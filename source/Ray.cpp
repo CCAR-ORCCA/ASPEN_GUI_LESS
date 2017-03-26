@@ -1,10 +1,10 @@
 #include "Ray.hpp"
 
-Ray::Ray(unsigned int y_index, unsigned int z_index, Lidar * lidar) {
+Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	this -> lidar = lidar;
-	this -> y_index = y_index;
-	this -> z_index = z_index;
+	this -> row_index = row_index;
+	this -> col_index = col_index;
 
 	// the origin of the ray is computed in the lidar plane
 	// the outward line-of-sight direction is set to the +x direction
@@ -26,7 +26,7 @@ Ray::Ray(unsigned int y_index, unsigned int z_index, Lidar * lidar) {
 		a_z = 0;
 	}
 	double b_z = 0.5 * ( - this -> lidar -> get_size_z() + pz );
-	z =  a_z * z_index + b_z;
+	z =  a_z * col_index + b_z;
 
 	// Y coordinate
 	double a_y;
@@ -37,10 +37,10 @@ Ray::Ray(unsigned int y_index, unsigned int z_index, Lidar * lidar) {
 		a_y = 0;
 	}
 	double b_y = 0.5 * ( - this -> lidar -> get_size_y() + py );
-	y = a_y * y_index + b_y;
+	y = a_y * row_index + b_y;
 
 	// Origin and direction
-	arma::vec origin = {x, y, z};
+	arma::vec origin = {x, z, y};
 	this -> origin = std::make_shared<arma::vec>(origin);
 	this -> direction = std::make_shared<arma::vec>(arma::normalise( - origin));
 }
@@ -62,11 +62,16 @@ arma::vec * Ray::get_origin() {
 	return this -> origin.get();
 }
 
-void Ray::brute_force_ray_casting() {
+void Ray::brute_force_ray_casting(bool computed_mes) {
 
-
-	this -> hit_facet = nullptr;
-	this -> range = std::numeric_limits<float>::infinity();
+	if (computed_mes == false) {
+		this -> hit_facet = nullptr;
+		this -> range = std::nan("");
+	}
+	else {
+		this -> hit_facet_apriori = nullptr;
+		this -> range_apriori = std::nan("");
+	}
 
 	arma::vec direction_in_target_frame = this -> lidar -> get_frame_graph() -> convert(
 	        *this -> direction,
@@ -85,7 +90,8 @@ void Ray::brute_force_ray_casting() {
 
 		this -> find_intersect_with_facet(direction_in_target_frame,
 		                                  origin_in_target_frame,
-		                                  this -> lidar -> get_shape_model() -> get_facets() -> at(facet_index));
+		                                  this -> lidar -> get_shape_model() -> get_facets() -> at(facet_index),
+		                                  computed_mes);
 
 	}
 
@@ -94,7 +100,8 @@ void Ray::brute_force_ray_casting() {
 
 void Ray::find_intersect_with_facet(arma::vec & direction_in_target_frame,
                                     arma::vec & origin_in_target_frame,
-                                    Facet * facet) {
+                                    Facet * facet,
+                                    bool computed_mes) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
@@ -110,7 +117,7 @@ void Ray::find_intersect_with_facet(arma::vec & direction_in_target_frame,
 	if (t > 0) {
 
 		arma::vec H = direction_in_target_frame * t + origin_in_target_frame;
-		
+
 
 		// If the intersect is indise the facet
 		if (this -> intersection_inside(H, facet) == true) {
@@ -118,9 +125,15 @@ void Ray::find_intersect_with_facet(arma::vec & direction_in_target_frame,
 
 			// If the corresponding distance is less that what was already found,
 			// this is an interesting intersection to retain
-			if (range < this -> range) {
-				this -> range = range;
-				this -> hit_facet = facet;
+			if (range < this -> range || std::isnan(this -> range) == true) {
+				if (computed_mes == false) {
+					this -> range = range;
+					this -> hit_facet = facet;
+				}
+				else {
+					this -> range_apriori = range;
+					this -> hit_facet_apriori = facet;
+				}
 
 			}
 

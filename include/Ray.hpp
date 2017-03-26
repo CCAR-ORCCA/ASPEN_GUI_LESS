@@ -55,24 +55,29 @@ public:
 	Sets the $hit_facet and $range members depending on whether an intersect was found:
 		- no intersect found: range == oo and hit_facet == nullptr
 		- intersect found: hit_facet and range have valid values
+	@param computed_mes True if the measurements are collected from the a-priori
 	*/
-	void brute_force_ray_casting();
+	void brute_force_ray_casting(bool computed_mes = false);
 
 
 protected:
 	Lidar * lidar;
-	Facet * hit_facet;
 	std::shared_ptr<arma::vec> origin;
 	std::shared_ptr<arma::vec> direction;
-	unsigned int y_index;
-	unsigned int z_index;
+	unsigned int row_index;
+	unsigned int col_index;
 
 	double range;
+	Facet * hit_facet;
+
+	double range_apriori;
+	Facet * hit_facet_apriori;
 
 
 	void find_intersect_with_facet(arma::vec & direction_in_target_frame,
 	                               arma::vec & origin_in_target_frame,
-	                               Facet * facet);
+	                               Facet * facet,
+	                               bool computed_mes);
 	bool intersection_inside(arma::vec & H, Facet * facet, double tol = 1e-7) ;
 
 

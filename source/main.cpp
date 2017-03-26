@@ -13,24 +13,27 @@ int main() {
 	frame_graph.add_transform("N", "L");
 	frame_graph.add_transform("N", "T");
 
-	arma::vec lidar_pos = { -3000., 0., 0.};
+	arma::vec lidar_pos = { -1000., 0., 0.};
 	frame_graph.set_transform_origin("N", "L", lidar_pos);
-	arma::vec target_mrp = {0.1, 0, 0};
-	frame_graph.set_transform_mrp("N", "T", target_mrp);
-
+	
 	// Shape model
 	ShapeModel shape_model("T", &frame_graph);
-	ShapeModelImporter shape_io("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/KW4Alpha.obj");
+	ShapeModelImporter shape_io("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/KW4Alpha.obj",
+		1);
 	shape_io.load_shape_model(&shape_model);
 
+	std::cout << "CM" << std::endl;
+	std::cout << *shape_model.get_center_of_mass() << std::endl;
+
+	std::cout << "volume" << std::endl;
+	std::cout << shape_model.get_volume() << std::endl;
+
 	// Lidar
-	Lidar lidar(&frame_graph, "L", 30, 30, 32, 32, 1e-2);
-	lidar.send_flash(&shape_model);
-	lidar.save_focal_plane_range("ranges.txt");
+	// Lidar lidar(&frame_graph, "L", 30, 30, 32, 32, 1e-2, 0.5);
 
-	// Filter
-	Filter filter(&lidar, &shape_model, &shape_model,0,10,1e-3);
-
+	// // Filter
+	// Filter filter(&frame_graph,&lidar, &shape_model, &shape_model, 0, 100, 1e-3);
+	// filter.run();
 	/**
 	Need a Filter class to host:
 		- the instrument

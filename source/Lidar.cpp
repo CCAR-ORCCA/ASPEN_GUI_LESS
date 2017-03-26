@@ -7,7 +7,8 @@ Lidar::Lidar(
     double fov_z,
     unsigned int res_y,
     unsigned int res_z,
-    double f) {
+    double f,
+    double freq) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -16,6 +17,7 @@ Lidar::Lidar(
 	this -> fov_z = fov_z;
 	this -> res_y = res_y;
 	this -> res_z = res_z;
+	this -> freq = freq;
 
 
 
@@ -45,6 +47,10 @@ double Lidar::get_focal_length() const {
 
 FrameGraph * Lidar::get_frame_graph() {
 	return this -> frame_graph;
+}
+
+double Lidar::get_frequency() const {
+	return this -> freq;
 }
 
 
@@ -92,6 +98,7 @@ void Lidar::send_flash(ShapeModel * shape_model) {
 		}
 	}
 
+
 }
 
 
@@ -103,37 +110,68 @@ std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
-void Lidar::save_focal_plane_range(std::string path) const {
+std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const {
 
-	// std::ofstream pixel_location_file;
-	// pixel_location_file.open(path);
-	Gnuplot gp;
+	std::ofstream pixel_location_file;
+	pixel_location_file.open(path + ".txt");
 
-	std::vector<boost::tuple<unsigned int, unsigned int, double> > range_tuple_vec;
+	double r_max = 	- std::numeric_limits<float>::infinity();
+	double r_min =  std::numeric_limits<float>::infinity();
 
 
 	for (unsigned int y_index = 0; y_index < this -> res_y; ++y_index) {
 
-		for (unsigned int z_index = 0; z_index < this -> res_z; ++z_index) {
-			// Cheap and dirty way to get rid of the inf
-			if (this -> focal_plane[y_index][z_index] -> get_range() < 1e10)
-				// pixel_location_file << y_index << " " << z_index << " " << this -> focal_plane[y_index][z_index] -> get_range() << "\n";
-				range_tuple_vec.push_back(boost::make_tuple(
-				                              y_index,
-				                              z_index,
-				                              this -> focal_plane[y_index][z_index] -> get_range()
-				                          ));
+
+		pixel_location_file << this -> focal_plane[y_index][0] -> get_range() ;
+
+
+		for (unsigned int z_index = 1; z_index < this -> res_z; ++z_index) {
+
+			double range = this -> focal_plane[y_index][z_index] -> get_range() ;
+
+			pixel_location_file << " " << range ;
+			if (range > r_max)
+				r_max = range;
+			if (range < r_min)
+				r_min = range;
 
 		}
 
+		pixel_location_file << "\n";
+
+
 	}
-	// pixel_location_file.close();
-	gp << "set view map\n";
-	gp << "set dgrid3d\n";
-	gp << "set xrange [-1:" << std::to_string(this -> res_y + 1) << "]\nset yrange [-2:" << std::to_string(this -> res_z + 1) << "]\n";
 
-	gp << "splot" << gp.file1d(range_tuple_vec) << "using 1:2:3 with pm3d\n";
+	pixel_location_file.close();
+	return std::make_pair(r_min, r_max);
 
+}
+
+void Lidar::plot_ranges(std::string path) const {
+
+	std::pair<double, double> range_lims = this -> save_focal_plane_range(path);
+	std::vector<std::string> script;
+	script.push_back("set terminal png");
+	script.push_back("set output '" + path + ".png'");
+
+	script.push_back("set title ''");
+	script.push_back("set view map");
+	script.push_back("set palette rgb 33, 13, 10");
+	script.push_back("set palette negative");
+	script.push_back("set xrange [" + std::to_string(-1) + ":" + std::to_string(this -> res_z) + "]");
+	script.push_back("set yrange [" + std::to_string(-1) + ":" + std::to_string(this -> res_y) + "]");
+	script.push_back("set cbrange [" + std::to_string(range_lims.first) + ":" + std::to_string(range_lims.second) + "]");
+	script.push_back("set size square");
+
+	script.push_back("plot '" + path + ".txt' matrix with image notitle");
+
+
+	GNUPlot plotter;
+	plotter.open();
+	plotter.execute(script);
+	plotter.write("exit");
+	plotter.flush();
+	plotter.close();
 
 
 

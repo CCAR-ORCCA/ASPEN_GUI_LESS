@@ -34,6 +34,8 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 add_definitions(-Wall -O2 -lboost_iostreams)
 include_directories(include)
+include_directories(external/include)
+
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
@@ -54,7 +56,7 @@ endif()
 # set(Boost_USE_MULTITHREADED ON)  
 # set(Boost_USE_STATIC_RUNTIME OFF) 
 set(BOOST_ROOT /usr/local/Cellar/boost/1.63.0/)
-find_package(Boost COMPONENTS filesystem system iostreams) 
+find_package(Boost COMPONENTS filesystem system) 
 if (Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS}) 
 else()
@@ -132,6 +134,8 @@ include/RigidBodyKinematics.hpp
 include/Adjacency_List.hpp
 include/FrameGraph.hpp
 include/Filter.hpp
+external/source/GNUPlot.cpp
+external/include/GNUPlot.h
 
 # include/RefTransform.hpp
 # include/OMP_flags.hpp

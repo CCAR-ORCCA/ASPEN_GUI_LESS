@@ -4,9 +4,7 @@
 #include "ShapeModel.hpp"
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
-
-#include "../external/gnuplot-iostream.h"
-#include <boost/tuple/tuple.hpp>
+#include "GNUPlot.h"
 
 class Ray;
 class ShapeModel;
@@ -21,17 +19,19 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	@param fov_h horizontal field of view (degrees)
 	@param fov_v vertical field of view (degrees)
-	@param res_h horizontal resolution (number of pixels)
-	@param res_v vertical resolution (number of pixels)
+	@param res_y horizontal resolution (number of pixel rows)
+	@param res_z vertical resolution (number of pixel columns)
 	@param f focal length (m)
+	@param freq frequency of operation (Hz)
 	*/
 	Lidar(FrameGraph * frame_graph,
 	      std::string ref_frame_name = "L",
 	      double fov_h = 10,
 	      double fov_v = 10,
-	      unsigned int res_h = 16,
-	      unsigned int res_v = 16,
-	      double f = 1e-2
+	      unsigned int res_y = 16,
+	      unsigned int res_z = 16,
+	      double f = 1e-2,
+	      double freq = 3
 	     );
 
 
@@ -80,12 +80,26 @@ public:
 	*/
 	double get_res_z() const ;
 
+	/**
+	Returns the frequency of operation
+	@return Frequency (Hz)
+	*/
+	double get_frequency() const;
+
 
 	/**
 	Writes the location of the pixels to a file
 	@param path Path to the file to store the pixel locations
 	*/
 	void save_pixel_location(std::string path) const ;
+
+
+	/**
+	Plot the ranges collected in the the focal plane
+	after storing them at the provided location
+	@param path Path to the text file containing the ranges
+	*/
+	void plot_ranges(std::string path) const;
 
 
 	/**
@@ -105,12 +119,14 @@ public:
 
 
 
-	/**
+	/*
 	Saves the ranges collected by each pixel in the focal plane
 	to a file
 	@param path Path to the file
+	@return Pair of min and max measured range
 	*/
-	void save_focal_plane_range(std::string path) const ;
+	std::pair<double, double> save_focal_plane_range(std::string path) const ;
+
 
 	FrameGraph * get_frame_graph();
 
@@ -118,6 +134,7 @@ public:
 
 protected:
 	double f;
+	double freq;
 
 	double fov_y ;
 	double fov_z ;

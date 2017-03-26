@@ -3,11 +3,12 @@
 
 #include "ShapeModel.hpp"
 #include "Lidar.hpp"
+#include "FrameGraph.hpp"
 
 
 
 /**
-Filter class to hosting:
+Filter class hosting:
 - the instrument
 - the true shape model
 - the estimated shape model
@@ -21,6 +22,7 @@ public:
 
 	/**
 	Constructor
+	@param frame_graph Pointer to the graph storing the reference frames
 	@param lidar Pointer to instrument
 	@param true_shape_model Pointer to the true shape model
 	@param estimated_shape_model Pointer to the estimated shape model
@@ -28,14 +30,15 @@ public:
 	@param t1 Final time (s)
 	@param dt Timestep (s)
 	*/
-	Filter(Lidar * lidar,
+	Filter(FrameGraph * frame_graph,
+	       Lidar * lidar,
 	       ShapeModel * true_shape_model,
 	       ShapeModel * estimated_shape_model,
 	       double t0,
 	       double tf,
 	       double dt);
 
-
+	void run();
 
 protected:
 
@@ -46,6 +49,7 @@ protected:
 	double tf;
 	double dt;
 
+	FrameGraph * frame_graph;
 	Lidar * lidar;
 	ShapeModel * true_shape_model;
 	ShapeModel * estimated_shape_model;

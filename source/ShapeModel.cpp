@@ -257,10 +257,28 @@ void ShapeModel::compute_volume() {
 		arma::vec * r3 =  vertices -> at(2) -> get_coordinates();
 
 		arma::vec u = arma::normalise(*r2 - *r1);
+		arma::vec v = arma::normalise(*r3 - *r1);
 		arma::vec w = arma::normalise(*r3 - *r2);
 
 		double a = arma::norm(*r2 - *r1);
 		double b = arma::norm(*r3 - *r2);
+
+		double cos_alpha = arma::dot(u, v);
+
+		if (cos_alpha < 0) {
+
+			r1 =  vertices -> at(1) -> get_coordinates();
+			r2 =  vertices -> at(2) -> get_coordinates();
+			r3 =  vertices -> at(0) -> get_coordinates();
+
+			a = arma::norm(*r2 - *r1);
+			b = arma::norm(*r3 - *r2);
+
+			u = arma::normalise(*r2 - *r1);
+			w = arma::normalise(*r3 - *r2);
+
+		}
+
 
 		double sin_beta = arma::norm(arma::cross(u, w));
 
@@ -300,20 +318,37 @@ void ShapeModel::compute_center_of_mass() {
 		arma::vec * r2 =  vertices -> at(1) -> get_coordinates();
 		arma::vec * r3 =  vertices -> at(2) -> get_coordinates();
 
-		arma::vec u = arma::normalise(*r2 - *r1);
-		arma::vec w = arma::normalise(*r3 - *r2);
-
 		double a = arma::norm(*r2 - *r1);
 		double b = arma::norm(*r3 - *r2);
 
-		double sin_beta = arma::norm(arma::cross(u, w));
-		double cos_beta = arma::dot(u, -w);
+		arma::vec u = arma::normalise(*r2 - *r1);
+		arma::vec v = arma::normalise(*r3 - *r1);
+		arma::vec w = arma::normalise(*r3 - *r2);
 
+		double cos_alpha = arma::dot(u, v);
+
+		if (cos_alpha < 0) {
+
+			r1 =  vertices -> at(1) -> get_coordinates();
+			r2 =  vertices -> at(2) -> get_coordinates();
+			r3 =  vertices -> at(0) -> get_coordinates();
+
+			a = arma::norm(*r2 - *r1);
+			b = arma::norm(*r3 - *r2);
+
+			u = arma::normalise(*r2 - *r1);
+			w = arma::normalise(*r3 - *r2);
+
+		}
+
+
+		double sin_beta = arma::norm(arma::cross(u, w));
 
 		double gamma = (arma::dot(*r1, a * b / 2. * (*r1) + 2 * b * a * a / 3. * u
 		                          + a * b * b / 3. * w)
-		                - 7. / 4. * cos_beta * a * a * b * b
-		                + a * a * a * b / 4. - a * b * b * b / 12.);
+		                + 1. / 4. * arma::dot(u, w) * a * a * b * b
+		                + a * a * a * b / 4. + a * b * b * b / 12.);
+
 
 		c_x = c_x + 0.5 * n[0] * sin_beta * gamma;
 		c_y = c_y + 0.5 * n[1] * sin_beta * gamma;
