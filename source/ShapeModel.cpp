@@ -270,45 +270,17 @@ void ShapeModel::compute_volume() {
 	        facet_index < this -> facets.size();
 	        ++facet_index) {
 
-		Facet * facet = this -> facets[facet_index];
+		std::vector<std::shared_ptr<Vertex > > * vertices = this -> facets[facet_index] -> get_vertices();
 
-		std::vector<std::shared_ptr<Vertex > > * vertices = facet -> get_vertices();
-		arma::vec * n = facet -> get_facet_normal();
+		arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
+		arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
+		arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
+		double dv = 1. / 6. * arma::dot(*r0, arma::cross(*r1 - *r0, *r2 - *r0));
+		volume = volume + dv;
 
-		arma::vec * r1 =  vertices -> at(0) -> get_coordinates();
-		arma::vec * r2 =  vertices -> at(1) -> get_coordinates();
-		arma::vec * r3 =  vertices -> at(2) -> get_coordinates();
-
-		arma::vec u = arma::normalise(*r2 - *r1);
-		arma::vec v = arma::normalise(*r3 - *r1);
-		arma::vec w = arma::normalise(*r3 - *r2);
-
-		double a = arma::norm(*r2 - *r1);
-		double b = arma::norm(*r3 - *r2);
-
-		double cos_alpha = arma::dot(u, v);
-
-		if (cos_alpha < 0) {
-
-			r1 =  vertices -> at(1) -> get_coordinates();
-			r2 =  vertices -> at(2) -> get_coordinates();
-			r3 =  vertices -> at(0) -> get_coordinates();
-
-			a = arma::norm(*r2 - *r1);
-			b = arma::norm(*r3 - *r2);
-
-			u = arma::normalise(*r2 - *r1);
-			w = arma::normalise(*r3 - *r2);
-
-		}
-
-
-		double sin_beta = arma::norm(arma::cross(u, w));
-
-		volume = volume + a * b * sin_beta * arma::dot(*r1, *n);
 	}
 
-	this -> volume = 1. / 6. * volume;
+	this -> volume = volume;
 }
 
 
@@ -332,56 +304,32 @@ void ShapeModel::compute_center_of_mass() {
 	        facet_index < this -> facets.size();
 	        ++facet_index) {
 
-		Facet * facet = this -> facets[facet_index];
 
-		std::vector<std::shared_ptr<Vertex > > * vertices = facet -> get_vertices();
-		double * n = facet -> get_facet_normal() -> colptr(0);
+		std::vector<std::shared_ptr<Vertex > > * vertices = this -> facets[facet_index] -> get_vertices();
 
-		arma::vec * r1 =  vertices -> at(0) -> get_coordinates();
-		arma::vec * r2 =  vertices -> at(1) -> get_coordinates();
-		arma::vec * r3 =  vertices -> at(2) -> get_coordinates();
+		arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
+		arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
+		arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
 
-		double a = arma::norm(*r2 - *r1);
-		double b = arma::norm(*r3 - *r2);
+		double * r0d =  vertices -> at(0) -> get_coordinates() -> colptr(0);
+		double * r1d =  vertices -> at(1) -> get_coordinates() -> colptr(0);
+		double * r2d =  vertices -> at(2) -> get_coordinates() -> colptr(0);
 
-		arma::vec u = arma::normalise(*r2 - *r1);
-		arma::vec v = arma::normalise(*r3 - *r1);
-		arma::vec w = arma::normalise(*r3 - *r2);
+		double dv = 1. / 6. * arma::dot(*r1, arma::cross(*r1 - *r0, *r2 - *r0));
 
-		double cos_alpha = arma::dot(u, v);
+		double dr_x = (r0d[0] + r1d[0] + r2d[0]) / 4.;
+		double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
+		double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
 
-		if (cos_alpha < 0) {
-
-			r1 =  vertices -> at(1) -> get_coordinates();
-			r2 =  vertices -> at(2) -> get_coordinates();
-			r3 =  vertices -> at(0) -> get_coordinates();
-
-			a = arma::norm(*r2 - *r1);
-			b = arma::norm(*r3 - *r2);
-
-			u = arma::normalise(*r2 - *r1);
-			w = arma::normalise(*r3 - *r2);
-
-		}
-
-
-		double sin_beta = arma::norm(arma::cross(u, w));
-
-		double gamma = (arma::dot(*r1, a * b / 2. * (*r1) + 2 * b * a * a / 3. * u
-		                          + a * b * b / 3. * w)
-		                + 1. / 4. * arma::dot(u, w) * a * a * b * b
-		                + a * a * a * b / 4. + a * b * b * b / 12.);
-
-
-		c_x = c_x + 0.5 * n[0] * sin_beta * gamma;
-		c_y = c_y + 0.5 * n[1] * sin_beta * gamma;
-		c_z = c_z + 0.5 * n[2] * sin_beta * gamma;
+		c_x = c_x + dv * dr_x / volume;
+		c_y = c_y + dv * dr_y / volume;
+		c_z = c_z + dv * dr_z / volume;
 
 	}
 
 	arma::vec cm = {c_x, c_y, c_z};
 
-	this -> cm =  cm / volume;
+	this -> cm =  cm ;
 
 }
 

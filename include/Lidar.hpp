@@ -98,8 +98,39 @@ public:
 	Plot the ranges collected in the the focal plane
 	after storing them at the provided location
 	@param path Path to the text file containing the ranges
+	@param type Indicates what type of ranges should be saved
+		- 0 : true ranges
+		- 1 : computed ranges
+		- 2 : residuals
 	*/
-	void plot_ranges(std::string path) const;
+	void plot_ranges(std::string path,unsigned int type) const;
+
+
+	/*
+	Saves the true ranges collected by each pixel in the focal plane
+	to a file
+	@param path Path to the file
+	@return Pair of min and max measured range
+	*/
+	std::pair<double, double> save_true_range(std::string path) const ;
+
+
+	/*
+	Saves the computed ranges collected by each pixel in the focal plane
+	to a file
+	@param path Path to the file
+	@return Pair of min and max measured range
+	*/
+	std::pair<double, double> save_computed_range(std::string path) const ;
+
+
+	/*
+	Saves the range residuals collected by each pixel in the focal plane
+	to a file
+	@param path Path to the file
+	@return Pair of min and max measured range
+	*/
+	std::pair<double, double> save_range_residuals(std::string path) const ;
 
 
 	/**
@@ -108,8 +139,9 @@ public:
 	Depending on whether the target is hit or not,
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
+	@param computed_mes True is target is a-priori, false otherwise
 	*/
-	void send_flash(ShapeModel * shape_model);
+	void send_flash(ShapeModel * shape_model, bool computed_mes) ;
 
 	/**
 	Accessor to the shape model currently observed
@@ -118,14 +150,6 @@ public:
 	ShapeModel * get_shape_model();
 
 
-
-	/*
-	Saves the ranges collected by each pixel in the focal plane
-	to a file
-	@param path Path to the file
-	@return Pair of min and max measured range
-	*/
-	std::pair<double, double> save_focal_plane_range(std::string path) const ;
 
 
 	FrameGraph * get_frame_graph();

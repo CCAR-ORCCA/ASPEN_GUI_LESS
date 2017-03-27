@@ -1,5 +1,4 @@
 #include "RigidBodyKinematics.hpp"
-#include <math.h>
 
 
 arma::mat mrp_to_dcm(const arma::vec & sigma) {
@@ -30,13 +29,13 @@ arma::mat euler313_to_dcm(const arma::vec & euler_angles) {
 }
 
 arma::mat euler321d_to_dcm(arma::vec & euler_angles) {
-	euler_angles = boost::math::constants::pi<double>() / 180. * euler_angles;
+	euler_angles = arma::datum::pi / 180. * euler_angles;
 	arma::mat M(M1(euler_angles(2)) * M2(euler_angles(1)) * M3(euler_angles(0)));
 	return M;
 }
 
 arma::mat euler313d_to_dcm(arma::vec & euler_angles) {
-	euler_angles = boost::math::constants::pi<double>() / 180. * euler_angles;
+	euler_angles = arma::datum::pi / 180. * euler_angles;
 
 	arma::mat M(M3(euler_angles(2)) * M1(euler_angles(1)) * M3(euler_angles(0)));
 	return M;
@@ -255,11 +254,11 @@ arma::vec euler313d_to_mrp(arma::vec & euler_angles) {
 }
 
 arma::vec dcm_to_euler321d(const arma::mat & dcm) {
-	return 180. / boost::math::constants::pi<double>() * dcm_to_euler321(dcm);
+	return 180. / arma::datum::pi * dcm_to_euler321(dcm);
 }
 
 arma::vec dcm_to_euler313d(const arma::mat & dcm) {
-	return 180. / boost::math::constants::pi<double>() * dcm_to_euler313(dcm);
+	return 180. / arma::datum::pi * dcm_to_euler313(dcm);
 }
 
 arma::vec mrp_to_euler313d(const arma::vec & sigma) {

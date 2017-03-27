@@ -34,16 +34,36 @@ public:
 	Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar);
 
 	/**
-	Pointer to hit facet
+	Pointer to hit facet on the true target
 	@return pointer to hit facet (set to nullptr if no facet was hit)
 	*/
-	Facet * get_hit_facet() ;
+	Facet * get_true_hit_facet() ;
 
 	/**
-	Value of range measurement (from pixel to facet)
+	Pointer to hit facet on the estimated target
+	@return pointer to hit facet (set to nullptr if no facet was hit)
+	*/
+	Facet * get_computed_hit_facet() ;
+
+
+	/**
+	Value of true range measurement (from pixel to facet)
 	@return range measurement (m)
 	*/
-	double get_range() const ;
+	double get_true_range() const ;
+
+	/**
+	Value of computed range measurement (from pixel to facet)
+	@return range measurement (m)
+	*/
+	double get_computed_range() const ;
+
+
+	/**
+	Value of range residual (from pixel to facet, true minus computed)
+	@return range residual (m)
+	*/
+	double get_range_residual() const;
 
 	/**
 	Return pointer to the unit vector directing the ray,
@@ -71,18 +91,20 @@ public:
 
 
 protected:
-	
+
 	Lidar * lidar;
 	std::shared_ptr<arma::vec> origin;
 	std::shared_ptr<arma::vec> direction;
 	unsigned int row_index;
 	unsigned int col_index;
 
-	double range;
-	Facet * hit_facet;
+	double true_range;
+	Facet * true_hit_facet;
 
-	double range_apriori;
-	Facet * hit_facet_apriori;
+	double computed_range;
+	Facet * computed_hit_facet;
+
+	double range_residual;
 
 
 	bool intersection_inside(arma::vec & H, Facet * facet, double tol = 1e-7) ;

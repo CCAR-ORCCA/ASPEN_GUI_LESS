@@ -63,8 +63,15 @@ void Filter::run() {
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
-		this -> lidar -> send_flash(this -> true_shape_model);
-		this -> lidar -> plot_ranges("../images/ranges_" + std::to_string(time_index));
+		this -> lidar -> send_flash(this -> true_shape_model,false);
+		this -> lidar -> send_flash(this -> estimated_shape_model,true);
+
+		this -> lidar -> plot_ranges("../images/true_" + std::to_string(time_index),0);
+		this -> lidar -> plot_ranges("../images/computed_" + std::to_string(time_index),1);
+		this -> lidar -> plot_ranges("../images/residuals_" + std::to_string(time_index),2);
+
+
+		// this -> lidar -> plot_range_residuals("../images/residuals" + std::to_string(time_index));
 
 	}
 

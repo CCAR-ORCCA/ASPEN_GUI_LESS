@@ -17,26 +17,28 @@ int main() {
 	frame_graph.add_transform("N", "T");
 	frame_graph.add_transform("N", "E");
 
-	arma::vec lidar_pos = { -1000., 0., 0.};
+	arma::vec lidar_pos = { -1500., 0., 0.};
 	frame_graph.set_transform_origin("N", "L", lidar_pos);
 
 	// Shape model
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	ShapeModelImporter shape_io("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj",
+	ShapeModelImporter shape_io_truth("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_16.obj",
 	                            1000);
-	shape_io.load_shape_model(&true_shape_model);
-	shape_io.load_shape_model(&estimated_shape_model);
+	ShapeModelImporter shape_io_estimated("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj",
+	                            1000);
+
+	shape_io_truth.load_shape_model(&true_shape_model);
+	shape_io_estimated.load_shape_model(&estimated_shape_model);
+
 
 	// Lidar
 	Lidar lidar(&frame_graph, "L", 15, 15, 32, 32, 1e-2, 1);
 
 	// Filter
 	Filter filter(&frame_graph, &lidar, &true_shape_model, &estimated_shape_model, 0, 100, 1e-3);
-
 	filter.run();
-
 
 	/**
 	Need a Filter class to host:

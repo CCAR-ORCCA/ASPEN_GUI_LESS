@@ -4,8 +4,6 @@ FrameGraph::FrameGraph() {
 
 }
 
-
-
 arma::vec FrameGraph::convert(arma::vec & input, std::string from, std::string to,
                               bool is_unit_vector) {
 

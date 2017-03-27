@@ -3,8 +3,6 @@
 #define RIGIDBODYKINEMATICS_HPP
 
 #include <armadillo>
-#include <boost/math/constants/constants.hpp>
-// class Args;
 
 /**
 Converts MRP to DCM

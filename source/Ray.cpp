@@ -45,12 +45,25 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 	this -> direction = std::make_shared<arma::vec>(arma::normalise( - origin));
 }
 
-Facet * Ray::get_hit_facet() {
-	return this -> hit_facet;
+Facet * Ray::get_true_hit_facet() {
+	return this -> true_hit_facet;
 }
 
-double Ray::get_range() const {
-	return this -> range;
+Facet * Ray::get_computed_hit_facet() {
+	return this -> computed_hit_facet;
+}
+
+double Ray::get_true_range() const {
+	return this -> true_range;
+}
+
+double Ray::get_computed_range() const {
+	return this -> computed_range;
+}
+
+
+double Ray::get_range_residual() const {
+	return this -> range_residual;
 }
 
 arma::vec * Ray::get_direction() {
@@ -78,7 +91,7 @@ void Ray::brute_force_ray_casting(bool computed_mes) {
 
 	// Every facet of the shape model is searched for a potential intersect
 	struct CompareRanges range_comp;
-	
+
 	#pragma omp parallel for reduction(minimum:range_comp) if (USE_OMP_RAY)
 	for (unsigned int facet_index = 0;
 	        facet_index < this -> lidar -> get_shape_model() -> get_NFacets();
@@ -117,16 +130,18 @@ void Ray::brute_force_ray_casting(bool computed_mes) {
 
 	}
 
-	if (computed_mes == false) {
-		this -> range = range_comp.range;
-		this -> hit_facet = range_comp.hit_facet;
+	// The observed target is the a-priori
+	if (computed_mes == true) {
+		this -> computed_range = range_comp.range;
+		this -> computed_hit_facet = range_comp.hit_facet;
+		this -> range_residual = this -> true_range - this -> computed_range;
 	}
 
+	// The observed target is the true target
 	else {
-		this -> range_apriori = range_comp.range;
-		this -> hit_facet_apriori = range_comp.hit_facet;
+		this -> true_range = range_comp.range;
+		this -> true_hit_facet = range_comp.hit_facet;
 	}
-
 
 }
 

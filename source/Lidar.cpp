@@ -83,19 +83,17 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-void Lidar::send_flash(ShapeModel * shape_model) {
+void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
 	this -> shape_model = shape_model;
-
 	unsigned int y_res = this -> res_y;
 	unsigned int z_res = this -> res_z;
 
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
-			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting();
+			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
 		}
 	}
-
 
 }
 
@@ -108,7 +106,15 @@ std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
-std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const {
+
+
+
+
+
+
+
+
+std::pair<double, double> Lidar::save_true_range(std::string path) const {
 
 	std::ofstream pixel_location_file;
 	pixel_location_file.open(path + ".txt");
@@ -119,8 +125,8 @@ std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const 
 
 	for (unsigned int y_index = 0; y_index < this -> res_y; ++y_index) {
 
-		if (this -> focal_plane[y_index][0] -> get_range() < 1e10 )
-			pixel_location_file << this -> focal_plane[y_index][0] -> get_range();
+		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+			pixel_location_file << this -> focal_plane[y_index][0] -> get_true_range();
 		else
 			pixel_location_file << "nan";
 
@@ -128,7 +134,7 @@ std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const 
 
 		for (unsigned int z_index = 1; z_index < this -> res_z; ++z_index) {
 
-			double range = this -> focal_plane[y_index][z_index] -> get_range() ;
+			double range = this -> focal_plane[y_index][z_index] -> get_true_range() ;
 
 			if (range < 1e10 )
 				pixel_location_file << " " << range ;
@@ -153,9 +159,117 @@ std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const 
 
 }
 
-void Lidar::plot_ranges(std::string path) const {
 
-	std::pair<double, double> range_lims = this -> save_focal_plane_range(path);
+std::pair<double, double> Lidar::save_computed_range(std::string path) const {
+
+	std::ofstream pixel_location_file;
+	pixel_location_file.open(path + ".txt");
+
+	double r_max = 	- std::numeric_limits<float>::infinity();
+	double r_min =  std::numeric_limits<float>::infinity();
+
+
+	for (unsigned int y_index = 0; y_index < this -> res_y; ++y_index) {
+
+		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+			pixel_location_file << this -> focal_plane[y_index][0] -> get_computed_range();
+		else
+			pixel_location_file << "nan";
+
+
+
+		for (unsigned int z_index = 1; z_index < this -> res_z; ++z_index) {
+
+			double range = this -> focal_plane[y_index][z_index] -> get_computed_range() ;
+
+			if (range < 1e10 )
+				pixel_location_file << " " << range ;
+			else
+				pixel_location_file << " nan";
+
+			if (range > r_max && range < 1e10)
+				r_max = range;
+			if (range < r_min)
+				r_min = range;
+
+		}
+
+		pixel_location_file << "\n";
+
+
+	}
+
+	pixel_location_file.close();
+
+	return std::make_pair(r_min, r_max);
+
+}
+
+
+std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
+
+	std::ofstream pixel_location_file;
+	pixel_location_file.open(path + ".txt");
+
+	double r_max = 	- std::numeric_limits<float>::infinity();
+	double r_min =  std::numeric_limits<float>::infinity();
+
+
+	for (unsigned int y_index = 0; y_index < this -> res_y; ++y_index) {
+
+		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+			pixel_location_file << this -> focal_plane[y_index][0] -> get_range_residual();
+		else
+			pixel_location_file << "nan";
+
+
+
+		for (unsigned int z_index = 1; z_index < this -> res_z; ++z_index) {
+
+			double range = this -> focal_plane[y_index][z_index] -> get_range_residual() ;
+
+			if (range < 1e10 )
+				pixel_location_file << " " << range ;
+			else
+				pixel_location_file << " nan";
+
+			if (range > r_max && range < 1e10)
+				r_max = range;
+			if (range < r_min)
+				r_min = range;
+
+		}
+
+		pixel_location_file << "\n";
+
+
+	}
+
+	pixel_location_file.close();
+
+	return std::make_pair(r_min, r_max);
+
+}
+
+
+void Lidar::plot_ranges(std::string path, unsigned int type) const {
+
+	std::pair<double, double> range_lims;
+	switch (type) {
+	case 0:
+		range_lims = this -> save_true_range(path);
+		break;
+	case 1:
+		range_lims = this -> save_computed_range(path);
+		break;
+	case 2:
+		range_lims = this -> save_range_residuals(path);
+		break;
+	default:
+		throw (std::runtime_error("Type not equal to 0, 1 or 2. Got " + std::to_string(type)));
+		break;
+	}
+
 	std::vector<std::string> script;
 	script.push_back("set terminal png");
 	script.push_back("set output '" + path + ".png'");
