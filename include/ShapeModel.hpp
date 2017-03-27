@@ -20,10 +20,10 @@
 
 
 /**
-Declaration of the ShapeModel class. Effectively represents 
+Declaration of the ShapeModel class. Effectively represents
 a shape parametrized in terms of facets/edges/vertices. The topology
 information is stored in the facets/vertices whereas the edges
-store relevant quantities for variational methods such as 
+store relevant quantities for variational methods such as
 the Polyhedron Gravity Model Evaluation
 */
 class ShapeModel {
@@ -42,8 +42,8 @@ public:
 	reference frame relationships
 	@param frame_graph Pointer to the reference frame graph
 	*/
-	ShapeModel(std::string ref_frame_name, 
-		FrameGraph * frame_graph);
+	ShapeModel(std::string ref_frame_name,
+	           FrameGraph * frame_graph);
 
 
 	/**
@@ -77,12 +77,12 @@ public:
 	@param tol numerical tolerance ,i.e value under which the lagrangian of the "surface field"
 		below which the point is considered outside
 	@return true if point is contained inside the shape, false otherwise
-	*/	
+	*/
 	bool contains(double * point, double tol = 1e-6) ;
 
 
 	/**
-	Checks that the normals were consistently oriented. If not, 
+	Checks that the normals were consistently oriented. If not,
 	the ordering of the vertices in the provided shape model file is incorrect
 	@param tol numerical tolerance (if consistent: norm(Sum(oriented_surface_area)) / average_facet_surface_area << tol)
 	*/
@@ -112,7 +112,7 @@ public:
 
 	/**
 	Defines the reference frame attached to the shape model
-	@param ref_frame Pointer to the reference frame attached 
+	@param ref_frame Pointer to the reference frame attached
 	to the shape model
 	*/
 	void set_ref_frame_name(std::string ref_frame_name);
@@ -172,6 +172,12 @@ public:
 	*/
 	void update_mass_properties();
 
+	/**
+	Shifts the coordinates of the shape model
+	@param x Shifting to apply to the coordinates
+	*/
+	void shift(arma::vec x);
+
 
 protected:
 
@@ -179,7 +185,7 @@ protected:
 	void compute_surface_area();
 	void compute_volume();
 	void compute_center_of_mass();
-	
+
 	std::vector<Facet * >  facets;
 	std::vector<std::shared_ptr< Edge> >  edges;
 	std::vector<std::shared_ptr< Vertex> >  vertices;

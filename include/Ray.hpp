@@ -11,6 +11,16 @@ class Lidar;
 class Facet;
 class ShapeModel;
 
+/**
+Convenience struct used in the parallelization of the ray casting procedure
+*/
+struct CompareRanges {
+	double range = std::numeric_limits<double>::infinity();
+	Facet * hit_facet = nullptr;
+
+};
+#pragma omp declare reduction(minimum : struct CompareRanges : omp_out = omp_in.range < omp_out.range ? omp_in : omp_out)
+
 class Ray {
 
 public:
@@ -61,6 +71,7 @@ public:
 
 
 protected:
+	
 	Lidar * lidar;
 	std::shared_ptr<arma::vec> origin;
 	std::shared_ptr<arma::vec> direction;
@@ -74,10 +85,6 @@ protected:
 	Facet * hit_facet_apriori;
 
 
-	void find_intersect_with_facet(arma::vec & direction_in_target_frame,
-	                               arma::vec & origin_in_target_frame,
-	                               Facet * facet,
-	                               bool computed_mes);
 	bool intersection_inside(arma::vec & H, Facet * facet, double tol = 1e-7) ;
 
 

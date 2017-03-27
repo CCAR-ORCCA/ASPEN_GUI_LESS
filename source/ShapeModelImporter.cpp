@@ -153,5 +153,10 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 	// are computed
 	shape_model -> update_mass_properties();
 
+	// The shape model is shifted so as to have its coordinates
+	// expressed in its barycentric frame
+	shape_model -> shift(-(*shape_model -> get_center_of_mass()));
+
+
 
 }

@@ -57,7 +57,6 @@ public:
 	*/
 	arma::mat * get_facet_dyad() ;
 
-
 	/**
 	Not implemented
 	*/

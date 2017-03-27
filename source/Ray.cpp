@@ -64,14 +64,6 @@ arma::vec * Ray::get_origin() {
 
 void Ray::brute_force_ray_casting(bool computed_mes) {
 
-	if (computed_mes == false) {
-		this -> hit_facet = nullptr;
-		this -> range = std::nan("");
-	}
-	else {
-		this -> hit_facet_apriori = nullptr;
-		this -> range_apriori = std::nan("");
-	}
 
 	arma::vec direction_in_target_frame = this -> lidar -> get_frame_graph() -> convert(
 	        *this -> direction,
@@ -85,54 +77,38 @@ void Ray::brute_force_ray_casting(bool computed_mes) {
 	                                       this -> lidar -> get_shape_model() -> get_ref_frame_name());
 
 	// Every facet of the shape model is searched for a potential intersect
-	for (unsigned int facet_index = 0; facet_index < this -> lidar -> get_shape_model() -> get_NFacets();
+	struct CompareRanges range_comp;
+	
+	#pragma omp parallel for reduction(minimum:range_comp) if (USE_OMP_RAY)
+	for (unsigned int facet_index = 0;
+	        facet_index < this -> lidar -> get_shape_model() -> get_NFacets();
 	        ++facet_index) {
 
-		this -> find_intersect_with_facet(direction_in_target_frame,
-		                                  origin_in_target_frame,
-		                                  this -> lidar -> get_shape_model() -> get_facets() -> at(facet_index),
-		                                  computed_mes);
 
-	}
+		Facet * facet = this -> lidar -> get_shape_model() -> get_facets() -> at(facet_index);
 
+		// The ray is parametrized as R = At + B where (A,B) are respectively
+		// the direction and the origin of the ray. For an intersection to
+		// be valid, t must be positive
+		arma::vec * n = facet -> get_facet_normal();
+		arma::vec * p = facet -> get_facet_center();
+		double t = arma::dot(*n, *p - origin_in_target_frame) / arma::dot(*n, direction_in_target_frame);
 
-}
+		// If the range is positive, this is further tested for
+		// potential intersection with this facet
+		if (t > 0) {
 
-void Ray::find_intersect_with_facet(arma::vec & direction_in_target_frame,
-                                    arma::vec & origin_in_target_frame,
-                                    Facet * facet,
-                                    bool computed_mes) {
+			arma::vec H = direction_in_target_frame * t + origin_in_target_frame;
 
-	// The ray is parametrized as R = At + B where (A,B) are respectively
-	// the direction and the origin of the ray. For an intersection to
-	// be valid, t must be positive
+			// If the intersect is indise the facet
+			if (this -> intersection_inside(H, facet) == true) {
+				double range = t;
 
-	arma::vec * n = facet -> get_facet_normal();
-	arma::vec * p = facet -> get_facet_center();
-
-	double t = arma::dot(*n, *p - origin_in_target_frame) / arma::dot(*n, direction_in_target_frame);
-
-	// If the range is positive, this is further tested for
-	// potential intersection with this facet
-	if (t > 0) {
-
-		arma::vec H = direction_in_target_frame * t + origin_in_target_frame;
-
-
-		// If the intersect is indise the facet
-		if (this -> intersection_inside(H, facet) == true) {
-			double range = t;
-
-			// If the corresponding distance is less that what was already found,
-			// this is an interesting intersection to retain
-			if (range < this -> range || std::isnan(this -> range) == true) {
-				if (computed_mes == false) {
-					this -> range = range;
-					this -> hit_facet = facet;
-				}
-				else {
-					this -> range_apriori = range;
-					this -> hit_facet_apriori = facet;
+				// If the corresponding distance is less that what was already found,
+				// this is an interesting intersection to retain
+				if (range < range_comp . range || (range_comp.range > 1e10) == true) {
+					range_comp . range = range;
+					range_comp . hit_facet = facet;
 				}
 
 			}
@@ -140,6 +116,17 @@ void Ray::find_intersect_with_facet(arma::vec & direction_in_target_frame,
 		}
 
 	}
+
+	if (computed_mes == false) {
+		this -> range = range_comp.range;
+		this -> hit_facet = range_comp.hit_facet;
+	}
+
+	else {
+		this -> range_apriori = range_comp.range;
+		this -> hit_facet_apriori = range_comp.hit_facet;
+	}
+
 
 }
 

@@ -144,6 +144,29 @@ ShapeModel::ShapeModel() {
 
 }
 
+void ShapeModel::shift(arma::vec x) {
+
+	// The vertices are shifted
+	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> get_NVertices();
+	        ++vertex_index) {
+
+		*this -> vertices[vertex_index] -> get_coordinates() = *this -> vertices[vertex_index] -> get_coordinates() + x;
+
+	}
+
+	// The facet centers are shifted
+	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
+	for (unsigned int facet_index = 0;
+	        facet_index < this -> get_NFacets();
+	        ++facet_index) {
+
+		*this -> facets[facet_index] -> get_facet_center() =  *this -> facets[facet_index] -> get_facet_center() + x;
+	}
+
+
+}
 
 ShapeModel::ShapeModel(std::string ref_frame_name,
                        FrameGraph * frame_graph) {

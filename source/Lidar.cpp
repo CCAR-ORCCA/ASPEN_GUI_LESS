@@ -89,10 +89,8 @@ void Lidar::send_flash(ShapeModel * shape_model) {
 	unsigned int y_res = this -> res_y;
 	unsigned int z_res = this -> res_z;
 
-	// #pragma omp parallel for if(USE_OMP_LIDAR)
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
-		// Segfaults ??
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting();
 		}
@@ -121,16 +119,23 @@ std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const 
 
 	for (unsigned int y_index = 0; y_index < this -> res_y; ++y_index) {
 
+		if (this -> focal_plane[y_index][0] -> get_range() < 1e10 )
+			pixel_location_file << this -> focal_plane[y_index][0] -> get_range();
+		else
+			pixel_location_file << "nan";
 
-		pixel_location_file << this -> focal_plane[y_index][0] -> get_range() ;
 
 
 		for (unsigned int z_index = 1; z_index < this -> res_z; ++z_index) {
 
 			double range = this -> focal_plane[y_index][z_index] -> get_range() ;
 
-			pixel_location_file << " " << range ;
-			if (range > r_max)
+			if (range < 1e10 )
+				pixel_location_file << " " << range ;
+			else
+				pixel_location_file << " nan";
+
+			if (range > r_max && range < 1e10)
 				r_max = range;
 			if (range < r_min)
 				r_min = range;
@@ -143,6 +148,7 @@ std::pair<double, double> Lidar::save_focal_plane_range(std::string path) const 
 	}
 
 	pixel_location_file.close();
+
 	return std::make_pair(r_min, r_max);
 
 }

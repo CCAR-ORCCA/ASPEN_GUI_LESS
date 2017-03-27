@@ -11,6 +11,6 @@ Enable/Disable the corresponding functionality by setting the flag
 // Use OMP multithreading in DynamicAnalysis methods
 #define USE_OMP_DYNAMIC_ANALYSIS 1
 
-// Use OMP multithreading in Lidar methods
-#define USE_OMP_LIDAR 1
+// Use OMP multithreading in Ray methods
+#define USE_OMP_RAY 1
 

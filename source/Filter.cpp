@@ -55,7 +55,6 @@ void Filter::run() {
 		lidar_pos = M3(-omega * times[time_index]) * lidar_pos_0;
 		u = arma::normalise( - lidar_pos);
 		v = arma::normalise(arma::cross(w, u));
-		std::cout << lidar_pos.t() << std::endl;
 
 		dcm_LN.row(0) = u.t();
 		dcm_LN.row(1) = v.t();
