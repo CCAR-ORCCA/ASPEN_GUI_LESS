@@ -4,7 +4,7 @@
 #include "ShapeModel.hpp"
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
-
+#include "RigidBodyKinematics.hpp"
 
 
 /**
@@ -45,6 +45,12 @@ protected:
 	void step_in_time();
 	void collect_observations();
 	void compute_observations();
+	void correct_shape();
+	std::vector<arma::rowvec> partial_range_partial_coordinates(const arma::vec & P, const arma::vec & u, Facet * facet) ;
+
+
+
+
 	double t0;
 	double tf;
 	double dt;

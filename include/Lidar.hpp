@@ -19,8 +19,8 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	@param fov_h horizontal field of view (degrees)
 	@param fov_v vertical field of view (degrees)
-	@param res_y horizontal resolution (number of pixel rows)
-	@param res_z vertical resolution (number of pixel columns)
+	@param row_count horizontal resolution (number of pixel rows)
+	@param col_count vertical resolution (number of pixel columns)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
 	*/
@@ -28,8 +28,8 @@ public:
 	      std::string ref_frame_name = "L",
 	      double fov_h = 10,
 	      double fov_v = 10,
-	      unsigned int res_y = 16,
-	      unsigned int res_z = 16,
+	      unsigned int row_count = 16,
+	      unsigned int col_count = 16,
 	      double f = 1e-2,
 	      double freq = 3
 	     );
@@ -69,16 +69,16 @@ public:
 	double get_size_y() const ;
 
 	/**
-	Get the resolution of the focal plane along the y axis
-	@return resolution along the y axis
+	Get the number of pixel rows in the focal plane
+	@return number of pixel rows in the focal plane
 	*/
-	double get_res_y() const ;
+	double get_row_count() const ;
 
 	/**
-	Get the resolution of the focal plane along the z axis
-	@return resolution along the z axis
+	Get the number of pixel columns in the focal plane
+	@return number of pixel columns in the focal plane
 	*/
-	double get_res_z() const ;
+	double get_col_count() const ;
 
 	/**
 	Returns the frequency of operation
@@ -95,6 +95,13 @@ public:
 
 
 	/**
+	Returns a pointer to the ray (row_index,col_index)
+	@return ray pointer to the ray
+	*/
+	Ray * get_ray(unsigned int row_index, unsigned int col_index);
+
+
+	/**
 	Plot the ranges collected in the the focal plane
 	after storing them at the provided location
 	@param path Path to the text file containing the ranges
@@ -103,7 +110,7 @@ public:
 		- 1 : computed ranges
 		- 2 : residuals
 	*/
-	void plot_ranges(std::string path,unsigned int type) const;
+	void plot_ranges(std::string path, unsigned int type) const;
 
 
 	/*
@@ -162,8 +169,8 @@ protected:
 
 	double fov_y ;
 	double fov_z ;
-	double res_y ;
-	double res_z ;
+	double row_count ;
+	double col_count ;
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;

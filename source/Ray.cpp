@@ -14,13 +14,13 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 	double y, z;
 	double x = - this -> lidar -> get_focal_length();
 
-	double py = this -> lidar -> get_size_y() / this -> lidar -> get_res_y();
-	double pz = this -> lidar -> get_size_z() / this -> lidar -> get_res_z();
+	double py = this -> lidar -> get_size_y() / this -> lidar -> get_row_count();
+	double pz = this -> lidar -> get_size_z() / this -> lidar -> get_col_count();
 
 	// Z coordinate
 	double a_z;
-	if (this -> lidar -> get_res_z() - 1 > 0) {
-		a_z = (this -> lidar -> get_size_z() - pz) / (this -> lidar -> get_res_z() - 1) ;
+	if (this -> lidar -> get_col_count() - 1 > 0) {
+		a_z = (this -> lidar -> get_size_z() - pz) / (this -> lidar -> get_col_count() - 1) ;
 	}
 	else {
 		a_z = 0;
@@ -30,8 +30,8 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	// Y coordinate
 	double a_y;
-	if (this -> lidar -> get_res_y() - 1 > 0) {
-		a_y = (this -> lidar -> get_size_y() - py) / (this -> lidar -> get_res_y() - 1) ;
+	if (this -> lidar -> get_row_count() - 1 > 0) {
+		a_y = (this -> lidar -> get_size_y() - py) / (this -> lidar -> get_row_count() - 1) ;
 	}
 	else {
 		a_y = 0;
