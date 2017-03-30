@@ -142,6 +142,13 @@ public:
 	void get_bounding_box(double * bounding_box) const;
 
 	/**
+	Saves the shape model in the form of an .obj file
+	@param path Location of the saved file
+	*/
+	void save(std::string path) const;
+
+
+	/**
 	Returns the surface area of the shape model
 	@return surface area (U^2 where U is the unit of the shape coordinates)
 	*/
@@ -167,10 +174,25 @@ public:
 	std::string get_ref_frame_name() const;
 
 
+
 	/**
 	Updates the values of the center of mass, volume, surface area
 	*/
 	void update_mass_properties();
+
+	/**
+	Update all the facets of the shape model
+	*/
+	void update_facets() ;
+
+
+	/**
+	Updates the specified facets of the shape model. Ensures consistency between the vertex coordinates
+	and the facet surface area, normals, dyads and centers.
+	@param facets Facets to be updated
+	*/
+	void update_facets(std::set<Facet *> & facets);
+
 
 	/**
 	Shifts the coordinates of the shape model

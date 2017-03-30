@@ -144,6 +144,70 @@ ShapeModel::ShapeModel() {
 
 }
 
+void ShapeModel::update_mass_properties() {
+	this -> compute_surface_area();
+
+	this -> compute_volume();
+
+	this -> compute_center_of_mass();
+
+}
+
+
+void ShapeModel::update_facets() {
+
+	for (auto & facet : this -> facets) {
+		facet -> update();
+	}
+
+}
+
+void ShapeModel::update_facets(std::set<Facet *> & facets) {
+
+	for (auto & facet : facets) {
+		facet -> update();
+	}
+
+}
+
+void ShapeModel::save(std::string path) const {
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	std::map<std::shared_ptr<Vertex> , unsigned int> vertex_ptr_to_index;
+
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> get_NVertices();
+	        ++vertex_index) {
+
+		shape_file << "v " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
+		vertex_ptr_to_index[this -> vertices[vertex_index]] = vertex_index;
+
+	}
+
+	for (unsigned int facet_index = 0;
+	        facet_index < this -> get_NFacets();
+	        ++facet_index) {
+
+		unsigned int v0 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(0)] + 1;
+		unsigned int v1 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(1)] + 1;
+		unsigned int v2 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(2)] + 1;
+
+		shape_file << "f " << v0 << " " << v1 << " " << v2 << std::endl;
+
+	}
+
+
+
+
+	shape_file.close();
+
+
+
+
+}
+
+
 void ShapeModel::shift(arma::vec x) {
 
 	// The vertices are shifted
@@ -157,6 +221,8 @@ void ShapeModel::shift(arma::vec x) {
 	}
 
 	// The facet centers are shifted
+	// Faster than calling update() on the facet as this would also recompute
+	// the normals, the dyads and the surface area
 	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 	        facet_index < this -> get_NFacets();
@@ -275,7 +341,7 @@ void ShapeModel::compute_volume() {
 		arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
 		arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
 		arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
-		double dv = 1. / 6. * arma::dot(*r0, arma::cross(*r1 - *r0, *r2 - *r0));
+		double dv = arma::dot(*r0, arma::cross(*r1 - *r0, *r2 - *r0)) / 6.;
 		volume = volume + dv;
 
 	}
@@ -285,13 +351,6 @@ void ShapeModel::compute_volume() {
 
 
 
-void ShapeModel::update_mass_properties() {
-	this -> compute_surface_area();
-
-	this -> compute_volume();
-
-	this -> compute_center_of_mass();
-}
 
 void ShapeModel::compute_center_of_mass() {
 	double c_x = 0;
@@ -330,6 +389,7 @@ void ShapeModel::compute_center_of_mass() {
 	arma::vec cm = {c_x, c_y, c_z};
 
 	this -> cm =  cm ;
+
 
 }
 

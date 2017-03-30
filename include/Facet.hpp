@@ -43,8 +43,6 @@ public:
 	*/
 	void remove_edge(std::shared_ptr< Facet > edge);
 
-
-
 	/**
 	Get outbound facet normal
 	@return pointer to facet normal
@@ -81,7 +79,7 @@ public:
 	        std::shared_ptr<Vertex>v1) const ;
 
 	/**
-	Not implemented
+	Recomputes the facet dyads, normal, surface area and center
 	*/
 	void update();
 

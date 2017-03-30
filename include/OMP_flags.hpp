@@ -12,5 +12,5 @@ Enable/Disable the corresponding functionality by setting the flag
 #define USE_OMP_DYNAMIC_ANALYSIS 1
 
 // Use OMP multithreading in Ray methods
-#define USE_OMP_RAY 1
+#define USE_OMP_RAY 0
 

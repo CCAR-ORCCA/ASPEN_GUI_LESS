@@ -106,6 +106,7 @@ void Ray::brute_force_ray_casting(bool computed_mes) {
 		arma::vec * n = facet -> get_facet_normal();
 		arma::vec * p = facet -> get_facet_center();
 		double t = arma::dot(*n, *p - origin_in_target_frame) / arma::dot(*n, direction_in_target_frame);
+		
 
 		// If the range is positive, this is further tested for
 		// potential intersection with this facet
@@ -143,6 +144,8 @@ void Ray::brute_force_ray_casting(bool computed_mes) {
 		this -> true_hit_facet = range_comp.hit_facet;
 	}
 
+
+
 }
 
 bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
@@ -156,7 +159,6 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 	                      arma::norm(arma::cross(H - *P0, H - *P1))
 	                      + arma::norm(arma::cross(H - *P1, H - *P2))
 	                      + arma::norm(arma::cross(H - *P2, H - *P0)) ));
-
 	// If true, the intersection point is inside the surface
 	if (std::abs(epsilon) < tol) {
 		return true;

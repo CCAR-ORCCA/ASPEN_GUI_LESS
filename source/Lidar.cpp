@@ -88,11 +88,24 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
 	unsigned int y_res = this -> row_count;
 	unsigned int z_res = this -> col_count;
 
+	bool has_missed_target = true;
+	if (computed_mes == false){
+		has_missed_target = false;
+	}
+
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
+			if (computed_mes == true && std::abs(this -> focal_plane[y_index][z_index] -> get_computed_range() < 1e10)) {
+				has_missed_target = false;
+			}
 		}
+
+	}
+
+	if (has_missed_target == true) {
+		throw (std::runtime_error("has missed target"));
 	}
 
 }
@@ -125,26 +138,29 @@ std::pair<double, double> Lidar::save_true_range(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_true_range()) < 1e10 )
 			pixel_location_file << this -> focal_plane[y_index][0] -> get_true_range();
 		else
 			pixel_location_file << "nan";
 
 
-
 		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
 
 			double range = this -> focal_plane[y_index][z_index] -> get_true_range() ;
+			if (std::abs(range) < 1e10 ) {
 
-			if (range < 1e10 )
 				pixel_location_file << " " << range ;
+				if (range > r_max) {
+					r_max = range;
+				}
+				if (range < r_min ) {
+					r_min = range;
+				}
+			}
 			else
 				pixel_location_file << " nan";
 
-			if (range > r_max && range < 1e10)
-				r_max = range;
-			if (range < r_min)
-				r_min = range;
+
 
 		}
 
@@ -171,7 +187,7 @@ std::pair<double, double> Lidar::save_computed_range(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_computed_range()) < 1e10 )
 			pixel_location_file << this -> focal_plane[y_index][0] -> get_computed_range();
 		else
 			pixel_location_file << "nan";
@@ -182,15 +198,17 @@ std::pair<double, double> Lidar::save_computed_range(std::string path) const {
 
 			double range = this -> focal_plane[y_index][z_index] -> get_computed_range() ;
 
-			if (range < 1e10 )
+
+			if (std::abs(range) < 1e10 ) {
+
 				pixel_location_file << " " << range ;
+				if (range > r_max)
+					r_max = range;
+				if (range < r_min )
+					r_min = range;
+			}
 			else
 				pixel_location_file << " nan";
-
-			if (range > r_max && range < 1e10)
-				r_max = range;
-			if (range < r_min)
-				r_min = range;
 
 		}
 
@@ -221,7 +239,7 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (this -> focal_plane[y_index][0] -> get_true_range() < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_range_residual()) < 1e10 )
 			pixel_location_file << this -> focal_plane[y_index][0] -> get_range_residual();
 		else
 			pixel_location_file << "nan";
@@ -232,15 +250,18 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 
 			double range = this -> focal_plane[y_index][z_index] -> get_range_residual() ;
 
-			if (range < 1e10 )
+
+			if (std::abs(range) < 1e10 ) {
+
 				pixel_location_file << " " << range ;
+				if (range > r_max)
+					r_max = range;
+				if (range < r_min )
+					r_min = range;
+			}
 			else
 				pixel_location_file << " nan";
 
-			if (range > r_max && range < 1e10)
-				r_max = range;
-			if (range < r_min)
-				r_min = range;
 
 		}
 
@@ -286,7 +307,6 @@ void Lidar::plot_ranges(std::string path, unsigned int type) const {
 	script.push_back("set yrange [" + std::to_string(-1) + ":" + std::to_string(this -> row_count) + "]");
 	script.push_back("set cbrange [" + std::to_string(range_lims.first) + ":" + std::to_string(range_lims.second) + "]");
 	script.push_back("set size square");
-
 	script.push_back("plot '" + path + ".txt' matrix with image notitle");
 
 

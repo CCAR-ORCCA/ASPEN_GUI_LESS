@@ -100,7 +100,8 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 	}
 
 	std::cout << std::endl << " Constructing Facets " << std::endl ;
-
+	
+	
 	boost::progress_display progress_facets(facet_vertices.size()) ;
 
 	// Facets are added to the shape model

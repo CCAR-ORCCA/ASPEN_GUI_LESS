@@ -26,12 +26,18 @@ Facet::Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > >   vertice
 
 }
 
+void Facet::update() {
+	this -> compute_normal();
+	this -> compute_area();
+	this -> compute_facet_center();
+	this -> compute_facet_dyad();
+}
+
 void Facet::compute_normal() {
 
 	arma::vec * P0 = this -> vertices -> at(0) -> get_coordinates();
 	arma::vec * P1 = this -> vertices -> at(1) -> get_coordinates();
 	arma::vec * P2 = this -> vertices -> at(2) -> get_coordinates();
-
 	*this -> facet_normal = arma::cross(*P1 - *P0, *P2 - *P0) / arma::norm(arma::cross(*P1 - *P0, *P2 - *P0));
 }
 
