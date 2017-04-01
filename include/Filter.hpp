@@ -30,7 +30,11 @@ public:
 	@param t0 Initial time (s)
 	@param t1 Final time (s)
 	@param omega Angular rate of the instrument about the target (rad/s)
-	@param theta_min Minimum angle for a ray to be used (rad)
+	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
+	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
+	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
+	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
+	estimation process
 	*/
 	Filter(FrameGraph * frame_graph,
 	       Lidar * lidar,
@@ -39,7 +43,10 @@ public:
 	       double t0,
 	       double tf,
 	       double omega,
-	       double theta_min);
+	       double min_normal_observation_angle,
+	       double min_facet_normal_angle_difference,
+	       unsigned int minimum_ray_per_facet,
+	       double ridge_coef);
 
 	/**
 	@param N_iteration number of iteration of the filter with each batch of information
@@ -56,14 +63,12 @@ protected:
 	                               std::set<Vertex *> & seen_vertices,
 	                               std::set<Facet *> & seen_facets,
 	                               arma::mat & N_mat,
-	                               std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices,
-	                               std::map<Facet *, arma::uvec> & facet_to_N_mat_cols) ;
+	                               std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) ;
 	void get_observed_features(std::vector<Ray * > & good_rays,
 	                           std::set<Vertex *> & seen_vertices,
 	                           std::set<Facet *> & seen_facets,
 	                           arma::mat & N_mat,
-	                           std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices,
-	                           std::map<Facet *, arma::uvec> & facet_to_N_mat_cols) ;
+	                           std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) ;
 
 
 
@@ -77,8 +82,11 @@ protected:
 
 	double t0;
 	double tf;
-	double theta_min;
+	double min_normal_observation_angle;
 	double omega;
+	double min_facet_normal_angle_difference;
+	unsigned int minimum_ray_per_facet;
+	double ridge_coef;
 
 	FrameGraph * frame_graph;
 	Lidar * lidar;
