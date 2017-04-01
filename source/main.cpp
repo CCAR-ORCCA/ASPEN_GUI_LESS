@@ -18,7 +18,7 @@ int main() {
 	frame_graph.add_transform("N", "T");
 	frame_graph.add_transform("N", "E");
 
-	arma::vec lidar_pos = { -5., 0., 0.};
+	arma::vec lidar_pos = { -2500., 0., 0.};
 	frame_graph.set_transform_origin("N", "L", lidar_pos);
 
 	// Shape model
@@ -26,11 +26,11 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj",
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/KW4Alpha.obj",
 	    1);
 	ShapeModelImporter shape_io_estimated(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj",
-	    0.3);
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
+	    500);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
@@ -42,7 +42,12 @@ int main() {
 	double omega = 2 * arma::datum::pi / (  20);
 
 	// Minimum impact angle for a measurement to be used (deg)
-	double min_normal_observation_angle = 60;
+	// double min_normal_observation_angle = 60;
+	// double min_facet_normal_angle_difference = 20;
+	double min_normal_observation_angle = 0;
+
+	// Minimum angular difference between two neighboring surface
+	// normals to be considered different
 	double min_facet_normal_angle_difference = 10;
 
 	// Minimum number of rays required for a facet to be considered
@@ -50,7 +55,7 @@ int main() {
 	unsigned int minimum_ray_per_facet = 10;
 
 	// Ridge estimation
-	double ridge_coef = 0;
+	double ridge_coef = 1;
 
 	// Filter
 	Filter filter(&frame_graph,
@@ -58,7 +63,7 @@ int main() {
 	              &true_shape_model,
 	              &estimated_shape_model,
 	              0,
-	              40,
+	              60,
 	              omega,
 	              arma::datum::pi * min_normal_observation_angle / 180.,
 	              arma::datum::pi * min_facet_normal_angle_difference / 180.,

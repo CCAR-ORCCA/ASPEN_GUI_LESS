@@ -240,7 +240,7 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
 		if (std::abs(this -> focal_plane[y_index][0] -> get_range_residual()) < 1e10 )
-			pixel_location_file << this -> focal_plane[y_index][0] -> get_range_residual();
+			pixel_location_file << std::abs(this -> focal_plane[y_index][0] -> get_range_residual());
 		else
 			pixel_location_file << "nan";
 
@@ -248,7 +248,7 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 
 		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
 
-			double range = this -> focal_plane[y_index][z_index] -> get_range_residual() ;
+			double range = std::abs(this -> focal_plane[y_index][z_index] -> get_range_residual()) ;
 
 
 			if (std::abs(range) < 1e10 ) {
@@ -302,7 +302,8 @@ void Lidar::plot_ranges(std::string path, unsigned int type) const {
 	script.push_back("set title ''");
 	script.push_back("set view map");
 	script.push_back("set palette rgb 33, 13, 10");
-	script.push_back("set palette negative");
+	if (type != 2)
+		script.push_back("set palette negative");
 	script.push_back("set xrange [" + std::to_string(-1) + ":" + std::to_string(this -> col_count) + "]");
 	script.push_back("set yrange [" + std::to_string(-1) + ":" + std::to_string(this -> row_count) + "]");
 	script.push_back("set cbrange [" + std::to_string(range_lims.first) + ":" + std::to_string(range_lims.second) + "]");
