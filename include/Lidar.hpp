@@ -150,14 +150,30 @@ public:
 	*/
 	void send_flash(ShapeModel * shape_model, bool computed_mes) ;
 
+
+
+	/**
+	Saves the range residuals associated with each facet to
+	a file
+	@param path Path to the file
+	@param facets_to_residuals Map storing the facet that were seen and their associated residuals
+	*/
+	void save_range_residuals_per_facet(std::string path, std::map<Facet * , std::vector<double> > & facets_to_residuals) const ;
+
+
+	/**
+	Plots the range residuals associated with each facet
+	@param path Path to the file
+	*/
+	void plot_range_residuals_per_facet(std::string path) ;
+
+
+
 	/**
 	Accessor to the shape model currently observed
 	@return pointer to shape model currently observed
 	*/
 	ShapeModel * get_shape_model();
-
-
-
 
 	FrameGraph * get_frame_graph();
 

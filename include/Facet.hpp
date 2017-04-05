@@ -20,16 +20,18 @@ public:
 	*/
 	Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices);
 
+	
 	/**
-	Not implemented
+	Get neighbors
+	@return Pointer to neighboring facets, plus the calling facet
 	*/
-	void add_neighbor(std::shared_ptr< Facet > facet);
-
+	std::set < Facet * > get_neighbors() const;
 
 	/**
-	Not implemented
+	Add an edge to this facet
+	@param Pointer to the edge to be added
 	*/
-	void add_edge(std::shared_ptr< Edge > edge);
+	void add_edge(Edge * edge);
 
 
 	/**
@@ -39,9 +41,12 @@ public:
 
 
 	/**
-	Not implemented
+	Removes the specified edge from the 
+	facet. The edge has to be present in the facet
+	for this to work
+	@param Pointer to the edge to be removed
 	*/
-	void remove_edge(std::shared_ptr< Facet > edge);
+	void remove_edge(Edge * edge);
 
 	/**
 	Get outbound facet normal
@@ -55,10 +60,6 @@ public:
 	*/
 	arma::mat * get_facet_dyad() ;
 
-	/**
-	Not implemented
-	*/
-	std::set<std::shared_ptr< Facet > > get_neighbors() const;
 
 	/**
 	Not implemented
@@ -67,8 +68,8 @@ public:
 
 
 	/**
-	Returns pointer to the first vertex owned by $this that is 
-	neither $v0 and $v1. When $v0 and $v1 are on the same edge, 
+	Returns pointer to the first vertex owned by $this that is
+	neither $v0 and $v1. When $v0 and $v1 are on the same edge,
 	this method returns a pointer to the vertex of $this that is not
 	on the edge but still owned by $this
 	@param v0 Pointer to first vertex to exclude
@@ -102,6 +103,20 @@ public:
 	std::vector<std::shared_ptr<Vertex > > * get_vertices() ;
 
 
+	/**
+	Sets the number of time this facet has been split
+	@param split_counter Number of time this facet and its parents
+	have been split
+	*/
+	void set_split_counter(unsigned int split_counter);
+
+	/**
+	Returns the number of times the (deceased)
+	parents of that face were split
+	@return number of time the parents of that
+	facet where split
+	*/
+	unsigned int get_split_counter() const;
 
 protected:
 
@@ -116,9 +131,11 @@ protected:
 	std::shared_ptr<arma::vec> facet_normal;
 	std::shared_ptr<arma::vec> facet_center;
 
-	std::set<std::shared_ptr< Facet > > neighbors;
-	std::vector<std::shared_ptr <Edge> > facet_edges;
+	std::set<Facet * > neighbors;
+	std::set<Edge * > facet_edges;
+
 	double area;
+	unsigned int split_counter = 0;
 
 };
 #endif

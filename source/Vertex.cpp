@@ -6,7 +6,7 @@ void Vertex::set_coordinates(std::shared_ptr<arma::vec> coordinates) {
 
 
 void Vertex::add_facet_ownership(Facet * facet) {
-	
+
 	bool already_present = false;
 
 	for (unsigned int i = 0; i < this -> owning_facets.size(); ++i) {
@@ -24,6 +24,17 @@ void Vertex::add_facet_ownership(Facet * facet) {
 
 
 }
+
+
+void Vertex::remove_facet_ownership(Facet * facet) {
+
+	auto it_to_facet = std::find(this -> owning_facets.begin(),
+	                             this -> owning_facets.end(), facet);
+	this -> owning_facets.erase(it_to_facet);
+
+}
+
+
 
 
 std::vector<Facet *>  Vertex::common_facets(std::shared_ptr<Vertex> vertex) const {

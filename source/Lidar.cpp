@@ -89,7 +89,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
 	unsigned int z_res = this -> col_count;
 
 	bool has_missed_target = true;
-	if (computed_mes == false){
+	if (computed_mes == false) {
 		has_missed_target = false;
 	}
 
@@ -227,6 +227,53 @@ Ray * Lidar::get_ray(unsigned int row_index, unsigned int col_index) {
 	return this -> focal_plane[row_index][col_index].get();
 }
 
+void Lidar::save_range_residuals_per_facet(std::string path, std::map<Facet * , std::vector<double> > & facets_to_residuals) const {
+
+
+	std::ofstream facets_residuals_file;
+	facets_residuals_file.open(path + ".txt");
+
+	unsigned int facet_index = 0;
+	for (auto const & facet_pair : facets_to_residuals) {
+
+		for (unsigned int res_index = 0; res_index < facet_pair.second.size(); ++ res_index) {
+			facets_residuals_file << facet_index << " " << facet_pair.second[res_index] << "\n";
+
+		}
+
+		++facet_index;
+	}
+
+	facets_residuals_file.close();
+
+}
+
+void Lidar::plot_range_residuals_per_facet(std::string path) {
+
+
+
+	std::vector<std::string> script;
+	script.push_back("set terminal png");
+	script.push_back("set output '" + path + ".png'");
+
+	script.push_back("set title ''");
+	script.push_back("set view map");
+
+	script.push_back("stats '" + path + ".txt' using 1");
+	script.push_back("set xrange [STATS_min - 1:STATS_max + 1]");
+	script.push_back("plot '" + path + ".txt' with points notitle");
+
+	script.push_back("replot");
+
+	GNUPlot plotter;
+	plotter.open();
+	plotter.execute(script);
+	plotter.write("exit");
+	plotter.flush();
+	plotter.close();
+
+
+}
 
 std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 

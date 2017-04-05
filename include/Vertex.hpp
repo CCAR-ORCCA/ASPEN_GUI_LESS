@@ -35,7 +35,6 @@ public:
 	void add_facet_ownership(Facet * facet);
 
 
-
 	/**
 	Finds the facets owming both $this and $vertex
 	@return commons_facets Vector of Facet * owning the two vertices

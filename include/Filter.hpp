@@ -6,6 +6,133 @@
 #include "FrameGraph.hpp"
 #include "RigidBodyKinematics.hpp"
 #include <boost/progress.hpp>
+#include <numeric>
+#include <sstream>
+#include <iomanip>
+
+/**
+Class storing the filter parameters
+	*/
+class Arguments {
+public:
+
+	/**
+	Default constructor
+	*/
+	Arguments() {
+
+	}
+
+	/**
+	Constructor
+	@param t0 Initial time (s)
+	@param t1 Final time (s)
+	@param orbit_rate Angular rate of the instrument about the target (rad/s), 313
+	@param body_spin_rate Angular rate of the instrument about the target (rad/s), M3
+	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
+	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
+	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
+	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
+	estimation process
+	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
+	@param split_status True if the shape model is to be split
+	*/
+
+	Arguments(double t0,
+	          double tf,
+	          double min_normal_observation_angle,
+	          double orbit_rate,
+	          double inclination,
+	          double body_spin_rate,
+	          double min_facet_normal_angle_difference,
+	          unsigned int minimum_ray_per_facet,
+	          double ridge_coef,
+	          bool reject_outliers,
+	          bool split_status) {
+
+		this -> t0 = t0;
+		this -> tf = tf;
+		this -> min_normal_observation_angle = min_normal_observation_angle;
+		this -> orbit_rate = orbit_rate;
+		this -> inclination = inclination;
+		this -> body_spin_rate = body_spin_rate;
+		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
+		this -> minimum_ray_per_facet = minimum_ray_per_facet;
+		this -> ridge_coef = ridge_coef;
+		this -> reject_outliers = reject_outliers;
+		this -> split_status = split_status;
+
+	}
+
+	double get_t0() const {
+		return this -> t0;
+
+	}
+	double get_tf() const {
+		return this -> tf;
+
+	}
+	double get_min_normal_observation_angle() const {
+		return this -> min_normal_observation_angle;
+
+	}
+	double get_orbit_rate() const {
+		return this -> orbit_rate;
+
+	}
+	double get_body_spin_rate() const {
+		return this -> body_spin_rate;
+	}
+	
+	double get_inclination() const {
+		return this -> inclination;
+	}
+
+	double get_min_facet_normal_angle_difference() const {
+		return this -> min_facet_normal_angle_difference;
+
+	}
+
+	bool get_split_status() const {
+		return this -> split_status;
+
+	}
+
+	unsigned int get_minimum_ray_per_facet() const {
+		return this -> minimum_ray_per_facet;
+
+	}
+	double get_ridge_coef() const {
+		return this -> ridge_coef;
+
+	}
+	bool get_reject_outliers() const {
+		return this -> reject_outliers;
+
+	}
+
+
+
+
+
+protected:
+	double t0;
+	double tf;
+	double min_normal_observation_angle;
+
+	double orbit_rate;
+	double inclination;
+	double body_spin_rate;
+
+	double min_facet_normal_angle_difference;
+	unsigned int minimum_ray_per_facet;
+	double ridge_coef;
+
+	bool reject_outliers;
+	bool split_status;
+};
+
+
 
 
 /**
@@ -21,32 +148,22 @@ class Filter {
 
 public:
 
+
+
 	/**
 	Constructor
 	@param frame_graph Pointer to the graph storing the reference frames
 	@param lidar Pointer to instrument
 	@param true_shape_model Pointer to the true shape model
 	@param estimated_shape_model Pointer to the estimated shape model
-	@param t0 Initial time (s)
-	@param t1 Final time (s)
-	@param omega Angular rate of the instrument about the target (rad/s)
-	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
-	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
-	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
-	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
-	estimation process
+	@param arguments filter parameters
 	*/
 	Filter(FrameGraph * frame_graph,
 	       Lidar * lidar,
 	       ShapeModel * true_shape_model,
 	       ShapeModel * estimated_shape_model,
-	       double t0,
-	       double tf,
-	       double omega,
-	       double min_normal_observation_angle,
-	       double min_facet_normal_angle_difference,
-	       unsigned int minimum_ray_per_facet,
-	       double ridge_coef);
+	       Arguments * arguments);
+
 
 	/**
 	@param N_iteration number of iteration of the filter with each batch of information
@@ -57,7 +174,7 @@ public:
 
 protected:
 
-	void correct_shape();
+	void correct_shape(unsigned int time_index, bool last_iter);
 
 	void correct_observed_features(std::vector<Ray * > & good_rays,
 	                               std::set<Vertex *> & seen_vertices,
@@ -78,20 +195,12 @@ protected:
 	        const arma::vec & u, Facet * facet) ;
 
 
-
-
-	double t0;
-	double tf;
-	double min_normal_observation_angle;
-	double omega;
-	double min_facet_normal_angle_difference;
-	unsigned int minimum_ray_per_facet;
-	double ridge_coef;
-
+	Arguments * arguments;
 	FrameGraph * frame_graph;
 	Lidar * lidar;
 	ShapeModel * true_shape_model;
 	ShapeModel * estimated_shape_model;
+
 
 
 

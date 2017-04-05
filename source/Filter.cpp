@@ -4,25 +4,13 @@ Filter::Filter(FrameGraph * frame_graph,
                Lidar * lidar,
                ShapeModel * true_shape_model,
                ShapeModel * estimated_shape_model,
-               double t0,
-               double tf,
-               double omega,
-               double min_normal_observation_angle,
-               double min_facet_normal_angle_difference,
-               unsigned int minimum_ray_per_facet,
-               double ridge_coef) {
+               Arguments * arguments) {
 
 	this -> frame_graph = frame_graph;
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 	this -> estimated_shape_model = estimated_shape_model;
-	this -> t0 = t0;
-	this -> tf = tf;
-	this -> omega = omega;
-	this -> min_normal_observation_angle = min_normal_observation_angle;
-	this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
-	this -> minimum_ray_per_facet = minimum_ray_per_facet;
-	this -> ridge_coef = ridge_coef;
+	this -> arguments = arguments;
 }
 
 
@@ -34,31 +22,56 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 	// It corresponds to the observation times
 	std::vector<double> times;
 
-	times.push_back(this -> t0);
+	times.push_back(this -> arguments -> get_t0());
 	double t = times[0];
 
-	while (t < this -> tf) {
+	while (t < this -> arguments -> get_tf()) {
 		t = t + 1. / this -> lidar -> get_frequency();
 		times.push_back(t);
 	}
 
+	// The latitude and longitude are saved to a text file later on
+	arma::mat long_lat = arma::mat(times.size(), 2);
+	arma::mat long_lat_rel = arma::mat(times.size(), 2);
 
+	// Memory allocation for the lidar position
 	arma::vec lidar_pos_0 = *(this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> get_origin_from_parent());
 	arma::vec lidar_pos = arma::vec(3);
+	arma::vec lidar_pos_rel = arma::vec(3);
 
-	arma::vec u =  arma::vec(3);
-	arma::vec v =  arma::vec(3);
-	arma::vec w =  {0, 0, 1};
+	arma::vec u;
+	arma::vec v;
+	arma::vec w;
+
 	arma::mat dcm_LN = arma::zeros<arma::mat>(3, 3);
+	arma::mat dcm_TN = arma::zeros<arma::mat>(3, 3);
+
 	arma::vec mrp_LN = arma::vec(3);
+	arma::vec mrp_TN = arma::vec(3);
+	arma::vec mrp_LT = arma::vec(3);
+
+	arma::vec volume_dif = arma::vec(times.size());
+	// Properly orienting the lidar to the target
+
+	u = arma::normalise( - lidar_pos_0);
+
+	v = arma::randu(3);
+	v = arma::normalise(v - arma::dot(u, v) * u);
+	w = arma::cross(u, v);
+
+
+	dcm_LN.row(0) = u.t();
+	dcm_LN.row(1) = v.t();
 	dcm_LN.row(2) = w.t();
+	mrp_LN = dcm_to_mrp(dcm_LN);
+
+	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
 
 
 	if (save_shape_model == true) {
 		this -> estimated_shape_model -> save("../output/shape_model/shape_model_apriori.obj");
 		this -> true_shape_model -> save("../output/shape_model/true_shape_model.obj");
-
 	}
 
 
@@ -67,60 +80,104 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 		// The lidar is on a circular trajectory and is manually steered to the
 		// asteroid
 
-		lidar_pos = M3(-this -> omega * times[time_index]) * lidar_pos_0;
-		u = arma::normalise( - lidar_pos);
-		v = arma::normalise(arma::cross(w, u));
+		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		std::cout << "\n##################################################" << std::endl;
-		std::cout << time_index << " " << 180. / arma::datum::pi * this -> 	omega * times[time_index] << std::endl;
+		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		lidar_pos = dcm * lidar_pos_0;
 
 
+		std::cout << "Lidar pos, inertial" << std::endl;
+		std::cout << lidar_pos.t() << std::endl;
 
-		dcm_LN.row(0) = u.t();
-		dcm_LN.row(1) = v.t();
+		dcm_LN = M3(arma::datum::pi) * dcm.t();
+
+
 		mrp_LN = dcm_to_mrp(dcm_LN);
 
+		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = dcm_to_mrp(dcm_TN);
+		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+
+		std::cout << "Lidar pos, body-fixed frame" << std::endl;
+		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
+
+		// The angles are obtained from the mrp so as to be in the correct range
+		arma::vec angles = {std::atan2(lidar_pos(1), lidar_pos(0)), std::asin(lidar_pos(2) / arma::norm(lidar_pos))};
+
+		long_lat.row(time_index) = arma::rowvec(
+		{	angles(0), angles(1)});
+
+		lidar_pos_rel = dcm_TN * lidar_pos;
+
+		arma::vec angles_rel = {std::atan2(lidar_pos_rel(1), lidar_pos_rel(0)), std::asin(lidar_pos_rel(2) / arma::norm(lidar_pos_rel))};
+		long_lat_rel.row(time_index) = arma::rowvec(
+		{	angles_rel(0), angles_rel(1)});
 
 
+		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
+		// Setting the true and estimated frame to their new state
+		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
+		this -> frame_graph -> get_frame(this -> estimated_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
+
+
+		// Getting the true observations (noise free)
 		this -> lidar -> send_flash(this -> true_shape_model, false);
+
+
+		std::stringstream ss;
+		ss << std::setw(6) << std::setfill('0') << time_index;
+		std::string time_index_formatted = ss.str();
 
 		if (plot_measurements == true) {
 			this -> lidar -> send_flash(this -> estimated_shape_model, true);
-			this -> lidar -> plot_ranges("../output/measurements/residuals_prefit_" + std::to_string(time_index), 2);
-			this -> lidar -> plot_ranges("../output/measurements/computed_prefit_" + std::to_string(time_index), 1);
-			this -> lidar -> plot_ranges("../output/measurements/true_" + std::to_string(time_index), 0);
+			this -> lidar -> plot_ranges("../output/measurements/residuals_prefit_" + time_index_formatted, 2);
+			this -> lidar -> plot_ranges("../output/measurements/computed_prefit_" + time_index_formatted, 1);
+			this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
 
 		}
-
-
 
 		// The filter is iterated N times
 		for (unsigned int iteration = 0; iteration < N_iteration ; ++iteration) {
 			this -> lidar -> send_flash(this -> estimated_shape_model, true);
-			this -> correct_shape();
+
+			if (iteration !=  N_iteration - 1) {
+				this -> correct_shape(time_index, false);
+			}
+			else {
+				this -> correct_shape(time_index, true);
+			}
+
 		}
 
 		// The postfit residuals are stored
 		if (plot_measurements == true) {
 			this -> lidar -> send_flash(this -> estimated_shape_model, true);
-			this -> lidar -> plot_ranges("../output/measurements/residuals_postfit_" + std::to_string(time_index), 2);
-			this -> lidar -> plot_ranges("../output/measurements/computed_postfit_" + std::to_string(time_index), 1);
+			this -> lidar -> plot_ranges("../output/measurements/residuals_postfit_" + time_index_formatted, 2);
+			this -> lidar -> plot_ranges("../output/measurements/computed_postfit_" + time_index_formatted, 1);
 		}
 
-
+		// Should make a decision about splitting some facets here
 		if (save_shape_model == true) {
 			this -> estimated_shape_model -> save("../output/shape_model/shape_model_" + std::to_string(time_index) + ".obj");
 		}
 
+		// The volume difference between the estimated shape and the true shape is stored
+
+		volume_dif(time_index) = this -> true_shape_model -> get_volume() -  this -> estimated_shape_model -> get_volume();
+
 	}
+
+	long_lat.save("../output/long_lat.txt", arma::raw_ascii);
+	long_lat_rel.save("../output/long_lat_rel.txt", arma::raw_ascii);
+	volume_dif.save("../output/volume_dif.txt", arma::raw_ascii);
 
 
 }
 
-void Filter::correct_shape() {
+void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 
 	std::vector<Ray * > good_rays;
 	std::set<Vertex *> seen_vertices;
@@ -128,6 +185,7 @@ void Filter::correct_shape() {
 	arma::mat N_mat;
 	std::map<Facet *, std::vector<unsigned int> > facet_to_index_of_vertices;
 	std::map<Facet *, arma::uvec> facet_to_N_mat_cols;
+
 
 	this -> get_observed_features(good_rays,
 	                              seen_vertices,
@@ -143,6 +201,43 @@ void Filter::correct_shape() {
 	                                  seen_facets,
 	                                  N_mat,
 	                                  facet_to_index_of_vertices);
+
+	if (last_iter == false) {
+		std::map<Facet * , std::vector<double> > facets_to_residuals;
+
+		for (unsigned int ray_index = 0; ray_index < good_rays.size(); ++ray_index) {
+			facets_to_residuals[good_rays[ray_index] -> get_computed_hit_facet()].push_back(good_rays[ray_index] -> get_range_residual());
+
+		}
+
+		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_prefit_" + std::to_string(time_index), facets_to_residuals);
+		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_prefit_" + std::to_string(time_index));
+
+	}
+
+	else  {
+		std::map<Facet * , std::vector<double> > facets_to_residuals;
+
+		double max_res = -1;
+		Facet * facet_to_split = nullptr;
+
+		for (unsigned int ray_index = 0; ray_index < good_rays.size(); ++ray_index) {
+			facets_to_residuals[good_rays[ray_index] -> get_computed_hit_facet()].push_back(good_rays[ray_index] -> get_range_residual());
+			if (std::abs(good_rays[ray_index] -> get_range_residual()) > max_res) {
+				max_res = std::abs(good_rays[ray_index] -> get_range_residual());
+				facet_to_split = good_rays[ray_index] -> get_computed_hit_facet();
+			}
+		}
+
+		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index), facets_to_residuals);
+		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
+
+		if (facet_to_split != nullptr && this -> arguments -> get_split_status() == true) {
+			if (facet_to_split -> get_split_counter() == 0)
+				this -> estimated_shape_model -> split_facet(facet_to_split);
+		}
+
+	}
 
 }
 
@@ -209,13 +304,13 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 
 	}
 
-	info_mat = info_mat + this -> ridge_coef * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
+	info_mat = info_mat + this -> arguments -> get_ridge_coef() * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
 
 
 	// The deviation in the coordinates of the vertices that were seen is computed
 	arma::vec alpha = arma::solve(info_mat, normal_mat);
 	arma::vec dV = N_mat * alpha;
-
+	std::cout << "Info mat conditionning : " << arma::cond(info_mat) << std::endl;
 	std::cout << N_mat << std::endl;
 	std::cout << alpha << std::endl;
 	std::cout << dV << std::endl;
@@ -243,7 +338,6 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	this -> estimated_shape_model -> update_facets();
 
 	// std::cout << "Volume:" << this -> estimated_shape_model -> get_volume() << std::endl;
-
 }
 
 void Filter::get_observed_features(std::vector<Ray * > & good_rays,
@@ -281,7 +375,9 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 				                                   this -> estimated_shape_model -> get_ref_frame_name(),
 				                                   true);
 
-				if (std::abs(arma::dot(u, *ray -> get_computed_hit_facet() -> get_facet_normal())) < std::sin(this -> min_normal_observation_angle)) {
+				if (std::abs(
+				            arma::dot(u,
+				                      *ray -> get_computed_hit_facet() -> get_facet_normal())) < std::sin(this -> arguments -> get_min_normal_observation_angle())) {
 					// This is a grazing ray that should be excluded
 					continue;
 				}
@@ -291,6 +387,75 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 			}
 		}
 	}
+	std::cout << "Facet hit count of the " << facet_to_rays.size() << " facets seen before removing outliers" << std::endl;
+	for (auto pair : facet_to_rays) {
+		std::cout << pair.second.size() << std::endl;
+	}
+
+
+
+	if (this -> arguments -> get_reject_outliers() == true) {
+		// The distribution of the residuals for each facet are computed
+		// here, so as to exclude residuals that are "obvious" outliers
+
+		double mean = 0;
+		double stdev = 0;
+		unsigned int size = 0;
+
+		for (auto & pair : facet_to_rays) {
+
+
+			// The mean is computed
+			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
+				mean += pair.second[ray_index] -> get_range_residual();
+				++size;
+			}
+
+
+		}
+
+		mean = mean / size;
+
+
+		for (auto & pair : facet_to_rays) {
+
+			// The standard deviation is computed
+			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
+				stdev += (pair.second[ray_index] -> get_range_residual() - mean) * (pair.second[ray_index] -> get_range_residual() - mean);
+
+			}
+
+
+		}
+
+		stdev = std::sqrt(stdev / size);
+
+		std::cout << "mean: " << mean << std::endl;
+		std::cout << "sd: " << stdev << std::endl;
+
+
+		// Now that the mean and the standard deviation of the facet
+		// residuals has been computed, the outliers can be efficiently excluded
+
+		for (auto & pair : facet_to_rays) {
+
+
+			std::vector<Ray * > rays_to_keep;
+
+			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
+
+				if (std::abs(pair.second[ray_index] -> get_range_residual() - mean) < stdev) {
+					rays_to_keep.push_back(pair.second[ray_index]);
+				}
+
+			}
+
+			pair.second = rays_to_keep;
+
+		}
+
+	}
+
 
 
 	std::cout << "Facet hit count of the " << facet_to_rays.size() << " facets seen before removing under-observed facets" << std::endl;
@@ -300,7 +465,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 	for (auto facet_pair : facet_to_rays) {
 
-		if (facet_pair.second.size() >= this -> minimum_ray_per_facet) {
+		if (facet_pair.second.size() >= this -> arguments -> get_minimum_ray_per_facet()) {
 
 			seen_facets.insert(facet_pair.first);
 			seen_vertices.insert(facet_pair.first -> get_vertices() -> at(0) . get());
@@ -321,13 +486,10 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 	}
 
 
-
 	std::cout << "Facet hit count of the " << hit_count.size() << " facets seen after removing under-observed facets" << std::endl;
 	for (auto pair : hit_count) {
 		std::cout << pair.second << std::endl;
 	}
-
-
 
 
 	// This will help counting how many facets each vertex belongs to
@@ -387,7 +549,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 			arma::vec * n1 = vertex_to_owning_facets[v_index][0] -> get_facet_normal();
 			arma::vec * n2 = vertex_to_owning_facets[v_index][1] -> get_facet_normal();
 
-			if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> min_facet_normal_angle_difference)) {
+			if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
 				vertex_to_normal[v_index].push_back(n1);
 				vertex_to_normal[v_index].push_back(n2);
 			}
@@ -421,7 +583,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 				// If true, we just found another independent normal.
 				// We need to select up to one more
-				if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> min_facet_normal_angle_difference)) {
+				if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
 					vertex_to_normal[v_index].push_back(n2);
 					n2_index = facet_index;
 					break;
@@ -440,7 +602,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 						n3 = vertex_to_owning_facets[v_index][facet_index] -> get_facet_normal();
 						// If true, we found our third normal
-						if (std::abs(arma::dot(arma::cross(*n1, *n2), *n3)) > std::sin(this -> min_facet_normal_angle_difference)) {
+						if (std::abs(arma::dot(arma::cross(*n1, *n2), *n3)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
 							vertex_to_normal[v_index].push_back(n3);
 							break;
 						}
@@ -448,8 +610,6 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 					}
 				}
 			}
-
-
 
 		}
 
@@ -513,10 +673,6 @@ std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::
 	partials.push_back(drhodV2);
 
 	return partials;
-
-
-
-
 
 }
 

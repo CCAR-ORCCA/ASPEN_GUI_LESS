@@ -173,6 +173,42 @@ public:
 	*/
 	std::string get_ref_frame_name() const;
 
+	/**
+	Splits the provided facets in four facets.
+
+
+								
+				V4 --------------V0--------------V3
+				 \  \	  F7    /  \   F1    /   /
+				  \	   \	  /	    \      /    /
+				   \	  \  /   F0   \  /     /
+				    \	F6  V8-------V7  F2   /
+				     \	   /  \	 F5  / \     /
+				      \   /    \    /   \   /
+                       \ /  F4  \  /  F3 \ /
+						V1-------V6-------V2
+						 \        |       /
+						  \   F9  | F8   /
+						   \      |     /
+							\     |    /
+							 \    |   /
+							  \   |  /
+							   \  | /
+                                \ |/
+                                 V5
+	Adds 
+		- 10 facets 
+		- 3 vertices 
+		- 6 edges
+	Removes
+		- 3 facet
+		- 3 edges
+
+	@param facet Pointer to facet to be split. THIS POINTER
+	WILL BECOME INVALID AFTER THE FACET IS SPLIT
+	*/
+	void split_facet(Facet * facet);
+
 
 
 	/**

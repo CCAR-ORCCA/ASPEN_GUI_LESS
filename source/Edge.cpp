@@ -11,6 +11,9 @@ Edge::Edge(std::shared_ptr<Vertex> v0 ,
 	this -> fA = common_facets.at(0);
 	this -> fB = common_facets.at(1);
 
+	this -> fA -> add_edge(this);
+	this -> fB -> add_edge(this);
+
 	this -> edge_dyad = std::make_shared<arma::mat>(arma::zeros(3, 3));
 
 

@@ -182,7 +182,6 @@ void ShapeModel::save(std::string path) const {
 
 		shape_file << "v " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
 		vertex_ptr_to_index[this -> vertices[vertex_index]] = vertex_index;
-
 	}
 
 	for (unsigned int facet_index = 0;
@@ -254,7 +253,6 @@ std::string ShapeModel::get_ref_frame_name() const {
 
 void ShapeModel::add_edge(std::shared_ptr<Edge> edge) {
 	this -> edges. push_back(edge);
-
 }
 
 void ShapeModel::add_vertex(std::shared_ptr<Vertex> vertex) {
@@ -266,8 +264,6 @@ ShapeModel::~ShapeModel() {
 		delete(this -> facets[facet_index]);
 	}
 }
-
-
 
 unsigned int ShapeModel::get_NFacets() const {
 	return this -> facets . size();
@@ -318,10 +314,8 @@ void ShapeModel::check_normals_consistency(double tol) const {
 	arma::vec surface_sum = {sx, sy, sz};
 
 	facet_area_average = facet_area_average / this -> facets.size();
-
 	if (arma::norm(surface_sum) / facet_area_average > tol) {
-		std::cout << "Sum of oriented normals: " << arma::norm(surface_sum) / facet_area_average << std::endl;
-		throw "Normals were incorrectly oriented";
+		throw (std::runtime_error("Normals were incorrectly oriented. norm(sum(n * s))/sum(s):" + std::to_string(arma::norm(surface_sum) / facet_area_average)));
 	}
 
 }
@@ -347,6 +341,7 @@ void ShapeModel::compute_volume() {
 	}
 
 	this -> volume = volume;
+
 }
 
 
@@ -428,6 +423,248 @@ void ShapeModel::compute_surface_area() {
 }
 
 
+void ShapeModel::split_facet(Facet * facet) {
+
+	// The old facets are retrieved
+	// together with the old vertices
+
+	std::set<Facet *> splitted_facets = facet -> get_neighbors();
+
+	Facet * F1_old = nullptr;
+	Facet * F2_old = nullptr;
+	Facet * F3_old = nullptr;
+
+
+	std::vector<std::shared_ptr< Vertex> > * V_in_F0_old = facet -> get_vertices();
+	
+	std::shared_ptr<Vertex> V0 = V_in_F0_old -> at(0);
+	std::shared_ptr<Vertex> V1 = V_in_F0_old -> at(1);
+	std::shared_ptr<Vertex> V2 = V_in_F0_old -> at(2);
+
+	std::shared_ptr<Vertex> V3 ;
+	std::shared_ptr<Vertex> V4 ;
+	std::shared_ptr<Vertex> V5 ;
+
+
+	for (auto const & old_facet : splitted_facets) {
+
+		if (old_facet != facet) {
+
+			if (V0 -> is_owned_by(old_facet) &&
+			        V1 -> is_owned_by(old_facet)) {
+
+				F1_old = old_facet;
+
+				// Setting V4
+				for (unsigned int i = 0; i < 3; ++i) {
+					if (F1_old -> get_vertices() -> at(i) != V0 &&
+					        F1_old -> get_vertices() -> at(i) != V1) {
+						V4 = F1_old -> get_vertices() -> at(i);
+						break;
+					}
+
+				}
+
+			}
+
+			else if (V1 -> is_owned_by(old_facet) &&
+			         V2 -> is_owned_by(old_facet)) {
+
+				F2_old = old_facet;
+
+				// Setting V5
+				for (unsigned int i = 0; i < 3; ++i) {
+					if (F2_old -> get_vertices() -> at(i) != V2 &&
+					        F2_old -> get_vertices() -> at(i) != V1) {
+						V5 = F2_old -> get_vertices() -> at(i);
+						break;
+					}
+
+				}
+			}
+			else if (V2 -> is_owned_by(old_facet) &&
+			         V0 -> is_owned_by(old_facet)) {
+
+				F3_old = old_facet;
+
+				// Setting V3
+				for (unsigned int i = 0; i < 3; ++i) {
+					if (F3_old -> get_vertices() -> at(i) != V2 &&
+					        F3_old -> get_vertices() -> at(i) != V0) {
+						V3 = F3_old -> get_vertices() -> at(i);
+						break;
+					}
+
+				}
+
+			}
+		}
+	}
+
+	// The new vertices and their (empty) coordinates are created
+
+	std::shared_ptr<arma::vec> P6 = std::make_shared<arma::vec>(arma::vec(3));
+	std::shared_ptr<Vertex> V6 = std::make_shared<Vertex>(Vertex());
+	V6 -> set_coordinates(P6);
+
+	std::shared_ptr<arma::vec>  P7 = std::make_shared<arma::vec>(arma::vec(3));
+	std::shared_ptr<Vertex> V7 = std::make_shared<Vertex>(Vertex());
+	V7 -> set_coordinates(P7);
+
+	std::shared_ptr<arma::vec>  P8 = std::make_shared<arma::vec>(arma::vec(3));
+	std::shared_ptr<Vertex> V8 = std::make_shared<Vertex>(Vertex());
+	V8 -> set_coordinates(P8);
+
+
+	// Their coordinates are set to the midpoints of the existing edges
+	*P6 = ( *V1 -> get_coordinates() + *V2 -> get_coordinates() ) / 2;
+	*P7 = ( *V0 -> get_coordinates() + *V2 -> get_coordinates() ) / 2;
+	*P8 = ( *V0 -> get_coordinates() + *V1 -> get_coordinates() ) / 2;
+
+
+	// The new vertices are added to the shape model
+	this -> add_vertex(V6);
+	this -> add_vertex(V7);
+	this -> add_vertex(V8);
+
+	// The vertices are grouped accordingly
+	// to the indexing specified in ShapeModel.hpp
+	// This ensures the consistency of the surface normals
+
+	std::vector<std::shared_ptr<Vertex>> F0_vertices;
+	F0_vertices.push_back(V0);
+	F0_vertices.push_back(V8);
+	F0_vertices.push_back(V7);
+
+	std::vector<std::shared_ptr<Vertex>> F1_vertices;
+	F1_vertices.push_back(V7);
+	F1_vertices.push_back(V3);
+	F1_vertices.push_back(V0);
+
+	std::vector<std::shared_ptr<Vertex>> F2_vertices;
+	F2_vertices.push_back(V2);
+	F2_vertices.push_back(V3);
+	F2_vertices.push_back(V7);
+
+	std::vector<std::shared_ptr<Vertex>> F3_vertices;
+	F3_vertices.push_back(V6);
+	F3_vertices.push_back(V2);
+	F3_vertices.push_back(V7);
+
+	std::vector<std::shared_ptr<Vertex>> F4_vertices;
+	F4_vertices.push_back(V1);
+	F4_vertices.push_back(V6);
+	F4_vertices.push_back(V8);
+
+	std::vector<std::shared_ptr<Vertex>> F5_vertices;
+	F5_vertices.push_back(V6);
+	F5_vertices.push_back(V7);
+	F5_vertices.push_back(V8);
+
+	std::vector<std::shared_ptr<Vertex>> F6_vertices;
+	F6_vertices.push_back(V1);
+	F6_vertices.push_back(V8);
+	F6_vertices.push_back(V4);
+
+	std::vector<std::shared_ptr<Vertex>> F7_vertices;
+	F7_vertices.push_back(V0);
+	F7_vertices.push_back(V4);
+	F7_vertices.push_back(V8);
+
+	std::vector<std::shared_ptr<Vertex>> F8_vertices;
+	F8_vertices.push_back(V1);
+	F8_vertices.push_back(V5);
+	F8_vertices.push_back(V6);
+
+	std::vector<std::shared_ptr<Vertex>> F9_vertices;
+	F9_vertices.push_back(V5);
+	F9_vertices.push_back(V2);
+	F9_vertices.push_back(V6);
+
+	// // The new facets are created
+	Facet * F0 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F0_vertices));
+	Facet * F1 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F1_vertices));
+	Facet * F2 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F2_vertices));
+	Facet * F3 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F3_vertices));
+	Facet * F4 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F4_vertices));
+	Facet * F5 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F5_vertices));
+	Facet * F6 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F6_vertices));
+	Facet * F7 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F7_vertices));
+	Facet * F8 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F8_vertices));
+	Facet * F9 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F9_vertices));
+
+	F0 -> set_split_counter(facet -> get_split_counter() + 1);
+	F1 -> set_split_counter(facet -> get_split_counter() + 1);
+	F2 -> set_split_counter(facet -> get_split_counter() + 1);
+	F3 -> set_split_counter(facet -> get_split_counter() + 1);
+	F4 -> set_split_counter(facet -> get_split_counter() + 1);
+	F5 -> set_split_counter(facet -> get_split_counter() + 1);
+	F6 -> set_split_counter(facet -> get_split_counter() + 1);
+	F7 -> set_split_counter(facet -> get_split_counter() + 1);
+	F8 -> set_split_counter(facet -> get_split_counter() + 1);
+	F9 -> set_split_counter(facet -> get_split_counter() + 1);
+
+
+	// // The new facets are added to the shape model
+	this -> add_facet(F0);
+	this -> add_facet(F1);
+	this -> add_facet(F2);
+	this -> add_facet(F3);
+	this -> add_facet(F4);
+	this -> add_facet(F5);
+	this -> add_facet(F6);
+	this -> add_facet(F7);
+	this -> add_facet(F8);
+	this -> add_facet(F9);
+
+
+	/*
+	EDGES ARE IGNORED FOR NOW
+	*/
+
+	// V0, V1, V2, V3, V4 and V5 still are still
+	// owned by $facet and its neighbors. Must remove this ownership (note that
+	// the new ownerships have already been created when constructing
+	// the new facets)
+	V0 -> remove_facet_ownership(facet);
+	V1 -> remove_facet_ownership(facet);
+	V2 -> remove_facet_ownership(facet);
+
+	V0 -> remove_facet_ownership(F1_old);
+	V0 -> remove_facet_ownership(F3_old);
+
+	V1 -> remove_facet_ownership(F1_old);
+	V1 -> remove_facet_ownership(F2_old);
+
+	V2 -> remove_facet_ownership(F2_old);
+	V2 -> remove_facet_ownership(F3_old);
+
+	V3 -> remove_facet_ownership(F3_old);
+	V4 -> remove_facet_ownership(F1_old);
+	V5 -> remove_facet_ownership(F2_old);
+
+
+
+	// // The old facets are deleted and their pointer removed from the shape model
+	auto old_facet_F0 = std::find (this -> facets.begin(), this -> facets.end(), facet);
+	delete(*old_facet_F0);
+	this -> facets.erase(old_facet_F0);
+
+	auto old_facet_F1 = std::find (this -> facets.begin(), this -> facets.end(), F1_old);
+	delete(*old_facet_F1);
+	this -> facets.erase(old_facet_F1);
+
+	auto old_facet_F2 = std::find (this -> facets.begin(), this -> facets.end(), F2_old);
+	delete(*old_facet_F2);
+	this -> facets.erase(old_facet_F2);
+
+	auto old_facet_F3 = std::find (this -> facets.begin(), this -> facets.end(), F3_old);
+	delete(*old_facet_F3);
+	this -> facets.erase(old_facet_F3);
+
+}
+
+
 
 void ShapeModel::get_bounding_box(double * bounding_box) const {
 
@@ -473,7 +710,6 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 	bounding_box[3] = xmax;
 	bounding_box[4] = ymax;
 	bounding_box[5] = zmax;
-
 
 }
 
