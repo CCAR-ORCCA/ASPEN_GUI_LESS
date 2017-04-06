@@ -87,7 +87,7 @@ int main() {
 
 	// Time spans
 	double t0 = 0;
-	double tf = 0;
+	double tf = 1000;
 
 	// Filter arguments
 	Arguments args = Arguments( t0,
