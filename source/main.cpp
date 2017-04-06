@@ -33,11 +33,11 @@ int main() {
 
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/KW4Alpha.obj",
+	    "../resources/shape_models/KW4Alpha.obj",
 	    1);
 
 	ShapeModelImporter shape_io_estimated(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
+	    "../resources/shape_models/faceted_sphere.obj",
 	    400);
 
 
