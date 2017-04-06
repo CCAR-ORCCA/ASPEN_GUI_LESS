@@ -853,7 +853,7 @@ void ShapeModel::enforce_mesh_quality() {
 		        ++facet_index) {
 
 			if (this -> facets[facet_index] -> has_good_quality() == false) {
-
+				std::cout << "Recycling" << std::endl;
 				mesh_quality_confirmed = false;
 				this -> recycle_facet(this -> facets[facet_index]);
 				++facets_recycled;

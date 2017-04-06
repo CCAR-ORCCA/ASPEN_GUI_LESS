@@ -40,8 +40,6 @@ int main() {
 	    "../resources/shape_models/faceted_sphere.obj",
 	    400);
 
-
-
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
