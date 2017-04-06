@@ -177,7 +177,7 @@ public:
 	Splits the provided facets in four facets.
 
 
-								
+
 				V4 --------------V0--------------V3
 				 \  \	  F7    /  \   F1    /   /
 				  \	   \	  /	    \      /    /
@@ -185,7 +185,7 @@ public:
 				    \	F6  V8-------V7  F2   /
 				     \	   /  \	 F5  / \     /
 				      \   /    \    /   \   /
-                       \ /  F4  \  /  F3 \ /
+	                   \ /  F4  \  /  F3 \ /
 						V1-------V6-------V2
 						 \        |       /
 						  \   F9  | F8   /
@@ -194,11 +194,11 @@ public:
 							 \    |   /
 							  \   |  /
 							   \  | /
-                                \ |/
-                                 V5
-	Adds 
-		- 10 facets 
-		- 3 vertices 
+	                            \ |/
+	                             V5
+	Adds
+		- 10 facets
+		- 3 vertices
 		- 6 edges
 	Removes
 		- 3 facet
@@ -208,6 +208,18 @@ public:
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	*/
 	void split_facet(Facet * facet);
+
+
+
+
+
+	/**
+	Removes this facet from the shape model by merging together the two vertices
+	on the edge facing the smallest angle in the facet
+	@param facet Pointer to the facet to recycle. THIS POINTER
+	WILL BECOME INVALID AFTER THE FACET IS SPLIT
+	*/
+	void recycle_facet(Facet * facet);
 
 
 
@@ -235,6 +247,14 @@ public:
 	@param x Shifting to apply to the coordinates
 	*/
 	void shift(arma::vec x);
+
+
+	/**
+	Checks if every facets in the shape model has good quality.
+	If not, some facets are recycled until the mesh becomes satisfying
+	*/
+	void enforce_mesh_quality() ;
+
 
 
 protected:

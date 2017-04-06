@@ -58,6 +58,15 @@ public:
 
 
 	/**
+	Returns the owning facets
+	@return Owning facets
+	*/
+	std::vector<Facet * > get_owning_facets() const;
+
+
+
+
+	/**
 	Returns the number of facets owning this vertex
 	@return N number of owning of facets
 	*/

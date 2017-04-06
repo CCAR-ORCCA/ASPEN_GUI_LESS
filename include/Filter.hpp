@@ -36,6 +36,8 @@ public:
 	estimation process
 	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
 	@param split_status True if the shape model is to be split
+	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
+	@param recycle_facets True if facets that are degenerated should be removed
 	*/
 
 	Arguments(double t0,
@@ -48,7 +50,9 @@ public:
 	          unsigned int minimum_ray_per_facet,
 	          double ridge_coef,
 	          bool reject_outliers,
-	          bool split_status) {
+	          bool split_status,
+	          bool use_cholesky,
+	          bool recycle_facets) {
 
 		this -> t0 = t0;
 		this -> tf = tf;
@@ -61,7 +65,8 @@ public:
 		this -> ridge_coef = ridge_coef;
 		this -> reject_outliers = reject_outliers;
 		this -> split_status = split_status;
-
+		this -> use_cholesky = use_cholesky;
+		this -> recycle_facets = recycle_facets;
 	}
 
 	double get_t0() const {
@@ -83,7 +88,7 @@ public:
 	double get_body_spin_rate() const {
 		return this -> body_spin_rate;
 	}
-	
+
 	double get_inclination() const {
 		return this -> inclination;
 	}
@@ -111,6 +116,14 @@ public:
 
 	}
 
+	bool get_use_cholesky() const {
+		return this -> use_cholesky;
+	}
+
+	bool get_recycle_facets() const {
+		return this -> recycle_facets;
+	}
+
 
 
 
@@ -130,6 +143,9 @@ protected:
 
 	bool reject_outliers;
 	bool split_status;
+	bool use_cholesky;
+	bool recycle_facets;
+
 };
 
 
@@ -172,6 +188,15 @@ public:
 	*/
 	void run(unsigned int N_iteration, bool plot_measurements, bool save_shape_model);
 
+	/**
+	Solves the square linear system info_mat * x = normal_mat
+	by means of a cholesky decomposition
+	@param info_mat Symetrical information matrix
+	@param normal_mat Normal matrix
+	@return x Solution
+	*/
+	arma::vec cholesky(arma::mat & info_mat, arma::mat & normal_mat) const;
+
 protected:
 
 	void correct_shape(unsigned int time_index, bool last_iter);
@@ -186,7 +211,6 @@ protected:
 	                           std::set<Facet *> & seen_facets,
 	                           arma::mat & N_mat,
 	                           std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) ;
-
 
 
 

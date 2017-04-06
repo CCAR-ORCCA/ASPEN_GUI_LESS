@@ -23,21 +23,16 @@ public:
 	
 	/**
 	Get neighbors
+	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
 	@return Pointer to neighboring facets, plus the calling facet
 	*/
-	std::set < Facet * > get_neighbors() const;
+	std::set < Facet * > get_neighbors(bool all_neighbors) const;
 
 	/**
 	Add an edge to this facet
 	@param Pointer to the edge to be added
 	*/
 	void add_edge(Edge * edge);
-
-
-	/**
-	Not implemented
-	*/
-	void remove_neighbor(std::shared_ptr< Facet > facet);
 
 
 	/**
@@ -59,6 +54,12 @@ public:
 	@return pointer to facet dyad
 	*/
 	arma::mat * get_facet_dyad() ;
+
+	/**
+	Checks the degeneracy of the facet
+	@return True if facet is not degenerate, false otherwise
+	*/
+	bool has_good_quality() const;
 
 
 	/**
@@ -131,7 +132,6 @@ protected:
 	std::shared_ptr<arma::vec> facet_normal;
 	std::shared_ptr<arma::vec> facet_center;
 
-	std::set<Facet * > neighbors;
 	std::set<Edge * > facet_edges;
 
 	double area;

@@ -51,6 +51,8 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 	arma::vec mrp_LT = arma::vec(3);
 
 	arma::vec volume_dif = arma::vec(times.size());
+	arma::vec surface_dif = arma::vec(times.size());
+
 	// Properly orienting the lidar to the target
 
 	u = arma::normalise( - lidar_pos_0);
@@ -167,12 +169,15 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 		// The volume difference between the estimated shape and the true shape is stored
 
 		volume_dif(time_index) = this -> true_shape_model -> get_volume() -  this -> estimated_shape_model -> get_volume();
+		surface_dif(time_index) = this -> true_shape_model -> get_surface_area() -  this -> estimated_shape_model -> get_surface_area();
 
 	}
 
 	long_lat.save("../output/long_lat.txt", arma::raw_ascii);
 	long_lat_rel.save("../output/long_lat_rel.txt", arma::raw_ascii);
 	volume_dif.save("../output/volume_dif.txt", arma::raw_ascii);
+	surface_dif.save("../output/surface_dif.txt", arma::raw_ascii);
+
 
 
 }
@@ -233,10 +238,13 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
 
 		if (facet_to_split != nullptr && this -> arguments -> get_split_status() == true) {
-			if (facet_to_split -> get_split_counter() == 0)
+			if (facet_to_split -> get_split_counter() < 2)
 				this -> estimated_shape_model -> split_facet(facet_to_split);
 		}
 
+		if (this -> arguments -> get_recycle_facets() == true) {
+			this -> estimated_shape_model -> enforce_mesh_quality();
+		}
 	}
 
 }
@@ -307,8 +315,20 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	info_mat = info_mat + this -> arguments -> get_ridge_coef() * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
 
 
+	arma::vec alpha;
+
 	// The deviation in the coordinates of the vertices that were seen is computed
-	arma::vec alpha = arma::solve(info_mat, normal_mat);
+	if (this -> arguments -> get_use_cholesky() == true) {
+		alpha = this -> cholesky(info_mat, normal_mat);
+	}
+
+	else {
+		alpha = arma::solve(info_mat, normal_mat);
+	}
+
+
+
+
 	arma::vec dV = N_mat * alpha;
 	std::cout << "Info mat conditionning : " << arma::cond(info_mat) << std::endl;
 	std::cout << N_mat << std::endl;
@@ -638,6 +658,49 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 
 }
+
+
+
+arma::vec Filter::cholesky(arma::mat & info_mat, arma::mat & normal_mat) const {
+
+	// The cholesky decomposition of the information matrix is computed
+	arma::mat R = arma::chol(info_mat);
+
+	// R.t() * z = N is solved first
+	arma::vec z = arma::vec(normal_mat.n_rows);
+	z(0) = normal_mat(0) / R.row(0)(0);
+
+	for (unsigned int i = 1; i < normal_mat.n_rows; ++i) {
+
+		double partial_sum = 0;
+		for (unsigned int j = 0; j < i ; ++j) {
+			partial_sum += R.row(j)(i) * z(j);
+		}
+
+		z(i) = (normal_mat(i) - partial_sum) / R.row(i)(i);
+	}
+
+
+	// R*x = Z is now solved
+	arma::vec x = arma::vec(normal_mat.n_rows);
+	x(x.n_rows - 1) = z(z.n_rows - 1) / R.row(z.n_rows - 1)(z.n_rows - 1);
+
+	for (int i = x.n_rows - 2; i > -1; --i) {
+
+		double partial_sum = 0;
+		for (unsigned int j = i + 1; j < z.n_rows ; ++j) {
+			partial_sum += R.row(i)(j) * x(j);
+		}
+
+		x(i) = (z(i) - partial_sum) / R.row(i)(i);
+	}
+
+	return x;
+
+}
+
+
+
 
 
 std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::vec & P, const arma::vec & u, Facet * facet) {

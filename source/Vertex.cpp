@@ -35,6 +35,10 @@ void Vertex::remove_facet_ownership(Facet * facet) {
 }
 
 
+std::vector<Facet * > Vertex::get_owning_facets() const {
+	return this -> owning_facets;
+}
+
 
 
 std::vector<Facet *>  Vertex::common_facets(std::shared_ptr<Vertex> vertex) const {

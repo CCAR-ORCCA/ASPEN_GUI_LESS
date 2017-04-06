@@ -45,7 +45,35 @@ void Facet::update() {
 }
 
 
-std::set < Facet * > Facet::get_neighbors() const {
+bool Facet::has_good_quality() const {
+
+	std::shared_ptr<Vertex> V0  = this -> vertices -> at(0);
+	std::shared_ptr<Vertex> V1  = this -> vertices -> at(1);
+	std::shared_ptr<Vertex> V2  = this -> vertices -> at(2);
+
+	arma::vec * P0  = V0 -> get_coordinates();
+	arma::vec * P1  = V1 -> get_coordinates();
+	arma::vec * P2  = V2 -> get_coordinates();
+
+	arma::vec sin_angles = arma::vec(3);
+	sin_angles(0) = arma::norm(arma::cross(*P1 - *P0, *P2 - *P0) / ( arma::norm(*P1 - *P0) * arma::norm(*P2 - *P0) ));
+	sin_angles(1) = arma::norm(arma::cross(*P2 - *P1, *P0 - *P1) / ( arma::norm(*P2 - *P1) * arma::norm(*P0 - *P1) ));
+	sin_angles(2) = arma::norm(arma::cross(*P0 - *P2, *P1 - *P2) / ( arma::norm(*P0 - *P2) * arma::norm(*P1 - *P2) ));
+
+	if (sin_angles.min() < std::sin(15 * arma::datum::pi /180)){
+		return false;
+	}
+	else{
+		return true;
+	}
+
+
+
+}
+
+
+
+std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 
 	std::set<Facet *> neighbors;
 
@@ -53,22 +81,43 @@ std::set < Facet * > Facet::get_neighbors() const {
 	std::shared_ptr<Vertex> V1 = this -> vertices -> at(1);
 	std::shared_ptr<Vertex> V2 = this -> vertices -> at(2);
 
-	std::vector<Facet *> neighboring_facets_e0 = V0 -> common_facets(V1);
-	std::vector<Facet *> neighboring_facets_e1 = V1 -> common_facets(V2);
-	std::vector<Facet *> neighboring_facets_e2 = V2 -> common_facets(V0);
 
-	for (unsigned int i = 0; i <  neighboring_facets_e0.size(); ++i) {
-		neighbors.insert(neighboring_facets_e0[i]);
+	if (all_neighbors == true) {
+		// Returns all facets sharing vertices with $this
+
+		for (unsigned int i = 0; i < V0 -> get_owning_facets().size(); ++i) {
+			neighbors.insert(V0 -> get_owning_facets()[i]);
+		}
+
+		for (unsigned int i = 0; i < V1 -> get_owning_facets().size(); ++i) {
+			neighbors.insert(V1 -> get_owning_facets()[i]);
+		}
+
+		for (unsigned int i = 0; i < V2 -> get_owning_facets().size(); ++i) {
+			neighbors.insert(V2 -> get_owning_facets()[i]);
+		}
+
+
 	}
 
-	for (unsigned int i = 0; i <  neighboring_facets_e1.size(); ++i) {
-		neighbors.insert(neighboring_facets_e1[i]);
-	}
+	else {
+		// Returns facets sharing edges with $this
+		std::vector<Facet *> neighboring_facets_e0 = V0 -> common_facets(V1);
+		std::vector<Facet *> neighboring_facets_e1 = V1 -> common_facets(V2);
+		std::vector<Facet *> neighboring_facets_e2 = V2 -> common_facets(V0);
 
-	for (unsigned int i = 0; i <  neighboring_facets_e2.size(); ++i) {
-		neighbors.insert(neighboring_facets_e2[i]);
-	}
+		for (unsigned int i = 0; i <  neighboring_facets_e0.size(); ++i) {
+			neighbors.insert(neighboring_facets_e0[i]);
+		}
 
+		for (unsigned int i = 0; i <  neighboring_facets_e1.size(); ++i) {
+			neighbors.insert(neighboring_facets_e1[i]);
+		}
+
+		for (unsigned int i = 0; i <  neighboring_facets_e2.size(); ++i) {
+			neighbors.insert(neighboring_facets_e2[i]);
+		}
+	}
 	return neighbors;
 
 
