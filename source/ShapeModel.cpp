@@ -729,17 +729,22 @@ void ShapeModel::recycle_facet(Facet * facet) {
 		}
 	}
 
+
 	for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
+
+
 		if (F1_old -> get_vertices() -> at(vertex_index) != V_merge_keep &&
 		        F1_old -> get_vertices() -> at(vertex_index) != V_merge_discard) {
-
 			V_keep_1 = F1_old -> get_vertices() -> at(vertex_index);
+
 			break;
 		}
-	}
+	}	
 
 
 	std::vector<Facet * > facets_owning_discarded_vertex = V_merge_discard -> get_owning_facets();
+
+
 
 	// The facets owning V_merge_discard are
 	// updated so as to have this vertex merging with
@@ -760,9 +765,19 @@ void ShapeModel::recycle_facet(Facet * facet) {
 		}
 	}
 
-	// V_keep_0,1 are still owned by the facets to be recycled
+	// Facet ownership is transferred from V_merge_discard to V_merge_keep
+	std::vector<Facet *> owning_facets = V_merge_discard -> get_owning_facets();
+	for (unsigned int i =0 ; i < owning_facets.size(); ++i){
+		V_merge_keep -> add_facet_ownership(owning_facets[i]);
+	}
+
+	// V_keep_0,1 and V_merge_keep are still owned by the facets to be recycled
 	V_keep_0 -> remove_facet_ownership(F0_old);
 	V_keep_1 -> remove_facet_ownership(F1_old);
+	V_merge_keep -> remove_facet_ownership(F0_old);
+	V_merge_keep -> remove_facet_ownership(F1_old);
+
+
 
 	// The discarded vertex is removed from the shape model
 	auto V_merge_discard_it = std::find (this -> vertices.begin(), this -> vertices.end(), V_merge_discard);
@@ -784,6 +799,7 @@ void ShapeModel::recycle_facet(Facet * facet) {
 
 	// The impacted facets are all updated to reflect their new geometry
 	this -> update_facets();
+
 
 
 }
@@ -853,9 +869,9 @@ void ShapeModel::enforce_mesh_quality() {
 		        ++facet_index) {
 
 			if (this -> facets[facet_index] -> has_good_quality() == false) {
-				std::cout << "Recycling" << std::endl;
 				mesh_quality_confirmed = false;
 				this -> recycle_facet(this -> facets[facet_index]);
+
 				++facets_recycled;
 				break;
 
