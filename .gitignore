@@ -1,0 +1,7 @@
+build/            
+output/             
+*.pyc
+*.pdf              
+focal_plane_loc.txt             
+resources/           
+
