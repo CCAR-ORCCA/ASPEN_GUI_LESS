@@ -117,7 +117,7 @@ public:
 	@return number of time the parents of that
 	facet where split
 	*/
-	unsigned int get_split_counter() const;
+	unsigned int get_split_count() const;
 
 protected:
 

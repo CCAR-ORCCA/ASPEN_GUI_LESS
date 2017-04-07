@@ -1,8 +1,9 @@
 #include "ShapeModelImporter.hpp"
 
-ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor) {
+ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor, bool use_edges) {
 	this -> filename = filename;
 	this -> unit_factor = unit_factor;
+	this -> use_edges = use_edges;
 }
 
 void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
@@ -100,8 +101,8 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 	}
 
 	std::cout << std::endl << " Constructing Facets " << std::endl ;
-	
-	
+
+
 	boost::progress_display progress_facets(facet_vertices.size()) ;
 
 	// Facets are added to the shape model
@@ -129,19 +130,21 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 
 
 	// Edges are added to the shape model
-	std::cout << std::endl << " Constructing Edges " << std::endl ;
+	if (this -> use_edges == true) {
+		std::cout << std::endl << " Constructing Edges " << std::endl ;
 
-	boost::progress_display progress_edges(edge_vertices_indices.size()) ;
-	for (auto edge_iter = edge_vertices_indices.begin(); edge_iter != edge_vertices_indices.end(); ++edge_iter) {
+		boost::progress_display progress_edges(edge_vertices_indices.size()) ;
+		for (auto edge_iter = edge_vertices_indices.begin(); edge_iter != edge_vertices_indices.end(); ++edge_iter) {
 
-		std::shared_ptr<Vertex> v0 = vertex_index_to_ptr[*edge_iter -> begin()];
-		std::shared_ptr<Vertex> v1 = vertex_index_to_ptr[*std::next(edge_iter -> begin())];
+			std::shared_ptr<Vertex> v0 = vertex_index_to_ptr[*edge_iter -> begin()];
+			std::shared_ptr<Vertex> v1 = vertex_index_to_ptr[*std::next(edge_iter -> begin())];
 
-		std::shared_ptr<Edge> edge = std::make_shared<Edge>(v0, v1);
+			std::shared_ptr<Edge> edge = std::make_shared<Edge>(v0, v1);
 
-		shape_model -> add_edge(edge);
-		++progress_edges;
+			shape_model -> add_edge(edge);
+			++progress_edges;
 
+		}
 	}
 
 

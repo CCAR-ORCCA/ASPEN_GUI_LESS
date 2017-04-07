@@ -24,29 +24,40 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	// ShapeModelImporter shape_io_truth(
-	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj",
-	//     1000);
+	//     "../resources/shape_models/itokawa_8.obj",
+	//     1000,false);
 
 	// ShapeModelImporter shape_io_estimated(
-	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
-	//     100);
+	//     "../resources/shape_models/faceted_sphere.obj",
+	//     100,false);
 
+
+	// ShapeModelImporter shape_io_truth(
+	//     "../resources/shape_models/KW4Alpha.obj",
+	//     1);
+
+	// ShapeModelImporter shape_io_estimated(
+	//     "../resources/shape_models/faceted_sphere.obj",
+	//     400);
 
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/KW4Alpha.obj",
-	    1);
+	    "../resources/shape_models/cube.obj",
+	    1,
+	    false);
 
 	ShapeModelImporter shape_io_estimated(
-	    "../resources/shape_models/faceted_sphere.obj",
-	    400);
+	    "../resources/shape_models/cube.obj",
+	    0.5,
+	    false);
+
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
 	// Lidar
-	// arma::vec lidar_pos = { 1000, 0., 0.};
+	arma::vec lidar_pos = { 3, 0., 0.};
 
-	arma::vec lidar_pos = { 2500, 0., 0.};
+	// arma::vec lidar_pos = { 1000, 0., 0.};
 	frame_graph.set_transform_origin("N", "L", lidar_pos);
 	Lidar lidar(&frame_graph, "L", 25, 25, 32, 32, 1e-2, 1);
 
@@ -109,10 +120,30 @@ int main() {
 	              &estimated_shape_model,
 	              &args);
 
-	filter.run(10, true, true);
+	filter.run(5, true, true);
+
+	// for (unsigned int i = 0; i < 30; ++i ) {
+
+	// 	estimated_shape_model.split_facet(estimated_shape_model . get_facets() -> at(0));
+	// }
+
+	// for (unsigned int i = 0; i < estimated_shape_model.get_NFacets(); ++i ) {
+	// 	std::cout << estimated_shape_model .get_facets() -> at(i) -> get_area() << std::endl;
+	// }
+
+
+	// // for (unsigned int i = 0; i < estimated_shape_model.get_NVertices(); ++i ) {
+	// // 	std::cout << estimated_shape_model .get_vertices() -> at(i) -> get_number_of_owning_facets() << std::endl;
+	// // }
 
 
 
+	// estimated_shape_model.enforce_mesh_quality();
+	// estimated_shape_model.check_normals_consistency();
+
+
+
+	estimated_shape_model.save("test.obj");
 
 
 	return 0;

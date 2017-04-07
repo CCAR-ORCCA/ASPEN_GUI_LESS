@@ -33,7 +33,7 @@ void Facet::set_split_counter(unsigned int split_counter) {
 
 
 
-unsigned int Facet::get_split_counter() const {
+unsigned int Facet::get_split_count() const {
 	return this -> split_counter;
 }
 

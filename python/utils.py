@@ -42,21 +42,40 @@ def plot_long_lat():
 	plt.savefig("long_lat.pdf")
 	plt.show()
 
+def plot_diff():
+	volume_dif = np.loadtxt("../output/volume_dif.txt")
+	surface_dif = np.loadtxt("../output/surface_dif.txt")
+
+	plt.plot(range(len(volume_dif)),100 * np.abs(volume_dif),label = 'Volume')
+	plt.plot(range(len(surface_dif)),100 * np.abs(surface_dif),label = 'Area')
+	plt.legend(bbox_to_anchor=(0.5, 1.1),ncol = 2,loc = 'upper center')
+	plt.ylabel("Relative difference (%)")
+	plt.xlabel("Measurement index")
+
+
+	plt.savefig("dif.pdf")
+
+
+
 def plot_volume_dif():
 	volume_dif = np.loadtxt("../output/volume_dif.txt")
 
-	plt.semilogy(range(len(volume_dif)),np.abs(volume_dif))
+	plt.plot(range(len(volume_dif)),100 * np.abs(volume_dif))
 	plt.xlabel("Measurement index")
-	plt.ylabel("Absolute volume difference (m^3)")
+	plt.ylabel("Relative volume difference (%)")
+	plt.savefig("volume_dif.pdf")
+
 
 	plt.show()
 
 def plot_surface_dif():
 	surface_dif = np.loadtxt("../output/surface_dif.txt")
 
-	plt.semilogy(range(len(surface_dif)),np.abs(surface_dif))
+	plt.plot(range(len(surface_dif)),100 * np.abs(surface_dif))
 	plt.xlabel("Measurement index")
-	plt.ylabel("Absolute surface difference (m^2)")
+	plt.ylabel("Relative surface difference (%)")
+	plt.savefig("surface_dif.pdf")
+
 
 	plt.show()
 

@@ -593,16 +593,16 @@ void ShapeModel::split_facet(Facet * facet) {
 	Facet * F8 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F8_vertices));
 	Facet * F9 = new Facet(std::make_shared<std::vector<std::shared_ptr<Vertex>>>(F9_vertices));
 
-	F0 -> set_split_counter(facet -> get_split_counter() + 1);
-	F1 -> set_split_counter(facet -> get_split_counter() + 1);
-	F2 -> set_split_counter(facet -> get_split_counter() + 1);
-	F3 -> set_split_counter(facet -> get_split_counter() + 1);
-	F4 -> set_split_counter(facet -> get_split_counter() + 1);
-	F5 -> set_split_counter(facet -> get_split_counter() + 1);
-	F6 -> set_split_counter(facet -> get_split_counter() + 1);
-	F7 -> set_split_counter(facet -> get_split_counter() + 1);
-	F8 -> set_split_counter(facet -> get_split_counter() + 1);
-	F9 -> set_split_counter(facet -> get_split_counter() + 1);
+	F0 -> set_split_counter(facet -> get_split_count() + 1);
+	F1 -> set_split_counter(facet -> get_split_count() + 1);
+	F2 -> set_split_counter(facet -> get_split_count() + 1);
+	F3 -> set_split_counter(facet -> get_split_count() + 1);
+	F4 -> set_split_counter(facet -> get_split_count() + 1);
+	F5 -> set_split_counter(facet -> get_split_count() + 1);
+	F6 -> set_split_counter(facet -> get_split_count() + 1);
+	F7 -> set_split_counter(facet -> get_split_count() + 1);
+	F8 -> set_split_counter(facet -> get_split_count() + 1);
+	F9 -> set_split_counter(facet -> get_split_count() + 1);
 
 
 	// // The new facets are added to the shape model
@@ -715,6 +715,7 @@ void ShapeModel::recycle_facet(Facet * facet) {
 		break;
 	}
 
+	*V_merge_keep -> get_coordinates() = 0.5 * (*V_merge_keep -> get_coordinates() + *V_merge_discard -> get_coordinates());
 
 	std::vector<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
 	Facet * F0_old = facets_to_recycle[0];
@@ -739,7 +740,7 @@ void ShapeModel::recycle_facet(Facet * facet) {
 
 			break;
 		}
-	}	
+	}
 
 
 	std::vector<Facet * > facets_owning_discarded_vertex = V_merge_discard -> get_owning_facets();
@@ -767,7 +768,7 @@ void ShapeModel::recycle_facet(Facet * facet) {
 
 	// Facet ownership is transferred from V_merge_discard to V_merge_keep
 	std::vector<Facet *> owning_facets = V_merge_discard -> get_owning_facets();
-	for (unsigned int i =0 ; i < owning_facets.size(); ++i){
+	for (unsigned int i = 0 ; i < owning_facets.size(); ++i) {
 		V_merge_keep -> add_facet_ownership(owning_facets[i]);
 	}
 
@@ -878,6 +879,7 @@ void ShapeModel::enforce_mesh_quality() {
 			}
 
 		}
+		
 
 	}
 

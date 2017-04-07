@@ -167,9 +167,8 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 		}
 
 		// The volume difference between the estimated shape and the true shape is stored
-
-		volume_dif(time_index) = this -> true_shape_model -> get_volume() -  this -> estimated_shape_model -> get_volume();
-		surface_dif(time_index) = this -> true_shape_model -> get_surface_area() -  this -> estimated_shape_model -> get_surface_area();
+		volume_dif(time_index) = (this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
+		surface_dif(time_index) = (this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
 
 	}
 
@@ -238,7 +237,7 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
 
 		if (facet_to_split != nullptr && this -> arguments -> get_split_status() == true) {
-			if (facet_to_split -> get_split_counter() < 2)
+			if (facet_to_split -> get_split_count() < 3)
 				this -> estimated_shape_model -> split_facet(facet_to_split);
 		}
 
