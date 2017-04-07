@@ -167,8 +167,8 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 		}
 
 		// The volume difference between the estimated shape and the true shape is stored
-		volume_dif(time_index) = (this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
-		surface_dif(time_index) = (this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
+		volume_dif(time_index) = std::abs(this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
+		surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
 
 	}
 

@@ -46,13 +46,13 @@ def plot_diff():
 	volume_dif = np.loadtxt("../output/volume_dif.txt")
 	surface_dif = np.loadtxt("../output/surface_dif.txt")
 
-	plt.plot(range(len(volume_dif)),100 * np.abs(volume_dif),label = 'Volume')
-	plt.plot(range(len(surface_dif)),100 * np.abs(surface_dif),label = 'Area')
+	plt.semilogy(range(len(volume_dif)),100 * np.abs(volume_dif),label = 'Volume')
+	plt.semilogy(range(len(surface_dif)),100 * np.abs(surface_dif),label = 'Area')
 	plt.legend(bbox_to_anchor=(0.5, 1.1),ncol = 2,loc = 'upper center')
 	plt.ylabel("Relative difference (%)")
 	plt.xlabel("Measurement index")
 
-
+	plt.grid()
 	plt.savefig("dif.pdf")
 
 
