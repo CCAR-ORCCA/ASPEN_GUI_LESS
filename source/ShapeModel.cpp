@@ -867,11 +867,12 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle, double min_edge_an
 		        facet_index < this -> facets.size();
 		        ++facet_index) {
 
-			if (this -> facets[facet_index] -> has_good_edge_quality(min_edge_angle) == false) {
-				mesh_quality_confirmed = false;
-				break;
-			}
-
+			// This will collapse an edge of the shape model 
+			// if it appears that the two facets it connects have
+			// spurious surface normal orientations
+			// This will cause the facet to get recycled
+ 			this -> facets[facet_index] -> has_good_edge_quality(min_edge_angle);
+			
 			if (this -> facets[facet_index] -> has_good_surface_quality(min_facet_angle) == false) {
 				mesh_quality_confirmed = false;
 				this -> recycle_shrunk_facet(this -> facets[facet_index]);

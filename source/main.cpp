@@ -101,7 +101,9 @@ int main() {
 	double min_facet_angle = 15 * arma::datum::pi / 180;
 
 	// Minimum edge angle indicating degeneracy
-	double min_edge_angle = 45 * arma::datum::pi / 180;
+	// 0 deg: no edge recycling at all
+	// 90 deg : facets cannot have their normals in opposite directions
+	double min_edge_angle = 20 * arma::datum::pi / 180;
 
 	// Time spans
 	double t0 = 0;
