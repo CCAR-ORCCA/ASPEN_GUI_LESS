@@ -20,7 +20,7 @@ public:
 	*/
 	Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices);
 
-	
+
 	/**
 	Get neighbors
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
@@ -36,7 +36,7 @@ public:
 
 
 	/**
-	Removes the specified edge from the 
+	Removes the specified edge from the
 	facet. The edge has to be present in the facet
 	for this to work
 	@param Pointer to the edge to be removed
@@ -57,9 +57,22 @@ public:
 
 	/**
 	Checks the degeneracy of the facet
+	@param angle minimum angle indicating that the facet is degenerate
 	@return True if facet is not degenerate, false otherwise
 	*/
-	bool has_good_quality() const;
+	bool has_good_surface_quality(double angle) const;
+
+
+	/**
+	Checks the degeneracy of the facet edge
+	If the facet edge is found to be degenerate, 
+	the facet geometry is altered so as to be recycled next time
+	@param angle minimum angle indicating that the facet is degenerate
+	@return
+	- If an edge is non-degenerate: returns false
+	- If edge is degenerate : returns true
+	*/
+	bool has_good_edge_quality(double angle) ;
 
 
 	/**

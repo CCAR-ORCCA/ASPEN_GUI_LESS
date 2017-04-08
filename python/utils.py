@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
+ffmpeg -f image2 -framerate 25 -i computed_prefit_00%04d.png -vcodec libx264 -b:v 800k ../kw4/computed_kw4.avi
+'''
+
+
+
 def plot_focal_plane():
 
 	ranges = np.loadtxt("../build/ranges.txt")
@@ -54,7 +60,7 @@ def plot_diff():
 
 	plt.grid()
 	plt.savefig("dif.pdf")
-
+	plt.clf()
 
 
 def plot_volume_dif():

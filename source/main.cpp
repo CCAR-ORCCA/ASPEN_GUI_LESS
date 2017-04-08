@@ -38,7 +38,7 @@ int main() {
 
 	// ShapeModelImporter shape_io_estimated(
 	//     "../resources/shape_models/faceted_sphere.obj",
-	//     400,false);
+	//     400, false);
 
 	// ShapeModelImporter shape_io_truth(
 	//     "../resources/shape_models/cube.obj",
@@ -73,11 +73,14 @@ int main() {
 
 	// Minimum angular difference between two neighboring surface
 	// normals to be considered different
-	double min_facet_normal_angle_difference = 30 * arma::datum::pi / 180.;
+	double min_facet_normal_angle_difference = 45 * arma::datum::pi / 180.;
 
 	// Minimum number of rays required for a facet to be considered
 	// in the estimation process
 	unsigned int minimum_ray_per_facet = 5;
+
+	// Maximum number of times a facet and its children can be split
+	unsigned int max_split_count = 5;
 
 	// Ridge estimation
 	double ridge_coef = 1e1;
@@ -92,7 +95,13 @@ int main() {
 	bool use_cholesky = false;
 
 	// Recycle degenerate facets
-	bool recycle_facets = true;
+	bool recycle_shrunk_facets = true;
+
+	// Minimum facet angle indicating degeneracy
+	double min_facet_angle = 15 * arma::datum::pi / 180;
+
+	// Minimum edge angle indicating degeneracy
+	double min_edge_angle = 45 * arma::datum::pi / 180;
 
 	// Time spans
 	double t0 = 0;
@@ -106,12 +115,17 @@ int main() {
 	                            inclination,
 	                            body_spin_rate,
 	                            min_facet_normal_angle_difference,
-	                            minimum_ray_per_facet,
 	                            ridge_coef,
+	                            min_facet_angle,
+	                            min_edge_angle,
+	                            minimum_ray_per_facet,
+	                            max_split_count,
 	                            reject_outliers,
 	                            split_status,
 	                            use_cholesky,
-	                            recycle_facets);
+	                            recycle_shrunk_facets);
+
+
 
 	// Filter
 	Filter filter(&frame_graph,
@@ -121,8 +135,9 @@ int main() {
 	              &args);
 
 	filter.run(5, true, true);
+	// std::cout << args.get_min_facet_angle();
 
-	
+
 
 
 	return 0;

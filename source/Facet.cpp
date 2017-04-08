@@ -45,7 +45,75 @@ void Facet::update() {
 }
 
 
-bool Facet::has_good_quality() const {
+bool Facet::has_good_edge_quality(double angle) {
+
+	std::set < Facet * > neighbors = this -> get_neighbors(false);
+
+	arma::vec * n = this -> facet_normal.get();
+
+	for (auto & neighbor : neighbors) {
+		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
+
+
+			Vertex * V0 = nullptr;
+			Vertex * V1 = nullptr;
+			Vertex * V2 = nullptr;
+
+
+			// The two vertices of $this lying on the edge are found
+			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
+
+				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)) {
+					V0 = this -> vertices -> at(vertex_index).get();
+					continue;
+				}
+
+				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)
+				        && V0 != nullptr) {
+					V1 = this -> vertices -> at(vertex_index).get();
+					break;
+				}
+
+			}
+
+			// The other vertex in neighbor is found
+			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
+
+				if (neighbor -> get_vertices() -> at(vertex_index).get() != V0 &&
+				        neighbor -> get_vertices() -> at(vertex_index).get() != V1 )
+				{
+					V2 = neighbor -> get_vertices() -> at(vertex_index).get();
+					break;
+				}
+
+			}
+
+			// The shortest edge is made even shorter
+			if (arma::norm(*V0 -> get_coordinates() - *V2 -> get_coordinates()) <
+			        arma::norm(*V1 -> get_coordinates() - *V2 -> get_coordinates())) {
+
+				*V2 -> get_coordinates() = *V0 -> get_coordinates() + 0.1 * ( *V2 -> get_coordinates() - *V0 -> get_coordinates());
+
+
+			}
+			else {
+				*V2 -> get_coordinates() = *V1 -> get_coordinates() + 0.1 * ( *V2 -> get_coordinates() - *V1 -> get_coordinates());
+
+			}
+
+			return false;
+
+		}
+
+	}
+
+	return true;
+
+
+
+}
+
+bool Facet::has_good_surface_quality(double angle) const {
 
 	std::shared_ptr<Vertex> V0  = this -> vertices -> at(0);
 	std::shared_ptr<Vertex> V1  = this -> vertices -> at(1);
@@ -60,10 +128,10 @@ bool Facet::has_good_quality() const {
 	sin_angles(1) = arma::norm(arma::cross(*P2 - *P1, *P0 - *P1) / ( arma::norm(*P2 - *P1) * arma::norm(*P0 - *P1) ));
 	sin_angles(2) = arma::norm(arma::cross(*P0 - *P2, *P1 - *P2) / ( arma::norm(*P0 - *P2) * arma::norm(*P1 - *P2) ));
 
-	if (sin_angles.min() < std::sin(15 * arma::datum::pi /180)){
+	if (sin_angles.min() < std::sin(angle)) {
 		return false;
 	}
-	else{
+	else {
 		return true;
 	}
 

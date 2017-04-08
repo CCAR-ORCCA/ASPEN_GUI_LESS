@@ -219,7 +219,7 @@ public:
 	@param facet Pointer to the facet to recycle. THIS POINTER
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	*/
-	void recycle_facet(Facet * facet);
+	void recycle_shrunk_facet(Facet * facet);
 
 
 
@@ -251,9 +251,11 @@ public:
 
 	/**
 	Checks if every facets in the shape model has good quality.
+	@param min_facet_angle Minimum facet vertex angle indicating degeneracy
+	@param min_edge_angle Minimum edge angle indicating degeneracy
 	If not, some facets are recycled until the mesh becomes satisfying
 	*/
-	void enforce_mesh_quality() ;
+	void enforce_mesh_quality(double min_facet_angle, double min_edge_angle) ;
 
 
 

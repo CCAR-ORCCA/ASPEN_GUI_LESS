@@ -237,12 +237,13 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
 
 		if (facet_to_split != nullptr && this -> arguments -> get_split_status() == true) {
-			if (facet_to_split -> get_split_count() < 3)
+			if (facet_to_split -> get_split_count() < this -> arguments -> get_max_split_count())
 				this -> estimated_shape_model -> split_facet(facet_to_split);
 		}
 
-		if (this -> arguments -> get_recycle_facets() == true) {
-			this -> estimated_shape_model -> enforce_mesh_quality();
+		if (this -> arguments -> get_recycle_shrunk_facets() == true) {
+			this -> estimated_shape_model -> enforce_mesh_quality(this -> arguments -> get_min_facet_angle(),
+				this -> arguments -> get_min_edge_angle());
 		}
 	}
 

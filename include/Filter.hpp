@@ -31,13 +31,18 @@ public:
 	@param body_spin_rate Angular rate of the instrument about the target (rad/s), M3
 	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
 	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
-	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
 	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
 	estimation process
+	@param min_facet_angle Minimum angle below which a facet's corner angle indicates facet degeneracy
+	@param min_edge_angle Minimum angle separating to facets around an edge for the facets not 
+	to be flagged as degenerated
+	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
+	@param max_split_count Maximum time a facet (and its children) can get split
+	
 	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
 	@param split_status True if the shape model is to be split
 	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
-	@param recycle_facets True if facets that are degenerated should be removed
+	@param recycle_shrunk_facets True if facets that are degenerated should be removed
 	*/
 
 	Arguments(double t0,
@@ -47,12 +52,15 @@ public:
 	          double inclination,
 	          double body_spin_rate,
 	          double min_facet_normal_angle_difference,
-	          unsigned int minimum_ray_per_facet,
 	          double ridge_coef,
+	          double min_facet_angle,
+	          double min_edge_angle,
+	          unsigned int minimum_ray_per_facet,
+	          unsigned int max_split_count,
 	          bool reject_outliers,
 	          bool split_status,
 	          bool use_cholesky,
-	          bool recycle_facets) {
+	          bool recycle_shrunk_facets) {
 
 		this -> t0 = t0;
 		this -> tf = tf;
@@ -62,11 +70,14 @@ public:
 		this -> body_spin_rate = body_spin_rate;
 		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
 		this -> minimum_ray_per_facet = minimum_ray_per_facet;
+		this -> max_split_count = max_split_count;
 		this -> ridge_coef = ridge_coef;
+		this -> min_facet_angle = min_facet_angle;
+		this -> min_edge_angle = min_edge_angle;
 		this -> reject_outliers = reject_outliers;
 		this -> split_status = split_status;
 		this -> use_cholesky = use_cholesky;
-		this -> recycle_facets = recycle_facets;
+		this -> recycle_shrunk_facets = recycle_shrunk_facets;
 	}
 
 	double get_t0() const {
@@ -120,8 +131,17 @@ public:
 		return this -> use_cholesky;
 	}
 
-	bool get_recycle_facets() const {
-		return this -> recycle_facets;
+	bool get_recycle_shrunk_facets() const {
+		return this -> recycle_shrunk_facets;
+	}
+	double get_max_split_count() const {
+		return this -> max_split_count;
+	}
+	double get_min_facet_angle() const {
+		return this -> min_facet_angle;
+	}
+	double get_min_edge_angle() const{
+		return this -> min_edge_angle;
 	}
 
 
@@ -132,19 +152,21 @@ protected:
 	double t0;
 	double tf;
 	double min_normal_observation_angle;
-
 	double orbit_rate;
 	double inclination;
 	double body_spin_rate;
-
 	double min_facet_normal_angle_difference;
-	unsigned int minimum_ray_per_facet;
 	double ridge_coef;
+	double min_facet_angle;
+	double min_edge_angle;
+
+	unsigned int minimum_ray_per_facet;
+	unsigned int max_split_count;
 
 	bool reject_outliers;
 	bool split_status;
 	bool use_cholesky;
-	bool recycle_facets;
+	bool recycle_shrunk_facets;
 
 };
 

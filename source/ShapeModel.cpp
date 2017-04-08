@@ -666,7 +666,7 @@ void ShapeModel::split_facet(Facet * facet) {
 
 
 
-void ShapeModel::recycle_facet(Facet * facet) {
+void ShapeModel::recycle_shrunk_facet(Facet * facet) {
 
 	// The vertices in the facet are extracted
 	std::shared_ptr<Vertex> V0  = facet -> get_vertices() -> at(0);
@@ -778,8 +778,6 @@ void ShapeModel::recycle_facet(Facet * facet) {
 	V_merge_keep -> remove_facet_ownership(F0_old);
 	V_merge_keep -> remove_facet_ownership(F1_old);
 
-
-
 	// The discarded vertex is removed from the shape model
 	auto V_merge_discard_it = std::find (this -> vertices.begin(), this -> vertices.end(), V_merge_discard);
 
@@ -856,7 +854,7 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 }
 
 
-void ShapeModel::enforce_mesh_quality() {
+void ShapeModel::enforce_mesh_quality(double min_facet_angle, double min_edge_angle) {
 
 	bool mesh_quality_confirmed = false;
 	unsigned int facets_recycled = 0;
@@ -869,9 +867,14 @@ void ShapeModel::enforce_mesh_quality() {
 		        facet_index < this -> facets.size();
 		        ++facet_index) {
 
-			if (this -> facets[facet_index] -> has_good_quality() == false) {
+			if (this -> facets[facet_index] -> has_good_edge_quality(min_edge_angle) == false) {
 				mesh_quality_confirmed = false;
-				this -> recycle_facet(this -> facets[facet_index]);
+				break;
+			}
+
+			if (this -> facets[facet_index] -> has_good_surface_quality(min_facet_angle) == false) {
+				mesh_quality_confirmed = false;
+				this -> recycle_shrunk_facet(this -> facets[facet_index]);
 
 				++facets_recycled;
 				break;
@@ -879,7 +882,7 @@ void ShapeModel::enforce_mesh_quality() {
 			}
 
 		}
-		
+
 
 	}
 
