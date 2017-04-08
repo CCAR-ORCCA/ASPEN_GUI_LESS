@@ -23,22 +23,22 @@ int main() {
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/itokawa_8.obj",
-	    3000,false);
-
-	ShapeModelImporter shape_io_estimated(
-	    "../resources/shape_models/faceted_sphere.obj",
-	    200,false);
-
-
 	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/KW4Alpha.obj",
-	//     1);
+	//     "../resources/shape_models/itokawa_8.obj",
+	//     3000,false);
 
 	// ShapeModelImporter shape_io_estimated(
 	//     "../resources/shape_models/faceted_sphere.obj",
-	//     400, false);
+	//     200,false);
+
+
+	ShapeModelImporter shape_io_truth(
+	    "../resources/shape_models/KW4Alpha.obj",
+	    1);
+
+	ShapeModelImporter shape_io_estimated(
+	    "../resources/shape_models/faceted_sphere.obj",
+	    400, false);
 
 	// ShapeModelImporter shape_io_truth(
 	//     "../resources/shape_models/cube.obj",
@@ -137,7 +137,6 @@ int main() {
 	              &args);
 
 	filter.run(5, true, true);
-	// std::cout << args.get_min_facet_angle();
 
 
 

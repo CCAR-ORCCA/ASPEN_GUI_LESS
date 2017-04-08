@@ -145,11 +145,14 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 		for (unsigned int iteration = 0; iteration < N_iteration ; ++iteration) {
 			this -> lidar -> send_flash(this -> estimated_shape_model, true);
 
-			if (iteration !=  N_iteration - 1) {
-				this -> correct_shape(time_index, false);
+			if (iteration ==  0) {
+				this -> correct_shape(time_index, true, false);
+			}
+			else if (iteration ==  N_iteration - 1) {
+				this -> correct_shape(time_index, false, true);
 			}
 			else {
-				this -> correct_shape(time_index, true);
+				this -> correct_shape(time_index, false, false);
 			}
 
 		}
@@ -181,7 +184,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 }
 
-void Filter::correct_shape(unsigned int time_index, bool last_iter) {
+void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter) {
 
 	std::vector<Ray * > good_rays;
 	std::set<Vertex *> seen_vertices;
@@ -206,7 +209,7 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 	                                  N_mat,
 	                                  facet_to_index_of_vertices);
 
-	if (last_iter == false) {
+	if (first_iter == true) {
 		std::map<Facet * , std::vector<double> > facets_to_residuals;
 
 		for (unsigned int ray_index = 0; ray_index < good_rays.size(); ++ray_index) {
@@ -219,7 +222,7 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 
 	}
 
-	else  {
+	else if (last_iter == true) {
 		std::map<Facet * , std::vector<double> > facets_to_residuals;
 
 		double max_res = -1;
@@ -243,7 +246,7 @@ void Filter::correct_shape(unsigned int time_index, bool last_iter) {
 
 		if (this -> arguments -> get_recycle_shrunk_facets() == true) {
 			this -> estimated_shape_model -> enforce_mesh_quality(this -> arguments -> get_min_facet_angle(),
-				this -> arguments -> get_min_edge_angle());
+			        this -> arguments -> get_min_edge_angle());
 		}
 	}
 
@@ -464,7 +467,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
 
-				if (std::abs(pair.second[ray_index] -> get_range_residual() - mean) < stdev) {
+				if (std::abs(pair.second[ray_index] -> get_range_residual() - mean) < 2 * stdev) {
 					rays_to_keep.push_back(pair.second[ray_index]);
 				}
 
@@ -681,7 +684,7 @@ arma::vec Filter::cholesky(arma::mat & info_mat, arma::mat & normal_mat) const {
 	}
 
 
-	// R*x = Z is now solved
+	// R * x = z is now solved
 	arma::vec x = arma::vec(normal_mat.n_rows);
 	x(x.n_rows - 1) = z(z.n_rows - 1) / R.row(z.n_rows - 1)(z.n_rows - 1);
 

@@ -34,11 +34,11 @@ public:
 	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
 	estimation process
 	@param min_facet_angle Minimum angle below which a facet's corner angle indicates facet degeneracy
-	@param min_edge_angle Minimum angle separating to facets around an edge for the facets not 
+	@param min_edge_angle Minimum angle separating to facets around an edge for the facets not
 	to be flagged as degenerated
 	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
 	@param max_split_count Maximum time a facet (and its children) can get split
-	
+
 	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
 	@param split_status True if the shape model is to be split
 	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
@@ -140,7 +140,7 @@ public:
 	double get_min_facet_angle() const {
 		return this -> min_facet_angle;
 	}
-	double get_min_edge_angle() const{
+	double get_min_edge_angle() const {
 		return this -> min_edge_angle;
 	}
 
@@ -221,7 +221,7 @@ public:
 
 protected:
 
-	void correct_shape(unsigned int time_index, bool last_iter);
+	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter);
 
 	void correct_observed_features(std::vector<Ray * > & good_rays,
 	                               std::set<Vertex *> & seen_vertices,
