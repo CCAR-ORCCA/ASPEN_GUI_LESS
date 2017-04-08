@@ -52,11 +52,8 @@ bool Facet::has_good_edge_quality(double angle) {
 	arma::vec * n = this -> facet_normal.get();
 
 	for (auto & neighbor : neighbors) {
-		
-		std::cout << arma::dot(*n, *neighbor -> get_facet_normal()) << std::endl;
 
 		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
-
 
 			Vertex * V0 = nullptr;
 			Vertex * V1 = nullptr;
@@ -67,17 +64,17 @@ bool Facet::has_good_edge_quality(double angle) {
 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
 				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)) {
-					V0 = this -> vertices -> at(vertex_index).get();
-					continue;
-				}
+					if (V0 == nullptr) {
+						V0 = this -> vertices -> at(vertex_index).get();
+					}
+					else {
+						V1 = this -> vertices -> at(vertex_index).get();
 
-				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)
-				        && V0 != nullptr) {
-					V1 = this -> vertices -> at(vertex_index).get();
-					break;
+					}
 				}
 
 			}
+
 
 			// The other vertex in neighbor is found
 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
@@ -91,6 +88,7 @@ bool Facet::has_good_edge_quality(double angle) {
 
 			}
 
+
 			// The shortest edge is made even shorter
 			if (arma::norm(*V0 -> get_coordinates() - *V2 -> get_coordinates()) <
 			        arma::norm(*V1 -> get_coordinates() - *V2 -> get_coordinates())) {
@@ -103,7 +101,6 @@ bool Facet::has_good_edge_quality(double angle) {
 				*V2 -> get_coordinates() = *V1 -> get_coordinates() + 0.1 * ( *V2 -> get_coordinates() - *V1 -> get_coordinates());
 
 			}
-
 			return false;
 
 		}
