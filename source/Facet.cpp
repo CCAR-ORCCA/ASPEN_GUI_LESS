@@ -52,6 +52,9 @@ bool Facet::has_good_edge_quality(double angle) {
 	arma::vec * n = this -> facet_normal.get();
 
 	for (auto & neighbor : neighbors) {
+		
+		std::cout << arma::dot(*n, *neighbor -> get_facet_normal()) << std::endl;
+
 		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
 
 
