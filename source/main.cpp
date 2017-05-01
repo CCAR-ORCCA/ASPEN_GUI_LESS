@@ -32,23 +32,22 @@ int main() {
 	//     200,false);
 
 
+	// ShapeModelImporter shape_io_truth(
+	//     "../resources/shape_models/KW4Alpha.obj",
+	//     1);
+
+	// ShapeModelImporter shape_io_estimated(
+	//     "../resources/shape_models/faceted_sphere.obj",
+	//     400, false);
+
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/KW4Alpha.obj",
-	    1);
+	    "../resources/shape_models/67P_lowlowres.obj",
+	    1000,
+	    false);
 
 	ShapeModelImporter shape_io_estimated(
 	    "../resources/shape_models/faceted_sphere.obj",
-	    400, false);
-
-	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/cube.obj",
-	//     1,
-	//     false);
-
-	// ShapeModelImporter shape_io_estimated(
-	//     "../resources/shape_models/cube.obj",
-	//     0.5,
-	//     false);
+	    300, false);
 
 
 	shape_io_truth.load_shape_model(&true_shape_model);
@@ -98,7 +97,7 @@ int main() {
 	bool recycle_shrunk_facets = true;
 
 	// Minimum facet angle indicating degeneracy
-	double min_facet_angle = 15 * arma::datum::pi / 180;
+	double min_facet_angle = 10 * arma::datum::pi / 180;
 
 	// Minimum edge angle indicating degeneracy
 	// 0 deg: no edge recycling at all
@@ -136,7 +135,9 @@ int main() {
 	              &estimated_shape_model,
 	              &args);
 
-	filter.run(5, true, true);
+	// filter.run(5, true, true);
+	filter.get_surface_point_cloud();
+
 
 
 

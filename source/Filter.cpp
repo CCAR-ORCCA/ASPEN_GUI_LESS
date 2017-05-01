@@ -13,6 +13,104 @@ Filter::Filter(FrameGraph * frame_graph,
 	this -> arguments = arguments;
 }
 
+void Filter::get_surface_point_cloud(){
+
+	std::cout << "Collecting surface data" << std::endl;
+
+	// The vector of times is created first
+	// It corresponds to the observation times
+	std::vector<double> times;
+
+	times.push_back(this -> arguments -> get_t0());
+	double t = times[0];
+
+	while (t < this -> arguments -> get_tf()) {
+		t = t + 1. / this -> lidar -> get_frequency();
+		times.push_back(t);
+	}
+
+	// Memory allocation for the lidar position
+	arma::vec lidar_pos_0 = *(this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> get_origin_from_parent());
+	arma::vec lidar_pos = arma::vec(3);
+	arma::vec lidar_pos_rel = arma::vec(3);
+
+	arma::vec u;
+	arma::vec v;
+	arma::vec w;
+
+	arma::mat dcm_LN = arma::zeros<arma::mat>(3, 3);
+	arma::mat dcm_TN = arma::zeros<arma::mat>(3, 3);
+
+	arma::vec mrp_LN = arma::vec(3);
+	arma::vec mrp_TN = arma::vec(3);
+	arma::vec mrp_LT = arma::vec(3);
+
+	arma::vec volume_dif = arma::vec(times.size());
+	arma::vec surface_dif = arma::vec(times.size());
+
+	// Properly orienting the lidar to the target
+
+	u = arma::normalise( - lidar_pos_0);
+
+	v = arma::randu(3);
+	v = arma::normalise(v - arma::dot(u, v) * u);
+	w = arma::cross(u, v);
+
+
+	dcm_LN.row(0) = u.t();
+	dcm_LN.row(1) = v.t();
+	dcm_LN.row(2) = w.t();
+	mrp_LN = dcm_to_mrp(dcm_LN);
+
+	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
+
+
+	for (unsigned int time_index = 0; time_index < times.size(); ++time_index) {
+
+		// The lidar is on a circular trajectory and is manually steered to the
+		// asteroid
+
+		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
+
+		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		lidar_pos = dcm * lidar_pos_0;
+
+
+		std::cout << "Lidar pos, inertial" << std::endl;
+		std::cout << lidar_pos.t() << std::endl;
+
+		dcm_LN = M3(arma::datum::pi) * dcm.t();
+
+		mrp_LN = dcm_to_mrp(dcm_LN);
+
+		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = dcm_to_mrp(dcm_TN);
+		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+
+		std::cout << "Lidar pos, body-fixed frame" << std::endl;
+		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
+
+	
+
+		// Setting the Lidar frame to its new state
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
+
+		// Setting the true and estimated frame to their new state
+		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
+
+		// Getting the true observations (noise free)
+		this -> lidar -> send_flash(this -> true_shape_model, false,true);
+
+		
+	}
+
+	this -> lidar -> save_surface_measurements("67P_pc.obj");
+
+
+
+
+}
 
 void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_shape_model) {
 

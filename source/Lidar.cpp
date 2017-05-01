@@ -83,7 +83,7 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
+void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes) {
 	this -> shape_model = shape_model;
 	unsigned int y_res = this -> row_count;
 	unsigned int z_res = this -> col_count;
@@ -96,10 +96,36 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
+
 			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
+
 			if (computed_mes == true && std::abs(this -> focal_plane[y_index][z_index] -> get_computed_range() < 1e10)) {
 				has_missed_target = false;
 			}
+
+			// If true, all the measurements are stored
+			if (store_mes == true) {
+
+
+
+				arma::vec direction_in_target_frame = this -> get_frame_graph() -> convert(
+				        *this -> focal_plane[y_index][z_index] -> get_direction(),
+				        this -> get_ref_frame_name(),
+				        this -> get_shape_model() -> get_ref_frame_name(),
+				        true);
+
+				arma::vec origin_in_target_frame = this -> get_frame_graph() -> convert(
+				                                       *this -> focal_plane[y_index][z_index] -> get_origin(),
+				                                       this -> get_ref_frame_name(),
+				                                       this -> get_shape_model() -> get_ref_frame_name());
+
+				this -> surface_measurements.push_back(
+				    this -> focal_plane[y_index][z_index] -> get_true_range() *
+				    direction_in_target_frame
+				    + origin_in_target_frame);
+
+			}
+
 		}
 
 	}
@@ -107,6 +133,8 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes) {
 	if (has_missed_target == true) {
 		throw (std::runtime_error("has missed target"));
 	}
+
+
 
 }
 
@@ -368,6 +396,23 @@ void Lidar::plot_ranges(std::string path, unsigned int type) const {
 
 
 }
+
+void Lidar::save_surface_measurements(std::string path) const {
+
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> surface_measurements.size();
+	        ++vertex_index) {
+		shape_file << "v " << this -> surface_measurements[vertex_index](0) << " " << this -> surface_measurements[vertex_index](1) << " " << this -> surface_measurements[vertex_index](2) << std::endl;
+	}
+
+
+
+}
+
 
 
 

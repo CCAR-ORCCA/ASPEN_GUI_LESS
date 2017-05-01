@@ -147,8 +147,9 @@ public:
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
 	@param computed_mes True is target is a-priori, false otherwise
+	@param store_mes True if all measurements must be stored
 	*/
-	void send_flash(ShapeModel * shape_model, bool computed_mes) ;
+	void send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes = false) ;
 
 
 
@@ -168,7 +169,6 @@ public:
 	void plot_range_residuals_per_facet(std::string path) ;
 
 
-
 	/**
 	Accessor to the shape model currently observed
 	@return pointer to shape model currently observed
@@ -178,6 +178,8 @@ public:
 	FrameGraph * get_frame_graph();
 
 	std::string get_ref_frame_name() const;
+
+	void save_surface_measurements(std::string path) const ;
 
 protected:
 	double f;
@@ -194,6 +196,7 @@ protected:
 	ShapeModel * shape_model = nullptr;
 	std::vector<std::vector<std::shared_ptr<Ray> > > focal_plane;
 
+	std::vector<arma::vec> surface_measurements;
 
 };
 

@@ -210,6 +210,13 @@ public:
 	*/
 	void run(unsigned int N_iteration, bool plot_measurements, bool save_shape_model);
 
+
+	/**
+	Collects 3D point cloud measurements and stores them to an ASCII file 
+	*/
+	void get_surface_point_cloud();
+
+
 	/**
 	Solves the square linear system info_mat * x = normal_mat
 	by means of a cholesky decomposition
