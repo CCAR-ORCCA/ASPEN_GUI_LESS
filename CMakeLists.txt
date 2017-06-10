@@ -63,6 +63,11 @@ endif()
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
+
+# Find RBK 
+find_package(RigidBodyKinematics REQUIRED)
+include_directories(${RBK_INCLUDE_DIRS})
+
 # Find OpenMP
 # This is not mandatory. If not found, the pragmas will simply be ignored (may have to comment out #include "omp.h")
 find_package(OpenMP)
@@ -107,7 +112,6 @@ source/Vertex.cpp
 source/Lidar.cpp
 source/Ray.cpp
 source/RefFrame.cpp
-source/RigidBodyKinematics.cpp
 source/FrameGraph.cpp
 source/Filter.cpp
 include/ShapeModel.hpp
@@ -118,7 +122,6 @@ include/Vertex.hpp
 include/Lidar.hpp
 include/Ray.hpp
 include/RefFrame.hpp
-include/RigidBodyKinematics.hpp
 include/Adjacency_List.hpp
 include/FrameGraph.hpp
 include/Filter.hpp
@@ -129,6 +132,8 @@ external/include/GNUPlot.h
 # Linking
 set(library_dependencies
 ${ARMADILLO_LIBRARIES}
-${Boost_LIBRARIES})
+${Boost_LIBRARIES}
+${RBK_LIBRARY})
+
 target_link_libraries(${EXE_NAME} ${library_dependencies})
 

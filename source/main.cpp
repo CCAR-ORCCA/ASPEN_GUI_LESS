@@ -32,22 +32,22 @@ int main() {
 	//     200,false);
 
 
-	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/KW4Alpha.obj",
-	//     1);
-
-	// ShapeModelImporter shape_io_estimated(
-	//     "../resources/shape_models/faceted_sphere.obj",
-	//     400, false);
-
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/67P_lowlowres.obj",
-	    1000,
-	    false);
+	    "../resources/shape_models/KW4Alpha.obj",
+	    1000);
 
 	ShapeModelImporter shape_io_estimated(
 	    "../resources/shape_models/faceted_sphere.obj",
-	    300, false);
+	    400, false);
+
+	// ShapeModelImporter shape_io_truth(
+	//     "../resources/shape_models/67P_lowlowres.obj",
+	//     1000,
+	//     false);
+
+	// ShapeModelImporter shape_io_estimated(
+	//     "../resources/shape_models/faceted_sphere.obj",
+	//     300, false);
 
 
 	shape_io_truth.load_shape_model(&true_shape_model);
@@ -135,8 +135,8 @@ int main() {
 	              &estimated_shape_model,
 	              &args);
 
-	// filter.run(5, true, true);
-	filter.get_surface_point_cloud();
+	filter.run(5, true, true);
+	// filter.get_surface_point_cloud();
 
 
 

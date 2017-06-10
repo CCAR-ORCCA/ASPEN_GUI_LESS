@@ -4,7 +4,9 @@
 #include "ShapeModel.hpp"
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
-#include "RigidBodyKinematics.hpp"
+
+#include <RigidBodyKinematics.hpp>
+
 #include <boost/progress.hpp>
 #include <numeric>
 #include <sstream>

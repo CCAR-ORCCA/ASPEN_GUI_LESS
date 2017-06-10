@@ -264,7 +264,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		// Should make a decision about splitting some facets here
 		if (save_shape_model == true) {
-			this -> estimated_shape_model -> save("../output/shape_model/shape_model_" + std::to_string(time_index) + ".obj");
+			this -> estimated_shape_model -> save("../output/shape_model/shape_model_" + time_index_formatted + ".obj");
 		}
 
 		// The volume difference between the estimated shape and the true shape is stored

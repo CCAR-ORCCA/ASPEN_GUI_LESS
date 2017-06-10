@@ -106,23 +106,24 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 
+				if (this -> focal_plane[y_index][z_index] -> get_true_range() < 1e30) {
 
+					arma::vec direction_in_target_frame = this -> get_frame_graph() -> convert(
+					        *this -> focal_plane[y_index][z_index] -> get_direction(),
+					        this -> get_ref_frame_name(),
+					        this -> get_shape_model() -> get_ref_frame_name(),
+					        true);
 
-				arma::vec direction_in_target_frame = this -> get_frame_graph() -> convert(
-				        *this -> focal_plane[y_index][z_index] -> get_direction(),
-				        this -> get_ref_frame_name(),
-				        this -> get_shape_model() -> get_ref_frame_name(),
-				        true);
+					arma::vec origin_in_target_frame = this -> get_frame_graph() -> convert(
+					                                       *this -> focal_plane[y_index][z_index] -> get_origin(),
+					                                       this -> get_ref_frame_name(),
+					                                       this -> get_shape_model() -> get_ref_frame_name());
 
-				arma::vec origin_in_target_frame = this -> get_frame_graph() -> convert(
-				                                       *this -> focal_plane[y_index][z_index] -> get_origin(),
-				                                       this -> get_ref_frame_name(),
-				                                       this -> get_shape_model() -> get_ref_frame_name());
-
-				this -> surface_measurements.push_back(
-				    this -> focal_plane[y_index][z_index] -> get_true_range() *
-				    direction_in_target_frame
-				    + origin_in_target_frame);
+					this -> surface_measurements.push_back(
+					    this -> focal_plane[y_index][z_index] -> get_true_range() *
+					    direction_in_target_frame
+					    + origin_in_target_frame);
+				}
 
 			}
 
