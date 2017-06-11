@@ -17,8 +17,6 @@ Edge::Edge(std::shared_ptr<Vertex> v0 ,
 	this -> edge_dyad = std::make_shared<arma::mat>(arma::zeros(3, 3));
 
 
-	this -> compute_dyad();
-
 }
 
 Vertex * Edge::get_v0() {

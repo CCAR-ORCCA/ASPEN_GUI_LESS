@@ -3,6 +3,7 @@
 #include "ShapeModelImporter.hpp"
 #include "FrameGraph.hpp"
 #include "Filter.hpp"
+#include "RK4.hpp"
 
 #include <chrono>
 
@@ -18,7 +19,6 @@ int main() {
 	frame_graph.add_transform("N", "T");
 	frame_graph.add_transform("N", "E");
 
-
 	// Shape model
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
@@ -30,7 +30,6 @@ int main() {
 	// ShapeModelImporter shape_io_estimated(
 	//     "../resources/shape_models/faceted_sphere.obj",
 	//     200,false);
-
 
 	ShapeModelImporter shape_io_truth(
 	    "../resources/shape_models/KW4Alpha.obj",
@@ -105,38 +104,85 @@ int main() {
 	double min_edge_angle = 20 * arma::datum::pi / 180;
 
 	// Time spans
-	double t0 = 0;
-	double tf = 500;
+	// double t0 = 0;
+	// double tf = 500;
 
 	// Filter arguments
-	Arguments args = Arguments( t0,
-	                            tf,
-	                            min_normal_observation_angle,
-	                            orbit_rate,
-	                            inclination,
-	                            body_spin_rate,
-	                            min_facet_normal_angle_difference,
-	                            ridge_coef,
-	                            min_facet_angle,
-	                            min_edge_angle,
-	                            minimum_ray_per_facet,
-	                            max_split_count,
-	                            reject_outliers,
-	                            split_status,
-	                            use_cholesky,
-	                            recycle_shrunk_facets);
+	// Arguments args = Arguments( t0,
+	//                             tf,
+	//                             min_normal_observation_angle,
+	//                             orbit_rate,
+	//                             inclination,
+	//                             body_spin_rate,
+	//                             min_facet_normal_angle_difference,
+	//                             ridge_coef,
+	//                             min_facet_angle,
+	//                             min_edge_angle,
+	//                             minimum_ray_per_facet,
+	//                             max_split_count,
+	//                             reject_outliers,
+	//                             split_status,
+	//                             use_cholesky,
+	//                             recycle_shrunk_facets);
 
 
+	// // Filter
+	// Filter filter(&frame_graph,
+	//               &lidar,
+	//               &true_shape_model,
+	//               &estimated_shape_model,
+	//               &args);
 
-	// Filter
-	Filter filter(&frame_graph,
-	              &lidar,
-	              &true_shape_model,
-	              &estimated_shape_model,
-	              &args);
-
-	filter.run(5, true, true);
+	// filter.run(5, true, true);
 	// filter.get_surface_point_cloud();
+
+	// 1) Propagate small body attitude
+	arma::vec attitude_0 = {0,
+	                        0,
+	                        0,
+	                        0.,
+	                        0.01 * 2 * arma::datum::pi / (2.8 * 3600),
+	                        2 * arma::datum::pi / (2.8 * 3600)
+	                       };
+	double t0 = 0;
+	double tf = 86400;
+	double dt = 60;
+	arma::vec T_attitude;
+	arma::mat attitude;
+
+	RK4_attitude rk4_attitude(  attitude_0,
+	                            t0,
+	                            tf,
+	                            dt,
+	                            &T_attitude,
+	                            &attitude,
+	                            true_shape_model.get_body_inertia(),
+	                            &dXattitudedt,
+	                            true
+	                         );
+
+
+	// 2) Propagate spacecraft attitude about small body
+	// using computed small body attitude
+	arma::vec T_orbit;
+	arma::mat orbit;
+
+	arma::vec orbit_0 = {1000, 0, 0, 0.1, 0.4, 0.1};
+
+	// dt = 1;
+	RK4_orbit rk4_orbit( orbit_0,
+	                     t0,
+	                     tf,
+	                     dt,
+	                     &T_orbit,
+	                     &orbit,
+	                     2000.,
+	                     &true_shape_model,
+	                     &frame_graph,
+	                     true
+	                   );
+
+	orbit.save("orbit.txt", arma::raw_ascii);
 
 
 

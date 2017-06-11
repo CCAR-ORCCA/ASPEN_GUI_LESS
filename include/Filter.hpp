@@ -148,8 +148,6 @@ public:
 
 
 
-
-
 protected:
 	double t0;
 	double tf;
@@ -214,7 +212,7 @@ public:
 
 
 	/**
-	Collects 3D point cloud measurements and stores them to an ASCII file 
+	Collects 3D point cloud measurements and stores them to an ASCII file
 	*/
 	void get_surface_point_cloud();
 
@@ -236,12 +234,15 @@ protected:
 	                               std::set<Vertex *> & seen_vertices,
 	                               std::set<Facet *> & seen_facets,
 	                               arma::mat & N_mat,
-	                               std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) ;
+	                               std::map<Facet *,
+	                               std::vector<unsigned int> > & facet_to_index_of_vertices) ;
+
 	void get_observed_features(std::vector<Ray * > & good_rays,
 	                           std::set<Vertex *> & seen_vertices,
 	                           std::set<Facet *> & seen_facets,
 	                           arma::mat & N_mat,
-	                           std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) ;
+	                           std::map<Facet *,
+	                           std::vector<unsigned int> > & facet_to_index_of_vertices) ;
 
 
 

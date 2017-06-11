@@ -145,14 +145,13 @@ ShapeModel::ShapeModel() {
 }
 
 void ShapeModel::update_mass_properties() {
+
 	this -> compute_surface_area();
-
 	this -> compute_volume();
-
 	this -> compute_center_of_mass();
+	this -> compute_inertia();
 
 }
-
 
 void ShapeModel::update_facets() {
 
@@ -162,6 +161,17 @@ void ShapeModel::update_facets() {
 
 }
 
+
+void ShapeModel::update_edges() {
+
+	for (auto & edge : this -> edges) {
+		edge -> compute_dyad();
+	}
+
+}
+
+
+
 void ShapeModel::update_facets(std::set<Facet *> & facets) {
 
 	for (auto & facet : facets) {
@@ -169,6 +179,80 @@ void ShapeModel::update_facets(std::set<Facet *> & facets) {
 	}
 
 }
+
+bool ShapeModel::contains(double * point, double tol ) {
+
+	double lagrangian = 0;
+
+	// Facet loop
+	#pragma omp parallel for reduction(+:lagrangian) if (USE_OMP_DYNAMIC_ANALYSIS)
+	for (unsigned int facet_index = 0; facet_index < this -> get_NFacets(); ++ facet_index) {
+
+		std::vector<std::shared_ptr<Vertex > > * vertices = this -> get_facets() -> at(facet_index) -> get_vertices();
+
+		const double * r1 =  vertices -> at(0) -> get_coordinates() -> colptr(0);
+		const double * r2 =  vertices -> at(1) -> get_coordinates() -> colptr(0);
+		const double * r3 =  vertices -> at(2) -> get_coordinates() -> colptr(0);
+
+		double r1m[3];
+		double r2m[3];
+		double r3m[3];
+
+		r1m[0] = r1[0] - point[0];
+		r1m[1] = r1[1] - point[1];
+		r1m[2] = r1[2] - point[2];
+
+		r2m[0] = r2[0] - point[0];
+		r2m[1] = r2[1] - point[1];
+		r2m[2] = r2[2] - point[2];
+
+		r3m[0] = r3[0] - point[0];
+		r3m[1] = r3[1] - point[1];
+		r3m[2] = r3[2] - point[2];
+
+
+		double R1 = std::sqrt( r1m[0] * r1m[0]
+		                       + r1m[1] * r1m[1]
+		                       + r1m[2] * r1m[2]       );
+
+		double R2 = std::sqrt( r2m[0] * r2m[0]
+		                       + r2m[1] * r2m[1]
+		                       + r2m[2] * r2m[2]      );
+
+
+		double R3 = std::sqrt( r3m[0] * r3m[0]
+		                       + r3m[1] * r3m[1]
+		                       + r3m[2] * r3m[2]      );
+
+		double r2_cross_r3_0 = r2m[1] * r3m[2] - r2m[2] * r3m[1];
+		double r2_cross_r3_1 = r3m[0] * r2m[2] - r3m[2] * r2m[0];
+		double r2_cross_r3_2 = r2m[0] * r3m[1] - r2m[1] * r3m[0];
+
+
+		double wf = 2 * std::atan2(
+		                r1m[0] * r2_cross_r3_0 + r1m[1] * r2_cross_r3_1 + r1m[2] * r2_cross_r3_2,
+
+		                R1 * R2 * R3 + R1 * (r2m[0] * r3m[0] + r2m[1] * r3m[1]  + r2m[2] * r3m[2] )
+		                + R2 * (r3m[0] * r1m[0] + r3m[1] * r1m[1] + r3m[2] * r1m[2])
+		                + R3 * (r1m[0] * r2m[0] + r1m[1] * r2m[1] + r1m[2] * r2m[2]));
+
+
+
+		lagrangian += wf;
+
+	}
+
+	if (std::abs(lagrangian) < tol){
+		return false;
+	}
+	else {
+		return true;
+	}
+
+
+
+}
+
 
 void ShapeModel::save(std::string path) const {
 	std::ofstream shape_file;
@@ -207,7 +291,9 @@ void ShapeModel::save(std::string path) const {
 }
 
 
-void ShapeModel::shift(arma::vec x) {
+void ShapeModel::shift_to_barycenter() {
+
+	arma::vec x = - (*this -> get_center_of_mass());
 
 	// The vertices are shifted
 	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
@@ -219,19 +305,43 @@ void ShapeModel::shift(arma::vec x) {
 
 	}
 
-	// The facet centers are shifted
-	// Faster than calling update() on the facet as this would also recompute
-	// the normals, the dyads and the surface area
-	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
-	for (unsigned int facet_index = 0;
-	        facet_index < this -> get_NFacets();
-	        ++facet_index) {
-
-		*this -> facets[facet_index] -> get_facet_center() =  *this -> facets[facet_index] -> get_facet_center() + x;
-	}
-
+	this -> cm = 0 * this -> cm;
 
 }
+
+void ShapeModel::align_with_principal_axes() {
+
+	arma::vec moments;
+	arma::mat axes;
+
+	arma::eig_sym(moments, axes, this -> body_inertia);
+
+	// The vertices are shifted
+	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> get_NVertices();
+	        ++vertex_index) {
+
+		*this -> vertices[vertex_index] -> get_coordinates() = axes.t() * (*this -> vertices[vertex_index] -> get_coordinates());
+
+	}
+
+	this -> body_inertia = arma::diagmat(moments);
+	this -> inertia_axes = axes;
+
+}
+
+arma::mat ShapeModel::get_body_inertia() const {
+	return this -> body_inertia;
+
+}
+
+arma::mat ShapeModel::get_inertia_axes() const {
+	return this -> inertia_axes;
+
+}
+
+
 
 ShapeModel::ShapeModel(std::string ref_frame_name,
                        FrameGraph * frame_graph) {
@@ -384,6 +494,113 @@ void ShapeModel::compute_center_of_mass() {
 	arma::vec cm = {c_x, c_y, c_z};
 
 	this -> cm =  cm ;
+
+
+}
+
+
+void ShapeModel::compute_inertia() {
+
+
+	double P_xx = 0;
+	double P_yy = 0;
+	double P_zz = 0;
+	double P_xy = 0;
+	double P_xz = 0;
+	double P_yz = 0;
+
+	#pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
+	for (unsigned int facet_index = 0;
+	        facet_index < this -> facets.size();
+	        ++facet_index) {
+
+
+		std::vector<std::shared_ptr<Vertex > > * vertices = this -> facets[facet_index] -> get_vertices();
+
+		arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
+		arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
+		arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
+
+		double * r0d =  vertices -> at(0) -> get_coordinates() -> colptr(0);
+		double * r1d =  vertices -> at(1) -> get_coordinates() -> colptr(0);
+		double * r2d =  vertices -> at(2) -> get_coordinates() -> colptr(0);
+
+		double dv = 1. / 6. * arma::dot(*r1, arma::cross(*r1 - *r0, *r2 - *r0));
+
+
+
+		P_xx += dv / 20 * (2 * r0d[0] * r0d[0]
+		                   + 2 * r1d[0] * r1d[0]
+		                   + 2 * r2d[0] * r2d[0]
+		                   + r0d[0] * r1d[0]
+		                   + r0d[0] * r1d[0]
+		                   + r0d[0] * r2d[0]
+		                   + r0d[0] * r2d[0]
+		                   + r1d[0] * r2d[0]
+		                   + r1d[0] * r2d[0]);
+
+
+		P_yy += dv / 20 * (2 * r0d[1] * r0d[1]
+		                   + 2 * r1d[1] * r1d[1]
+		                   + 2 * r2d[1] * r2d[1]
+		                   + r0d[1] * r1d[1]
+		                   + r0d[1] * r1d[1]
+		                   + r0d[1] * r2d[1]
+		                   + r0d[1] * r2d[1]
+		                   + r1d[1] * r2d[1]
+		                   + r1d[1] * r2d[1]);
+
+		P_zz += dv / 20 * (2 * r0d[2] * r0d[2]
+		                   + 2 * r1d[2] * r1d[2]
+		                   + 2 * r2d[2] * r2d[2]
+		                   + r0d[2] * r1d[2]
+		                   + r0d[2] * r1d[2]
+		                   + r0d[2] * r2d[2]
+		                   + r0d[2] * r2d[2]
+		                   + r1d[2] * r2d[2]
+		                   + r1d[2] * r2d[2]);
+
+		P_xy += dv / 20 * (2 * r0d[0] * r0d[1]
+		                   + 2 * r1d[0] * r1d[1]
+		                   + 2 * r2d[0] * r2d[1]
+		                   + r0d[0] * r1d[1]
+		                   + r0d[1] * r1d[0]
+		                   + r0d[0] * r2d[1]
+		                   + r0d[1] * r2d[0]
+		                   + r1d[0] * r2d[1]
+		                   + r1d[1] * r2d[0]);
+
+		P_xz += dv / 20 * (2 * r0d[0] * r0d[2]
+		                   + 2 * r1d[0] * r1d[2]
+		                   + 2 * r2d[0] * r2d[2]
+		                   + r0d[0] * r1d[2]
+		                   + r0d[2] * r1d[0]
+		                   + r0d[0] * r2d[2]
+		                   + r0d[2] * r2d[0]
+		                   + r1d[0] * r2d[2]
+		                   + r1d[2] * r2d[0]);
+
+		P_yz += dv / 20 * (2 * r0d[1] * r0d[2]
+		                   + 2 * r1d[1] * r1d[2]
+		                   + 2 * r2d[1] * r2d[2]
+		                   + r0d[1] * r1d[2]
+		                   + r0d[2] * r1d[1]
+		                   + r0d[1] * r2d[2]
+		                   + r0d[2] * r2d[1]
+		                   + r1d[1] * r2d[2]
+		                   + r1d[2] * r2d[1]);
+
+	}
+
+	// The inertia tensor is finally assembled
+
+	arma::mat I = {
+		{P_yy + P_zz, -P_xy, -P_xz},
+		{ -P_xy, P_xx + P_zz, -P_yz},
+		{ -P_xz, -P_yz, P_xx + P_yy}
+	};
+
+	this -> body_inertia = I;
 
 
 }
@@ -867,12 +1084,12 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle, double min_edge_an
 		        facet_index < this -> facets.size();
 		        ++facet_index) {
 
-			// This will collapse an edge of the shape model 
+			// This will collapse an edge of the shape model
 			// if it appears that the two facets it connects have
 			// spurious surface normal orientations
 			// This will cause the facet to get recycled
- 			this -> facets[facet_index] -> has_good_edge_quality(min_edge_angle);
-			
+			this -> facets[facet_index] -> has_good_edge_quality(min_edge_angle);
+
 			if (this -> facets[facet_index] -> has_good_surface_quality(min_facet_angle) == false) {
 				mesh_quality_confirmed = false;
 				this -> recycle_shrunk_facet(this -> facets[facet_index]);
