@@ -242,7 +242,7 @@ bool ShapeModel::contains(double * point, double tol ) {
 
 	}
 
-	if (std::abs(lagrangian) < tol){
+	if (std::abs(lagrangian) < tol) {
 		return false;
 	}
 	else {
@@ -316,6 +316,15 @@ void ShapeModel::align_with_principal_axes() {
 
 	arma::eig_sym(moments, axes, this -> body_inertia);
 
+
+	if (arma::det(axes) < 0) {
+
+		axes.col(0) = - axes.col(0);
+
+	}
+
+
+
 	// The vertices are shifted
 	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
 	for (unsigned int vertex_index = 0;
@@ -323,7 +332,6 @@ void ShapeModel::align_with_principal_axes() {
 	        ++vertex_index) {
 
 		*this -> vertices[vertex_index] -> get_coordinates() = axes.t() * (*this -> vertices[vertex_index] -> get_coordinates());
-
 	}
 
 	this -> body_inertia = arma::diagmat(moments);
@@ -1067,6 +1075,19 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 	bounding_box[3] = xmax;
 	bounding_box[4] = ymax;
 	bounding_box[5] = zmax;
+
+
+	std::cout << "xmin : " << xmin << std::endl;
+	std::cout << "xmax : " << xmax << std::endl;
+
+
+	std::cout << "ymin : " << ymin << std::endl;
+	std::cout << "ymax : " << ymax << std::endl;
+
+
+	std::cout << "zmin : " << zmin << std::endl;
+	std::cout << "zmax : " << zmax << std::endl;
+
 
 }
 

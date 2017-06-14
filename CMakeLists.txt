@@ -114,8 +114,10 @@ source/Ray.cpp
 source/RefFrame.cpp
 source/FrameGraph.cpp
 source/Filter.cpp
-source/RK4.cpp
+source/RK.cpp
 source/DynamicAnalyses.cpp
+source/Wrappers.cpp
+source/Interpolator.cpp
 include/ShapeModel.hpp
 include/ShapeModelImporter.hpp
 include/Facet.hpp
@@ -127,8 +129,11 @@ include/RefFrame.hpp
 include/Adjacency_List.hpp
 include/FrameGraph.hpp
 include/Filter.hpp
-include/RK4.hpp
+include/RK.hpp
 include/DynamicAnalyses.hpp
+include/Wrappers.hpp
+include/Args.hpp
+include/Interpolator.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
 )

@@ -3,7 +3,9 @@
 #include "ShapeModelImporter.hpp"
 #include "FrameGraph.hpp"
 #include "Filter.hpp"
-#include "RK4.hpp"
+#include "RK.hpp"
+#include "Wrappers.hpp"
+#include "Interpolator.hpp"
 
 #include <chrono>
 
@@ -24,20 +26,20 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/itokawa_8.obj",
-	//     3000,false);
+	//     "../resources/shape_models/faceted_sphere.obj",
+	//     500, false);
+
+	ShapeModelImporter shape_io_estimated(
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
+	    200, false);
+
+	ShapeModelImporter shape_io_truth(
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj",
+	    1000);
 
 	// ShapeModelImporter shape_io_estimated(
 	//     "../resources/shape_models/faceted_sphere.obj",
-	//     200,false);
-
-	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/KW4Alpha.obj",
-	    1000);
-
-	ShapeModelImporter shape_io_estimated(
-	    "../resources/shape_models/faceted_sphere.obj",
-	    400, false);
+	//     400, false);
 
 	// ShapeModelImporter shape_io_truth(
 	//     "../resources/shape_models/67P_lowlowres.obj",
@@ -140,52 +142,63 @@ int main() {
 	arma::vec attitude_0 = {0,
 	                        0,
 	                        0,
-	                        0.,
-	                        0.01 * 2 * arma::datum::pi / (2.8 * 3600),
-	                        2 * arma::datum::pi / (2.8 * 3600)
+	                        0.000,
+	                        0.000,
+	                        0 * 2 * arma::datum::pi / (12.13 * 3600)
 	                       };
 	double t0 = 0;
 	double tf = 86400;
-	double dt = 60;
-	arma::vec T_attitude;
-	arma::mat attitude;
+	double dt = 1;
 
-	RK4_attitude rk4_attitude(  attitude_0,
-	                            t0,
-	                            tf,
-	                            dt,
-	                            &T_attitude,
-	                            &attitude,
-	                            true_shape_model.get_body_inertia(),
-	                            &dXattitudedt,
-	                            true
-	                         );
+	bool check_energy_conservation = true;
+
+
+	Args args(2000,
+	          &frame_graph,
+	          &true_shape_model);
+
+
+	RK45 rk_attitude(attitude_0,
+	                 t0,
+	                 tf,
+	                 dt,
+	                 &args,
+	                 check_energy_conservation,
+	                 "attitude");
+
+	rk_attitude.run(&attitude_dxdt_wrapper, &energy_attitude, &event_function_mrp);
 
 
 	// 2) Propagate spacecraft attitude about small body
 	// using computed small body attitude
-	arma::vec T_orbit;
-	arma::mat orbit;
+	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
+	args.set_interpolator(&interpolator);
 
-	arma::vec orbit_0 = {1000, 0, 0, 0.1, 0.4, 0.1};
+	arma::vec orbit_0 = {1000, 0, 0, 0.0, 0.05, 0.01};
 
 	// dt = 1;
-	RK4_orbit rk4_orbit( orbit_0,
-	                     t0,
-	                     tf,
-	                     dt,
-	                     &T_orbit,
-	                     &orbit,
-	                     2000.,
-	                     &true_shape_model,
-	                     &frame_graph,
-	                     true
-	                   );
+	RK45 rk_orbit( orbit_0,
+	               t0,
+	               tf,
+	               dt,
+	               &args,
+	               check_energy_conservation,
+	               "orbit"
+	             );
 
-	orbit.save("orbit.txt", arma::raw_ascii);
+	std::chrono::time_point<std::chrono::system_clock> start, end;
 
 
 
+
+	start = std::chrono::system_clock::now();
+
+	rk_orbit.run(&pgm_dxdt_wrapper, &energy_orbit, &event_function_collision, true);
+	end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 
 	return 0;

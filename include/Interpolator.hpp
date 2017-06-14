@@ -11,7 +11,6 @@ public:
 protected:
 	arma::vec * T;
 	arma::mat * X;
-}
-
+};
 
 #endif
