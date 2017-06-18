@@ -6,6 +6,7 @@
 #include "RK.hpp"
 #include "Wrappers.hpp"
 #include "Interpolator.hpp"
+#include "KDNode.hpp"
 
 #include <chrono>
 
@@ -25,41 +26,24 @@ int main() {
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/faceted_sphere.obj",
-	//     500, false);
-
 	ShapeModelImporter shape_io_estimated(
 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
 	    200, false);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj",
-	    1000);
-
-	// ShapeModelImporter shape_io_estimated(
-	//     "../resources/shape_models/faceted_sphere.obj",
-	//     400, false);
-
-	// ShapeModelImporter shape_io_truth(
-	//     "../resources/shape_models/67P_lowlowres.obj",
-	//     1000,
-	//     false);
-
-	// ShapeModelImporter shape_io_estimated(
-	//     "../resources/shape_models/faceted_sphere.obj",
-	//     300, false);
-
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/KW4Alpha.obj",
+	    1);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
-	// Lidar
-	// arma::vec lidar_pos = { 3, 0., 0.};
+	std::shared_ptr<KDNode> kdtree = std::make_shared<KDNode>(KDNode());
+	kdtree = kdtree -> build(*true_shape_model . get_facets(), 0);
 
-	arma::vec lidar_pos = { 2000, 0., 0.};
+	// Lidar
+	arma::vec lidar_pos = { 2, 0., 0.};
 	frame_graph.set_transform_origin("N", "L", lidar_pos);
-	Lidar lidar(&frame_graph, "L", 35, 35, 32, 32, 1e-2, 1);
+	Lidar lidar(&frame_graph, "L", 10, 10, 128, 128, 1e-2, 1, kdtree.get());
 
 	// Instrument orbit (rate and inclination)
 	double orbit_rate =  2 * arma::datum::pi * 1e-2 ;
@@ -106,99 +90,111 @@ int main() {
 	double min_edge_angle = 20 * arma::datum::pi / 180;
 
 	// Time spans
-	// double t0 = 0;
-	// double tf = 500;
+	double t0 = 0;
+	double tf = 100;
 
 	// Filter arguments
-	// Arguments args = Arguments( t0,
-	//                             tf,
-	//                             min_normal_observation_angle,
-	//                             orbit_rate,
-	//                             inclination,
-	//                             body_spin_rate,
-	//                             min_facet_normal_angle_difference,
-	//                             ridge_coef,
-	//                             min_facet_angle,
-	//                             min_edge_angle,
-	//                             minimum_ray_per_facet,
-	//                             max_split_count,
-	//                             reject_outliers,
-	//                             split_status,
-	//                             use_cholesky,
-	//                             recycle_shrunk_facets);
+	Arguments args = Arguments( t0,
+	                            tf,
+	                            min_normal_observation_angle,
+	                            orbit_rate,
+	                            inclination,
+	                            body_spin_rate,
+	                            min_facet_normal_angle_difference,
+	                            ridge_coef,
+	                            min_facet_angle,
+	                            min_edge_angle,
+	                            minimum_ray_per_facet,
+	                            max_split_count,
+	                            reject_outliers,
+	                            split_status,
+	                            use_cholesky,
+	                            recycle_shrunk_facets);
 
 
 	// // Filter
-	// Filter filter(&frame_graph,
-	//               &lidar,
-	//               &true_shape_model,
-	//               &estimated_shape_model,
-	//               &args);
+	Filter filter(&frame_graph,
+	              &lidar,
+	              &true_shape_model,
+	              &estimated_shape_model,
+	              &args);
 
 	// filter.run(5, true, true);
-	// filter.get_surface_point_cloud();
-
-	// 1) Propagate small body attitude
-	arma::vec attitude_0 = {0,
-	                        0,
-	                        0,
-	                        0.000,
-	                        0.000,
-	                        0 * 2 * arma::datum::pi / (12.13 * 3600)
-	                       };
-	double t0 = 0;
-	double tf = 86400;
-	double dt = 1;
-
-	bool check_energy_conservation = true;
 
 
-	Args args(2000,
-	          &frame_graph,
-	          &true_shape_model);
 
-
-	RK45 rk_attitude(attitude_0,
-	                 t0,
-	                 tf,
-	                 dt,
-	                 &args,
-	                 check_energy_conservation,
-	                 "attitude");
-
-	rk_attitude.run(&attitude_dxdt_wrapper, &energy_attitude, &event_function_mrp);
-
-
-	// 2) Propagate spacecraft attitude about small body
-	// using computed small body attitude
-	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
-	args.set_interpolator(&interpolator);
-
-	arma::vec orbit_0 = {1000, 0, 0, 0.0, 0.05, 0.01};
-
-	// dt = 1;
-	RK45 rk_orbit( orbit_0,
-	               t0,
-	               tf,
-	               dt,
-	               &args,
-	               check_energy_conservation,
-	               "orbit"
-	             );
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-
-
-
-
 	start = std::chrono::system_clock::now();
 
-	rk_orbit.run(&pgm_dxdt_wrapper, &energy_orbit, &event_function_collision, true);
+
+
+	filter.get_surface_point_cloud("KW4_kd.obj");
+
+
+
 	end = std::chrono::system_clock::now();
-
 	std::chrono::duration<double> elapsed_seconds = end - start;
-
 	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+
+
+	// 1) Propagate small body attitude
+	// arma::vec attitude_0 = {0,
+	//                         0,
+	//                         0,
+	//                         0.000,
+	//                         0.000,
+	//                         2 * arma::datum::pi / (12.13 * 3600)
+	//                        };
+	// double t0 = 0;
+	// double tf = 2 * 86400;
+	// double dt = 1;
+
+	// bool check_energy_conservation = true;
+
+
+	// Args args(2000,
+	//           &frame_graph,
+	//           &true_shape_model);
+
+
+	// RK45 rk_attitude(attitude_0,
+	//                  t0,
+	//                  tf,
+	//                  dt,
+	//                  &args,
+	//                  check_energy_conservation,
+	//                  "attitude");
+
+	// rk_attitude.run(&attitude_dxdt_wrapper, &energy_attitude, &event_function_mrp);
+
+
+	// // 2) Propagate spacecraft attitude about small body
+	// // using computed small body attitude
+	// Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
+	// args.set_interpolator(&interpolator);
+
+	// arma::vec orbit_0 = {1000, 0, 0, -0.005, 0.0, 0.035};
+
+	// // dt = 1;
+	// RK45 rk_orbit( orbit_0,
+	//                t0,
+	//                tf,
+	//                dt,
+	//                &args,
+	//                check_energy_conservation,
+	//                "orbit"
+	//              );
+
+	// rk_orbit.run(&pgm_dxdt_wrapper, &energy_orbit, &event_function_collision, true);
+
+	// // The attitude of the asteroid is also interpolated
+	// arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
+
+	// for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
+	// 	interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i));
+	// }
+	// interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
 
 
 	return 0;

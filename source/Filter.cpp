@@ -13,7 +13,7 @@ Filter::Filter(FrameGraph * frame_graph,
 	this -> arguments = arguments;
 }
 
-void Filter::get_surface_point_cloud(){
+void Filter::get_surface_point_cloud(std::string path) {
 
 	std::cout << "Collecting surface data" << std::endl;
 
@@ -90,7 +90,6 @@ void Filter::get_surface_point_cloud(){
 		std::cout << "Lidar pos, body-fixed frame" << std::endl;
 		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
 
-	
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
@@ -100,15 +99,12 @@ void Filter::get_surface_point_cloud(){
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
 
 		// Getting the true observations (noise free)
-		this -> lidar -> send_flash(this -> true_shape_model, false,true);
+		this -> lidar -> send_flash(this -> true_shape_model, false, true);
 
-		
+
 	}
 
-	this -> lidar -> save_surface_measurements("67P_pc.obj");
-
-
-
+	this -> lidar -> save_surface_measurements(path);
 
 }
 

@@ -156,7 +156,7 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 
 	// The shape model is then rotated so as to be oriented
 	// with respect to its principal axes
-	shape_model -> align_with_principal_axes();
+	// shape_model -> align_with_principal_axes();
 
 	// Edges and facets are updated (their dyads, normals and centers
 	// are computed) to reflect the new position/orientation

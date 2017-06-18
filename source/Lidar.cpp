@@ -8,7 +8,8 @@ Lidar::Lidar(
     unsigned int row_count,
     unsigned int col_count,
     double f,
-    double freq) {
+    double freq,
+    KDNode * kdtree) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -18,6 +19,7 @@ Lidar::Lidar(
 	this -> row_count = row_count;
 	this -> col_count = col_count;
 	this -> freq = freq;
+	this -> kdtree = kdtree;
 
 
 
@@ -84,59 +86,39 @@ double Lidar::get_size_y() const {
 }
 
 void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes) {
+
 	this -> shape_model = shape_model;
+
 	unsigned int y_res = this -> row_count;
 	unsigned int z_res = this -> col_count;
 
-	bool has_missed_target = true;
-	if (computed_mes == false) {
-		has_missed_target = false;
-	}
+	bool hit;
 
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 
-			this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
 
-			if (computed_mes == true && std::abs(this -> focal_plane[y_index][z_index] -> get_computed_range() < 1e10)) {
-				has_missed_target = false;
-			}
+			// Range measurements is reset
+			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
+
+			// hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
+
+			hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
+
 
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 
-				if (this -> focal_plane[y_index][z_index] -> get_true_range() < 1e30) {
-
-					arma::vec direction_in_target_frame = this -> get_frame_graph() -> convert(
-					        *this -> focal_plane[y_index][z_index] -> get_direction(),
-					        this -> get_ref_frame_name(),
-					        this -> get_shape_model() -> get_ref_frame_name(),
-					        true);
-
-					arma::vec origin_in_target_frame = this -> get_frame_graph() -> convert(
-					                                       *this -> focal_plane[y_index][z_index] -> get_origin(),
-					                                       this -> get_ref_frame_name(),
-					                                       this -> get_shape_model() -> get_ref_frame_name());
-
+				if (hit) {
 					this -> surface_measurements.push_back(
 					    this -> focal_plane[y_index][z_index] -> get_true_range() *
-					    direction_in_target_frame
-					    + origin_in_target_frame);
+					    (*this -> focal_plane[y_index][z_index] -> get_direction_target_frame())
+					    +  *this -> focal_plane[y_index][z_index] -> get_origin_target_frame());
 				}
-
 			}
-
 		}
-
 	}
-
-	if (has_missed_target == true) {
-		throw (std::runtime_error("has missed target"));
-	}
-
-
-
 }
 
 
@@ -147,11 +129,6 @@ ShapeModel * Lidar::get_shape_model() {
 std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
-
-
-
-
-
 
 
 
@@ -188,8 +165,6 @@ std::pair<double, double> Lidar::save_true_range(std::string path) const {
 			}
 			else
 				pixel_location_file << " nan";
-
-
 
 		}
 

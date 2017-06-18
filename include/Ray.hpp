@@ -3,6 +3,7 @@
 
 #include "Facet.hpp"
 #include "Lidar.hpp"
+#include "FrameGraph.hpp"
 
 #include <memory>
 #include <armadillo>
@@ -58,6 +59,16 @@ public:
 	*/
 	double get_computed_range() const ;
 
+	/**
+	Sets the corresponding measurement ray
+	to a default state. In particular, the origin and direction 
+	of the ray are computed in the same reference frame 
+	as the one corresponding to the Lidar's target coordinates
+	@param computed_mes True if the reset ray is the one targeted
+	at the computed shape. False if the true shape is targeted
+	*/
+	void reset(bool computed_mes) ;
+
 
 	/**
 	Value of range residual (from pixel to facet, true minus computed)
@@ -80,21 +91,64 @@ public:
 	arma::vec * get_origin();
 
 	/**
-	Cast a ray to the target and searches for intersections inside each of the
-	shape model's facets.
-	Sets the $hit_facet and $range members depending on whether an intersect was found:
-		- no intersect found: range == oo and hit_facet == nullptr
-		- intersect found: hit_facet and range have valid values
-	@param computed_mes True if the measurements are collected from the a-priori
+	Return pointer to the unit vector directing the ray,
+	expressed in the target's frame
+	@return pointer to ray direction
 	*/
-	void brute_force_ray_casting(bool computed_mes = false);
+	arma::vec * get_direction_target_frame();
+
+	/**
+	Return pointer to the origin of the ray
+	expressed in the target's frame
+	@return pointer to ray origin
+	*/
+	arma::vec * get_origin_target_frame();
+
+
+	/**
+	Cast a ray to the target and searches for intersections inside each of the
+	shape model's facets using a greedy search. Not recommended for high resolutins Lidars
+	or complex targets
+	Sets the $hit_facet and $range members depending on whether an intersect was found:
+	- no intersect found: range == oo and hit_facet == nullptr
+	- intersect found: hit_facet and range have valid values
+	@param computed_mes True if the measurements are collected from the a-priori
+	@param true if the ray hit the target, false otherwise
+	*/
+	bool brute_force_ray_casting(bool computed_mes = false);
+
+	/**
+	Cast a ray to a single facet of the target
+	Sets the $hit_facet and $range members depending on whether an intersect was found:
+	- no intersect found: range == oo and hit_facet == nullptr
+	- intersect found: hit_facet and range have valid values
+	Rewrites previously found range and intersect if new range is less
+	@param computed_mes True if the measurements are collected from the a-priori
+	@param hit true if the facet was hit
+	*/
+	bool single_facet_ray_casting(Facet * facet, bool computed_mes ) ;
+
+
+
+	/**
+	Accessor to lidar
+	@return pointer to parent Lidar
+	*/
+	Lidar * get_lidar();
+
+
 
 
 protected:
 
 	Lidar * lidar;
+
 	std::shared_ptr<arma::vec> origin;
 	std::shared_ptr<arma::vec> direction;
+
+	std::shared_ptr<arma::vec> origin_target_frame;
+	std::shared_ptr<arma::vec> direction_target_frame;
+
 	unsigned int row_index;
 	unsigned int col_index;
 

@@ -316,13 +316,23 @@ void ShapeModel::align_with_principal_axes() {
 
 	arma::eig_sym(moments, axes, this -> body_inertia);
 
-
+	// Action is taken if the DCM is not proper
+	// With the convention that the first component
+	// of the first column is positive.
 	if (arma::det(axes) < 0) {
 
-		axes.col(0) = - axes.col(0);
+		if (axes.col(0)(0) > 0) {
+			axes.swap_cols(1, 2);
+		}
+
+		else {
+			axes.col(0) = - axes.col(0);
+		}
 
 	}
 
+	std::cout << axes << std::endl;
+	std::cout << moments << std::endl;
 
 
 	// The vertices are shifted

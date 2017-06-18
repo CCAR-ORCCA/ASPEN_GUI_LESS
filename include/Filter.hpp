@@ -212,9 +212,10 @@ public:
 
 
 	/**
-	Collects 3D point cloud measurements and stores them to an ASCII file
+	Collects 3D point cloud measurements and stores them to an OBJ file
+	@param path Path to obj file of the form XXX.obj (ex: test.obj)
 	*/
-	void get_surface_point_cloud();
+	void get_surface_point_cloud(std::string path);
 
 
 	/**

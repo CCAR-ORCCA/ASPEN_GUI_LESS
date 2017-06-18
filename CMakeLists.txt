@@ -118,6 +118,8 @@ source/RK.cpp
 source/DynamicAnalyses.cpp
 source/Wrappers.cpp
 source/Interpolator.cpp
+source/BBox.cpp
+source/KDNode.cpp
 include/ShapeModel.hpp
 include/ShapeModelImporter.hpp
 include/Facet.hpp
@@ -134,6 +136,8 @@ include/DynamicAnalyses.hpp
 include/Wrappers.hpp
 include/Args.hpp
 include/Interpolator.hpp
+include/BBox.hpp
+include/KDNode.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
 )

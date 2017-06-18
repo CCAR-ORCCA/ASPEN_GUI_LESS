@@ -5,8 +5,10 @@
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
+#include "KDNode.hpp"
 
 class Ray;
+class KDNode;
 class ShapeModel;
 
 class Lidar {
@@ -23,6 +25,7 @@ public:
 	@param col_count vertical resolution (number of pixel columns)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
+	@param kdtree KDTree
 	*/
 	Lidar(FrameGraph * frame_graph,
 	      std::string ref_frame_name = "L",
@@ -31,7 +34,8 @@ public:
 	      unsigned int row_count = 16,
 	      unsigned int col_count = 16,
 	      double f = 1e-2,
-	      double freq = 3
+	      double freq = 3,
+	      KDNode * kdtree = nullptr
 	     );
 
 
@@ -149,7 +153,8 @@ public:
 	@param computed_mes True is target is a-priori, false otherwise
 	@param store_mes True if all measurements must be stored
 	*/
-	void send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes = false) ;
+	void send_flash(ShapeModel * shape_model,
+	                bool computed_mes, bool store_mes = false) ;
 
 
 
@@ -198,6 +203,7 @@ protected:
 
 	std::vector<arma::vec> surface_measurements;
 
+	KDNode * kdtree;
 };
 
 

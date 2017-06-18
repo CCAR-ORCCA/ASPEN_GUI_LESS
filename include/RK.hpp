@@ -53,7 +53,7 @@ public:
 	     Args * args,
 	     bool check_energy_conservation,
 	     std::string title = "",
-	     double tol = 1e-3
+	     double tol = 1e-4
 	    );
 
 	void run(
