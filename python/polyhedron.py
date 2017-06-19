@@ -183,14 +183,17 @@ def convert_to_body_frame(inertial_state,mrp):
 
   return orbit
 
-def plot_body_frame_traj(path_to_inertial_traj,path_to_mrp,path_to_shape,scale_factor):
+def plot_body_frame_traj(path_to_traj,path_to_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
 
-  inertial_orbit = np.loadtxt(path_to_inertial_traj)[0:3,:]
+  orbit = np.loadtxt(path_to_traj)[0:3,:]
 
   mrp = np.loadtxt(path_to_mrp)[0:3,:]
- 
-  body_frame_orbit = convert_to_body_frame(inertial_orbit,mrp)
-
+  
+  if already_in_body_frame is False:
+    body_frame_orbit = convert_to_body_frame(orbit,mrp)
+  else:
+    body_frame_orbit = np.copy(orbit)
+    
   fig = plt.figure()
   ax = fig.add_subplot(111, projection='3d')
   
@@ -203,8 +206,17 @@ def plot_body_frame_traj(path_to_inertial_traj,path_to_mrp,path_to_shape,scale_f
 
 
 
+def plot_jacobi(path):
+    if path is None:
+       energy = np.loadtxt("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/build/orbit_energy.txt")
+    else:
+       energy = np.loadtxt(path)
 
+    plt.plot(range(len(energy)),(energy - energy[0])/energy[0] * 100)
+    plt.xlabel("Index")
+    plt.ylabel("Relative change (%)")
 
+    plt.show()
 
 
 

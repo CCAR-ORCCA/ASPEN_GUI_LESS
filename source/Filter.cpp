@@ -187,7 +187,6 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		dcm_LN = M3(arma::datum::pi) * dcm.t();
 
-
 		mrp_LN = dcm_to_mrp(dcm_LN);
 
 		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();

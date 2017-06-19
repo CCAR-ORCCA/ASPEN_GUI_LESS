@@ -202,7 +202,17 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		this -> X.col(i) = X_v[i];
 
 		if (check_energy_conservation == true) {
-			energy(i) = energy_v[i];
+			if (this -> args -> get_stopping_bool() == false) {
+				energy(i) = energy_v[i];
+			}
+			else {
+				if (i < this -> T.n_rows - 1) {
+					energy(i) = energy_v[i];
+				}
+				else {
+					energy(i) = energy(i - 1);
+				}
+			}
 		}
 
 	}
