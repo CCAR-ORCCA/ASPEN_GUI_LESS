@@ -4,6 +4,8 @@
 #include "ShapeModel.hpp"
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
+#include "Interpolator.hpp"
+#include "FilterArguments.hpp"
 
 #include <RigidBodyKinematics.hpp>
 
@@ -11,166 +13,6 @@
 #include <numeric>
 #include <sstream>
 #include <iomanip>
-
-/**
-Class storing the filter parameters
-	*/
-class Arguments {
-public:
-
-	/**
-	Default constructor
-	*/
-	Arguments() {
-
-	}
-
-	/**
-	Constructor
-	@param t0 Initial time (s)
-	@param t1 Final time (s)
-	@param orbit_rate Angular rate of the instrument about the target (rad/s), 313
-	@param body_spin_rate Angular rate of the instrument about the target (rad/s), M3
-	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
-	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
-	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
-	estimation process
-	@param min_facet_angle Minimum angle below which a facet's corner angle indicates facet degeneracy
-	@param min_edge_angle Minimum angle separating to facets around an edge for the facets not
-	to be flagged as degenerated
-	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
-	@param max_split_count Maximum time a facet (and its children) can get split
-
-	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
-	@param split_status True if the shape model is to be split
-	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
-	@param recycle_shrunk_facets True if facets that are degenerated should be removed
-	*/
-
-	Arguments(double t0,
-	          double tf,
-	          double min_normal_observation_angle,
-	          double orbit_rate,
-	          double inclination,
-	          double body_spin_rate,
-	          double min_facet_normal_angle_difference,
-	          double ridge_coef,
-	          double min_facet_angle,
-	          double min_edge_angle,
-	          unsigned int minimum_ray_per_facet,
-	          unsigned int max_split_count,
-	          bool reject_outliers,
-	          bool split_status,
-	          bool use_cholesky,
-	          bool recycle_shrunk_facets) {
-
-		this -> t0 = t0;
-		this -> tf = tf;
-		this -> min_normal_observation_angle = min_normal_observation_angle;
-		this -> orbit_rate = orbit_rate;
-		this -> inclination = inclination;
-		this -> body_spin_rate = body_spin_rate;
-		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
-		this -> minimum_ray_per_facet = minimum_ray_per_facet;
-		this -> max_split_count = max_split_count;
-		this -> ridge_coef = ridge_coef;
-		this -> min_facet_angle = min_facet_angle;
-		this -> min_edge_angle = min_edge_angle;
-		this -> reject_outliers = reject_outliers;
-		this -> split_status = split_status;
-		this -> use_cholesky = use_cholesky;
-		this -> recycle_shrunk_facets = recycle_shrunk_facets;
-	}
-
-	double get_t0() const {
-		return this -> t0;
-
-	}
-	double get_tf() const {
-		return this -> tf;
-
-	}
-	double get_min_normal_observation_angle() const {
-		return this -> min_normal_observation_angle;
-
-	}
-	double get_orbit_rate() const {
-		return this -> orbit_rate;
-
-	}
-	double get_body_spin_rate() const {
-		return this -> body_spin_rate;
-	}
-
-	double get_inclination() const {
-		return this -> inclination;
-	}
-
-	double get_min_facet_normal_angle_difference() const {
-		return this -> min_facet_normal_angle_difference;
-
-	}
-
-	bool get_split_status() const {
-		return this -> split_status;
-
-	}
-
-	unsigned int get_minimum_ray_per_facet() const {
-		return this -> minimum_ray_per_facet;
-
-	}
-	double get_ridge_coef() const {
-		return this -> ridge_coef;
-
-	}
-	bool get_reject_outliers() const {
-		return this -> reject_outliers;
-
-	}
-
-	bool get_use_cholesky() const {
-		return this -> use_cholesky;
-	}
-
-	bool get_recycle_shrunk_facets() const {
-		return this -> recycle_shrunk_facets;
-	}
-	double get_max_split_count() const {
-		return this -> max_split_count;
-	}
-	double get_min_facet_angle() const {
-		return this -> min_facet_angle;
-	}
-	double get_min_edge_angle() const {
-		return this -> min_edge_angle;
-	}
-
-
-
-protected:
-	double t0;
-	double tf;
-	double min_normal_observation_angle;
-	double orbit_rate;
-	double inclination;
-	double body_spin_rate;
-	double min_facet_normal_angle_difference;
-	double ridge_coef;
-	double min_facet_angle;
-	double min_edge_angle;
-
-	unsigned int minimum_ray_per_facet;
-	unsigned int max_split_count;
-
-	bool reject_outliers;
-	bool split_status;
-	bool use_cholesky;
-	bool recycle_shrunk_facets;
-
-};
-
-
 
 
 /**
@@ -200,8 +42,18 @@ public:
 	       Lidar * lidar,
 	       ShapeModel * true_shape_model,
 	       ShapeModel * estimated_shape_model,
-	       Arguments * arguments);
+	       FilterArguments * arguments);
 
+
+	/**
+	Constructor
+	@param frame_graph Pointer to the graph storing the reference frames
+	@param lidar Pointer to instrument
+	@param true_shape_model Pointer to the true shape model
+	*/
+	Filter(FrameGraph * frame_graph,
+	       Lidar * lidar,
+	       ShapeModel * true_shape_model) ;
 
 	/**
 	@param N_iteration number of iteration of the filter with each batch of information
@@ -216,6 +68,41 @@ public:
 	@param path Path to obj file of the form XXX.obj (ex: test.obj)
 	*/
 	void get_surface_point_cloud(std::string path);
+
+
+	/**
+	Collects 3D point cloud measurements and stores them to an OBJ file
+	using a precomputed orbit and attracting body attitude
+	@param orbit_path Path to the orbit file
+	@param orbit_time_path Path to the orbit time file
+	@param attitude_path Path to the attitude file
+	@param attitude_time_path Path to the attitude time file
+	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
+	*/
+	void get_surface_point_cloud_from_trajectory(
+	    std::string orbit_path,
+	    std::string orbit_time_path,
+	    std::string attitude_path,
+	    std::string attitude_time_path,
+	    std::string savepath);
+
+
+	/**
+	Collects 3D point cloud measurements and stores them to an OBJ file
+	using a precomputed orbit and attracting body attitude
+	@param orbit_states Orbit states
+	@param orbit_time Orbit time
+	@param attitude_states Attitude states
+	@param attitude_time Attitude time
+	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
+	*/
+	void get_surface_point_cloud_from_trajectory(
+	    arma::mat * orbit_states,
+	    arma::vec * orbit_time,
+	    arma::mat * attitude_states,
+	    arma::vec * attitude_time,
+	    std::string savepath) ;
+
 
 
 	/**
@@ -252,7 +139,7 @@ protected:
 	        const arma::vec & u, Facet * facet) ;
 
 
-	Arguments * arguments;
+	FilterArguments * arguments;
 	FrameGraph * frame_graph;
 	Lidar * lidar;
 	ShapeModel * true_shape_model;

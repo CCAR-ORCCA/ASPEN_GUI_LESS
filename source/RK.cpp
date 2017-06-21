@@ -197,6 +197,8 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 	this -> X = arma::mat(this -> X0.n_rows, T_v.size());
 	arma::vec energy = arma::vec(T_v.size());
 
+
+
 	for (unsigned int i = 0; i < this -> T . n_rows; ++i) {
 		this -> T(i) = T_v[i];
 		this -> X.col(i) = X_v[i];
@@ -217,12 +219,17 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 	}
 
+
 	// Extrapolation "backwards" if need be
 	if (this -> args -> get_stopping_bool() == false) {
+
 		Interpolator interpolator(&this -> T, &this -> X);
-		this -> X.col(this -> T.n_rows - 1) = interpolator . interpolate(this -> tf);
+
+		this -> X.col(this -> T.n_rows - 1) = interpolator . interpolate(this -> tf, this -> args -> get_is_attitude_bool());
+
 		this -> T(this -> T.n_rows - 1) = this -> tf;
 	}
+
 
 	if (check_energy_conservation == true) {
 		energy.save("energy_RK45_" + this -> title + ".txt", arma::raw_ascii);

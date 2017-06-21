@@ -6,7 +6,7 @@ Interpolator::Interpolator(arma::vec * T, arma::mat * X) {
 	this -> X = X;
 }
 
-arma::vec Interpolator::interpolate(double t) {
+arma::vec Interpolator::interpolate(double t,bool is_attitude) {
 
 
 	unsigned int index_min = arma::abs((*this -> T) - t).index_min();
@@ -25,7 +25,7 @@ arma::vec Interpolator::interpolate(double t) {
 	arma::vec X_before = this -> X -> col(index_before);
 	arma::vec X_after = this -> X -> col(index_after);
 
-	if (arma::norm(X_after.rows(0, 2) - X_before.rows(0, 2)) > 1.5) {
+	if (arma::norm(X_after.rows(0, 2) - X_before.rows(0, 2)) > 1.5 && is_attitude) {
 		index_before += 1;
 		index_after += 1;
 

@@ -18,6 +18,7 @@ int main() {
 	frame_graph.add_frame("L");
 	frame_graph.add_frame("T");
 	frame_graph.add_frame("E");
+
 	frame_graph.add_transform("N", "L");
 	frame_graph.add_transform("N", "T");
 	frame_graph.add_transform("N", "E");
@@ -31,25 +32,97 @@ int main() {
 	    200, false);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj",
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/HO3.obj",
 	    1000);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
-	// std::shared_ptr<KDNode> kdtree = std::make_shared<KDNode>(KDNode());
-	// kdtree = kdtree -> build(*true_shape_model . get_facets(), 0);
+	std::shared_ptr<KDNode> kdtree = std::make_shared<KDNode>(KDNode());
+	kdtree = kdtree -> build(*true_shape_model . get_facets(), 0);
 
-	// // Lidar
-	// arma::vec lidar_pos = { 2, 0., 0.};
-	// frame_graph.set_transform_origin("N", "L", lidar_pos);
-	// Lidar lidar(&frame_graph, "L", 10, 10, 128, 128, 1e-2, 1, kdtree.get());
+	1) Propagate small body attitude
+	arma::vec attitude_0 = {0,
+	                        0,
+	                        0,
+	                        0.000,
+	                        0.000,
+	                        2 * arma::datum::pi / (12.13 * 3600)
+	                       };
+	double t0 = 0;
+	double tf = 3600;
+	double dt = 1; //default timestep. Used as initial guess for RK45
 
-	// // Instrument orbit (rate and inclination)
+	bool check_energy_conservation = false;
+
+	// Specifiying arguments such as density, pointer to frame graph and
+	// attracting shape model
+	Args args(2000,
+	          &frame_graph,
+	          &true_shape_model);
+	args.set_is_attitude_bool(true);
+
+	RK45 rk_attitude(attitude_0,
+	                 t0,
+	                 tf,
+	                 dt,
+	                 &args,
+	                 check_energy_conservation,
+	                 "attitude");
+
+	rk_attitude.run(&attitude_dxdt_wrapper,
+	                &energy_attitude,
+	                &event_function_mrp);
+
+	// 2) Propagate spacecraft attitude about small body
+	// using computed small body attitude
+	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
+	args.set_interpolator(&interpolator);
+	args.set_is_attitude_bool(false);
+
+	// Initial condition of the orbiting spacecraft
+	arma::vec initial_pos = {800, 0, 0};
+	arma::vec initial_vel_inertial = {0, 0.0, 0.06};
+
+	arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
+	                     initial_pos);
+
+	arma::vec orbit_0(6);
+
+	orbit_0.rows(0, 2) = initial_pos;
+	orbit_0.rows(3, 5) = body_vel;
+
+	RK45 rk_orbit( orbit_0,
+	               t0,
+	               tf,
+	               dt,
+	               &args,
+	               check_energy_conservation,
+	               "orbit_body_frame",
+	               1e-3
+	             );
+
+	rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
+	             &energy_orbit_body_frame,
+	             &event_function_collision_body_frame,
+	             true);
+
+	// The attitude of the asteroid is also interpolated
+	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
+
+	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
+		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
+	}
+	interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
+
+	// Lidar
+	Lidar lidar(&frame_graph, "L", 15, 15 , 128, 128, 1e-2, 0.005, kdtree.get());
+
+	// Instrument orbit (rate and inclination)
 	// double orbit_rate =  2 * arma::datum::pi * 1e-2 ;
 	// double inclination = 80 * arma::datum::pi / 180;
 
-	// // Target angular rate
+	// Target angular rate
 	// double body_spin_rate =  2e-1 ;
 
 	// // Minimum impact angle for a measurement to be used (deg)
@@ -89,12 +162,8 @@ int main() {
 	// // 90 deg : facets cannot have their normals in opposite directions
 	// double min_edge_angle = 20 * arma::datum::pi / 180;
 
-	// // Time spans
-	// double t0 = 0;
-	// double tf = 100;
-
 	// // Filter arguments
-	// Arguments args = Arguments( t0,
+	// FilterArguments args = FilterArguments( t0,
 	//                             tf,
 	//                             min_normal_observation_angle,
 	//                             orbit_rate,
@@ -112,104 +181,38 @@ int main() {
 	//                             recycle_shrunk_facets);
 
 
-	// // // Filter
-	// Filter filter(&frame_graph,
-	//               &lidar,
-	//               &true_shape_model,
-	//               &estimated_shape_model,
-	//               &args);
+
+	// // Filter
+	Filter filter(&frame_graph,
+	              &lidar,
+	              &true_shape_model);
+
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
+	filter.get_surface_point_cloud_from_trajectory(rk_orbit.get_X(),
+	        rk_orbit.get_T(),
+	        rk_attitude.get_X(),
+	        rk_attitude.get_T(),
+	        "KW4_kd.obj");
+
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 	// // filter.run(5, true, true);
 
 
 
 
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
+
+	filter.get_surface_point_cloud("HO3.obj");
 
 
 
-	// filter.get_surface_point_cloud("KW4_kd.obj");
 
-
-
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
-	// std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-
-	// 1) Propagate small body attitude
-	arma::vec attitude_0 = {0,
-	                        0,
-	                        0,
-	                        0.000,
-	                        0.000,
-	                        2 * arma::datum::pi / (12.13 * 3600)
-	                       };
-	double t0 = 0;
-	double tf = 86400;
-	double dt = 1;
-
-	bool check_energy_conservation = true;
-
-
-	Args args(2000,
-	          &frame_graph,
-	          &true_shape_model);
-
-
-	RK45 rk_attitude(attitude_0,
-	                 t0,
-	                 tf,
-	                 dt,
-	                 &args,
-	                 check_energy_conservation,
-	                 "attitude");
-
-	rk_attitude.run(&attitude_dxdt_wrapper,
-	                &energy_attitude,
-	                &event_function_mrp);
-
-
-	// 2) Propagate spacecraft attitude about small body
-	// using computed small body attitude
-	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
-	args.set_interpolator(&interpolator);
-
-	// Initial condition of the orbiting spacecraft
-	arma::vec initial_pos = {800, 0, 0};
-	arma::vec initial_vel = {0, 0.0, 0};
-
-	arma::vec body_vel = initial_vel - arma::cross(attitude_0.rows(3, 5),
-	                     initial_pos);
-
-	arma::vec orbit_0(6);
-
-	orbit_0.rows(0, 2) = initial_pos;
-	orbit_0.rows(3, 5) = body_vel;
-
-	// dt = 1;
-	RK45 rk_orbit( orbit_0,
-	               t0,
-	               tf,
-	               dt,
-	               &args,
-	               check_energy_conservation,
-	               "orbit_body_frame",
-	               1e-3
-	             );
-
-	rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
-	             &energy_orbit_body_frame,
-	             &event_function_collision_body_frame, true);
-
-	// The attitude of the asteroid is also interpolated
-	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
-
-	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
-		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i));
-	}
-	interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
 
 
 	return 0;

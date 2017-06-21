@@ -16,6 +16,7 @@ public:
 		this -> frame_graph = frame_graph;
 		this -> shape_model = shape_model;
 		this -> stopping_bool = false;
+		this -> is_attitude_bool = false;
 
 	}
 
@@ -43,6 +44,13 @@ public:
 		return this -> stopping_bool;
 	}
 
+	bool get_is_attitude_bool() const {
+		return this -> is_attitude_bool;
+	}
+
+	void set_is_attitude_bool(bool is_attitude) {
+		this -> is_attitude_bool = is_attitude;
+	}
 
 	Interpolator * get_interpolator() {
 		return this -> interpolator;
@@ -54,6 +62,7 @@ protected:
 	FrameGraph * frame_graph;
 	ShapeModel * shape_model;
 	Interpolator * interpolator;
+	bool is_attitude_bool;
 
 
 };

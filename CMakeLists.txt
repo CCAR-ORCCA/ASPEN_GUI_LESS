@@ -120,6 +120,7 @@ source/Wrappers.cpp
 source/Interpolator.cpp
 source/BBox.cpp
 source/KDNode.cpp
+source/ICP.cpp
 include/ShapeModel.hpp
 include/ShapeModelImporter.hpp
 include/Facet.hpp
@@ -138,6 +139,8 @@ include/Args.hpp
 include/Interpolator.hpp
 include/BBox.hpp
 include/KDNode.hpp
+include/ICP.hpp
+include/FilterArguments.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
 )

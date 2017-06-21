@@ -6,7 +6,7 @@
 class Interpolator {
 public:
 	Interpolator(arma::vec * T, arma::mat * X);
-	arma::vec interpolate(double t);
+	arma::vec interpolate(double t, bool is_attitude);
 
 protected:
 	arma::vec * T;

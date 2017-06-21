@@ -4,7 +4,7 @@ arma::vec pgm_dxdt_wrapper(double t, arma::vec X, Args * args) {
 
 	DynamicAnalyses dyn_analyses(args -> get_shape_model());
 
-	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t).rows(0, 2);
+	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t, true).rows(0, 2);
 
 	args -> get_frame_graph() -> set_transform_mrp("N", "T", mrp_TN);
 	arma::vec pos_inertial = X . rows(0, 2);
@@ -20,7 +20,7 @@ arma::vec pgm_dxdt_wrapper(double t, arma::vec X, Args * args) {
 arma::vec pgm_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args) {
 
 	DynamicAnalyses dyn_analyses(args -> get_shape_model());
-	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t);
+	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t, true);
 
 	arma::vec mrp_TN = attitude_state.rows(0, 2);
 	arma::vec omega_TN = attitude_state.rows(3, 5);
@@ -41,7 +41,7 @@ double energy_orbit_body_frame(double t, arma::vec X , Args * args) {
 
 	DynamicAnalyses dyn_analyses(args -> get_shape_model());
 
-	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t);
+	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t, true);
 	arma::vec omega_TN = attitude_state.rows(3, 5);
 
 	double potential = dyn_analyses.pgm_potential(X . rows(0, 2).colptr(0) , args -> get_density());
@@ -69,7 +69,7 @@ arma::vec event_function_mrp(double t, arma::vec X, Args * args) {
 
 arma::vec event_function_collision(double t, arma::vec X, Args * args) {
 
-	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t).rows(0, 2);
+	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t, true).rows(0, 2);
 
 	args -> get_frame_graph() -> set_transform_mrp("N", "T", mrp_TN);
 	arma::vec pos_inertial = X . rows(0, 2);
@@ -85,7 +85,7 @@ arma::vec event_function_collision(double t, arma::vec X, Args * args) {
 
 arma::vec event_function_collision_body_frame(double t, arma::vec X, Args * args) {
 
-	
+
 	arma::vec pos_body = X . rows(0, 2);
 
 	if (args -> get_shape_model() -> contains(pos_body.colptr(0))) {

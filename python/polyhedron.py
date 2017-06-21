@@ -183,14 +183,16 @@ def convert_to_body_frame(inertial_state,mrp):
 
   return orbit
 
-def plot_body_frame_traj(path_to_traj,path_to_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
+def plot_body_frame_traj(path_to_traj,path_to_interpolated_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
 
   orbit = np.loadtxt(path_to_traj)[0:3,:]
 
-  mrp = np.loadtxt(path_to_mrp)[0:3,:]
   
   if already_in_body_frame is False:
+    mrp = np.loadtxt(path_to_interpolated_mrp)[0:3,:]
+
     body_frame_orbit = convert_to_body_frame(orbit,mrp)
+
   else:
     body_frame_orbit = np.copy(orbit)
     
