@@ -32,8 +32,7 @@ int main() {
 	    200, false);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/HO3.obj",
-	    1000);
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj", 1);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
@@ -41,19 +40,20 @@ int main() {
 	std::shared_ptr<KDNode> kdtree = std::make_shared<KDNode>(KDNode());
 	kdtree = kdtree -> build(*true_shape_model . get_facets(), 0);
 
-	1) Propagate small body attitude
+
+	// 1) Propagate small body attitude
 	arma::vec attitude_0 = {0,
 	                        0,
 	                        0,
-	                        0.000,
-	                        0.000,
+	                        0,
+	                        0,
 	                        2 * arma::datum::pi / (12.13 * 3600)
 	                       };
 	double t0 = 0;
 	double tf = 3600;
-	double dt = 1; //default timestep. Used as initial guess for RK45
+	double dt = 0.1; //default timestep. Used as initial guess for RK45
 
-	bool check_energy_conservation = false;
+	bool check_energy_conservation = true;
 
 	// Specifiying arguments such as density, pointer to frame graph and
 	// attracting shape model
@@ -72,7 +72,7 @@ int main() {
 
 	rk_attitude.run(&attitude_dxdt_wrapper,
 	                &energy_attitude,
-	                &event_function_mrp);
+	                &event_function_mrp, true);
 
 	// 2) Propagate spacecraft attitude about small body
 	// using computed small body attitude
@@ -98,8 +98,7 @@ int main() {
 	               dt,
 	               &args,
 	               check_energy_conservation,
-	               "orbit_body_frame",
-	               1e-3
+	               "orbit_body_frame"
 	             );
 
 	rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
@@ -115,8 +114,10 @@ int main() {
 	}
 	interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
 
+	throw;
+
 	// Lidar
-	Lidar lidar(&frame_graph, "L", 15, 15 , 128, 128, 1e-2, 0.005, kdtree.get());
+	Lidar lidar(&frame_graph, "L", 5, 5 , 32, 32, 1e-2, 1. / 3600, kdtree.get());
 
 	// Instrument orbit (rate and inclination)
 	// double orbit_rate =  2 * arma::datum::pi * 1e-2 ;
@@ -182,36 +183,35 @@ int main() {
 
 
 
-	// // Filter
+	// Filter
 	Filter filter(&frame_graph,
 	              &lidar,
 	              &true_shape_model);
 
-
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	filter.get_surface_point_cloud_from_trajectory(rk_orbit.get_X(),
-	        rk_orbit.get_T(),
-	        rk_attitude.get_X(),
-	        rk_attitude.get_T(),
-	        "KW4_kd.obj");
+	// filter.get_surface_point_cloud_from_trajectory(rk_orbit.get_X(),
+	//         rk_orbit.get_T(),
+	//         rk_attitude.get_X(),
+	//         rk_attitude.get_T(),
+	//         "itokawa_pc.obj");
 
 
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+	filter.get_surface_point_cloud_from_trajectory(
+	    "../build/X_RK45_orbit_body_frame.txt",
+	    "../build/T_RK45_orbit_body_frame.txt",
+	    "../build/X_RK45_attitude.txt",
+	    "../build/T_RK45_attitude.txt",
+	    "itokawa_pc.obj");
+
+	true_shape_model. save_lat_long_map_to_file("lat_long_impacts.txt");
+
+	// end = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_seconds = end - start;
+	// std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 	// // filter.run(5, true, true);
-
-
-
-
-
-	filter.get_surface_point_cloud("HO3.obj");
-
-
-
 
 
 

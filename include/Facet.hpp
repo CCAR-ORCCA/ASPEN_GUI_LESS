@@ -64,8 +64,13 @@ public:
 
 
 	/**
+	Increases the hit count by one
+	*/
+	void increase_hit_count();
+
+	/**
 	Checks the degeneracy of the facet edge
-	If the facet edge is found to be degenerate, 
+	If the facet edge is found to be degenerate,
 	the facet geometry is altered so as to be recycled next time
 	@param angle minimum angle indicating that the facet is degenerate
 	@return
@@ -79,7 +84,6 @@ public:
 	Not implemented
 	*/
 	std::vector<std::shared_ptr <Edge> > get_facet_edges() const;
-
 
 	/**
 	Returns pointer to the first vertex owned by $this that is
@@ -97,6 +101,8 @@ public:
 	Recomputes the facet dyads, normal, surface area and center
 	*/
 	void update();
+
+
 
 	/**
 	Return facet surface area
@@ -128,9 +134,17 @@ public:
 	Returns the number of times the (deceased)
 	parents of that face were split
 	@return number of time the parents of that
-	facet where split
+	facet where 
 	*/
 	unsigned int get_split_count() const;
+
+
+
+	/**
+	Get the number of times this facet has been hit
+	@return hit_count Number of time this facet has been hit by an inbound ray
+	*/
+	unsigned int get_hit_count() const;
 
 protected:
 
@@ -149,6 +163,7 @@ protected:
 
 	double area;
 	unsigned int split_counter = 0;
+	unsigned int hit_count = 0;
 
 };
 #endif

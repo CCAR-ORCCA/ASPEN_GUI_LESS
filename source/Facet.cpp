@@ -28,6 +28,9 @@ void Facet::set_split_counter(unsigned int split_counter) {
 	this -> split_counter = split_counter;
 }
 
+unsigned int Facet::get_hit_count() const {
+	return this -> hit_count;
+}
 
 
 unsigned int Facet::get_split_count() const {
@@ -40,6 +43,14 @@ void Facet::update() {
 	this -> compute_facet_center();
 	this -> compute_facet_dyad();
 }
+
+/**
+Increases the hit counter by one
+*/
+void Facet::increase_hit_count() {
+	this -> hit_count = 1 + this -> hit_count;
+}
+
 
 
 bool Facet::has_good_edge_quality(double angle) {

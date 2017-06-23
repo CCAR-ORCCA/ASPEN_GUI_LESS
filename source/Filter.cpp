@@ -148,13 +148,15 @@ void Filter::get_surface_point_cloud_from_trajectory(
 	arma::vec interpolated_orbit(6);
 	arma::vec interpolated_attitude(6);
 
+
+
 	int N = (int)((orbit_time -> at(orbit_time -> n_rows - 1 ) - orbit_time -> at(0) ) * this -> lidar -> get_frequency());
-	arma::vec times = arma::linspace(orbit_time -> at(0), orbit_time -> at(orbit_time -> n_rows - 1 ),  N);
+	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
+
 
 	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
-
-		std::cout << "\n################### Time : " << time_index << " / " <<  times.n_rows << " ########################" << std::endl;
+		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
@@ -164,21 +166,21 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		lidar_pos = interpolated_orbit.rows(0, 2);
 		lidar_vel = interpolated_orbit.rows(3, 5);
 
-		std::cout << lidar_pos << std::endl;
-
 		// LT DCM
 		u = - arma::normalise(lidar_pos);
 		v = arma::normalise(arma::cross(lidar_pos, lidar_vel));
 		w = arma::cross(u, v);
 
-		dcm_LT = arma::join_rows(u, arma::join_rows(v, w));
-
+		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
+		
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
 		dcm_TN = mrp_to_dcm(mrp_TN);
 
 		// LN DCM
 		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
+
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
@@ -249,16 +251,14 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 
 	int N = (int)((orbit_time(orbit_time.n_rows - 1 ) - orbit_time(0) ) * this -> lidar -> get_frequency());
-	arma::vec times = arma::linspace(orbit_time(0), orbit_time(orbit_time . n_rows - 1 ),  N);
 
+	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
 
 
 	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
 
-		std::cout << "\n################### Time : " << time_index << " / " <<  times.n_rows << " ########################" << std::endl;
-
-
+		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
@@ -274,7 +274,7 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		v = arma::normalise(arma::cross(lidar_pos, lidar_vel));
 		w = arma::cross(u, v);
 
-		dcm_LT = arma::join_rows(u, arma::join_rows(v, w));
+		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
@@ -284,6 +284,7 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
 
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
+
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);

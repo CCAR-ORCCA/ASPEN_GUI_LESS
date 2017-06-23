@@ -105,15 +105,27 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 
 			hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
 
+			// The hit counter of that facet is increased
+			if (hit) {
+				Facet * facet = this -> focal_plane[y_index][z_index] -> get_true_hit_facet();
+
+				// If the sun phasing was sufficiently good
+				// if (arma::dot(*facet -> get_facet_normal(), - s) > std::sin(minimum_elevation)) {
+				facet -> increase_hit_count();
+				// }
+
+			}
 
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 
 				if (hit) {
+
 					this -> surface_measurements.push_back(
 					    this -> focal_plane[y_index][z_index] -> get_true_range() *
 					    (*this -> focal_plane[y_index][z_index] -> get_direction_target_frame())
 					    +  *this -> focal_plane[y_index][z_index] -> get_origin_target_frame());
+
 				}
 			}
 		}
@@ -381,6 +393,7 @@ void Lidar::save_surface_measurements(std::string path) const {
 	for (unsigned int vertex_index = 0;
 	        vertex_index < this -> surface_measurements.size();
 	        ++vertex_index) {
+
 		shape_file << "v " << this -> surface_measurements[vertex_index](0) << " " << this -> surface_measurements[vertex_index](1) << " " << this -> surface_measurements[vertex_index](2) << std::endl;
 	}
 

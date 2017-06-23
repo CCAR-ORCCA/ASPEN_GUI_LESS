@@ -46,6 +46,15 @@ public:
 	           FrameGraph * frame_graph);
 
 
+	
+
+	/**
+	Saves the longitude, latitude of each hit point to a file
+	*/
+	void save_lat_long_map_to_file(std::string path) const;
+
+
+
 	/**
 	Destructor
 	*/
@@ -278,19 +287,12 @@ public:
 	void enforce_mesh_quality(double min_facet_angle, double min_edge_angle) ;
 
 	/**
-	Returns the inertia tensor of the body in the body-fixed
-	principal axes
+	Returns the non-dimensional inertia tensor of the body in the body-fixed
+	principal axes. (rho == 1, l = (volume)^(1/3))
 	@return principal inertia tensor
 	*/
-	arma::mat get_body_inertia() const;
+	arma::mat get_inertia() const;
 
-	/**
-	Returns the directions of the principal inertia 
-	axes expressed in the original coordinate frame
-	in which the coordinates of the body were provided
-	@return principal axes directions
-	*/
-	arma::mat get_inertia_axes() const;
 
 
 
@@ -309,8 +311,7 @@ protected:
 	double volume;
 	arma::vec cm;
 
-	arma::mat body_inertia;
-	arma::mat inertia_axes;
+	arma::mat inertia;
 
 	double surface_area;
 

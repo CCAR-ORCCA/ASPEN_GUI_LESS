@@ -183,6 +183,45 @@ def convert_to_body_frame(inertial_state,mrp):
 
   return orbit
 
+
+
+
+
+
+
+def plot_longitude_latitude_impact_count(path_to_impact_count):
+  impact_counts = np.loadtxt(path_to_impact_count)
+
+  # the np array is turned into a list in preparation for the 
+  # use of the imshow function
+
+  impact_counts_list = []
+  for i in range(impact_counts.shape[0]):
+
+    if (int(impact_counts[i,-1]) > 0):
+      new_list = [ impact_counts[i,0:2] ] * int(impact_counts[i,-1])
+      impact_counts_list += [np.vstack(new_list)]
+
+  impact_counts_formatted = np.vstack(impact_counts_list)
+
+
+  plt.hist2d(impact_counts_formatted[:,0],impact_counts_formatted[:,1],bins = 64,norm = colors.LogNorm())
+  plt.colorbar()
+  plt.xlim([-180,180])
+  plt.ylim([-90,90])
+  plt.xlabel("Longitude (deg)")
+  plt.ylabel("Latitude (deg)")
+
+  plt.title("Visibility occurence against longitude/latitude")
+
+
+  plt.savefig("visibility_128.pdf")
+  plt.clf()
+
+
+
+
+
 def plot_body_frame_traj(path_to_traj,path_to_interpolated_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
 
   orbit = np.loadtxt(path_to_traj)[0:3,:]
@@ -222,7 +261,7 @@ def plot_jacobi(path):
 
 
 
-def plot_shape(path,ax = None,scale_factor = 1):
+def plot_shape(path,already_in_body_frame = True,ax = None,scale_factor = 1):
 
   # The obj file is read
   read_obj = np.loadtxt(path,dtype = 'string')
@@ -241,16 +280,19 @@ def plot_shape(path,ax = None,scale_factor = 1):
   # The barycenter is computed
   cm = compute_center_of_mass(verts,facets)
 
-  # The direction of the principal axes is also computed
-  inertia = compute_inertia(verts,facets)
-  moments, axes = np.linalg.eigh(inertia)
+  if already_in_body_frame is False:
+    
+    # The direction of the principal axes is also computed
+    inertia = compute_inertia(verts,facets)
+    moments, axes = np.linalg.eigh(inertia)
 
-  if (np.linalg.det(axes) < 0):
-    axes[:,0] = - axes[:,0]
 
-  # The shape is centered at its barycenter and oriented along its principal axes
-  for i in range(len(verts)):
-    verts[i] = axes.T.dot(verts[i] - cm);
+    if (np.linalg.det(axes) < 0):
+      axes[:,0] = - axes[:,0]
+
+    # The shape is centered at its barycenter and oriented along its principal axes
+    for i in range(len(verts)):
+      verts[i] = axes.T.dot(verts[i] - cm);
 
   # The limits of the bounding box are found
   x_lim,y_lim,z_lim = compute_bounding_box(verts)

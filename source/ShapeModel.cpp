@@ -312,28 +312,71 @@ void ShapeModel::shift_to_barycenter() {
 void ShapeModel::align_with_principal_axes() {
 
 	arma::vec moments;
-	arma::mat axes;
+	arma::mat axes ;
 
-	arma::eig_sym(moments, axes, this -> body_inertia);
+	double T = arma::trace(this -> inertia) ;
+	double Pi = 0.5 * (T * T - arma::trace(this -> inertia * this -> inertia));
+	double U = std::sqrt(T * T - 3 * Pi) / 3;
+	double Det = arma::det(this -> inertia);
 
-	// Action is taken if the DCM is not proper
-	// With the convention that the first component
-	// of the first column is positive.
-	if (arma::det(axes) < 0) {
+	std::cout << "Non-dimensional inertia: " << std::endl;
+	std::cout << this -> inertia << std::endl;
 
-		if (axes.col(0)(0) > 0) {
-			axes.swap_cols(1, 2);
-		}
+	if (U > 1e-6) {
 
-		else {
-			axes.col(0) = - axes.col(0);
-		}
+		double Theta = std::acos( (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U ));
 
+		double A = T / 3 - 2 * U * std::cos(Theta / 3);
+		double B = T / 3 - 2 * U * std::cos(Theta / 3 - 2 * arma::datum::pi / 3);
+		double C = T / 3 - 2 * U * std::cos(Theta / 3 + 2 * arma::datum::pi / 3);
+
+		moments = {A, B, C};
+
+		arma::mat L0 = this -> inertia - moments(0) * arma::eye<arma::mat>(3, 3);
+		arma::mat L1 = this -> inertia - moments(1) * arma::eye<arma::mat>(3, 3);
+
+		L0.row(0) = arma::normalise(L0.row(0));
+		L0.row(1) = arma::normalise(L0.row(1));
+		L0.row(2) = arma::normalise(L0.row(2));
+
+		L1.row(0) = arma::normalise(L1.row(0));
+		L1.row(1) = arma::normalise(L1.row(1));
+		L1.row(2) = arma::normalise(L1.row(2));
+
+		arma::mat e0_mat(3, 3);
+
+		e0_mat.row(0) = arma::cross(L0.row(0), L0.row(1));
+		e0_mat.row(1) = arma::cross(L0.row(0), L0.row(2));
+		e0_mat.row(2) = arma::cross(L0.row(1), L0.row(2));
+
+		arma::vec norms_e0 = {arma::norm(e0_mat.row(0)), arma::norm(e0_mat.row(1)), arma::norm(e0_mat.row(2))};
+		double best_e0 = norms_e0.index_max();
+		arma::vec e0 = arma::normalise(e0_mat.row(best_e0).t());
+
+		arma::mat e1_mat(3, 3);
+		e1_mat.row(0) = arma::cross(L1.row(0), L1.row(1));
+		e1_mat.row(1) = arma::cross(L1.row(0), L1.row(2));
+		e1_mat.row(2) = arma::cross(L1.row(1), L1.row(2));
+
+		arma::vec norms_e1 = {arma::norm(e1_mat.row(0)), arma::norm(e1_mat.row(1)), arma::norm(e1_mat.row(2))};
+		double best_e1 = norms_e1.index_max();
+		arma::vec e1 = arma::normalise(e1_mat.row(best_e1).t());
+
+		arma::vec e2 = arma::cross(e0, e1);
+
+		axes = arma::join_rows(e0, arma::join_rows(e1, e2));
 	}
 
-	std::cout << axes << std::endl;
-	std::cout << moments << std::endl;
+	else {
+		moments = std::pow(Det, 1. / 3.) * arma::ones<arma::vec>(3);
+		axes = arma::eye<arma::mat>(3, 3);
+	}
 
+	std::cout << "Principal axes: " << std::endl;
+	std::cout << axes << std::endl;
+
+	std::cout << "Non-dimensional principal moments: " << std::endl;
+	std::cout << moments << std::endl;
 
 	// The vertices are shifted
 	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
@@ -344,18 +387,12 @@ void ShapeModel::align_with_principal_axes() {
 		*this -> vertices[vertex_index] -> get_coordinates() = axes.t() * (*this -> vertices[vertex_index] -> get_coordinates());
 	}
 
-	this -> body_inertia = arma::diagmat(moments);
-	this -> inertia_axes = axes;
+	this -> inertia = arma::diagmat(moments);
 
 }
 
-arma::mat ShapeModel::get_body_inertia() const {
-	return this -> body_inertia;
-
-}
-
-arma::mat ShapeModel::get_inertia_axes() const {
-	return this -> inertia_axes;
+arma::mat ShapeModel::get_inertia() const {
+	return this -> inertia;
 
 }
 
@@ -371,6 +408,28 @@ ShapeModel::ShapeModel(std::string ref_frame_name,
 
 void ShapeModel::add_facet(Facet * facet) {
 	this -> facets. push_back(facet);
+}
+
+void ShapeModel::save_lat_long_map_to_file(std::string path) const {
+
+	arma::mat long_lat_hit_count = arma::mat(this -> get_NFacets(), 3);
+
+	for (unsigned int facet_index = 0; facet_index < this -> get_NFacets(); ++facet_index) {
+
+		Facet * facet = this -> facets . at(facet_index);
+		arma::vec * facet_center = facet -> get_facet_center();
+
+		double longitude = 180. / arma::datum::pi * std::atan2(facet_center -> at(1), facet_center -> at(0)) ;
+		double latitude = 180. / arma::datum::pi * std::atan2(facet_center -> at(2), arma::norm(facet_center ->rows(0, 1)));
+		unsigned int hit_count = facet -> get_hit_count();
+		arma::rowvec facet_results = {longitude, latitude, (double)(hit_count)};
+
+		long_lat_hit_count.row(facet_index) = facet_results;
+
+	}
+
+	long_lat_hit_count.save(path, arma::raw_ascii);
+
 }
 
 
@@ -527,6 +586,9 @@ void ShapeModel::compute_inertia() {
 	double P_xz = 0;
 	double P_yz = 0;
 
+	double l = std::pow(this -> volume, 1. / 3.);
+
+
 	#pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 	        facet_index < this -> facets.size();
@@ -535,15 +597,16 @@ void ShapeModel::compute_inertia() {
 
 		std::vector<std::shared_ptr<Vertex > > * vertices = this -> facets[facet_index] -> get_vertices();
 
-		arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
-		arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
-		arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
+		// Normalized coordinates
+		arma::vec r0 =  (*vertices -> at(0) -> get_coordinates()) / l;
+		arma::vec r1 =  (*vertices -> at(1) -> get_coordinates()) / l;
+		arma::vec r2 =  (*vertices -> at(2) -> get_coordinates()) / l;
 
-		double * r0d =  vertices -> at(0) -> get_coordinates() -> colptr(0);
-		double * r1d =  vertices -> at(1) -> get_coordinates() -> colptr(0);
-		double * r2d =  vertices -> at(2) -> get_coordinates() -> colptr(0);
+		double * r0d =  r0. colptr(0);
+		double * r1d =  r1. colptr(0);
+		double * r2d =  r2. colptr(0);
 
-		double dv = 1. / 6. * arma::dot(*r1, arma::cross(*r1 - *r0, *r2 - *r0));
+		double dv = 1. / 6. * arma::dot(r1, arma::cross(r1 - r0, r2 - r0));
 
 
 
@@ -618,11 +681,9 @@ void ShapeModel::compute_inertia() {
 		{ -P_xz, -P_yz, P_xx + P_yy}
 	};
 
-	this -> body_inertia = I;
-
+	this -> inertia = I;
 
 }
-
 
 
 double ShapeModel::get_volume() const {
