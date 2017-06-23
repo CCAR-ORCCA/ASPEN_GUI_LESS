@@ -155,12 +155,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		arma::vec k5 = (*dXdt)(tk5 , yk + k1 * this -> dt * 439. / 216. - k2 * this -> dt * 8. + k3 * this -> dt * 3680. / 513. - k4 * this -> dt * 845. / 4104., this -> args);
 		arma::vec k6 = (*dXdt)(tk6 , yk - k1 * this -> dt * 8. / 27. + 2 * k2 * this -> dt - k3 * this -> dt * 3544. / 2565. + k4 * this -> dt * 1859. / 4104. - k5 * this -> dt * 11. / 40., this -> args);
 
-		// if (title == "orbit") {
-		// 	std::cout << yk.t() << std::endl;
-		// 	std::cout << k1.t() << std::endl;
-		// 	throw;
-
-		// }
 
 		// Solutions
 		arma::vec y_order_4 = yk + this -> dt * (25. / 216 * k1 + 1408. / 2565 * k3 + 2197. / 4101 * k4 - 1. / 5. * k5);
@@ -196,8 +190,7 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 	this -> T = arma::vec(T_v.size());
 	this -> X = arma::mat(this -> X0.n_rows, T_v.size());
 	arma::vec energy = arma::vec(T_v.size());
-
-
+	
 
 	for (unsigned int i = 0; i < this -> T . n_rows; ++i) {
 		this -> T(i) = T_v[i];
@@ -219,7 +212,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 	}
 
-
 	// Extrapolation "backwards" if need be
 	if (this -> args -> get_stopping_bool() == false) {
 
@@ -237,9 +229,5 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 	this -> T.save("T_RK45_" + this -> title + ".txt", arma::raw_ascii);
 	this -> X.save("X_RK45_" + this -> title + ".txt", arma::raw_ascii);
-
-
-
-
 
 }

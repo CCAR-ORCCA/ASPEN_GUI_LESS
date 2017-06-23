@@ -9,6 +9,7 @@
 
 arma::vec pgm_dxdt_wrapper(double t, arma::vec X, Args * args);
 arma::vec pgm_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args);
+arma::vec E_dot_wrapper(double t, arma::vec X, Args * args) ;
 
 arma::vec attitude_dxdt_wrapper(double t, arma::vec X, Args * args);
 

@@ -6,6 +6,7 @@
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
 #include "KDNode.hpp"
+#include "Args.hpp"
 
 class Ray;
 class KDNode;
@@ -26,6 +27,7 @@ public:
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
 	@param kdtree KDTree
+	@param args Pointer to structure holding various parameters
 	*/
 	Lidar(FrameGraph * frame_graph,
 	      std::string ref_frame_name = "L",
@@ -35,6 +37,7 @@ public:
 	      unsigned int col_count = 16,
 	      double f = 1e-2,
 	      double freq = 3,
+	      Args * args = nullptr,
 	      KDNode * kdtree = nullptr
 	     );
 
@@ -65,6 +68,13 @@ public:
 	@return focal plane vertical size (m)
 	*/
 	double get_size_z() const ;
+
+
+	/**
+	Get pointer to argument structure
+	*/
+
+	Args * get_args() const;
 
 	/**
 	Get the horizontal focal plane size
@@ -204,6 +214,7 @@ protected:
 	std::vector<arma::vec> surface_measurements;
 
 	KDNode * kdtree;
+	Args * args;
 };
 
 

@@ -421,8 +421,8 @@ void ShapeModel::save_lat_long_map_to_file(std::string path) const {
 
 		double longitude = 180. / arma::datum::pi * std::atan2(facet_center -> at(1), facet_center -> at(0)) ;
 		double latitude = 180. / arma::datum::pi * std::atan2(facet_center -> at(2), arma::norm(facet_center ->rows(0, 1)));
-		unsigned int hit_count = facet -> get_hit_count();
-		arma::rowvec facet_results = {longitude, latitude, (double)(hit_count)};
+		double hit_count = facet -> get_hit_count();
+		arma::rowvec facet_results = {longitude, latitude, hit_count};
 
 		long_lat_hit_count.row(facet_index) = facet_results;
 

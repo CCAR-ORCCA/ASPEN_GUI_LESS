@@ -55,6 +55,19 @@ public:
 	       Lidar * lidar,
 	       ShapeModel * true_shape_model) ;
 
+
+	/**
+	Constructor
+	@param frame_graph Pointer to the graph storing the reference frames
+	@param lidar Pointer to instrument
+	@param true_shape_model Pointer to the true shape model
+	@param args Pointer to a structure holding a variety of parameters
+	*/
+	Filter(FrameGraph * frame_graph,
+	       Lidar * lidar,
+	       ShapeModel * true_shape_model,
+	       Args * args) ;
+
 	/**
 	@param N_iteration number of iteration of the filter with each batch of information
 	@param plot_measurement true if the measurements should be saved

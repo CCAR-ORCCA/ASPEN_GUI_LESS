@@ -9,7 +9,9 @@ Lidar::Lidar(
     unsigned int col_count,
     double f,
     double freq,
-    KDNode * kdtree) {
+    Args * args,
+    KDNode * kdtree
+) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -20,6 +22,7 @@ Lidar::Lidar(
 	this -> col_count = col_count;
 	this -> freq = freq;
 	this -> kdtree = kdtree;
+	this -> args = args;
 
 
 
@@ -97,7 +100,8 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
-
+			bool good_lighting = false;
+			
 			// Range measurements is reset
 			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
 
@@ -110,16 +114,21 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 				Facet * facet = this -> focal_plane[y_index][z_index] -> get_true_hit_facet();
 
 				// If the sun phasing was sufficiently good
-				// if (arma::dot(*facet -> get_facet_normal(), - s) > std::sin(minimum_elevation)) {
-				facet -> increase_hit_count();
-				// }
+				arma::vec s_inertial = this -> args -> get_interp_s() -> interpolate(this -> args -> get_time(), false);
+				arma::vec s = this -> frame_graph -> convert(s_inertial, "N", "T");
+				
+				if (arma::dot(*facet -> get_facet_normal(), - s) > std::sin(this -> args -> get_minimum_elevation())) {
+					facet -> increase_hit_count();
+					good_lighting = true;
+
+				}
 
 			}
 
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 
-				if (hit) {
+				if (hit && good_lighting) {
 
 					this -> surface_measurements.push_back(
 					    this -> focal_plane[y_index][z_index] -> get_true_range() *
@@ -132,6 +141,9 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 	}
 }
 
+Args * Lidar::get_args() const {
+	return this -> args;
+}
 
 ShapeModel * Lidar::get_shape_model() {
 	return this -> shape_model;
@@ -140,8 +152,6 @@ ShapeModel * Lidar::get_shape_model() {
 std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
-
-
 
 
 std::pair<double, double> Lidar::save_true_range(std::string path) const {

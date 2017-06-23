@@ -24,6 +24,7 @@ Filter::Filter(FrameGraph * frame_graph,
 }
 
 
+
 void Filter::get_surface_point_cloud(std::string path) {
 
 	std::cout << "Collecting surface data" << std::endl;
@@ -172,7 +173,7 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		w = arma::cross(u, v);
 
 		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
-		
+
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
 		dcm_TN = mrp_to_dcm(mrp_TN);
@@ -181,6 +182,8 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
+		// Current time
+		this -> lidar -> get_args() -> set_time(times(time_index));
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
@@ -257,7 +260,6 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
-
 		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
@@ -285,6 +287,8 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
+		// Current time
+		this -> lidar -> get_args() -> set_time(times(time_index));
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);

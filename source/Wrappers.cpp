@@ -36,6 +36,13 @@ arma::vec pgm_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args) {
 
 }
 
+arma::vec E_dot_wrapper(double t, arma::vec X, Args * args) {
+
+	double n = std::sqrt(args -> get_mu() / (args -> get_sma() * args -> get_sma() * args -> get_sma()));
+	arma::vec dEdt = {n / (1 - args -> get_e() * arma::cos(X))};
+
+	return dEdt;
+}
 
 double energy_orbit_body_frame(double t, arma::vec X , Args * args) {
 

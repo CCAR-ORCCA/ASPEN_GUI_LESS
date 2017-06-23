@@ -144,7 +144,7 @@ public:
 	Get the number of times this facet has been hit
 	@return hit_count Number of time this facet has been hit by an inbound ray
 	*/
-	unsigned int get_hit_count() const;
+	double get_hit_count() const;
 
 protected:
 
@@ -163,7 +163,7 @@ protected:
 
 	double area;
 	unsigned int split_counter = 0;
-	unsigned int hit_count = 0;
+	double hit_count = 0;
 
 };
 #endif
