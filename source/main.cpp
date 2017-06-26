@@ -57,9 +57,14 @@ int main() {
 
 	// Specifiying arguments such as density, pointer to frame graph and
 	// attracting shape model
-	Args args(2000,
-	          &frame_graph,
-	          &true_shape_model);
+	Args args;
+
+	args.set_density(2000);
+	args.set_frame_graph(&frame_graph);
+	args.set_shape_model(&true_shape_model);
+
+	
+
 	args.set_is_attitude_bool(true);
 
 	RK45 rk_attitude(attitude_0,
@@ -113,8 +118,6 @@ int main() {
 		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
 	}
 	interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
-
-	throw;
 
 	// Lidar
 	Lidar lidar(&frame_graph, "L", 5, 5 , 32, 32, 1e-2, 1. / 3600, kdtree.get());

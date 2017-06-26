@@ -9,19 +9,44 @@ class Args {
 
 public:
 
-	Args(double density,
-	     FrameGraph * frame_graph,
-	     ShapeModel * shape_model) {
-		this -> density = density;
+	void set_frame_graph(FrameGraph * frame_graph) {
 		this -> frame_graph = frame_graph;
-		this -> shape_model = shape_model;
-		this -> stopping_bool = false;
-		this -> is_attitude_bool = false;
+	}
 
+	void set_shape_model(ShapeModel * shape_model) {
+		this -> shape_model = shape_model;
+	}
+
+	void set_density(double density) {
+		this -> density = density;
+	}
+
+	void set_e(double e) {
+		this -> eccentricity = e;
+	}
+
+	void set_mu(double mu) {
+		this -> mu = mu;
+	}
+
+	void set_sma(double sma) {
+		this -> sma = sma;
+	}
+
+	double get_sma() const {
+		return this -> sma;
+	}
+
+	double get_mu() const {
+		return this -> mu;
 	}
 
 	double get_density() const {
 		return this -> density;
+	}
+
+	double get_e() const {
+		return this -> eccentricity;
 	}
 
 	FrameGraph * get_frame_graph() {
@@ -56,13 +81,35 @@ public:
 		return this -> interpolator;
 	}
 
+	void set_time(double time) {
+		this -> time = time;
+	}
+
+	double get_time() const {
+		return this -> time;
+	}
+
+	void set_minimum_elevation(double el) {
+		this -> minimum_elevation = el;
+	}
+	
+	double get_minimum_elevation() const {
+		return this -> minimum_elevation;
+	}
+
 protected:
 	double density;
-	bool stopping_bool;
+	double eccentricity;
+	double mu;
+	double sma;
+	double time;
+	double minimum_elevation;
+	bool stopping_bool = false;
 	FrameGraph * frame_graph;
 	ShapeModel * shape_model;
 	Interpolator * interpolator;
-	bool is_attitude_bool;
+
+	bool is_attitude_bool = false;
 
 
 };

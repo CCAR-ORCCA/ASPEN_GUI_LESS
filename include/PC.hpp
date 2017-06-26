@@ -2,14 +2,16 @@
 #define HEADER_PC
 
 #include <armadillo>
-#include "Lidar.hpp"
 #include "KDTree_pc.hpp"
+#include "Ray.hpp"
+#include <memory>
+
 
 class PC {
 
 public:
 
-	PC(Lidar * lidar);
+	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane);
 
 protected:
 
@@ -20,6 +22,7 @@ protected:
 	void construct_normals();
 
 	KDTree_pc kd_tree;
+
 };
 
 

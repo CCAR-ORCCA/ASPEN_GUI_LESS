@@ -6,6 +6,7 @@
 #include "FrameGraph.hpp"
 #include "Interpolator.hpp"
 #include "FilterArguments.hpp"
+#include "PC.hpp"
 
 #include <RigidBodyKinematics.hpp>
 
@@ -145,7 +146,8 @@ protected:
 	ShapeModel * true_shape_model;
 	ShapeModel * estimated_shape_model;
 
-
+	PC * old_pc;
+	PC * new_pc;
 
 
 };

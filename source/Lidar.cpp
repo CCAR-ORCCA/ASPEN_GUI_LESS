@@ -105,17 +105,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 
 			hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
 
-			// The hit counter of that facet is increased
-			if (hit) {
-				Facet * facet = this -> focal_plane[y_index][z_index] -> get_true_hit_facet();
-
-				// If the sun phasing was sufficiently good
-				// if (arma::dot(*facet -> get_facet_normal(), - s) > std::sin(minimum_elevation)) {
-				facet -> increase_hit_count();
-				// }
-
-			}
-
+			
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 

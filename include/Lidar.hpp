@@ -7,6 +7,7 @@
 #include "GNUPlot.h"
 #include "KDNode.hpp"
 
+
 class Ray;
 class KDNode;
 class ShapeModel;
@@ -204,6 +205,10 @@ protected:
 	std::vector<arma::vec> surface_measurements;
 
 	KDNode * kdtree;
+
+	
+
+
 };
 
 

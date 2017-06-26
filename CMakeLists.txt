@@ -121,6 +121,7 @@ source/Interpolator.cpp
 source/BBox.cpp
 source/KDNode.cpp
 source/ICP.cpp
+source/PC.cpp
 include/ShapeModel.hpp
 include/ShapeModelImporter.hpp
 include/Facet.hpp
@@ -140,6 +141,7 @@ include/Interpolator.hpp
 include/BBox.hpp
 include/KDNode.hpp
 include/ICP.hpp
+include/PC.hpp
 include/FilterArguments.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
