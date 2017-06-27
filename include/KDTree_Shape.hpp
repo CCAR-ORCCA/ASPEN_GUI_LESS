@@ -1,13 +1,13 @@
-#ifndef HEADER_KDNode
-#define HEADER_KDNode
+#ifndef HEADER_KDTree_Shape
+#define HEADER_KDTree_Shape
 
 #include "Facet.hpp"
-#include "ShapeModel.hpp"
 #include "FrameGraph.hpp"
 #include "BBox.hpp"
 #include "Lidar.hpp"
+
 #include <set>
-// #include "Ray.hpp"
+
 
 
 // Implementation of a KDTree based on the
@@ -16,18 +16,18 @@
 //
 class Ray;
 
-class KDNode {
+class KDTree_Shape {
 
 public:
 	BBox bbox;
-	std::shared_ptr<KDNode> left;
-	std::shared_ptr<KDNode> right;
+	std::shared_ptr<KDTree_Shape> left;
+	std::shared_ptr<KDTree_Shape> right;
 	std::vector<Facet * > facets;
 
-	KDNode();
+	KDTree_Shape();
 
-	std::shared_ptr<KDNode> build(std::vector<Facet *> & facets, int depth, bool verbose = false);
-	bool hit(KDNode * node, Ray * ray) const;
+	std::shared_ptr<KDTree_Shape> build(std::vector<Facet *> & facets, int depth, bool verbose = false);
+	bool hit(KDTree_Shape * node, Ray * ray) const;
 	bool hit_bbox(Ray * ray ) const;
 
 	int get_depth() const;
@@ -37,7 +37,6 @@ protected:
 
 	int depth;
 	int max_depth = 1000;
-	ShapeModel * shape_model;
 
 
 

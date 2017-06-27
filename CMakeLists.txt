@@ -119,9 +119,11 @@ source/DynamicAnalyses.cpp
 source/Wrappers.cpp
 source/Interpolator.cpp
 source/BBox.cpp
-source/KDNode.cpp
+source/KDTree_Shape.cpp
 source/ICP.cpp
 source/PC.cpp
+source/PointNormal.cpp
+source/KDTree_pc.cpp
 include/ShapeModel.hpp
 include/ShapeModelImporter.hpp
 include/Facet.hpp
@@ -139,10 +141,11 @@ include/Wrappers.hpp
 include/Args.hpp
 include/Interpolator.hpp
 include/BBox.hpp
-include/KDNode.hpp
+include/KDTree_Shape.hpp
 include/ICP.hpp
 include/PC.hpp
 include/FilterArguments.hpp
+include/PointNormal.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
 )

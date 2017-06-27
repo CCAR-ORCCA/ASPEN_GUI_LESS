@@ -1,15 +1,14 @@
-#include "KDNode.hpp"
+#include "KDTree_Shape.hpp"
 
-KDNode::KDNode() {
+KDTree_Shape::KDTree_Shape() {
 }
 
 
 
-std::shared_ptr<KDNode> KDNode::build(std::vector<Facet *> & facets,  int depth, bool verbose) {
-
+std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,  int depth, bool verbose) {
 
 	// Creating the node
-	std::shared_ptr<KDNode> node = std::make_shared<KDNode>( KDNode() );
+	std::shared_ptr<KDTree_Shape> node = std::make_shared<KDTree_Shape>( KDTree_Shape() );
 	node -> facets = facets;
 	node -> left = nullptr;
 	node -> right = nullptr;
@@ -31,8 +30,8 @@ std::shared_ptr<KDNode> KDNode::build(std::vector<Facet *> & facets,  int depth,
 
 		node -> bbox . update(facets[0]);
 
-		node -> left = std::make_shared<KDNode>( KDNode() );
-		node -> right = std::make_shared<KDNode>( KDNode() );
+		node -> left = std::make_shared<KDTree_Shape>( KDTree_Shape() );
+		node -> right = std::make_shared<KDTree_Shape>( KDTree_Shape() );
 
 		node -> left -> facets = std::vector<Facet * >();
 		node -> right -> facets = std::vector<Facet * >();
@@ -109,20 +108,20 @@ std::shared_ptr<KDNode> KDNode::build(std::vector<Facet *> & facets,  int depth,
 
 	// Subdivision stops if at least 50% of triangles are shared amongst the two leaves
 	// or if this node has reached the maximum depth
-	// specified in KDNode.hpp (1000 by default)
+	// specified in KDTree_Shape.hpp (1000 by default)
 	if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets.size() < 0.5 && depth < this -> max_depth) {
 
 
 		// Recursion continues
-		node -> left = build(left_facets, depth + 1);
-		node -> right = build(right_facets, depth + 1);
+		node -> left = build(left_facets, depth + 1, verbose);
+		node -> right = build(right_facets, depth + 1, verbose);
 
 	}
 
 	else {
 
-		node -> left = std::make_shared<KDNode>( KDNode() );
-		node -> right = std::make_shared<KDNode>( KDNode() );
+		node -> left = std::make_shared<KDTree_Shape>( KDTree_Shape() );
+		node -> right = std::make_shared<KDTree_Shape>( KDTree_Shape() );
 
 		node -> left -> facets = std::vector<Facet * >();
 		node -> right -> facets = std::vector<Facet * >();
@@ -147,7 +146,7 @@ std::shared_ptr<KDNode> KDNode::build(std::vector<Facet *> & facets,  int depth,
 }
 
 
-bool KDNode::hit(KDNode * node, Ray * ray) const {
+bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray) const {
 
 	// Check if the ray intersects the bounding box of the given node
 	if (node -> hit_bbox(ray)) {
@@ -189,13 +188,13 @@ bool KDNode::hit(KDNode * node, Ray * ray) const {
 
 }
 
-void KDNode::set_depth(int depth) {
+void KDTree_Shape::set_depth(int depth) {
 	this -> depth = depth;
 }
 
 
 
-bool KDNode::hit_bbox(Ray * ray) const {
+bool KDTree_Shape::hit_bbox(Ray * ray) const {
 
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();

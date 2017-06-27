@@ -5,11 +5,11 @@
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
-#include "KDNode.hpp"
+#include "KDTree_Shape.hpp"
 
 
 class Ray;
-class KDNode;
+class KDTree_Shape;
 class ShapeModel;
 
 class Lidar {
@@ -36,7 +36,7 @@ public:
 	      unsigned int col_count = 16,
 	      double f = 1e-2,
 	      double freq = 3,
-	      KDNode * kdtree = nullptr
+	      KDTree_Shape * kdtree = nullptr
 	     );
 
 
@@ -204,7 +204,7 @@ protected:
 
 	std::vector<arma::vec> surface_measurements;
 
-	KDNode * kdtree;
+	KDTree_Shape * kdtree;
 
 	
 

@@ -2,9 +2,11 @@
 #define HEADER_PC
 
 #include <armadillo>
+#include <memory>
+
 #include "KDTree_pc.hpp"
 #include "Ray.hpp"
-#include <memory>
+#include "PointNormal.hpp"
 
 
 class PC {
@@ -12,16 +14,17 @@ class PC {
 public:
 
 	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane);
+	PC(arma::vec los_dir, arma::mat & points);
 
+	int get_closest_point_index_brute_force(arma::vec & test_point) const;
+	arma::uvec get_closest_points_indices_brute_force(arma::vec & test_point, unsigned int N) const ;
+	
 protected:
 
-	std::vector<std::shared_ptr<arma::vec> > points;
-	std::vector<std::shared_ptr<arma::vec> > normals;
-
-	void construct_kd_tree();
+	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals();
 
-	KDTree_pc kd_tree;
+	std::shared_ptr<KDTree_pc> kd_tree;
 
 };
 

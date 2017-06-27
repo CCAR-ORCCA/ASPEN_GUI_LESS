@@ -2,9 +2,9 @@
 #define HEADER_BBOX
 
 #include "FrameGraph.hpp"
-#include "ShapeModel.hpp"
 #include "Facet.hpp"
 #include <time.h>
+
 /**
 Declaration of the BBox class, representing
 the bounding box of a KDTree node

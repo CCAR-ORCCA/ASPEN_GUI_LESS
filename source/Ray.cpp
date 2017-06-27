@@ -200,6 +200,31 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 }
 
 
+arma::vec Ray::get_impact_point(bool computed_mes) const {
+
+	if (computed_mes) {
+		if (this -> computed_range < std::numeric_limits<double>::infinity()) {
+			return (*this -> direction) * this -> computed_range + (*this -> origin);
+		}
+		else {
+			throw "Invalid ray";
+		}
+
+	}
+	else {
+
+		if (this -> true_range < std::numeric_limits<double>::infinity()) {
+			return (*this -> direction) * this -> true_range + (*this -> origin);
+		}
+		else {
+			throw "Invalid ray";
+		}
+
+	}
+}
+
+
+
 bool Ray::single_facet_ray_casting(Facet * facet, bool computed_mes ) {
 
 

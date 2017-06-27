@@ -12,11 +12,15 @@
 #include <map>
 #include <limits>
 
+#include "FrameGraph.hpp"
 #include "Facet.hpp"
 #include "Edge.hpp"
 #include "Vertex.hpp"
 #include "OMP_flags.hpp"
-#include "FrameGraph.hpp"
+#include "KDTree_Shape.hpp"
+
+class KDTree_Shape;
+
 
 
 /**
@@ -45,20 +49,22 @@ public:
 	ShapeModel(std::string ref_frame_name,
 	           FrameGraph * frame_graph);
 
-
-	
-
 	/**
 	Saves the longitude, latitude of each hit point to a file
 	*/
 	void save_lat_long_map_to_file(std::string path) const;
 
-
-
 	/**
 	Destructor
 	*/
 	~ShapeModel();
+
+
+	/**
+	Constructs the KDTree holding the shape model
+	*/
+	void construct_kd_tree();
+
 
 	/**
 	Returns number of facets
@@ -259,14 +265,14 @@ public:
 	/**
 	Shifts the coordinates of the shape model
 	so as to have (0,0,0) aligned with its barycenter
-	
+
 	The resulting barycenter coordinates are (0,0,0)
 	*/
 	void shift_to_barycenter();
 
 	/**
 	Applies a rotation that aligns the body
-	with its principal axes. 
+	with its principal axes.
 
 	This assumes that the body has been shifted so
 	that (0,0,0) lies at its barycenter
@@ -293,7 +299,7 @@ public:
 	*/
 	arma::mat get_inertia() const;
 
-
+	bool has_kd_tree() const;
 
 
 protected:
@@ -317,6 +323,8 @@ protected:
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;
+
+	std::shared_ptr<KDTree_Shape> kd_tree = nullptr;
 
 
 };

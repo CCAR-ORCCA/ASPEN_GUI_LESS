@@ -104,6 +104,15 @@ public:
 	*/
 	arma::vec * get_origin_target_frame();
 
+	/**
+	Returns the coordinates of the impacted point
+	expressed in the instrument frame.
+	Throws an exception if this ray has not impacted the target
+	@param computed_mes True if the ray is targeted at the computed shape (as opposed to the true shape)
+	@return Coordinates of the impacted point expressed in the instrument framme
+	*/
+	arma::vec get_impact_point(bool computed_mes) const;
+
 
 	/**
 	Cast a ray to the target and searches for intersections inside each of the

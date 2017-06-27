@@ -9,7 +9,7 @@ Lidar::Lidar(
     unsigned int col_count,
     double f,
     double freq,
-    KDNode * kdtree) {
+    KDTree_Shape * kdtree) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -101,11 +101,17 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 			// Range measurements is reset
 			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
 
-			// hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
-
-			hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
-
+			if (shape_model -> has_kd_tree()) {
+				hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
+			}
 			
+			else {
+				hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
+
+			}
+
+
+
 			// If true, all the measurements are stored
 			if (store_mes == true) {
 

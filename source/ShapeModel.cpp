@@ -180,6 +180,21 @@ void ShapeModel::update_facets(std::set<Facet *> & facets) {
 
 }
 
+bool ShapeModel::has_kd_tree() const {
+	if (this -> kd_tree == nullptr) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+void ShapeModel::construct_kd_tree() {
+
+	this -> kd_tree = std::make_shared<KDTree_Shape>(KDTree_Shape());
+	this -> kd_tree = this -> kd_tree -> build(this -> facets, 0);
+}
+
 bool ShapeModel::contains(double * point, double tol ) {
 
 	double lagrangian = 0;
