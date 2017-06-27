@@ -224,7 +224,7 @@ void Filter::get_surface_point_cloud_from_trajectory(
 	arma::mat attitude_states;
 	attitude_states.load(attitude_path);
 
-	// Vector of orbit times
+	// Vector of attitude times
 	arma::vec attitude_time;
 	attitude_time.load(attitude_time_path);
 
@@ -280,6 +280,102 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
+		dcm_TN = mrp_to_dcm(mrp_TN);
+
+		// LN DCM
+		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+
+		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
+
+		// Current time
+		this -> lidar -> get_args() -> set_time(times(time_index));
+
+		// Setting the Lidar frame to its new state
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
+
+		// Setting the true and estimated frame to their new state
+		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
+
+		// Getting the true observations (noise free)
+		this -> lidar -> send_flash(this -> true_shape_model, false, true);
+
+	}
+
+	this -> lidar -> save_surface_measurements(savepath);
+
+}
+
+
+void Filter::get_surface_point_cloud_from_trajectory(
+    std::string matlab_file_path,
+    std::string savepath) {
+
+	std::cout << "Collecting surface data" << std::endl;
+
+	arma::mat matlab_states;
+	matlab_states.load(matlab_file_path);
+
+	// Vector of orbit times
+	arma::vec orbit_time = matlab_states.col(0);
+
+	// Matrix of orbit states
+	arma::mat orbit_states = matlab_states.cols(1, 6);
+	arma::inplace_trans(orbit_states);
+
+	// Matrix of attitude states
+	arma::mat attitude_states = matlab_states.cols(7, 9);
+	arma::inplace_trans(attitude_states);
+
+
+	// Lidar position
+	arma::vec lidar_pos_inertial = arma::vec(3);
+	arma::vec lidar_pos = arma::vec(3);
+	arma::vec lidar_vel = arma::vec(3);
+
+	arma::vec u;
+	arma::vec v;
+	arma::vec w;
+
+	arma::mat dcm_TN = arma::zeros<arma::mat>(3, 3);
+	arma::mat dcm_LT = arma::zeros<arma::mat>(3, 3);
+
+	arma::vec mrp_LN = arma::vec(3);
+	arma::vec mrp_TN = arma::vec(3);
+	arma::vec mrp_LT = arma::vec(3);
+
+	// // An interpolator of the attitude state is created
+	Interpolator interpolator_attitude(&orbit_time, &attitude_states);
+	Interpolator interpolator_orbit(&orbit_time, &orbit_states);
+
+	arma::vec interpolated_orbit(6);
+	arma::vec interpolated_attitude(6);
+
+	int N = (int)((orbit_time(orbit_time.n_rows - 1 ) - orbit_time(0) ) * this -> lidar -> get_frequency());
+
+	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
+
+
+	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
+
+		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
+
+		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
+		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
+
+		// L frame position and velocity (in T frame)
+		lidar_pos = interpolated_orbit.rows(0, 2);
+		lidar_vel = interpolated_orbit.rows(3, 5);
+
+		// LT DCM
+		u = - arma::normalise(lidar_pos);
+		v = arma::normalise(arma::cross(lidar_pos, lidar_vel));
+		w = arma::cross(u, v);
+
+		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
+
+		// TN DCM
+		mrp_TN = euler313_to_mrp(interpolated_attitude.rows(0, 2));
 		dcm_TN = mrp_to_dcm(mrp_TN);
 
 		// LN DCM

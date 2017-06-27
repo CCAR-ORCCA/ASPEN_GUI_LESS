@@ -236,9 +236,13 @@ def plot_longitude_latitude_impact_count(path_to_impact_count):
 
 
 
-def plot_body_frame_traj(path_to_traj,path_to_interpolated_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
+def plot_body_frame_traj(path_to_traj,path_to_shape,scale_factor,is_nicolas, path_to_interpolated_mrp = None , already_in_body_frame = True):
+  if (is_nicolas is False):
+    orbit = np.loadtxt(path_to_traj)[0:3,:]
+  else:
+    orbit = np.loadtxt(path_to_traj)[:,1:4].T
 
-  orbit = np.loadtxt(path_to_traj)[0:3,:]
+
 
   
   if already_in_body_frame is False:

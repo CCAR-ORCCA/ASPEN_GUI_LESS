@@ -116,7 +116,15 @@ public:
 	    arma::vec * attitude_time,
 	    std::string savepath) ;
 
-
+	/**
+	Collects 3D point cloud measurements and stores them to an OBJ file
+	using a precomputed orbit and attracting body attitude
+	@param matlab_file_path File to matlab-generated code storing all the relevant states
+	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
+	*/
+	void get_surface_point_cloud_from_trajectory(
+	    std::string matlab_file_path,
+	    std::string savepath);
 
 	/**
 	Solves the square linear system info_mat * x = normal_mat

@@ -116,7 +116,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 				// If the sun phasing was sufficiently good
 				arma::vec s_inertial = this -> args -> get_interp_s() -> interpolate(this -> args -> get_time(), false);
 				arma::vec s = this -> frame_graph -> convert(s_inertial, "N", "T");
-				
+
 				if (arma::dot(*facet -> get_facet_normal(), - s) > std::sin(this -> args -> get_minimum_elevation())) {
 					facet -> increase_hit_count();
 					good_lighting = true;

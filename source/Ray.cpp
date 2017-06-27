@@ -9,7 +9,7 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 	// the origin of the ray is computed in the lidar plane
 	// the outward line-of-sight direction is set to the +x direction
 	// The bottom left of the focal plane (as seen from an observer looking inside
-	// the lidar) is formed by the fixel of coordinates (0,0);
+	// the lidar) is formed by the pixel of coordinates (0,0);
 
 	double y, z;
 	double x = - this -> lidar -> get_focal_length();

@@ -26,6 +26,15 @@ public:
 		this -> eccentricity = e;
 	}
 
+
+	void set_i(double i) {
+		this -> i = i;
+	}
+
+	double get_i() const {
+		return this -> i;
+	}
+
 	void set_mu(double mu) {
 		this -> mu = mu;
 	}
@@ -103,14 +112,37 @@ public:
 	void set_minimum_elevation(double el) {
 		this -> minimum_elevation = el;
 	}
-	
+
 	double get_minimum_elevation() const {
 		return this -> minimum_elevation;
 	}
 
+	double get_Omega() const {
+		return this -> Omega;
+	}
+
+	void set_Omega(double Omega) {
+		this -> Omega = Omega;
+	}
+
+	double get_omega() const {
+		return this -> omega;
+	}
+
+	void set_omega(double omega) {
+		this -> omega = omega;
+	}
+
+	
+
+
+
 protected:
 	double density;
 	double eccentricity;
+	double Omega;
+	double omega;
+	double i;
 	double mu;
 	double sma;
 	double time;

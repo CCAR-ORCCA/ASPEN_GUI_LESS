@@ -140,6 +140,7 @@ include/Interpolator.hpp
 include/BBox.hpp
 include/KDNode.hpp
 include/ICP.hpp
+include/Constants.hpp
 include/FilterArguments.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
