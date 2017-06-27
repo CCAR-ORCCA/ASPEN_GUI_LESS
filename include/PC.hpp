@@ -18,8 +18,12 @@ public:
 
 	int get_closest_point_index_brute_force(arma::vec & test_point) const;
 	arma::uvec get_closest_points_indices_brute_force(arma::vec & test_point, unsigned int N) const ;
-	
+
+	std::shared_ptr<PointNormal> get_closest_point(arma::vec & test_point) const;
+
 protected:
+
+
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals();

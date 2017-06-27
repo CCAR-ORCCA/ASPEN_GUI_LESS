@@ -26,6 +26,8 @@ public:
 
 	KDTree_Shape();
 
+	
+
 	std::shared_ptr<KDTree_Shape> build(std::vector<Facet *> & facets, int depth, bool verbose = false);
 	bool hit(KDTree_Shape * node, Ray * ray) const;
 	bool hit_bbox(Ray * ray ) const;

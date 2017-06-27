@@ -9,9 +9,7 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 		for (unsigned int z_index = 0; z_index < focal_plane -> at(0).size(); ++z_index) {
 
 			if (focal_plane -> at(y_index)[z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
-
 				points_normals.push_back(std::make_shared<PointNormal>(PointNormal(focal_plane -> at(y_index)[z_index] -> get_impact_point(true))));
-
 			}
 
 		}
@@ -27,9 +25,7 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
 	for (unsigned int index = 0; index < points . n_cols; ++index) {
-
 		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
-
 	}
 
 	this -> construct_kd_tree(points_normals);
@@ -45,6 +41,21 @@ void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_
 	this -> kd_tree = this -> kd_tree -> build(points_normals, 0, false);
 
 }
+
+std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const {
+
+	double distance = std::numeric_limits<double>::infinity();
+	std::shared_ptr<PointNormal> closest_point;
+	
+	this -> kd_tree -> closest_point_search(test_point,
+	                                        this -> kd_tree,
+	                                        closest_point,
+	                                        distance);
+
+	return closest_point;
+
+}
+
 
 
 int PC::get_closest_point_index_brute_force(arma::vec & test_point) const {

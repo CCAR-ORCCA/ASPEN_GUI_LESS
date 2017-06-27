@@ -7,51 +7,69 @@
 #include "Wrappers.hpp"
 #include "Interpolator.hpp"
 #include "PC.hpp"
+#include "PointNormal.hpp"
 
 #include <chrono>
 
 int main() {
 
 
-	arma::mat P = arma::randu<arma::mat>(3, 10000);
+	arma::mat P = arma::randu<arma::mat>(3, int(1e6));
 
 	arma::vec test = P.col(500);
 	arma::vec u = {1, 0, 0};
 
 	PC pc(u, P);
 
-	std::cout << pc.get_closest_point_index_brute_force(test) << std::endl;
-	arma::uvec closest_neighbors = pc.get_closest_points_indices_brute_force(test, 10);
+	std::cout << test.t() << std::endl;
 
-	std::cout << closest_neighbors.t() << std::endl;
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+
+	start = std::chrono::system_clock::now();
+	unsigned int index_best = pc.get_closest_point_index_brute_force(test);
+	end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "Brute force elapsed time: " << elapsed_seconds.count() << "s\n";
+	std::cout << P.col(index_best).t() << std::endl;
+
+
+	start = std::chrono::system_clock::now();
+	std::shared_ptr<PointNormal> best_guess = pc.get_closest_point(test);
+	end = std::chrono::system_clock::now();
+	elapsed_seconds = end - start;
+
+
+	std::cout << "KD Tree elapsed time: " << elapsed_seconds.count() << "s\n";
+	std::cout << best_guess -> get_point() -> t() << std::endl;
 
 
 	// Ref frame graph
-	FrameGraph frame_graph;
-	frame_graph.add_frame("N");
-	frame_graph.add_frame("L");
-	frame_graph.add_frame("T");
-	frame_graph.add_frame("E");
+	// FrameGraph frame_graph;
+	// frame_graph.add_frame("N");
+	// frame_graph.add_frame("L");
+	// frame_graph.add_frame("T");
+	// frame_graph.add_frame("E");
 
-	frame_graph.add_transform("N", "L");
-	frame_graph.add_transform("N", "T");
-	frame_graph.add_transform("N", "E");
+	// frame_graph.add_transform("N", "L");
+	// frame_graph.add_transform("N", "T");
+	// frame_graph.add_transform("N", "E");
 
-	// Shape model
-	ShapeModel true_shape_model("T", &frame_graph);
-	ShapeModel estimated_shape_model("E", &frame_graph);
+	// // Shape model
+	// ShapeModel true_shape_model("T", &frame_graph);
+	// ShapeModel estimated_shape_model("E", &frame_graph);
 
-	ShapeModelImporter shape_io_estimated(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
-	    200, false);
+	// ShapeModelImporter shape_io_estimated(
+	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
+	//     200, false);
 
-	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj", 1);
+	// ShapeModelImporter shape_io_truth(
+	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj", 1);
 
-	shape_io_truth.load_shape_model(&true_shape_model);
-	shape_io_estimated.load_shape_model(&estimated_shape_model);
+	// shape_io_truth.load_shape_model(&true_shape_model);
+	// shape_io_estimated.load_shape_model(&estimated_shape_model);
 
-	true_shape_model . construct_kd_tree();
+	// true_shape_model . construct_kd_tree();
 
 	// // 1) Propagate small body attitude
 	// arma::vec attitude_0 = {0,

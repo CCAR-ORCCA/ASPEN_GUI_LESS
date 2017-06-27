@@ -1,6 +1,7 @@
 #include "KDTree_Shape.hpp"
 
 KDTree_Shape::KDTree_Shape() {
+	
 }
 
 

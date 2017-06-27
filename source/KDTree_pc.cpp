@@ -10,6 +10,97 @@ void KDTree_pc::set_depth(int depth) {
 	this -> depth = depth;
 }
 
+
+
+double KDTree_pc::get_value() const {
+	return this -> value;
+}
+
+unsigned int KDTree_pc::get_axis() const {
+	return this -> axis;
+}
+
+void KDTree_pc::set_value(double value) {
+	this -> value = value;
+}
+void KDTree_pc::set_axis(unsigned int axis) {
+	this -> axis = axis;
+}
+
+void KDTree_pc::closest_point_search(const arma::vec & test_point,
+                                     std::shared_ptr<KDTree_pc> node,
+                                     std::shared_ptr<PointNormal> & best_guess,
+                                     double & distance) {
+
+
+
+	if (node -> points_normals.size() == 1 ) {
+
+		double new_distance = arma::norm(* node -> points_normals[0] -> get_point() - test_point);
+
+		if (new_distance < distance) {
+			distance = new_distance;
+			best_guess = node -> points_normals[0];
+		}
+
+	}
+
+	else {
+
+		bool search_left_first;
+
+
+
+		if (test_point(node -> get_axis()) <= node -> get_value()) {
+			search_left_first = true;
+		}
+		else {
+			search_left_first = false;
+		}
+
+		if (search_left_first) {
+
+
+
+			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> closest_point_search(test_point,
+				                             node -> left,
+				                             best_guess,
+				                             distance);
+			}
+
+			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+				node -> closest_point_search(test_point,
+				                             node -> right,
+				                             best_guess,
+				                             distance);
+			}
+
+		}
+
+		else {
+
+			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+				node -> closest_point_search(test_point,
+				                             node -> right,
+				                             best_guess,
+				                             distance);
+			}
+
+			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> closest_point_search(test_point,
+				                             node -> left,
+				                             best_guess,
+				                             distance);
+			}
+
+		}
+
+	}
+
+
+}
+
 std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth, bool verbose) {
 
 	// Creating the node
@@ -38,6 +129,10 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 		node -> left -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 		node -> right -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 
+		if (verbose) {
+			std::cout << "Trivial node" << std::endl;
+			std::cout << "Leaf depth: " << depth << std::endl;
+		}
 
 		return node;
 
@@ -60,13 +155,13 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	for (unsigned int i = 0; i < points_normals.size(); ++i) {
 
 		xmin = std::min(points_normals[i] -> get_point() -> at(0), xmin);
-		xmax = std::min(points_normals[i] -> get_point() -> at(0), xmax);
+		xmax = std::max(points_normals[i] -> get_point() -> at(0), xmax);
 
-		ymax = std::min(points_normals[i] -> get_point() -> at(1), ymax);
-		ymin = std::min(points_normals[i] -> get_point() -> at(1), ymax);
+		ymin = std::min(points_normals[i] -> get_point() -> at(1), ymin);
+		ymax = std::max(points_normals[i] -> get_point() -> at(1), ymax);
 
-		zmax = std::min(points_normals[i] -> get_point() -> at(2), zmax);
-		zmin = std::min(points_normals[i] -> get_point() -> at(2), zmax);
+		zmin = std::min(points_normals[i] -> get_point() -> at(2), zmin);
+		zmax = std::max(points_normals[i] -> get_point() -> at(2), zmax);
 
 
 		// The midpoint of all the facets is found
@@ -84,14 +179,17 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	for (unsigned int i = 0; i < points_normals.size() ; ++i) {
 
 		if (midpoint(longest_axis) >= points_normals[i] -> get_point() -> at(longest_axis)) {
-			right_points.push_back(points_normals[i]);
-		}
-
-		else {
 			left_points.push_back(points_normals[i]);
 		}
 
+		else {
+			right_points.push_back(points_normals[i]);
+		}
+
 	}
+
+	node -> set_axis(longest_axis);
+	node -> set_value(midpoint(longest_axis));
 
 	// I guess this could be avoided
 	if (left_points.size() == 0 && right_points.size() > 0) {
@@ -103,8 +201,8 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	}
 
 	// Recursion continues
-	node -> left = build(left_points, depth + 1);
-	node -> right = build(right_points, depth + 1);
+	node -> left = build(left_points, depth + 1,verbose);
+	node -> right = build(right_points, depth + 1,verbose);
 
 	return node;
 
