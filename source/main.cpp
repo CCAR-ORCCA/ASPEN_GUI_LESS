@@ -6,137 +6,115 @@
 #include "RK.hpp"
 #include "Wrappers.hpp"
 #include "Interpolator.hpp"
-#include "PC.hpp"
-#include "PointNormal.hpp"
 
 #include <chrono>
 #include <limits>
 
 int main() {
 
-	arma::arma_rng::set_seed_random();
-	// arma::mat P = arma::randu<arma::mat>(3, int(1e4));
-
-	arma::mat P;
-	P.load("pc.txt");
-
-	std::cout << P.n_rows << " " << P.n_cols << std::endl;
-
-	arma::vec u = {1, 0, 0};
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-	PC pc(u, P);
-
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "kdtree time : " << elapsed_seconds.count() << std::endl;
-
+	
 
 	// Ref frame graph
-	// FrameGraph frame_graph;
-	// frame_graph.add_frame("N");
-	// frame_graph.add_frame("L");
-	// frame_graph.add_frame("T");
-	// frame_graph.add_frame("E");
+	FrameGraph frame_graph;
+	frame_graph.add_frame("N");
+	frame_graph.add_frame("L");
+	frame_graph.add_frame("T");
+	frame_graph.add_frame("E");
 
-	// frame_graph.add_transform("N", "L");
-	// frame_graph.add_transform("N", "T");
-	// frame_graph.add_transform("N", "E");
+	frame_graph.add_transform("N", "L");
+	frame_graph.add_transform("N", "T");
+	frame_graph.add_transform("N", "E");
 
-	// // Shape model
-	// ShapeModel true_shape_model("T", &frame_graph);
-	// ShapeModel estimated_shape_model("E", &frame_graph);
+	// Shape model
+	ShapeModel true_shape_model("T", &frame_graph);
+	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	// ShapeModelImporter shape_io_estimated(
-	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
-	//     200, false);
+	ShapeModelImporter shape_io_estimated(
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
+	    200, false);
 
-	// ShapeModelImporter shape_io_truth(
-	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj", 1);
+	ShapeModelImporter shape_io_truth(
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj", 1);
 
-	// shape_io_truth.load_shape_model(&true_shape_model);
-	// shape_io_estimated.load_shape_model(&estimated_shape_model);
+	shape_io_truth.load_shape_model(&true_shape_model);
+	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
-	// true_shape_model . construct_kd_tree();
+	true_shape_model . construct_kd_tree();
 
-	// // 1) Propagate small body attitude
-	// arma::vec attitude_0 = {0,
-	//                         0,
-	//                         0,
-	//                         0,
-	//                         0,
-	//                         2 * arma::datum::pi / (12.13 * 3600)
-	//                        };
-	// double t0 = 0;
-	// double tf = 3600;
-	// double dt = 0.1; //default timestep. Used as initial guess for RK45
+	// 1) Propagate small body attitude
+	arma::vec attitude_0 = {0,
+	                        0,
+	                        0,
+	                        0,
+	                        0,
+	                        2 * arma::datum::pi / (12.13 * 3600)
+	                       };
+	double t0 = 0;
+	double tf = 3600;
+	double dt = 0.1; //default timestep. Used as initial guess for RK45
 
-	// bool check_energy_conservation = true;
+	bool check_energy_conservation = false;
 
-	// // Specifiying arguments such as density, pointer to frame graph and
-	// // attracting shape model
-	// Args args;
+	// Specifiying arguments such as density, pointer to frame graph and
+	// attracting shape model
+	Args args;
 
-	// args.set_density(2000);
-	// args.set_frame_graph(&frame_graph);
-	// args.set_shape_model(&true_shape_model);
+	args.set_frame_graph(&frame_graph);
+	args.set_shape_model(&true_shape_model);
+	args.set_is_attitude_bool(true);
 
+	RK45 rk_attitude(attitude_0,
+	                 t0,
+	                 tf,
+	                 dt,
+	                 &args,
+	                 check_energy_conservation,
+	                 "attitude");
 
+	rk_attitude.run(&attitude_dxdt_wrapper,
+	                &energy_attitude,
+	                &event_function_mrp, true);
 
-	// args.set_is_attitude_bool(true);
+	// 2) Propagate spacecraft attitude about small body
+	// using computed small body attitude
+	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
+	args.set_interpolator(&interpolator);
+	args.set_is_attitude_bool(false);
+	args.set_density(2000);
 
-	// RK45 rk_attitude(attitude_0,
-	//                  t0,
-	//                  tf,
-	//                  dt,
-	//                  &args,
-	//                  check_energy_conservation,
-	//                  "attitude");
+	// Initial condition of the orbiting spacecraft
+	arma::vec initial_pos = {800, 0, 0};
+	arma::vec initial_vel_inertial = {0, 0.0, 0.06};
 
-	// rk_attitude.run(&attitude_dxdt_wrapper,
-	//                 &energy_attitude,
-	//                 &event_function_mrp, true);
+	arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
+	                     initial_pos);
 
-	// // 2) Propagate spacecraft attitude about small body
-	// // using computed small body attitude
-	// Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
-	// args.set_interpolator(&interpolator);
-	// args.set_is_attitude_bool(false);
+	arma::vec orbit_0(6);
 
-	// // Initial condition of the orbiting spacecraft
-	// arma::vec initial_pos = {800, 0, 0};
-	// arma::vec initial_vel_inertial = {0, 0.0, 0.06};
+	orbit_0.rows(0, 2) = initial_pos;
+	orbit_0.rows(3, 5) = body_vel;
 
-	// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
-	//                      initial_pos);
+	RK45 rk_orbit( orbit_0,
+	               t0,
+	               tf,
+	               dt,
+	               &args,
+	               check_energy_conservation,
+	               "orbit_body_frame"
+	             );
 
-	// arma::vec orbit_0(6);
+	rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
+	             &energy_orbit_body_frame,
+	             &event_function_collision_body_frame,
+	             true);
+	
+	// The attitude of the asteroid is also interpolated
+	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
 
-	// orbit_0.rows(0, 2) = initial_pos;
-	// orbit_0.rows(3, 5) = body_vel;
-
-	// RK45 rk_orbit( orbit_0,
-	//                t0,
-	//                tf,
-	//                dt,
-	//                &args,
-	//                check_energy_conservation,
-	//                "orbit_body_frame"
-	//              );
-
-	// rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
-	//              &energy_orbit_body_frame,
-	//              &event_function_collision_body_frame,
-	//              true);
-
-	// // The attitude of the asteroid is also interpolated
-	// arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
-
-	// for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
-	// 	interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
-	// }
-	// interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
+	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
+		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
+	}
+	interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
 
 	// // Lidar
 	// Lidar lidar(&frame_graph, "L", 5, 5 , 32, 32, 1e-2, 1. / 3600, kdtree.get());
