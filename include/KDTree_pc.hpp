@@ -23,10 +23,17 @@ public:
 	std::shared_ptr<KDTree_pc> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth, bool verbose = false);
 
 
+	void closest_point_search(
+	    const arma::vec & test_point,
+	    std::shared_ptr<KDTree_pc> node,
+	    std::shared_ptr<PointNormal> & best_guess,
+	    double & distance);
+
 	void closest_point_search(const arma::vec & test_point,
 	                          std::shared_ptr<KDTree_pc> node,
 	                          std::shared_ptr<PointNormal> & best_guess,
-	                          double & distance);
+	                          double & distance,
+	                          std::vector< std::shared_ptr<PointNormal> > & closest_points);
 
 
 

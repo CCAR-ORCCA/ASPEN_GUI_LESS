@@ -16,6 +16,7 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 	}
 
 	this -> construct_kd_tree(points_normals);
+	this -> construct_normals(los_dir);
 
 }
 
@@ -29,6 +30,8 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 	}
 
 	this -> construct_kd_tree(points_normals);
+	this -> construct_normals(los_dir);
+
 
 }
 
@@ -46,7 +49,7 @@ std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const
 
 	double distance = std::numeric_limits<double>::infinity();
 	std::shared_ptr<PointNormal> closest_point;
-	
+
 	this -> kd_tree -> closest_point_search(test_point,
 	                                        this -> kd_tree,
 	                                        closest_point,
@@ -56,9 +59,32 @@ std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const
 
 }
 
+std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
+    arma::vec & test_point, unsigned int N) const {
+
+	std::vector<std::shared_ptr<PointNormal> > closest_points;
+
+	for (unsigned int i = 0; i < N; ++i) {
+
+		double distance = std::numeric_limits<double>::infinity();
+		std::shared_ptr<PointNormal> closest_point;
+
+		this -> kd_tree -> closest_point_search(test_point,
+		                                        this -> kd_tree,
+		                                        closest_point,
+		                                        distance,
+		                                        closest_points);
+
+		closest_points.push_back(closest_point);
+	}
+
+	return closest_points;
+
+}
 
 
-int PC::get_closest_point_index_brute_force(arma::vec & test_point) const {
+
+std::shared_ptr<PointNormal> PC::get_closest_point_index_brute_force(arma::vec & test_point) const {
 
 	double distance = std::numeric_limits<double>::infinity();
 
@@ -76,10 +102,10 @@ int PC::get_closest_point_index_brute_force(arma::vec & test_point) const {
 
 	}
 
-	return index_closest;
+	return this -> kd_tree -> get_points_normals() -> at(index_closest);
 }
 
-arma::uvec PC::get_closest_points_indices_brute_force(arma::vec & test_point, unsigned int N) const {
+std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(arma::vec & test_point, unsigned int N) const {
 
 	unsigned int pc_size = this -> kd_tree -> get_size();
 
@@ -115,12 +141,52 @@ arma::uvec PC::get_closest_points_indices_brute_force(arma::vec & test_point, un
 
 	}
 
-	arma::uvec closest_indices(N);
+	std::vector<std::shared_ptr<PointNormal> > closest_points;
 
 	for (auto it = distance_map.begin(); it != distance_map.end(); ++it ) {
-		closest_indices(std::distance(distance_map.begin(), it)) = it -> second;
+		closest_points.push_back(this -> kd_tree -> get_points_normals() -> at(it -> second));
 	}
 
-	return closest_indices;
+	return closest_points;
 }
+
+
+void PC::construct_normals(arma::vec & los_dir) {
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < this -> kd_tree -> get_points_normals() -> size(); ++i) {
+
+		std::shared_ptr<PointNormal> pn = this -> kd_tree -> get_points_normals() -> at(i);
+
+		// Get the N nearest neighbors to this point
+		unsigned int N = 3;
+		std::vector< std::shared_ptr<PointNormal > > closest_points = this -> get_closest_N_points(*pn -> get_point(), N);
+
+		// This N nearest neighbors are used to get the normal
+		arma::mat points_augmented(N, 4);
+		points_augmented.col(3) = arma::ones<arma::vec>(N);
+
+		for (unsigned int j = 0; j < N; ++j) {
+			points_augmented.row(j).cols(0, 2) = closest_points[j] -> get_point() -> t();
+		}
+
+		// The eigenvalue problem is solved
+		arma::vec eigval;
+		arma::mat eigvec;
+
+		arma::eig_sym(eigval, eigvec, points_augmented.t() * points_augmented);
+		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
+
+		// The normal is flipped to make sure it is facing the los
+		if (arma::dot(n, los_dir) < 0) {
+			this -> kd_tree -> get_points_normals() -> at(i) -> set_normal(n);
+		}
+		else {
+			this -> kd_tree -> get_points_normals() -> at(i) -> set_normal(-n);
+		}
+
+	}
+
+}
+
 

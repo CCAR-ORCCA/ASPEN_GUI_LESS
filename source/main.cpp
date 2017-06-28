@@ -10,38 +10,27 @@
 #include "PointNormal.hpp"
 
 #include <chrono>
+#include <limits>
 
 int main() {
 
+	arma::arma_rng::set_seed_random();
+	// arma::mat P = arma::randu<arma::mat>(3, int(1e4));
 
-	arma::mat P = arma::randu<arma::mat>(3, int(1e6));
+	arma::mat P;
+	P.load("pc.txt");
 
-	arma::vec test = P.col(500);
+	std::cout << P.n_rows << " " << P.n_cols << std::endl;
+
 	arma::vec u = {1, 0, 0};
 
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 	PC pc(u, P);
 
-	std::cout << test.t() << std::endl;
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-
-	start = std::chrono::system_clock::now();
-	unsigned int index_best = pc.get_closest_point_index_brute_force(test);
 	end = std::chrono::system_clock::now();
-
 	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "Brute force elapsed time: " << elapsed_seconds.count() << "s\n";
-	std::cout << P.col(index_best).t() << std::endl;
-
-
-	start = std::chrono::system_clock::now();
-	std::shared_ptr<PointNormal> best_guess = pc.get_closest_point(test);
-	end = std::chrono::system_clock::now();
-	elapsed_seconds = end - start;
-
-
-	std::cout << "KD Tree elapsed time: " << elapsed_seconds.count() << "s\n";
-	std::cout << best_guess -> get_point() -> t() << std::endl;
+	std::cout << "kdtree time : " << elapsed_seconds.count() << std::endl;
 
 
 	// Ref frame graph

@@ -71,15 +71,15 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 			// based on where their vertices lie
 
 			if ( midpoint(longest_axis) >= facets[i] -> get_vertices() -> at(v) -> get_coordinates() -> at(longest_axis)
-			        && added_to_right == false) {
-				right_facets.push_back(facets[i]);
-				added_to_right = true;
+			        && added_to_left == false) {
+				left_facets.push_back(facets[i]);
+				added_to_left = true;
 			}
 
 			else if (midpoint(longest_axis) <= facets[i] -> get_vertices() -> at(v) -> get_coordinates() -> at(longest_axis)
-			         && added_to_left == false) {
-				left_facets.push_back(facets[i]);
-				added_to_left = true;
+			         && added_to_right == false) {
+				right_facets.push_back(facets[i]);
+				added_to_right = true;
 			}
 
 		}
