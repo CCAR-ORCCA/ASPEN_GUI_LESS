@@ -1,24 +1,36 @@
 #ifndef HEADER_ICP
 #define HEADER_ICP
 #include <armadillo>
+#include <memory>
+#include "PC.hpp"
+
 
 class ICP {
 public:
-	ICP(arma::vec * source_points, arma::vec * destination_points);
+	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source);
 
-	void compute_normals();
 
 
 protected:
+	std::shared_ptr<PC> pc_destination;
+	std::shared_ptr<PC> pc_source;
 
-	arma::vec * source_points;
-	arma::vec * destination_points;
+	void register_pc_mrp_multiplicative_partials(
+	    const unsigned int iterations_max,
+	    const double rel_tol,
+	    const double stol,
+	    const bool pedantic);
 
-	arma::vec * source_normals;
-	arma::vec * destination_normals;
+	arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
 
+	arma::umat compute_pairs_closest_compatible_minimum_point_to_plane_dist(
+	    const arma::mat & dcm,
+	    const arma::mat & x);
 
-
+	double compute_rms_residuals(
+	    const arma::mat & dcm,
+	    const arma::vec & x,
+	    const arma::umat & point_pairs);
 
 
 

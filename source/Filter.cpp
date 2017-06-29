@@ -557,7 +557,6 @@ void Filter::run_new(
 		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
-
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
@@ -566,19 +565,35 @@ void Filter::run_new(
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
 
 		// Getting the true observations (noise free)
-		this -> lidar -> send_flash(this -> true_shape_model, false, true);
+		this -> lidar -> send_flash(this -> true_shape_model, false, false);
 		this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
+
+		// Registering the two stored point clouds
+		this -> register_pcs();
 
 	}
 
 }
 
+void Filter::register_pcs() {
+
+	// The rigid transform best aligning the two point clouds is found
+	
+
+	// From the pairing, the surface velocities are computed
+
+
+	// The virtual velocities are processed in a batch to obtain the center of mass and the 
+	// angular velocity
+
+
+}
 
 void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter) {
 
 	std::vector<Ray * > good_rays;
-	std::set<Vertex *> seen_vertices;
-	std::set<Facet *> seen_facets;
+	std::set<Vertex * > seen_vertices;
+	std::set<Facet * > seen_facets;
 	arma::mat N_mat;
 	std::map<Facet *, std::vector<unsigned int> > facet_to_index_of_vertices;
 	std::map<Facet *, arma::uvec> facet_to_N_mat_cols;

@@ -1,6 +1,7 @@
 #include "PC.hpp"
 
-PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane) {
+PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane,
+       FrameGraph * frame_graph) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
@@ -9,7 +10,12 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 		for (unsigned int z_index = 0; z_index < focal_plane -> at(0).size(); ++z_index) {
 
 			if (focal_plane -> at(y_index)[z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
-				points_normals.push_back(std::make_shared<PointNormal>(PointNormal(focal_plane -> at(y_index)[z_index] -> get_impact_point(true))));
+
+				arma::vec impact_point_instrument = focal_plane -> at(y_index)[z_index] -> get_impact_point(true);
+
+				arma::vec impact_point_inertial = frame_graph -> convert(impact_point_instrument, "L", "N");
+
+				points_normals.push_back(std::make_shared<PointNormal>(PointNormal(impact_point_inertial)));
 			}
 
 		}
@@ -21,11 +27,30 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 }
 
 
+
+unsigned int PC::get_size() const {
+	return this -> kd_tree -> points_normals.size();
+}
+
+arma::vec PC::get_point_coordinates(unsigned int index) const {
+	return *this -> kd_tree -> points_normals[index] -> get_point();
+}
+
+arma::vec PC::get_point_normal(unsigned int index) const {
+	return *this -> kd_tree -> points_normals[index] -> get_normal();
+}
+
+
+
+
+
+
 PC::PC(arma::vec los_dir, arma::mat & points) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
 	for (unsigned int index = 0; index < points . n_cols; ++index) {
+
 		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
 	}
 

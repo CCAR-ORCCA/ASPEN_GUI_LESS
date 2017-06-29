@@ -189,6 +189,10 @@ bool ShapeModel::has_kd_tree() const {
 	}
 }
 
+std::shared_ptr<KDTree_Shape> ShapeModel::get_kdtree() const {
+	return this -> kd_tree;
+}
+
 void ShapeModel::construct_kd_tree() {
 
 	this -> kd_tree = std::make_shared<KDTree_Shape>(KDTree_Shape());

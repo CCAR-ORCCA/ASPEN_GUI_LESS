@@ -8,8 +8,7 @@ Lidar::Lidar(
     unsigned int row_count,
     unsigned int col_count,
     double f,
-    double freq,
-    KDTree_Shape * kdtree) {
+    double freq) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -19,7 +18,7 @@ Lidar::Lidar(
 	this -> row_count = row_count;
 	this -> col_count = col_count;
 	this -> freq = freq;
-	this -> kdtree = kdtree;
+
 
 
 
@@ -102,9 +101,10 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
 
 			if (shape_model -> has_kd_tree()) {
-				hit = this -> kdtree -> hit(this -> kdtree, this -> focal_plane[y_index][z_index].get());
+				hit = shape_model -> get_kdtree().get() -> hit(shape_model -> get_kdtree().get(),
+				        this -> focal_plane[y_index][z_index].get());
 			}
-			
+
 			else {
 				hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
 
@@ -125,6 +125,17 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 				}
 			}
 		}
+	}
+
+	arma::vec u = {1, 0, 0};
+	if (this -> destination_pc == nullptr) {
+		this -> destination_pc = std::make_shared<PC>(PC(u, &this -> focal_plane, this -> frame_graph));
+	}
+	else {
+		if (this -> source_pc != nullptr) {
+			this -> destination_pc = this -> source_pc;
+		}
+		this -> source_pc = std::make_shared<PC>(PC(u, &this -> focal_plane, this -> frame_graph));
 	}
 }
 

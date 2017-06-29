@@ -7,6 +7,7 @@
 #include "Interpolator.hpp"
 #include "FilterArguments.hpp"
 #include "PC.hpp"
+#include "ICP.hpp"
 
 #include <RigidBodyKinematics.hpp>
 
@@ -62,7 +63,7 @@ public:
 	@param save_shape_model true if the shape model should be saved after each measurement
 	*/
 	void run(unsigned int N_iteration, bool plot_measurements, bool save_shape_model);
-	
+
 	/**
 	@param orbit_path Path to the orbit file
 	@param orbit_time_path Path to the orbit time file
@@ -71,16 +72,23 @@ public:
 	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
 	*/
 	void run_new(
-    std::string orbit_path,
-    std::string orbit_time_path,
-    std::string attitude_path,
-    std::string attitude_time_path);
+	    std::string orbit_path,
+	    std::string orbit_time_path,
+	    std::string attitude_path,
+	    std::string attitude_time_path);
 
 	/**
 	Collects 3D point cloud measurements and stores them to an OBJ file
 	@param path Path to obj file of the form XXX.obj (ex: test.obj)
 	*/
 	void get_surface_point_cloud(std::string path);
+
+
+	/**
+	Register the source and destination point clouds
+	*/
+	void register_pcs();
+
 
 
 	/**

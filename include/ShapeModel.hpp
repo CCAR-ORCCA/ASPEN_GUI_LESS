@@ -97,6 +97,14 @@ public:
 
 
 	/**
+	Returns pointer to KDTree member. 
+	@return pointer to KDtree
+	*/
+	std::shared_ptr<KDTree_Shape> get_kdtree() const ;
+
+
+
+	/**
 	Checks that the normals were consistently oriented. If not,
 	the ordering of the vertices in the provided shape model file is incorrect
 	@param tol numerical tolerance (if consistent: norm(Sum(oriented_surface_area)) / average_facet_surface_area << tol)

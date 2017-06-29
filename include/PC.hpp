@@ -7,6 +7,7 @@
 #include "KDTree_pc.hpp"
 #include "Ray.hpp"
 #include "PointNormal.hpp"
+#include "FrameGraph.hpp"
 
 
 class PC {
@@ -18,9 +19,11 @@ public:
 	@param los_dir Not used
 	@param focal_plane Pointer to focal plane whose individual rays impacting with the target
 	yield the point cloud
+	@param frame_graph Pointer to reference frame graph
 	*/
-	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane);
-	
+	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane,
+	   FrameGraph * frame_graph);
+
 	/**
 	Constructor
 	@param los_dir Not used
@@ -52,6 +55,22 @@ public:
 	*/
 	std::shared_ptr<PointNormal> get_closest_point(arma::vec & test_point) const;
 
+
+	/**	
+	Returns pointer the coordinates of the to queried point
+	@param index Index of the queried point
+	@return Pointer to queried point
+	*/
+	arma::vec get_point_coordinates(unsigned int index) const;
+
+	/**	
+	Returns normal of the queried point
+	@param index Index of the queried point
+	@return Pointer to normal of queried point
+	*/
+	arma::vec get_point_normal(unsigned int index) const;
+
+
 	/**
 	Returns a pointer to the N PointNormal-s whose points are closest to the provided test_point
 	using the KD Tree search
@@ -61,12 +80,26 @@ public:
 	std::vector<std::shared_ptr<PointNormal> > get_closest_N_points(arma::vec & test_point, unsigned int N) const;
 
 
+	/**
+	Return size of point clouds
+	@param size of point cloud
+	*/
+	unsigned int get_size() const;
+
+
+
+
+
 protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec & los);
 
 	std::shared_ptr<KDTree_pc> kd_tree;
+
+	arma::vec spacecraft_location_inertial;
+	arma::mat spacecraft_orientation_inertial;
+
 
 };
 

@@ -195,23 +195,37 @@ def plot_longitude_latitude_impact_count(path_to_impact_count):
   # the np array is turned into a list in preparation for the 
   # use of the imshow function
 
-  impact_counts_list = []
-  for i in range(impact_counts.shape[0]):
+  # impact_counts_list = []
+  # for i in range(impact_counts.shape[0]):
 
-    if (int(impact_counts[i,-1]) > 0):
-      new_list = [ impact_counts[i,0:2] ] * int(impact_counts[i,-1])
-      impact_counts_list += [np.vstack(new_list)]
+  #   if (int(impact_counts[i,-1]) > 0):
+  #     new_list = [ impact_counts[i,0:2] ] * int(impact_counts[i,-1])
+  #     impact_counts_list += [np.vstack(new_list)]
 
-  impact_counts_formatted = np.vstack(impact_counts_list)
+  # impact_counts_formatted = np.vstack(impact_counts_list)
 
 
-  plt.hist2d(impact_counts_formatted[:,0],impact_counts_formatted[:,1],bins = 64,norm = colors.LogNorm())
-  plt.colorbar()
+  # plt.hist2d(impact_counts_formatted[:,0],impact_counts_formatted[:,1],bins = 25)
+
+  zero_visibility = impact_counts[:,2] == 0
+  visibility = impact_counts[:,2] > 0
+
+  min_impact = np.amin(impact_counts[visibility,2])
+  max_impact = np.amax(impact_counts[visibility,2])
+
+  sc = plt.scatter(impact_counts[visibility,0], impact_counts[visibility,1], 
+    c = impact_counts[visibility,2], vmin = min_impact, vmax = max_impact, 
+    s = 10, edgecolors = 'none')
+
+  plt.scatter(impact_counts[zero_visibility,0], impact_counts[zero_visibility,1], 
+    color = 'k',s = 10, edgecolors = None, marker = 'd')
+
+  plt.colorbar(sc)
+
   plt.xlim([-180,180])
   plt.ylim([-90,90])
   plt.xlabel("Longitude (deg)")
   plt.ylabel("Latitude (deg)")
-
   plt.title("Visibility occurence against longitude/latitude")
 
 
@@ -222,9 +236,13 @@ def plot_longitude_latitude_impact_count(path_to_impact_count):
 
 
 
-def plot_body_frame_traj(path_to_traj,path_to_interpolated_mrp,path_to_shape,scale_factor,already_in_body_frame = True):
+def plot_body_frame_traj(path_to_traj,path_to_shape,scale_factor,is_nicolas, path_to_interpolated_mrp = None , already_in_body_frame = True):
+  
 
-  orbit = np.loadtxt(path_to_traj)[0:3,:]
+  if (is_nicolas is False):
+    orbit = np.loadtxt(path_to_traj)[0:3,:]
+  else:
+    orbit = np.loadtxt(path_to_traj)[:,1:4].T
 
   
   if already_in_body_frame is False:

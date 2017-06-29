@@ -5,12 +5,12 @@
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
-#include "KDTree_Shape.hpp"
+#include "PC.hpp"
 
 
 class Ray;
-class KDTree_Shape;
 class ShapeModel;
+class PC;
 
 class Lidar {
 
@@ -26,7 +26,6 @@ public:
 	@param col_count vertical resolution (number of pixel columns)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
-	@param kdtree KDTree
 	*/
 	Lidar(FrameGraph * frame_graph,
 	      std::string ref_frame_name = "L",
@@ -35,8 +34,7 @@ public:
 	      unsigned int row_count = 16,
 	      unsigned int col_count = 16,
 	      double f = 1e-2,
-	      double freq = 3,
-	      KDTree_Shape * kdtree = nullptr
+	      double freq = 3
 	     );
 
 
@@ -204,9 +202,11 @@ protected:
 
 	std::vector<arma::vec> surface_measurements;
 
-	KDTree_Shape * kdtree;
+	std::shared_ptr<PC> destination_pc = nullptr;
+	std::shared_ptr<PC> source_pc = nullptr;
 
-	
+
+
 
 
 };
