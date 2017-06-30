@@ -43,7 +43,7 @@ cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
-add_definitions(-Wall -O2)
+add_definitions(-Wall -O2 -lstdc++fs)
 
 # Include directories
 include_directories(include)
@@ -51,13 +51,9 @@ include_directories(external/include)
 
 # Find Boost
 set(BOOST_ROOT /usr/local/Cellar/boost/1.63.0/)
-find_package(Boost COMPONENTS filesystem system) 
-if (Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS}) 
-else() # This corresponds to a personal setting. The first statement should be sufficient to find BOOST provided it is installed
-	include_directories(/usr/local/Cellar/boost/1.60.0_2/include) 
-	set(Boost_LIBRARY_DIRS "/usr/local/Cellar/boost/1.60.0_2/lib")
-endif()
+find_package(Boost COMPONENTS filesystem system REQUIRED) 
+include_directories(${Boost_INCLUDE_DIRS}) 
+
 
 # Find Armadillo 
 find_package(Armadillo REQUIRED)

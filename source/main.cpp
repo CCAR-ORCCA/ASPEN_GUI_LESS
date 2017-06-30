@@ -9,9 +9,15 @@
 #include "KDNode.hpp"
 #include "Constants.hpp"
 
+
+
 #include <chrono>
+#include <fstream>
+
 
 int main() {
+
+
 
 	// Ref frame graph
 	FrameGraph frame_graph;
@@ -26,17 +32,11 @@ int main() {
 
 	// Shape model
 	ShapeModel true_shape_model("T", &frame_graph);
-	// ShapeModel estimated_shape_model("E", &frame_graph);
-
-	// ShapeModelImporter shape_io_estimated(
-	//     "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
-	//     200, false);
 
 	ShapeModelImporter shape_io_truth(
 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/HO3_scaled.obj", 1);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
-	// shape_io_estimated.load_shape_model(&estimated_shape_model);
 
 	std::shared_ptr<KDNode> kdtree = std::make_shared<KDNode>(KDNode());
 	kdtree = kdtree -> build(*true_shape_model . get_facets(), 0);
@@ -55,51 +55,56 @@ int main() {
 	args.set_minimum_elevation(MINIMUM_ELEVATION * arma::datum::pi / 180);
 
 
-	// 0) Load ephemeride of HO3
-	arma::mat nu;
-	arma::vec times;
-	nu.load("/Users/bbercovici/Desktop/Nicolas_code/nu.txt");
-	times.load("/Users/bbercovici/Desktop/Nicolas_code/time.txt");
+	std::vector<std::string> directories;
 
-	arma::inplace_trans(nu);
-
-	arma::mat s = arma::zeros<arma::mat>( 3, nu.n_cols);
-	s.row(0) = arma::cos(nu + args.get_omega());
-	s.row(1) = arma::sin(nu + args.get_omega());
-	s = (M3(- args.get_Omega()) * M1(- args.get_i())) * s;
-
-	Interpolator interp_s(&times, &s);
-	args.set_interp_s(&interp_s);
-
-	Lidar lidar(&frame_graph, "L", ROW_FOV, COL_FOV , ROW_RESOLUTION,
-	            COL_RESOLUTION, FOCAL_LENGTH, INSTRUMENT_FREQUENCY, &args, kdtree.get());
+	std::ifstream infile("/Users/bbercovici/Downloads/output/paths.txt");
+	std::string path;
+	while (infile >> path) {
+		directories.push_back(path);
+	}
 
 
-	// Filter
-	Filter filter(&frame_graph,
-	              &lidar,
-	              &true_shape_model);
+	for (unsigned int dir_index = 0; dir_index < directories.size(); ++dir_index) {
 
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
+		// 0) Load ephemeride of HO3
+		arma::mat nu;
+		arma::vec times;
+		nu.load(directories[dir_index] + "/nu.txt");
+		times.load(directories[dir_index] + "/time.txt");
+
+		arma::inplace_trans(nu);
+
+		arma::mat s = arma::zeros<arma::mat>( 3, nu.n_cols);
+		s.row(0) = arma::cos(nu + args.get_omega());
+		s.row(1) = arma::sin(nu + args.get_omega());
+		s = (M3(- args.get_Omega()) * M1(- args.get_i())) * s;
+
+		Interpolator interp_s(&times, &s);
+		args.set_interp_s(&interp_s);
+
+		Lidar lidar(&frame_graph, "L", ROW_FOV, COL_FOV , ROW_RESOLUTION,
+		            COL_RESOLUTION, FOCAL_LENGTH, INSTRUMENT_FREQUENCY, &args, kdtree.get());
 
 
-	filter.get_surface_point_cloud_from_trajectory(
-	    "/Users/bbercovici/Desktop/Nicolas_code/Trajectory_BodyFixed.txt",
-	    "HO3_pc.obj");
+		// Filter
+		Filter filter(&frame_graph,
+		              &lidar,
+		              &true_shape_model);
 
-	true_shape_model. save_lat_long_map_to_file("lat_long_impacts.txt");
+		filter.get_surface_point_cloud_from_trajectory(
+		    directories[dir_index] + "/Trajectory_BodyFixed.txt",
+		    directories[dir_index] + "/HO3_pc.obj");
 
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
-	// std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+		true_shape_model. save_lat_long_map_to_file(directories[dir_index] + "lat_long_impacts.txt");
 
-	// // filter.run(5, true, true);
-
-
+	}
 
 	return 0;
 }
+
+
+
+
 
 
 
