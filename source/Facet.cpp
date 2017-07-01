@@ -23,6 +23,11 @@ Facet::Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > >   vertice
 
 }
 
+void Facet::set_hit_count(double hit_count) {
+	this -> hit_count = hit_count;
+}
+
+
 
 void Facet::set_split_counter(unsigned int split_counter) {
 	this -> split_counter = split_counter;

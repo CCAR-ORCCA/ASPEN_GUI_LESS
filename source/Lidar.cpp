@@ -101,7 +101,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 			bool good_lighting = false;
-			
+
 			// Range measurements is reset
 			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
 
@@ -139,6 +139,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 			}
 		}
 	}
+
 }
 
 Args * Lidar::get_args() const {

@@ -57,14 +57,23 @@ int main() {
 
 	std::vector<std::string> directories;
 
-	std::ifstream infile("/Users/bbercovici/Downloads/output/paths.txt");
-	std::string path;
-	while (infile >> path) {
-		directories.push_back(path);
-	}
+	// std::ifstream infile("/Users/bbercovici/Downloads/output/paths.txt");
+	// std::string path;
+	// while (infile >> path) {
+	// 	directories.push_back(path);
+	// }
+
+	directories.push_back("/Users/bbercovici/Desktop/HO3/hovering");
 
 
 	for (unsigned int dir_index = 0; dir_index < directories.size(); ++dir_index) {
+
+
+
+		std::cout << directories[dir_index] << std::endl;
+
+
+
 
 		// 0) Load ephemeride of HO3
 		arma::mat nu;
@@ -91,11 +100,14 @@ int main() {
 		              &lidar,
 		              &true_shape_model);
 
+		true_shape_model.reset();
+
 		filter.get_surface_point_cloud_from_trajectory(
 		    directories[dir_index] + "/Trajectory_BodyFixed.txt",
 		    directories[dir_index] + "/HO3_pc.obj");
 
-		true_shape_model. save_lat_long_map_to_file(directories[dir_index] + "lat_long_impacts.txt");
+		filter.save_facet_seen_count(directories[dir_index] + "/facets_seen_count.txt");
+		true_shape_model. save_lat_long_map_to_file(directories[dir_index] + "/lat_long_impacts.txt");
 
 	}
 

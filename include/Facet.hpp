@@ -134,7 +134,7 @@ public:
 	Returns the number of times the (deceased)
 	parents of that face were split
 	@return number of time the parents of that
-	facet where 
+	facet where
 	*/
 	unsigned int get_split_count() const;
 
@@ -145,6 +145,13 @@ public:
 	@return hit_count Number of time this facet has been hit by an inbound ray
 	*/
 	double get_hit_count() const;
+
+
+	/**
+	Get the number of times this facet has been hit
+	@param hit_count to set
+	*/
+	void set_hit_count(double hit_count);
 
 protected:
 

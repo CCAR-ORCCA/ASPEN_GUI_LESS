@@ -398,6 +398,34 @@ arma::mat ShapeModel::get_inertia() const {
 
 
 
+unsigned int ShapeModel::seen_facets_count() const {
+
+	unsigned facet_seen_count = 0;
+
+	#pragma omp parallel for reduction (+:facet_seen_count)
+	for (unsigned int facet_index = 0; facet_index < this -> facets.size(); ++facet_index) {
+		if (facets[facet_index] -> get_hit_count() > 0) {
+			++facet_seen_count;
+		}
+	}
+	return facet_seen_count;
+
+
+}
+
+
+void ShapeModel::reset() {
+
+	#pragma omp parallel for
+	for (unsigned int facet_index = 0; facet_index < this -> facets.size(); ++facet_index) {
+		facets[facet_index] -> set_hit_count(0) ;
+
+	}
+
+}
+
+
+
 ShapeModel::ShapeModel(std::string ref_frame_name,
                        FrameGraph * frame_graph) {
 	this -> frame_graph = frame_graph;

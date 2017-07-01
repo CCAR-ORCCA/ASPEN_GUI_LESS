@@ -135,6 +135,13 @@ public:
 	*/
 	arma::vec cholesky(arma::mat & info_mat, arma::mat & normal_mat) const;
 
+
+	/**
+	Save the time history of the facet hit count to file
+	@param path Save path
+	*/
+	void save_facet_seen_count(std::string);
+
 protected:
 
 	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter);
@@ -159,6 +166,7 @@ protected:
 	std::vector<arma::rowvec> partial_range_partial_coordinates(const arma::vec & P,
 	        const arma::vec & u, Facet * facet) ;
 
+	arma::mat seen_facets_time_history;
 
 	FilterArguments * arguments;
 	FrameGraph * frame_graph;

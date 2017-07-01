@@ -12,8 +12,8 @@
 #define MINIMUM_ELEVATION 35
 
 // Lidar settings
-#define ROW_RESOLUTION 32
-#define COL_RESOLUTION 32
+#define ROW_RESOLUTION 256
+#define COL_RESOLUTION 256
 #define ROW_FOV 6
 #define COL_FOV 6
 #define INSTRUMENT_FREQUENCY 0.00028

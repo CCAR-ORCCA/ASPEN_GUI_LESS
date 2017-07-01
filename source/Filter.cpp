@@ -356,6 +356,8 @@ void Filter::get_surface_point_cloud_from_trajectory(
 	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
 
 
+	this -> seen_facets_time_history = arma::mat(times.n_rows, 2);
+
 	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
 		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
@@ -396,6 +398,10 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		// Getting the true observations (noise free)
 		this -> lidar -> send_flash(this -> true_shape_model, false, true);
 
+		// The time history of the seen facets is stored
+		this -> seen_facets_time_history.row(time_index).col(0) = times(time_index);
+		this -> seen_facets_time_history.row(time_index).col(1) = double(this -> true_shape_model -> seen_facets_count()) / double(this -> true_shape_model -> get_NFacets());
+
 	}
 
 	this -> lidar -> save_surface_measurements(savepath);
@@ -403,6 +409,9 @@ void Filter::get_surface_point_cloud_from_trajectory(
 }
 
 
+void Filter::save_facet_seen_count(std::string path) {
+	this -> seen_facets_time_history.save(path, arma::raw_ascii);
+}
 
 
 

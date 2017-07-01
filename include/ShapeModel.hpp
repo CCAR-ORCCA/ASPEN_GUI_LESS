@@ -98,6 +98,13 @@ public:
 	void check_normals_consistency(double tol = 1e-3) const;
 
 
+
+	/**
+	Returns the number of facets in the shape model that have been seen
+	@return number of facets that have been seen
+	*/
+	unsigned int seen_facets_count() const;
+
 	/**
 	Augment the internal container storing facets with a new (and not already inserted)
 	one
@@ -293,7 +300,10 @@ public:
 	*/
 	arma::mat get_inertia() const;
 
-
+	/**
+	Resets the hit count of all facets to 0
+	*/
+	void reset() ;
 
 
 protected:

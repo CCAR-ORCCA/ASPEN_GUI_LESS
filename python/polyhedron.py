@@ -2,6 +2,12 @@ import mpl_toolkits.mplot3d as a3
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import os
+
+from matplotlib import rc
+
+
+rc('text', usetex=True)
 
 def compute_volume(verts,facets):
   volume = 0
@@ -187,25 +193,106 @@ def convert_to_body_frame(inertial_state,mrp):
 
 
 
+def plot_facet_seen_count_vs_time(path):
+
+  paths = os.listdir(path)
+  read = 0
+
+  plt.rc('text', usetex=True)
+  plt.rc('font', family='serif')
+  print paths
+  for directory in paths:
+
+    if ("pole" or "hovering" in directory):
+
+
+      try:
+        facet_seen_count_vs_time = np.loadtxt(directory + "/facets_seen_count.txt")
+      except IOError:
+        print "Incomplete"
+
+      else:
+        plt.plot(facet_seen_count_vs_time[:,0] / (86400 * 30.5),facet_seen_count_vs_time[:,1] * 100)
+        read = read + 1
+
+  print read
+  plt.xlabel(r"Time (months)")
+  plt.ylabel(r"Percentage of facets seen")
+  plt.title(r"Percentage of facets seen over time",y = 1.04)
+
+  plt.savefig(path + "/facet_visi_vs_time.pdf")
+  plt.clf()
+
+
+def plot_longitude_latitude_impact_count_all(path):
+
+  paths = os.listdir(path)
+
+  plt.rc('text', usetex=True)
+  plt.rc('font', family='serif')
+  for directory in paths:
+
+    if ("pole" in directory):
+      print directory
+      plot_longitude_latitude_impact_count(directory)
+  plt.clf()
+     
+
+
+
+def plot_azimuth_elevation_facet_seen_count(rootpath):
+
+
+  paths = os.listdir(rootpath)
+
+  min_visibility = 1e6
+  max_visibility = -1e6
+
+  angles_list = []
+  colors = []
+
+
+  for directory in paths:
+
+    if ("pole" in directory):
+
+      angles = np.loadtxt(directory + "/angles.txt")
+      visibility = np.loadtxt(directory + "/facets_seen_count.txt")
+
+      min_visibility = min(min_visibility,visibility[-1,1])
+      max_visibility = max(max_visibility,visibility[-1,1])
+
+
+      angles_list += [angles[0:2]]
+      colors += [100 * visibility[-1,1]]
+
+  angles_mat = np.vstack(angles_list)
+  min_visibility = min_visibility * 100
+  max_visibility = max_visibility * 100
+
+
+  sc = plt.scatter(180./np.pi * angles_mat[:,0] - 180,180./np.pi * angles_mat[:,1], 
+  c = colors, vmin = min_visibility, vmax = max_visibility, 
+  s = 50, edgecolors = 'none')
+
+
+  plt.colorbar(sc)
+
+  plt.xlim([-180,180])
+  plt.ylim([0,180])
+  plt.xlabel("Azimuth (deg)")
+  plt.ylabel("Elevation (deg)")
+  plt.title("Percentage of facets seen after 6 months vs pole orientation",y =1.04)
+
+ 
+  plt.savefig(rootpath + "visibility.pdf")
+  plt.clf()
 
 
 def plot_longitude_latitude_impact_count(path_to_impact_count):
-  impact_counts = np.loadtxt(path_to_impact_count)
-
-  # the np array is turned into a list in preparation for the 
-  # use of the imshow function
-
-  # impact_counts_list = []
-  # for i in range(impact_counts.shape[0]):
-
-  #   if (int(impact_counts[i,-1]) > 0):
-  #     new_list = [ impact_counts[i,0:2] ] * int(impact_counts[i,-1])
-  #     impact_counts_list += [np.vstack(new_list)]
-
-  # impact_counts_formatted = np.vstack(impact_counts_list)
 
 
-  # plt.hist2d(impact_counts_formatted[:,0],impact_counts_formatted[:,1],bins = 25)
+  impact_counts = np.loadtxt(path_to_impact_count + "/lat_long_impacts.txt")
 
   zero_visibility = impact_counts[:,2] == 0
   visibility = impact_counts[:,2] > 0
@@ -224,12 +311,12 @@ def plot_longitude_latitude_impact_count(path_to_impact_count):
 
   plt.xlim([-180,180])
   plt.ylim([-90,90])
-  plt.xlabel("Longitude (deg)")
-  plt.ylabel("Latitude (deg)")
-  plt.title("Visibility occurence against longitude/latitude")
+  plt.xlabel(r"Longitude (deg)")
+  plt.ylabel(r"Latitude (deg)")
+  plt.title(r"Visibility occurence against longitude/latitude")
 
-
-  plt.savefig("visibility_128.pdf")
+ 
+  plt.savefig(path_to_impact_count + "/visibility.pdf")
   plt.clf()
 
 
