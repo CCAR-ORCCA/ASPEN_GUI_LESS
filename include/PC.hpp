@@ -56,17 +56,26 @@ public:
 	std::shared_ptr<PointNormal> get_closest_point(arma::vec & test_point) const;
 
 
+
+
+	/**	
+	Returns pointer to queried point
+	@param index Index of the queried point
+	@return queried point 
+	*/
+	std::shared_ptr<PointNormal> get_point(unsigned int index) const;
+
 	/**	
 	Returns pointer the coordinates of the to queried point
 	@param index Index of the queried point
-	@return Pointer to queried point
+	@return queried point coordinatess
 	*/
 	arma::vec get_point_coordinates(unsigned int index) const;
 
 	/**	
 	Returns normal of the queried point
 	@param index Index of the queried point
-	@return Pointer to normal of queried point
+	@return normal of queried point
 	*/
 	arma::vec get_point_normal(unsigned int index) const;
 
@@ -86,6 +95,24 @@ public:
 	*/
 	unsigned int get_size() const;
 
+
+
+
+	/**
+	Saves pc to file
+	@param path save path
+	*/
+	void save(std::string path) const;
+
+
+
+	/**
+	Saves pc to file after applying a rigid transform
+	@param path save path
+	@param dcm DCM
+	@param x Translation component
+	*/
+	void save(std::string path,arma::mat dcm, arma::vec x) const;
 
 
 

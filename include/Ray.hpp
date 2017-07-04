@@ -59,10 +59,26 @@ public:
 	*/
 	double get_computed_range() const ;
 
+
+	/**
+	Sets the true range to the prescribed value
+	@param true_range Prescribed true range value
+	*/
+	void set_true_range(double true_range) ;
+
+
+
+	/**
+	Sets the computed range to the prescribed value
+	@param true_range Prescribed computed range value
+	*/
+	void set_computed_range(double computed_range) ;
+
+
 	/**
 	Sets the corresponding measurement ray
-	to a default state. In particular, the origin and direction 
-	of the ray are computed in the same reference frame 
+	to a default state. In particular, the origin and direction
+	of the ray are computed in the same reference frame
 	as the one corresponding to the Lidar's target coordinates
 	@param computed_mes True if the reset ray is the one targeted
 	at the computed shape. False if the true shape is targeted

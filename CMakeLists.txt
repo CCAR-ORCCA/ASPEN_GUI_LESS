@@ -146,6 +146,7 @@ include/ICP.hpp
 include/PC.hpp
 include/FilterArguments.hpp
 include/PointNormal.hpp
+include/Constants.hpp
 external/source/GNUPlot.cpp
 external/include/GNUPlot.h
 )

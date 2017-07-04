@@ -211,9 +211,79 @@ public:
 		this -> min_edge_angle  = min_edge_angle;
 	}
 
+	void set_cm_bar_0(arma::vec cm_bar) {
+		this -> cm_hat_history.clear();
+		this -> cm_bar = cm_bar;
+		this -> cm_hat_history.push_back(cm_bar);
+	}
+
+	arma::vec get_latest_cm_hat() const {
+		return *(--this -> cm_hat_history.end());
+	}
+
+	void set_P_cm_0(arma::mat P_cm_0) {
+		this -> P_cm_hat_history.clear();
+		this -> P_cm_0 = P_cm_0;
+		this -> P_cm_hat_history.push_back(P_cm_0);
+	}
+
+	arma::mat get_latest_P_cm_hat() const {
+		return *(--this -> P_cm_hat_history.end()) ;
+	}
+
+	double get_R() const {
+		return this -> R;
+	}
+
+
+	void set_R(double R) {
+		this -> R = R;
+	}
+
+
+	void set_Q(arma::mat Q) {
+		this -> Q = Q;
+	}
+
+	arma::mat get_Q() const {
+		return this -> Q;
+	}
+
+	void append_cm_hat(arma::vec cm) {
+		this -> cm_hat_history.push_back(cm);
+	}
+
+	void append_P_cm_hat(arma::mat P) {
+		this -> P_cm_hat_history.push_back(P);
+	}
+
+	void save_estimate_time_history() const {
+
+
+
+
+
+		// Estimate
+		arma::mat cm_hat_time_history_mat = arma::mat(3, this -> cm_hat_history.size());
+		arma::mat P_cm_hat_time_history_mat = arma::mat(9, this -> P_cm_hat_history.size());
+
+		for (unsigned int i = 0; i < this -> cm_hat_history.size() ; ++i) {
+			cm_hat_time_history_mat.col(i) = this -> cm_hat_history[i];
+			P_cm_hat_time_history_mat.col(i) = arma::vectorise(this -> P_cm_hat_history[i]);
+
+		}
+
+
+		cm_hat_time_history_mat.save("cm_time_history_mat.txt", arma::raw_ascii);
+		P_cm_hat_time_history_mat.save("P_cm_hat_time_history_mat.txt", arma::raw_ascii);
+
+
+
+	}
 
 
 protected:
+
 	double t0;
 	double tf;
 	double min_normal_observation_angle;
@@ -232,6 +302,17 @@ protected:
 	bool split_status;
 	bool use_cholesky;
 	bool recycle_shrunk_facets;
+
+	arma::vec cm_bar;
+	arma::mat P_cm_0;
+	double R;
+	arma::mat Q;
+
+	std::vector<arma::vec> cm_hat_history;
+	std::vector<arma::mat> P_cm_hat_history;
+
+
+
 
 };
 

@@ -8,7 +8,8 @@ Lidar::Lidar(
     unsigned int row_count,
     unsigned int col_count,
     double f,
-    double freq) {
+    double freq,
+    double los_noise_sd) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -18,7 +19,7 @@ Lidar::Lidar(
 	this -> row_count = row_count;
 	this -> col_count = col_count;
 	this -> freq = freq;
-
+	this -> los_noise_sd = los_noise_sd;
 
 
 
@@ -111,6 +112,27 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 			}
 
 
+			// If there's a hit, noise is added along the line of sight
+			if (hit) {
+				if (computed_mes) {
+
+					double computed_range = this -> focal_plane[y_index][z_index]-> get_computed_range();
+					arma::vec random_vec = arma::randn(1);
+					double noise = this -> los_noise_sd * random_vec(0);
+					this -> focal_plane[y_index][z_index] -> set_computed_range(computed_range + noise);
+
+				}
+				else {
+					double true_range = this -> focal_plane[y_index][z_index]-> get_true_range();
+					arma::vec random_vec = arma::randn(1);
+					double noise = this -> los_noise_sd * random_vec(0);
+					this -> focal_plane[y_index][z_index] -> set_true_range(true_range + noise);
+
+				}
+			}
+
+
+
 
 			// If true, all the measurements are stored
 			if (store_mes == true) {
@@ -127,16 +149,6 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 		}
 	}
 
-	arma::vec u = {1, 0, 0};
-	if (this -> destination_pc == nullptr) {
-		this -> destination_pc = std::make_shared<PC>(PC(u, &this -> focal_plane, this -> frame_graph));
-	}
-	else {
-		if (this -> source_pc != nullptr) {
-			this -> destination_pc = this -> source_pc;
-		}
-		this -> source_pc = std::make_shared<PC>(PC(u, &this -> focal_plane, this -> frame_graph));
-	}
 }
 
 
@@ -148,6 +160,9 @@ std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
+std::vector<std::vector<std::shared_ptr<Ray> > > * Lidar::get_focal_plane() {
+	return &this -> focal_plane;
+}
 
 
 

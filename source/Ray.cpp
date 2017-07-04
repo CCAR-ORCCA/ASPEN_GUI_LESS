@@ -66,6 +66,15 @@ double Ray::get_computed_range() const {
 	return this -> computed_range;
 }
 
+void Ray::set_true_range(double true_range) {
+	this -> true_range = true_range;
+}
+
+void Ray::set_computed_range(double computed_range) {
+	this -> computed_range = computed_range;
+}
+
+
 
 Lidar * Ray::get_lidar() {
 	return this -> lidar;

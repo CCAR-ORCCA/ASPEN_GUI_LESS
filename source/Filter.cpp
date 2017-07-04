@@ -1,16 +1,30 @@
 #include "Filter.hpp"
+#include <chrono>
+
 
 Filter::Filter(FrameGraph * frame_graph,
                Lidar * lidar,
                ShapeModel * true_shape_model,
                ShapeModel * estimated_shape_model,
-               FilterArguments * arguments) {
+               FilterArguments * filter_arguments) {
 
 	this -> frame_graph = frame_graph;
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 	this -> estimated_shape_model = estimated_shape_model;
-	this -> arguments = arguments;
+	this -> filter_arguments = filter_arguments;
+}
+
+Filter::Filter(FrameGraph * frame_graph,
+               Lidar * lidar,
+               ShapeModel * true_shape_model,
+               FilterArguments * filter_arguments) {
+
+	this -> frame_graph = frame_graph;
+	this -> lidar = lidar;
+	this -> true_shape_model = true_shape_model;
+	this -> filter_arguments = filter_arguments;
+
 }
 
 Filter::Filter(FrameGraph * frame_graph,
@@ -32,10 +46,10 @@ void Filter::get_surface_point_cloud(std::string path) {
 	// It corresponds to the observation times
 	std::vector<double> times;
 
-	times.push_back(this -> arguments -> get_t0());
+	times.push_back(this -> filter_arguments -> get_t0());
 	double t = times[0];
 
-	while (t < this -> arguments -> get_tf()) {
+	while (t < this -> filter_arguments -> get_tf()) {
 		t = t + 1. / this -> lidar -> get_frequency();
 		times.push_back(t);
 	}
@@ -80,7 +94,7 @@ void Filter::get_surface_point_cloud(std::string path) {
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (M3(this -> filter_arguments -> get_orbit_rate() * time_index) * M1(this -> filter_arguments -> get_inclination()) * M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
@@ -91,7 +105,7 @@ void Filter::get_surface_point_cloud(std::string path) {
 
 		mrp_LN = dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		dcm_TN = M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
 		mrp_TN = dcm_to_mrp(dcm_TN);
 		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
 
@@ -315,10 +329,10 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 	// It corresponds to the observation times
 	std::vector<double> times;
 
-	times.push_back(this -> arguments -> get_t0());
+	times.push_back(this -> filter_arguments -> get_t0());
 	double t = times[0];
 
-	while (t < this -> arguments -> get_tf()) {
+	while (t < this -> filter_arguments -> get_tf()) {
 		t = t + 1. / this -> lidar -> get_frequency();
 		times.push_back(t);
 	}
@@ -377,7 +391,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (M3(this -> filter_arguments -> get_orbit_rate() * time_index) * M1(this -> filter_arguments -> get_inclination()) * M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
@@ -388,7 +402,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		mrp_LN = dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		dcm_TN = M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
 		mrp_TN = dcm_to_mrp(dcm_TN);
 		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
 
@@ -555,7 +569,7 @@ void Filter::run_new(
 
 		// LN DCM
 		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
-		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
+		lidar_pos_inertial = dcm_TN.t() * lidar_pos + *this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> get_origin_from_parent();
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
@@ -568,26 +582,213 @@ void Filter::run_new(
 		this -> lidar -> send_flash(this -> true_shape_model, false, false);
 		this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
 
-		// Registering the two stored point clouds
-		this -> register_pcs();
+
+		// The point clouds are stored: the focal plane is dumped to either the source or destination
+		// point cloud receptacle
+		this -> store_point_clouds(time_index);
+
+		// The two point clouds are registered
+		this -> register_pcs(time_index);
+
+	}
+
+
+
+
+	arma::mat cm_pos_mat(3, this -> cm_pos.size());
+
+	for (unsigned int i = 0; i < this -> cm_pos.size(); ++i) {
+
+		cm_pos_mat.col(i) = this -> cm_pos[i];
+
+		std::ofstream shape_file;
+		shape_file.open("cm_" + std::to_string(i) + ".obj");
+		shape_file << "v " << this -> cm_pos[i](0) << " " << this -> cm_pos[i](1) << " " << this -> cm_pos[i](2) << std::endl;
+
+
+
+	}
+
+	cm_pos_mat.save("cm_pos.txt", arma::raw_ascii);
+
+}
+
+void Filter::register_pcs(int index) {
+
+
+
+
+	// The rigid transform best aligning the two point clouds is found
+	if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
+
+		ICP icp(this -> destination_pc, this -> source_pc);
+
+
+		this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", icp.get_DCM(), icp.get_X());
+
+
+		// The virtual velocities are processed in a batch to obtain the center of mass and the
+		// angular velocity
+		this -> compute_cm_angular_vel_KF(icp.get_point_pairs());
+
+	}
+
+
+}
+
+
+void Filter::compute_cm_angular_vel_KF(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs) {
+
+
+	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
+
+		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
+		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
+
+		arma::vec v = (*destination_point - *source_point) * this -> lidar -> get_frequency();
+		arma::vec midpoint = (*destination_point + *source_point) / 2;
+
+		arma::vec v_norm = arma::normalise(v);
+
+		double d = - arma::dot(v_norm, midpoint);
+
+		arma::rowvec H = v_norm.t();
+		double y = -d;
+
+		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
+		arma::mat P_bar = this -> filter_arguments -> get_latest_P_cm_hat() + this -> filter_arguments -> get_Q();
+
+
+		// Measurement update
+		arma::vec K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + this -> filter_arguments -> get_R());
+		arma::vec cm_hat = cm_bar + K * (y - H * cm_bar);
+		arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R() * K.t();
+
+		this -> filter_arguments -> append_cm_hat(cm_hat);
+		this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
+
+
+	}
+	std::cout << "CM : " << std::endl;
+	std::cout << this -> filter_arguments -> get_latest_cm_hat().t() << std::endl;
+}
+
+
+void Filter::compute_cm_angular_vel(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs) {
+
+
+	arma::mat H(point_pairs -> size(), 3);
+	arma::vec y(point_pairs -> size());
+
+
+	#pragma omp parallel for
+	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
+
+		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
+		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
+
+		arma::vec v = (*destination_point - *source_point) * this -> lidar -> get_frequency();
+		arma::vec midpoint = (*destination_point + *source_point) / 2;
+
+		arma::vec v_norm = arma::normalise(v);
+
+
+		// double d = - arma::dot(v_norm, *source_point);
+		double d = - arma::dot(v_norm, midpoint);
+
+
+		H.row(pair_index) = v_norm.t();
+		y(pair_index) = -d;
+
+	}
+
+	unsigned int H_non_obs_index = arma::mean(arma::abs(H), 0).index_min();
+
+	std::cout << arma::inv(H.t() * H) << std::endl;
+
+	// H.shed_col(H_non_obs_index);
+
+	arma::vec cm_obs = arma::solve(H.t() * H, H.t() * y);
+
+	arma::vec cm(3);
+
+
+	switch (H_non_obs_index) {
+	case 0:
+
+		cm(0) = 0;
+		cm(1) = cm_obs(0);
+		cm(2) = cm_obs(1);
+		break;
+
+	case 1:
+		cm(0) = cm_obs(0);
+		cm(1) = 0;
+		cm(2) = cm_obs(1);
+		break;
+
+	case 2:
+		cm(0) = cm_obs(0);
+		cm(1) = cm_obs(1);
+		cm(2) = 0;
+		break;
+	}
+
+
+	this -> cm_pos.push_back(cm);
+
+	std::cout << "cm: " << std::endl;
+	std::cout << cm.t() << std::endl;
+
+
+
+}
+
+
+void Filter::store_point_clouds(int index) {
+
+
+	arma::vec u = {1, 0, 0};
+
+	// No point cloud has been collected yet
+	if (this -> source_pc == nullptr) {
+		this -> source_pc = std::make_shared<PC>(PC(u,
+		                    this -> lidar -> get_focal_plane(),
+		                    this -> frame_graph));
+		this -> source_pc -> save("source_" + std::to_string(index) + ".obj");
+
+	}
+	else {
+		// Only one source point cloud has been collected
+		if (this -> destination_pc == nullptr) {
+			this -> destination_pc = std::make_shared<PC>(PC(u,
+			                         this -> lidar -> get_focal_plane(),
+			                         this -> frame_graph));
+
+			this -> destination_pc -> save("destination_" + std::to_string(index) + ".obj");
+
+
+
+		}
+
+		// Two point clouds have been collected : "nominal case")
+		else {
+
+			this -> destination_pc = this -> source_pc;
+			this -> source_pc = std::make_shared<PC>(PC(u,
+			                    this -> lidar -> get_focal_plane(),
+			                    this -> frame_graph));
+
+			this -> source_pc -> save("source_" + std::to_string(index) + ".obj");
+			this -> destination_pc -> save("destination_" + std::to_string(index) + ".obj");
+
+
+		}
 
 	}
 
 }
 
-void Filter::register_pcs() {
-
-	// The rigid transform best aligning the two point clouds is found
-	
-
-	// From the pairing, the surface velocities are computed
-
-
-	// The virtual velocities are processed in a batch to obtain the center of mass and the 
-	// angular velocity
-
-
-}
 
 void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter) {
 
@@ -644,14 +845,14 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index), facets_to_residuals);
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
 
-		if (facet_to_split != nullptr && this -> arguments -> get_split_status() == true) {
-			if (facet_to_split -> get_split_count() < this -> arguments -> get_max_split_count())
+		if (facet_to_split != nullptr && this -> filter_arguments -> get_split_status() == true) {
+			if (facet_to_split -> get_split_count() < this -> filter_arguments -> get_max_split_count())
 				this -> estimated_shape_model -> split_facet(facet_to_split);
 		}
 
-		if (this -> arguments -> get_recycle_shrunk_facets() == true) {
-			this -> estimated_shape_model -> enforce_mesh_quality(this -> arguments -> get_min_facet_angle(),
-			        this -> arguments -> get_min_edge_angle());
+		if (this -> filter_arguments -> get_recycle_shrunk_facets() == true) {
+			this -> estimated_shape_model -> enforce_mesh_quality(this -> filter_arguments -> get_min_facet_angle(),
+			        this -> filter_arguments -> get_min_edge_angle());
 		}
 	}
 
@@ -720,13 +921,13 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 
 	}
 
-	info_mat = info_mat + this -> arguments -> get_ridge_coef() * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
+	info_mat = info_mat + this -> filter_arguments -> get_ridge_coef() * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
 
 
 	arma::vec alpha;
 
 	// The deviation in the coordinates of the vertices that were seen is computed
-	if (this -> arguments -> get_use_cholesky() == true) {
+	if (this -> filter_arguments -> get_use_cholesky() == true) {
 		alpha = this -> cholesky(info_mat, normal_mat);
 	}
 
@@ -805,7 +1006,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 				if (std::abs(
 				            arma::dot(u,
-				                      *ray -> get_computed_hit_facet() -> get_facet_normal())) < std::sin(this -> arguments -> get_min_normal_observation_angle())) {
+				                      *ray -> get_computed_hit_facet() -> get_facet_normal())) < std::sin(this -> filter_arguments -> get_min_normal_observation_angle())) {
 					// This is a grazing ray that should be excluded
 					continue;
 				}
@@ -822,7 +1023,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 
 
-	if (this -> arguments -> get_reject_outliers() == true) {
+	if (this -> filter_arguments -> get_reject_outliers() == true) {
 		// The distribution of the residuals for each facet are computed
 		// here, so as to exclude residuals that are "obvious" outliers
 
@@ -893,7 +1094,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 	for (auto facet_pair : facet_to_rays) {
 
-		if (facet_pair.second.size() >= this -> arguments -> get_minimum_ray_per_facet()) {
+		if (facet_pair.second.size() >= this -> filter_arguments -> get_minimum_ray_per_facet()) {
 
 			seen_facets.insert(facet_pair.first);
 			seen_vertices.insert(facet_pair.first -> get_vertices() -> at(0) . get());
@@ -977,7 +1178,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 			arma::vec * n1 = vertex_to_owning_facets[v_index][0] -> get_facet_normal();
 			arma::vec * n2 = vertex_to_owning_facets[v_index][1] -> get_facet_normal();
 
-			if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
+			if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference())) {
 				vertex_to_normal[v_index].push_back(n1);
 				vertex_to_normal[v_index].push_back(n2);
 			}
@@ -1011,7 +1212,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 				// If true, we just found another independent normal.
 				// We need to select up to one more
-				if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
+				if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference())) {
 					vertex_to_normal[v_index].push_back(n2);
 					n2_index = facet_index;
 					break;
@@ -1030,7 +1231,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 						n3 = vertex_to_owning_facets[v_index][facet_index] -> get_facet_normal();
 						// If true, we found our third normal
-						if (std::abs(arma::dot(arma::cross(*n1, *n2), *n3)) > std::sin(this -> arguments -> get_min_facet_normal_angle_difference())) {
+						if (std::abs(arma::dot(arma::cross(*n1, *n2), *n3)) > std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference())) {
 							vertex_to_normal[v_index].push_back(n3);
 							break;
 						}

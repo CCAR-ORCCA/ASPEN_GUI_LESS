@@ -26,6 +26,8 @@ public:
 	@param col_count vertical resolution (number of pixel columns)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
+	@param los_noise_sd Standard deviation of the line-of-sight gaussian noise of zero mean
+	applied to the range measurement
 	*/
 	Lidar(FrameGraph * frame_graph,
 	      std::string ref_frame_name = "L",
@@ -34,7 +36,8 @@ public:
 	      unsigned int row_count = 16,
 	      unsigned int col_count = 16,
 	      double f = 1e-2,
-	      double freq = 3
+	      double freq = 3,
+	      double los_noise_sd = 0
 	     );
 
 
@@ -185,6 +188,9 @@ public:
 
 	void save_surface_measurements(std::string path) const ;
 
+	std::vector<std::vector<std::shared_ptr<Ray> > > * get_focal_plane() ;
+
+
 protected:
 	double f;
 	double freq;
@@ -193,6 +199,7 @@ protected:
 	double fov_z ;
 	double row_count ;
 	double col_count ;
+	double los_noise_sd;
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;
@@ -201,9 +208,6 @@ protected:
 	std::vector<std::vector<std::shared_ptr<Ray> > > focal_plane;
 
 	std::vector<arma::vec> surface_measurements;
-
-	std::shared_ptr<PC> destination_pc = nullptr;
-	std::shared_ptr<PC> source_pc = nullptr;
 
 
 

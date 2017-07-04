@@ -6,6 +6,68 @@ ffmpeg -f image2 -framerate 25 -i computed_prefit_00%04d.png -vcodec libx264 -b:
 '''
 
 
+from matplotlib import rc
+rc('text', usetex=True)
+
+
+def plot_cm_estimate(path = None):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        cm_history = np.loadtxt(path + "cm_time_history_mat.txt")
+        P_history = np.loadtxt(path + "P_cm_hat_time_history_mat.txt")
+        true_cm = np.loadtxt(path + "true_cm.obj",dtype = str)[1:].astype(float)
+
+    else:
+        cm_history = np.loadtxt("cm_time_history_mat.txt")
+        P_history = np.loadtxt("P_cm_hat_time_history_mat.txt")
+        true_cm = np.loadtxt("true_cm.obj",dtype = str)[1:].astype(float)
+
+    sd_list = []
+
+    for i in range(P_history.shape[1]):
+        sd_list += [np.sqrt(np.linalg.eigvalsh([P_history[:,i].reshape(3,3)]))]
+
+    sd_mat = np.vstack(sd_list).T
+
+    indices = range(cm_history.shape[1])
+
+    estimate_error = cm_history.T - true_cm
+    
+    # Estimate error
+    plt.plot(indices,estimate_error[:,0],label = "$\Delta x$")
+    plt.plot(indices,estimate_error[:,1],label = "$\Delta y$")
+    plt.plot(indices,estimate_error[:,2],label = "$\Delta z$")
+
+
+    # Covariance
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(indices, 3 * sd_mat[0,:],'--')
+    plt.plot(indices, 3 * sd_mat[1,:],'--')
+    plt.plot(indices, 3 * sd_mat[2,:],'--')
+
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(indices, - 3 * sd_mat[0,:],'--')
+    plt.plot(indices, - 3 * sd_mat[1,:],'--')
+    plt.plot(indices, - 3 * sd_mat[2,:],'--')
+
+    max_val = np.amax(np.abs(estimate_error))
+
+    plt.ylim([- 1. * max_val,1. * max_val])
+
+    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
+    plt.xlabel("Measurement index")
+    plt.ylabel("Error (m)")
+
+    plt.title("Center of mass estimation")
+    plt.show()
+    plt.clf()
+
+
 
 def plot_focal_plane():
 

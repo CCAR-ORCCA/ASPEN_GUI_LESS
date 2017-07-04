@@ -11,7 +11,7 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 
 			if (focal_plane -> at(y_index)[z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
 
-				arma::vec impact_point_instrument = focal_plane -> at(y_index)[z_index] -> get_impact_point(true);
+				arma::vec impact_point_instrument = focal_plane -> at(y_index)[z_index] -> get_impact_point(false);
 
 				arma::vec impact_point_inertial = frame_graph -> convert(impact_point_instrument, "L", "N");
 
@@ -35,6 +35,13 @@ unsigned int PC::get_size() const {
 arma::vec PC::get_point_coordinates(unsigned int index) const {
 	return *this -> kd_tree -> points_normals[index] -> get_point();
 }
+
+std::shared_ptr<PointNormal> PC::get_point(unsigned int index) const {
+	return this -> kd_tree -> points_normals[index];
+}
+
+
+
 
 arma::vec PC::get_point_normal(unsigned int index) const {
 	return *this -> kd_tree -> points_normals[index] -> get_normal();
@@ -106,6 +113,45 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 	return closest_points;
 
 }
+
+void PC::save(std::string path) const {
+
+
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> get_size();
+	        ++vertex_index) {
+
+		arma::vec p = this -> get_point_coordinates(vertex_index);
+		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+	}
+
+
+
+}
+
+
+void  PC::save(std::string path, arma::mat dcm, arma::vec x) const {
+
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int vertex_index = 0;
+	        vertex_index < this -> get_size();
+	        ++vertex_index) {
+
+		arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
+		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+	}
+
+
+
+}
+
 
 
 
