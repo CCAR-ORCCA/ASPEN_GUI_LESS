@@ -57,13 +57,13 @@ int main() {
 
 	std::vector<std::string> directories;
 
-	// std::ifstream infile("/Users/bbercovici/Downloads/output/paths.txt");
-	// std::string path;
-	// while (infile >> path) {
-	// 	directories.push_back(path);
-	// }
+	std::ifstream infile("/Users/bbercovici/Desktop/HO3/SPC/paths.txt");
+	std::string path;
+	while (infile >> path) {
+		directories.push_back(path);
+	}
 
-	directories.push_back("/Users/bbercovici/Desktop/HO3/hovering");
+	// directories.push_back("/Users/bbercovici/Desktop/HO3/hovering");
 
 
 	for (unsigned int dir_index = 0; dir_index < directories.size(); ++dir_index) {
@@ -71,8 +71,6 @@ int main() {
 
 
 		std::cout << directories[dir_index] << std::endl;
-
-
 
 
 		// 0) Load ephemeride of HO3

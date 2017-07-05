@@ -9,11 +9,11 @@
 #define HO3_LONGITUDE_PERIGEE 5.36213407427001
 
 // Visibility settings
-#define MINIMUM_ELEVATION 35
+#define MINIMUM_ELEVATION 0
 
 // Lidar settings
-#define ROW_RESOLUTION 256
-#define COL_RESOLUTION 256
+#define ROW_RESOLUTION 64
+#define COL_RESOLUTION 64
 #define ROW_FOV 6
 #define COL_FOV 6
 #define INSTRUMENT_FREQUENCY 0.00028
