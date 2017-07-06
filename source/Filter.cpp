@@ -494,7 +494,8 @@ void Filter::run_new(
     std::string orbit_path,
     std::string orbit_time_path,
     std::string attitude_path,
-    std::string attitude_time_path) {
+    std::string attitude_time_path,
+    bool inertial_traj) {
 
 	std::cout << "Collecting surface data" << std::endl;
 
@@ -549,8 +550,15 @@ void Filter::run_new(
 
 		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
-		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
+		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
+
+		if (inertial_traj == true) {
+			arma::mat dcm = mrp_to_dcm(interpolated_attitude.rows(0, 2));
+			interpolated_orbit.rows(0, 2) = dcm * interpolated_orbit.rows(0, 2);
+			interpolated_orbit.rows(3, 5) = dcm * interpolated_orbit.rows(0, 2) - arma::cross(interpolated_attitude.rows(3, 5), interpolated_orbit.rows(0, 2));
+		}
+
 
 		// L frame position and velocity (in T frame)
 		lidar_pos = interpolated_orbit.rows(0, 2);
@@ -590,26 +598,23 @@ void Filter::run_new(
 		// The two point clouds are registered
 		this -> register_pcs(time_index);
 
-	}
+		// The latest estimate of the center of mass is saved
 
-
-
-
-	arma::mat cm_pos_mat(3, this -> cm_pos.size());
-
-	for (unsigned int i = 0; i < this -> cm_pos.size(); ++i) {
-
-		cm_pos_mat.col(i) = this -> cm_pos[i];
-
+		arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
 		std::ofstream shape_file;
-		shape_file.open("cm_" + std::to_string(i) + ".obj");
-		shape_file << "v " << this -> cm_pos[i](0) << " " << this -> cm_pos[i](1) << " " << this -> cm_pos[i](2) << std::endl;
+		shape_file.open("cm_" + std::to_string(time_index) + ".obj");
+		shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
+		shape_file.close();
+
 
 
 
 	}
 
-	cm_pos_mat.save("cm_pos.txt", arma::raw_ascii);
+
+
+
+
 
 }
 
@@ -651,97 +656,29 @@ void Filter::compute_cm_angular_vel_KF(std::vector<std::pair<std::shared_ptr<Poi
 		arma::vec v_norm = arma::normalise(v);
 
 		double d = - arma::dot(v_norm, midpoint);
+		// double d = - arma::dot(v_norm, *source_point);
 
 		arma::rowvec H = v_norm.t();
 		double y = -d;
 
 		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
-		arma::mat P_bar = this -> filter_arguments -> get_latest_P_cm_hat() + this -> filter_arguments -> get_Q();
+		arma::mat P_bar = this -> filter_arguments -> get_latest_P_cm_hat() + this -> filter_arguments -> get_Q_cm();
 
 
 		// Measurement update
-		arma::vec K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + this -> filter_arguments -> get_R());
+		arma::vec K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + this -> filter_arguments -> get_R_cm());
 		arma::vec cm_hat = cm_bar + K * (y - H * cm_bar);
-		arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R() * K.t();
+		arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R_cm() * K.t();
 
 		this -> filter_arguments -> append_cm_hat(cm_hat);
 		this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
 
 
 	}
+	this -> filter_arguments -> append_latest_index_cm(this -> filter_arguments -> get_latest_index_cm());
+
 	std::cout << "CM : " << std::endl;
 	std::cout << this -> filter_arguments -> get_latest_cm_hat().t() << std::endl;
-}
-
-
-void Filter::compute_cm_angular_vel(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs) {
-
-
-	arma::mat H(point_pairs -> size(), 3);
-	arma::vec y(point_pairs -> size());
-
-
-	#pragma omp parallel for
-	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
-
-		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
-		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
-
-		arma::vec v = (*destination_point - *source_point) * this -> lidar -> get_frequency();
-		arma::vec midpoint = (*destination_point + *source_point) / 2;
-
-		arma::vec v_norm = arma::normalise(v);
-
-
-		// double d = - arma::dot(v_norm, *source_point);
-		double d = - arma::dot(v_norm, midpoint);
-
-
-		H.row(pair_index) = v_norm.t();
-		y(pair_index) = -d;
-
-	}
-
-	unsigned int H_non_obs_index = arma::mean(arma::abs(H), 0).index_min();
-
-	std::cout << arma::inv(H.t() * H) << std::endl;
-
-	// H.shed_col(H_non_obs_index);
-
-	arma::vec cm_obs = arma::solve(H.t() * H, H.t() * y);
-
-	arma::vec cm(3);
-
-
-	switch (H_non_obs_index) {
-	case 0:
-
-		cm(0) = 0;
-		cm(1) = cm_obs(0);
-		cm(2) = cm_obs(1);
-		break;
-
-	case 1:
-		cm(0) = cm_obs(0);
-		cm(1) = 0;
-		cm(2) = cm_obs(1);
-		break;
-
-	case 2:
-		cm(0) = cm_obs(0);
-		cm(1) = cm_obs(1);
-		cm(2) = 0;
-		break;
-	}
-
-
-	this -> cm_pos.push_back(cm);
-
-	std::cout << "cm: " << std::endl;
-	std::cout << cm.t() << std::endl;
-
-
-
 }
 
 

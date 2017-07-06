@@ -8,20 +8,27 @@
 #define HO3_RIGHT_ASCENSION 1.16087534800775
 #define HO3_LONGITUDE_PERIGEE 5.36213407427001
 
-// Central body density
+// Central body density/mass
 #define DENSITY 0
+#define MASS 45641859220 //Roughly equivalent to n = 0.1 deg/s at a = 100 m
 
 // Visibility settings
 #define MINIMUM_ELEVATION 35
 
 // Lidar settings
-#define ROW_RESOLUTION 128
-#define COL_RESOLUTION 128
-#define ROW_FOV 25
-#define COL_FOV 25
-#define INSTRUMENT_FREQUENCY 0.002
+#define ROW_RESOLUTION 256
+#define COL_RESOLUTION 256
+#define ROW_FOV 15
+#define COL_FOV 15
+#define INSTRUMENT_FREQUENCY 0.1
 #define FOCAL_LENGTH 1e-2
-#define LOS_NOISE_SD 1e1
+#define LOS_NOISE_SD 0e-1
+
+// Time (s)
+#define T0 0
+#define TF 360
+
+
 
 
 	

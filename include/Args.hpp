@@ -65,6 +65,13 @@ public:
 		this -> stopping_bool = stop;
 	}
 
+	void set_mass(double mass) {
+		this -> mass = mass;
+	}
+	double get_mass() const {
+		return this -> mass;
+	}
+
 	bool get_stopping_bool() {
 		return this -> stopping_bool;
 	}
@@ -92,7 +99,7 @@ public:
 	void set_minimum_elevation(double el) {
 		this -> minimum_elevation = el;
 	}
-	
+
 	double get_minimum_elevation() const {
 		return this -> minimum_elevation;
 	}
@@ -104,6 +111,7 @@ protected:
 	double sma;
 	double time;
 	double minimum_elevation;
+	double mass;
 	bool stopping_bool = false;
 	FrameGraph * frame_graph;
 	ShapeModel * shape_model;

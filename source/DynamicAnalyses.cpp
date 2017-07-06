@@ -34,8 +34,8 @@ void DynamicAnalyses::compute_pgm_potentials(double density) {
 	for (unsigned int facet_index = 0; facet_index < this -> shape_model -> get_NFacets(); ++facet_index) {
 
 		this -> pgm_potentials(facet_index) = this -> pgm_potential(
-		            this -> shape_model -> get_facets() -> at(facet_index) -> get_facet_center() -> colptr(0) ,
-		            density);
+		        this -> shape_model -> get_facets() -> at(facet_index) -> get_facet_center() -> colptr(0) ,
+		        density);
 
 		++progress;
 	}
@@ -329,6 +329,17 @@ arma::vec DynamicAnalyses::pgm_acceleration(double * point , double density) con
 	return acceleration;
 
 }
+
+arma::vec DynamicAnalyses::point_mass_acceleration(arma::vec & point , double mass) const {
+
+	arma::vec acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
+	return acc;
+
+
+}
+
+
+
 
 
 void DynamicAnalyses::save_slopes(std::string path) const {

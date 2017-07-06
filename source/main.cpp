@@ -35,7 +35,7 @@ int main() {
 	    200, false);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/saturn_v_ft_scaled.obj", 1);
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/saturn_v_ft.obj", 1);
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
@@ -62,17 +62,15 @@ int main() {
 	arma::vec attitude_0 = {0,
 	                        0,
 	                        0,
-	                        0,
-	                       	0,
-	                        7e-4
+	                        0.01,
+	                       	0.02,
+	                        0.03
 	                       };
-	double t0 = 0;
-	double tf = 5 * 1001;
+	double t0 = T0;
+	double tf = TF;
 	double dt = 0.1; //default timestep. Used as initial guess for RK45
 
 	bool check_energy_conservation = false;
-
-
 
 
 	// Specifiying filter_arguments such as density, pointer to frame graph and
@@ -92,7 +90,7 @@ int main() {
 	                 "attitude");
 
 	rk_attitude.run(&attitude_dxdt_wrapper,
-	                &energy_attitude,
+	                nullptr,
 	                &event_function_mrp, true);
 
 	// 2) Propagate spacecraft attitude about small body
@@ -101,18 +99,23 @@ int main() {
 	args.set_interpolator(&interpolator);
 	args.set_is_attitude_bool(false);
 	args.set_density(DENSITY);
+	args.set_mass(MASS);
 
 	// Initial condition of the orbiting spacecraft
-	arma::vec initial_pos = {0, 5500, 0};
-	arma::vec initial_vel_inertial = {0, 0.0, 0.0};
+	arma::vec initial_pos = {100, 0, 0};
+	arma::vec initial_vel_inertial = {0, std::sqrt(arma::datum::G * args.get_mass() / initial_pos(0)), 0.0};
 
-	arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
-	                     initial_pos);
+	// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
+	//                      initial_pos);
 
 	arma::vec orbit_0(6);
 
+	// orbit_0.rows(0, 2) = initial_pos;
+	// orbit_0.rows(3, 5) = body_vel;
+
+
 	orbit_0.rows(0, 2) = initial_pos;
-	orbit_0.rows(3, 5) = body_vel;
+	orbit_0.rows(3, 5) = initial_vel_inertial;
 
 	RK45 rk_orbit( orbit_0,
 	               t0,
@@ -123,9 +126,9 @@ int main() {
 	               "orbit_body_frame"
 	             );
 
-	rk_orbit.run(&pgm_dxdt_wrapper_body_frame,
-	             &energy_orbit_body_frame,
-	             &event_function_collision_body_frame,
+	rk_orbit.run(&point_mass_dxdt_wrapper,
+	             nullptr,
+	             nullptr,
 	             true);
 
 	// // The attitude of the asteroid is also interpolated
@@ -205,10 +208,10 @@ int main() {
 	//                             recycle_shrunk_facets);
 
 	FilterArguments filter_args;
-	filter_args.set_R(1e3);
+	filter_args.set_R_cm(1e3);
 	filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
 	filter_args.set_cm_bar_0(arma::zeros<arma::vec>(3));
-	filter_args.set_Q(1e-2 * arma::eye<arma::mat>(3, 3));
+	filter_args.set_Q_cm(1e-2 * arma::eye<arma::mat>(3, 3));
 
 
 
@@ -227,7 +230,8 @@ int main() {
 	    "../build/X_RK45_orbit_body_frame.txt",
 	    "../build/T_RK45_orbit_body_frame.txt",
 	    "../build/X_RK45_attitude.txt",
-	    "../build/T_RK45_attitude.txt");
+	    "../build/T_RK45_attitude.txt",
+	    true);
 
 
 	filter_args.save_estimate_time_history();

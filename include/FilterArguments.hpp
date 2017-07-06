@@ -217,9 +217,19 @@ public:
 		this -> cm_hat_history.push_back(cm_bar);
 	}
 
+	void set_omega_bar_0(arma::vec omega_bar) {
+		this -> omega_hat_history.clear();
+		this -> omega_bar = omega_bar;
+		this -> omega_hat_history.push_back(omega_bar);
+	}
+
+	/**
+	Center of mass
+	*/
 	arma::vec get_latest_cm_hat() const {
 		return *(--this -> cm_hat_history.end());
 	}
+
 
 	void set_P_cm_0(arma::mat P_cm_0) {
 		this -> P_cm_hat_history.clear();
@@ -227,27 +237,34 @@ public:
 		this -> P_cm_hat_history.push_back(P_cm_0);
 	}
 
+
 	arma::mat get_latest_P_cm_hat() const {
 		return *(--this -> P_cm_hat_history.end()) ;
 	}
 
-	double get_R() const {
-		return this -> R;
+
+	double get_R_cm() const {
+		return this -> R_cm;
+	}
+
+	unsigned int get_latest_index_cm() const {
+		return this -> cm_hat_history.size();
 	}
 
 
-	void set_R(double R) {
-		this -> R = R;
+	void set_R_cm(double R_cm) {
+		this -> R_cm = R_cm;
 	}
 
 
-	void set_Q(arma::mat Q) {
-		this -> Q = Q;
+	void set_Q_cm(arma::mat Q_cm) {
+		this -> Q_cm = Q_cm;
 	}
 
-	arma::mat get_Q() const {
-		return this -> Q;
+	arma::mat get_Q_cm() const {
+		return this -> Q_cm;
 	}
+
 
 	void append_cm_hat(arma::vec cm) {
 		this -> cm_hat_history.push_back(cm);
@@ -257,15 +274,71 @@ public:
 		this -> P_cm_hat_history.push_back(P);
 	}
 
+
+	std::vector<arma::vec> * get_cm_hat_history(){
+		return &this -> cm_hat_history;
+	}
+
+
+	void append_latest_index_cm(unsigned int index) {
+		this -> latest_index_history_cm.push_back(index);
+	}
+
+	/**
+	Omega
+	*/
+
+	void set_P_omega_0(arma::mat P_omega_0) {
+		this -> P_omega_hat_history.clear();
+		this -> P_omega_0 = P_omega_0;
+		this -> P_omega_hat_history.push_back(P_omega_0);
+	}
+
+
+	arma::vec get_latest_omega_hat() const {
+		return *(--this -> omega_hat_history.end());
+	}
+
+
+	unsigned int get_latest_index_omega() const {
+		return this -> omega_hat_history.size();
+	}
+
+	
+	arma::mat get_latest_P_omega_hat() const {
+		return *(--this -> P_omega_hat_history.end()) ;
+	}
+
+
+
+	void set_R_omega(double R_omega) {
+		this -> R_omega = R_omega;
+	}
+
+
+	void set_Q_omega(arma::mat Q_omega) {
+		this -> Q_omega = Q_omega;
+	}
+
+	arma::mat get_Q_omega() const {
+		return this -> Q_omega;
+	}
+	
+	void append_latest_index_omega(unsigned int index) {
+		this -> latest_index_history_omega.push_back(index);
+	}
+
+
+
+
 	void save_estimate_time_history() const {
-
-
 
 
 
 		// Estimate
 		arma::mat cm_hat_time_history_mat = arma::mat(3, this -> cm_hat_history.size());
 		arma::mat P_cm_hat_time_history_mat = arma::mat(9, this -> P_cm_hat_history.size());
+		arma::vec latest_index_history_cm_vec = arma::vec(this -> latest_index_history_cm.size());
 
 		for (unsigned int i = 0; i < this -> cm_hat_history.size() ; ++i) {
 			cm_hat_time_history_mat.col(i) = this -> cm_hat_history[i];
@@ -273,11 +346,14 @@ public:
 
 		}
 
+		for (unsigned int i = 0; i < this -> latest_index_history_cm.size() ; ++i) {
+			latest_index_history_cm_vec(i) = this -> latest_index_history_cm[i];
+		}
+
 
 		cm_hat_time_history_mat.save("cm_time_history_mat.txt", arma::raw_ascii);
 		P_cm_hat_time_history_mat.save("P_cm_hat_time_history_mat.txt", arma::raw_ascii);
-
-
+		latest_index_history_cm_vec.save("latest_index_history_cm_vec.txt", arma::raw_ascii);
 
 	}
 
@@ -304,12 +380,27 @@ protected:
 	bool recycle_shrunk_facets;
 
 	arma::vec cm_bar;
+	arma::vec omega_bar;
 	arma::mat P_cm_0;
-	double R;
-	arma::mat Q;
+	arma::mat P_omega_0;
+
+
+	double R_cm;
+	arma::mat R_omega;
+	arma::mat Q_cm;
+	arma::mat Q_omega;
+
 
 	std::vector<arma::vec> cm_hat_history;
+	std::vector<arma::vec> omega_hat_history;
+
 	std::vector<arma::mat> P_cm_hat_history;
+	std::vector<arma::mat> P_omega_hat_history;
+
+	std::vector<unsigned int> latest_index_history_cm;
+	std::vector<unsigned int> latest_index_history_omega;
+
+
 
 
 

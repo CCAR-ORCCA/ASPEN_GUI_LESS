@@ -10,7 +10,7 @@ from matplotlib import rc
 rc('text', usetex=True)
 
 
-def plot_cm_estimate(path = None):
+def plot_cm_estimate(path = None,save = True):
 
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
@@ -19,11 +19,15 @@ def plot_cm_estimate(path = None):
         cm_history = np.loadtxt(path + "cm_time_history_mat.txt")
         P_history = np.loadtxt(path + "P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt(path + "true_cm.obj",dtype = str)[1:].astype(float)
+        transitions = np.loadtxt(path + "latest_index_history_cm_vec.txt")
+
 
     else:
         cm_history = np.loadtxt("cm_time_history_mat.txt")
         P_history = np.loadtxt("P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt("true_cm.obj",dtype = str)[1:].astype(float)
+        transitions = np.loadtxt("latest_index_history_cm_vec.txt")
+
 
     sd_list = []
 
@@ -35,11 +39,16 @@ def plot_cm_estimate(path = None):
     indices = range(cm_history.shape[1])
 
     estimate_error = cm_history.T - true_cm
+    print "RMS: " + str(np.std(np.linalg.norm(estimate_error[int(len(estimate_error) / 2):,:],axis = 1))) + " m"
     
     # Estimate error
     plt.plot(indices,estimate_error[:,0],label = "$\Delta x$")
     plt.plot(indices,estimate_error[:,1],label = "$\Delta y$")
     plt.plot(indices,estimate_error[:,2],label = "$\Delta z$")
+
+    for i in range(len(transitions)):
+        plt.axvline(transitions[i],ymin = 0.25,ymax = 0.75,color = 'gray',linestyle = '--')
+        plt.text(transitions[i],45,str(i))
 
 
     # Covariance
@@ -57,14 +66,17 @@ def plot_cm_estimate(path = None):
 
     max_val = np.amax(np.abs(estimate_error))
 
-    plt.ylim([- 1. * max_val,1. * max_val])
+    plt.ylim([- 0.1 * max_val,0.1 * max_val])
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
     plt.xlabel("Measurement index")
     plt.ylabel("Error (m)")
 
     plt.title("Center of mass estimation")
-    plt.show()
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/com_pos.pdf")
+    else:
+        plt.show()
     plt.clf()
 
 

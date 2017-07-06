@@ -68,6 +68,16 @@ public:
 	arma::vec pgm_acceleration(double * point , double density) const ;
 
 	/**
+	Evaluates the acceleration due to gravity at the provided point using a point mass model
+	@param point Array of coordinates at which the acceleration is evaluated
+	@param mass Mass of the point mass (kg)
+	@return PGM acceleration expressed in the body frame
+	*/
+	arma::vec point_mass_acceleration(arma::vec & point , double mass) const ;
+
+
+
+	/**
 	Evaluates the gravity potential at the provided point using a Polyhedron Gravity Model
 	@param point Array of body-frame coordinates at which the acceleration is evaluated
 	@param density Density of the shape model (kg/m^3)

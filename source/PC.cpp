@@ -149,7 +149,6 @@ void  PC::save(std::string path, arma::mat dcm, arma::vec x) const {
 	}
 
 
-
 }
 
 
@@ -230,7 +229,7 @@ void PC::construct_normals(arma::vec & los_dir) {
 		std::shared_ptr<PointNormal> pn = this -> kd_tree -> get_points_normals() -> at(i);
 
 		// Get the N nearest neighbors to this point
-		unsigned int N = 3;
+		unsigned int N = 5;
 		std::vector< std::shared_ptr<PointNormal > > closest_points = this -> get_closest_N_points(*pn -> get_point(), N);
 
 		// This N nearest neighbors are used to get the normal

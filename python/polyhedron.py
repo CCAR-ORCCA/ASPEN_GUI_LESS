@@ -278,7 +278,6 @@ def plot_jacobi(path):
     plt.show()
 
 
-
 def plot_shape(path,already_in_body_frame = True,ax = None,scale_factor = 1):
 
   # The obj file is read

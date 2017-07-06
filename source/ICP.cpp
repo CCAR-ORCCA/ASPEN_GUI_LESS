@@ -7,8 +7,8 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) {
 
 
 	this -> register_pc_mrp_multiplicative_partials(30,
-	        1e-3,
-	        1e-3,
+	        1e-7,
+	        1e-7,
 	        true );
 
 
@@ -72,22 +72,28 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	arma::vec mrp = {0, 0, 0};
 	arma::vec x = {0, 0, 0};
 
-	int h = (int)(std::log(this -> pc_source -> get_size()) / std::log(2) / 2);
+	int h = 5;
 
 	bool exit = false;
+	bool next_h = true;
+
 
 	while (h >= 0 && exit == false) {
+
 		std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
 
 		// The ICP is iterated
 		for (unsigned int iter = 0; iter < iterations_max; ++iter) {
 
-			// The pairs are formed
-			this -> compute_pairs_closest_minimum_distance(
-			    mrp_to_dcm(mrp),
-			    x, h);
+			if ( next_h == true ) {
+				// The pairs are formed only after a change in the hierchical search
+				this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist(
+				    mrp_to_dcm(mrp),
+				    x, h);
+				next_h = false;
+			}
 
-			if (iter == 0) {
+			if (iter == 0 ) {
 
 				// The initial residuals are computed
 				J_0 = this -> compute_rms_residuals(mrp_to_dcm(mrp),
@@ -151,6 +157,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			// The state is updated
 			mrp = dcm_to_mrp(mrp_to_dcm(dmrp) * mrp_to_dcm(mrp));
 
+
 			x = x + dx;
 
 			// the mrp is switched to its shadow if need be
@@ -176,11 +183,13 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 			if ( std::abs(J - J_previous) / J_previous < stol ) {
 				h = h - 1;
+				next_h = true;
 				break;
 			}
 
 			else if (iter == iterations_max - 1) {
 				h = h - 1;
+				next_h = true;
 				break;
 			}
 
@@ -282,7 +291,7 @@ void ICP::compute_pairs_closest_minimum_distance(
 
 	// Only pairs whose residuals is less than the mean are kept
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
-			this -> point_pairs.push_back(it -> second);
+		this -> point_pairs.push_back(it -> second);
 	}
 
 }
@@ -291,7 +300,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
     const arma::mat & dcm,
     const arma::mat & x,
     int h) {
-
 
 
 	this -> point_pairs.clear();
@@ -305,7 +313,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 	std::cout << "Number of random indices : " << std::to_string(random_indices.n_rows) << std::endl;
 
 	std::map < std::shared_ptr<PointNormal> , std::map<double, std::shared_ptr<PointNormal> > > destination_to_source_pre_pairs;
-
 
 	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
 
@@ -337,10 +344,10 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 		}
 	}
 
-
 	// Each destination point can only be paired once
 	for (auto it = destination_to_source_pre_pairs.begin() ; it != destination_to_source_pre_pairs.end(); ++it) {
 
+		// Source/Destination pair
 		std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > pair(it -> second . begin() -> second, it -> first);
 		double dist = it -> second . begin() -> first;
 		all_pairs[dist] = pair;
@@ -348,10 +355,35 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 		mean_dist += dist;
 	}
 
+	arma::vec dist_vec(all_pairs.size());
 
-	
+	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
+		dist_vec(i) = std::next(all_pairs.begin(), i) -> first;
+	}
+
+	double median = arma::median(dist_vec);
+	double max = dist_vec.max();
+	double min = dist_vec.min();
+
+
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
-		this -> point_pairs.push_back(it -> second);
+
+		if (it -> first >= median) {
+			if ((it -> first - median) / (max - median) < 0.9) {
+				if ((it -> first - median) / (max - median) >= 0.0)
+					this -> point_pairs.push_back(it -> second);
+
+			}
+		}
+
+		else {
+			if (( median - it -> first) / (median - min) < 0.6) {
+				if (( median - it -> first) / (median - min) > 0.)
+					this -> point_pairs.push_back(it -> second);
+			}
+		}
+
+
 	}
 
 

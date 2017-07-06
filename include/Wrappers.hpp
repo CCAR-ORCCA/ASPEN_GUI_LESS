@@ -9,6 +9,8 @@
 
 arma::vec pgm_dxdt_wrapper(double t, arma::vec X, Args * args);
 arma::vec pgm_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args);
+arma::vec point_mass_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args);
+arma::vec point_mass_dxdt_wrapper(double t, arma::vec X, Args * args) ;
 
 arma::vec attitude_dxdt_wrapper(double t, arma::vec X, Args * args);
 

@@ -82,12 +82,14 @@ public:
 	@param attitude_path Path to the attitude file
 	@param attitude_time_path Path to the attitude time file
 	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
+	@param inertial_traj True if provided trajectory is inertial
 	*/
 	void run_new(
 	    std::string orbit_path,
 	    std::string orbit_time_path,
 	    std::string attitude_path,
-	    std::string attitude_time_path);
+	    std::string attitude_time_path,
+	    bool inertial_traj);
 
 	/**
 	Collects 3D point cloud measurements and stores them to an OBJ file
@@ -205,9 +207,6 @@ protected:
 
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
-
-	std::vector<arma::vec> cm_pos;
-
 
 
 };
