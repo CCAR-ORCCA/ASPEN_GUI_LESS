@@ -16,17 +16,17 @@
 #define MINIMUM_ELEVATION 35
 
 // Lidar settings
-#define ROW_RESOLUTION 256
-#define COL_RESOLUTION 256
-#define ROW_FOV 15
-#define COL_FOV 15
-#define INSTRUMENT_FREQUENCY 0.1
+#define ROW_RESOLUTION 128
+#define COL_RESOLUTION 128
+#define ROW_FOV 10
+#define COL_FOV 10
+#define INSTRUMENT_FREQUENCY 0.4
 #define FOCAL_LENGTH 1e-2
-#define LOS_NOISE_SD 0e-1
+#define LOS_NOISE_SD 0e-2
 
 // Time (s)
 #define T0 0
-#define TF 360
+#define TF 300
 
 
 

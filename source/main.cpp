@@ -45,7 +45,7 @@ int main() {
 
 	// The shape model is shifted set_transform_origin that it is no longer at
 	// the origin of the N frame
-	arma::vec new_origin = { -100, 100, 150};
+	arma::vec new_origin = { 0, 0, 0};
 
 	std::ofstream shape_file;
 	shape_file.open("true_cm.obj");
@@ -59,13 +59,15 @@ int main() {
 
 
 	// // 1) Propagate small body attitude
-	arma::vec attitude_0 = {0,
-	                        0,
-	                        0,
-	                        0.01,
-	                       	0.02,
-	                        0.03
-	                       };
+	arma::vec attitude_0(6);
+
+	arma::vec angles = {0, 0, 0};
+	arma::vec angular_vel = {0.01, 0.02, -0.01};
+
+	attitude_0.rows(0, 2) = euler313d_to_mrp(angles);
+	attitude_0.rows(3, 5) = angular_vel;
+
+
 	double t0 = T0;
 	double tf = TF;
 	double dt = 0.1; //default timestep. Used as initial guess for RK45
@@ -91,7 +93,7 @@ int main() {
 
 	rk_attitude.run(&attitude_dxdt_wrapper,
 	                nullptr,
-	                &event_function_mrp, true);
+	                &event_function_mrp, false);
 
 	// 2) Propagate spacecraft attitude about small body
 	// using computed small body attitude
@@ -129,7 +131,7 @@ int main() {
 	rk_orbit.run(&point_mass_dxdt_wrapper,
 	             nullptr,
 	             nullptr,
-	             true);
+	             false);
 
 	// // The attitude of the asteroid is also interpolated
 	// arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
@@ -208,11 +210,13 @@ int main() {
 	//                             recycle_shrunk_facets);
 
 	FilterArguments filter_args;
-	filter_args.set_R_cm(1e3);
 	filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
 	filter_args.set_cm_bar_0(arma::zeros<arma::vec>(3));
-	filter_args.set_Q_cm(1e-2 * arma::eye<arma::mat>(3, 3));
+	filter_args.set_Q_cm(1e-13 * arma::eye<arma::mat>(3, 3));
 
+	filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
+	filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
+	filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
 
 
 

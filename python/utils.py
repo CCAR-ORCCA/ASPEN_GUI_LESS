@@ -10,6 +10,15 @@ from matplotlib import rc
 rc('text', usetex=True)
 
 
+
+def plot_results(path = None,save = False):
+
+
+    plot_cm_estimate(path ,save )
+    plot_omega_histories(path,save)
+    plot_omega_norm_histories(path,save)
+    plot_spin_axis_histories(path,save)
+
 def plot_cm_estimate(path = None,save = True):
 
     plt.rc('text', usetex=True)
@@ -19,14 +28,14 @@ def plot_cm_estimate(path = None,save = True):
         cm_history = np.loadtxt(path + "cm_time_history_mat.txt")
         P_history = np.loadtxt(path + "P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt(path + "true_cm.obj",dtype = str)[1:].astype(float)
-        transitions = np.loadtxt(path + "latest_index_history_cm_vec.txt")
+        time = np.loadtxt(path + "time_history.txt")
 
 
     else:
         cm_history = np.loadtxt("cm_time_history_mat.txt")
         P_history = np.loadtxt("P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt("true_cm.obj",dtype = str)[1:].astype(float)
-        transitions = np.loadtxt("latest_index_history_cm_vec.txt")
+        time = np.loadtxt("time_history.txt")
 
 
     sd_list = []
@@ -36,45 +45,167 @@ def plot_cm_estimate(path = None,save = True):
 
     sd_mat = np.vstack(sd_list).T
 
-    indices = range(cm_history.shape[1])
-
     estimate_error = cm_history.T - true_cm
     print "RMS: " + str(np.std(np.linalg.norm(estimate_error[int(len(estimate_error) / 2):,:],axis = 1))) + " m"
     
     # Estimate error
-    plt.plot(indices,estimate_error[:,0],label = "$\Delta x$")
-    plt.plot(indices,estimate_error[:,1],label = "$\Delta y$")
-    plt.plot(indices,estimate_error[:,2],label = "$\Delta z$")
-
-    for i in range(len(transitions)):
-        plt.axvline(transitions[i],ymin = 0.25,ymax = 0.75,color = 'gray',linestyle = '--')
-        plt.text(transitions[i],45,str(i))
-
+    plt.plot(time,estimate_error[1:,0],"-o",label = "$\Delta x$")
+    plt.plot(time,estimate_error[1:,1],"-o",label = "$\Delta y$")
+    plt.plot(time,estimate_error[1:,2],"-o",label = "$\Delta z$")
 
     # Covariance
     plt.gca().set_color_cycle(None)
 
-    plt.plot(indices, 3 * sd_mat[0,:],'--')
-    plt.plot(indices, 3 * sd_mat[1,:],'--')
-    plt.plot(indices, 3 * sd_mat[2,:],'--')
+    plt.plot(time, 3 * sd_mat[0,1:],'--')
+    plt.plot(time, 3 * sd_mat[1,1:],'--')
+    plt.plot(time, 3 * sd_mat[2,1:],'--')
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(indices, - 3 * sd_mat[0,:],'--')
-    plt.plot(indices, - 3 * sd_mat[1,:],'--')
-    plt.plot(indices, - 3 * sd_mat[2,:],'--')
+    plt.plot(time, - 3 * sd_mat[0,1:],'--')
+    plt.plot(time, - 3 * sd_mat[1,1:],'--')
+    plt.plot(time, - 3 * sd_mat[2,1:],'--')
 
-    max_val = np.amax(np.abs(estimate_error))
+    max_val = np.amax(np.abs(estimate_error[2:]))
 
     plt.ylim([- 0.1 * max_val,0.1 * max_val])
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
-    plt.xlabel("Measurement index")
+    plt.xlabel("Measurement time (s)")
     plt.ylabel("Error (m)")
 
     plt.title("Center of mass estimation")
     if (save is True):
         plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/com_pos.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+
+
+def plot_omega_histories(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        omega_mes_history = np.loadtxt(path + "omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    else:
+        omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
+        time = np.loadtxt(path + "time_history.txt")
+
+
+
+    # Truth 
+    plt.plot(time,omega_true_history[:,0],"-o",label = "$\omega_x$")
+    plt.plot(time,omega_true_history[:,1],"-o",label = "$\omega_y$")
+    plt.plot(time,omega_true_history[:,2],"-o",label = "$\omega_z$")
+    plt.gca().set_color_cycle(None)
+
+    # Estimate 
+    plt.plot(time,omega_mes_history[:,0],"-x",label = r"$\tilde{\omega}_x$")
+    plt.plot(time,omega_mes_history[:,1],"-x",label = r"$\tilde{\omega}_y$")
+    plt.plot(time,omega_mes_history[:,2],"-x",label = r"$\tilde{\omega}_z$")
+
+
+
+    plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("Angular velocity (rad/s)")
+
+    plt.title("Angular velocity time histories")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/omega_histories.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+def plot_omega_norm_histories(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        omega_mes_history = np.loadtxt(path + "omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+    else:
+        omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    # Truth 
+    plt.plot(time,np.linalg.norm(omega_true_history,axis = 1),"-o",label = "Truth")
+
+    # Estimate 
+    plt.plot(time,np.linalg.norm(omega_mes_history,axis = 1),"-x",label = "Measured")
+
+
+    plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("Angular velocity (rad/s)")
+    plt.ylim([0,1.1 * (max(np.amax(np.linalg.norm(omega_true_history,axis = 1)),
+        np.amax(np.linalg.norm(omega_mes_history,axis = 1))))])
+
+    plt.title("Angular velocity norm time histories")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/omega_norm_histories.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+
+def plot_spin_axis_histories(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        omega_mes_history = np.loadtxt(path + "omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    else:
+        omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
+        omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
+        time = np.loadtxt(path + "time_history.txt")
+
+
+
+    # Truth 
+    plt.plot(time,omega_true_history[:,0]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_x$")
+    plt.plot(time,omega_true_history[:,1]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_y$")
+    plt.plot(time,omega_true_history[:,2]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_z$")
+    plt.gca().set_color_cycle(None)
+
+    # Estimate 
+    plt.plot(time,omega_mes_history[:,0]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_x$")
+    plt.plot(time,omega_mes_history[:,1]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_y$")
+    plt.plot(time,omega_mes_history[:,2]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_z$")
+
+
+
+    plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("Spin axis component")
+
+    plt.title("Spin axis time histories")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/spin_axis_histories.pdf")
     else:
         plt.show()
     plt.clf()

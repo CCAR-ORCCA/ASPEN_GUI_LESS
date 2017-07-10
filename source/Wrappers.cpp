@@ -91,6 +91,7 @@ double energy_orbit_body_frame(double t, arma::vec X , Args * args) {
 arma::vec attitude_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 	arma::vec dxdt = dXattitudedt(t, X , args -> get_shape_model() -> get_inertia());
+
 	return dxdt;
 
 }

@@ -6,10 +6,10 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) {
 	this -> pc_source = pc_source;
 
 
-	this -> register_pc_mrp_multiplicative_partials(30,
-	        1e-7,
-	        1e-7,
-	        true );
+	this -> register_pc_mrp_multiplicative_partials(100,
+	        1e-8,
+	        1e-8,
+	        false );
 
 
 }
@@ -80,8 +80,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	while (h >= 0 && exit == false) {
 
-		std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
-
+		if (pedantic) {
+			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
+		}
 		// The ICP is iterated
 		for (unsigned int iter = 0; iter < iterations_max; ++iter) {
 
@@ -209,6 +210,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 
 
+
 }
 
 
@@ -239,11 +241,11 @@ void ICP::compute_pairs_closest_minimum_distance(
     const arma::mat & x,
     int h) {
 
+	std::cout << this -> point_pairs.size() << std::endl;
 
 	this -> point_pairs.clear();
 
 	std::map<double, std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > all_pairs;
-	double mean_dist = 0;
 
 	int N_points = (int)(this -> pc_source -> get_size() / std::pow(2, h));
 	arma::ivec random_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, this -> pc_source -> get_size() - 1)));
@@ -282,17 +284,23 @@ void ICP::compute_pairs_closest_minimum_distance(
 		std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > pair(it -> second . begin() -> second, it -> first);
 		double dist = it -> second . begin() -> first;
 		all_pairs[dist] = pair;
-
-		mean_dist += dist;
 	}
 
+	arma::vec distances(all_pairs.size());
 
-	mean_dist = mean_dist / all_pairs.size();
+	for (unsigned int i = 0; i < all_pairs.size(); ++i) {
+		distances(i) = std::next(all_pairs.begin(), i) -> first;
+	}
 
-	// Only pairs whose residuals is less than the mean are kept
+	double threshold = std::min(arma::mean(distances), arma::median(distances));
+
+	int threshold_length = int(0.1 * all_pairs.size());
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
-		this -> point_pairs.push_back(it -> second);
+		if (this -> point_pairs.size() < threshold_length)
+			this -> point_pairs.push_back(it -> second);
 	}
+
+	std::cout << this -> point_pairs.size() << std::endl;
 
 }
 
@@ -309,8 +317,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 	int N_points = (int)(this -> pc_source -> get_size() / std::pow(2, h));
 	arma::ivec random_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, this -> pc_source -> get_size() - 1)));
-
-	std::cout << "Number of random indices : " << std::to_string(random_indices.n_rows) << std::endl;
 
 	std::map < std::shared_ptr<PointNormal> , std::map<double, std::shared_ptr<PointNormal> > > destination_to_source_pre_pairs;
 

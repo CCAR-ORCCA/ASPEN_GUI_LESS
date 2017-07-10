@@ -544,6 +544,7 @@ void Filter::run_new(
 
 	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
+
 		std::stringstream ss;
 		ss << std::setw(6) << std::setfill('0') << time_index;
 		std::string time_index_formatted = ss.str();
@@ -590,21 +591,27 @@ void Filter::run_new(
 		this -> lidar -> send_flash(this -> true_shape_model, false, false);
 		this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
 
-
 		// The point clouds are stored: the focal plane is dumped to either the source or destination
 		// point cloud receptacle
 		this -> store_point_clouds(time_index);
 
-		// The two point clouds are registered
-		this -> register_pcs(time_index);
 
-		// The latest estimate of the center of mass is saved
+		// The rigid transform best aligning the two point clouds is found
+		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
-		arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
-		std::ofstream shape_file;
-		shape_file.open("cm_" + std::to_string(time_index) + ".obj");
-		shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
-		shape_file.close();
+			// The two point clouds are registered
+			this -> register_pcs(time_index, times(time_index));
+
+			this -> filter_arguments -> append_omega_true(dcm_TN.t() * interpolated_attitude.rows(3, 5));
+
+			// The latest estimate of the center of mass is saved
+			arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
+			std::ofstream shape_file;
+			shape_file.open("cm_" + std::to_string(time_index) + ".obj");
+			shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
+			shape_file.close();
+
+		}
 
 
 
@@ -612,74 +619,185 @@ void Filter::run_new(
 	}
 
 
+}
+
+void Filter::register_pcs(int index, double time) {
 
 
+	ICP icp(this -> destination_pc, this -> source_pc);
+	arma::mat dcm = icp.get_DCM();
+	arma::vec X = icp.get_X();
+
+
+	this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", dcm, X);
+
+	this -> measure_spin_axis(dcm, X, icp.get_point_pairs());
+	this -> estimate_cm_KF(dcm, X);
+	this -> measure_omega(icp.get_point_pairs());
+
+	this -> filter_arguments -> append_time(time);
 
 
 }
 
-void Filter::register_pcs(int index) {
+void Filter::measure_spin_axis(arma::mat & dcm,
+                               arma::vec & x,
+                               std::vector<std::pair<std::shared_ptr<PointNormal>,
+                               std::shared_ptr<PointNormal> > > * point_pairs) {
+
+
+	arma::vec * source_point = point_pairs -> at(0).first -> get_point();
+	arma::vec * destination_point = point_pairs -> at(0).second -> get_point();
+
+	// Rigid transform invariant:
+	arma::cx_vec eigval;
+	arma::cx_mat eigvec;
+	arma::eig_gen( eigval, eigvec, dcm);
+
+	// The spin axis is extracted from the eigenvalue whose real part is closest to 1
+	unsigned int spin_axis_index = arma::abs(arma::real(eigval - 1)).index_min();
+	arma::vec spin_axis = arma::real(eigvec.col(spin_axis_index));
+
+	// The spin axis is oriented in the positive direction
+	// The first source/destination pair is used
+	arma::vec u = arma::normalise(arma::cross(*source_point - this -> filter_arguments -> get_latest_cm_hat(),
+	                              *destination_point - this -> filter_arguments -> get_latest_cm_hat()));
+	if (arma::dot(u, spin_axis) < 0) {
+		spin_axis = - spin_axis;
+	}
+
+	this -> filter_arguments -> append_spin_axis_mes(spin_axis);
+
+
+}
+
+
+void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
+
+	// The center of mass is also extracted
+	arma::mat v(3, 3);
+	v.col(0) = this -> filter_arguments -> get_latest_spin_axis_mes();
+	v.col(1) = arma::normalise(arma::cross(v.col(0), arma::randu(3)));
+	v.col(2) = arma::normalise(arma::cross(v.col(0), v.col(1)));
+
+
+	arma::mat H = (dcm - arma::eye<arma::mat>(3, 3)) * v.cols(1, 2);
+	arma::vec lambdas = arma::solve(H.t() * H, - H.t() * x);
+	arma::vec cm_obs = v.cols(1, 2) * lambdas;
+
+
+	// The measurement of the center of mass is fused with the past ones
+	double a = 1e8;
+	double b = 1e-2;
+	double c = 1e-2;
+
+	arma::mat R = a * v.col(0) * v.col(0).t() +  b * v.col(1) * v.col(1).t() +  c * v.col(2) * v.col(2).t();
+
+
+	// Measurement update for the center of mass
+	arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
+	arma::mat P_cm_bar = this -> filter_arguments -> get_latest_P_cm_hat() + this -> filter_arguments -> get_Q_cm();
+
+	arma::mat K = P_cm_bar * arma::inv(P_cm_bar + R);
+	arma::vec cm_hat = cm_bar + K * (cm_obs - cm_bar);
+	arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K ) * P_cm_bar * (arma::eye<arma::mat>(3, 3) - K ).t() + K * R * K.t();
+
+
+	this -> filter_arguments -> append_cm_hat(cm_hat);
+	this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
+
+}
 
 
 
-
-	// The rigid transform best aligning the two point clouds is found
-	if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
-
-		ICP icp(this -> destination_pc, this -> source_pc);
+void Filter::measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
+                           std::shared_ptr<PointNormal> > > * point_pairs) {
 
 
-		this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", icp.get_DCM(), icp.get_X());
+	arma::vec omega_mes_distr(point_pairs -> size());
 
+	for (unsigned int i = 0; i < point_pairs -> size() ; ++i) {
 
-		// The virtual velocities are processed in a batch to obtain the center of mass and the
-		// angular velocity
-		this -> compute_cm_angular_vel_KF(icp.get_point_pairs());
+		arma::vec * source_point = point_pairs -> at(i).first -> get_point();
+		arma::vec * destination_point = point_pairs -> at(i).second -> get_point();
+
+		double cos = arma::dot(arma::normalise(*source_point -  this -> filter_arguments -> get_latest_cm_hat()),
+		                       arma::normalise(*destination_point -  this -> filter_arguments -> get_latest_cm_hat()));
+
+		omega_mes_distr(i) = this -> lidar -> get_frequency() * std::acos(cos);
 
 	}
 
 
+
+	this -> filter_arguments -> append_omega_mes(arma::mean(omega_mes_distr) * this -> filter_arguments -> get_latest_spin_axis_mes());
+	this -> filter_arguments -> append_R_omega(arma::stddev(omega_mes_distr) * this -> filter_arguments -> get_latest_spin_axis_mes() * this -> filter_arguments -> get_latest_spin_axis_mes().t());
+
 }
 
 
-void Filter::compute_cm_angular_vel_KF(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs) {
+
+// void Filter::compute_omega_KF(std::vector<std::pair<std::shared_ptr<PointNormal>,
+//                               std::shared_ptr<PointNormal> > > * point_pairs,
+//                               double time) {
+
+// 	arma::vec omega_bar(3);
+// 	arma::vec omega_hat(3);
+// 	arma::vec midpoint(3);
+
+// 	arma::mat K(3, 3);
+// 	arma::mat P_omega_bar(3, 3);
+// 	arma::mat P_omega_hat(3, 3);
+
+// 	arma::vec y(3);
+
+// 	arma::mat H = arma::eye<arma::mat>(3, 3);
+// 	arma::vec cm_hat(3);
+
+// 	omega_bar = this -> filter_arguments -> get_latest_omega_hat();
+// 	P_omega_bar = this -> filter_arguments -> get_latest_P_omega_hat() + this -> filter_arguments -> get_Q_omega();
 
 
-	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
+// 	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
 
-		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
-		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
+// 		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
+// 		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
 
-		arma::vec v = (*destination_point - *source_point) * this -> lidar -> get_frequency();
-		arma::vec midpoint = (*destination_point + *source_point) / 2;
-
-		arma::vec v_norm = arma::normalise(v);
-
-		double d = - arma::dot(v_norm, midpoint);
-		// double d = - arma::dot(v_norm, *source_point);
-
-		arma::rowvec H = v_norm.t();
-		double y = -d;
-
-		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
-		arma::mat P_bar = this -> filter_arguments -> get_latest_P_cm_hat() + this -> filter_arguments -> get_Q_cm();
+// 		cm_hat = this -> filter_arguments -> get_latest_cm_hat();
 
 
-		// Measurement update
-		arma::vec K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + this -> filter_arguments -> get_R_cm());
-		arma::vec cm_hat = cm_bar + K * (y - H * cm_bar);
-		arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R_cm() * K.t();
+// 		midpoint = (*destination_point + *source_point) / 2;
 
-		this -> filter_arguments -> append_cm_hat(cm_hat);
-		this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
+// 		// The estimate of the center of mass is used here
+
+// 		double dtheta = 2 * std::atan(arma::norm(midpoint - *source_point) / arma::norm(midpoint - cm_hat));
 
 
-	}
-	this -> filter_arguments -> append_latest_index_cm(this -> filter_arguments -> get_latest_index_cm());
+// 		arma::vec u = arma::normalise(arma::cross(*source_point - cm_hat, *destination_point - cm_hat));
 
-	std::cout << "CM : " << std::endl;
-	std::cout << this -> filter_arguments -> get_latest_cm_hat().t() << std::endl;
-}
+
+// 		y = dtheta * this -> lidar -> get_frequency() * u;
+
+// 		// Measurement update
+// 		K = P_omega_bar * H.t() * arma::inv(H * P_omega_bar * H.t() + this -> filter_arguments -> get_R_omega());
+// 		omega_hat = omega_bar + K * (y - H * omega_bar);
+// 		P_omega_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_omega_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R_omega() * K.t();
+
+
+// 		// No time update yet
+// 		omega_bar = omega_hat;
+// 		P_omega_bar = P_omega_bar;
+
+// 	}
+
+// 	this -> filter_arguments -> append_omega_hat(omega_hat);
+// 	this -> filter_arguments -> append_P_omega_hat(P_omega_hat);
+
+
+// 	std::cout << "Omega : " << std::endl;
+// 	std::cout << this -> filter_arguments -> get_latest_omega_hat().t() << std::endl;
+// }
+
 
 
 void Filter::store_point_clouds(int index) {
@@ -692,7 +810,7 @@ void Filter::store_point_clouds(int index) {
 		this -> source_pc = std::make_shared<PC>(PC(u,
 		                    this -> lidar -> get_focal_plane(),
 		                    this -> frame_graph));
-		this -> source_pc -> save("source_" + std::to_string(index) + ".obj");
+		this -> source_pc -> save("source_" + std::to_string(index + 1) + ".obj");
 
 	}
 	else {
@@ -711,10 +829,10 @@ void Filter::store_point_clouds(int index) {
 		// Two point clouds have been collected : "nominal case")
 		else {
 
-			this -> destination_pc = this -> source_pc;
-			this -> source_pc = std::make_shared<PC>(PC(u,
-			                    this -> lidar -> get_focal_plane(),
-			                    this -> frame_graph));
+			this -> source_pc = this -> destination_pc;
+			this -> destination_pc = std::make_shared<PC>(PC(u,
+			                         this -> lidar -> get_focal_plane(),
+			                         this -> frame_graph));
 
 			this -> source_pc -> save("source_" + std::to_string(index) + ".obj");
 			this -> destination_pc -> save("destination_" + std::to_string(index) + ".obj");

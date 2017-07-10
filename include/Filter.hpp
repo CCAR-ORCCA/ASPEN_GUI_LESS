@@ -101,8 +101,21 @@ public:
 	/**
 	Register the source and destination point clouds
 	@param index time index
+	@param time Time
 	*/
-	void register_pcs(int index);
+	void register_pcs(int index, double time);
+
+	/**
+	Extracts the spin axis from the rigid transform
+	@param dcm DCM
+	@param x
+	@param points_pairs Source/Destination point pairs
+	*/
+	void extract_spin_axis(arma::mat & dcm,
+	                       arma::vec & x,
+	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
+	                       std::shared_ptr<PointNormal> > > * point_pairs) ;
+
 
 
 
@@ -159,20 +172,45 @@ public:
 
 
 	/**
-	Computes an estimate of the center of mass and angular velocity of the target
-	assuming that it is undergoing torque free motion
+	Computes a measurement of the angular velocity
 	@param point_pairs Pointer to the paired source and destination point clouds
 	*/
+	void measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
+	                   std::shared_ptr<PointNormal> > > * point_pairs);
 
-	void compute_cm_angular_vel(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs);
+	/**
+	Computes an estimate of angular velocity of the target
+	assuming that it is undergoing torque free motion using a CKF.
+	@param point_pairs Pointer to the paired source and destination point clouds
+	@param time Time
+	*/
+	void compute_omega_KF(std::vector<std::pair<std::shared_ptr<PointNormal>,
+	                      std::shared_ptr<PointNormal> > > * point_pairs,
+	                      double time) ;
 
 
 	/**
-	Computes an estimate of the center of mass and angular velocity of the target
+	Computes an estimate of the center of mass of the target
 	assuming that it is undergoing torque free motion using a CKF.
+	@param dcm DCM obtained from the ICP rigid transform
+	@param X translation vector obtained from the ICP rigid transform
+	*/
+	void estimate_cm_KF(arma::mat & dcm, arma::vec & x);
+
+	/**
+	Computes a measurement of the direction of the rigid's body spin axis
+	@param dcm DCM obtained from the ICP rigid transform
+	@param X translation vector obtained from the ICP rigid transform
 	@param point_pairs Pointer to the paired source and destination point clouds
 	*/
-	void compute_cm_angular_vel_KF(std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * point_pairs);
+	void measure_spin_axis(arma::mat & dcm,
+	                       arma::vec & x,
+	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
+	                       std::shared_ptr<PointNormal> > > * point_pairs);
+
+
+
+
 
 
 protected:
