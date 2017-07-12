@@ -22,11 +22,11 @@
 #define COL_FOV 10
 #define INSTRUMENT_FREQUENCY 0.4
 #define FOCAL_LENGTH 1e-2
-#define LOS_NOISE_SD 0e-2
+#define LOS_NOISE_SD 5e-2
 
 // Time (s)
 #define T0 0
-#define TF 300
+#define TF 200
 
 
 

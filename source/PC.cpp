@@ -21,10 +21,63 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 		}
 	}
 
+
+	arma::vec converted_los = frame_graph -> convert(los_dir, "L", "N", true);
+
 	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(los_dir);
+	this -> construct_normals(converted_los);
 
 }
+
+
+PC::PC(arma::mat & dcm,
+       arma::vec & x,
+       std::shared_ptr<PC> destination_pc,
+       std::shared_ptr<PC> source_pc,
+       FrameGraph * frame_graph) {
+
+
+	std::vector<arma::vec> points;
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+
+
+	// The inclusion counter of each source is decremented
+	// If this counter is greater or equal to zero, this point
+	// can be reused
+	// Otherwise it is discarded. This prevents the point cloud from growing too much
+	for (unsigned int i = 0; i < source_pc -> get_size(); ++i) {
+
+		source_pc -> get_point(i) -> decrement_inclusion_counter();
+		if (source_pc -> get_point(i) -> get_inclusion_counter() >= 0) {
+			points.push_back(dcm * source_pc -> get_point_coordinates(i) + x);
+
+			points_normals.push_back(std::make_shared<PointNormal>(PointNormal(dcm * source_pc -> get_point_coordinates(i) + x, source_pc -> get_point(i) -> get_inclusion_counter())));
+
+		}
+
+	}
+
+	// all the destination points are used
+	for (unsigned int i = 0; i < destination_pc -> get_size(); ++i) {
+		points.push_back(destination_pc -> get_point_coordinates(i));
+
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(destination_pc -> get_point_coordinates(i))));
+
+
+	}
+
+
+	arma::vec u = {1, 0, 0};
+	arma::vec converted_los = frame_graph -> convert(u, "L", "N", true);
+
+	this -> construct_kd_tree(points_normals);
+	this -> construct_normals(converted_los);
+
+
+
+
+}
+
 
 
 
@@ -39,6 +92,7 @@ arma::vec PC::get_point_coordinates(unsigned int index) const {
 std::shared_ptr<PointNormal> PC::get_point(unsigned int index) const {
 	return this -> kd_tree -> points_normals[index];
 }
+
 
 
 
@@ -66,6 +120,7 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 
 }
+
 
 
 

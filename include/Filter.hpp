@@ -15,6 +15,8 @@
 #include <numeric>
 #include <sstream>
 #include <iomanip>
+#include <limits>
+
 
 
 /**
@@ -116,7 +118,12 @@ public:
 	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
 	                       std::shared_ptr<PointNormal> > > * point_pairs) ;
 
-
+	/**
+	Measures the attitude by appending the rigid transform dcm
+	to the previously found ones
+	@param dcm
+	*/
+	void measure_mrp(arma::mat & dcm);
 
 
 	/**
@@ -171,12 +178,21 @@ public:
 	void store_point_clouds(int index);
 
 
+
 	/**
 	Computes a measurement of the angular velocity
 	@param point_pairs Pointer to the paired source and destination point clouds
 	*/
-	void measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
-	                   std::shared_ptr<PointNormal> > > * point_pairs);
+	// void measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
+	//                    std::shared_ptr<PointNormal> > > * point_pairs);
+
+
+	/**
+	Computes a measurement of the angular velocity
+	@param dcm M in f(C) = MC + x
+	*/
+	void measure_omega(arma::mat & dcm) ;
+
 
 	/**
 	Computes an estimate of angular velocity of the target
@@ -200,13 +216,8 @@ public:
 	/**
 	Computes a measurement of the direction of the rigid's body spin axis
 	@param dcm DCM obtained from the ICP rigid transform
-	@param X translation vector obtained from the ICP rigid transform
-	@param point_pairs Pointer to the paired source and destination point clouds
 	*/
-	void measure_spin_axis(arma::mat & dcm,
-	                       arma::vec & x,
-	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
-	                       std::shared_ptr<PointNormal> > > * point_pairs);
+	void measure_spin_axis(arma::mat & dcm);
 
 
 
@@ -245,6 +256,8 @@ protected:
 
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
+
+
 
 
 };

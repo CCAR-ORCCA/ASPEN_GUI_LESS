@@ -82,7 +82,7 @@ void Filter::get_surface_point_cloud(std::string path) {
 	dcm_LN.row(0) = u.t();
 	dcm_LN.row(1) = v.t();
 	dcm_LN.row(2) = w.t();
-	mrp_LN = dcm_to_mrp(dcm_LN);
+	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
@@ -94,20 +94,20 @@ void Filter::get_surface_point_cloud(std::string path) {
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> filter_arguments -> get_orbit_rate() * time_index) * M1(this -> filter_arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (RBK::M3(this -> filter_arguments -> get_orbit_rate() * time_index) * RBK::M1(this -> filter_arguments -> get_inclination()) * RBK::M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
 		std::cout << "Lidar pos, inertial" << std::endl;
 		std::cout << lidar_pos.t() << std::endl;
 
-		dcm_LN = M3(arma::datum::pi) * dcm.t();
+		dcm_LN = RBK::M3(arma::datum::pi) * dcm.t();
 
-		mrp_LN = dcm_to_mrp(dcm_LN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
-		mrp_TN = dcm_to_mrp(dcm_TN);
-		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+		dcm_TN = RBK::M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = RBK::dcm_to_mrp(dcm_TN);
+		mrp_LT = RBK::dcm_to_mrp(dcm_LN * dcm_TN.t());
 
 		std::cout << "Lidar pos, body-fixed frame" << std::endl;
 		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
@@ -189,10 +189,10 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
 
@@ -292,10 +292,10 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
@@ -372,7 +372,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 	dcm_LN.row(0) = u.t();
 	dcm_LN.row(1) = v.t();
 	dcm_LN.row(2) = w.t();
-	mrp_LN = dcm_to_mrp(dcm_LN);
+	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
@@ -391,20 +391,20 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> filter_arguments -> get_orbit_rate() * time_index) * M1(this -> filter_arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (RBK::M3(this -> filter_arguments -> get_orbit_rate() * time_index) * RBK::M1(this -> filter_arguments -> get_inclination()) * RBK::M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
 		std::cout << "Lidar pos, inertial" << std::endl;
 		std::cout << lidar_pos.t() << std::endl;
 
-		dcm_LN = M3(arma::datum::pi) * dcm.t();
+		dcm_LN = RBK::M3(arma::datum::pi) * dcm.t();
 
-		mrp_LN = dcm_to_mrp(dcm_LN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
-		mrp_TN = dcm_to_mrp(dcm_TN);
-		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+		dcm_TN = RBK::M3(this -> filter_arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = RBK::dcm_to_mrp(dcm_TN);
+		mrp_LT = RBK::dcm_to_mrp(dcm_LN * dcm_TN.t());
 
 		std::cout << "Lidar pos, body-fixed frame" << std::endl;
 		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
@@ -555,7 +555,7 @@ void Filter::run_new(
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
 
 		if (inertial_traj == true) {
-			arma::mat dcm = mrp_to_dcm(interpolated_attitude.rows(0, 2));
+			arma::mat dcm = RBK::mrp_to_dcm(interpolated_attitude.rows(0, 2));
 			interpolated_orbit.rows(0, 2) = dcm * interpolated_orbit.rows(0, 2);
 			interpolated_orbit.rows(3, 5) = dcm * interpolated_orbit.rows(0, 2) - arma::cross(interpolated_attitude.rows(3, 5), interpolated_orbit.rows(0, 2));
 		}
@@ -574,10 +574,10 @@ void Filter::run_new(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos + *this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> get_origin_from_parent();
 
 		// Setting the Lidar frame to its new state
@@ -595,7 +595,6 @@ void Filter::run_new(
 		// point cloud receptacle
 		this -> store_point_clouds(time_index);
 
-
 		// The rigid transform best aligning the two point clouds is found
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
@@ -603,6 +602,7 @@ void Filter::run_new(
 			this -> register_pcs(time_index, times(time_index));
 
 			this -> filter_arguments -> append_omega_true(dcm_TN.t() * interpolated_attitude.rows(3, 5));
+			this -> filter_arguments -> append_mrp_true(RBK::dcm_to_mrp(dcm_TN));
 
 			// The latest estimate of the center of mass is saved
 			arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
@@ -610,14 +610,9 @@ void Filter::run_new(
 			shape_file.open("cm_" + std::to_string(time_index) + ".obj");
 			shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
 			shape_file.close();
-
 		}
 
-
-
-
 	}
-
 
 }
 
@@ -631,42 +626,57 @@ void Filter::register_pcs(int index, double time) {
 
 	this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", dcm, X);
 
-	this -> measure_spin_axis(dcm, X, icp.get_point_pairs());
+	// Spin axis is measured
+	this -> measure_spin_axis(dcm);
+
+	// Center of mass location is estimated
 	this -> estimate_cm_KF(dcm, X);
-	this -> measure_omega(icp.get_point_pairs());
+
+	// Angular velocity is measured
+	this -> measure_omega(dcm);
+
+	// Attitude is measured
+	this -> measure_mrp(dcm);
+
+
+	// The destination point cloud is augmented with the source point cloud. This way,
+	// the source point cloud at the next measurement time will be comprised of
+	// the (registered) source and destination points from the previous measurement time
+
+	this -> destination_pc = std::make_shared<PC>(PC(dcm, X, 
+		this -> destination_pc, 
+		this -> source_pc,
+		this -> frame_graph));
+
+
+	// A raw point cloud of all registered points is assembled.
+	// This point cloud should demonstrate some drift in the points coordinates
+	arma::mat EN_dcm = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes());
+
+	for (unsigned int i = 0; i < this -> source_pc -> get_size(); ++i) {
+
+		this -> filter_arguments -> add_to_raw_point_cloud(EN_dcm * (this -> source_pc -> get_point_coordinates(i) - this -> filter_arguments -> get_latest_cm_hat()));
+
+	}
 
 	this -> filter_arguments -> append_time(time);
 
+}
+
+
+
+void Filter::measure_mrp(arma::mat & dcm) {
+
+	this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * dcm.t()));
 
 }
 
-void Filter::measure_spin_axis(arma::mat & dcm,
-                               arma::vec & x,
-                               std::vector<std::pair<std::shared_ptr<PointNormal>,
-                               std::shared_ptr<PointNormal> > > * point_pairs) {
+void Filter::measure_spin_axis(arma::mat & dcm) {
 
 
-	arma::vec * source_point = point_pairs -> at(0).first -> get_point();
-	arma::vec * destination_point = point_pairs -> at(0).second -> get_point();
+	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm.t());
 
-	// Rigid transform invariant:
-	arma::cx_vec eigval;
-	arma::cx_mat eigvec;
-	arma::eig_gen( eigval, eigvec, dcm);
-
-	// The spin axis is extracted from the eigenvalue whose real part is closest to 1
-	unsigned int spin_axis_index = arma::abs(arma::real(eigval - 1)).index_min();
-	arma::vec spin_axis = arma::real(eigvec.col(spin_axis_index));
-
-	// The spin axis is oriented in the positive direction
-	// The first source/destination pair is used
-	arma::vec u = arma::normalise(arma::cross(*source_point - this -> filter_arguments -> get_latest_cm_hat(),
-	                              *destination_point - this -> filter_arguments -> get_latest_cm_hat()));
-	if (arma::dot(u, spin_axis) < 0) {
-		spin_axis = - spin_axis;
-	}
-
-	this -> filter_arguments -> append_spin_axis_mes(spin_axis);
+	this -> filter_arguments -> append_spin_axis_mes(prv.second);
 
 
 }
@@ -703,101 +713,20 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 	arma::mat P_cm_hat = (arma::eye<arma::mat>(3, 3) - K ) * P_cm_bar * (arma::eye<arma::mat>(3, 3) - K ).t() + K * R * K.t();
 
 
-	this -> filter_arguments -> append_cm_hat(cm_hat);
+	this -> filter_arguments -> append_cm_hat( cm_hat);
 	this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
 
 }
 
 
 
-void Filter::measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
-                           std::shared_ptr<PointNormal> > > * point_pairs) {
+void Filter::measure_omega(arma::mat & dcm) {
 
+	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
 
-	arma::vec omega_mes_distr(point_pairs -> size());
-
-	for (unsigned int i = 0; i < point_pairs -> size() ; ++i) {
-
-		arma::vec * source_point = point_pairs -> at(i).first -> get_point();
-		arma::vec * destination_point = point_pairs -> at(i).second -> get_point();
-
-		double cos = arma::dot(arma::normalise(*source_point -  this -> filter_arguments -> get_latest_cm_hat()),
-		                       arma::normalise(*destination_point -  this -> filter_arguments -> get_latest_cm_hat()));
-
-		omega_mes_distr(i) = this -> lidar -> get_frequency() * std::acos(cos);
-
-	}
-
-
-
-	this -> filter_arguments -> append_omega_mes(arma::mean(omega_mes_distr) * this -> filter_arguments -> get_latest_spin_axis_mes());
-	this -> filter_arguments -> append_R_omega(arma::stddev(omega_mes_distr) * this -> filter_arguments -> get_latest_spin_axis_mes() * this -> filter_arguments -> get_latest_spin_axis_mes().t());
+	this -> filter_arguments -> append_omega_mes(this -> lidar -> get_frequency() * prv.first * this -> filter_arguments -> get_latest_spin_axis_mes());
 
 }
-
-
-
-// void Filter::compute_omega_KF(std::vector<std::pair<std::shared_ptr<PointNormal>,
-//                               std::shared_ptr<PointNormal> > > * point_pairs,
-//                               double time) {
-
-// 	arma::vec omega_bar(3);
-// 	arma::vec omega_hat(3);
-// 	arma::vec midpoint(3);
-
-// 	arma::mat K(3, 3);
-// 	arma::mat P_omega_bar(3, 3);
-// 	arma::mat P_omega_hat(3, 3);
-
-// 	arma::vec y(3);
-
-// 	arma::mat H = arma::eye<arma::mat>(3, 3);
-// 	arma::vec cm_hat(3);
-
-// 	omega_bar = this -> filter_arguments -> get_latest_omega_hat();
-// 	P_omega_bar = this -> filter_arguments -> get_latest_P_omega_hat() + this -> filter_arguments -> get_Q_omega();
-
-
-// 	for (unsigned int pair_index = 0; pair_index < point_pairs -> size(); ++pair_index) {
-
-// 		arma::vec * source_point = point_pairs -> at(pair_index).first -> get_point();
-// 		arma::vec * destination_point = point_pairs -> at(pair_index).second -> get_point();
-
-// 		cm_hat = this -> filter_arguments -> get_latest_cm_hat();
-
-
-// 		midpoint = (*destination_point + *source_point) / 2;
-
-// 		// The estimate of the center of mass is used here
-
-// 		double dtheta = 2 * std::atan(arma::norm(midpoint - *source_point) / arma::norm(midpoint - cm_hat));
-
-
-// 		arma::vec u = arma::normalise(arma::cross(*source_point - cm_hat, *destination_point - cm_hat));
-
-
-// 		y = dtheta * this -> lidar -> get_frequency() * u;
-
-// 		// Measurement update
-// 		K = P_omega_bar * H.t() * arma::inv(H * P_omega_bar * H.t() + this -> filter_arguments -> get_R_omega());
-// 		omega_hat = omega_bar + K * (y - H * omega_bar);
-// 		P_omega_hat = (arma::eye<arma::mat>(3, 3) - K * H) * P_omega_bar * (arma::eye<arma::mat>(3, 3) - K * H).t() + K * this -> filter_arguments -> get_R_omega() * K.t();
-
-
-// 		// No time update yet
-// 		omega_bar = omega_hat;
-// 		P_omega_bar = P_omega_bar;
-
-// 	}
-
-// 	this -> filter_arguments -> append_omega_hat(omega_hat);
-// 	this -> filter_arguments -> append_P_omega_hat(P_omega_hat);
-
-
-// 	std::cout << "Omega : " << std::endl;
-// 	std::cout << this -> filter_arguments -> get_latest_omega_hat().t() << std::endl;
-// }
-
 
 
 void Filter::store_point_clouds(int index) {
@@ -813,23 +742,29 @@ void Filter::store_point_clouds(int index) {
 		this -> source_pc -> save("source_" + std::to_string(index + 1) + ".obj");
 
 	}
+
 	else {
 		// Only one source point cloud has been collected
 		if (this -> destination_pc == nullptr) {
+
+
 			this -> destination_pc = std::make_shared<PC>(PC(u,
 			                         this -> lidar -> get_focal_plane(),
 			                         this -> frame_graph));
 
 			this -> destination_pc -> save("destination_" + std::to_string(index) + ".obj");
-
-
-
 		}
 
 		// Two point clouds have been collected : "nominal case")
 		else {
 
+
+
+			// The source and destination point clouds are combined into the new source point cloud
 			this -> source_pc = this -> destination_pc;
+
+
+
 			this -> destination_pc = std::make_shared<PC>(PC(u,
 			                         this -> lidar -> get_focal_plane(),
 			                         this -> frame_graph));
@@ -837,12 +772,15 @@ void Filter::store_point_clouds(int index) {
 			this -> source_pc -> save("source_" + std::to_string(index) + ".obj");
 			this -> destination_pc -> save("destination_" + std::to_string(index) + ".obj");
 
-
 		}
-
 	}
-
 }
+
+
+
+
+
+
 
 
 void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter) {
@@ -1385,15 +1323,15 @@ std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::
 
 
 	arma::rowvec drhodV0 = (n.t()) / arma::dot(u, n) + (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V2 - *V1);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V2 - *V1);
 
 
 	arma::rowvec drhodV1 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V0 - *V2);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V0 - *V2);
 
 
 	arma::rowvec drhodV2 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V1 - *V0);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V1 - *V0);
 
 	partials.push_back(drhodV0);
 	partials.push_back(drhodV1);

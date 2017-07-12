@@ -158,7 +158,7 @@ def tilde(a):
     return atilde
 
 
-def mrp_to_DCM(sigma):
+def mrp_to_dcm(sigma):
   '''
   MRP to DCM
   Inputs:
@@ -179,7 +179,7 @@ def convert_to_body_frame(inertial_state,mrp):
 
   for i in range(orbit.shape[1]):
 
-    orbit[:,i] = mrp_to_DCM(mrp[:,i]).dot(inertial_state[:,i])
+    orbit[:,i] = mrp_to_dcm(mrp[:,i]).dot(inertial_state[:,i])
 
   return orbit
 

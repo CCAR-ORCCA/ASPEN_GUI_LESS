@@ -24,12 +24,30 @@ public:
 	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane,
 	   FrameGraph * frame_graph);
 
+
+
 	/**
 	Constructor
 	@param los_dir Not used
 	@param points 3-by-N matrix
 	*/
 	PC(arma::vec los_dir, arma::mat & points);
+
+
+
+	/**
+	Constructor
+	@param dcm DCM of the ICP rigid transform
+	@param x Translation term of the ICP rigid transform
+	@param destination_pc Pointer to destination PC
+	@param source_pc Pointer to destination PC
+	@param frame_graph Pointer to frame graph
+	*/
+	PC(arma::mat & dcm,
+	   arma::vec & x,
+	   std::shared_ptr<PC> destination_pc,
+	   std::shared_ptr<PC> source_pc,
+	   FrameGraph * frame_graph);
 
 	/**
 	Returns a pointer to the PointNormal whose point is closest to the provided test_point
@@ -56,23 +74,29 @@ public:
 	std::shared_ptr<PointNormal> get_closest_point(arma::vec & test_point) const;
 
 
+	/**
+	Appends N points from the provided point cloud to the present point cloud
+	@param other_pc Point cloud from which points must be included
+	@param N Number of points to be kept from the other point cloud
+	*/
+	void append(std::shared_ptr<PC> other_pc, unsigned int N);
 
 
-	/**	
+	/**
 	Returns pointer to queried point
 	@param index Index of the queried point
-	@return queried point 
+	@return queried point
 	*/
 	std::shared_ptr<PointNormal> get_point(unsigned int index) const;
 
-	/**	
+	/**
 	Returns pointer the coordinates of the to queried point
 	@param index Index of the queried point
 	@return queried point coordinatess
 	*/
 	arma::vec get_point_coordinates(unsigned int index) const;
 
-	/**	
+	/**
 	Returns normal of the queried point
 	@param index Index of the queried point
 	@return normal of queried point
@@ -95,15 +119,11 @@ public:
 	*/
 	unsigned int get_size() const;
 
-
-
-
 	/**
 	Saves pc to file
 	@param path save path
 	*/
 	void save(std::string path) const;
-
 
 
 	/**
@@ -112,9 +132,9 @@ public:
 	@param dcm DCM
 	@param x Translation component
 	*/
-	void save(std::string path,arma::mat dcm, arma::vec x) const;
+	void save(std::string path, arma::mat dcm, arma::vec x) const;
 
-
+	
 
 
 protected:
@@ -124,8 +144,6 @@ protected:
 
 	std::shared_ptr<KDTree_pc> kd_tree;
 
-	arma::vec spacecraft_location_inertial;
-	arma::mat spacecraft_orientation_inertial;
 
 
 };

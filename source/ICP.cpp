@@ -89,7 +89,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			if ( next_h == true ) {
 				// The pairs are formed only after a change in the hierchical search
 				this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist(
-				    mrp_to_dcm(mrp),
+				    RBK::mrp_to_dcm(mrp),
 				    x, h);
 				next_h = false;
 			}
@@ -97,7 +97,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			if (iter == 0 ) {
 
 				// The initial residuals are computed
-				J_0 = this -> compute_rms_residuals(mrp_to_dcm(mrp),
+				J_0 = this -> compute_rms_residuals(RBK::mrp_to_dcm(mrp),
 				                                    x);
 				J = J_0;
 
@@ -133,7 +133,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				Info_mat_temp(arma::span(3, 5), arma::span()) = Info_mat_second_rows;
 
 				// The prefit residuals are computed
-				double y_i = arma::dot(n_i.t(), Q_i -  mrp_to_dcm(mrp) * P_i - x );
+				double y_i = arma::dot(n_i.t(), Q_i -  RBK::mrp_to_dcm(mrp) * P_i - x );
 
 				// The normal matrix is similarly built
 				Normal_mat_temp(arma::span(0, 2)) = H.t() * y_i;
@@ -156,7 +156,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			arma::vec dx = {dX(3), dX(4), dX(5)};
 
 			// The state is updated
-			mrp = dcm_to_mrp(mrp_to_dcm(dmrp) * mrp_to_dcm(mrp));
+			mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(mrp));
 
 
 			x = x + dx;
@@ -168,7 +168,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 
 			// The postfit residuals are computed
-			J = this -> compute_rms_residuals(mrp_to_dcm(mrp),
+			J = this -> compute_rms_residuals(RBK::mrp_to_dcm(mrp),
 			                                  x);
 
 			if (pedantic == true) {
@@ -201,22 +201,14 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	}
 
 	this -> X = x;
-	this -> DCM = mrp_to_dcm(mrp);
-
-	// Closest-point pairs are formed
-	this -> compute_pairs_closest_minimum_distance(
-	    this -> DCM,
-	    this -> X, 0);
-
-
-
+	this -> DCM = RBK::mrp_to_dcm(mrp);
 
 }
 
 
 arma::rowvec ICP::dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n) {
 
-	arma::rowvec partial = - 4 * P.t() * mrp_to_dcm(mrp).t() * tilde(n);
+	arma::rowvec partial = - 4 * P.t() * RBK::mrp_to_dcm(mrp).t() * RBK::tilde(n);
 	return partial;
 
 }
@@ -296,11 +288,11 @@ void ICP::compute_pairs_closest_minimum_distance(
 
 	int threshold_length = int(0.1 * all_pairs.size());
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
-		if (this -> point_pairs.size() < threshold_length)
+		if (this -> point_pairs.size() < threshold_length) {
 			this -> point_pairs.push_back(it -> second);
+		}
 	}
 
-	std::cout << this -> point_pairs.size() << std::endl;
 
 }
 
@@ -368,8 +360,12 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 	}
 
 	double median = arma::median(dist_vec);
+
+	
+	// Erase
 	double max = dist_vec.max();
 	double min = dist_vec.min();
+
 
 
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {

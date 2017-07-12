@@ -45,26 +45,42 @@ int main() {
 
 	// The shape model is shifted set_transform_origin that it is no longer at
 	// the origin of the N frame
-	arma::vec new_origin = { 0, 0, 0};
+	arma::vec new_origin = { 100, 10, 30};
 
 	std::ofstream shape_file;
 	shape_file.open("true_cm.obj");
 	shape_file << "v " << new_origin(0) << " " << new_origin(1) << " " << new_origin(2) << std::endl;
 
 
-
 	frame_graph.set_transform_origin("N",
 	                                 "T",
 	                                 new_origin);
+
+	// The estimated shape is also positioned in space
+	arma::vec E_origin = { 0, 0, 0};
+	arma::vec E_mrp = { 0, 0, 0};
+
+
+	frame_graph.set_transform_origin("N",
+	                                 "E",
+	                                 new_origin);
+
+	frame_graph.set_transform_mrp("N",
+	                              "E",
+	                              E_mrp);
+
+
+
+
 
 
 	// // 1) Propagate small body attitude
 	arma::vec attitude_0(6);
 
 	arma::vec angles = {0, 0, 0};
-	arma::vec angular_vel = {0.01, 0.02, -0.01};
+	arma::vec angular_vel = {0.02, 0.02, -0.02};
 
-	attitude_0.rows(0, 2) = euler313d_to_mrp(angles);
+	attitude_0.rows(0, 2) = RBK::euler313d_to_mrp(angles);
 	attitude_0.rows(3, 5) = angular_vel;
 
 
@@ -217,6 +233,8 @@ int main() {
 	filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
 	filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
 	filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
+
+
 
 
 

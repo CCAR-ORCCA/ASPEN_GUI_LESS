@@ -41,10 +41,10 @@ int main() {
 	angles_1 = arma::datum::pi * angles_1 / 180;
 	angles_2 = arma::datum::pi * angles_2 / 180;
 
-	arma::vec mrp_FI = dcm_to_mrp(longitude_latitude_to_dcm(angles));
+	arma::vec mrp_FI = RBK::dcm_to_mrp(longitude_latitude_to_dcm(angles));
 
-	arma::vec mrp_EI = dcm_to_mrp(longitude_latitude_to_dcm(angles_1));
-	arma::vec mrp_FE = dcm_to_mrp(longitude_latitude_to_dcm(angles_2));
+	arma::vec mrp_EI = RBK::dcm_to_mrp(longitude_latitude_to_dcm(angles_1));
+	arma::vec mrp_FE = RBK::dcm_to_mrp(longitude_latitude_to_dcm(angles_2));
 
 	arma::vec origin_LB = {0, 0, 0};
 

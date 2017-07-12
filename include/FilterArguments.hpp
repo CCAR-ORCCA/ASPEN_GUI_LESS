@@ -20,7 +20,7 @@ public:
 	@param t0 Initial time (s)
 	@param t1 Final time (s)
 	@param orbit_rate Angular rate of the instrument about the target (rad/s), 313
-	@param body_spin_rate Angular rate of the instrument about the target (rad/s), M3
+	@param body_spin_rate Angular rate of the instrument about the target (rad/s), RBK::M3
 	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
 	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
 	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
@@ -263,6 +263,27 @@ public:
 		return &this -> cm_hat_history;
 	}
 
+	/**
+	MRP
+	*/
+
+
+	void append_mrp_mes(arma::vec mrp_mes) {
+		this -> mrp_mes_history.push_back(mrp_mes);
+	}
+
+	void append_mrp_true(arma::vec mrp_true) {
+		this -> mrp_true_history.push_back(mrp_true);
+	}
+
+	arma::vec get_latest_mrp_mes() const {
+		if (this -> mrp_mes_history.size() == 0) {
+			return arma::zeros<arma::vec>(3);
+		}
+		else
+			return * (--this ->mrp_mes_history.end());
+
+	}
 
 	/**
 	Spin axis
@@ -273,6 +294,8 @@ public:
 	}
 
 	arma::vec get_latest_spin_axis_mes() const {
+
+
 		return * (--this -> spin_axis_mes_history.end());
 	}
 
@@ -343,6 +366,10 @@ public:
 		this -> time_history.push_back(time);
 	}
 
+	void add_to_raw_point_cloud(arma::vec point) {
+		this -> raw_point_cloud.push_back(point);
+	}
+
 
 	void save_estimate_time_history() const {
 
@@ -355,6 +382,10 @@ public:
 		arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
 		arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
 		arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
+
+		arma::mat mrp_mes_time_history_mat = arma::mat(3, this -> mrp_mes_history.size());
+		arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
+
 
 
 
@@ -375,15 +406,39 @@ public:
 
 		}
 
+		for (unsigned int i = 0; i < this -> mrp_mes_history.size() ; ++i) {
+			mrp_mes_time_history_mat.col(i) = this -> mrp_mes_history[i];
+		}
+
+		for (unsigned int i = 0; i < this -> mrp_true_history.size() ; ++i) {
+			mrp_true_time_history_mat.col(i) = this -> mrp_true_history[i];
+		}
+
+
 		cm_hat_time_history_mat.save("cm_time_history_mat.txt", arma::raw_ascii);
 		P_cm_hat_time_history_mat.save("P_cm_hat_time_history_mat.txt", arma::raw_ascii);
 		omega_mes_time_history_mat.save("omega_mes_time_history_mat.txt", arma::raw_ascii);
+		mrp_mes_time_history_mat.save("mrp_mes_time_history_mat.txt", arma::raw_ascii);
+		mrp_true_time_history_mat.save("mrp_true_time_history_mat.txt", arma::raw_ascii);
+
+
 		omega_true_time_history_mat.save("omega_true_time_history_mat.txt", arma::raw_ascii);
 		time_mat.save("time_history.txt", arma::raw_ascii);
 
 
 
+		std::ofstream raw_pc_file;
+		raw_pc_file.open("raw_pc.obj");
 
+		for (unsigned int index = 0;
+		        index < this -> raw_point_cloud.size();
+		        ++index) {
+
+			arma::vec p = this -> raw_point_cloud[index];
+			raw_pc_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		}
+		
+		raw_pc_file.close();
 	}
 
 
@@ -423,6 +478,11 @@ protected:
 	std::vector<arma::vec> omega_mes_history;
 	std::vector<arma::vec> omega_hat_history;
 	std::vector<arma::vec> omega_true_history;
+
+	std::vector<arma::vec> mrp_mes_history;
+	std::vector<arma::vec> mrp_true_history;
+
+
 	std::vector<arma::mat > R_omega;
 
 
@@ -434,6 +494,7 @@ protected:
 	std::vector<double> time_history;
 
 
+	std::vector<arma::vec> raw_point_cloud;
 
 
 

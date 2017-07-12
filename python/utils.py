@@ -15,6 +15,8 @@ def plot_results(path = None,save = False):
 
 
     plot_cm_estimate(path ,save )
+    plot_mrp_histories(path,save)
+    plot_angle_error(path,save)
     plot_omega_histories(path,save)
     plot_omega_norm_histories(path,save)
     plot_spin_axis_histories(path,save)
@@ -123,6 +125,97 @@ def plot_omega_histories(path = None,save = True):
     plt.title("Angular velocity time histories")
     if (save is True):
         plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/omega_histories.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+def plot_angle_error(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        mrp_mes_history = np.loadtxt(path + "mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    else:
+        mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    angle_error =[]
+
+    for i in range(len(time)):
+
+        dcm_mes = mrp_to_dcm(mrp_mes_history[i,:])
+        dcm_true = mrp_to_dcm(mrp_true_history[i,:])
+       
+
+
+        angle_error += [ np.arccos((np.trace(dcm_mes.T .dot( dcm_true)) - 1 )/2)]
+
+    angle_error = 180. / np.pi * np.array(angle_error)
+
+
+    # Truth 
+    plt.plot(time,angle_error,"-o")
+    
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("Angle error (deg)")
+
+    plt.title("Angle error history")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/angle_error.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+
+def plot_mrp_histories(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        mrp_mes_history = np.loadtxt(path + "mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    else:
+        mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
+
+        time = np.loadtxt(path + "time_history.txt")
+
+    # Truth 
+    plt.plot(time,mrp_true_history[:,0],"-o",label = "$\sigma_x$")
+    plt.plot(time,mrp_true_history[:,1],"-o",label = "$\sigma_y$")
+    plt.plot(time,mrp_true_history[:,2],"-o",label = "$\sigma_z$")
+    plt.gca().set_color_cycle(None)
+
+    # Estimate 
+    plt.plot(time,mrp_mes_history[:,0],"-x",label = r"$\tilde{\sigma}_x$")
+    plt.plot(time,mrp_mes_history[:,1],"-x",label = r"$\tilde{\sigma}_y$")
+    plt.plot(time,mrp_mes_history[:,2],"-x",label = r"$\tilde{\sigma}_z$")
+
+
+
+    plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("MRP")
+
+    plt.title("MRP time histories")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/mrp_histories.pdf")
     else:
         plt.show()
     plt.clf()
@@ -365,6 +458,35 @@ def plot_orbit(path = None):
 
 
 
+def mrp_to_dcm(sigma):
+  '''
+  MRP to DCM
+  Inputs:
+  ------
+  - sigma : (3-by-1) MRP
+  Outputs:
+  ------
+  - dcm : (3-by-3 ) DCM
+  '''
+  dcm = np.eye(3) + (8 * tilde(sigma).dot(tilde(sigma)) - 4 * (1 - np.linalg.norm(sigma) ** 2) * tilde(sigma))/(1 + np.linalg.norm(sigma)**2)**2
+  return dcm
 
 
 
+
+
+def tilde(a):
+
+    '''
+    Returns the skew-symmetric matrix corresponding to the linear mapping cross(a,.)
+    Inputs : 
+    ------
+    a : (3-by-1 np.array) vector
+    Outputs:
+    ------
+    atilde : (3-by-3 np.array) linear mapping matrix
+    '''
+    atilde = np.array([[0,-a[2],a[1]],
+        [a[2],0,-a[0]],
+        [-a[1],a[0],0]])
+    return atilde
