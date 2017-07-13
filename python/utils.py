@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import rc
 '''
 ffmpeg -f image2 -framerate 25 -i computed_prefit_00%04d.png -vcodec libx264 -b:v 800k ../itokawa/computed_itokawa.avi
 '''
@@ -31,6 +32,211 @@ def plot_focal_plane():
 
     plt.grid()
     plt.show()
+
+
+
+
+
+def plot_exposure_time_vs_angular_drift():
+    plt.clf()
+
+    rc('text', usetex=True)
+    plt.rc('font', family='serif')
+#     t = np.array([5.44e-3, 8.20e-3, 10.9e-3, 16.4e-3,
+# 21.8e-3, 32.8e-3, 43.5e-3, 65.6e-3,
+# 87.0e-3, 131e-3, 174e-3, 262e-3,
+# 348e-3, 525e-3, 696e-3, 1.05, 1.39,
+# 2.10, 2.79, 4.20, 5.57, 8.40,
+# 11.1, 16.8, 22.3, 33.6, 44.6,
+# 67.2, 89.1, 134, 178])
+
+    t = np.array([5.44e-3, 8.20e-3, 10.9e-3, 16.4e-3,
+21.8e-3, 32.8e-3, 43.5e-3, 65.6e-3,
+87.0e-3, 131e-3, 174e-3, 262e-3,
+348e-3, 525e-3, 696e-3, 1.05])
+
+
+    R_T = 50 # maybe 50?
+    omega_T = 2 * np.pi /(27 * 60)
+
+    r = np.array([350,5e2,1e3,2.5e3,5e3,7.5e3,1e4]) # (meters)
+
+    alpha = 1 # pixel drift (less than 1)
+    f = 0.120 # focal length(meters)
+    h = 12e-6 # pixel size(meters)
+
+    T = np.linspace(t[0],t[-1],1e4) # interpolated exposure times
+
+    cmap = plt.cm.get_cmap("RdYlGn", len(r))
+
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + alpha * h / (f * T)
+        omega_D_2 = omega_D_star - alpha * h / (f * T)
+
+        plt.semilogx(T, 180./np.pi * np.ones(len(T)) * omega_D_star,color = cmap(i),linewidth = 1)
+        plt.semilogx(T, 180./np.pi * omega_D_1,color = cmap(i),label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+        plt.semilogx(T, 180./np.pi * omega_D_2,color = cmap(i),linewidth = 1.5)
+
+        plt.gca().fill_between(T, 180. / np.pi * omega_D_2, 180. / np.pi * omega_D_1, facecolor = cmap(i), alpha=0.5)
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\omega_D$ (deg/s)")
+    plt.title(r"$\omega_D$ enveloppes, $\alpha =$" + str(alpha))
+    plt.legend(loc = "center right",bbox_to_anchor = (1.,0.25))
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/omega_envelopes.pdf")
+    plt.clf()
+
+
+    alphas = np.linspace(0,1)
+
+
+    plt.plot(alphas,alphas * h / f)
+
+    plt.xlabel(r"Pixel fraction $\alpha$")
+    plt.ylabel(r"$\epsilon^*$ (deg)")
+    plt.title(r"Maximum pointing error assuming regulated $\omega_D$")
+    plt.legend(loc = "center right",bbox_to_anchor = (1.,0.25))
+    plt.grid()
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/epsilon_nominal.pdf")
+    plt.clf()
+
+
+
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + alpha * h / (f * T)
+
+        plt.loglog(T,omega_D_1,label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+    plt.grid()
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\omega_D$ (deg)")
+    plt.title(r"Maximum pointing drift rate assuming $\omega_D = 0$ rad/s, $\alpha = $" + str(alpha))
+    plt.legend(loc = "center right",bbox_to_anchor = (0.70,0.08),ncol = 3,prop = {'size':10})
+
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/omega_still.pdf")
+
+    plt.clf()
+
+
+
+    plt.loglog(r/1000,r * h / f)
+
+    plt.xlabel("Altitude (km)")
+    plt.ylabel("Projected pixel size (m)")
+    plt.grid(True, which="both")
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/pixel_size.pdf")
+
+
+    plt.clf()
+
+
+    max_epsilon = -1e10
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + alpha * h / (f * T)
+        epsilon = omega_D_1 * T
+
+        plt.semilogx(T,epsilon,label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+        max_epsilon = max(max_epsilon,epsilon[0])
+    plt.grid()
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\epsilon$ (deg)")
+    plt.title(r"Maximum pointing error assuming $\omega_D = 0$ rad/s, $\alpha = $" + str(alpha))
+    plt.legend(loc = "center right",bbox_to_anchor = (0.33,0.25))
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/epsilon_still.pdf")
+
+    plt.clf()
+
+
+
+    Delta = 5
+
+
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + Delta / (r[i] * T)
+        omega_D_2 = omega_D_star - Delta / (r[i] * T)
+
+        plt.semilogx(T, 180./np.pi * np.ones(len(T)) * omega_D_star,color = cmap(i),linewidth = 1)
+        plt.semilogx(T, 180./np.pi * omega_D_1,color = cmap(i),label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+        plt.semilogx(T, 180./np.pi * omega_D_2,color = cmap(i),linewidth = 1.5)
+
+        plt.gca().fill_between(T, 180. / np.pi * omega_D_2, 180. / np.pi * omega_D_1, facecolor = cmap(i), alpha=0.5)
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\omega_D$ (deg/s)")
+    plt.title(r"$\omega_D$ enveloppes, $\Delta =\ $" + str(Delta) + " m")
+    plt.legend(loc = "center right",bbox_to_anchor = (1.,0.25))
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/omega_envelopes_Delta.pdf")
+    plt.clf()
+
+
+    max_epsilon = -1e10
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + Delta / (r[i] * T)
+        epsilon = omega_D_1 * T
+
+        plt.loglog(T,epsilon,label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+        max_epsilon = max(max_epsilon,epsilon[0])
+    plt.grid()
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\epsilon$ (deg)")
+    plt.title(r"Maximum pointing error assuming $\omega_D = 0$ rad/s, $\Delta =\ $" + str(Delta) + " m")
+    plt.legend(loc = "center right",bbox_to_anchor = (0.95,0.16),ncol = 3)
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/epsilon_still_Delta.pdf")
+
+    plt.clf()
+
+    max_epsilon = -1e10
+    for i in range(len(r)):
+
+        omega_D_star = - omega_T * R_T / r[i]
+        omega_D_1 = omega_D_star + Delta / (r[i] * T)
+
+        plt.loglog(T,omega_D_1,label = "r = " + str(r[i]/1000) + " km",linewidth = 1.5)
+        max_epsilon = max(max_epsilon,epsilon[0])
+    plt.grid()
+    plt.grid(True, which="both")
+
+    plt.xlabel(r"Exposure time (s)")
+    plt.ylabel(r"$\omega_D$ (deg)")
+    plt.title(r"Maximum pointing drift rate assuming $\omega_D = 0$ rad/s, $\Delta =\ $" + str(Delta) + " m")
+    plt.legend(loc = "center right",bbox_to_anchor = (0.70,0.08),ncol = 3,prop = {'size':10})
+
+
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/HO3/omega_still_Delta.pdf")
+
+    plt.clf()
+
+
+   
+
+
+
+
+
+
+
+    
+
+
+
 
 def plot_long_lat():
 
