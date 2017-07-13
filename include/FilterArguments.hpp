@@ -366,10 +366,7 @@ public:
 		this -> time_history.push_back(time);
 	}
 
-	void add_to_raw_point_cloud(arma::vec point) {
-		this -> raw_point_cloud.push_back(point);
-	}
-
+	
 
 	void save_estimate_time_history() const {
 
@@ -427,18 +424,6 @@ public:
 
 
 
-		std::ofstream raw_pc_file;
-		raw_pc_file.open("raw_pc.obj");
-
-		for (unsigned int index = 0;
-		        index < this -> raw_point_cloud.size();
-		        ++index) {
-
-			arma::vec p = this -> raw_point_cloud[index];
-			raw_pc_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
-		}
-		
-		raw_pc_file.close();
 	}
 
 
@@ -494,7 +479,6 @@ protected:
 	std::vector<double> time_history;
 
 
-	std::vector<arma::vec> raw_point_cloud;
 
 
 

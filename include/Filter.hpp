@@ -8,6 +8,7 @@
 #include "FilterArguments.hpp"
 #include "PC.hpp"
 #include "ICP.hpp"
+#include "ICPException.hpp"
 
 #include <RigidBodyKinematics.hpp>
 

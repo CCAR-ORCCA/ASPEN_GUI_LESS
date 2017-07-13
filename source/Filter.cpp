@@ -618,10 +618,15 @@ void Filter::run_new(
 
 void Filter::register_pcs(int index, double time) {
 
+	
+	try {
+		ICP icp(this -> destination_pc, this -> source_pc);
+		arma::mat dcm = icp.get_DCM();
+		arma::vec X = icp.get_X();
+	}
+	catch {
 
-	ICP icp(this -> destination_pc, this -> source_pc);
-	arma::mat dcm = icp.get_DCM();
-	arma::vec X = icp.get_X();
+	}
 
 
 	this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", dcm, X);
@@ -637,27 +642,6 @@ void Filter::register_pcs(int index, double time) {
 
 	// Attitude is measured
 	this -> measure_mrp(dcm);
-
-
-	// The destination point cloud is augmented with the source point cloud. This way,
-	// the source point cloud at the next measurement time will be comprised of
-	// the (registered) source and destination points from the previous measurement time
-
-	this -> destination_pc = std::make_shared<PC>(PC(dcm, X, 
-		this -> destination_pc, 
-		this -> source_pc,
-		this -> frame_graph));
-
-
-	// A raw point cloud of all registered points is assembled.
-	// This point cloud should demonstrate some drift in the points coordinates
-	arma::mat EN_dcm = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes());
-
-	for (unsigned int i = 0; i < this -> source_pc -> get_size(); ++i) {
-
-		this -> filter_arguments -> add_to_raw_point_cloud(EN_dcm * (this -> source_pc -> get_point_coordinates(i) - this -> filter_arguments -> get_latest_cm_hat()));
-
-	}
 
 	this -> filter_arguments -> append_time(time);
 
