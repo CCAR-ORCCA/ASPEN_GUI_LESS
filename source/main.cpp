@@ -8,8 +8,7 @@
 #include "Interpolator.hpp"
 #include "KDNode.hpp"
 #include "Constants.hpp"
-
-
+#include <RigidBodyKinematics.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -84,7 +83,7 @@ int main() {
 		arma::mat s = arma::zeros<arma::mat>( 3, nu.n_cols);
 		s.row(0) = arma::cos(nu + args.get_omega());
 		s.row(1) = arma::sin(nu + args.get_omega());
-		s = (M3(- args.get_Omega()) * M1(- args.get_i())) * s;
+		s = (RBK::M3(- args.get_Omega()) * RBK::M1(- args.get_i())) * s;
 
 		Interpolator interp_s(&times, &s);
 		args.set_interp_s(&interp_s);

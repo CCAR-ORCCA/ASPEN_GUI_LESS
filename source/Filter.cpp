@@ -69,7 +69,7 @@ void Filter::get_surface_point_cloud(std::string path) {
 	dcm_LN.row(0) = u.t();
 	dcm_LN.row(1) = v.t();
 	dcm_LN.row(2) = w.t();
-	mrp_LN = dcm_to_mrp(dcm_LN);
+	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
@@ -81,20 +81,20 @@ void Filter::get_surface_point_cloud(std::string path) {
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (RBK::M3(this -> arguments -> get_orbit_rate() * time_index) * RBK::M1(this -> arguments -> get_inclination()) * RBK::M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
 		std::cout << "Lidar pos, inertial" << std::endl;
 		std::cout << lidar_pos.t() << std::endl;
 
-		dcm_LN = M3(arma::datum::pi) * dcm.t();
+		dcm_LN = RBK::M3(arma::datum::pi) * dcm.t();
 
-		mrp_LN = dcm_to_mrp(dcm_LN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
-		mrp_TN = dcm_to_mrp(dcm_TN);
-		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+		dcm_TN = RBK::M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = RBK::dcm_to_mrp(dcm_TN);
+		mrp_LT = RBK::dcm_to_mrp(dcm_LN * dcm_TN.t());
 
 		std::cout << "Lidar pos, body-fixed frame" << std::endl;
 		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
@@ -176,10 +176,10 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
 		// Current time
@@ -280,10 +280,10 @@ void Filter::get_surface_point_cloud_from_trajectory(
 
 		// TN DCM
 		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
@@ -377,11 +377,11 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
 
 		// TN DCM
-		mrp_TN = euler313_to_mrp(interpolated_attitude.rows(0, 2));
-		dcm_TN = mrp_to_dcm(mrp_TN);
+		mrp_TN = RBK::euler313_to_mrp(interpolated_attitude.rows(0, 2));
+		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
 
 		// LN DCM
-		mrp_LN = dcm_to_mrp(dcm_LT * dcm_TN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
 
@@ -467,7 +467,7 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 	dcm_LN.row(0) = u.t();
 	dcm_LN.row(1) = v.t();
 	dcm_LN.row(2) = w.t();
-	mrp_LN = dcm_to_mrp(dcm_LN);
+	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
@@ -486,20 +486,20 @@ void Filter::run(unsigned int N_iteration, bool plot_measurements, bool save_sha
 
 		std::cout << "\n################### Time : " << time_index << " ########################" << std::endl;
 
-		arma::mat dcm = (M3(this -> arguments -> get_orbit_rate() * time_index) * M1(this -> arguments -> get_inclination()) * M3(0)).t() ;
+		arma::mat dcm = (RBK::M3(this -> arguments -> get_orbit_rate() * time_index) *RBK::M1(this -> arguments -> get_inclination()) *RBK::M3(0)).t() ;
 		lidar_pos = dcm * lidar_pos_0;
 
 
 		std::cout << "Lidar pos, inertial" << std::endl;
 		std::cout << lidar_pos.t() << std::endl;
 
-		dcm_LN = M3(arma::datum::pi) * dcm.t();
+		dcm_LN = RBK::M3(arma::datum::pi) * dcm.t();
 
-		mrp_LN = dcm_to_mrp(dcm_LN);
+		mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
-		dcm_TN = M3(this -> arguments-> get_body_spin_rate() * time_index).t();
-		mrp_TN = dcm_to_mrp(dcm_TN);
-		mrp_LT = dcm_to_mrp(dcm_LN * dcm_TN.t());
+		dcm_TN = RBK::M3(this -> arguments-> get_body_spin_rate() * time_index).t();
+		mrp_TN = RBK::dcm_to_mrp(dcm_TN);
+		mrp_LT = RBK::dcm_to_mrp(dcm_LN * dcm_TN.t());
 
 		std::cout << "Lidar pos, body-fixed frame" << std::endl;
 		std::cout << (dcm_TN * lidar_pos).t() << std::endl;
@@ -1125,15 +1125,15 @@ std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::
 
 
 	arma::rowvec drhodV0 = (n.t()) / arma::dot(u, n) + (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V2 - *V1);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V2 - *V1);
 
 
 	arma::rowvec drhodV1 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V0 - *V2);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V0 - *V2);
 
 
 	arma::rowvec drhodV2 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	                       - n * u.t() / arma::dot(u, n)) * tilde(*V1 - *V0);
+	                       - n * u.t() / arma::dot(u, n)) * RBK::tilde(*V1 - *V0);
 
 	partials.push_back(drhodV0);
 	partials.push_back(drhodV1);
