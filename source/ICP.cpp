@@ -1,6 +1,8 @@
 #include "ICP.hpp"
 
-ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) {
+ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
+         arma::mat dcm_0,
+         arma::vec X_0) {
 
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
@@ -9,7 +11,8 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) {
 	this -> register_pc_mrp_multiplicative_partials(100,
 	        1e-8,
 	        1e-8,
-	        false );
+	        false, dcm_0,
+	        X_0 );
 
 
 }
@@ -62,15 +65,17 @@ void ICP::register_pc_mrp_multiplicative_partials(
     const unsigned int iterations_max,
     const double rel_tol,
     const double stol,
-    const bool pedantic) {
+    const bool pedantic,
+    arma::mat dcm_0,
+    arma::vec X_0) {
 
 	double J;
 	double J_0;
 	double J_previous = std::numeric_limits<double>::infinity();
 
-	// The batch estimator is initialized with a zero translation/zero rotation
-	arma::vec mrp = {0, 0, 0};
-	arma::vec x = {0, 0, 0};
+	// The batch estimator is initialized
+	arma::vec mrp = RBK::dcm_to_mrp(dcm_0);
+	arma::vec x = X_0;
 
 	int h = 5;
 
@@ -189,8 +194,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			}
 
 			else if (iter == iterations_max - 1) {
-				h = h - 1;
-				next_h = true;
+
+				throw ICPException();
+
 				break;
 			}
 
@@ -361,7 +367,7 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 	double median = arma::median(dist_vec);
 
-	
+
 	// Erase
 	double max = dist_vec.max();
 	double min = dist_vec.min();

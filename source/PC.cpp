@@ -30,6 +30,9 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 }
 
 
+
+
+
 PC::PC(arma::mat & dcm,
        arma::vec & x,
        std::shared_ptr<PC> destination_pc,

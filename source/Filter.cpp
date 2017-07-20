@@ -618,18 +618,32 @@ void Filter::run_new(
 
 void Filter::register_pcs(int index, double time) {
 
-	
-	try {
-		ICP icp(this -> destination_pc, this -> source_pc);
-		arma::mat dcm = icp.get_DCM();
-		arma::vec X = icp.get_X();
-	}
-	catch {
 
-	}
+	ICP icp(this -> destination_pc, this -> source_pc);
+
+	arma::mat dcm = icp.get_DCM();
+	arma::vec X = icp.get_X();
+
+	arma::mat dcm_epoch;
+	arma::vec X_epoch;
+
+	ICP icp_epoch(this -> destination_pc, this -> source_pc_epoch,
+		RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()),
+		);
+
+	// If no exception is thrown, the ICP registration has suceeded
+	dcm_epoch = icp_epoch.get_DCM();
+	X_epoch = icp_epoch.get_X();
+
+	// try {
+
+	// }
+	// catch (ICPException & exception) {
+
+	// }
 
 
-	this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", dcm, X);
+	this -> source_pc -> save("source_transformed_" + std::to_string(index) + ".obj", dcm_epoch, X_epoch);
 
 	// Spin axis is measured
 	this -> measure_spin_axis(dcm);
@@ -641,7 +655,7 @@ void Filter::register_pcs(int index, double time) {
 	this -> measure_omega(dcm);
 
 	// Attitude is measured
-	this -> measure_mrp(dcm);
+	this -> measure_mrp(dcm_epoch);
 
 	this -> filter_arguments -> append_time(time);
 
@@ -651,7 +665,7 @@ void Filter::register_pcs(int index, double time) {
 
 void Filter::measure_mrp(arma::mat & dcm) {
 
-	this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * dcm.t()));
+	this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( dcm.t()));
 
 }
 
@@ -719,12 +733,17 @@ void Filter::store_point_clouds(int index) {
 	arma::vec u = {1, 0, 0};
 
 	// No point cloud has been collected yet
-	if (this -> source_pc == nullptr) {
+	if (this -> source_pc_epoch == nullptr) {
+		this -> source_pc_epoch = std::make_shared<PC>(PC(u,
+		                          this -> lidar -> get_focal_plane(),
+		                          this -> frame_graph));
+
+		this -> source_pc_epoch -> save("source_epoch_" + std::to_string(index + 1) + ".obj");
+
+
 		this -> source_pc = std::make_shared<PC>(PC(u,
 		                    this -> lidar -> get_focal_plane(),
 		                    this -> frame_graph));
-		this -> source_pc -> save("source_" + std::to_string(index + 1) + ".obj");
-
 	}
 
 	else {
@@ -746,8 +765,6 @@ void Filter::store_point_clouds(int index) {
 
 			// The source and destination point clouds are combined into the new source point cloud
 			this -> source_pc = this -> destination_pc;
-
-
 
 			this -> destination_pc = std::make_shared<PC>(PC(u,
 			                         this -> lidar -> get_focal_plane(),

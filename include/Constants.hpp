@@ -26,7 +26,7 @@
 
 // Time (s)
 #define T0 0
-#define TF 200
+#define TF 10
 
 
 

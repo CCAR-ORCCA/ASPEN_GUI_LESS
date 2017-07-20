@@ -3,11 +3,14 @@
 #include <armadillo>
 #include <memory>
 #include "PC.hpp"
+#include "ICPException.hpp"
 
 
 class ICP {
 public:
-	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source);
+	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
+	    arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
+	    arma::vec X_0 = arma::zeros<arma::vec>(3));
 
 	arma::vec get_X() const;
 	arma::mat get_DCM() const;
@@ -24,7 +27,9 @@ protected:
 	    const unsigned int iterations_max,
 	    const double rel_tol,
 	    const double stol,
-	    const bool pedantic);
+	    const bool pedantic,
+	    arma::mat dcm_0 ,
+	    arma::vec X_0);
 
 	arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
 

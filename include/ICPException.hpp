@@ -1,3 +1,6 @@
+#ifndef HEADER_ICPEXCEPTION
+#define HEADER_ICPEXCEPTION
+
 #include <exception>
 
 
@@ -6,3 +9,5 @@ struct ICPException : public std::exception {
 		return "ICP did not converge";
 	}
 };
+
+#endif
