@@ -256,7 +256,7 @@ def plot_azimuth_elevation_facet_seen_count(rootpath):
 
     if ("pole" in directory):
 
-      angles = np.loadtxt(directory + "/angles.txt")
+      angles = np.loadtxt(directory + "/Trajectory_BodyFixed.txt")[0,7:]
       visibility = np.loadtxt(directory + "/facets_seen_count.txt")
 
       min_visibility = min(min_visibility,visibility[-1,1])
@@ -286,6 +286,33 @@ def plot_azimuth_elevation_facet_seen_count(rootpath):
 
  
   plt.savefig(rootpath + "visibility.pdf")
+  plt.clf()
+
+
+def plot_histogram_facet_seen_count(rootpath):
+
+  paths = os.listdir(rootpath)
+  colors = []
+
+  visibility = []
+
+  for directory in paths:
+
+    if ("pole" in directory):
+
+      visibility += [np.loadtxt(directory + "/facets_seen_count.txt")[-1,1]]
+
+  visibility = np.array(visibility)
+
+  plt.hist(100 * visibility,  bins=[0, 20, 40, 60, 80,100])
+
+  plt.title(r"Final surface visibility distribution")
+  plt.xlabel(r"Final surface visibility (percentage)")
+  plt.ylabel(r"Occurences")
+
+  # plt.show()
+
+  plt.savefig(rootpath + "visibility_histogram.pdf")
   plt.clf()
 
 

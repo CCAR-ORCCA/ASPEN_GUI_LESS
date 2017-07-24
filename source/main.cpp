@@ -16,8 +16,6 @@
 
 int main() {
 
-
-
 	// Ref frame graph
 	FrameGraph frame_graph;
 	frame_graph.add_frame("N");
@@ -56,29 +54,30 @@ int main() {
 
 	std::vector<std::string> directories;
 
-	std::ifstream infile("/Users/bbercovici/Desktop/HO3/SPC/paths.txt");
+
+	std::string master_path = "/Users/bbercovici/Desktop/HO3/IIIC/";
+
+
+	std::ifstream infile(master_path + "paths.txt");
 	std::string path;
 	while (infile >> path) {
 		directories.push_back(path);
 	}
 
-	// directories.push_back("/Users/bbercovici/Desktop/HO3/hovering");
+	// directories.push_back(master_path + "pole_short_1");
 
+	// 0) Load ephemeride of HO3
+	arma::mat nu;
+	arma::vec times;
+
+	nu.load(master_path + "nu.txt");
+	times.load(master_path + "time.txt");
+
+	arma::inplace_trans(nu);
 
 	for (unsigned int dir_index = 0; dir_index < directories.size(); ++dir_index) {
 
-
-
 		std::cout << directories[dir_index] << std::endl;
-
-
-		// 0) Load ephemeride of HO3
-		arma::mat nu;
-		arma::vec times;
-		nu.load(directories[dir_index] + "/nu.txt");
-		times.load(directories[dir_index] + "/time.txt");
-
-		arma::inplace_trans(nu);
 
 		arma::mat s = arma::zeros<arma::mat>( 3, nu.n_cols);
 		s.row(0) = arma::cos(nu + args.get_omega());
@@ -90,7 +89,6 @@ int main() {
 
 		Lidar lidar(&frame_graph, "L", ROW_FOV, COL_FOV , ROW_RESOLUTION,
 		            COL_RESOLUTION, FOCAL_LENGTH, INSTRUMENT_FREQUENCY, &args, kdtree.get());
-
 
 		// Filter
 		Filter filter(&frame_graph,

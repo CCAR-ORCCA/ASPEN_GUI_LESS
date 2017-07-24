@@ -12,11 +12,13 @@
 #define MINIMUM_ELEVATION 0
 
 // Lidar settings
-#define ROW_RESOLUTION 64
-#define COL_RESOLUTION 64
-#define ROW_FOV 6
-#define COL_FOV 6
-#define INSTRUMENT_FREQUENCY 0.00028
+#define ROW_RESOLUTION 128
+#define COL_RESOLUTION 128
+#define ROW_FOV 1
+#define COL_FOV 1
+
+// One image every 74 mins
+#define INSTRUMENT_FREQUENCY 0.00022522522522522523
 #define FOCAL_LENGTH 1e-2
 
 

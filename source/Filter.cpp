@@ -23,8 +23,6 @@ Filter::Filter(FrameGraph * frame_graph,
 
 }
 
-
-
 void Filter::get_surface_point_cloud(std::string path) {
 
 	std::cout << "Collecting surface data" << std::endl;
