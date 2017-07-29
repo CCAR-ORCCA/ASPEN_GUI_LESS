@@ -9,26 +9,28 @@
 #define HO3_LONGITUDE_PERIGEE 5.36213407427001
 
 // Central body density/mass
-#define DENSITY 0
-#define MASS 45641859220 //Roughly equivalent to n = 0.1 deg/s at a = 100 m
-
-// Visibility settings
-#define MINIMUM_ELEVATION 35
+#define DENSITY 2000
 
 // Lidar settings
 #define ROW_RESOLUTION 128
 #define COL_RESOLUTION 128
-#define ROW_FOV 10
-#define COL_FOV 10
-#define INSTRUMENT_FREQUENCY 0.4
-#define FOCAL_LENGTH 1e-2
-#define LOS_NOISE_SD 5e-2
+#define ROW_FOV 20
+#define COL_FOV 20
 
-// Time (s)
+// Instrument operating frequency
+#define INSTRUMENT_FREQUENCY 0.0011111111111111111 // one flash 15 minutes
+
+// Noise
+#define FOCAL_LENGTH 1e1
+#define LOS_NOISE_3SD_BASELINE 5e-2
+
+#define LOS_NOISE_FRACTION_MES_TRUTH 0.
+
+// Times (s)
 #define T0 0
-#define TF 10
+#define TF 604800// 7 days
 
 
 
 
-	
+

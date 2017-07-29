@@ -5,9 +5,6 @@
 #include <string>
 #include <iostream>
 #include <armadillo>
-// #include <assimp/Importer.hpp>
-// #include <assimp/scene.h>
-// #include <assimp/postprocess.h>
 #include <set>
 #include <map>
 #include <limits>
@@ -62,8 +59,10 @@ public:
 
 	/**
 	Constructs the KDTree holding the shape model
+	@param verbose true will save the bounding boxes to a file and display
+	kd tree construction details
 	*/
-	void construct_kd_tree();
+	void construct_kd_tree(bool verbose = false);
 
 
 	/**
@@ -97,7 +96,7 @@ public:
 
 
 	/**
-	Returns pointer to KDTree member. 
+	Returns pointer to KDTree member.
 	@return pointer to KDtree
 	*/
 	std::shared_ptr<KDTree_Shape> get_kdtree() const ;
@@ -224,13 +223,15 @@ public:
 		- 3 vertices
 		- 6 edges
 	Removes
-		- 3 facet
+		- 3 facets
 		- 3 edges
 
 	@param facet Pointer to facet to be split. THIS POINTER
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
+	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
+	This set will be edited to ensure that the facets that remain are all valid
 	*/
-	void split_facet(Facet * facet);
+	void split_facet(Facet * facet, std::set<Facet *> & seen_facets);
 
 
 
@@ -241,8 +242,10 @@ public:
 	on the edge facing the smallest angle in the facet
 	@param facet Pointer to the facet to recycle. THIS POINTER
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
+	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
+	This set will be edited to ensure that the facets that remain are all valid
 	*/
-	void recycle_shrunk_facet(Facet * facet);
+	void recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_facets);
 
 
 
@@ -297,8 +300,14 @@ public:
 	@param min_facet_angle Minimum facet vertex angle indicating degeneracy
 	@param min_edge_angle Minimum edge angle indicating degeneracy
 	If not, some facets are recycled until the mesh becomes satisfying
+	@param max_recycled_facets maximum number of facets that will be recycled
+	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
+	This set will be edited to ensure that the facets that remain are all valid
 	*/
-	void enforce_mesh_quality(double min_facet_angle, double min_edge_angle) ;
+	void enforce_mesh_quality(double min_facet_angle,
+	                          double min_edge_angle,
+	                          unsigned int max_recycled_facets,
+	                          std::set<Facet *> & seen_facets) ;
 
 	/**
 	Returns the non-dimensional inertia tensor of the body in the body-fixed

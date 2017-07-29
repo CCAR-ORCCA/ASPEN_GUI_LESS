@@ -26,18 +26,20 @@ public:
 	@param col_count vertical resolution (number of pixel columns)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
-	@param los_noise_sd Standard deviation of the line-of-sight gaussian noise of zero mean
-	applied to the range measurement
+	@param los_noise_3sd_baseline 3 standard deviation of the baseline line-of-sight gaussian noise
+	Total sd is given by 3 sigma = los_noise_sd_baseline + los_noise_fraction_mes_truth * rho_truth
+	@param los_noise_fraction_mes_truth truth-proportional fraction of the range measurement error
 	*/
 	Lidar(FrameGraph * frame_graph,
-	      std::string ref_frame_name = "L",
-	      double fov_h = 10,
-	      double fov_v = 10,
-	      unsigned int row_count = 16,
-	      unsigned int col_count = 16,
-	      double f = 1e-2,
-	      double freq = 3,
-	      double los_noise_sd = 0
+	      std::string ref_frame_name ,
+	      double fov_h ,
+	      double fov_v ,
+	      unsigned int row_count ,
+	      unsigned int col_count ,
+	      double f ,
+	      double freq ,
+	      double los_noise_3sd_baseline ,
+	      double los_noise_fraction_mes_truth
 	     );
 
 
@@ -146,6 +148,13 @@ public:
 	std::pair<double, double> save_range_residuals(std::string path) const ;
 
 
+
+
+	/**
+	Computes range residuals collected over the focal plane
+	*/
+	void compute_residuals();
+
 	/**
 	Sends a laser flash to the targeted shape model.
 	Every pixel present in the focal plane will cast a ray towards the target.
@@ -156,8 +165,8 @@ public:
 	@param store_mes True if all measurements must be stored
 	*/
 	void send_flash(ShapeModel * shape_model,
-	                bool computed_mes, bool store_mes = false) ;
-
+	                bool computed_mes,
+	                bool store_mes) ;
 
 
 	/**
@@ -165,6 +174,7 @@ public:
 	a file
 	@param path Path to the file
 	@param facets_to_residuals Map storing the facet that were seen and their associated residuals
+
 	*/
 	void save_range_residuals_per_facet(std::string path, std::map<Facet * , std::vector<double> > & facets_to_residuals) const ;
 
@@ -199,7 +209,8 @@ protected:
 	double fov_z ;
 	double row_count ;
 	double col_count ;
-	double los_noise_sd;
+	double los_noise_3sd_baseline;
+	double los_noise_fraction_mes_truth;
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;

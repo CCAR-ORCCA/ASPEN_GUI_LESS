@@ -72,7 +72,8 @@ RK45::RK45(
 
 void RK4::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
               double (*energy_fun)(double t, arma::vec , Args * args),
-              arma::vec (*event_function)(double t, arma::vec, Args *)) {
+              arma::vec (*event_function)(double t, arma::vec, Args *),
+              std::string savepath) {
 
 
 	if (this -> check_energy_conservation == true) {
@@ -105,19 +106,20 @@ void RK4::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 	}
 
 	if (check_energy_conservation == true) {
-		energy.save("energy_RK4_" + this -> title + ".txt", arma::raw_ascii);
+		energy.save(savepath + "energy_RK4_" + this -> title + ".txt", arma::raw_ascii);
 	}
-
-	this -> T.save("T_RK4_" + this -> title + ".txt", arma::raw_ascii);
-	this -> X.save("X_RK4_" + this -> title + ".txt", arma::raw_ascii);
-
+	if (savepath != "") {
+		this -> T.save(savepath + "T_RK4_" + this -> title + ".txt", arma::raw_ascii);
+		this -> X.save(savepath + "X_RK4_" + this -> title + ".txt", arma::raw_ascii);
+	}
 
 }
 
 void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
                double (*energy_fun)(double, arma::vec, Args * args),
                arma::vec (*event_function)(double t, arma::vec, Args *),
-               bool verbose) {
+               bool verbose,
+               std::string savepath) {
 
 
 	std::vector<double> T_v;
@@ -155,12 +157,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		arma::vec k5 = (*dXdt)(tk5 , yk + k1 * this -> dt * 439. / 216. - k2 * this -> dt * 8. + k3 * this -> dt * 3680. / 513. - k4 * this -> dt * 845. / 4104., this -> args);
 		arma::vec k6 = (*dXdt)(tk6 , yk - k1 * this -> dt * 8. / 27. + 2 * k2 * this -> dt - k3 * this -> dt * 3544. / 2565. + k4 * this -> dt * 1859. / 4104. - k5 * this -> dt * 11. / 40., this -> args);
 
-		// if (title == "orbit") {
-		// 	std::cout << yk.t() << std::endl;
-		// 	std::cout << k1.t() << std::endl;
-		// 	throw;
-
-		// }
 
 		// Solutions
 		arma::vec y_order_4 = yk + this -> dt * (25. / 216 * k1 + 1408. / 2565 * k3 + 2197. / 4101 * k4 - 1. / 5. * k5);
@@ -176,6 +172,7 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		this -> dt = std::min(this -> dt, (this -> tf - this -> t0) / 100);
 
 		// Applying event function to state if need be
+
 		if (event_function != nullptr) {
 			X_v[X_v.size() - 1] = (*event_function)( tk5, X_v[X_v.size() - 1], this -> args);
 		}
@@ -203,6 +200,7 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		this -> T(i) = T_v[i];
 		this -> X.col(i) = X_v[i];
 
+
 		if (check_energy_conservation == true) {
 			if (this -> args -> get_stopping_bool() == false) {
 				energy(i) = energy_v[i];
@@ -219,7 +217,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 	}
 
-
 	// Extrapolation "backwards" if need be
 	if (this -> args -> get_stopping_bool() == false) {
 
@@ -232,12 +229,13 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 
 	if (check_energy_conservation == true) {
-		energy.save("energy_RK45_" + this -> title + ".txt", arma::raw_ascii);
+		energy.save(savepath + "energy_RK45_" + this -> title + ".txt", arma::raw_ascii);
 	}
+	if (savepath != "") {
 
-	this -> T.save("T_RK45_" + this -> title + ".txt", arma::raw_ascii);
-	this -> X.save("X_RK45_" + this -> title + ".txt", arma::raw_ascii);
-
+		this -> T.save(savepath + "T_RK45_" + this -> title + ".txt", arma::raw_ascii);
+		this -> X.save(savepath + "X_RK45_" + this -> title + ".txt", arma::raw_ascii);
+	}
 
 
 

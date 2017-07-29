@@ -184,6 +184,8 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 			if ( J / J_0 < rel_tol ) {
 				exit = true;
+				this -> R = arma::inv(Info_mat);
+
 				break;
 			}
 
@@ -211,6 +213,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 }
 
+arma::mat ICP::get_R() const{
+	return this -> R;
+}
 
 arma::rowvec ICP::dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n) {
 
@@ -349,7 +354,8 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 	}
 
 	// Each destination point can only be paired once
-	for (auto it = destination_to_source_pre_pairs.begin() ; it != destination_to_source_pre_pairs.end(); ++it) {
+	for (auto it = destination_to_source_pre_pairs.begin() ; 
+		it != destination_to_source_pre_pairs.end(); ++it) {
 
 		// Source/Destination pair
 		std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > pair(it -> second . begin() -> second, it -> first);
@@ -371,8 +377,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 	// Erase
 	double max = dist_vec.max();
 	double min = dist_vec.min();
-
-
 
 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
 

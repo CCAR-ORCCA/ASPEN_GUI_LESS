@@ -9,6 +9,11 @@
 #include "PC.hpp"
 #include "ICP.hpp"
 #include "ICPException.hpp"
+#include "Args.hpp"
+#include "Wrappers.hpp"
+#include "RK.hpp"
+
+
 
 #include <RigidBodyKinematics.hpp>
 
@@ -73,13 +78,25 @@ public:
 	       FilterArguments * filter_arguments) ;
 
 	/**
-	@param N_iteration number of iteration of the filter with each batch of information
+	Runs the shape reconstruction filter
+	@param orbit_path Path to the orbit file
+	@param orbit_time_path Path to the orbit time file
+	@param attitude_path Path to the attitude file
+	@param attitude_time_path Path to the attitude time file
 	@param plot_measurement true if the measurements should be saved
 	@param save_shape_model true if the shape model should be saved after each measurement
+	@param inertial_traj True if provided trajectory is inertial
 	*/
-	void run(unsigned int N_iteration, bool plot_measurements, bool save_shape_model);
+	void run_shape_reconstruction(std::string orbit_path,
+	                              std::string orbit_time_path,
+	                              std::string attitude_path,
+	                              std::string attitude_time_path,
+	                              bool plot_measurements,
+	                              bool save_shape_model,
+	                              bool inertial_traj);
 
 	/**
+	Runs the attitude estimation filter
 	@param orbit_path Path to the orbit file
 	@param orbit_time_path Path to the orbit time file
 	@param attitude_path Path to the attitude file
@@ -87,24 +104,18 @@ public:
 	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
 	@param inertial_traj True if provided trajectory is inertial
 	*/
-	void run_new(
+	void run_attitude_estimation(
 	    std::string orbit_path,
 	    std::string orbit_time_path,
 	    std::string attitude_path,
 	    std::string attitude_time_path,
 	    bool inertial_traj);
 
-	/**
-	Collects 3D point cloud measurements and stores them to an OBJ file
-	@param path Path to obj file of the form XXX.obj (ex: test.obj)
-	*/
-	void get_surface_point_cloud(std::string path);
-
 
 	/**
 	Register the source and destination point clouds
 	@param index time index
-	@param time Time
+	@param time time
 	*/
 	void register_pcs(int index, double time);
 
@@ -119,13 +130,18 @@ public:
 	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
 	                       std::shared_ptr<PointNormal> > > * point_pairs) ;
 
-	/**
-	Measures the attitude by appending the rigid transform dcm
-	to the previously found ones
-	@param dcm
-	*/
-	void measure_mrp(arma::mat & dcm);
 
+	/**
+
+	Runs one shape reconstruction pass (N shape correction updates followed by a 
+	facet recycling step)
+	@param time_index index
+	@param time_index_formatted string denoting the current time
+	*/
+	void shape_reconstruction_pass(unsigned int time_index, 
+		std::string time_index_formatted);
+
+	
 
 	/**
 	Collects 3D point cloud measurements and stores them to an OBJ file
@@ -241,7 +257,11 @@ protected:
 	                           std::set<Facet *> & seen_facets,
 	                           arma::mat & N_mat,
 	                           std::map<Facet *,
-	                           std::vector<unsigned int> > & facet_to_index_of_vertices) ;
+	                           std::vector<unsigned int> > & facet_to_index_of_vertices,
+	                           double & mean,
+	                           double & stdev
+
+	                          ) ;
 
 
 
@@ -257,7 +277,11 @@ protected:
 
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
-	std::shared_ptr<PC> source_pc_epoch = nullptr;
+	std::shared_ptr<PC> destination_pc_shape = nullptr;
+	std::shared_ptr<PC> source_pc_shape = nullptr;
+
+
+	std::set<Facet *> seen_facets_destination;
 
 
 };

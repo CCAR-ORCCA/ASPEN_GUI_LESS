@@ -21,18 +21,26 @@ arma::vec pgm_dxdt_wrapper(double t, arma::vec X, Args * args) {
 arma::vec point_mass_dxdt_wrapper(double t, arma::vec X, Args * args) {
 
 	DynamicAnalyses dyn_analyses(args -> get_shape_model());
-	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t, true).rows(0, 2);
 
-	args -> get_frame_graph() -> set_transform_mrp("N", "T", mrp_TN);
 	arma::vec pos_inertial = X . rows(0, 2);
 	arma::vec acc_inertial = dyn_analyses.point_mass_acceleration(pos_inertial , args -> get_mass());
 
 	arma::vec dxdt = { X(3), X(4), X(5), acc_inertial(0), acc_inertial(1), acc_inertial(2)};
+
 	return dxdt;
 
 }
 
 
+arma::vec sigma_dot_wrapper(double t, arma::vec X, Args * args) {
+
+
+	arma::vec omega = args -> get_constant_omega();
+	arma::vec attitude_set = {X(0), X(1), X(2), omega(0), omega(1), omega(2)};
+
+	arma::vec sigma_dot =  RBK::dmrpdt(t, attitude_set );
+	return sigma_dot;
+}
 
 
 
@@ -96,11 +104,22 @@ arma::vec attitude_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 }
 
-arma::vec event_function_mrp(double t, arma::vec X, Args * args) {
+arma::vec event_function_mrp_omega(double t, arma::vec X, Args * args) {
 	if (arma::norm(X.rows(0, 2)) > 1) {
 		arma::vec mrp = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
 		arma::vec state = {mrp(0), mrp(1), mrp(2), X(3), X(4), X(5)};
 		return state;
+	}
+	else {
+		return X;
+	}
+}
+
+
+arma::vec event_function_mrp(double t, arma::vec X, Args * args) {
+	if (arma::norm(X.rows(0, 2)) > 1) {
+		arma::vec mrp = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
+		return mrp;
 	}
 	else {
 		return X;

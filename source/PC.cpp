@@ -31,6 +31,42 @@ PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * foc
 
 
 
+PC::PC(arma::vec los_dir, arma::mat & points) {
+
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+
+	for (unsigned int index = 0; index < points . n_cols; ++index) {
+
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
+	}
+
+	this -> construct_kd_tree(points_normals);
+	this -> construct_normals(los_dir);
+
+
+}
+
+
+
+PC::PC(ShapeModel * shape_model) {
+
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+
+
+	// The shape model is used to create the point cloud
+	// The center points to each facets are used
+	// The normals of each facet are directly used
+
+	for (unsigned int facet_index = 0; facet_index < shape_model -> get_NFacets(); ++facet_index) {
+		Facet * facet = shape_model -> get_facets() -> at(facet_index);
+
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(*facet -> get_facet_center(), *facet -> get_facet_normal())));
+
+	}
+
+	this -> construct_kd_tree(points_normals);
+
+}
 
 
 PC::PC(arma::mat & dcm,
@@ -106,23 +142,6 @@ arma::vec PC::get_point_normal(unsigned int index) const {
 
 
 
-
-
-
-PC::PC(arma::vec los_dir, arma::mat & points) {
-
-	std::vector< std::shared_ptr<PointNormal> > points_normals;
-
-	for (unsigned int index = 0; index < points . n_cols; ++index) {
-
-		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
-	}
-
-	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(los_dir);
-
-
-}
 
 
 

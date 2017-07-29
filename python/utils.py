@@ -17,6 +17,7 @@ def plot_results(path = None,save = False):
     plot_cm_estimate(path ,save )
     plot_mrp_histories(path,save)
     plot_angle_error(path,save)
+    plot_cm_eigen(path,save )
     plot_omega_histories(path,save)
     plot_omega_norm_histories(path,save)
     plot_spin_axis_histories(path,save)
@@ -43,7 +44,10 @@ def plot_cm_estimate(path = None,save = True):
     sd_list = []
 
     for i in range(P_history.shape[1]):
-        sd_list += [np.sqrt(np.linalg.eigvalsh([P_history[:,i].reshape(3,3)]))]
+        sd = np.sqrt(np.diag(P_history[:,i].reshape(3,3)))
+
+        sd_list += [sd]
+
 
     sd_mat = np.vstack(sd_list).T
 
@@ -86,6 +90,51 @@ def plot_cm_estimate(path = None,save = True):
 
 
 
+def plot_cm_eigen(path = None,save = False):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        P_history = np.loadtxt(path + "P_cm_hat_time_history_mat.txt")
+        time = np.loadtxt(path + "time_history.txt")
+
+
+    else:
+        P_history = np.loadtxt("P_cm_hat_time_history_mat.txt")
+        time = np.loadtxt("time_history.txt")
+
+
+    sd_list = []
+
+    for i in range(P_history.shape[1]):
+        sd_list += [np.sqrt(np.linalg.eigvalsh([P_history[:,i].reshape(3,3)]))]
+
+    sd_mat = np.vstack(sd_list).T
+
+
+    # Covariance
+
+    plt.semilogy(time, sd_mat[0,1:],'--',label = r"$\sigma_1$")
+    plt.semilogy(time, sd_mat[1,1:],'--',label = r"$\sigma_2$")
+    plt.semilogy(time, sd_mat[2,1:],'--',label = r"$\sigma_3$")
+
+
+    plt.legend(loc = "best")
+    plt.xlabel("Measurement time (s)")
+    plt.ylabel("Eigenvalue (m)")
+
+    plt.title("Center of mass estimated covariance eigenvalues")
+    if (save is True):
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/eigen_pos.pdf")
+    else:
+        plt.show()
+    plt.clf()
+
+
+
+
+
 def plot_omega_histories(path = None,save = True):
 
     plt.rc('text', usetex=True)
@@ -101,7 +150,7 @@ def plot_omega_histories(path = None,save = True):
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
-        time = np.loadtxt(path + "time_history.txt")
+        time = np.loadtxt("time_history.txt")
 
 
 
@@ -146,7 +195,7 @@ def plot_angle_error(path = None,save = True):
         mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
         mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
 
-        time = np.loadtxt(path + "time_history.txt")
+        time = np.loadtxt("time_history.txt")
 
 
     angle_error =[]
@@ -194,7 +243,7 @@ def plot_mrp_histories(path = None,save = True):
         mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
         mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
 
-        time = np.loadtxt(path + "time_history.txt")
+        time = np.loadtxt( "time_history.txt")
 
     # Truth 
     plt.plot(time,mrp_true_history[:,0],"-o",label = "$\sigma_x$")
@@ -235,7 +284,7 @@ def plot_omega_norm_histories(path = None,save = True):
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
-        time = np.loadtxt(path + "time_history.txt")
+        time = np.loadtxt("time_history.txt")
 
 
     # Truth 
@@ -275,7 +324,7 @@ def plot_spin_axis_histories(path = None,save = True):
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
-        time = np.loadtxt(path + "time_history.txt")
+        time = np.loadtxt("time_history.txt")
 
 
 
@@ -347,14 +396,17 @@ def plot_long_lat():
     plt.show()
 
 def plot_diff():
-    volume_dif = np.loadtxt("../output/volume_dif.txt")
-    surface_dif = np.loadtxt("../output/surface_dif.txt")
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    volume_dif = np.loadtxt("./volume_dif.txt")
+    surface_dif = np.loadtxt("./surface_dif.txt")
 
     plt.semilogy(range(len(volume_dif)),100 * np.abs(volume_dif),label = 'Volume')
     plt.semilogy(range(len(surface_dif)),100 * np.abs(surface_dif),label = 'Area')
     plt.legend(bbox_to_anchor=(0.5, 1.1),ncol = 2,loc = 'upper center')
-    plt.ylabel("Relative difference (%)")
-    plt.xlabel("Measurement index")
+    plt.ylabel(r"Relative difference $(\%)$")
+    plt.xlabel(r"Measurement index")
 
     plt.grid()
     plt.savefig("dif.pdf")
@@ -362,22 +414,28 @@ def plot_diff():
 
 
 def plot_volume_dif():
-    volume_dif = np.loadtxt("../output/volume_dif.txt")
 
-    plt.plot(range(len(volume_dif)),100 * np.abs(volume_dif))
-    plt.xlabel("Measurement index")
-    plt.ylabel("Relative volume difference (%)")
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    volume_dif = np.loadtxt("./volume_dif.txt")
+
+    plt.semilogy(range(len(volume_dif)),100 * np.abs(volume_dif))
+    plt.xlabel(r"Measurement index")
+    plt.ylabel(r"Relative volume difference $(\%)$")
     plt.savefig("volume_dif.pdf")
 
 
     plt.show()
 
 def plot_surface_dif():
-    surface_dif = np.loadtxt("../output/surface_dif.txt")
 
-    plt.plot(range(len(surface_dif)),100 * np.abs(surface_dif))
-    plt.xlabel("Measurement index")
-    plt.ylabel("Relative surface difference (%)")
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    surface_dif = np.loadtxt("./surface_dif.txt")
+
+    plt.semilogy(range(len(surface_dif)),100 * np.abs(surface_dif))
+    plt.xlabel(r"Measurement index")
+    plt.ylabel(r"Relative surface difference $(\%)$")
     plt.savefig("surface_dif.pdf")
 
 

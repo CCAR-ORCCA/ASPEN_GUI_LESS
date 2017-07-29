@@ -8,6 +8,7 @@
 #include "Ray.hpp"
 #include "PointNormal.hpp"
 #include "FrameGraph.hpp"
+#include "ShapeModel.hpp"
 
 
 class PC {
@@ -33,6 +34,12 @@ public:
 	*/
 	PC(arma::vec los_dir, arma::mat & points);
 
+
+	/*
+	Constructor
+	@param shape_model pointer to shape model
+	*/
+	PC(ShapeModel * shape_model);
 
 
 	/**
@@ -134,9 +141,9 @@ public:
 	*/
 	void save(std::string path, arma::mat dcm, arma::vec x) const;
 
-	
 
-	
+
+
 
 
 protected:

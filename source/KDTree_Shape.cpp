@@ -1,9 +1,8 @@
 #include "KDTree_Shape.hpp"
 
 KDTree_Shape::KDTree_Shape() {
-	
-}
 
+}
 
 
 std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,  int depth, bool verbose) {
@@ -135,8 +134,8 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 			node -> bbox.print();
 			// Uncomment if willing to save the leaf bounding boxes to a
 			// readable obj file
-			// std::string path = std::to_string(rand() ) + ".obj";
-			// node -> bbox.save_to_file(path);
+			std::string path = std::to_string(rand() ) + ".obj";
+			node -> bbox.save_to_file(path);
 
 		}
 
@@ -147,19 +146,20 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 }
 
 
-bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray) const {
+bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const {
 
 	// Check if the ray intersects the bounding box of the given node
-	if (node -> hit_bbox(ray)) {
+
+	if (node -> hit_bbox(ray, computed_mes)) {
 
 		bool hit_facet = false;
 
 		// If there are triangles in the child leaves, those are checked
-		// for intersect
+		// for intersect. First, the method checks whether it is still on a branch
 		if (node -> left -> facets.size() > 0 || node -> right -> facets.size() > 0) {
 
-			bool hitleft = this -> hit(node -> left.get(), ray);
-			bool hitright = this -> hit(node -> right.get(), ray);
+			bool hitleft = this -> hit(node -> left.get(), ray, computed_mes);
+			bool hitright = this -> hit(node -> right.get(), ray, computed_mes);
 
 			return (hitleft || hitright);
 
@@ -171,7 +171,7 @@ bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray) const {
 			for (unsigned int i = 0; i < node -> facets.size(); ++i) {
 
 				// If there is a hit
-				if (ray -> single_facet_ray_casting(node -> facets[i], false)) {
+				if (ray -> single_facet_ray_casting(node -> facets[i], computed_mes)) {
 					hit_facet = true;
 				}
 
@@ -195,10 +195,11 @@ void KDTree_Shape::set_depth(int depth) {
 
 
 
-bool KDTree_Shape::hit_bbox(Ray * ray) const {
+bool KDTree_Shape::hit_bbox(Ray * ray, bool computed_mes) const {
 
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();
+
 
 	arma::vec all_t(6);
 
@@ -219,9 +220,15 @@ bool KDTree_Shape::hit_bbox(Ray * ray) const {
 
 	// If the current minimum range for this Ray is less than the distance to this bounding box,
 	// this bounding box is ignored
-
-	if (ray -> get_true_range() < all_t_sorted(2)) {
-		return false;
+	if (computed_mes) {
+		if (ray -> get_computed_range() < all_t_sorted(2)) {
+			return false;
+		}
+	}
+	else {
+		if (ray -> get_true_range() < all_t_sorted(2)) {
+			return false;
+		}
 	}
 
 	if (test_point(0) <= this -> bbox . get_xmax() && test_point(0) >= this -> bbox . get_xmin()) {

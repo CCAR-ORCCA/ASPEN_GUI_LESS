@@ -96,6 +96,8 @@ public:
 		return this -> time;
 	}
 
+	
+
 	void set_minimum_elevation(double el) {
 		this -> minimum_elevation = el;
 	}
@@ -103,6 +105,17 @@ public:
 	double get_minimum_elevation() const {
 		return this -> minimum_elevation;
 	}
+
+
+	void set_constant_omega(arma::vec omega) {
+		this -> constant_omega = omega;
+	}
+
+	arma::vec get_constant_omega() const {
+		return this -> constant_omega;
+	}
+
+
 
 protected:
 	double density;
@@ -116,6 +129,8 @@ protected:
 	FrameGraph * frame_graph;
 	ShapeModel * shape_model;
 	Interpolator * interpolator;
+
+	arma::vec constant_omega;
 
 	bool is_attitude_bool = false;
 

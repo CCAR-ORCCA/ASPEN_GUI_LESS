@@ -21,7 +21,14 @@ Facet::Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > >   vertice
 	// Computing surface area
 	this -> compute_area();
 
+	// Computing normals
+	this -> compute_normal();
+
+	// Computing facet center
+	this -> compute_facet_center();
+
 }
+
 
 
 void Facet::set_split_counter(unsigned int split_counter) {
@@ -37,11 +44,13 @@ unsigned int Facet::get_split_count() const {
 	return this -> split_counter;
 }
 
-void Facet::update() {
+void Facet::update(bool compute_dyad) {
 	this -> compute_normal();
 	this -> compute_area();
 	this -> compute_facet_center();
-	this -> compute_facet_dyad();
+	if (compute_dyad) {
+		this -> compute_facet_dyad();
+	}
 }
 
 /**
@@ -97,7 +106,8 @@ bool Facet::has_good_edge_quality(double angle) {
 			}
 
 
-			// The shortest edge is made even shorter
+			// The shortest edge is made even shorter. This will trigger the other 
+			// facet recycling scheme
 			if (arma::norm(*V0 -> get_coordinates() - *V2 -> get_coordinates()) <
 			        arma::norm(*V1 -> get_coordinates() - *V2 -> get_coordinates())) {
 
@@ -205,7 +215,7 @@ void Facet::compute_normal() {
 	arma::vec * P0 = this -> vertices -> at(0) -> get_coordinates();
 	arma::vec * P1 = this -> vertices -> at(1) -> get_coordinates();
 	arma::vec * P2 = this -> vertices -> at(2) -> get_coordinates();
-	*this -> facet_normal = arma::cross(*P1 - *P0, *P2 - *P0) / arma::norm(arma::cross(*P1 - *P0, *P2 - *P0));
+	*this -> facet_normal = arma::normalise(arma::cross(*P1 - *P0, *P2 - *P0));
 }
 
 void Facet::compute_facet_dyad() {

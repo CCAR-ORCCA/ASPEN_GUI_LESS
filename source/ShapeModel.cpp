@@ -1,144 +1,6 @@
 #include "../include/ShapeModel.hpp"
 #include <chrono>
 
-// void ShapeModel::load(const std::string & filename) {
-
-// 	Assimp::Importer importer;
-
-// 	const aiScene * scene = importer.ReadFile( filename, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices  );
-
-// 	// If the import succeeded:
-// 	if (scene != NULL) {
-
-// 		// If the imported shape model had at least one mesh in it
-// 		if (scene -> mMeshes > 0) {
-
-// 			// For now, only the first mesh is used
-// 			this -> vertices = arma::mat(3, scene -> mMeshes[0] -> mNumVertices);
-// 			this -> facet_vertices = arma::umat(3, scene -> mMeshes[0] -> mNumFaces);
-// 			this -> facet_normals = arma::mat(3, scene -> mMeshes[0] -> mNumFaces);
-// 			this -> F_dyads = arma::cube(scene -> mMeshes[0] -> mNumFaces, 3, 3);
-
-// 			this -> NFacets = scene -> mMeshes[0] -> mNumFaces;
-// 			this -> NVertices = scene -> mMeshes[0] -> mNumVertices;
-
-// 			std::map<unsigned int , std::set<unsigned int> > vertex_index_to_facet;
-// 			std::set<std::set<unsigned int> > edges;
-
-// 			// Vertex coordinates
-
-
-
-// 			for (unsigned int vertex = 0; vertex < scene -> mMeshes[0] -> mNumVertices; ++vertex) {
-
-// 				arma::vec vertex_coords = {scene -> mMeshes[0] -> mVertices[vertex].x,
-// 				                           scene -> mMeshes[0] -> mVertices[vertex].y,
-// 				                           scene -> mMeshes[0] -> mVertices[vertex].z
-// 				                          };
-// 				this -> vertices.col(vertex) = vertex_coords;
-// 			}
-
-
-// 			// Connectivity Table
-// 			for (unsigned int facet = 0; facet < this -> NFacets ; ++facet) {
-
-// 				if (scene -> mMeshes[0] -> mFaces[facet].mNumIndices != 3) {
-// 					std::cout << " More than three vertices belong to this facet " << std::endl;
-// 					throw " More than three vertices belong to this facet ";
-// 				}
-
-// 				this -> facet_vertices.col(facet)(0) = scene -> mMeshes[0] -> mFaces[facet].mIndices[0];
-// 				this -> facet_vertices.col(facet)(1) = scene -> mMeshes[0] -> mFaces[facet].mIndices[1];
-// 				this -> facet_vertices.col(facet)(2) = scene -> mMeshes[0] -> mFaces[facet].mIndices[2];
-
-
-// 				vertex_index_to_facet[this -> facet_vertices.col(facet)(0)].insert(facet);
-// 				vertex_index_to_facet[this -> facet_vertices.col(facet)(1)].insert(facet);
-// 				vertex_index_to_facet[this -> facet_vertices.col(facet)(2)].insert(facet);
-
-// 				std::set<unsigned int> edge_0;
-// 				edge_0.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[0]);
-// 				edge_0.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[1]);
-
-// 				std::set<unsigned int> edge_1;
-// 				edge_1.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[0]);
-// 				edge_1.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[2]);
-
-// 				std::set<unsigned int> edge_2;
-// 				edge_2.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[1]);
-// 				edge_2.insert(scene -> mMeshes[0] -> mFaces[facet].mIndices[2]);
-
-// 				if (this -> edges_to_facets.find(edge_0) == this -> edges_to_facets.end()) {
-// 					this -> edges_to_facets[edge_0].insert(facet);
-// 				}
-
-// 				else if (this -> edges_to_facets[edge_0].size() < 2) {
-// 					this -> edges_to_facets[edge_0].insert(facet);
-// 				}
-
-// 				if (this -> edges_to_facets.find(edge_1) == this -> edges_to_facets.end()) {
-// 					this -> edges_to_facets[edge_1].insert(facet);
-// 				}
-
-// 				else if (this -> edges_to_facets[edge_1].size() < 2) {
-// 					this -> edges_to_facets[edge_1].insert(facet);
-// 				}
-
-
-// 				if (this -> edges_to_facets.find(edge_2) == this -> edges_to_facets.end()) {
-// 					this -> edges_to_facets[edge_2].insert(facet);
-// 				}
-
-// 				else if (this -> edges_to_facets[edge_2].size() < 2) {
-// 					this -> edges_to_facets[edge_2].insert(facet);
-// 				}
-
-// 				edges.insert(edge_0);
-// 				edges.insert(edge_1);
-// 				edges.insert(edge_2);
-
-// 			}
-
-// 			this -> NEdges = edges.size();
-// 			this -> E_dyads = arma::cube(this -> NEdges, 3, 3);
-// 			unsigned int edge_index = 0;
-
-
-// 			for (std::set<std::set<unsigned int> >::iterator iter = edges.begin(); iter != edges.end(); ++iter) {
-// 				this -> edges_to_edges_index[*iter] = edge_index;
-// 				this -> edges_indices_to_edge[edge_index] = *iter;
-// 				++edge_index;
-// 			}
-
-// 			// Normals
-// 			#pragma omp parallel for
-// 			for (unsigned int facet = 0; facet < this -> NFacets; ++facet) {
-// 				unsigned int P0_index = this -> facet_vertices.col(facet)(0);
-// 				unsigned int P1_index = this -> facet_vertices.col(facet)(1);
-// 				unsigned int P2_index = this -> facet_vertices.col(facet)(2);
-
-// 				arma::vec P0 = this -> vertices.col(P0_index);
-// 				arma::vec P1 = this -> vertices.col(P1_index);
-// 				arma::vec P2 = this -> vertices.col(P2_index);
-// 				arma::vec facet_normal = arma::cross(P1 - P0, P2 - P0) / arma::norm(arma::cross(P1 - P0, P2 - P0));
-// 				this -> facet_normals.col(facet) = facet_normal;
-// 			}m
-
-
-// 			this -> check_normals_consistency();
-
-// 			this -> compute_dyads();
-
-// 		}
-
-// 	}
-
-// 	else {
-// 		std::cout << " There was an error opening the shape model file " << std::endl;
-// 		throw " There was an error opening the shape model file ";
-// 	}
-
-// }
 
 ShapeModel::ShapeModel() {
 
@@ -149,7 +11,7 @@ void ShapeModel::update_mass_properties() {
 	this -> compute_surface_area();
 	this -> compute_volume();
 	this -> compute_center_of_mass();
-	this -> compute_inertia();
+	// this -> compute_inertia();
 
 }
 
@@ -194,10 +56,21 @@ std::shared_ptr<KDTree_Shape> ShapeModel::get_kdtree() const {
 	return this -> kd_tree;
 }
 
-void ShapeModel::construct_kd_tree() {
+void ShapeModel::construct_kd_tree(bool verbose) {
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
 
 	this -> kd_tree = std::make_shared<KDTree_Shape>(KDTree_Shape());
-	this -> kd_tree = this -> kd_tree -> build(this -> facets, 0);
+	this -> kd_tree = this -> kd_tree -> build(this -> facets, 0, verbose);
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+
+	std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+
 }
 
 
@@ -335,6 +208,8 @@ void ShapeModel::align_with_principal_axes() {
 	arma::vec moments;
 	arma::mat axes ;
 
+	this -> compute_inertia();
+
 	double T = arma::trace(this -> inertia) ;
 	double Pi = 0.5 * (T * T - arma::trace(this -> inertia * this -> inertia));
 	double U = std::sqrt(T * T - 3 * Pi) / 3;
@@ -343,15 +218,36 @@ void ShapeModel::align_with_principal_axes() {
 	std::cout << "Non-dimensional inertia: " << std::endl;
 	std::cout << this -> inertia << std::endl;
 
+
 	if (U > 1e-6) {
 
-		double Theta = std::acos( (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U ));
+		double cos_Theta = (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U );
+		double Theta;
+
+		if (cos_Theta > 0) {
+
+		}
+
+		if (std::abs(std::abs(cos_Theta) - 1) < 1e-6) {
+			if (cos_Theta > 0) {
+				Theta = 0;
+			}
+			else {
+				Theta = arma::datum::pi;
+			}
+		}
+		else {
+			Theta = std::acos( (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U ));
+		}
+
+
 
 		double A = T / 3 - 2 * U * std::cos(Theta / 3);
 		double B = T / 3 - 2 * U * std::cos(Theta / 3 - 2 * arma::datum::pi / 3);
 		double C = T / 3 - 2 * U * std::cos(Theta / 3 + 2 * arma::datum::pi / 3);
 
 		moments = {A, B, C};
+
 
 		arma::mat L0 = this -> inertia - moments(0) * arma::eye<arma::mat>(3, 3);
 		arma::mat L1 = this -> inertia - moments(1) * arma::eye<arma::mat>(3, 3);
@@ -523,7 +419,7 @@ void ShapeModel::check_normals_consistency(double tol) const {
 
 	facet_area_average = facet_area_average / this -> facets.size();
 	if (arma::norm(surface_sum) / facet_area_average > tol) {
-		throw (std::runtime_error("Normals were incorrectly oriented. norm(sum(n * s))/sum(s):" + std::to_string(arma::norm(surface_sum) / facet_area_average)));
+		throw (std::runtime_error("Normals were incorrectly oriented. norm(sum(n * s))/sum(s)= " + std::to_string(arma::norm(surface_sum) / facet_area_average)));
 	}
 
 }
@@ -608,7 +504,6 @@ void ShapeModel::compute_inertia() {
 	double P_yz = 0;
 
 	double l = std::pow(this -> volume, 1. / 3.);
-
 
 	#pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
@@ -703,7 +598,6 @@ void ShapeModel::compute_inertia() {
 	};
 
 	this -> inertia = I;
-
 }
 
 
@@ -740,7 +634,7 @@ void ShapeModel::compute_surface_area() {
 }
 
 
-void ShapeModel::split_facet(Facet * facet) {
+void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 
 	// The old facets are retrieved
 	// together with the old vertices
@@ -758,10 +652,10 @@ void ShapeModel::split_facet(Facet * facet) {
 	std::shared_ptr<Vertex> V1 = V_in_F0_old -> at(1);
 	std::shared_ptr<Vertex> V2 = V_in_F0_old -> at(2);
 
+
 	std::shared_ptr<Vertex> V3 ;
 	std::shared_ptr<Vertex> V4 ;
 	std::shared_ptr<Vertex> V5 ;
-
 
 	for (auto const & old_facet : splitted_facets) {
 
@@ -818,8 +712,11 @@ void ShapeModel::split_facet(Facet * facet) {
 		}
 	}
 
-	// The new vertices and their (empty) coordinates are created
 
+
+
+
+	// The new vertices and their (empty) coordinates are created
 	std::shared_ptr<arma::vec> P6 = std::make_shared<arma::vec>(arma::vec(3));
 	std::shared_ptr<Vertex> V6 = std::make_shared<Vertex>(Vertex());
 	V6 -> set_coordinates(P6);
@@ -921,7 +818,6 @@ void ShapeModel::split_facet(Facet * facet) {
 	F8 -> set_split_counter(facet -> get_split_count() + 1);
 	F9 -> set_split_counter(facet -> get_split_count() + 1);
 
-
 	// // The new facets are added to the shape model
 	this -> add_facet(F0);
 	this -> add_facet(F1);
@@ -935,6 +831,24 @@ void ShapeModel::split_facet(Facet * facet) {
 	this -> add_facet(F9);
 
 
+	// The facets that were seen and split are removed from the set
+	seen_facets.erase(facet);
+	seen_facets.erase(F1_old);
+	seen_facets.erase(F2_old);
+	seen_facets.erase(F3_old);
+
+	// The facets that replaced them are added back
+	seen_facets.insert(F0);
+	seen_facets.insert(F1);
+	seen_facets.insert(F2);
+	seen_facets.insert(F3);
+	seen_facets.insert(F4);
+	seen_facets.insert(F5);
+	seen_facets.insert(F6);
+	seen_facets.insert(F7);
+	seen_facets.insert(F8);
+	seen_facets.insert(F9);
+
 	/*
 	EDGES ARE IGNORED FOR NOW
 	*/
@@ -943,6 +857,7 @@ void ShapeModel::split_facet(Facet * facet) {
 	// owned by $facet and its neighbors. Must remove this ownership (note that
 	// the new ownerships have already been created when constructing
 	// the new facets)
+
 	V0 -> remove_facet_ownership(facet);
 	V1 -> remove_facet_ownership(facet);
 	V2 -> remove_facet_ownership(facet);
@@ -956,9 +871,10 @@ void ShapeModel::split_facet(Facet * facet) {
 	V2 -> remove_facet_ownership(F2_old);
 	V2 -> remove_facet_ownership(F3_old);
 
-	V3 -> remove_facet_ownership(F3_old);
 	V4 -> remove_facet_ownership(F1_old);
 	V5 -> remove_facet_ownership(F2_old);
+	V3 -> remove_facet_ownership(F3_old);
+
 
 
 
@@ -979,11 +895,16 @@ void ShapeModel::split_facet(Facet * facet) {
 	delete(*old_facet_F3);
 	this -> facets.erase(old_facet_F3);
 
+
+	this -> update_mass_properties();
+
+	this -> check_normals_consistency(1e-5);
+
 }
 
 
 
-void ShapeModel::recycle_shrunk_facet(Facet * facet) {
+void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 
 	// The vertices in the facet are extracted
 	std::shared_ptr<Vertex> V0  = facet -> get_vertices() -> at(0);
@@ -1062,8 +983,6 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet) {
 
 	std::vector<Facet * > facets_owning_discarded_vertex = V_merge_discard -> get_owning_facets();
 
-
-
 	// The facets owning V_merge_discard are
 	// updated so as to have this vertex merging with
 	// V_merge_keep
@@ -1100,9 +1019,9 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet) {
 
 	this -> vertices.erase(V_merge_discard_it);
 
-	// At this point, the ref_count of V_merge_discard should yield 1
-	// std::cout << " V_merge_discard count: " << V_merge_discard.use_count() << std::endl;
-	// Actually it does not because of the edges!
+
+	seen_facets.erase(F0_old);
+	seen_facets.erase(F1_old);
 
 	// The facets to recycle are removed from the shape model
 	auto old_facet_F0 = std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[0]);
@@ -1113,14 +1032,12 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet) {
 	delete(*old_facet_F1);
 	this -> facets.erase(old_facet_F1);
 
+
+
 	// The impacted facets are all updated to reflect their new geometry
 	this -> update_facets();
 
-
-
 }
-
-
 
 
 void ShapeModel::get_bounding_box(double * bounding_box) const {
@@ -1184,12 +1101,18 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 }
 
 
-void ShapeModel::enforce_mesh_quality(double min_facet_angle, double min_edge_angle) {
+void ShapeModel::enforce_mesh_quality(double min_facet_angle,
+                                      double min_edge_angle,
+                                      unsigned int max_recycled_facets,
+                                      std::set<Facet * > & seen_facets) {
 
 	bool mesh_quality_confirmed = false;
 	unsigned int facets_recycled = 0;
 
-	while (mesh_quality_confirmed == false) {
+
+
+
+	while (mesh_quality_confirmed == false && 2 * facets_recycled < max_recycled_facets) {
 
 		mesh_quality_confirmed = true;
 
@@ -1205,7 +1128,7 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle, double min_edge_an
 
 			if (this -> facets[facet_index] -> has_good_surface_quality(min_facet_angle) == false) {
 				mesh_quality_confirmed = false;
-				this -> recycle_shrunk_facet(this -> facets[facet_index]);
+				this -> recycle_shrunk_facet(this -> facets[facet_index], seen_facets);
 
 				++facets_recycled;
 				break;

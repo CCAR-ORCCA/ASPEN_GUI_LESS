@@ -9,7 +9,6 @@
 #include <set>
 
 
-
 // Implementation of a KDTree based on the
 // very informative yet incomplete post found at
 // https://blog.frogslayer.com/kd-trees-for-faster-ray-tracing-with-triangles/
@@ -26,11 +25,11 @@ public:
 
 	KDTree_Shape();
 
-	
+
 
 	std::shared_ptr<KDTree_Shape> build(std::vector<Facet *> & facets, int depth, bool verbose = false);
-	bool hit(KDTree_Shape * node, Ray * ray) const;
-	bool hit_bbox(Ray * ray ) const;
+	bool hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const;
+	bool hit_bbox(Ray * ray, bool computed_mes ) const;
 
 	int get_depth() const;
 	void set_depth(int depth);

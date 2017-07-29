@@ -5,6 +5,11 @@ PointNormal::PointNormal(arma::vec point) {
 	this -> point = point;
 }
 
+PointNormal::PointNormal(arma::vec point, arma::vec normal) {
+	this -> point = point;
+	this -> normal = normal;
+}
+
 PointNormal::PointNormal(arma::vec point, int inclusion_counter) {
 	this -> point = point;
 	this -> inclusion_counter = inclusion_counter;

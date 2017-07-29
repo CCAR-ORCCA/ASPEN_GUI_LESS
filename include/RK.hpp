@@ -2,9 +2,7 @@
 #define HEADER_RK4
 
 #include <armadillo>
-#include "ShapeModel.hpp"
-#include "DynamicAnalyses.hpp"
-#include "FrameGraph.hpp"
+
 #include "Args.hpp"
 #include "Interpolator.hpp"
 
@@ -60,7 +58,8 @@ public:
 	    arma::vec (*dXdt)(double, arma::vec, Args *),
 	    double (*energy_fun)(double , arma::vec, Args *),
 	    arma::vec (*event_function)(double t, arma::vec, Args *) = nullptr,
-	    bool verbose = false);
+	    bool verbose = false,
+	    std::string savepath = "");
 
 protected:
 	double tol;
@@ -83,7 +82,8 @@ public:
 	void run(
 	    arma::vec (*dXdt)(double, arma::vec , Args * args),
 	    double (*energy_fun)(double, arma::vec , Args * args),
-	    arma::vec (*event_function)(double t, arma::vec, Args *) = nullptr);
+	    arma::vec (*event_function)(double t, arma::vec, Args *) = nullptr,
+	    std::string savepath = "");
 
 protected:
 

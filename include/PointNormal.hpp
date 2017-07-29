@@ -11,6 +11,8 @@ public:
 
 	PointNormal(arma::vec point);
 	PointNormal(arma::vec point, int inclusion_counter) ;
+	PointNormal(arma::vec point, arma::vec normal);
+
 
 	double distance(std::shared_ptr<PointNormal> other_point) const;
 

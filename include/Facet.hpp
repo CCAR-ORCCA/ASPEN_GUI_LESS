@@ -20,7 +20,7 @@ public:
 	*/
 	Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices);
 
-
+	
 	/**
 	Get neighbors
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
@@ -99,8 +99,9 @@ public:
 
 	/**
 	Recomputes the facet dyads, normal, surface area and center
+	@param compute_dyad true if this facet's dyad should be computed
 	*/
-	void update();
+	void update(bool compute_dyad = true);
 
 
 
@@ -134,7 +135,7 @@ public:
 	Returns the number of times the (deceased)
 	parents of that face were split
 	@return number of time the parents of that
-	facet where 
+	facet where
 	*/
 	unsigned int get_split_count() const;
 

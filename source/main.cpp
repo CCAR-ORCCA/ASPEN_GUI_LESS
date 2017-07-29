@@ -30,66 +30,36 @@ int main() {
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	ShapeModelImporter shape_io_estimated(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere.obj",
-	    200, false);
-
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/saturn_v_ft.obj", 1);
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_150_scaled.obj", 1 );
+
+	ShapeModelImporter shape_io_estimated(
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere_scaled.obj",
+	    0.1, false);
+
+
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	shape_io_estimated.load_shape_model(&estimated_shape_model);
 
+	true_shape_model.construct_kd_tree(false);
+	estimated_shape_model.construct_kd_tree(false);
 
-	true_shape_model.construct_kd_tree();
-
-	// The shape model is shifted set_transform_origin that it is no longer at
-	// the origin of the N frame
-	arma::vec new_origin = { 100, 10, 30};
-
-	std::ofstream shape_file;
-	shape_file.open("true_cm.obj");
-	shape_file << "v " << new_origin(0) << " " << new_origin(1) << " " << new_origin(2) << std::endl;
-
-
-	frame_graph.set_transform_origin("N",
-	                                 "T",
-	                                 new_origin);
-
-	// The estimated shape is also positioned in space
-	arma::vec E_origin = { 0, 0, 0};
-	arma::vec E_mrp = { 0, 0, 0};
-
-
-	frame_graph.set_transform_origin("N",
-	                                 "E",
-	                                 new_origin);
-
-	frame_graph.set_transform_mrp("N",
-	                              "E",
-	                              E_mrp);
-
-
-
-
-
-
-	// // 1) Propagate small body attitude
+	// 1) Propagate small body attitude
 	arma::vec attitude_0(6);
 
-	arma::vec angles = {0, 0, 0};
-	arma::vec angular_vel = {0.02, 0.02, -0.02};
+	double omega = 2 * arma::datum::pi / (12 * 3600);
 
-	attitude_0.rows(0, 2) = RBK::euler313d_to_mrp(angles);
+	arma::vec angular_vel = { 0, 0, omega};
+
+	attitude_0.rows(0, 2) = arma::zeros<arma::vec>(3);
 	attitude_0.rows(3, 5) = angular_vel;
-
 
 	double t0 = T0;
 	double tf = TF;
 	double dt = 0.1; //default timestep. Used as initial guess for RK45
 
 	bool check_energy_conservation = false;
-
 
 	// Specifiying filter_arguments such as density, pointer to frame graph and
 	// attracting shape model
@@ -109,7 +79,9 @@ int main() {
 
 	rk_attitude.run(&attitude_dxdt_wrapper,
 	                nullptr,
-	                &event_function_mrp, false);
+	                &event_function_mrp_omega,
+	                false,
+	                "../output/integrators/");
 
 	// 2) Propagate spacecraft attitude about small body
 	// using computed small body attitude
@@ -117,20 +89,18 @@ int main() {
 	args.set_interpolator(&interpolator);
 	args.set_is_attitude_bool(false);
 	args.set_density(DENSITY);
-	args.set_mass(MASS);
+	args.set_mass(DENSITY * true_shape_model . get_volume());
 
 	// Initial condition of the orbiting spacecraft
-	arma::vec initial_pos = {100, 0, 0};
-	arma::vec initial_vel_inertial = {0, std::sqrt(arma::datum::G * args.get_mass() / initial_pos(0)), 0.0};
+	arma::vec initial_pos = {3000 , 0, 0};
+	double v = std::sqrt(arma::datum::G * args.get_mass() / arma::norm(initial_pos));
+
+	arma::vec initial_vel_inertial = {0, 0, v};
 
 	// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
 	//                      initial_pos);
 
 	arma::vec orbit_0(6);
-
-	// orbit_0.rows(0, 2) = initial_pos;
-	// orbit_0.rows(3, 5) = body_vel;
-
 
 	orbit_0.rows(0, 2) = initial_pos;
 	orbit_0.rows(3, 5) = initial_vel_inertial;
@@ -141,131 +111,96 @@ int main() {
 	               dt,
 	               &args,
 	               check_energy_conservation,
-	               "orbit_body_frame"
+	               "orbit_inertial"
 	             );
 
 	rk_orbit.run(&point_mass_dxdt_wrapper,
 	             nullptr,
 	             nullptr,
-	             false);
+	             false,
+	             "../output/integrators/");
 
-	// // The attitude of the asteroid is also interpolated
-	// arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
+	// The attitude of the asteroid is also interpolated
+	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
 
-	// for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
-	// 	interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
-	// }
-	// interpolated_attitude.save("interpolated_attitude.txt", arma::raw_ascii);
+	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
+		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
+	}
+	interpolated_attitude.save("../output/integrators/interpolated_attitude.txt", arma::raw_ascii);
 
 	// Lidar
-	Lidar lidar(&frame_graph, "L", ROW_FOV, COL_FOV , ROW_RESOLUTION,
-	            COL_RESOLUTION, FOCAL_LENGTH, INSTRUMENT_FREQUENCY,
-	            LOS_NOISE_SD);
-
-
-	// Instrument orbit (rate and inclination)
-	// double orbit_rate =  2 * arma::datum::pi * 1e-2 ;
-	// double inclination = 80 * arma::datum::pi / 180;
-
-	// Target angular rate
-	// double body_spin_rate =  2e-1 ;
-
-	// // Minimum impact angle for a measurement to be used (deg)
-	// double min_normal_observation_angle = 10 * arma::datum::pi / 180.;
-
-	// // Minimum angular difference between two neighboring surface
-	// // normals to be considered different
-	// double min_facet_normal_angle_difference = 45 * arma::datum::pi / 180.;
-
-	// // Minimum number of rays required for a facet to be considered
-	// // in the estimation process
-	// unsigned int minimum_ray_per_facet = 5;
-
-	// // Maximum number of times a facet and its children can be split
-	// unsigned int max_split_count = 5;
-
-	// // Ridge estimation
-	// double ridge_coef = 1e1;
-
-	// // Remove outliers
-	// bool reject_outliers = true;
-
-	// // Activate surface splitting
-	// bool split_status = true;
-
-	// // Use cholesky decomposition (WARNING: SHOULD TURN OFF RIDGE IF TRUE)
-	// bool use_cholesky = false;
-
-	// // Recycle degenerate facets
-	// bool recycle_shrunk_facets = true;
-
-	// // Minimum facet angle indicating degeneracy
-	// double min_facet_angle = 10 * arma::datum::pi / 180;
-
-	// // Minimum edge angle indicating degeneracy
-	// // 0 deg: no edge recycling at all
-	// // 90 deg : facets cannot have their normals in opposite directions
-	// double min_edge_angle = 20 * arma::datum::pi / 180;
-
-	// // Filter filter_arguments
-	// FilterArguments args = FilterArguments( t0,
-	//                             tf,
-	//                             min_normal_observation_angle,
-	//                             orbit_rate,
-	//                             inclination,
-	//                             body_spin_rate,
-	//                             min_facet_normal_angle_difference,
-	//                             ridge_coef,
-	//                             min_facet_angle,
-	//                             min_edge_angle,
-	//                             minimum_ray_per_facet,
-	//                             max_split_count,
-	//                             reject_outliers,
-	//                             split_status,
-	//                             use_cholesky,
-	//                             recycle_shrunk_facets);
-
-	FilterArguments filter_args;
-	filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
-	filter_args.set_cm_bar_0(arma::zeros<arma::vec>(3));
-	filter_args.set_Q_cm(1e-13 * arma::eye<arma::mat>(3, 3));
-
-	filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
-	filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
-	filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
+	Lidar lidar(&frame_graph,
+	            "L",
+	            ROW_FOV,
+	            COL_FOV ,
+	            ROW_RESOLUTION,
+	            COL_RESOLUTION,
+	            FOCAL_LENGTH,
+	            INSTRUMENT_FREQUENCY,
+	            LOS_NOISE_3SD_BASELINE,
+	            LOS_NOISE_FRACTION_MES_TRUTH);
 
 
 
 
+	// Filter filter_arguments
+	FilterArguments shape_filter_args = FilterArguments();
 
-	// Filter
-	Filter filter(&frame_graph,
-	              &lidar,
-	              &true_shape_model,
-	              &filter_args);
+	shape_filter_args.set_max_ray_incidence(70 * arma::datum::pi / 180.);
+	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
+	shape_filter_args.set_ridge_coef(5e1);
 
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
+	shape_filter_args.set_reject_outliers(true);
+	shape_filter_args.set_split_facets(true);
+	shape_filter_args.set_use_cholesky(false);
+	shape_filter_args.set_min_edge_angle(80 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
+	shape_filter_args.set_min_facet_angle(10 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
+
+	shape_filter_args.set_N_iterations(5);
+
+	// Facets recycling
+	shape_filter_args.set_recycle_shrunk_facets(false);
+	shape_filter_args.set_max_recycled_facets(4);
+
+	shape_filter_args.set_convergence_facet_residuals(5 * LOS_NOISE_3SD_BASELINE);
+
+	arma::vec cm_bar_0 = {1e3, -1e2, 1e3};
+
+	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
+	shape_filter_args.set_cm_bar_0(cm_bar_0);
+	shape_filter_args.set_Q_cm(1e-3 * arma::eye<arma::mat>(3, 3));
+
+	shape_filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
+	shape_filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
+	shape_filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
+
+	shape_filter_args.set_estimate_shape(false);
+	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1e-1);
 
 
-	filter.run_new(
-	    "../build/X_RK45_orbit_body_frame.txt",
-	    "../build/T_RK45_orbit_body_frame.txt",
-	    "../build/X_RK45_attitude.txt",
-	    "../build/T_RK45_attitude.txt",
+
+
+	Filter shape_filter(&frame_graph,
+	                    &lidar,
+	                    &true_shape_model,
+	                    &estimated_shape_model,
+	                    &shape_filter_args);
+
+
+	shape_filter.run_shape_reconstruction(
+	    "../output/integrators/X_RK45_orbit_inertial.txt",
+	    "../output/integrators/T_RK45_orbit_inertial.txt",
+	    "../output/integrators/X_RK45_attitude.txt",
+	    "../output/integrators/T_RK45_attitude.txt",
+	    true,
+	    true,
 	    true);
 
 
-	filter_args.save_estimate_time_history();
-
-
-	// true_shape_model. save_lat_long_map_to_file("lat_long_impacts.txt");
-
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
-	// std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-	// // filter.run(5, true, true);
+	shape_filter_args.save_estimate_time_history();
+	std::ofstream shape_file;
+	shape_file.open("../output/attitude/true_cm.obj");
+	shape_file << "v " << 0 << " " << 0 << " " << 0 << std::endl;
 
 
 

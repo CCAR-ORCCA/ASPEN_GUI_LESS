@@ -9,7 +9,8 @@ Lidar::Lidar(
     unsigned int col_count,
     double f,
     double freq,
-    double los_noise_sd) {
+    double los_noise_3sd_baseline,
+    double los_noise_fraction_mes_truth) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
@@ -19,10 +20,10 @@ Lidar::Lidar(
 	this -> row_count = row_count;
 	this -> col_count = col_count;
 	this -> freq = freq;
-	this -> los_noise_sd = los_noise_sd;
+	this -> los_noise_3sd_baseline = los_noise_3sd_baseline;
+	this -> los_noise_fraction_mes_truth = los_noise_fraction_mes_truth;
 
-
-
+	// The focal plane of the lidar is populated
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
 		std::vector<std::shared_ptr<Ray> > h_row;
@@ -33,6 +34,8 @@ Lidar::Lidar(
 
 		this -> focal_plane.push_back(h_row);
 	}
+
+
 }
 
 double Lidar::get_row_count() const {
@@ -85,67 +88,94 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes) {
 
-	this -> shape_model = shape_model;
+void Lidar::compute_residuals() {
+
+
+	unsigned int y_res = this -> row_count;
+	unsigned int z_res = this -> col_count;
+
+	#pragma omp parallel for
+	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
+
+		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
+
+
+			if (this -> focal_plane[y_index][z_index] -> get_computed_range() < std::numeric_limits<double>::infinity()
+			        && this -> focal_plane[y_index][z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
+				this -> focal_plane[y_index][z_index] -> set_range_residual(this -> focal_plane[y_index][z_index] -> get_true_range()  -
+				        this -> focal_plane[y_index][z_index] -> get_computed_range() );
+			}
+			else {
+
+				this -> focal_plane[y_index][z_index] -> set_range_residual( std::numeric_limits<double>::infinity());
+
+			}
+
+		}
+	}
+}
+
+
+
+
+
+
+
+
+void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes) {
 
 	unsigned int y_res = this -> row_count;
 	unsigned int z_res = this -> col_count;
 
 	bool hit;
 
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
+	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
+		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
+
+			// Range measurements are reset
+			this -> focal_plane[y_index][z_index] -> reset(computed_mes, shape_model);
+
+		}
+	}
+
+
+	#pragma omp parallel for
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 
-			// Range measurements is reset
-			this -> focal_plane[y_index][z_index] -> reset(computed_mes);
-
 			if (shape_model -> has_kd_tree()) {
 				hit = shape_model -> get_kdtree().get() -> hit(shape_model -> get_kdtree().get(),
-				        this -> focal_plane[y_index][z_index].get());
+				        this -> focal_plane[y_index][z_index].get(), computed_mes);
 			}
 
 			else {
-				hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes);
-
+				hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes, shape_model);
 			}
 
-
-			// If there's a hit, noise is added along the line of sight
+			// If there's a hit, noise is added along the line of sight on the true measurement
 			if (hit) {
-				if (computed_mes) {
 
-					double computed_range = this -> focal_plane[y_index][z_index]-> get_computed_range();
-					arma::vec random_vec = arma::randn(1);
-					double noise = this -> los_noise_sd * random_vec(0);
-					this -> focal_plane[y_index][z_index] -> set_computed_range(computed_range + noise);
+				if (computed_mes == false) {
 
-				}
-				else {
-					double true_range = this -> focal_plane[y_index][z_index]-> get_true_range();
+					double true_range = this -> focal_plane[y_index][z_index] -> get_true_range();
 					arma::vec random_vec = arma::randn(1);
-					double noise = this -> los_noise_sd * random_vec(0);
+
+					double noise_sd = (1. / .3) * (this -> los_noise_3sd_baseline + this -> los_noise_fraction_mes_truth
+					                               * true_range);
+
+					double noise = noise_sd * random_vec(0);
+					
 					this -> focal_plane[y_index][z_index] -> set_true_range(true_range + noise);
 
 				}
 			}
 
-
-
-
-			// If true, all the measurements are stored
-			if (store_mes == true) {
-
-				if (hit) {
-
-					this -> surface_measurements.push_back(
-					    this -> focal_plane[y_index][z_index] -> get_true_range() *
-					    (*this -> focal_plane[y_index][z_index] -> get_direction_target_frame())
-					    +  *this -> focal_plane[y_index][z_index] -> get_origin_target_frame());
-
-				}
-			}
 		}
 	}
 
@@ -177,7 +207,7 @@ std::pair<double, double> Lidar::save_true_range(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (std::abs(this -> focal_plane[y_index][0] -> get_true_range()) < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_true_range()) < std::numeric_limits<double>::infinity() )
 			pixel_location_file << this -> focal_plane[y_index][0] -> get_true_range();
 		else
 			pixel_location_file << "nan";
@@ -186,7 +216,7 @@ std::pair<double, double> Lidar::save_true_range(std::string path) const {
 		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
 
 			double range = this -> focal_plane[y_index][z_index] -> get_true_range() ;
-			if (std::abs(range) < 1e10 ) {
+			if (std::abs(range) < std::numeric_limits<double>::infinity() ) {
 
 				pixel_location_file << " " << range ;
 				if (range > r_max) {
@@ -224,7 +254,7 @@ std::pair<double, double> Lidar::save_computed_range(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (std::abs(this -> focal_plane[y_index][0] -> get_computed_range()) < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_computed_range()) < std::numeric_limits<double>::infinity() )
 			pixel_location_file << this -> focal_plane[y_index][0] -> get_computed_range();
 		else
 			pixel_location_file << "nan";
@@ -236,7 +266,7 @@ std::pair<double, double> Lidar::save_computed_range(std::string path) const {
 			double range = this -> focal_plane[y_index][z_index] -> get_computed_range() ;
 
 
-			if (std::abs(range) < 1e10 ) {
+			if (std::abs(range) < std::numeric_limits<double>::infinity() ) {
 
 				pixel_location_file << " " << range ;
 				if (range > r_max)
@@ -274,7 +304,10 @@ void Lidar::save_range_residuals_per_facet(std::string path, std::map<Facet * , 
 	for (auto const & facet_pair : facets_to_residuals) {
 
 		for (unsigned int res_index = 0; res_index < facet_pair.second.size(); ++ res_index) {
+
+
 			facets_residuals_file << facet_index << " " << facet_pair.second[res_index] << "\n";
+
 
 		}
 
@@ -323,7 +356,7 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 
 	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
 
-		if (std::abs(this -> focal_plane[y_index][0] -> get_range_residual()) < 1e10 )
+		if (std::abs(this -> focal_plane[y_index][0] -> get_range_residual()) < std::numeric_limits<double>::infinity() )
 			pixel_location_file << std::abs(this -> focal_plane[y_index][0] -> get_range_residual());
 		else
 			pixel_location_file << "nan";
@@ -335,7 +368,7 @@ std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
 			double range = std::abs(this -> focal_plane[y_index][z_index] -> get_range_residual()) ;
 
 
-			if (std::abs(range) < 1e10 ) {
+			if (std::abs(range) < std::numeric_limits<double>::infinity()  ) {
 
 				pixel_location_file << " " << range ;
 				if (range > r_max)

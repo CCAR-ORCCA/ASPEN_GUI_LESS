@@ -8,12 +8,7 @@ Class storing the filter parameters
 class FilterArguments {
 public:
 
-	/**
-	Default constructor
-	*/
-	FilterArguments() {
 
-	}
 
 	/**
 	Constructor
@@ -21,7 +16,7 @@ public:
 	@param t1 Final time (s)
 	@param orbit_rate Angular rate of the instrument about the target (rad/s), 313
 	@param body_spin_rate Angular rate of the instrument about the target (rad/s), RBK::M3
-	@param min_normal_observation_angle Minimum angle for a ray to be used (rad)
+	@param max_ray_incidence maximum incidence w/r to surface normal beyond which a ray is discarded (rad)
 	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
 	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
 	estimation process
@@ -37,63 +32,14 @@ public:
 	@param recycle_shrunk_facets True if facets that are degenerated should be removed
 	*/
 
-	FilterArguments(double t0,
-	                double tf,
-	                double min_normal_observation_angle,
-	                double orbit_rate,
-	                double inclination,
-	                double body_spin_rate,
-	                double min_facet_normal_angle_difference,
-	                double ridge_coef,
-	                double min_facet_angle,
-	                double min_edge_angle,
-	                unsigned int minimum_ray_per_facet,
-	                unsigned int max_split_count,
-	                bool reject_outliers,
-	                bool split_status,
-	                bool use_cholesky,
-	                bool recycle_shrunk_facets) {
-
-		this -> t0 = t0;
-		this -> tf = tf;
-		this -> min_normal_observation_angle = min_normal_observation_angle;
-		this -> orbit_rate = orbit_rate;
-		this -> inclination = inclination;
-		this -> body_spin_rate = body_spin_rate;
-		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
-		this -> minimum_ray_per_facet = minimum_ray_per_facet;
-		this -> max_split_count = max_split_count;
-		this -> ridge_coef = ridge_coef;
-		this -> min_facet_angle = min_facet_angle;
-		this -> min_edge_angle = min_edge_angle;
-		this -> reject_outliers = reject_outliers;
-		this -> split_status = split_status;
-		this -> use_cholesky = use_cholesky;
-		this -> recycle_shrunk_facets = recycle_shrunk_facets;
-	}
-
-	double get_t0() const {
-		return this -> t0;
+	FilterArguments() {
 
 	}
-	double get_tf() const {
-		return this -> tf;
 
-	}
-	double get_min_normal_observation_angle() const {
-		return this -> min_normal_observation_angle;
 
-	}
-	double get_orbit_rate() const {
-		return this -> orbit_rate;
+	double get_max_ray_incidence() const {
+		return this -> max_ray_incidence;
 
-	}
-	double get_body_spin_rate() const {
-		return this -> body_spin_rate;
-	}
-
-	double get_inclination() const {
-		return this -> inclination;
 	}
 
 	double get_min_facet_normal_angle_difference() const {
@@ -138,47 +84,49 @@ public:
 
 	//
 
-	void set_t0(double t0)  {
-		this -> t0 = t0;
+	void set_max_ray_incidence(double max_ray_incidence) {
+		this -> max_ray_incidence = max_ray_incidence;
 
 	}
 
-	void set_tf(double tf)  {
-		this -> tf = tf;
-
-	}
-
-	void set_min_normal_observation_angle(double min_normal_observation_angle) {
-		this -> min_normal_observation_angle = min_normal_observation_angle;
-
-	}
-
-	void set_orbit_rate(double orbit_rate )  {
-		this -> orbit_rate = orbit_rate;
-
-	}
-
-	void set_body_spin_rate(double body_spin_rate) {
-		this -> body_spin_rate = body_spin_rate;
-	}
-
-	void set_inclination(double inclination)  {
-		this -> inclination = inclination;
-	}
 
 	void set_min_facet_normal_angle_difference(double min_facet_normal_angle_difference)  {
 		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
 
 	}
 
-	void set_split_status(bool split_status)  {
+	void set_split_facets(bool split_status)  {
 		this -> split_status = split_status;
 
 	}
 
-	void set_minimum_ray_per_facet(unsigned int minimum_ray_per_facet)  {
+	void set_min_ray_per_facet(unsigned int minimum_ray_per_facet)  {
 		this -> minimum_ray_per_facet = minimum_ray_per_facet;
 
+	}
+
+	void set_max_recycled_facets(unsigned int max_recycled_facets) {
+		this -> max_recycled_facets = max_recycled_facets;
+	}
+
+	void set_convergence_facet_residuals(double convergence_facet_residuals) {
+		this -> convergence_facet_residuals = convergence_facet_residuals;
+	}
+
+	double get_convergence_facet_residuals() const {
+		return this -> convergence_facet_residuals;
+	}
+
+	unsigned int get_max_recycled_facets() const {
+		return this -> max_recycled_facets;
+	}
+
+	void set_N_iterations(unsigned int N_iterations) {
+		this -> N_iterations = N_iterations;
+	}
+
+	unsigned int get_N_iterations() const {
+		return this -> N_iterations;
 	}
 
 	void set_ridge_coef(double ridge_coef )  {
@@ -214,8 +162,6 @@ public:
 	/**
 	Center of mass
 	*/
-
-
 	void set_cm_bar_0(arma::vec cm_bar) {
 		this -> cm_hat_history.clear();
 		this -> cm_bar = cm_bar;
@@ -249,6 +195,29 @@ public:
 		return this -> Q_cm;
 	}
 
+	void set_estimate_shape(bool estim_shape) {
+		this -> estimate_shape = estim_shape;
+	}
+
+	bool get_estimate_shape() const {
+		return this -> estimate_shape;
+	}
+
+	bool get_has_transitioned_to_shape() const {
+		return this -> has_transitioned_to_shape;
+	}
+
+	void set_has_transitioned_to_shape(bool transition) {
+		this -> has_transitioned_to_shape = transition;
+	}
+
+	double get_shape_estimation_cm_trigger_thresh() const {
+		return this -> shape_estimation_cm_trigger_thresh;
+	}
+
+	void set_shape_estimation_cm_trigger_thresh(double threshold) {
+		this -> shape_estimation_cm_trigger_thresh = threshold;
+	}
 
 	void append_cm_hat(arma::vec cm) {
 		this -> cm_hat_history.push_back(cm);
@@ -357,6 +326,10 @@ public:
 		this -> omega_mes_history.push_back(omega);
 	}
 
+	arma::vec get_latest_omega_mes() const {
+		return *(--this -> omega_mes_history.end());
+	}
+
 
 	void append_P_omega_hat(arma::mat P) {
 		this -> P_omega_hat_history.push_back(P);
@@ -366,11 +339,21 @@ public:
 		this -> time_history.push_back(time);
 	}
 
-	
+	double get_latest_time() const {
+		return *(--this -> time_history.end()) ;
+	}
+
+	unsigned int get_number_of_shape_passes() const {
+		return this -> number_of_shape_passes;
+	}
+
+	void set_number_of_shape_passe(unsigned int shape_passes)  {
+		this -> number_of_shape_passes = shape_passes;
+	}
+
+
 
 	void save_estimate_time_history() const {
-
-
 
 		arma::mat cm_hat_time_history_mat = arma::mat(3, this -> cm_hat_history.size());
 		arma::mat P_cm_hat_time_history_mat = arma::mat(9, this -> P_cm_hat_history.size());
@@ -412,15 +395,15 @@ public:
 		}
 
 
-		cm_hat_time_history_mat.save("cm_time_history_mat.txt", arma::raw_ascii);
-		P_cm_hat_time_history_mat.save("P_cm_hat_time_history_mat.txt", arma::raw_ascii);
-		omega_mes_time_history_mat.save("omega_mes_time_history_mat.txt", arma::raw_ascii);
-		mrp_mes_time_history_mat.save("mrp_mes_time_history_mat.txt", arma::raw_ascii);
-		mrp_true_time_history_mat.save("mrp_true_time_history_mat.txt", arma::raw_ascii);
+		cm_hat_time_history_mat.save("../output/attitude/cm_time_history_mat.txt", arma::raw_ascii);
+		P_cm_hat_time_history_mat.save("../output/attitude/P_cm_hat_time_history_mat.txt", arma::raw_ascii);
+		omega_mes_time_history_mat.save("../output/attitude/omega_mes_time_history_mat.txt", arma::raw_ascii);
+		mrp_mes_time_history_mat.save("../output/attitude/mrp_mes_time_history_mat.txt", arma::raw_ascii);
+		mrp_true_time_history_mat.save("../output/attitude/mrp_true_time_history_mat.txt", arma::raw_ascii);
 
 
-		omega_true_time_history_mat.save("omega_true_time_history_mat.txt", arma::raw_ascii);
-		time_mat.save("time_history.txt", arma::raw_ascii);
+		omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
+		time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
 
 
 
@@ -429,54 +412,56 @@ public:
 
 protected:
 
-	double t0;
-	double tf;
-	double min_normal_observation_angle;
-	double orbit_rate;
-	double inclination;
-	double body_spin_rate;
+
+	double max_ray_incidence;
 	double min_facet_normal_angle_difference;
 	double ridge_coef;
 	double min_facet_angle;
 	double min_edge_angle;
+	double shape_estimation_cm_trigger_thresh;
+	double convergence_facet_residuals;
 
-	unsigned int minimum_ray_per_facet;
-	unsigned int max_split_count;
+
+
+	unsigned int minimum_ray_per_facet = 5;
+	unsigned int max_split_count = 1000;
+	unsigned int N_iterations;
+	unsigned int max_recycled_facets;
+	unsigned int number_of_shape_passes = 5;
 
 	bool reject_outliers;
 	bool split_status;
 	bool use_cholesky;
 	bool recycle_shrunk_facets;
+	bool estimate_shape;
+	bool has_transitioned_to_shape = false;
+
+
 
 	arma::vec cm_bar;
 	arma::vec omega_bar;
+
 	arma::mat P_cm_0;
 	arma::mat P_omega_0;
-
 	arma::mat Q_cm;
 	arma::mat Q_omega;
 
 	std::vector<arma::vec> cm_hat_history;
-
 	std::vector<arma::vec> spin_axis_mes_history;
-
 	std::vector<arma::vec> omega_mes_history;
 	std::vector<arma::vec> omega_hat_history;
 	std::vector<arma::vec> omega_true_history;
-
 	std::vector<arma::vec> mrp_mes_history;
 	std::vector<arma::vec> mrp_true_history;
 
-
 	std::vector<arma::mat > R_omega;
-
-
-
 	std::vector<arma::mat> P_cm_hat_history;
 	std::vector<arma::mat> P_omega_hat_history;
 
 
 	std::vector<double> time_history;
+
+
 
 
 

@@ -4,6 +4,7 @@
 #include "Facet.hpp"
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
+#include "ShapeModel.hpp"
 
 #include <memory>
 #include <armadillo>
@@ -82,8 +83,9 @@ public:
 	as the one corresponding to the Lidar's target coordinates
 	@param computed_mes True if the reset ray is the one targeted
 	at the computed shape. False if the true shape is targeted
+	@param shape_model pointer to shape model about to be flashed by this ray
 	*/
-	void reset(bool computed_mes) ;
+	void reset(bool computed_mes, ShapeModel * shape_model) ;
 
 
 	/**
@@ -91,6 +93,15 @@ public:
 	@return range residual (m)
 	*/
 	double get_range_residual() const;
+
+
+	/**
+	Sets range residual
+	@param res range residual
+	**/
+	void set_range_residual(double res) ;
+
+
 
 	/**
 	Return pointer to the unit vector directing the ray,
@@ -138,9 +149,10 @@ public:
 	- no intersect found: range == oo and hit_facet == nullptr
 	- intersect found: hit_facet and range have valid values
 	@param computed_mes True if the measurements are collected from the a-priori
-	@param true if the ray hit the target, false otherwise
+	@param shape_model pointer to illuminated shape model
+	@return true if the ray hit the target, false otherwise
 	*/
-	bool brute_force_ray_casting(bool computed_mes = false);
+	bool brute_force_ray_casting(bool computed_mes ,ShapeModel * shape_model);
 
 	/**
 	Cast a ray to a single facet of the target
