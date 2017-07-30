@@ -709,22 +709,45 @@ void Filter::register_pcs(int index, double time) {
 		the previous timestep to the current time
 		*/
 
-		ICP icp_shape(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
+		arma::mat dcm_shape;
+		arma::vec X_shape;
+		arma::mat R_shape;
 
-		arma::mat dcm_shape = icp_shape.get_DCM();
-		arma::vec X_shape = icp_shape.get_X();
-		arma::mat R_shape = icp_shape.get_R();
+		try {
+			ICP icp_shape(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
 
+			dcm_shape = icp_shape.get_DCM();
+			X_shape = icp_shape.get_X();
+			R_shape = icp_shape.get_R();
+		}
+		catch (const ICPException & error ) {
+			std::cerr << "For registration using the shape" << std::endl;
+			std::cerr << error.what() << std::endl;
+
+			throw (std::runtime_error(""));
+		}
 
 		// An ICP solution is also obtained from the actual source and destination
 		// point clouds
 
+		arma::mat dcm;
+		arma::vec X;
+		arma::mat R;
 
-		ICP icp(this -> destination_pc, this -> source_pc);
 
-		arma::mat dcm = icp.get_DCM();
-		arma::vec X = icp.get_X();
-		arma::mat R = icp.get_R();
+		try {
+			ICP icp(this -> destination_pc, this -> source_pc);
+
+			dcm = icp.get_DCM();
+			X = icp.get_X();
+			R = icp.get_R();
+		}
+		catch (const ICPException & error ) {
+			std::cerr << "For consecutive registration" << std::endl;
+			std::cerr << error.what() << std::endl;
+
+			throw (std::runtime_error(""));
+		}
 
 
 		arma::vec eigen_R = arma::eig_sym(R);
@@ -741,7 +764,7 @@ void Filter::register_pcs(int index, double time) {
 
 			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
 			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
-			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm, X);
+			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
 
 			arma::mat incremental_dcm = dcm_shape * RBK::mrp_to_dcm(mrp_mes_past).t();
 
