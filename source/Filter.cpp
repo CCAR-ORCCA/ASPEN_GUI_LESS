@@ -715,9 +715,9 @@ void Filter::register_pcs(int index, double time) {
 			R_shape = icp_shape.get_R();
 		}
 		catch (const ICPException & error ) {
-			std::cerr << "For registration using the shape" << std::endl;
+			std::cerr << "Registration using the shape failed" << std::endl;
 			std::cerr << error.what() << std::endl;
-			R_shape = std::numeric_limits<double>::infinity() * arma::eye<arma::mat>(6, 6);
+			R_shape = 1e10 * arma::eye<arma::mat>(6, 6);
 		}
 
 		// An ICP solution is also obtained from the actual source and destination
