@@ -730,6 +730,8 @@ void Filter::register_pcs(int index, double time) {
 		arma::vec eigen_R = arma::eig_sym(R);
 		arma::vec eigen_R_shape = arma::eig_sym(R_shape);
 
+		std::cout << "eigen_R: " << eigen_R.t() << std::endl;
+		std::cout << "eigen_R_shape: " << eigen_R_shape.t() << std::endl;
 
 		// Using the shape to obtain the attitude solution
 		if (arma::max(eigen_R) > arma::max(eigen_R_shape)) {
