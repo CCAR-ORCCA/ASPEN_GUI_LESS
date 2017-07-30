@@ -679,21 +679,14 @@ void Filter::register_pcs(int index, double time) {
 
 		// Center of mass location
 		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
-
-
 		// The a-priori orientation between the model-generated point cloud and the
 		// collected point cloud is obtained from the last measure of the orientation
-
-
 		// The mrp measuring the orientation of the body frame is extracted
 		arma::vec mrp_mes_past = this -> filter_arguments -> get_latest_mrp_mes();
 
 		// It is propagated forward in time assuming a constant angular velocity
 		Args args;
 		args.set_constant_omega(this -> filter_arguments -> get_latest_omega_mes());
-
-
-
 		RK45 rk_sigma(mrp_mes_past,
 		              this -> filter_arguments -> get_latest_time(),
 		              time,
@@ -709,7 +702,6 @@ void Filter::register_pcs(int index, double time) {
 
 
 		arma::mat dcm_bar = RBK::mrp_to_dcm(rk_sigma.get_X() -> col(rk_sigma.get_X() -> n_cols - 1));
-
 		arma::vec X_bar = - (dcm_bar - arma::eye<arma::mat>(3, 3)) * cm_bar;
 
 		/*
@@ -717,11 +709,39 @@ void Filter::register_pcs(int index, double time) {
 		the previous timestep to the current time
 		*/
 
-		ICP icp(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
+		ICP icp_shape(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
+
+		arma::mat dcm_shape = icp_shape.get_DCM();
+		arma::vec X_shape = icp_shape.get_X();
+		arma::mat R_shape = icp_shape.get_R();
+
+
+		// An ICP solution is also obtained from the actual source and destination
+		// point clouds
+
+
+		ICP icp(this -> destination_pc, this -> source_pc);
 
 		arma::mat dcm = icp.get_DCM();
 		arma::vec X = icp.get_X();
 		arma::mat R = icp.get_R();
+
+
+
+		std::cout << "R: " << R << std::endl;
+		std::cout << "R_shape: " << R_shape << std::endl << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
 
 		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
 		this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
