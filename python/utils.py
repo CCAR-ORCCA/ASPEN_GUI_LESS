@@ -66,7 +66,7 @@ def plot_cm_estimate(path = None,save = True):
 
     # Covariance
     plt.gca().set_color_cycle(None)
-    plt.axvline( x = switch_time[0])
+    plt.axvline( x = switch_time)
     plt.gca().set_color_cycle(None)
 
 
