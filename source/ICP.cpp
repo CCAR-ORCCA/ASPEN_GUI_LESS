@@ -192,6 +192,8 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			if ( std::abs(J - J_previous) / J_previous < stol ) {
 				h = h - 1;
 				next_h = true;
+				this -> R = arma::inv(Info_mat);
+				
 				break;
 			}
 
