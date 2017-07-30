@@ -31,11 +31,11 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	ShapeModelImporter shape_io_truth(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_150_scaled.obj", 1 );
+	    "../resources/shape_models/itokawa_150_scaled.obj", 1 );
 
 	ShapeModelImporter shape_io_estimated(
-	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/faceted_sphere_scaled.obj",
-	    0.1, false);
+	    "../resources/shape_models/itokawa_8_scaled.obj",
+	    1, false);
 
 
 
@@ -157,14 +157,15 @@ int main() {
 	shape_filter_args.set_min_facet_angle(10 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
 
 	shape_filter_args.set_N_iterations(5);
+	shape_filter_args.set_number_of_shape_passe(100);
 
 	// Facets recycling
 	shape_filter_args.set_recycle_shrunk_facets(false);
 	shape_filter_args.set_max_recycled_facets(4);
 
-	shape_filter_args.set_convergence_facet_residuals(5 * LOS_NOISE_3SD_BASELINE);
+	shape_filter_args.set_convergence_facet_residuals(10 * LOS_NOISE_3SD_BASELINE);
 
-	arma::vec cm_bar_0 = {1e3, -1e2, 1e3};
+	arma::vec cm_bar_0 = {0e3, -0e2, 0e3};
 
 	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
 	shape_filter_args.set_cm_bar_0(cm_bar_0);
@@ -175,7 +176,7 @@ int main() {
 	shape_filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
 
 	shape_filter_args.set_estimate_shape(false);
-	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1e-1);
+	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1);
 
 
 

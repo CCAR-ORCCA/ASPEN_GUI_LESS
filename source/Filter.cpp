@@ -399,8 +399,17 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 			for (unsigned int pass = 0 ; pass < this -> filter_arguments -> get_number_of_shape_passes() ; ++pass) {
 
+				unsigned int size_before = this -> estimated_shape_model -> get_NFacets();
 				this -> shape_reconstruction_pass(time_index,
 				                                  time_index_formatted);
+
+				if (this -> estimated_shape_model -> get_NFacets() == size_before) {
+					std::cout << "Shape unchanged after " << pass + 1 << " passes. " << std::endl;
+					this -> filter_arguments -> set_has_transitioned_to_shape(true);
+
+					break;
+				}
+
 			}
 
 
@@ -626,11 +635,7 @@ void Filter::register_pcs(int index, double time) {
 	        this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
 
 
-		// This will cause the next estimate of the attitude to come
-		// from the estimate shape model
-		if (this -> filter_arguments -> get_estimate_shape() == true) {
-			// this -> filter_arguments -> set_has_transitioned_to_shape(true);
-		}
+
 
 
 
@@ -798,10 +803,9 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 	this -> filter_arguments -> append_P_cm_hat(P_cm_hat);
 
 
-	// A boolean is switching when the greatest observable direction eigen value is less than a determined threshold
-	arma::vec standard_deviations_eigen = arma::sqrt(arma::eig_sym(P_cm_hat));
+	// A boolean is switched when the norm of the center-of-mass update is less than a given threshold
 
-	if (standard_deviations_eigen(1) < this -> filter_arguments -> get_shape_estimation_cm_trigger_thresh()) {
+	if (arma::norm(K * (cm_obs - cm_bar)) < this -> filter_arguments -> get_shape_estimation_cm_trigger_thresh()) {
 		this -> filter_arguments -> set_estimate_shape(true);
 	}
 
