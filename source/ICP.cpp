@@ -83,6 +83,10 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	bool next_h = true;
 
 
+	arma::mat Info_mat = arma::mat(6, 6);
+	arma::vec Normal_mat = arma::vec(6);
+
+
 	while (h >= 0 && exit == false) {
 
 		if (pedantic) {
@@ -90,8 +94,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 		}
 
 
-		arma::mat Info_mat = arma::mat(6, 6);
-		arma::vec Normal_mat = arma::vec(6);
 
 		// The ICP is iterated
 		for (unsigned int iter = 0; iter < iterations_max; ++iter) {
