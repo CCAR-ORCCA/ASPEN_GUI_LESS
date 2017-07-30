@@ -673,11 +673,11 @@ void Filter::register_pcs(int index, double time) {
 
 	}
 
-	// If the center of mass is "Figured out" (frozen), the filter switches to
+	// If the center of mass is "Figured out" , the filter switches to
 	// shape estimation and determines the attitude based on the current shape estimate
 	else {
 
-		// Center of mass location is just kept constant from the last estimate
+		// Center of mass location
 		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
 
 
@@ -717,14 +717,14 @@ void Filter::register_pcs(int index, double time) {
 		the previous timestep to the current time
 		*/
 
-		ICP icp(this -> destination_pc, this -> source_pc, dcm_bar, X_bar);
+		ICP icp(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
 
 		arma::mat dcm = icp.get_DCM();
 		arma::vec X = icp.get_X();
 		arma::mat R = icp.get_R();
 
 		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
-		this -> destination_pc -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
+		this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
 		this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm, X);
 
 		arma::mat incremental_dcm = dcm * RBK::mrp_to_dcm(mrp_mes_past).t();
@@ -875,7 +875,8 @@ void Filter::store_point_clouds(int index) {
 			// shape model is used to produce the "destination" point cloud
 			else {
 
-				this -> destination_pc = std::make_shared<PC>(PC(this -> estimated_shape_model));
+				this -> destination_pc = this -> source_pc;
+				this -> destination_pc_shape = std::make_shared<PC>(PC(this -> estimated_shape_model));
 				this -> source_pc = std::make_shared<PC>(PC(u,
 				                    this -> lidar -> get_focal_plane(),
 				                    this -> frame_graph));

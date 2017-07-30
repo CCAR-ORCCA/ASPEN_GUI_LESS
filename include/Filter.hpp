@@ -278,7 +278,6 @@ protected:
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
 	std::shared_ptr<PC> destination_pc_shape = nullptr;
-	std::shared_ptr<PC> source_pc_shape = nullptr;
 
 
 	std::set<Facet *> seen_facets_destination;
