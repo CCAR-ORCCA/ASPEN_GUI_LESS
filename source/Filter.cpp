@@ -706,6 +706,8 @@ void Filter::register_pcs(int index, double time) {
 		arma::vec X_shape;
 		arma::mat R_shape;
 
+		bool use_consecutive_pc = false;
+
 		try {
 			ICP icp_shape(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
 
@@ -716,8 +718,7 @@ void Filter::register_pcs(int index, double time) {
 		catch (const ICPException & error ) {
 			std::cerr << "For registration using the shape" << std::endl;
 			std::cerr << error.what() << std::endl;
-
-			throw (std::runtime_error(""));
+			use_consecutive_pc = true;
 		}
 
 		// An ICP solution is also obtained from the actual source and destination
@@ -750,7 +751,7 @@ void Filter::register_pcs(int index, double time) {
 		std::cout << "eigen_R_shape: " << eigen_R_shape.t() << std::endl;
 
 		// Using the shape to obtain the attitude solution
-		if (arma::max(eigen_R) > arma::max(eigen_R_shape)) {
+		if (arma::max(eigen_R) > arma::max(eigen_R_shape) || use_consecutive_pc == false) {
 			std::cout << "USING SHAPE" << std::endl;
 
 
