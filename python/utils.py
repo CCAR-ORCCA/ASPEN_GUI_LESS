@@ -17,7 +17,6 @@ def plot_results(path = None,save = False):
     plot_cm_estimate(path ,save )
     plot_mrp_histories(path,save)
     plot_angle_error(path,save)
-    plot_cm_eigen(path,save )
     plot_omega_histories(path,save)
     plot_omega_norm_histories(path,save)
     plot_spin_axis_histories(path,save)
@@ -153,12 +152,19 @@ def plot_omega_histories(path = None,save = True):
         omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
 
 
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
         time = np.loadtxt("time_history.txt")
+        switch_time = np.loadtxt("switch_time.txt")
+
+
+
+
+
 
 
 
@@ -173,7 +179,9 @@ def plot_omega_histories(path = None,save = True):
     plt.plot(time,omega_mes_history[:,1],"-x",label = r"$\tilde{\omega}_y$")
     plt.plot(time,omega_mes_history[:,2],"-x",label = r"$\tilde{\omega}_z$")
 
+    plt.gca().set_color_cycle(None)
 
+    plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
     plt.xlabel("Measurement time (s)")
@@ -197,6 +205,8 @@ def plot_angle_error(path = None,save = True):
         mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
+
 
 
     else:
@@ -204,6 +214,8 @@ def plot_angle_error(path = None,save = True):
         mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt("time_history.txt")
+
+        switch_time = np.loadtxt("switch_time.txt")
 
 
     angle_error =[]
@@ -218,6 +230,9 @@ def plot_angle_error(path = None,save = True):
         angle_error += [ np.arccos((np.trace(dcm_mes.T .dot( dcm_true)) - 1 )/2)]
 
     angle_error = 180. / np.pi * np.array(angle_error)
+
+
+    plt.axvline(x = switch_time)
 
 
     # Truth 
@@ -245,6 +260,8 @@ def plot_mrp_histories(path = None,save = True):
         mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
+
 
 
     else:
@@ -252,6 +269,7 @@ def plot_mrp_histories(path = None,save = True):
         mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt( "time_history.txt")
+        switch_time = np.loadtxt("switch_time.txt")
 
     # Truth 
     plt.plot(time,mrp_true_history[:,0],"-o",label = "$\sigma_x$")
@@ -264,7 +282,8 @@ def plot_mrp_histories(path = None,save = True):
     plt.plot(time,mrp_mes_history[:,1],"-x",label = r"$\tilde{\sigma}_y$")
     plt.plot(time,mrp_mes_history[:,2],"-x",label = r"$\tilde{\sigma}_z$")
 
-
+    plt.gca().set_color_cycle(None)
+    plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
     plt.xlabel("Measurement time (s)")
@@ -288,11 +307,15 @@ def plot_omega_norm_histories(path = None,save = True):
         omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
+
 
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
         time = np.loadtxt("time_history.txt")
+        switch_time = np.loadtxt("switch_time.txt")
+
 
 
     # Truth 
@@ -301,6 +324,8 @@ def plot_omega_norm_histories(path = None,save = True):
     # Estimate 
     plt.plot(time,np.linalg.norm(omega_mes_history,axis = 1),"-x",label = "Measured")
 
+    plt.gca().set_color_cycle(None)
+    plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
     plt.xlabel("Measurement time (s)")
@@ -327,6 +352,7 @@ def plot_spin_axis_histories(path = None,save = True):
         omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
 
 
     else:
@@ -335,6 +361,7 @@ def plot_spin_axis_histories(path = None,save = True):
         time = np.loadtxt("time_history.txt")
 
 
+        switch_time = np.loadtxt("switch_time.txt")
 
     # Truth 
     plt.plot(time,omega_true_history[:,0]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_x$")
@@ -346,7 +373,8 @@ def plot_spin_axis_histories(path = None,save = True):
     plt.plot(time,omega_mes_history[:,0]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_x$")
     plt.plot(time,omega_mes_history[:,1]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_y$")
     plt.plot(time,omega_mes_history[:,2]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_z$")
-
+    plt.gca().set_color_cycle(None)
+    plt.axvline(x = switch_time)
 
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
