@@ -29,7 +29,7 @@
 // Times (s)
 #define T0 0
 // #define TF 604800// 7 days
-#define TF 10000// 7 days
+#define TF 30000// 7 days
 
 
 

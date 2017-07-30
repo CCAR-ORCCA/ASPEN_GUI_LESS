@@ -165,7 +165,7 @@ int main() {
 
 	shape_filter_args.set_convergence_facet_residuals(10 * LOS_NOISE_3SD_BASELINE);
 
-	arma::vec cm_bar_0 = {0e3, -0e2, 0e3};
+	arma::vec cm_bar_0 = {1e3, -1e2, 1e3};
 
 	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
 	shape_filter_args.set_cm_bar_0(cm_bar_0);
