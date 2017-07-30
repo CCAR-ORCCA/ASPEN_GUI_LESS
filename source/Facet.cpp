@@ -106,19 +106,20 @@ bool Facet::has_good_edge_quality(double angle) {
 			}
 
 
-			// The shortest edge is made even shorter. This will trigger the other 
-			// facet recycling scheme
-			if (arma::norm(*V0 -> get_coordinates() - *V2 -> get_coordinates()) <
-			        arma::norm(*V1 -> get_coordinates() - *V2 -> get_coordinates())) {
+			arma::vec dir = arma::normalise(*n + *neighbor -> get_facet_normal());
+			arma::vec delta_V0 = arma::dot(*V2 -> get_coordinates() - *V0 -> get_coordinates(),
+			                               dir) * dir;
+			arma::vec delta_V1 = arma::dot(*V2 -> get_coordinates() - *V1 -> get_coordinates(),
+			                               dir) * dir;
 
-				*V2 -> get_coordinates() = *V0 -> get_coordinates() + 0.1 * ( *V2 -> get_coordinates() - *V0 -> get_coordinates());
+			arma::vec delta = (delta_V0 + delta_V1) / 2;
 
 
-			}
-			else {
-				*V2 -> get_coordinates() = *V1 -> get_coordinates() + 0.1 * ( *V2 -> get_coordinates() - *V1 -> get_coordinates());
 
-			}
+			*V0 -> get_coordinates() = *V0 -> get_coordinates() + delta;
+			*V1 -> get_coordinates() = *V1 -> get_coordinates() + delta;
+
+
 			return false;
 
 		}
@@ -171,16 +172,19 @@ std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 	if (all_neighbors == true) {
 		// Returns all facets sharing vertices with $this
 
-		for (unsigned int i = 0; i < V0 -> get_owning_facets().size(); ++i) {
-			neighbors.insert(V0 -> get_owning_facets()[i]);
+		for (auto facet_it = V0 -> get_owning_facets().begin();
+		        facet_it != V0 -> get_owning_facets().end(); ++facet_it) {
+			neighbors.insert(*facet_it);
 		}
 
-		for (unsigned int i = 0; i < V1 -> get_owning_facets().size(); ++i) {
-			neighbors.insert(V1 -> get_owning_facets()[i]);
+		for (auto facet_it = V1 -> get_owning_facets().begin();
+		        facet_it != V1 -> get_owning_facets().end(); ++facet_it) {
+			neighbors.insert(*facet_it);
 		}
 
-		for (unsigned int i = 0; i < V2 -> get_owning_facets().size(); ++i) {
-			neighbors.insert(V2 -> get_owning_facets()[i]);
+		for (auto facet_it = V2 -> get_owning_facets().begin();
+		        facet_it != V2 -> get_owning_facets().end(); ++facet_it) {
+			neighbors.insert(*facet_it);
 		}
 
 

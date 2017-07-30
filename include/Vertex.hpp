@@ -61,7 +61,7 @@ public:
 	Returns the owning facets
 	@return Owning facets
 	*/
-	std::vector<Facet * > get_owning_facets() const;
+	std::set<Facet * > get_owning_facets() const;
 
 
 
@@ -74,7 +74,7 @@ public:
 
 protected:
 	std::shared_ptr<arma::vec> coordinates;
-	std::vector<Facet * > owning_facets;
+	std::set<Facet * > owning_facets;
 
 
 

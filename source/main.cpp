@@ -31,7 +31,7 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/itokawa_15_scaled.obj", 1 );
+	    "../resources/shape_models/itokawa_150_scaled.obj", 1 );
 
 	ShapeModelImporter shape_io_estimated(
 	    "../resources/shape_models/faceted_sphere_scaled.obj",
@@ -146,22 +146,22 @@ int main() {
 	// Filter filter_arguments
 	FilterArguments shape_filter_args = FilterArguments();
 
-	shape_filter_args.set_max_ray_incidence(70 * arma::datum::pi / 180.);
+	shape_filter_args.set_max_ray_incidence(60 * arma::datum::pi / 180.);
 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
 	shape_filter_args.set_ridge_coef(5e1);
 
 	shape_filter_args.set_reject_outliers(true);
 	shape_filter_args.set_split_facets(true);
 	shape_filter_args.set_use_cholesky(false);
-	shape_filter_args.set_min_edge_angle(80 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
-	shape_filter_args.set_min_facet_angle(30 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
+	shape_filter_args.set_min_edge_angle(30 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
+	shape_filter_args.set_min_facet_angle(40 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
 
 	shape_filter_args.set_N_iterations(10);
-	shape_filter_args.set_number_of_shape_passe(100);
+	shape_filter_args.set_number_of_shape_passe(10);
 
 	// Facets recycling
 	shape_filter_args.set_recycle_shrunk_facets(true);
-	shape_filter_args.set_max_recycled_facets(6);
+	shape_filter_args.set_max_recycled_facets(4);
 
 	shape_filter_args.set_convergence_facet_residuals( 10 * LOS_NOISE_3SD_BASELINE);
 
