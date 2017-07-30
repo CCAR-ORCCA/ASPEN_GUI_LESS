@@ -1172,7 +1172,7 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle,
 				mesh_quality_confirmed = false;
 				// this -> recycle_shrunk_facet((*it_facet), seen_facets);
 
-				// ++facets_recycled;
+				++facets_recycled;
 				break;
 
 			};
