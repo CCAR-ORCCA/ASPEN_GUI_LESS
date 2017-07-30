@@ -724,7 +724,7 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat incremental_dcm = dcm * RBK::mrp_to_dcm(mrp_mes_past).t();
 
-
+		// The cente of mass is still estimated
 		this -> estimate_cm_KF(dcm, X);
 
 
