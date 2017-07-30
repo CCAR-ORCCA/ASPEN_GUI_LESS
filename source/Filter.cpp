@@ -719,6 +719,11 @@ void Filter::register_pcs(int index, double time) {
 			std::cerr << error.what() << std::endl;
 			R_shape = 1e10 * arma::eye<arma::mat>(6, 6);
 		}
+		catch (const std::runtime_error & error) {
+			std::cerr << "Registration using the shape failed" << std::endl;
+			std::cerr << error.what() << std::endl;
+			throw (std::runtime_error());
+		}
 
 		// An ICP solution is also obtained from the actual source and destination
 		// point clouds
@@ -740,6 +745,11 @@ void Filter::register_pcs(int index, double time) {
 			std::cerr << error.what() << std::endl;
 
 			throw (std::runtime_error(""));
+		}
+		catch (const std::runtime_error & error) {
+			std::cerr << "For consecutive registration" << std::endl;
+			std::cerr << error.what() << std::endl;
+			throw (std::runtime_error());
 		}
 
 
