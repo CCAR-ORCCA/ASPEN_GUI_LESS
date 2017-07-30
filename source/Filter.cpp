@@ -728,8 +728,8 @@ void Filter::register_pcs(int index, double time) {
 
 
 
-		std::cout << "R: " << R << std::endl;
-		std::cout << "R_shape: " << R_shape << std::endl << std::endl;
+		std::cout << "R: " << arma::eig_sym(R) << std::endl;
+		std::cout << "R_shape: " << arma::eig_sym(R_shape) << std::endl << std::endl;
 
 
 
