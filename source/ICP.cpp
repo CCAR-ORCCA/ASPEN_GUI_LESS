@@ -88,6 +88,11 @@ void ICP::register_pc_mrp_multiplicative_partials(
 		if (pedantic) {
 			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
 		}
+
+
+		arma::mat Info_mat = arma::mat(6, 6);
+		arma::vec Normal_mat = arma::vec(6);
+
 		// The ICP is iterated
 		for (unsigned int iter = 0; iter < iterations_max; ++iter) {
 
@@ -109,8 +114,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			}
 
 			// The matrices of the LS problem are now accumulated
-			arma::mat Info_mat = arma::mat(6, 6);
-			arma::vec Normal_mat = arma::vec(6);
+
 
 			for (unsigned int pair_index = 0; pair_index != this -> point_pairs.size(); ++pair_index) {
 
@@ -184,7 +188,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 			if ( J / J_0 < rel_tol ) {
 				exit = true;
-				this -> R = arma::inv(Info_mat);
 
 				break;
 			}
@@ -192,8 +195,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			if ( std::abs(J - J_previous) / J_previous < stol ) {
 				h = h - 1;
 				next_h = true;
-				this -> R = arma::inv(Info_mat);
-				
+
 				break;
 			}
 
@@ -212,10 +214,11 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	this -> X = x;
 	this -> DCM = RBK::mrp_to_dcm(mrp);
+	this -> R = arma::inv(Info_mat);
 
 }
 
-arma::mat ICP::get_R() const{
+arma::mat ICP::get_R() const {
 	return this -> R;
 }
 
@@ -356,8 +359,8 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 	}
 
 	// Each destination point can only be paired once
-	for (auto it = destination_to_source_pre_pairs.begin() ; 
-		it != destination_to_source_pre_pairs.end(); ++it) {
+	for (auto it = destination_to_source_pre_pairs.begin() ;
+	        it != destination_to_source_pre_pairs.end(); ++it) {
 
 		// Source/Destination pair
 		std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > pair(it -> second . begin() -> second, it -> first);
