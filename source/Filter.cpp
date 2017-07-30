@@ -727,49 +727,67 @@ void Filter::register_pcs(int index, double time) {
 		arma::mat R = icp.get_R();
 
 
-
-		std::cout << "R: " << arma::eig_sym(R) << std::endl;
-		std::cout << "R_shape: " << arma::eig_sym(R_shape) << std::endl << std::endl;
-
+		arma::vec eigen_R = arma::eig_sym(R);
+		arma::vec eigen_R_shape = arma::eig_sym(R_shape);
 
 
-
-
-
+		// Using the shape to obtain the attitude solution
+		if (arma::max(eigen_R) > arma::max(eigen_R_shape)) {
+			std::cout << "USING SHAPE" << std::endl;
 
 
 
+			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
+			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
+			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm, X);
+
+			arma::mat incremental_dcm = dcm_shape * RBK::mrp_to_dcm(mrp_mes_past).t();
+
+			// The cente of mass is still estimated
+			this -> estimate_cm_KF(dcm_shape, X_shape);
+
+
+			// Spin axis is measured
+			this -> measure_spin_axis(incremental_dcm);
+
+			// Angular velocity is measured
+			this -> measure_omega(incremental_dcm);
+
+			// Attitude is measured
+			arma::vec mrp_mes_shape_N = RBK::dcm_to_mrp(dcm_shape);
+
+			this -> filter_arguments -> append_mrp_mes(mrp_mes_shape_N);
+
+			this -> filter_arguments -> append_time(time);
+
+		}
+
+		// Using the two consecutive point clouds to obtain the attitude solution
+		else {
 
 
 
-
-		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
-		this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
-		this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm, X);
-
-		arma::mat incremental_dcm = dcm * RBK::mrp_to_dcm(mrp_mes_past).t();
-
-		// The cente of mass is still estimated
-		this -> estimate_cm_KF(dcm, X);
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(index) + ".obj");
+			this -> destination_pc -> save("../output/pc/destination_" + std::to_string(index) + ".obj");
+			this -> source_pc -> save("../output/pc/source_transformed_" + std::to_string(index) + ".obj", dcm, X);
 
 
-		// Spin axis is measured
-		this -> measure_spin_axis(incremental_dcm);
+			// Spin axis is measured
+			this -> measure_spin_axis(dcm);
 
-		// Angular velocity is measured
-		this -> measure_omega(incremental_dcm);
+			// Center of mass location is estimated
+			this -> estimate_cm_KF(dcm, X);
 
-		// Attitude is measured
-		arma::vec mrp_mes_shape_N = RBK::dcm_to_mrp(dcm);
+			// Angular velocity is measured
+			this -> measure_omega(dcm);
 
-		this -> filter_arguments -> append_mrp_mes(mrp_mes_shape_N);
+			// Attitude is measured
+			arma::vec mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
 
-		this -> filter_arguments -> append_time(time);
+			this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
+			this -> filter_arguments -> append_time(time);
 
-
-
-
-
+		}
 
 
 	}
