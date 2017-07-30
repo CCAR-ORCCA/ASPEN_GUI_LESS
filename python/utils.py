@@ -32,6 +32,7 @@ def plot_cm_estimate(path = None,save = True):
         P_history = np.loadtxt(path + "P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt(path + "true_cm.obj",dtype = str)[1:].astype(float)
         time = np.loadtxt(path + "time_history.txt")
+        switch_time = np.loadtxt(path + "switch_time.txt")
 
 
     else:
@@ -39,6 +40,8 @@ def plot_cm_estimate(path = None,save = True):
         P_history = np.loadtxt("P_cm_hat_time_history_mat.txt")
         true_cm = np.loadtxt("true_cm.obj",dtype = str)[1:].astype(float)
         time = np.loadtxt("time_history.txt")
+        switch_time = np.loadtxt("switch_time.txt")
+
 
 
     sd_list = []
@@ -59,8 +62,13 @@ def plot_cm_estimate(path = None,save = True):
     plt.plot(time,estimate_error[1:,1],"-o",label = "$\Delta y$")
     plt.plot(time,estimate_error[1:,2],"-o",label = "$\Delta z$")
 
+
+
     # Covariance
     plt.gca().set_color_cycle(None)
+    plt.axvline( x = switch_time[0])
+    plt.gca().set_color_cycle(None)
+
 
     plt.plot(time, 3 * sd_mat[0,1:],'--')
     plt.plot(time, 3 * sd_mat[1,1:],'--')

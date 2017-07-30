@@ -405,7 +405,12 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 				if (this -> estimated_shape_model -> get_NFacets() == size_before) {
 					std::cout << "Shape unchanged after " << pass + 1 << " passes. " << std::endl;
-					this -> filter_arguments -> set_has_transitioned_to_shape(true);
+					if (this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
+						this -> filter_arguments -> set_has_transitioned_to_shape(true);
+						std::ofstream shape_file;
+						shape_file.open("../output/attitude/switch_time.txt");
+						shape_file << times(time_index) << std::endl;
+					}
 
 					break;
 				}
