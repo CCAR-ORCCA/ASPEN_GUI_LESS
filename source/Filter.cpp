@@ -437,14 +437,14 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 			}
 
 
-			// The volume difference between the estimated shape and the true shape is stored
-			volume_dif(time_index) = std::abs(this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
-			surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
 
 
 		}
 
 
+		// The volume difference between the estimated shape and the true shape is stored
+		volume_dif(time_index) = std::abs(this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
+		surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
 
 
 
@@ -488,13 +488,6 @@ void Filter::shape_reconstruction_pass(unsigned int time_index,
 		}
 
 	}
-
-
-
-
-
-
-
 
 
 }
@@ -1142,7 +1135,6 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	else {
 		alpha = arma::solve(info_mat, normal_mat);
 	}
-
 
 
 
