@@ -674,9 +674,6 @@ void Filter::register_pcs(int index, double time) {
 
 		// Center of mass location is just kept constant from the last estimate
 		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
-		arma::mat P_cm_bar = this -> filter_arguments -> get_latest_P_cm_hat();
-		this -> filter_arguments -> append_cm_hat(cm_bar);
-		this -> filter_arguments -> append_P_cm_hat(P_cm_bar);
 
 
 		// The a-priori orientation between the model-generated point cloud and the
@@ -726,6 +723,10 @@ void Filter::register_pcs(int index, double time) {
 		this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm, X);
 
 		arma::mat incremental_dcm = dcm * RBK::mrp_to_dcm(mrp_mes_past).t();
+
+
+		this -> estimate_cm_KF(dcm, X);
+
 
 		// Spin axis is measured
 		this -> measure_spin_axis(incremental_dcm);
