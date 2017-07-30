@@ -749,7 +749,7 @@ void Filter::register_pcs(int index, double time) {
 		catch (const std::runtime_error & error) {
 			std::cerr << "For consecutive registration" << std::endl;
 			std::cerr << error.what() << std::endl;
-			throw (std::runtime_error());
+			throw (std::runtime_error(""));
 		}
 
 
