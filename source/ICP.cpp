@@ -69,8 +69,8 @@ void ICP::register_pc_mrp_multiplicative_partials(
     arma::mat dcm_0,
     arma::vec X_0) {
 
-	double J;
-	double J_0;
+	double J  = std::numeric_limits<double>::infinity();
+	double J_0  = std::numeric_limits<double>::infinity();
 	double J_previous = std::numeric_limits<double>::infinity();
 
 	// The batch estimator is initialized
@@ -85,7 +85,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	arma::mat Info_mat = arma::mat(6, 6);
 	arma::vec Normal_mat = arma::vec(6);
-	unsigned int n_pairs;
 
 
 	while (h >= 0 && exit == false) {

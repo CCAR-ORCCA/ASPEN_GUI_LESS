@@ -704,7 +704,7 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm_shape;
 		arma::vec X_shape;
-		    =		double J_res_shape;
+		double J_res_shape;
 
 
 
