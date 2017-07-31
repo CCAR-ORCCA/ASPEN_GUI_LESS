@@ -731,7 +731,6 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm;
 		arma::vec X;
-		double J_res;
 
 
 		try {
@@ -739,7 +738,6 @@ void Filter::register_pcs(int index, double time) {
 
 			dcm = icp.get_DCM();
 			X = icp.get_X();
-			J_res = icp.get_J_res();
 		}
 		catch (const ICPException & error ) {
 			std::cerr << "For consecutive registration" << std::endl;
@@ -753,22 +751,16 @@ void Filter::register_pcs(int index, double time) {
 			throw (std::runtime_error(""));
 		}
 
+		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
+		this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
+		this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
 
 
-		// Using the shape to obtain the attitude solution
-		std::cout << "RMS residuals:" << std::endl;
-		std::cout << "\t Shape: " << J_res_shape << " m" << std::endl;
-		std::cout << "\t Point clouds: " << J_res << " m" << std::endl;
-
-
-		if (J_res > J_res_shape) {
+		if (this -> filter_arguments -> get_maximum_J_rms_shape() > J_res_shape) {
 			std::cout << "USING SHAPE" << std::endl;
 
 
 
-			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
-			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
-			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
 
 			arma::mat incremental_dcm = dcm_shape * RBK::mrp_to_dcm(mrp_mes_past).t();
 

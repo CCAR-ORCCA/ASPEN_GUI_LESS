@@ -159,6 +159,14 @@ public:
 		this -> min_edge_angle  = min_edge_angle;
 	}
 
+	double get_maximum_J_rms_shape() const {
+		return this -> maximum_J_rms_shape;
+	}
+
+	void set_maximum_J_rms_shape(double maximum_J_rms) {
+		this -> maximum_J_rms_shape = maximum_J_rms;
+	}
+
 	/**
 	Center of mass
 	*/
@@ -420,6 +428,7 @@ protected:
 	double min_edge_angle;
 	double shape_estimation_cm_trigger_thresh;
 	double convergence_facet_residuals;
+	double maximum_J_rms_shape = 2;
 
 
 
