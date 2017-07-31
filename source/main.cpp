@@ -163,7 +163,7 @@ int main() {
 	shape_filter_args.set_recycle_shrunk_facets(false);
 	shape_filter_args.set_max_recycled_facets(10);
 
-	shape_filter_args.set_convergence_facet_residuals( 5 * LOS_NOISE_3SD_BASELINE);
+	shape_filter_args.set_convergence_facet_residuals( 15 * LOS_NOISE_3SD_BASELINE);
 
 	arma::vec cm_bar_0 = {1e3, -1e2, -1e3};
 

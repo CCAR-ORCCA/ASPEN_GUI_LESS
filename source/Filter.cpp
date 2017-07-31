@@ -705,6 +705,8 @@ void Filter::register_pcs(int index, double time) {
 		arma::mat dcm_shape;
 		arma::vec X_shape;
 		arma::mat R_shape;
+		double J_res_shape;
+
 
 
 		try {
@@ -717,7 +719,7 @@ void Filter::register_pcs(int index, double time) {
 		catch (const ICPException & error ) {
 			std::cerr << "Registration using the shape failed" << std::endl;
 			std::cerr << error.what() << std::endl;
-			R_shape = 1e10 * arma::eye<arma::mat>(6, 6);
+			J_res_shape = std::numeric_limits<double>::infinity();
 		}
 		catch (const std::runtime_error & error) {
 			std::cerr << "Registration using the shape failed" << std::endl;
@@ -731,6 +733,7 @@ void Filter::register_pcs(int index, double time) {
 		arma::mat dcm;
 		arma::vec X;
 		arma::mat R;
+		double J_res;
 
 
 		try {
@@ -753,20 +756,19 @@ void Filter::register_pcs(int index, double time) {
 		}
 
 
-		arma::vec eigen_R = arma::eig_sym(R);
-		arma::vec eigen_R_shape = arma::eig_sym(R_shape);
-
-		std::cout << "eigen_R: " << eigen_R.t() << std::endl;
-		std::cout << "eigen_R_shape: " << eigen_R_shape.t() << std::endl;
 
 		// Using the shape to obtain the attitude solution
+		std::cout << "RMS residuals:" << std::endl;
+		std::cout << "\t Shape: " << J_res_shape << " m" << std::endl;
+		std::cout << "\t Point clouds: " << J_res << " m" << std::endl;
 
-		if (arma::max(eigen_R) > arma::max(eigen_R_shape)) {
-			std::cout << "USING SHAPE" << std::endl;
+
+		if (J_res > J_res_shape) {
+		std::cout << "USING SHAPE" << std::endl;
 
 
 
-			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
+		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
 			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
 			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
 

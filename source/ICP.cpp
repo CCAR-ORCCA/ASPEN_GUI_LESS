@@ -85,6 +85,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	arma::mat Info_mat = arma::mat(6, 6);
 	arma::vec Normal_mat = arma::vec(6);
+	unsigned int n_pairs;
 
 
 	while (h >= 0 && exit == false) {
@@ -116,7 +117,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			}
 
 			// The matrices of the LS problem are now accumulated
-
+			n_pairs = this -> point_pairs.size();
 
 			for (unsigned int pair_index = 0; pair_index != this -> point_pairs.size(); ++pair_index) {
 
@@ -217,11 +218,16 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	this -> X = x;
 	this -> DCM = RBK::mrp_to_dcm(mrp);
 	this -> R = arma::inv(Info_mat);
+	this -> J_res = J ;
 
 }
 
 arma::mat ICP::get_R() const {
 	return this -> R;
+}
+
+double ICP::get_J_res() const {
+	return this -> J_res;
 }
 
 arma::rowvec ICP::dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n) {

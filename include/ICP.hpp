@@ -15,6 +15,7 @@ public:
 	arma::vec get_X() const;
 	arma::mat get_DCM() const;
 	arma::mat get_R() const;
+	double get_J_res() const;
 
 	std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > * get_point_pairs();
 
@@ -54,7 +55,8 @@ protected:
 	arma::vec X;
 	arma::mat DCM;
 	arma::mat R;
-	
+	double J_res;
+
 	std::vector<std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > point_pairs;
 
 
