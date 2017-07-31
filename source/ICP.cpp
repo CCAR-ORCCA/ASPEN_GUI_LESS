@@ -116,7 +116,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			}
 
 			// The matrices of the LS problem are now accumulated
-			n_pairs = this -> point_pairs.size();
 
 			for (unsigned int pair_index = 0; pair_index != this -> point_pairs.size(); ++pair_index) {
 
