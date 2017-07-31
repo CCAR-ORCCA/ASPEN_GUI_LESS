@@ -705,7 +705,7 @@ void Filter::register_pcs(int index, double time) {
 		arma::mat dcm_shape;
 		arma::vec X_shape;
 		double J_res_shape;
-
+		bool icp_shape_converged = true;
 
 
 		try {
@@ -719,6 +719,7 @@ void Filter::register_pcs(int index, double time) {
 			std::cerr << "Registration using the shape failed" << std::endl;
 			std::cerr << error.what() << std::endl;
 			J_res_shape = std::numeric_limits<double>::infinity();
+			icp_shape_converged = false;
 		}
 		catch (const std::runtime_error & error) {
 			std::cerr << "Registration using the shape failed" << std::endl;
@@ -751,9 +752,11 @@ void Filter::register_pcs(int index, double time) {
 			throw (std::runtime_error(""));
 		}
 
-		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
-		this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
-		this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
+		if (icp_shape_converged) {
+			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
+			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
+			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
+		}
 
 
 		if (this -> filter_arguments -> get_maximum_J_rms_shape() > J_res_shape) {
