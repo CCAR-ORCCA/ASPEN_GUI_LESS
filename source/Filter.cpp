@@ -724,7 +724,7 @@ void Filter::register_pcs(int index, double time) {
 		catch (const std::runtime_error & error) {
 			std::cerr << "Registration using the shape failed" << std::endl;
 			std::cerr << error.what() << std::endl;
-			throw (std::runtime_error(""));
+			icp_shape_converged = false;
 		}
 
 		// An ICP solution is also obtained from the actual source and destination
