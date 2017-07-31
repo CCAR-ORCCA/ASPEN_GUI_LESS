@@ -704,8 +704,7 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm_shape;
 		arma::vec X_shape;
-		arma::mat R_shape;
-		double J_res_shape;
+		    =		double J_res_shape;
 
 
 
@@ -714,7 +713,7 @@ void Filter::register_pcs(int index, double time) {
 
 			dcm_shape = icp_shape.get_DCM();
 			X_shape = icp_shape.get_X();
-			R_shape = icp_shape.get_R();
+			J_res_shape = icp_shape.get_J_res();
 		}
 		catch (const ICPException & error ) {
 			std::cerr << "Registration using the shape failed" << std::endl;
@@ -732,7 +731,6 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm;
 		arma::vec X;
-		arma::mat R;
 		double J_res;
 
 
@@ -741,7 +739,7 @@ void Filter::register_pcs(int index, double time) {
 
 			dcm = icp.get_DCM();
 			X = icp.get_X();
-			R = icp.get_R();
+			J_res = icp.get_J_res();
 		}
 		catch (const ICPException & error ) {
 			std::cerr << "For consecutive registration" << std::endl;
@@ -764,11 +762,11 @@ void Filter::register_pcs(int index, double time) {
 
 
 		if (J_res > J_res_shape) {
-		std::cout << "USING SHAPE" << std::endl;
+			std::cout << "USING SHAPE" << std::endl;
 
 
 
-		this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
+			this -> source_pc -> save("../output/pc/source_shape_" + std::to_string(index) + ".obj");
 			this -> destination_pc_shape -> save("../output/pc/destination_shape_" + std::to_string(index) + ".obj");
 			this -> source_pc -> save("../output/pc/source_transformed_shape_" + std::to_string(index) + ".obj", dcm_shape	, X_shape	);
 
