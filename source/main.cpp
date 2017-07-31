@@ -150,20 +150,20 @@ int main() {
 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
 	shape_filter_args.set_ridge_coef(5e1);
 
-	shape_filter_args.set_reject_outliers(true);
+	shape_filter_args.set_reject_outliers(false);
 	shape_filter_args.set_split_facets(true);
 	shape_filter_args.set_use_cholesky(false);
 	shape_filter_args.set_min_edge_angle(30 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
 	shape_filter_args.set_min_facet_angle(40 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
 
-	shape_filter_args.set_N_iterations(10);
-	shape_filter_args.set_number_of_shape_passe(10);
+	shape_filter_args.set_N_iterations(5);
+	shape_filter_args.set_number_of_shape_passe(30);
 
 	// Facets recycling
-	shape_filter_args.set_recycle_shrunk_facets(true);
-	shape_filter_args.set_max_recycled_facets(4);
+	shape_filter_args.set_recycle_shrunk_facets(false);
+	shape_filter_args.set_max_recycled_facets(10);
 
-	shape_filter_args.set_convergence_facet_residuals( 10 * LOS_NOISE_3SD_BASELINE);
+	shape_filter_args.set_convergence_facet_residuals( 5 * LOS_NOISE_3SD_BASELINE);
 
 	arma::vec cm_bar_0 = {1e3, -1e2, -1e3};
 

@@ -957,29 +957,34 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 
 	*V_merge_keep -> get_coordinates() = 0.5 * (*V_merge_keep -> get_coordinates() + *V_merge_discard -> get_coordinates());
 
-	*V_merge_discard -> get_coordinates() = *V_merge_keep -> get_coordinates();
-
-
-
 
 	std::vector<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
 
-	// if (facets_to_recycle.size() > 2) {
+	if (facets_to_recycle.size() > 2) {
 
-	// 	for (unsigned int i = 0; i < facets_to_recycle.size() ; ++i ) {
-	// 		std::cout << facets_to_recycle[i] << std::endl;
-	// 		if (this -> facets.end() != std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[i])) {
-	// 			std::cout << "Facet still in shape model" << std::endl;
-	// 		}
-	// 		else {
-	// 			std::cout << "Facet no longer in shape model" << std::endl;
-	// 		}
-	// 	}
-	// 	throw (std::runtime_error("Two vertices can't share more than two facets: these shared " + std::to_string(facets_to_recycle.size()) + " facets"));
-	// }
+		for (unsigned int i = 0; i < facets_to_recycle.size() ; ++i ) {
+			std::cout << facets_to_recycle[i] << std::endl;
+			if (this -> facets.end() != std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[i])) {
+				std::cout << "Facet still in shape model" << std::endl;
+			}
+			else {
+				std::cout << "Facet no longer in shape model" << std::endl;
+			}
+		}
+		throw (std::runtime_error("Two vertices can't share more than two facets: these shared " + std::to_string(facets_to_recycle.size()) + " facets"));
+	}
 
 	Facet * F0_old = facets_to_recycle[0];
 	Facet * F1_old = facets_to_recycle[1];
+
+
+
+
+	if (arma::dot(*F0_old -> get_facet_normal(),
+	              *F1_old -> get_facet_normal()) < 0) {
+		
+		return ;
+	}
 
 	for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 		if (F0_old -> get_vertices() -> at(vertex_index) != V_merge_keep &&
@@ -1168,23 +1173,17 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle,
 
 
 			if ((*it_facet) -> has_good_edge_quality(min_edge_angle) == false) {
-				
+
+			};
+
+			if ((*it_facet) -> has_good_surface_quality(min_facet_angle) == false) {
 				mesh_quality_confirmed = false;
-				// this -> recycle_shrunk_facet((*it_facet), seen_facets);
+				this -> recycle_shrunk_facet((*it_facet), seen_facets);
 
 				++facets_recycled;
 				break;
 
-			};
-
-			// if ((*it_facet) -> has_good_surface_quality(min_facet_angle) == false) {
-			// 	mesh_quality_confirmed = false;
-			// 	this -> recycle_shrunk_facet((*it_facet), seen_facets);
-
-			// 	++facets_recycled;
-			// 	break;
-
-			// }
+			}
 
 		}
 
