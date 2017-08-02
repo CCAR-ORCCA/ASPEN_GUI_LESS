@@ -1152,6 +1152,11 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 
 	std::cout << "Done browsing facets" << std::endl;
 
+	if (V_merge_keep == V_merge_discard) {
+		throw std::runtime_error("V_merge_discard and V_merge_keep are the same");
+	}
+
+
 
 	// Check if there are any dangling vertex
 	for (auto facet_it = this -> get_facets() -> begin();
