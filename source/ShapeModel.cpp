@@ -1238,13 +1238,13 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 
 
 	if ( V_keep_0 -> get_number_of_owning_facets() < 3 ) {
-		throw (std::runtime_error("Dangling vertex leaving merge: V_keep_0 was owned by " + std::to_string(V_merge_keep -> get_number_of_owning_facets()) + " facets"));
+		throw (std::runtime_error("Dangling vertex leaving merge: V_keep_0 was owned by " + std::to_string(V_keep_0 -> get_number_of_owning_facets()) + " facets"));
 	}
 
 
 
 	if ( V_keep_1 -> get_number_of_owning_facets() < 3 ) {
-		throw (std::runtime_error("Dangling vertex leaving merge: V_keep_1 was owned by " + std::to_string(V_merge_keep -> get_number_of_owning_facets()) + " facets"));
+		throw (std::runtime_error("Dangling vertex leaving merge: V_keep_1 was owned by " + std::to_string(V_keep_1 -> get_number_of_owning_facets()) + " facets"));
 	}
 
 
