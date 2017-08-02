@@ -16,10 +16,10 @@ public:
 	Constructor
 	@param filename absolute or relative path to the OBJ file to be read
 	@param unit_facet 1 if provided file uses meters, 1000 if km are used, ...
-	@ param use_edges True if the shape model to be loaded should be augmented with edges
+	@param compute_dyads True if the shape model to be loaded should be augmented with facet/edge dyads
 	*/
 	ShapeModelImporter(std::string filename,double unit_factor = 1,
-		bool use_edges = true);
+		bool compute_dyads = true);
 
 	/**
 	Reads-in an OBJ file storing the shape model info and sets the field of 
@@ -31,7 +31,7 @@ public:
 protected:
 	std::string filename;
 	double unit_factor;
-	bool use_edges;
+	bool compute_dyads;
 
 };
 

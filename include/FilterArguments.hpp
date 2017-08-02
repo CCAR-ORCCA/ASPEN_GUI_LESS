@@ -29,7 +29,7 @@ public:
 	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
 	@param split_status True if the shape model is to be split
 	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
-	@param recycle_shrunk_facets True if facets that are degenerated should be removed
+	@param merge_shrunk_facets True if facets that are degenerated should be removed
 	*/
 
 	FilterArguments() {
@@ -69,8 +69,8 @@ public:
 		return this -> use_cholesky;
 	}
 
-	bool get_recycle_shrunk_facets() const {
-		return this -> recycle_shrunk_facets;
+	bool get_merge_shrunk_facets() const {
+		return this -> merge_shrunk_facets;
 	}
 	double get_max_split_count() const {
 		return this -> max_split_count;
@@ -143,8 +143,8 @@ public:
 		this -> use_cholesky = use_cholesky;
 	}
 
-	void set_recycle_shrunk_facets(bool recycle_shrunk_facets)  {
-		this -> recycle_shrunk_facets = recycle_shrunk_facets;
+	void set_merge_shrunk_facets(bool merge_shrunk_facets)  {
+		this -> merge_shrunk_facets = merge_shrunk_facets;
 	}
 
 	void set_max_split_count(double max_split_count)  {
@@ -432,7 +432,7 @@ protected:
 
 
 
-	unsigned int minimum_ray_per_facet = 5;
+	unsigned int minimum_ray_per_facet = 1;
 	unsigned int max_split_count = 1000;
 	unsigned int N_iterations;
 	unsigned int max_recycled_facets;
@@ -441,7 +441,7 @@ protected:
 	bool reject_outliers;
 	bool split_status;
 	bool use_cholesky;
-	bool recycle_shrunk_facets;
+	bool merge_shrunk_facets;
 	bool estimate_shape;
 	bool has_transitioned_to_shape = false;
 

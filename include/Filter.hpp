@@ -95,21 +95,6 @@ public:
 	                              bool save_shape_model,
 	                              bool inertial_traj);
 
-	/**
-	Runs the attitude estimation filter
-	@param orbit_path Path to the orbit file
-	@param orbit_time_path Path to the orbit time file
-	@param attitude_path Path to the attitude file
-	@param attitude_time_path Path to the attitude time file
-	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
-	@param inertial_traj True if provided trajectory is inertial
-	*/
-	void run_attitude_estimation(
-	    std::string orbit_path,
-	    std::string orbit_time_path,
-	    std::string attitude_path,
-	    std::string attitude_time_path,
-	    bool inertial_traj);
 
 
 	/**
@@ -248,6 +233,7 @@ protected:
 	void correct_observed_features(std::vector<Ray * > & good_rays,
 	                               std::set<Vertex *> & seen_vertices,
 	                               std::set<Facet *> & seen_facets,
+
 	                               arma::mat & N_mat,
 	                               std::map<Facet *,
 	                               std::vector<unsigned int> > & facet_to_index_of_vertices) ;
@@ -255,12 +241,12 @@ protected:
 	void get_observed_features(std::vector<Ray * > & good_rays,
 	                           std::set<Vertex *> & seen_vertices,
 	                           std::set<Facet *> & seen_facets,
+	                           std::set<Facet *> & spurious_facets,
 	                           arma::mat & N_mat,
 	                           std::map<Facet *,
 	                           std::vector<unsigned int> > & facet_to_index_of_vertices,
 	                           double & mean,
 	                           double & stdev
-
 	                          ) ;
 
 
@@ -280,7 +266,6 @@ protected:
 	std::shared_ptr<PC> destination_pc_shape = nullptr;
 
 
-	std::set<Facet *> seen_facets_destination;
 
 
 };

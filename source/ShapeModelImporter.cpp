@@ -1,9 +1,9 @@
 #include "ShapeModelImporter.hpp"
 
-ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor, bool use_edges) {
+ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor, bool compute_dyads) {
 	this -> filename = filename;
 	this -> unit_factor = unit_factor;
-	this -> use_edges = use_edges;
+	this -> compute_dyads = compute_dyads;
 }
 
 void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
@@ -129,7 +129,7 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 
 
 	// Edges are added to the shape model
-	if (this -> use_edges == true) {
+	if (this -> compute_dyads == true) {
 		std::cout << std::endl << " Constructing Edges " << std::endl ;
 
 		boost::progress_display progress_edges(edge_vertices_indices.size()) ;
@@ -161,9 +161,9 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 
 	// Edges and facets are updated (their dyads, normals and centers
 	// are computed) to reflect the new position/orientation
-	shape_model -> update_facets();
+	shape_model -> update_facets(this -> compute_dyads);
 
-	if (this -> use_edges == true) {
+	if (this -> compute_dyads == true) {
 		shape_model -> update_edges();
 	}
 

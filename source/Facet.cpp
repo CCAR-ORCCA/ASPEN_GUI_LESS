@@ -134,20 +134,40 @@ bool Facet::has_good_edge_quality(double angle) {
 
 bool Facet::has_good_surface_quality(double angle) const {
 
+	std::cout << "Reading the vertices (in facet)" << std::endl;
+
+
+
+	std::cout << this -> vertices  << std::endl;
+
+
+	std::cout << "moving on>" << std::endl;
+	std::cout << this -> vertices -> size() << std::endl;
+
+	std::cout << "moving on" << std::endl;
+
+	if (this -> vertices -> size() != 3) {
+		throw (std::runtime_error("this facet has " + std::to_string(this -> vertices -> size()) + " vertices"));
+	}
 	std::shared_ptr<Vertex> V0  = this -> vertices -> at(0);
 	std::shared_ptr<Vertex> V1  = this -> vertices -> at(1);
 	std::shared_ptr<Vertex> V2  = this -> vertices -> at(2);
 
+	std::cout << "Reading the coordinates (in facet)" << std::endl;
+
 	arma::vec * P0  = V0 -> get_coordinates();
 	arma::vec * P1  = V1 -> get_coordinates();
 	arma::vec * P2  = V2 -> get_coordinates();
+	std::cout << "Done reading the coordinates (in facet)" << std::endl;
 
-	arma::vec sin_angles = arma::vec(3);
-	sin_angles(0) = arma::norm(arma::cross(*P1 - *P0, *P2 - *P0) / ( arma::norm(*P1 - *P0) * arma::norm(*P2 - *P0) ));
-	sin_angles(1) = arma::norm(arma::cross(*P2 - *P1, *P0 - *P1) / ( arma::norm(*P2 - *P1) * arma::norm(*P0 - *P1) ));
-	sin_angles(2) = arma::norm(arma::cross(*P0 - *P2, *P1 - *P2) / ( arma::norm(*P0 - *P2) * arma::norm(*P1 - *P2) ));
 
-	if (sin_angles.min() < std::sin(angle)) {
+	arma::vec angles = arma::vec(3);
+	angles(0) = std::acos(arma::dot(arma::normalise(*P1 - *P0), arma::normalise( *P2 - *P0)));
+	angles(1) = std::acos(arma::dot(arma::normalise(*P2 - *P1), arma::normalise( *P0 - *P1)));
+	angles(2) = std::acos(arma::dot(arma::normalise(*P0 - *P2), arma::normalise( *P1 - *P2)));
+
+
+	if (angles.min() < angle) {
 		return false;
 	}
 	else {

@@ -498,132 +498,6 @@ void Filter::shape_reconstruction_pass(unsigned int time_index,
 
 
 
-void Filter::run_attitude_estimation(
-    std::string orbit_path,
-    std::string orbit_time_path,
-    std::string attitude_path,
-    std::string attitude_time_path,
-    bool inertial_traj) {
-
-	std::cout << "Collecting surface data" << std::endl;
-
-	// Matrix of orbit states
-	arma::mat orbit_states;
-	orbit_states.load(orbit_path);
-
-	// Vector of orbit times
-	arma::vec orbit_time;
-	orbit_time.load(orbit_time_path);
-
-	// Matrix of orbit states
-	arma::mat attitude_states;
-	attitude_states.load(attitude_path);
-
-	// Vector of orbit times
-	arma::vec attitude_time;
-	attitude_time.load(attitude_time_path);
-
-
-	// Lidar position
-	arma::vec lidar_pos_inertial = arma::vec(3);
-	arma::vec lidar_pos = arma::vec(3);
-	arma::vec lidar_vel = arma::vec(3);
-
-	arma::vec u;
-	arma::vec v;
-	arma::vec w;
-
-	arma::mat dcm_TN = arma::zeros<arma::mat>(3, 3);
-	arma::mat dcm_LT = arma::zeros<arma::mat>(3, 3);
-
-	arma::vec mrp_LN = arma::vec(3);
-	arma::vec mrp_TN = arma::vec(3);
-	arma::vec mrp_LT = arma::vec(3);
-
-	// An interpolator of the attitude state is created
-	Interpolator interpolator_attitude(&attitude_time, &attitude_states);
-	Interpolator interpolator_orbit(&orbit_time, &orbit_states);
-
-	arma::vec interpolated_orbit(6);
-	arma::vec interpolated_attitude(6);
-
-	int N = (int)((orbit_time(orbit_time . n_rows - 1 ) - orbit_time (0) ) * this -> lidar -> get_frequency());
-	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
-
-	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
-
-
-		std::stringstream ss;
-		ss << std::setw(6) << std::setfill('0') << time_index;
-		std::string time_index_formatted = ss.str();
-
-		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
-
-		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
-		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
-
-		if (inertial_traj == true) {
-			arma::mat dcm = RBK::mrp_to_dcm(interpolated_attitude.rows(0, 2));
-			interpolated_orbit.rows(0, 2) = dcm * interpolated_orbit.rows(0, 2);
-			interpolated_orbit.rows(3, 5) = dcm * interpolated_orbit.rows(3, 5) - arma::cross(interpolated_attitude.rows(3, 5), interpolated_orbit.rows(0, 2));
-		}
-
-
-		// L frame position and velocity (in T frame)
-		lidar_pos = interpolated_orbit.rows(0, 2);
-		lidar_vel = interpolated_orbit.rows(3, 5);
-
-		// LT DCM
-		u = - arma::normalise(lidar_pos);
-		v = arma::normalise(arma::cross(lidar_pos, lidar_vel));
-		w = arma::cross(u, v);
-
-		dcm_LT = arma::join_rows(u, arma::join_rows(v, w)).t();
-
-		// TN DCM
-		mrp_TN = interpolated_attitude.rows(0, 2);
-		dcm_TN = RBK::mrp_to_dcm(mrp_TN);
-
-		// LN DCM
-		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
-		lidar_pos_inertial = dcm_TN.t() * lidar_pos + *this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> get_origin_from_parent();
-
-		// Setting the Lidar frame to its new state
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
-
-		// Setting the true and estimated frame to their new state
-		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
-
-		// Getting the true observations (noise free)
-		this -> lidar -> send_flash(this -> true_shape_model, false, false);
-		this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
-
-		// The point clouds are stored: the focal plane is dumped to either the source or destination
-		// point cloud receptacle
-		this -> store_point_clouds(time_index);
-
-		// The rigid transform best aligning the two point clouds is found
-		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
-
-			// The two point clouds are registered
-			this -> register_pcs(time_index, times(time_index));
-
-			this -> filter_arguments -> append_omega_true(dcm_TN.t() * interpolated_attitude.rows(3, 5));
-			this -> filter_arguments -> append_mrp_true(RBK::dcm_to_mrp(dcm_TN));
-
-			// The latest estimate of the center of mass is saved
-			arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
-			std::ofstream shape_file;
-			shape_file.open("cm_" + std::to_string(time_index) + ".obj");
-			shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
-			shape_file.close();
-		}
-
-	}
-
-}
-
 void Filter::register_pcs(int index, double time) {
 
 
@@ -704,9 +578,8 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm_shape;
 		arma::vec X_shape;
-		double J_res_shape;
+		double J_res_shape = std::numeric_limits<double>::infinity();
 		bool icp_shape_converged = true;
-
 
 		try {
 			ICP icp_shape(this -> destination_pc_shape, this -> source_pc, dcm_bar, X_bar);
@@ -759,6 +632,10 @@ void Filter::register_pcs(int index, double time) {
 		}
 
 
+		std::cout << " RMS residuals from the shape-based ICP: " << J_res_shape << " m" << std::endl;
+
+
+
 		if (this -> filter_arguments -> get_maximum_J_rms_shape() > J_res_shape) {
 			std::cout << "USING SHAPE" << std::endl;
 
@@ -767,9 +644,8 @@ void Filter::register_pcs(int index, double time) {
 
 			arma::mat incremental_dcm = dcm_shape * RBK::mrp_to_dcm(mrp_mes_past).t();
 
-			// The cente of mass is still estimated
+			// The center of mass is still estimated
 			this -> estimate_cm_KF(dcm_shape, X_shape);
-
 
 			// Spin axis is measured
 			this -> measure_spin_axis(incremental_dcm);
@@ -960,6 +836,8 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 	std::vector<Ray * > good_rays;
 	std::set<Vertex * > seen_vertices;
 	std::set<Facet * > seen_facets;
+	std::set<Facet * > spurious_facets;
+
 	arma::mat N_mat;
 	std::map<Facet *, std::vector<unsigned int> > facet_to_index_of_vertices;
 	std::map<Facet *, arma::uvec> facet_to_N_mat_cols;
@@ -970,10 +848,12 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 	this -> get_observed_features(good_rays,
 	                              seen_vertices,
 	                              seen_facets,
+	                              spurious_facets,
 	                              N_mat,
 	                              facet_to_index_of_vertices,
 	                              mean,
-	                              stdev);
+	                              stdev
+	                             );
 
 	std::cout << " Number of good rays : " << good_rays.size() << std::endl;
 	std::cout << " Facets in view : " << seen_facets.size() << std::endl;
@@ -1029,7 +909,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 			facets_to_residuals_sd[it -> first] = arma::stddev(facet_residuals_arma);
 
 			if (it-> first -> get_area() > max_area) {
-				max_area = it-> first -> get_area();
+				max_area = it -> first -> get_area();
 				facet_to_split = it -> first;
 			}
 		}
@@ -1037,6 +917,20 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index), facets_to_residuals);
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
 
+
+
+		// The facets that were seen from behind are spuriously oriented and are thus removed from the shape model
+		std::cout << "Removing spurious_facets" << std::endl;
+		while (spurious_facets.size() > 0) {
+			std::cout << spurious_facets.size() << std::endl;
+			this -> estimated_shape_model -> merge_shrunk_facet(
+			    *spurious_facets.begin(),
+			    &seen_facets,
+			    &spurious_facets);
+
+		}
+
+		std::cout << "Done removing spurious_facets" << std::endl;
 
 		// Splitting the facet with the largest surface area if it has a larger standard deviation that the one that was specified
 		if (facets_to_residuals_sd[facet_to_split] > this -> filter_arguments -> get_convergence_facet_residuals()) {
@@ -1047,19 +941,38 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		}
 
 
-		if (this -> filter_arguments -> get_recycle_shrunk_facets() == true) {
+
+
+
+
+
+
+		std::cout << "Entering shape quality enforcement" << std::endl;
+		// The shape model is treated to remove shrunk facets
+		if (this -> filter_arguments -> get_merge_shrunk_facets() == true) {
 			this -> estimated_shape_model -> enforce_mesh_quality(
 			    this -> filter_arguments -> get_min_facet_angle(),
 			    this -> filter_arguments -> get_min_edge_angle(),
-			    this -> filter_arguments -> get_max_recycled_facets(), seen_facets);
+			    this -> filter_arguments -> get_max_recycled_facets(),
+			    seen_facets);
 		}
+		std::cout << "Leaving shape quality enforcement" << std::endl;
 
 
 
+		// Check if there are any dangling vertex
+		for (auto facet_it = estimated_shape_model -> get_facets() -> begin();
+		        facet_it != estimated_shape_model -> get_facets() -> end();
+		        ++facet_it) {
+			for (unsigned int vertex_index = 0;
+			        vertex_index < 3; ++vertex_index) {
 
-		this -> seen_facets_destination = seen_facets;
+				if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
+					throw (std::runtime_error("Dangling vertex"));
+				}
 
-
+			}
+		}
 
 	}
 
@@ -1165,17 +1078,19 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	this -> estimated_shape_model -> update_mass_properties();
 
 	// The facets of the shape model that have been seen are updated
-	this -> estimated_shape_model -> update_facets();
+	this -> estimated_shape_model -> update_facets(false);
 
 }
 
 void Filter::get_observed_features(std::vector<Ray * > & good_rays,
                                    std::set<Vertex *> & seen_vertices,
                                    std::set<Facet *> & seen_facets,
+                                   std::set<Facet *> & spurious_facets,
+
                                    arma::mat & N_mat,
                                    std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices,
                                    double & mean,
-                                   double & stdev ) {
+                                   double & stdev) {
 
 
 
@@ -1226,10 +1141,9 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 					// throw (std::runtime_error("Saw through the shape"));
 					std::cout << "Warning: saw through the shape" << std::endl;
+					spurious_facets.insert(ray -> get_computed_hit_facet());
 				}
 			}
-
-
 
 			facet_to_rays[ray -> get_computed_hit_facet()].push_back(ray);
 

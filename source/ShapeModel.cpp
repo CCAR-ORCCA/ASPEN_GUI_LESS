@@ -15,10 +15,10 @@ void ShapeModel::update_mass_properties() {
 
 }
 
-void ShapeModel::update_facets() {
+void ShapeModel::update_facets(bool compute_dyad) {
 
 	for (auto & facet : this -> facets) {
-		facet -> update();
+		facet -> update(compute_dyad);
 	}
 
 }
@@ -34,10 +34,10 @@ void ShapeModel::update_edges() {
 
 
 
-void ShapeModel::update_facets(std::set<Facet *> & facets) {
+void ShapeModel::update_facets(std::set<Facet *> & facets, bool compute_dyad) {
 
 	for (auto & facet : facets) {
-		facet -> update();
+		facet -> update(compute_dyad);
 	}
 
 }
@@ -634,7 +634,8 @@ void ShapeModel::compute_surface_area() {
 }
 
 
-void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
+void ShapeModel::split_facet(Facet * facet,
+                             std::set<Facet *> & seen_facets) {
 
 	// The old facets are retrieved
 	// together with the old vertices
@@ -658,14 +659,10 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 	std::shared_ptr<Vertex> V5 ;
 
 	for (auto const & old_facet : splitted_facets) {
-
 		if (old_facet != facet) {
-
 			if (V0 -> is_owned_by(old_facet) &&
 			        V1 -> is_owned_by(old_facet)) {
-
 				F1_old = old_facet;
-
 				// Setting V4
 				for (unsigned int i = 0; i < 3; ++i) {
 					if (F1_old -> get_vertices() -> at(i) != V0 &&
@@ -673,16 +670,11 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 						V4 = F1_old -> get_vertices() -> at(i);
 						break;
 					}
-
 				}
-
 			}
-
 			else if (V1 -> is_owned_by(old_facet) &&
 			         V2 -> is_owned_by(old_facet)) {
-
 				F2_old = old_facet;
-
 				// Setting V5
 				for (unsigned int i = 0; i < 3; ++i) {
 					if (F2_old -> get_vertices() -> at(i) != V2 &&
@@ -690,12 +682,10 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 						V5 = F2_old -> get_vertices() -> at(i);
 						break;
 					}
-
 				}
 			}
 			else if (V2 -> is_owned_by(old_facet) &&
 			         V0 -> is_owned_by(old_facet)) {
-
 				F3_old = old_facet;
 
 				// Setting V3
@@ -705,16 +695,15 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 						V3 = F3_old -> get_vertices() -> at(i);
 						break;
 					}
-
 				}
-
 			}
 		}
 	}
 
 
-
-
+	if (F1_old == nullptr || F2_old == nullptr || F3_old == nullptr) {
+		throw (std::runtime_error("Dangling facet pointers"));
+	}
 
 	// The new vertices and their (empty) coordinates are created
 	std::shared_ptr<arma::vec> P6 = std::make_shared<arma::vec>(arma::vec(3));
@@ -831,13 +820,8 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 	this -> add_facet(F9);
 
 
-	// The facets that were seen and split are removed from the set
-	seen_facets.erase(facet);
-	seen_facets.erase(F1_old);
-	seen_facets.erase(F2_old);
-	seen_facets.erase(F3_old);
 
-	// The facets that replaced them are added back
+	// The facets that replaced the recycled facets are added back
 	seen_facets.insert(F0);
 	seen_facets.insert(F1);
 	seen_facets.insert(F2);
@@ -848,6 +832,14 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 	seen_facets.insert(F7);
 	seen_facets.insert(F8);
 	seen_facets.insert(F9);
+
+
+	// The facets that were seen and split are removed from the set
+	seen_facets.erase(facet);
+	seen_facets.erase(F1_old);
+	seen_facets.erase(F2_old);
+	seen_facets.erase(F3_old);
+
 
 	/*
 	EDGES ARE IGNORED FOR NOW
@@ -874,6 +866,22 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 	V4 -> remove_facet_ownership(F1_old);
 	V5 -> remove_facet_ownership(F2_old);
 	V3 -> remove_facet_ownership(F3_old);
+
+
+
+	if (F0 -> get_vertices() -> size() > 3 ||
+	        F1 -> get_vertices() -> size() > 3 ||
+	        F2 -> get_vertices() -> size() > 3 ||
+	        F3 -> get_vertices() -> size() > 3 ||
+	        F4 -> get_vertices() -> size() > 3 ||
+	        F5 -> get_vertices() -> size() > 3 ||
+	        F6 -> get_vertices() -> size() > 3 ||
+	        F7 -> get_vertices() -> size() > 3 ||
+	        F8 -> get_vertices() -> size() > 3 ||
+	        F9 -> get_vertices() -> size() > 3
+	   ) {
+		throw (std::runtime_error("One of the new facets has more than three vertices"));
+	}
 
 
 
@@ -904,32 +912,51 @@ void ShapeModel::split_facet(Facet * facet, std::set<Facet *> & seen_facets) {
 
 
 
-void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_facets) {
+bool ShapeModel::merge_shrunk_facet(Facet * facet,
+                                    std::set<Facet *> * seen_facets,
+                                    std::set<Facet *> * spurious_facets) {
 
-	std::cout << "in" << std::endl;
+	std::cout << "In merge_shrunk_facet" << std::endl;
+
+
+	std::cout << facet -> get_vertices() << std::endl;
+
+	std::cout << "moving on?" << std::endl;
+
+	std::cout << facet -> get_vertices() -> size() << std::endl;
+
+	std::cout << "moving on" << std::endl;
+
+	if (facet -> get_vertices() -> size() != 3) {
+		throw (std::runtime_error("this facet has " + std::to_string(facet -> get_vertices() -> size()) + " vertices"));
+	}
 
 	// The vertices in the facet are extracted
 	std::shared_ptr<Vertex> V0  = facet -> get_vertices() -> at(0);
 	std::shared_ptr<Vertex> V1  = facet -> get_vertices() -> at(1);
 	std::shared_ptr<Vertex> V2  = facet -> get_vertices() -> at(2);
 
+
+	std::cout << "Done reading vertices" << std::endl;
+
 	arma::vec * P0  = V0 -> get_coordinates();
 	arma::vec * P1  = V1 -> get_coordinates();
 	arma::vec * P2  = V2 -> get_coordinates();
 
+	std::cout << "Done reading coordinates" << std::endl;
+
 
 	// The smallest of the three angles in the facet is identified
-	arma::vec sin_angles = arma::vec(3);
-	sin_angles(0) = arma::norm(arma::cross(arma::normalise(*P1 - *P0), arma::normalise(*P2 - *P0)));
-	sin_angles(1) = arma::norm(arma::cross(arma::normalise(*P2 - *P1), arma::normalise(*P0 - *P1)));
-	sin_angles(2) = arma::norm(arma::cross(arma::normalise(*P0 - *P2), arma::normalise(*P1 - *P2)));
-
+	arma::vec angles = arma::vec(3);
+	angles(0) = std::acos(abs(arma::dot(arma::normalise(*P1 - *P0), arma::normalise(*P2 - *P0))));
+	angles(1) = std::acos(abs(arma::dot(arma::normalise(*P2 - *P1), arma::normalise(*P0 - *P1))));
+	angles(2) = std::acos(abs(arma::dot(arma::normalise(*P0 - *P2), arma::normalise(*P1 - *P2))));
 
 	// This index indicates which vertices are to be merged
 	// - 0 : V1 and V2 shoud be merged
 	// - 1 : V0 and V2
 	// - 2 : V1 and V0
-	unsigned int min_angle_index = sin_angles.index_min();
+	unsigned int min_angle_index = angles.index_min();
 
 
 	std::shared_ptr<Vertex> V_merge_keep = nullptr;
@@ -955,7 +982,6 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 		break;
 	}
 
-	*V_merge_keep -> get_coordinates() = 0.5 * (*V_merge_keep -> get_coordinates() + *V_merge_discard -> get_coordinates());
 
 
 	std::vector<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
@@ -963,7 +989,17 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 	if (facets_to_recycle.size() > 2) {
 
 		for (unsigned int i = 0; i < facets_to_recycle.size() ; ++i ) {
-			std::cout << facets_to_recycle[i] << std::endl;
+			std::cout << "Facet at " <<  facets_to_recycle[i] -> get_facet_center() -> t() << std::endl;
+			std::cout << "Normal : " <<  facets_to_recycle[i] -> get_facet_normal() -> t() << std::endl;
+			std::cout << "Area : " <<  facets_to_recycle[i] -> get_area() << std::endl;
+
+
+
+			std::cout << "\t v0 : " <<  facets_to_recycle[i] -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v1 : " <<  facets_to_recycle[i] -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v2 : " <<  facets_to_recycle[i] -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
+
+
 			if (this -> facets.end() != std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[i])) {
 				std::cout << "Facet still in shape model" << std::endl;
 			}
@@ -977,15 +1013,6 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 	Facet * F0_old = facets_to_recycle[0];
 	Facet * F1_old = facets_to_recycle[1];
 
-
-
-
-	if (arma::dot(*F0_old -> get_facet_normal(),
-	              *F1_old -> get_facet_normal()) < 0) {
-		
-		return ;
-	}
-
 	for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 		if (F0_old -> get_vertices() -> at(vertex_index) != V_merge_keep &&
 		        F0_old -> get_vertices() -> at(vertex_index) != V_merge_discard) {
@@ -994,7 +1021,6 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 			break;
 		}
 	}
-
 
 	for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
@@ -1017,21 +1043,69 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 
 	std::set<Facet * > facets_owning_discarded_vertex = V_merge_discard -> get_owning_facets();
 
+	if (facets_owning_discarded_vertex.find(F0_old) == facets_owning_discarded_vertex.end()) {
+		throw (std::runtime_error("F0_old not in facets_owning_discarded_vertex"));
+	}
+
+
+	if (facets_owning_discarded_vertex.find(F1_old) == facets_owning_discarded_vertex.end()) {
+		throw (std::runtime_error("F1_old not in facets_owning_discarded_vertex"));
+	}
+
+	// If any of the facets to be updated was not seen, the method does not proceed
+
+	if (spurious_facets == nullptr) {
+		for (auto facet_it = facets_owning_discarded_vertex.begin();
+		        facet_it != facets_owning_discarded_vertex.end();
+		        ++facet_it) {
+
+			if (seen_facets -> find(*facet_it) == seen_facets -> end()) {
+				std::cout << "Connected facet is invisible. Recycling aborted" << std::endl;
+				return false;
+			}
+
+
+
+		}
+	}
+
+
+	if (facet != F0_old && facet != F1_old) {
+		throw (std::runtime_error("facet should be either of these"));
+	}
+
+	if (F0_old == F1_old) {
+		throw (std::runtime_error("These two facets can't be the same!"));
+	}
+
+
 	// The facets that will be discarded are removed from these facet set
+	unsigned int size_facets_owning_discarded_vertex_before = facets_owning_discarded_vertex.size();
 	facets_owning_discarded_vertex.erase(F0_old);
 	facets_owning_discarded_vertex.erase(F1_old);
 
+	if (size_facets_owning_discarded_vertex_before - 2 != facets_owning_discarded_vertex.size()) {
+		throw (std::runtime_error("owning facet removal failed: difference = " + std::to_string(size_facets_owning_discarded_vertex_before - facets_owning_discarded_vertex.size())));
+	}
+
+
+	std::cout << "Recycling" << std::endl;
+
+	*V_merge_keep -> get_coordinates() = 0.5 * (*V_merge_keep -> get_coordinates() + *V_merge_discard -> get_coordinates());
 
 
 	// The facets owning V_merge_discard are
 	// updated so as to have this vertex merging with
 	// V_merge_keep
-
+	std::cout << "browsing facets" << std::endl;
 	for (auto facet_it = facets_owning_discarded_vertex.begin();
 	        facet_it != facets_owning_discarded_vertex.end();
 	        ++facet_it) {
 
 		Facet * facet_to_update = *facet_it;
+
+
+
 
 		for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
@@ -1043,10 +1117,24 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 
 		}
 
+
+		facet_to_update -> update(false);
+
+
+
+		if (facet_to_update -> get_vertices() -> size() != 3) {
+			throw (std::runtime_error("this updated facet has " + std::to_string(facet -> get_vertices() -> size()) + " vertices"));
+		}
+
+
+
 		V_merge_discard -> remove_facet_ownership(facet_to_update);
 		V_merge_keep -> add_facet_ownership(facet_to_update);
 
 	}
+
+	std::cout << "Done browsing facets" << std::endl;
+
 
 
 
@@ -1055,10 +1143,12 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 	V_keep_1 -> remove_facet_ownership(F1_old);
 	V_merge_keep -> remove_facet_ownership(F0_old);
 	V_merge_keep -> remove_facet_ownership(F1_old);
-	V_merge_discard -> remove_facet_ownership(F1_old);
+	V_merge_discard -> remove_facet_ownership(F0_old);
 	V_merge_discard -> remove_facet_ownership(F1_old);
 
 
+
+	std::cout << "Looking for discarded vertex" << std::endl;
 
 	// The discarded vertex is removed from the shape model
 	auto V_merge_discard_it = std::find (this -> vertices.begin(),
@@ -1067,8 +1157,29 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 
 	this -> vertices.erase(V_merge_discard_it);
 
-	seen_facets.erase(F0_old);
-	seen_facets.erase(F1_old);
+
+
+	std::cout << "Done removing discarded vertex" << std::endl;
+
+
+	unsigned int size_seen_facets_before = seen_facets -> size();
+
+	seen_facets -> erase(F0_old);
+	seen_facets -> erase(F1_old);
+
+	if (spurious_facets != nullptr) {
+		spurious_facets -> erase(F0_old);
+		spurious_facets -> erase(F1_old);
+	}
+
+
+
+	if (size_seen_facets_before - 2 != seen_facets -> size() && spurious_facets == nullptr) {
+		throw (std::runtime_error("facet removal failed: difference = " + std::to_string(size_seen_facets_before - seen_facets -> size())));
+	}
+
+
+	std::cout << "cleaning up" << std::endl;
 
 	// The facets to recycle are removed from the shape model
 	auto old_facet_F0 = std::find (this -> facets.begin(), this -> facets.end(), F0_old);
@@ -1082,9 +1193,18 @@ void ShapeModel::recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_fa
 
 
 	// The impacted facets are all updated to reflect their new geometry
-	this -> update_facets();
+	this -> update_facets(false);
+
+	std::cout << "done" << std::endl;
+
+	return true;
 
 }
+
+
+
+
+
 
 
 void ShapeModel::get_bounding_box(double * bounding_box) const {
@@ -1153,40 +1273,52 @@ void ShapeModel::enforce_mesh_quality(double min_facet_angle,
                                       unsigned int max_recycled_facets,
                                       std::set<Facet * > & seen_facets) {
 
-	bool mesh_quality_confirmed = false;
+	bool recycling_still_occuring = true;
 	unsigned int facets_recycled = 0;
 
 
 
 
-	while (mesh_quality_confirmed == false && 2 * facets_recycled < max_recycled_facets) {
+	while (recycling_still_occuring == true && 2 * facets_recycled < max_recycled_facets) {
 
-		mesh_quality_confirmed = true;
+		recycling_still_occuring = false;
 
-		for (auto it_facet = seen_facets.begin(); it_facet != seen_facets.end();
+		for (auto it_facet = seen_facets.begin();
+		        it_facet != seen_facets.end();
 		        ++ it_facet) {
+
+
+
+
+			if (std::find(this -> facets.begin(), this -> facets.end(), *it_facet) == this -> facets.end()) {
+				throw (std::runtime_error("This facet does not exist in the shape model anymore"));
+			}
+
 
 			// This will collapse an edge of the shape model
 			// if it appears that the two facets it connects have
 			// spurious surface normal orientations
-			// This will cause the facet to get recycled
 
 
-			if ((*it_facet) -> has_good_edge_quality(min_edge_angle) == false) {
+			// if ((*it_facet) -> has_good_edge_quality(min_edge_angle) == false) {
 
-			};
+			// };
+
 
 			if ((*it_facet) -> has_good_surface_quality(min_facet_angle) == false) {
-				mesh_quality_confirmed = false;
-				this -> recycle_shrunk_facet((*it_facet), seen_facets);
 
-				++facets_recycled;
-				break;
+				std::cout << (*it_facet) -> get_facet_center() -> t() << std::endl;
+				recycling_still_occuring = this -> merge_shrunk_facet((*it_facet), &seen_facets);
+
+				if (recycling_still_occuring == true) {
+					++facets_recycled;
+
+					break;
+				}
 
 			}
 
 		}
-
 
 	}
 

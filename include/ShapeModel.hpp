@@ -230,6 +230,7 @@ public:
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
 	This set will be edited to ensure that the facets that remain are all valid
+	
 	*/
 	void split_facet(Facet * facet, std::set<Facet *> & seen_facets);
 
@@ -244,9 +245,13 @@ public:
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
 	This set will be edited to ensure that the facets that remain are all valid
+	@param abnormal_facets set containing facets that must be removed from the shape model
+	because they are flipped
+	@return true if the facet was recycled, false otherwise
 	*/
-	void recycle_shrunk_facet(Facet * facet, std::set<Facet *> & seen_facets);
-
+	bool merge_shrunk_facet(Facet * facet,
+	                        std::set<Facet *> * seen_facets,
+	                        std::set<Facet *> * abnormal_facets = nullptr);
 
 
 	/**
@@ -256,8 +261,9 @@ public:
 
 	/**
 	Update all the facets of the shape model
+	@param compute_dyad true if the facet dyad needs to be computed/updated
 	*/
-	void update_facets() ;
+	void update_facets(bool compute_dyad) ;
 
 	/**
 	Update all the edges of the shape model
@@ -269,8 +275,10 @@ public:
 	Updates the specified facets of the shape model. Ensures consistency between the vertex coordinates
 	and the facet surface area, normals, dyads and centers.
 	@param facets Facets to be updated
+	@param compute_dyad true if the facet dyad needs to be computed/updated
+
 	*/
-	void update_facets(std::set<Facet *> & facets);
+	void update_facets(std::set<Facet *> & facets, bool compute_dyad);
 
 
 	/**

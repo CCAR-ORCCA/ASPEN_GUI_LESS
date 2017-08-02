@@ -45,7 +45,9 @@ int main() {
 	true_shape_model.construct_kd_tree(false);
 	estimated_shape_model.construct_kd_tree(false);
 
-	// 1) Propagate small body attitude
+
+
+// 1) Propagate small body attitude
 	arma::vec attitude_0(6);
 
 	double omega = 2 * arma::datum::pi / (12 * 3600);
@@ -61,8 +63,8 @@ int main() {
 
 	bool check_energy_conservation = false;
 
-	// Specifiying filter_arguments such as density, pointer to frame graph and
-	// attracting shape model
+// Specifiying filter_arguments such as density, pointer to frame graph and
+// attracting shape model
 	Args args;
 
 	args.set_frame_graph(&frame_graph);
@@ -83,22 +85,22 @@ int main() {
 	                false,
 	                "../output/integrators/");
 
-	// 2) Propagate spacecraft attitude about small body
-	// using computed small body attitude
+// 2) Propagate spacecraft attitude about small body
+// using computed small body attitude
 	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
 	args.set_interpolator(&interpolator);
 	args.set_is_attitude_bool(false);
 	args.set_density(DENSITY);
 	args.set_mass(DENSITY * true_shape_model . get_volume());
 
-	// Initial condition of the orbiting spacecraft
+// Initial condition of the orbiting spacecraft
 	arma::vec initial_pos = {3000 , 0, 0};
 	double v = std::sqrt(arma::datum::G * args.get_mass() / arma::norm(initial_pos));
 
 	arma::vec initial_vel_inertial = {0, 0, v};
 
-	// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
-	//                      initial_pos);
+// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
+//                      initial_pos);
 
 	arma::vec orbit_0(6);
 
@@ -120,7 +122,7 @@ int main() {
 	             false,
 	             "../output/integrators/");
 
-	// The attitude of the asteroid is also interpolated
+// The attitude of the asteroid is also interpolated
 	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
 
 	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
@@ -128,7 +130,7 @@ int main() {
 	}
 	interpolated_attitude.save("../output/integrators/interpolated_attitude.txt", arma::raw_ascii);
 
-	// Lidar
+// Lidar
 	Lidar lidar(&frame_graph,
 	            "L",
 	            ROW_FOV,
@@ -142,8 +144,7 @@ int main() {
 
 
 
-
-	// Filter filter_arguments
+// Filter filter_arguments
 	FilterArguments shape_filter_args = FilterArguments();
 
 	shape_filter_args.set_max_ray_incidence(60 * arma::datum::pi / 180.);
@@ -153,20 +154,24 @@ int main() {
 	shape_filter_args.set_reject_outliers(false);
 	shape_filter_args.set_split_facets(true);
 	shape_filter_args.set_use_cholesky(false);
-	shape_filter_args.set_min_edge_angle(30 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
-	shape_filter_args.set_min_facet_angle(40 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
 
-	shape_filter_args.set_N_iterations(5);
+	shape_filter_args.set_min_edge_angle(0 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
+	shape_filter_args.set_min_facet_angle(20 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
+
+// Minimum number of rays per facet to update the estimated shape
+	shape_filter_args.set_min_ray_per_facet(3);
+
+// Iterations
+	shape_filter_args.set_N_iterations(10);
 	shape_filter_args.set_number_of_shape_passe(30);
 
-	// Facets recycling
-	shape_filter_args.set_recycle_shrunk_facets(false);
-	shape_filter_args.set_max_recycled_facets(10);
+// Facets recycling
+	shape_filter_args.set_merge_shrunk_facets(true);
+	shape_filter_args.set_max_recycled_facets(5);
 
-	shape_filter_args.set_convergence_facet_residuals( 15 * LOS_NOISE_3SD_BASELINE);
+	shape_filter_args.set_convergence_facet_residuals( 5 * LOS_NOISE_3SD_BASELINE);
 
 	arma::vec cm_bar_0 = {1e3, -1e2, -1e3};
-
 
 
 	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
@@ -181,8 +186,6 @@ int main() {
 	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1);
 
 
-
-
 	Filter shape_filter(&frame_graph,
 	                    &lidar,
 	                    &true_shape_model,
@@ -195,7 +198,7 @@ int main() {
 	    "../output/integrators/T_RK45_orbit_inertial.txt",
 	    "../output/integrators/X_RK45_attitude.txt",
 	    "../output/integrators/T_RK45_attitude.txt",
-	    true,
+	    false,
 	    true,
 	    true);
 
