@@ -933,11 +933,13 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		std::cout << "Done removing spurious_facets" << std::endl;
 
 		// Splitting the facet with the largest surface area if it has a larger standard deviation that the one that was specified
-		if (facets_to_residuals_sd[facet_to_split] > this -> filter_arguments -> get_convergence_facet_residuals()) {
-			std::cout << ( "Splitting facet: " + std::to_string(facets_to_residuals_sd[facet_to_split])
-			               + " > " + std::to_string(this -> filter_arguments -> get_convergence_facet_residuals())
-			               + " m of standard dev ") << std::endl;
-			this -> estimated_shape_model -> split_facet(facet_to_split, seen_facets);
+		if (seen_facets.find(facet_to_split) != seen_facets.end()) {
+			if (facets_to_residuals_sd[facet_to_split] > this -> filter_arguments -> get_convergence_facet_residuals()) {
+				std::cout << ( "Splitting facet: " + std::to_string(facets_to_residuals_sd[facet_to_split])
+				               + " > " + std::to_string(this -> filter_arguments -> get_convergence_facet_residuals())
+				               + " m of standard dev ") << std::endl;
+				this -> estimated_shape_model -> split_facet(facet_to_split, seen_facets);
+			}
 		}
 
 
@@ -960,7 +962,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 
-		
+
 
 	}
 

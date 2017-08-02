@@ -1070,8 +1070,7 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	}
 
 	// If any of the vertices to keep is on a corner (owned by three facets), nothing happens
-	if (V_keep_0 -> get_number_of_owning_facets() == 3 || V_keep_1 -> get_number_of_owning_facets() == 3 ||
-	        V_merge_keep -> get_number_of_owning_facets() == 3 ) {
+	if (V_keep_0 -> get_number_of_owning_facets() == 3 || V_keep_1 -> get_number_of_owning_facets() == 3 ) {
 		return false;
 	}
 
