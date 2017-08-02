@@ -921,12 +921,32 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 		// The facets that were seen from behind are spuriously oriented and are thus removed from the shape model
 		std::cout << "Removing spurious_facets" << std::endl;
+
+
+
+		unsigned int remaining_spurious_facets = spurious_facets.size();
 		while (spurious_facets.size() > 0) {
+
 			std::cout << spurious_facets.size() << std::endl;
 			this -> estimated_shape_model -> merge_shrunk_facet(
 			    *spurious_facets.begin(),
 			    &seen_facets,
 			    &spurious_facets);
+
+			if (spurious_facets.size() != 0 && spurious_facets.size() == remaining_spurious_facets) {
+				this -> estimated_shape_model -> merge_shrunk_facet(
+				    *(--spurious_facets.end()),
+				    &seen_facets,
+				    &spurious_facets);
+
+				if (spurious_facets.size() == remaining_spurious_facets) {
+					break;
+				}
+				else {
+					remaining_spurious_facets = spurious_facets.size();
+				}
+
+			}
 
 		}
 
