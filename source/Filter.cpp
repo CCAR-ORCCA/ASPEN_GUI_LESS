@@ -960,19 +960,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 
-		// Check if there are any dangling vertex
-		for (auto facet_it = estimated_shape_model -> get_facets() -> begin();
-		        facet_it != estimated_shape_model -> get_facets() -> end();
-		        ++facet_it) {
-			for (unsigned int vertex_index = 0;
-			        vertex_index < 3; ++vertex_index) {
-
-				if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
-					throw (std::runtime_error("Dangling vertex"));
-				}
-
-			}
-		}
+		
 
 	}
 
