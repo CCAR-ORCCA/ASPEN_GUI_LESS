@@ -1161,7 +1161,7 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 		        vertex_index < 3; ++vertex_index) {
 
 			if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
-				throw (std::runtime_error("Dangling vertex mid merge: this vertex was owned by" + std::to_string((*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() + " facets")));
+				throw (std::runtime_error("Dangling vertex mid merge: this vertex was owned by" + std::to_string((*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets()) + " facets"));
 			}
 
 		}
