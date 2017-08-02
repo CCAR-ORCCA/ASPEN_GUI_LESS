@@ -916,6 +916,23 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
                                     std::set<Facet *> * seen_facets,
                                     std::set<Facet *> * spurious_facets) {
 
+
+	// Check if there are any dangling vertex
+	for (auto facet_it = this -> get_facets() -> begin();
+	        facet_it != this -> get_facets() -> end();
+	        ++facet_it) {
+		for (unsigned int vertex_index = 0;
+		        vertex_index < 3; ++vertex_index) {
+
+			if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
+				throw (std::runtime_error("Dangling vertex entering merge"));
+			}
+
+		}
+	}
+
+
+
 	std::cout << "In merge_shrunk_facet" << std::endl;
 
 
@@ -1136,6 +1153,20 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	std::cout << "Done browsing facets" << std::endl;
 
 
+	// Check if there are any dangling vertex
+	for (auto facet_it = this -> get_facets() -> begin();
+	        facet_it != this -> get_facets() -> end();
+	        ++facet_it) {
+		for (unsigned int vertex_index = 0;
+		        vertex_index < 3; ++vertex_index) {
+
+			if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
+				throw (std::runtime_error("Dangling vertex mid merge"));
+			}
+
+		}
+	}
+
 
 
 	// V_keep_0,1 and V_merge_keep are still owned by the facets to be recycled
@@ -1206,7 +1237,7 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 		        vertex_index < 3; ++vertex_index) {
 
 			if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
-				throw (std::runtime_error("Dangling vertex"));
+				throw (std::runtime_error("Dangling vertex leaving merge"));
 			}
 
 		}
