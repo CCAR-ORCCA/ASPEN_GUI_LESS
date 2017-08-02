@@ -917,7 +917,7 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
                                     std::set<Facet *> * spurious_facets) {
 
 
-	
+
 
 
 	std::cout << "In merge_shrunk_facet" << std::endl;
@@ -1225,20 +1225,18 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	std::cout << "done" << std::endl;
 
 
-	
+
 	// Check if there are any dangling vertex
-	for (auto facet_it = this -> get_facets() -> begin();
-	        facet_it != this -> get_facets() -> end();
-	        ++facet_it) {
-		for (unsigned int vertex_index = 0;
-		        vertex_index < 3; ++vertex_index) {
 
-			if ( (*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets() < 3 ) {
-				throw (std::runtime_error("Dangling vertex leaving merge: this vertex was owned by " + std::to_string((*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets()) + " facets"));
-			}
 
-		}
+
+
+	if ( V_merge_keep -> get_number_of_owning_facets() < 3 ) {
+		throw (std::runtime_error("Dangling vertex leaving merge: this vertex was owned by " + std::to_string((*facet_it) -> get_vertices() -> at(vertex_index) -> get_number_of_owning_facets()) + " facets"));
 	}
+
+
+
 
 
 	return true;
