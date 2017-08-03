@@ -197,7 +197,7 @@ int main() {
 	    "../output/integrators/T_RK45_orbit_inertial.txt",
 	    "../output/integrators/X_RK45_attitude.txt",
 	    "../output/integrators/T_RK45_attitude.txt",
-	    false,
+	    true,
 	    true,
 	    true);
 
