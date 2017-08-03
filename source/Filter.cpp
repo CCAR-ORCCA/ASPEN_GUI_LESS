@@ -367,6 +367,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 
 
+
 		// The attitude of the estimated shape model
 		// is set using the latest mrp measurement
 		arma::vec mrp_EN = this -> filter_arguments -> get_latest_mrp_mes();
