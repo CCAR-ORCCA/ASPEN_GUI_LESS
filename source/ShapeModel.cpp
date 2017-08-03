@@ -1006,29 +1006,29 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 
 	std::vector<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
 
-	if (facets_to_recycle.size() > 2) {
+	// if (facets_to_recycle.size() > 2) {
 
-		for (unsigned int i = 0; i < facets_to_recycle.size() ; ++i ) {
-			std::cout << "Facet at " <<  facets_to_recycle[i] -> get_facet_center() -> t() << std::endl;
-			std::cout << "Normal : " <<  facets_to_recycle[i] -> get_facet_normal() -> t() << std::endl;
-			std::cout << "Area : " <<  facets_to_recycle[i] -> get_area() << std::endl;
-
-
-
-			std::cout << "\t v0 : " <<  facets_to_recycle[i] -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
-			std::cout << "\t v1 : " <<  facets_to_recycle[i] -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
-			std::cout << "\t v2 : " <<  facets_to_recycle[i] -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
+	// 	for (unsigned int i = 0; i < facets_to_recycle.size() ; ++i ) {
+	// 		std::cout << "Facet at " <<  facets_to_recycle[i] -> get_facet_center() -> t() << std::endl;
+	// 		std::cout << "Normal : " <<  facets_to_recycle[i] -> get_facet_normal() -> t() << std::endl;
+	// 		std::cout << "Area : " <<  facets_to_recycle[i] -> get_area() << std::endl;
 
 
-			if (this -> facets.end() != std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[i])) {
-				std::cout << "Facet still in shape model" << std::endl;
-			}
-			else {
-				std::cout << "Facet no longer in shape model" << std::endl;
-			}
-		}
-		throw (std::runtime_error("Two vertices can't share more than two facets: these shared " + std::to_string(facets_to_recycle.size()) + " facets"));
-	}
+
+	// 		std::cout << "\t v0 : " <<  facets_to_recycle[i] -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
+	// 		std::cout << "\t v1 : " <<  facets_to_recycle[i] -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
+	// 		std::cout << "\t v2 : " <<  facets_to_recycle[i] -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
+
+
+	// 		if (this -> facets.end() != std::find (this -> facets.begin(), this -> facets.end(), facets_to_recycle[i])) {
+	// 			std::cout << "Facet still in shape model" << std::endl;
+	// 		}
+	// 		else {
+	// 			std::cout << "Facet no longer in shape model" << std::endl;
+	// 		}
+	// 	}
+	// 	throw (std::runtime_error("Two vertices can't share more than two facets: these shared " + std::to_string(facets_to_recycle.size()) + " facets"));
+	// }
 
 	Facet * F0_old = facets_to_recycle[0];
 	Facet * F1_old = facets_to_recycle[1];
