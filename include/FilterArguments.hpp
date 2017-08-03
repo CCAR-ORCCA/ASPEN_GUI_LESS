@@ -60,10 +60,7 @@ public:
 		return this -> ridge_coef;
 
 	}
-	bool get_reject_outliers() const {
-		return this -> reject_outliers;
-
-	}
+	
 
 	bool get_use_cholesky() const {
 		return this -> use_cholesky;
@@ -134,10 +131,6 @@ public:
 
 	}
 
-	void set_reject_outliers(bool reject_outliers)  {
-		this -> reject_outliers = reject_outliers;
-
-	}
 
 	void set_use_cholesky(bool use_cholesky)  {
 		this -> use_cholesky = use_cholesky;
@@ -438,7 +431,6 @@ protected:
 	unsigned int max_recycled_facets;
 	unsigned int number_of_shape_passes = 5;
 
-	bool reject_outliers;
 	bool split_status;
 	bool use_cholesky;
 	bool merge_shrunk_facets;

@@ -151,7 +151,6 @@ int main() {
 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
 	shape_filter_args.set_ridge_coef(5e1);
 
-	shape_filter_args.set_reject_outliers(false);
 	shape_filter_args.set_split_facets(true);
 	shape_filter_args.set_use_cholesky(false);
 

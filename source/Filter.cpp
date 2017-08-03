@@ -340,8 +340,6 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_TN);
 
 
-
-
 		// Getting the true observations (noise is added)
 		this -> lidar -> send_flash(this -> true_shape_model, false, false);
 
@@ -475,6 +473,7 @@ void Filter::shape_reconstruction_pass(unsigned int time_index,
 		// The postfit esiduals are computed
 		this -> lidar -> compute_residuals();
 
+		// First iteration
 		if (iteration ==  1) {
 			this -> correct_shape(time_index, true, false);
 		}
@@ -505,11 +504,6 @@ void Filter::register_pcs(int index, double time) {
 	// If the center of mass is still being figured out
 	if (this -> filter_arguments -> get_estimate_shape() == false ||
 	        this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
-
-
-
-
-
 
 		ICP icp(this -> destination_pc, this -> source_pc);
 
@@ -542,10 +536,12 @@ void Filter::register_pcs(int index, double time) {
 
 	// If the center of mass is "Figured out" , the filter switches to
 	// shape estimation and determines the attitude based on the current shape estimate
+	// if the ICP residuals are good enough
 	else {
 
 		// Center of mass location
 		arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
+
 		// The a-priori orientation between the model-generated point cloud and the
 		// collected point cloud is obtained from the last measure of the orientation
 		// The mrp measuring the orientation of the body frame is extracted
@@ -587,6 +583,7 @@ void Filter::register_pcs(int index, double time) {
 			dcm_shape = icp_shape.get_DCM();
 			X_shape = icp_shape.get_X();
 			J_res_shape = icp_shape.get_J_res();
+
 		}
 		catch (const ICPException & error ) {
 			std::cerr << "Registration using the shape failed" << std::endl;
@@ -605,6 +602,7 @@ void Filter::register_pcs(int index, double time) {
 
 		arma::mat dcm;
 		arma::vec X;
+		double J_res;
 
 
 		try {
@@ -612,6 +610,7 @@ void Filter::register_pcs(int index, double time) {
 
 			dcm = icp.get_DCM();
 			X = icp.get_X();
+			J_res =  icp.get_J_res();
 		}
 		catch (const ICPException & error ) {
 			std::cerr << "For consecutive registration" << std::endl;
@@ -633,39 +632,79 @@ void Filter::register_pcs(int index, double time) {
 
 
 		std::cout << " RMS residuals from the shape-based ICP: " << J_res_shape << " m" << std::endl;
-
-
-
-		if (this -> filter_arguments -> get_maximum_J_rms_shape() > J_res_shape) {
-			std::cout << "USING SHAPE" << std::endl;
+		std::cout << " RMS residuals from the point-cloud based ICP: " << J_res << " m" << std::endl;
 
 
 
 
-			arma::mat incremental_dcm = dcm_shape * RBK::mrp_to_dcm(mrp_mes_past).t();
+		if (J_res_shape < this -> filter_arguments -> get_maximum_J_rms_shape() ) {
 
-			// The center of mass is still estimated
-			this -> estimate_cm_KF(dcm_shape, X_shape);
+			std::cout << "Fusing MRPs. Weights:" << std::endl;
+			std::cout << "\tShape: " << J_res / (J_res_shape + J_res) << std::endl;
+			std::cout << "\tPoint clouds: " << J_res_shape / (J_res_shape + J_res) <<  std::endl;
 
-			// Spin axis is measured
-			this -> measure_spin_axis(incremental_dcm);
 
-			// Angular velocity is measured
-			this -> measure_omega(incremental_dcm);
-
-			// Attitude is measured
+			// Attitude is measured by fusing the absolute
+			// attitude estimates from the shape ICP and the point cloud ICP
+			arma::vec mrp_mes_pc_N = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
 			arma::vec mrp_mes_shape_N = RBK::dcm_to_mrp(dcm_shape);
 
-			this -> filter_arguments -> append_mrp_mes(mrp_mes_shape_N);
+			// There may be a switching. It should be detected before fusing
 
+			arma::vec mrp_sets_difs = {
+				arma::norm(mrp_mes_pc_N - RBK::shadow_mrp(mrp_mes_shape_N, true)),
+				arma::norm(RBK::shadow_mrp(mrp_mes_pc_N, true) - mrp_mes_shape_N),
+				arma::norm(mrp_mes_pc_N - mrp_mes_shape_N)
+			};
+
+
+			arma::vec mrp_mes_fused_N;
+
+			switch (mrp_sets_difs.index_min()) {
+
+			case 0:
+
+				mrp_mes_fused_N = (1. / (J_res_shape + J_res)) * (J_res * RBK::shadow_mrp( mrp_mes_shape_N, true) + J_res_shape * mrp_mes_pc_N);
+				break;
+
+			case 1:
+
+				mrp_mes_fused_N = (1. / (J_res_shape + J_res)) * (J_res * mrp_mes_shape_N +  J_res_shape * RBK::shadow_mrp( mrp_mes_pc_N, true) );
+
+				break;
+
+			case 2:
+
+				mrp_mes_fused_N = (1. / (J_res_shape + J_res)) * (J_res * mrp_mes_shape_N + J_res_shape * mrp_mes_pc_N);
+				break;
+
+			}
+
+
+			// This fused mrp is switched to its shadow if need be
+			mrp_mes_fused_N = RBK::shadow_mrp(mrp_mes_fused_N);
+
+
+			// The center of mass is still estimated using the pc registration. Indeed,
+			// this measurement is insensitive to a potential drift
+			this -> estimate_cm_KF(dcm, X);
+
+			// Spin axis is measured using the pc registration. Indeed,
+			// this measurement is insensitive to a potential drift
+			this -> measure_spin_axis(dcm);
+
+			// Angular velocity is measured using the pc registration. Indeed,
+			// this measurement is insensitive to a potential drift
+			this -> measure_omega(dcm);
+
+
+			this -> filter_arguments -> append_mrp_mes(mrp_mes_fused_N);
 			this -> filter_arguments -> append_time(time);
 
 		}
 
 		// Using the two consecutive point clouds to obtain the attitude solution
 		else {
-
-
 
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(index) + ".obj");
 			this -> destination_pc -> save("../output/pc/destination_" + std::to_string(index) + ".obj");
@@ -691,9 +730,6 @@ void Filter::register_pcs(int index, double time) {
 
 
 	}
-
-
-
 
 
 }
@@ -842,17 +878,12 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 	std::map<Facet *, std::vector<unsigned int> > facet_to_index_of_vertices;
 	std::map<Facet *, arma::uvec> facet_to_N_mat_cols;
 
-	double mean = 0;
-	double stdev = 0;
-
 	this -> get_observed_features(good_rays,
 	                              seen_vertices,
 	                              seen_facets,
 	                              spurious_facets,
 	                              N_mat,
-	                              facet_to_index_of_vertices,
-	                              mean,
-	                              stdev
+	                              facet_to_index_of_vertices
 	                             );
 
 	std::cout << " Number of good rays : " << good_rays.size() << std::endl;
@@ -879,15 +910,9 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_prefit" + std::to_string(time_index));
 
 
-
-
-
-
-
 	}
 
 	else if (last_iter == true) {
-
 
 		std::map<Facet * , std::vector<double> > facets_to_residuals;
 		std::map<Facet * , double >   facets_to_residuals_sd;
@@ -906,6 +931,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 			for (unsigned int res_index = 0; res_index <  it -> second.size(); ++ res_index) {
 				facet_residuals_arma(res_index) = it -> second[res_index];
 			}
+
 			facets_to_residuals_sd[it -> first] = arma::stddev(facet_residuals_arma);
 
 			if (it-> first -> get_area() > max_area) {
@@ -919,38 +945,27 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 
-		// The facets that were seen from behind are spuriously oriented and are thus removed from the shape model
-		std::cout << "Removing spurious_facets" << std::endl;
+		// One facet that was seen from behind are spuriously oriented and are thus removed from the shape model
+		if (spurious_facets.size() > 0) {
+
+			std::cout << "Removing spurious facet " << std::endl;
 
 
+			bool keep_removing_spurious_facets = true;
 
-		unsigned int remaining_spurious_facets = spurious_facets.size();
-		while (spurious_facets.size() > 0) {
+			while (keep_removing_spurious_facets == true && spurious_facets.size() > 0) {
 
-			std::cout << spurious_facets.size() << std::endl;
-			this -> estimated_shape_model -> merge_shrunk_facet(
-			    *spurious_facets.begin(),
-			    &seen_facets,
-			    &spurious_facets);
-
-			if (spurious_facets.size() != 0 && spurious_facets.size() == remaining_spurious_facets) {
-				this -> estimated_shape_model -> merge_shrunk_facet(
-				    *(--spurious_facets.end()),
-				    &seen_facets,
-				    &spurious_facets);
-
-				if (spurious_facets.size() == remaining_spurious_facets) {
-					break;
-				}
-				else {
-					remaining_spurious_facets = spurious_facets.size();
-				}
-
+				keep_removing_spurious_facets = this -> estimated_shape_model -> merge_shrunk_facet(
+				                                    *spurious_facets.begin(),
+				                                    &seen_facets,
+				                                    &spurious_facets);
 			}
+			std::cout << "Done removing spurious facet " << std::endl;
+
 
 		}
 
-		std::cout << "Done removing spurious_facets" << std::endl;
+
 
 		// Splitting the facet with the largest surface area if it has a larger standard deviation that the one that was specified
 		if (seen_facets.find(facet_to_split) != seen_facets.end()) {
@@ -964,11 +979,6 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 
-
-
-
-
-
 		std::cout << "Entering shape quality enforcement" << std::endl;
 		// The shape model is treated to remove shrunk facets
 		if (this -> filter_arguments -> get_merge_shrunk_facets() == true) {
@@ -979,10 +989,6 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 			    seen_facets);
 		}
 		std::cout << "Leaving shape quality enforcement" << std::endl;
-
-
-
-
 
 	}
 
@@ -1000,7 +1006,6 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	arma::mat info_mat = arma::zeros<arma::mat>(gamma, gamma);
 	arma::vec normal_mat = arma::zeros<arma::vec>(gamma);
 	arma::rowvec H_tilde = arma::zeros<arma::rowvec>( 3 * seen_vertices . size());
-
 
 
 	for (unsigned int ray_index = 0; ray_index < good_rays.size(); ++ray_index) {
@@ -1029,7 +1034,7 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 		                                     u,
 		                                     ray -> get_computed_hit_facet());
 
-		// The indices of the facet present in the facet
+		// The indices of the vertices present in the facet
 		// impacted by this ray are found
 		// Here, the indices are purely local
 		// to the dimension of seen_vertices
@@ -1053,6 +1058,8 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 
 	info_mat = info_mat + this -> filter_arguments -> get_ridge_coef() * arma::eye<arma::mat>(info_mat.n_rows, info_mat.n_cols);
 
+	arma::vec non_zeros = arma::nonzeros(info_mat);
+	std::cout << "Information matrix sparseness: " << double(info_mat.n_elem - non_zeros.n_rows) / info_mat.n_elem * 100 << " %" << std::endl;
 
 	arma::vec alpha;
 
@@ -1096,17 +1103,14 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
                                    std::set<Vertex *> & seen_vertices,
                                    std::set<Facet *> & seen_facets,
                                    std::set<Facet *> & spurious_facets,
-
                                    arma::mat & N_mat,
-                                   std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices,
-                                   double & mean,
-                                   double & stdev) {
+                                   std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices
+                                  ) {
 
 
 
 
 	std::map<Facet *, std::vector<Ray * > > facet_to_rays;
-	std::map<Facet *, unsigned int  > hit_count;
 
 	for (unsigned int row_index = 0; row_index < this -> lidar -> get_row_count(); ++row_index) {
 		for (unsigned int col_index = 0; col_index < this -> lidar  -> get_col_count(); ++col_index) {
@@ -1144,12 +1148,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 				// This should never happen
 				if (arma::dot(u, *ray -> get_computed_hit_facet() -> get_facet_normal()) > 0) {
-					// std::cout << ray -> get_computed_hit_facet() -> get_facet_normal() -> t() << std::endl;
-					// std::cout << u.t() << std::endl;
 
-					// std::cout << arma::dot(u, *ray -> get_computed_hit_facet() -> get_facet_normal()) << std::endl;
-
-					// throw (std::runtime_error("Saw through the shape"));
 					std::cout << "Warning: saw through the shape" << std::endl;
 					spurious_facets.insert(ray -> get_computed_hit_facet());
 				}
@@ -1167,72 +1166,6 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 	// }
 
 
-
-	if (this -> filter_arguments -> get_reject_outliers() == true) {
-		// The distribution of the residuals for each facet are computed
-		// here, so as to exclude residuals that are "obvious" outliers
-
-
-		unsigned int size = 0;
-
-		for (auto & pair : facet_to_rays) {
-
-
-			// The mean is computed
-			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
-				mean += pair.second[ray_index] -> get_range_residual();
-				++size;
-			}
-
-
-		}
-
-		mean = mean / size;
-
-
-		for (auto & pair : facet_to_rays) {
-
-			// The standard deviation is computed
-			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
-				stdev += (pair.second[ray_index] -> get_range_residual() - mean) * (pair.second[ray_index] -> get_range_residual() - mean);
-
-			}
-
-
-		}
-
-		stdev = std::sqrt(stdev / size);
-
-
-		// Now that the mean and the standard deviation of the facet
-		// residuals has been computed, the outliers can be efficiently excluded
-
-		for (auto & pair : facet_to_rays) {
-
-
-			std::vector<Ray * > rays_to_keep;
-
-			for (unsigned int ray_index = 0; ray_index < pair.second.size(); ++ray_index) {
-
-				if (std::abs(pair.second[ray_index] -> get_range_residual() - mean) < 2 * stdev) {
-					rays_to_keep.push_back(pair.second[ray_index]);
-				}
-
-			}
-
-			pair.second = rays_to_keep;
-
-		}
-
-	}
-
-
-
-	// std::cout << "Facet hit count of the " << facet_to_rays.size() << " facets seen before removing under-observed facets" << std::endl;
-	// for (auto pair : facet_to_rays) {
-	// 	std::cout << pair.second.size() << std::endl;
-	// }
-
 	for (auto facet_pair : facet_to_rays) {
 
 		if (facet_pair.second.size() >= this -> filter_arguments -> get_minimum_ray_per_facet()) {
@@ -1247,7 +1180,6 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 			for (unsigned int ray_index = 0; ray_index < facet_pair.second.size();
 			        ++ray_index) {
 				good_rays.push_back(facet_pair.second[ray_index]);
-				hit_count[facet_pair.first] += 1;
 
 			}
 
@@ -1256,10 +1188,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 	}
 
 
-	// std::cout << "Facet hit count of the " << hit_count.size() << " facets seen after removing under-observed facets" << std::endl;
-	// for (auto pair : hit_count) {
-	// 	std::cout << pair.second << std::endl;
-	// }
+	
 
 
 	// This will help counting how many facets each vertex belongs to

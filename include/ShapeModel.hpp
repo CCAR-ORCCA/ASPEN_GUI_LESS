@@ -230,13 +230,12 @@ public:
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
 	This set will be edited to ensure that the facets that remain are all valid
-	
+
 	*/
 	void split_facet(Facet * facet, std::set<Facet *> & seen_facets);
 
 
-
-
+	
 
 	/**
 	Removes this facet from the shape model by merging together the two vertices
@@ -245,13 +244,13 @@ public:
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
 	This set will be edited to ensure that the facets that remain are all valid
-	@param abnormal_facets set containing facets that must be removed from the shape model
+	@param spurious_facets set containing facets that must be removed from the shape model
 	because they are flipped
 	@return true if the facet was recycled, false otherwise
 	*/
 	bool merge_shrunk_facet(Facet * facet,
 	                        std::set<Facet *> * seen_facets,
-	                        std::set<Facet *> * abnormal_facets = nullptr);
+	                        std::set<Facet *> * spurious_facets = nullptr);
 
 
 	/**

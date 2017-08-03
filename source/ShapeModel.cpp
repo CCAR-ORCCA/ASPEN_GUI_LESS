@@ -634,6 +634,24 @@ void ShapeModel::compute_surface_area() {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ShapeModel::split_facet(Facet * facet,
                              std::set<Facet *> & seen_facets) {
 
@@ -915,8 +933,6 @@ void ShapeModel::split_facet(Facet * facet,
 bool ShapeModel::merge_shrunk_facet(Facet * facet,
                                     std::set<Facet *> * seen_facets,
                                     std::set<Facet *> * spurious_facets) {
-
-
 
 
 

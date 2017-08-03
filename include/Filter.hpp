@@ -244,9 +244,7 @@ protected:
 	                           std::set<Facet *> & spurious_facets,
 	                           arma::mat & N_mat,
 	                           std::map<Facet *,
-	                           std::vector<unsigned int> > & facet_to_index_of_vertices,
-	                           double & mean,
-	                           double & stdev
+	                           std::vector<unsigned int> > & facet_to_index_of_vertices
 	                          ) ;
 
 
