@@ -1,7 +1,9 @@
 build/            
-output/             
+*.zip             
 *.pyc
-*.pdf              
+*.pdf            
+volume_dif.txt
+surface_dif.txt  
 focal_plane_loc.txt             
-resources/           
+           
 
