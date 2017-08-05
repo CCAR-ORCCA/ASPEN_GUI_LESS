@@ -12,11 +12,11 @@
 #include "Args.hpp"
 #include "Wrappers.hpp"
 #include "RK.hpp"
+#include "ShapeModelImporter.hpp"
 
 
-
+#include "CGAL_interface.hpp"
 #include <RigidBodyKinematics.hpp>
-
 #include <boost/progress.hpp>
 #include <numeric>
 #include <sstream>
@@ -118,15 +118,15 @@ public:
 
 	/**
 
-	Runs one shape reconstruction pass (N shape correction updates followed by a 
+	Runs one shape reconstruction pass (N shape correction updates followed by a
 	facet recycling step)
 	@param time_index index
 	@param time_index_formatted string denoting the current time
 	*/
-	void shape_reconstruction_pass(unsigned int time_index, 
-		std::string time_index_formatted);
+	void shape_reconstruction_pass(unsigned int time_index,
+	                               std::string time_index_formatted);
 
-	
+
 
 	/**
 	Collects 3D point cloud measurements and stores them to an OBJ file

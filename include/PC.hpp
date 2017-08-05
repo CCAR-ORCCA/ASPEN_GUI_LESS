@@ -126,20 +126,22 @@ public:
 	*/
 	unsigned int get_size() const;
 
-	/**
-	Saves pc to file
-	@param path save path
-	*/
-	void save(std::string path) const;
-
-
+	
 	/**
 	Saves pc to file after applying a rigid transform
 	@param path save path
 	@param dcm DCM
 	@param x Translation component
+	@param save_normals true if normals should be added on the same row as
+	the coordinates. cannot be true at the same time as format_like_obj!
+	@param format_like_obj true if v tag should be added in front of 
+	vertex coordinates. cannot be true at the same time as save_normals!
 	*/
-	void save(std::string path, arma::mat dcm, arma::vec x) const;
+	void save(std::string path,
+	          arma::mat dcm = arma::eye<arma::mat>(3, 3),
+	          arma::vec x = arma::zeros<arma::vec>(3),
+	          bool save_normals = false,
+	          bool format_like_obj = true) const;
 
 
 

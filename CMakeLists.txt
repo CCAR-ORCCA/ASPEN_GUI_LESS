@@ -1,4 +1,4 @@
-# CMakeLists.txt for SBGAT_core
+# CMakeLists.txt for ASPEN_GUI_LESS
 # Benjamin Bercovici, 03/10/2017
 # ORCCA
 # University of Colorado 
@@ -21,10 +21,11 @@ message("GCC version is " ${GCC_VERSION})
 if (GCC_VERSION VERSION_LESS 4.7) # if true, either running on a CCAR computer or a Mac (Clang has messed-up version IDs)
 		if (NOT APPLE) # If NOT APPLE, then running on a CCAR computer
         	set(CMAKE_CXX_FLAGS "-std=c++0x")
-        else() # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-        	if(EXISTS /usr/local/Cellar/gcc/6.3.0_1/bin/) 
-	        	set(CMAKE_C_COMPILER /usr/local/Cellar/gcc/6.3.0_1/bin/gcc-6 CACHE STRING "C Compiler" FORCE)
-				set(CMAKE_CXX_COMPILER /usr/local/Cellar/gcc/6.3.0_1/bin/g++-6 CACHE STRING "C++ Compiler" FORCE)
+        else() # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC from Homebrew
+        	if(EXISTS /usr/local/Cellar/gcc/7.1.0/bin/) 
+	        	set(CMAKE_C_COMPILER /usr/local/Cellar/gcc/7.1.0/bin/gcc-7 CACHE STRING "C Compiler" FORCE)
+				set(CMAKE_CXX_COMPILER /usr/local/Cellar/gcc/7.1.0/bin/g++-7 CACHE STRING "C++ Compiler" FORCE)
+				set(CMAKE_CXX_FLAGS "-std=c++17")
 			endif()
         endif()
     else() # Running on a proper Linux machine
@@ -47,52 +48,44 @@ add_definitions(-Wall -O2)
 
 # Include directories
 include_directories(include)
-include_directories(external/include)
+include_directories(external/Gnuplot/include)
+# include_directories(external/Quickhull/include)
+# include_directories(external/Quickhull/Tests)
+include_directories(external/CGAL_interface/include)
+
 
 # Find Boost
 set(BOOST_ROOT /usr/local/Cellar/boost/1.63.0/)
-find_package(Boost COMPONENTS filesystem system) 
-if (Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS}) 
-else() # This corresponds to a personal setting. The first statement should be sufficient to find BOOST provided it is installed
-	include_directories(/usr/local/Cellar/boost/1.60.0_2/include) 
-	set(Boost_LIBRARY_DIRS "/usr/local/Cellar/boost/1.60.0_2/lib")
-endif()
+find_package(Boost COMPONENTS filesystem system REQUIRED) 
+include_directories(${Boost_INCLUDE_DIRS}) 
+
 
 # Find Armadillo 
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-
 # Find RBK 
 find_package(RigidBodyKinematics REQUIRED)
 include_directories(${RBK_INCLUDE_DIRS})
 
+# Find CGAL
+find_package(CGAL REQUIRED)
+include( ${CGAL_USE_FILE} )
+include( CGAL_CreateSingleSourceCGALProgram )
+
+
+# Find Eigen3
+find_package(Eigen3 3.1.0 REQUIRED)
+include( ${EIGEN3_USE_FILE} )
+
+
 # Find OpenMP
-# This is not mandatory. If not found, the pragmas will simply be ignored (may have to comment out #include "omp.h")
 find_package(OpenMP)
 if(OPENMP_FOUND)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# Assimp
-# find_package(assimp)
-# include_directories(${ASSIMP_INCLUDE_DIRS})
-
-
-# include_directories(~/include/assimp)
-# if (APPLE)
-# 	set(ASSIMP_LIBRARY  
-# 		"/usr/local/lib/libassimp.3.3.1.dylib"
-# 		"/usr/local/lib/libassimp.3.dylib"
-# 		"/usr/local/lib/libassimp.dylib")
-# elseif(UNIX AND NOT APPLE)
-# 	set(ASSIMP_LIBRARY  
-# 			"/usr/local/lib/libassimp.so.3.3.1"
-# 			"/usr/local/lib/libassimp.so.3"
-# 			"/usr/local/lib/libassimp.so")
-# endif()
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0)
@@ -148,15 +141,21 @@ include/FilterArguments.hpp
 include/PointNormal.hpp
 include/Constants.hpp
 include/ICPException.hpp
-external/source/GNUPlot.cpp
-external/include/GNUPlot.h
+external/Gnuplot/source/GNUPlot.cpp
+external/Gnuplot/include/GNUPlot.h
+external/CGAL_interface/include/CGAL_interface.hpp
+external/CGAL_interface/source/CGAL_interface.cpp
 )
 
 # Linking
 set(library_dependencies
 ${ARMADILLO_LIBRARIES}
 ${Boost_LIBRARIES}
-${RBK_LIBRARY})
+${RBK_LIBRARY}
+${CGAL_LIBRARIES} 
+${CGAL_3RD_PARTY_LIBRARIES}
+)
+
 
 target_link_libraries(${EXE_NAME} ${library_dependencies})
 

@@ -191,38 +191,58 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 
 }
 
-void PC::save(std::string path) const {
+// void PC::save(std::string path, bool format_like_obj) const {
 
+// 	std::ofstream shape_file;
+// 	shape_file.open(path);
+
+// 	for (unsigned int vertex_index = 0;
+// 	        vertex_index < this -> get_size();
+// 	        ++vertex_index) {
+
+// 		arma::vec p = this -> get_point_coordinates(vertex_index);
+// 		if (format_like_obj) {
+// 			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+// 		}
+// 		else {
+// 			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+
+// 		}
+// 	}
+
+// }
+
+
+void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
+               bool format_like_obj) const {
 
 
 	std::ofstream shape_file;
 	shape_file.open(path);
 
-	for (unsigned int vertex_index = 0;
-	        vertex_index < this -> get_size();
-	        ++vertex_index) {
-
-		arma::vec p = this -> get_point_coordinates(vertex_index);
-		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+	if (save_normals == format_like_obj && save_normals == true) {
+		throw (std::runtime_error("save can't be called with those arguments!"));
 	}
-
-
-
-}
-
-
-void  PC::save(std::string path, arma::mat dcm, arma::vec x) const {
-
-
-	std::ofstream shape_file;
-	shape_file.open(path);
 
 	for (unsigned int vertex_index = 0;
 	        vertex_index < this -> get_size();
 	        ++vertex_index) {
 
 		arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
-		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+
+		if (format_like_obj) {
+			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		}
+		else if (save_normals) {
+
+			arma::vec n = dcm * this -> get_point_normal(vertex_index);
+
+			shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+		}
+		else {
+			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+
+		}
 	}
 
 

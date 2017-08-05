@@ -8,7 +8,7 @@
 #include <boost/progress.hpp>
 
 
-class ShapeModelImporter{
+class ShapeModelImporter {
 
 public:
 
@@ -17,12 +17,13 @@ public:
 	@param filename absolute or relative path to the OBJ file to be read
 	@param unit_facet 1 if provided file uses meters, 1000 if km are used, ...
 	@param compute_dyads True if the shape model to be loaded should be augmented with facet/edge dyads
+	@param as_is true if the provided shape model should not barycentered or aligned with principal axes
 	*/
-	ShapeModelImporter(std::string filename,double unit_factor = 1,
-		bool compute_dyads = true);
+	ShapeModelImporter(std::string filename, double unit_factor,
+	                   bool compute_dyads, bool as_is);
 
 	/**
-	Reads-in an OBJ file storing the shape model info and sets the field of 
+	Reads-in an OBJ file storing the shape model info and sets the field of
 	$shape_model to the corresponding values
 	@param shape_model Pointer to the shape model to receive the read data
 	*/
@@ -32,6 +33,7 @@ protected:
 	std::string filename;
 	double unit_factor;
 	bool compute_dyads;
+	bool as_is;
 
 };
 

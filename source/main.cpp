@@ -11,8 +11,8 @@
 #include <chrono>
 #include <limits>
 
-int main() {
 
+int main() {
 
 
 	// Ref frame graph
@@ -31,19 +31,12 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/itokawa_150_scaled.obj", 1 );
+	    "../resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
 
-	ShapeModelImporter shape_io_estimated(
-	    "../resources/shape_models/faceted_sphere_scaled.obj",
-	    0.1, false);
-
-
+	
 
 	shape_io_truth.load_shape_model(&true_shape_model);
-	shape_io_estimated.load_shape_model(&estimated_shape_model);
-
 	true_shape_model.construct_kd_tree(false);
-	estimated_shape_model.construct_kd_tree(false);
 
 
 
@@ -161,7 +154,7 @@ int main() {
 	shape_filter_args.set_min_ray_per_facet(3);
 
 // Iterations
-	shape_filter_args.set_N_iterations(10);
+	shape_filter_args.set_N_iterations(5);
 	shape_filter_args.set_number_of_shape_passe(30);
 
 // Facets recycling

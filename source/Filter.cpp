@@ -287,7 +287,6 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 
 	if (save_shape_model == true) {
-		this -> estimated_shape_model -> save("../output/shape_model/shape_model_000000.obj");
 		this -> true_shape_model -> save("../output/shape_model/true_shape_model.obj");
 	}
 
@@ -299,7 +298,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
@@ -359,10 +358,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 			// The latest estimate of the center of mass is saved
 			arma::vec latest_estimate = this -> filter_arguments ->  get_latest_cm_hat();
-			// std::ofstream shape_file;
-			// shape_file.open("cm_" + std::to_string(time_index) + ".obj");
-			// shape_file << "v " << latest_estimate(0) << " " << latest_estimate(1) << " " << latest_estimate(2) << std::endl;
-			// shape_file.close();
+
 		}
 
 
@@ -375,11 +371,9 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		    this -> estimated_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(
 		        mrp_EN);
 
-
 		/**
 		Shape estimation occurs second, if the center of mass has been properly determined
 		*/
-
 		if (this -> filter_arguments -> get_estimate_shape() == true) {
 
 
@@ -399,12 +393,14 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 			for (unsigned int pass = 0 ; pass < this -> filter_arguments -> get_number_of_shape_passes() ; ++pass) {
 
 				unsigned int size_before = this -> estimated_shape_model -> get_NFacets();
+
 				this -> shape_reconstruction_pass(time_index,
 				                                  time_index_formatted);
 
 				if (this -> estimated_shape_model -> get_NFacets() == size_before) {
 					std::cout << "Shape unchanged after " << pass + 1 << " passes. " << std::endl;
 					if (this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
+
 						this -> filter_arguments -> set_has_transitioned_to_shape(true);
 						std::ofstream shape_file;
 						shape_file.open("../output/attitude/switch_time.txt");
@@ -436,15 +432,18 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 			}
 
 
-
-
 		}
 
-
-		// The volume difference between the estimated shape and the true shape is stored
-		volume_dif(time_index) = std::abs(this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
-		surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
-
+		if (this -> filter_arguments -> get_estimate_shape()) {
+			// The volume difference between the estimated shape and the true shape is stored
+			volume_dif(time_index) = std::abs(this -> estimated_shape_model -> get_volume() -  this -> true_shape_model -> get_volume()) / this -> true_shape_model -> get_volume();
+			surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
+		}
+		else {
+			// The volume difference between the estimated shape and the true shape is stored
+			volume_dif(time_index) = 1;
+			surface_dif(time_index) = 1;
+		}
 
 
 
@@ -518,6 +517,10 @@ void Filter::register_pcs(int index, double time) {
 		this -> source_pc -> save("../output/pc/source_transformed_" + std::to_string(index) + ".obj", dcm, X);
 
 
+		// Attitude is measured
+		arma::vec mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
+		this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
+
 		// Spin axis is measured
 		this -> measure_spin_axis(dcm);
 
@@ -527,10 +530,6 @@ void Filter::register_pcs(int index, double time) {
 		// Angular velocity is measured
 		this -> measure_omega(dcm);
 
-		// Attitude is measured
-		arma::vec mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
-
-		this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
 		this -> filter_arguments -> append_time(time);
 
 	}
@@ -614,13 +613,31 @@ void Filter::register_pcs(int index, double time) {
 			J_res =  icp.get_J_res();
 		}
 		catch (const ICPException & error ) {
-			std::cerr << "For consecutive registration" << std::endl;
+			std::cerr << "For consecutive registrationm, caught ICPException" << std::endl;
 			std::cerr << error.what() << std::endl;
+			
+			// Try another time
+			try {
+				ICP icp(this -> destination_pc, this -> source_pc);
 
-			throw (std::runtime_error(""));
+				dcm = icp.get_DCM();
+				X = icp.get_X();
+				J_res =  icp.get_J_res();
+			}
+			catch (const std::runtime_error & error) {
+				std::cerr << "For consecutive registration, caught runtime error" << std::endl;
+				std::cerr << error.what() << std::endl;
+				throw (std::runtime_error(""));
+			}
+			catch (const ICPException & error ) {
+				std::cerr << "For consecutive registration, caught ICPException again" << std::endl;
+				std::cerr << error.what() << std::endl;
+				throw (std::runtime_error(""));
+			}
+
 		}
 		catch (const std::runtime_error & error) {
-			std::cerr << "For consecutive registration" << std::endl;
+			std::cerr << "For consecutive registration, caught runtime error" << std::endl;
 			std::cerr << error.what() << std::endl;
 			throw (std::runtime_error(""));
 		}
@@ -636,19 +653,39 @@ void Filter::register_pcs(int index, double time) {
 		std::cout << " RMS residuals from the point-cloud based ICP: " << J_res << " m" << std::endl;
 
 
+		// Attitude is measured by fusing the absolute
+		// attitude estimates from the shape ICP and the point cloud ICP
+
+		if (icp_shape_converged) {
+			arma::vec mrp_mes_pc_N = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
+			arma::vec mrp_mes_shape_N = RBK::dcm_to_mrp(dcm_shape);
+
+
+			std::cout << "Difference in absolute alignment :" << std::endl;
+
+			std::cout << RBK::dcm_to_prv(RBK::mrp_to_dcm(mrp_mes_pc_N) * RBK::mrp_to_dcm(mrp_mes_shape_N).t()).first * 180 / arma::datum::pi << " deg";
+
+		}
+
+
 
 
 		if (J_res_shape < this -> filter_arguments -> get_maximum_J_rms_shape() ) {
+
+			J_res = 1e10;
+
 
 			std::cout << "Fusing MRPs. Weights:" << std::endl;
 			std::cout << "\tShape: " << J_res / (J_res_shape + J_res) << std::endl;
 			std::cout << "\tPoint clouds: " << J_res_shape / (J_res_shape + J_res) <<  std::endl;
 
 
+
 			// Attitude is measured by fusing the absolute
 			// attitude estimates from the shape ICP and the point cloud ICP
 			arma::vec mrp_mes_pc_N = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * dcm );
 			arma::vec mrp_mes_shape_N = RBK::dcm_to_mrp(dcm_shape);
+
 
 			// There may be a switching. It should be detected before fusing
 
@@ -785,9 +822,46 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 
 
 	// A boolean is switched when the norm of the center-of-mass update is less than a given threshold
+	// In addition, the current source point cloud is used to produce an a-priori convex hull
 
-	if (arma::norm(K * (cm_obs - cm_bar)) < this -> filter_arguments -> get_shape_estimation_cm_trigger_thresh()) {
+	if (arma::norm(K * (cm_obs - cm_bar)) < this -> filter_arguments -> get_shape_estimation_cm_trigger_thresh() &&
+	        this -> filter_arguments -> get_estimate_shape() == false) {
+
+		// The boolean is switched, indicating that the shape is now to be estimated
 		this -> filter_arguments -> set_estimate_shape(true);
+
+		std::vector<arma::vec > point_cloud_transformed;
+
+		// The center of mass and the rigid transform component are formed
+		arma::vec C = this -> filter_arguments -> get_latest_cm_hat();
+		arma::vec mrp = this -> filter_arguments -> get_latest_mrp_mes();
+		arma::mat dcm = RBK::mrp_to_dcm(mrp);
+		arma::vec X = -(dcm - arma::eye<arma::mat>(3, 3)) * C;
+
+		// The points present in the point cloud are transformed back
+		// to the inertial frame using the last computed [EN] measurement
+		// and are saved to a file
+		this -> source_pc -> save("../output/pc/source_transformed_poisson.cgal", dcm, X, true, false);
+		this -> source_pc -> save("../output/pc/source_transformed_poisson.obj", dcm, X, false, true);
+
+
+		// A poisson surface reconstruction is ran over the point cloud
+		// to obtained a partially covering, well behaved, apriori shape model
+		CGALINTERFACE::CGAL_interface("../output/pc/source_transformed_poisson.cgal",
+		                              "../output/shape_model/apriori.obj");
+
+
+		// The estimated shape model is finally constructed using
+		// the convex hull
+		ShapeModelImporter shape_io_estimated(
+		    "../output/shape_model/apriori.obj",
+		    1, false, true);
+
+
+		shape_io_estimated.load_shape_model(this -> estimated_shape_model);
+		this -> estimated_shape_model -> construct_kd_tree(false);
+
+
 	}
 
 
@@ -1189,7 +1263,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 	}
 
 
-	
+
 
 
 	// This will help counting how many facets each vertex belongs to

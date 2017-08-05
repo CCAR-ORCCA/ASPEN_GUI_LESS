@@ -1,12 +1,13 @@
 #include "ShapeModelImporter.hpp"
 
-ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor, bool compute_dyads) {
+ShapeModelImporter::ShapeModelImporter(std::string filename, double unit_factor, bool compute_dyads, bool as_is) {
 	this -> filename = filename;
 	this -> unit_factor = unit_factor;
 	this -> compute_dyads = compute_dyads;
+	this -> as_is = as_is;
 }
 
-void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
+void ShapeModelImporter::load_shape_model(ShapeModel * shape_model) const {
 
 	std::ifstream ifs(this -> filename);
 
@@ -31,7 +32,7 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 		char type;
 		linestream >> type;
 
-		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u') {
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
 			continue;
 		}
 
@@ -150,14 +151,18 @@ void ShapeModelImporter::load_shape_model(ShapeModel * shape_model ) const {
 	// are computed
 	shape_model -> update_mass_properties();
 
-	// The shape model is shifted so as to have its coordinates
-	// expressed in its barycentric frame
-	shape_model -> shift_to_barycenter();
+	if (this -> as_is == false) {
 
-	// The shape model is then rotated so as to be oriented
-	// with respect to its principal axes
-	// The inertia tensor is computed on this occasion
-	shape_model -> align_with_principal_axes();
+		// The shape model is shifted so as to have its coordinates
+		// expressed in its barycentric frame
+		shape_model -> shift_to_barycenter();
+
+		// The shape model is then rotated so as to be oriented
+		// with respect to its principal axes
+		// The inertia tensor is computed on this occasion
+		shape_model -> align_with_principal_axes();
+
+	}
 
 	// Edges and facets are updated (their dyads, normals and centers
 	// are computed) to reflect the new position/orientation
