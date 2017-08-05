@@ -57,39 +57,39 @@ def plot_cm_estimate(path = None,save = True):
     print "RMS: " + str(np.std(np.linalg.norm(estimate_error[int(len(estimate_error) / 2):,:],axis = 1))) + " m"
     
     # Estimate error
-    plt.plot(time,estimate_error[1:,0],"-o",label = "$\Delta x$")
-    plt.plot(time,estimate_error[1:,1],"-o",label = "$\Delta y$")
-    plt.plot(time,estimate_error[1:,2],"-o",label = "$\Delta z$")
+    plt.plot(time / 86400.,estimate_error[1:,0],"-o",label = "$\Delta x$")
+    plt.plot(time / 86400.,estimate_error[1:,1],"-o",label = "$\Delta y$")
+    plt.plot(time / 86400.,estimate_error[1:,2],"-o",label = "$\Delta z$")
 
 
 
     # Covariance
     plt.gca().set_color_cycle(None)
-    plt.axvline( x = switch_time)
+    # plt.axvline( x = switch_time)
     plt.gca().set_color_cycle(None)
 
 
-    plt.plot(time, 3 * sd_mat[0,1:],'--')
-    plt.plot(time, 3 * sd_mat[1,1:],'--')
-    plt.plot(time, 3 * sd_mat[2,1:],'--')
+    plt.plot(time / 86400., 3 * sd_mat[0,1:],'--')
+    plt.plot(time / 86400., 3 * sd_mat[1,1:],'--')
+    plt.plot(time / 86400., 3 * sd_mat[2,1:],'--')
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(time, - 3 * sd_mat[0,1:],'--')
-    plt.plot(time, - 3 * sd_mat[1,1:],'--')
-    plt.plot(time, - 3 * sd_mat[2,1:],'--')
+    plt.plot(time / 86400., - 3 * sd_mat[0,1:],'--')
+    plt.plot(time / 86400., - 3 * sd_mat[1,1:],'--')
+    plt.plot(time / 86400., - 3 * sd_mat[2,1:],'--')
 
     max_val = np.amax(np.abs(estimate_error[2:]))
 
     plt.ylim([- 0.1 * max_val,0.1 * max_val])
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("Error (m)")
 
     plt.title("Center of mass estimation")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/com_pos.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/com_pos.pdf")
     else:
         plt.show()
     plt.clf()
@@ -128,7 +128,7 @@ def plot_cm_eigen(path = None,save = False):
 
 
     plt.legend(loc = "best")
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time ()")
     plt.ylabel("Eigenvalue (m)")
 
     plt.title("Center of mass estimated covariance eigenvalues")
@@ -169,27 +169,27 @@ def plot_omega_histories(path = None,save = True):
 
 
     # Truth 
-    plt.plot(time,omega_true_history[:,0],"-o",label = "$\omega_x$")
-    plt.plot(time,omega_true_history[:,1],"-o",label = "$\omega_y$")
-    plt.plot(time,omega_true_history[:,2],"-o",label = "$\omega_z$")
+    plt.plot(time/86400.,omega_true_history[:,0],"-o",label = "$\omega_x$")
+    plt.plot(time/86400.,omega_true_history[:,1],"-o",label = "$\omega_y$")
+    plt.plot(time/86400.,omega_true_history[:,2],"-o",label = "$\omega_z$")
     plt.gca().set_color_cycle(None)
 
     # Estimate 
-    plt.plot(time,omega_mes_history[:,0],"-x",label = r"$\tilde{\omega}_x$")
-    plt.plot(time,omega_mes_history[:,1],"-x",label = r"$\tilde{\omega}_y$")
-    plt.plot(time,omega_mes_history[:,2],"-x",label = r"$\tilde{\omega}_z$")
+    plt.plot(time/86400.,omega_mes_history[:,0],"-x",label = r"$\tilde{\omega}_x$")
+    plt.plot(time/86400.,omega_mes_history[:,1],"-x",label = r"$\tilde{\omega}_y$")
+    plt.plot(time/86400.,omega_mes_history[:,2],"-x",label = r"$\tilde{\omega}_z$")
 
     plt.gca().set_color_cycle(None)
 
-    plt.axvline(x = switch_time)
+    # plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("Angular velocity (rad/s)")
 
     plt.title("Angular velocity time histories")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/omega_histories.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/omega_histories.pdf")
     else:
         plt.show()
     plt.clf()
@@ -232,18 +232,18 @@ def plot_angle_error(path = None,save = True):
     angle_error = 180. / np.pi * np.array(angle_error)
 
 
-    plt.axvline(x = switch_time)
+    # plt.axvline(x = switch_time)
 
 
     # Truth 
-    plt.plot(time,angle_error,"-o")
+    plt.plot(time/86400,angle_error,"-o")
     
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("Angle error (deg)")
 
     plt.title("Angle error history")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/angle_error.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/angle_error.pdf")
     else:
         plt.show()
     plt.clf()
@@ -272,26 +272,26 @@ def plot_mrp_histories(path = None,save = True):
         switch_time = np.loadtxt("switch_time.txt")
 
     # Truth 
-    plt.plot(time,mrp_true_history[:,0],"-o",label = "$\sigma_x$")
-    plt.plot(time,mrp_true_history[:,1],"-o",label = "$\sigma_y$")
-    plt.plot(time,mrp_true_history[:,2],"-o",label = "$\sigma_z$")
+    plt.plot(time/86400.,mrp_true_history[:,0],"-o",label = "$\sigma_x$")
+    plt.plot(time/86400.,mrp_true_history[:,1],"-o",label = "$\sigma_y$")
+    plt.plot(time/86400.,mrp_true_history[:,2],"-o",label = "$\sigma_z$")
     plt.gca().set_color_cycle(None)
 
     # Estimate 
-    plt.plot(time,mrp_mes_history[:,0],"-x",label = r"$\tilde{\sigma}_x$")
-    plt.plot(time,mrp_mes_history[:,1],"-x",label = r"$\tilde{\sigma}_y$")
-    plt.plot(time,mrp_mes_history[:,2],"-x",label = r"$\tilde{\sigma}_z$")
+    plt.plot(time/86400.,mrp_mes_history[:,0],"-x",label = r"$\tilde{\sigma}_x$")
+    plt.plot(time/86400.,mrp_mes_history[:,1],"-x",label = r"$\tilde{\sigma}_y$")
+    plt.plot(time/86400.,mrp_mes_history[:,2],"-x",label = r"$\tilde{\sigma}_z$")
 
     plt.gca().set_color_cycle(None)
-    plt.axvline(x = switch_time)
+    # plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("MRP")
 
     plt.title("MRP time histories")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/mrp_histories.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/mrp_histories.pdf")
     else:
         plt.show()
     plt.clf()
@@ -319,23 +319,23 @@ def plot_omega_norm_histories(path = None,save = True):
 
 
     # Truth 
-    plt.plot(time,np.linalg.norm(omega_true_history,axis = 1),"-o",label = "Truth")
+    plt.plot(time/86400.,np.linalg.norm(omega_true_history,axis = 1),"-o",label = "Truth")
 
     # Estimate 
-    plt.plot(time,np.linalg.norm(omega_mes_history,axis = 1),"-x",label = "Measured")
+    plt.plot(time/86400.,np.linalg.norm(omega_mes_history,axis = 1),"-x",label = "Measured")
 
     plt.gca().set_color_cycle(None)
     plt.axvline(x = switch_time)
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("Angular velocity (rad/s)")
     plt.ylim([0,1.1 * (max(np.amax(np.linalg.norm(omega_true_history,axis = 1)),
         np.amax(np.linalg.norm(omega_mes_history,axis = 1))))])
 
     plt.title("Angular velocity norm time histories")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/omega_norm_histories.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/omega_norm_histories.pdf")
     else:
         plt.show()
     plt.clf()
@@ -364,26 +364,26 @@ def plot_spin_axis_histories(path = None,save = True):
         switch_time = np.loadtxt("switch_time.txt")
 
     # Truth 
-    plt.plot(time,omega_true_history[:,0]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_x$")
-    plt.plot(time,omega_true_history[:,1]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_y$")
-    plt.plot(time,omega_true_history[:,2]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_z$")
+    plt.plot(time/86400.,omega_true_history[:,0]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_x$")
+    plt.plot(time/86400.,omega_true_history[:,1]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_y$")
+    plt.plot(time/86400.,omega_true_history[:,2]/np.linalg.norm(omega_true_history,axis = 1),"-o",label = "$s_z$")
     plt.gca().set_color_cycle(None)
 
     # Estimate 
-    plt.plot(time,omega_mes_history[:,0]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_x$")
-    plt.plot(time,omega_mes_history[:,1]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_y$")
-    plt.plot(time,omega_mes_history[:,2]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_z$")
+    plt.plot(time/86400.,omega_mes_history[:,0]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_x$")
+    plt.plot(time/86400.,omega_mes_history[:,1]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_y$")
+    plt.plot(time/86400.,omega_mes_history[:,2]/np.linalg.norm(omega_mes_history,axis = 1),"-x",label = r"$\tilde{s}_z$")
     plt.gca().set_color_cycle(None)
     plt.axvline(x = switch_time)
 
 
     plt.legend(loc = "lower center",bbox_to_anchor = (0.5,-0.13),ncol = 6)
-    plt.xlabel("Measurement time (s)")
+    plt.xlabel("Measurement time (day)")
     plt.ylabel("Spin axis component")
 
     plt.title("Spin axis time histories")
     if (save is True):
-        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/ASPEN_progress/Figures/spin_axis_histories.pdf")
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/spin_axis_histories.pdf")
     else:
         plt.show()
     plt.clf()
@@ -445,7 +445,7 @@ def plot_diff():
     plt.xlabel(r"Measurement index")
 
     plt.grid()
-    plt.savefig("dif.pdf")
+    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/washington_2017/paper/Figures/dif.pdf")
     plt.clf()
 
 
