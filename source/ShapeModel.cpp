@@ -1267,8 +1267,8 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 
 	if ( V_keep_1 -> common_facets(V_merge_keep).size() != 2) {
 
-		auto facets = V_keep_1 -> common_facets(V_merge_keep).end();
-		for (auto it = 0; it != facets ; ++it ) {
+		auto facets = V_keep_1 -> common_facets(V_merge_keep);
+		for (auto it = 0; it != facets.end() ; ++it ) {
 			std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
 			std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
 			std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
