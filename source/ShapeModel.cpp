@@ -1267,8 +1267,8 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 
 	if ( V_keep_1 -> common_facets(V_merge_keep).size() != 2) {
 
-
-		for (auto it = 0; it != V_keep_1 -> common_facets(V_merge_keep).begin() ; ++it ) {
+		auto facets = V_keep_1 -> common_facets(V_merge_keep).end();
+		for (auto it = 0; it != facets ; ++it ) {
 			std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
 			std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
 			std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
@@ -1285,158 +1285,157 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	if ( V_keep_0 -> common_facets(V_merge_keep).size() != 2) {
 
 
-		if ( V_keep_0 -> common_facets(V_merge_keep).size() != 2) {
+		auto facets = V_keep_0 -> common_facets(V_merge_keep).begin();
 
+		for (auto it = 0; it != facets.end() ; ++it ) {
+			std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
+			std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
+			std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
 
-			for (auto it = 0; it != V_keep_0 -> common_facets(V_merge_keep).begin() ; ++it ) {
-				std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
-				std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
-				std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
-
-				std::cout << "\t v0 : " <<  (*it) -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
-				std::cout << "\t v1 : " <<  (*it) -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
-				std::cout << "\t v2 : " <<  (*it) -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
-			}
-
-
-			throw (std::runtime_error("V_keep_0 and V_merge_keep share " + std::to_string(V_keep_0 -> common_facets(V_merge_keep).size()) + " facets"));
-		};
-
-
-
-
-
-		return true;
-
-	}
-
-
-
-
-
-
-
-	void ShapeModel::get_bounding_box(double * bounding_box) const {
-
-		double xmin = std::numeric_limits<double>::infinity();
-		double ymin = std::numeric_limits<double>::infinity();
-		double zmin = std::numeric_limits<double>::infinity();
-
-		double xmax =  - std::numeric_limits<double>::infinity();
-		double ymax =  - std::numeric_limits<double>::infinity();
-		double zmax =  - std::numeric_limits<double>::infinity();
-
-		#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
-		for ( unsigned int vertex_index = 0; vertex_index < this -> get_NVertices(); ++ vertex_index) {
-
-			double * vertex_cords = this -> vertices[vertex_index] -> get_coordinates() -> colptr(0);
-
-			if (vertex_cords[0] >= xmax) {
-				xmax = vertex_cords[0];
-			}
-			else if (vertex_cords[0] <= xmin) {
-				xmin = vertex_cords[0];
-			}
-
-			if (vertex_cords[1] >= ymax) {
-				ymax = vertex_cords[1];
-			}
-			else if (vertex_cords[1] <= ymin) {
-				ymin = vertex_cords[1];
-			}
-
-			if (vertex_cords[2] >= zmax) {
-				zmax = vertex_cords[2];
-			}
-			else if (vertex_cords[2] <= zmin) {
-				zmin = vertex_cords[2];
-			}
-
+			std::cout << "\t v0 : " <<  (*it) -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v1 : " <<  (*it) -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v2 : " <<  (*it) -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
 		}
 
-		bounding_box[0] = xmin;
-		bounding_box[1] = ymin;
-		bounding_box[2] = zmin;
-		bounding_box[3] = xmax;
-		bounding_box[4] = ymax;
-		bounding_box[5] = zmax;
+
+		throw (std::runtime_error("V_keep_0 and V_merge_keep share " + std::to_string(V_keep_0 -> common_facets(V_merge_keep).size()) + " facets"));
+	};
 
 
-		std::cout << "xmin : " << xmin << std::endl;
-		std::cout << "xmax : " << xmax << std::endl;
 
 
-		std::cout << "ymin : " << ymin << std::endl;
-		std::cout << "ymax : " << ymax << std::endl;
+
+	return true;
+
+}
 
 
-		std::cout << "zmin : " << zmin << std::endl;
-		std::cout << "zmax : " << zmax << std::endl;
 
+
+
+
+
+void ShapeModel::get_bounding_box(double * bounding_box) const {
+
+	double xmin = std::numeric_limits<double>::infinity();
+	double ymin = std::numeric_limits<double>::infinity();
+	double zmin = std::numeric_limits<double>::infinity();
+
+	double xmax =  - std::numeric_limits<double>::infinity();
+	double ymax =  - std::numeric_limits<double>::infinity();
+	double zmax =  - std::numeric_limits<double>::infinity();
+
+	#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
+	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NVertices(); ++ vertex_index) {
+
+		double * vertex_cords = this -> vertices[vertex_index] -> get_coordinates() -> colptr(0);
+
+		if (vertex_cords[0] >= xmax) {
+			xmax = vertex_cords[0];
+		}
+		else if (vertex_cords[0] <= xmin) {
+			xmin = vertex_cords[0];
+		}
+
+		if (vertex_cords[1] >= ymax) {
+			ymax = vertex_cords[1];
+		}
+		else if (vertex_cords[1] <= ymin) {
+			ymin = vertex_cords[1];
+		}
+
+		if (vertex_cords[2] >= zmax) {
+			zmax = vertex_cords[2];
+		}
+		else if (vertex_cords[2] <= zmin) {
+			zmin = vertex_cords[2];
+		}
 
 	}
 
-
-	void ShapeModel::enforce_mesh_quality(double min_facet_angle,
-	                                      double min_edge_angle,
-	                                      unsigned int max_recycled_facets,
-	                                      std::set<Facet * > & seen_facets) {
-
-		bool recycling_still_occuring = true;
-		unsigned int facets_recycled = 0;
+	bounding_box[0] = xmin;
+	bounding_box[1] = ymin;
+	bounding_box[2] = zmin;
+	bounding_box[3] = xmax;
+	bounding_box[4] = ymax;
+	bounding_box[5] = zmax;
 
 
+	std::cout << "xmin : " << xmin << std::endl;
+	std::cout << "xmax : " << xmax << std::endl;
 
 
-		while (recycling_still_occuring == true && 2 * facets_recycled < max_recycled_facets) {
-
-			recycling_still_occuring = false;
-
-			for (auto it_facet = seen_facets.begin();
-			        it_facet != seen_facets.end();
-			        ++ it_facet) {
+	std::cout << "ymin : " << ymin << std::endl;
+	std::cout << "ymax : " << ymax << std::endl;
 
 
+	std::cout << "zmin : " << zmin << std::endl;
+	std::cout << "zmax : " << zmax << std::endl;
 
 
-				if (std::find(this -> facets.begin(), this -> facets.end(), *it_facet) == this -> facets.end()) {
-					throw (std::runtime_error("This facet does not exist in the shape model anymore"));
-				}
+}
 
 
-				// This will collapse an edge of the shape model
-				// if it appears that the two facets it connects have
-				// spurious surface normal orientations
+void ShapeModel::enforce_mesh_quality(double min_facet_angle,
+                                      double min_edge_angle,
+                                      unsigned int max_recycled_facets,
+                                      std::set<Facet * > & seen_facets) {
+
+	bool recycling_still_occuring = true;
+	unsigned int facets_recycled = 0;
 
 
-				// if ((*it_facet) -> has_good_edge_quality(min_edge_angle) == false) {
-
-				// };
 
 
-				if ((*it_facet) -> has_good_surface_quality(min_facet_angle) == false) {
+	while (recycling_still_occuring == true && 2 * facets_recycled < max_recycled_facets) {
 
-					std::cout << (*it_facet) -> get_facet_center() -> t() << std::endl;
-					recycling_still_occuring = this -> merge_shrunk_facet((*it_facet), &seen_facets);
+		recycling_still_occuring = false;
 
-					if (recycling_still_occuring == true) {
-						++facets_recycled;
+		for (auto it_facet = seen_facets.begin();
+		        it_facet != seen_facets.end();
+		        ++ it_facet) {
 
-						break;
-					}
 
+
+
+			if (std::find(this -> facets.begin(), this -> facets.end(), *it_facet) == this -> facets.end()) {
+				throw (std::runtime_error("This facet does not exist in the shape model anymore"));
+			}
+
+
+			// This will collapse an edge of the shape model
+			// if it appears that the two facets it connects have
+			// spurious surface normal orientations
+
+
+			// if ((*it_facet) -> has_good_edge_quality(min_edge_angle) == false) {
+
+			// };
+
+
+			if ((*it_facet) -> has_good_surface_quality(min_facet_angle) == false) {
+
+				std::cout << (*it_facet) -> get_facet_center() -> t() << std::endl;
+				recycling_still_occuring = this -> merge_shrunk_facet((*it_facet), &seen_facets);
+
+				if (recycling_still_occuring == true) {
+					++facets_recycled;
+
+					break;
 				}
 
 			}
 
 		}
 
-		std::cout << std::to_string(2 * facets_recycled) << " facets were recycled" << std::endl;
-
 	}
 
-	void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
+	std::cout << std::to_string(2 * facets_recycled) << " facets were recycled" << std::endl;
 
-		this -> ref_frame_name = ref_frame_name;
-	}
+}
+
+void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
+
+	this -> ref_frame_name = ref_frame_name;
+}
 
