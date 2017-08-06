@@ -1086,7 +1086,10 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	}
 
 	// If any of the vertices to keep is on a corner (owned by three facets), nothing happens
-	if (V_keep_0 -> get_number_of_owning_facets() == 3 || V_keep_1 -> get_number_of_owning_facets() == 3 ) {
+	if (
+	    V_keep_0 -> get_number_of_owning_facets() == 3 ||
+	    V_keep_1 -> get_number_of_owning_facets() == 3 ||
+	    V_merge_keep -> get_number_of_owning_facets() == 3) {
 		return false;
 	}
 
@@ -1246,12 +1249,9 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	// Check if there are any dangling vertex
 
 
-
-
 	if ( V_merge_keep -> get_number_of_owning_facets() < 3 ) {
 		throw (std::runtime_error("Dangling vertex leaving merge: V_merge_keep was owned by " + std::to_string(V_merge_keep -> get_number_of_owning_facets()) + " facets"));
 	}
-
 
 
 	if ( V_keep_0 -> get_number_of_owning_facets() < 3 ) {
