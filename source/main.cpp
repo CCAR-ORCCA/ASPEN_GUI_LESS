@@ -178,6 +178,7 @@ int main() {
 	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1);
 
 
+
 	Filter shape_filter(&frame_graph,
 	                    &lidar,
 	                    &true_shape_model,

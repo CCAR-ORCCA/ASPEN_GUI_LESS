@@ -60,7 +60,7 @@ public:
 		return this -> ridge_coef;
 
 	}
-	
+
 
 	bool get_use_cholesky() const {
 		return this -> use_cholesky;
@@ -340,9 +340,23 @@ public:
 		this -> time_history.push_back(time);
 	}
 
+	void append_time_used_pc(unsigned int index) {
+		this -> index_time_history_used_pc.push_back(index);
+	}
+
+
+	void append_time_used_shape(unsigned int index) {
+		this -> index_time_history_used_shape.push_back(index);
+	}
+
 	double get_latest_time() const {
 		return *(--this -> time_history.end()) ;
 	}
+
+	unsigned int get_latest_time_index() const {
+		return this -> time_history.size() - 1 ;
+	}
+
 
 	unsigned int get_number_of_shape_passes() const {
 		return this -> number_of_shape_passes;
@@ -361,6 +375,9 @@ public:
 
 
 		arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
+		arma::uvec index_time_pc_vec = arma::uvec(this -> index_time_history_used_pc.size());
+		arma::uvec index_time_shape_vec = arma::uvec(this -> index_time_history_used_shape.size());
+
 		arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
 		arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
 
@@ -368,6 +385,15 @@ public:
 		arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
 
 
+
+		for (unsigned int i = 0; i < this -> index_time_history_used_pc.size(); ++i) {
+			index_time_pc_vec(i) = this -> index_time_history_used_pc[i];
+		}
+
+
+		for (unsigned int i = 0; i < this -> index_time_history_used_shape.size(); ++i) {
+			index_time_shape_vec(i) = this -> index_time_history_used_shape[i];
+		}
 
 
 		for (unsigned int i = 0; i < this -> cm_hat_history.size() ; ++i) {
@@ -405,6 +431,8 @@ public:
 
 		omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
 		time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
+		index_time_pc_vec.save("../output/attitude/index_time_pc_vec_time_history.txt", arma::raw_ascii);
+		index_time_shape_vec.save("../output/attitude/index_time_shape_vec_time_history.txt", arma::raw_ascii);
 
 
 
@@ -461,6 +489,8 @@ protected:
 
 
 	std::vector<double> time_history;
+	std::vector<unsigned int> index_time_history_used_pc;
+	std::vector<unsigned int> index_time_history_used_shape;
 
 
 

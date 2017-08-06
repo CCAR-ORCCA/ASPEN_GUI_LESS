@@ -298,7 +298,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " / "<< times.n_rows-1  << ", Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
@@ -502,6 +502,7 @@ void Filter::register_pcs(int index, double time) {
 
 
 	// If the center of mass is still being figured out
+
 	if (this -> filter_arguments -> get_estimate_shape() == false ||
 	        this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
 
@@ -530,7 +531,10 @@ void Filter::register_pcs(int index, double time) {
 		// Angular velocity is measured
 		this -> measure_omega(dcm);
 
+		// Time is appended
 		this -> filter_arguments -> append_time(time);
+		this -> filter_arguments -> append_time_used_pc(this -> filter_arguments -> get_latest_time_index());
+
 
 	}
 
@@ -615,7 +619,7 @@ void Filter::register_pcs(int index, double time) {
 		catch (const ICPException & error ) {
 			std::cerr << "For consecutive registrationm, caught ICPException" << std::endl;
 			std::cerr << error.what() << std::endl;
-			
+
 			// Try another time
 			try {
 				ICP icp(this -> destination_pc, this -> source_pc);
@@ -738,6 +742,7 @@ void Filter::register_pcs(int index, double time) {
 
 			this -> filter_arguments -> append_mrp_mes(mrp_mes_fused_N);
 			this -> filter_arguments -> append_time(time);
+			this -> filter_arguments -> append_time_used_shape(this -> filter_arguments -> get_latest_time_index());
 
 		}
 
@@ -763,6 +768,8 @@ void Filter::register_pcs(int index, double time) {
 
 			this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
 			this -> filter_arguments -> append_time(time);
+			this -> filter_arguments -> append_time_used_pc(this -> filter_arguments -> get_latest_time_index());
+
 
 		}
 
