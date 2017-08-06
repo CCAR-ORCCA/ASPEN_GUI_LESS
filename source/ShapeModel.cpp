@@ -1265,6 +1265,20 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 	}
 
 
+	if ( V_keep_1 -> common_facets(V_keep_0).size() != 2) {
+		throw (std::runtime_error("V_keep_1 and V_keep_0 share " + std::to_string(V_keep_1 -> common_facets(V_keep_0).size()) + " facets"))
+
+	};
+
+	if ( V_keep_1 -> common_facets(V_merge_keep).size() != 2) {
+		throw (std::runtime_error("V_keep_1 and V_merge_keep share " + std::to_string(V_keep_1 -> common_facets(V_merge_keep).size()) + " facets"))
+	};
+
+	if ( V_keep_0 -> common_facets(V_merge_keep).size() != 2) {
+		throw (std::runtime_error("V_keep_0 and V_merge_keep share " + std::to_string(V_keep_0 -> common_facets(V_merge_keep).size()) + " facets"))
+	};
+
+
 
 
 
