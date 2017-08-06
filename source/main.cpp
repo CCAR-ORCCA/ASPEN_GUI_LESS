@@ -30,9 +30,16 @@ int main() {
 	ShapeModel true_shape_model("T", &frame_graph);
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
-	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
 
+	#ifdef __APPLE__
+		ShapeModelImporter shape_io_truth(
+	    	"../resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
+	#elif __linux__
+		ShapeModelImporter shape_io_truth(
+	    	"/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
+	#else
+		throw(std::runtime_error("Neither running on linux or mac os"));
+	#endif
 	
 
 	shape_io_truth.load_shape_model(&true_shape_model);
