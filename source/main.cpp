@@ -31,19 +31,47 @@ int main() {
 	ShapeModel estimated_shape_model("E", &frame_graph);
 
 
-	#ifdef __APPLE__
-		ShapeModelImporter shape_io_truth(
-	    	"../resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
-	#elif __linux__
-		ShapeModelImporter shape_io_truth(
-	    	"/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 ,true,false);
-	#else
-		throw(std::runtime_error("Neither running on linux or mac os"));
-	#endif
-	
+
+
+
+
+
+#ifdef __APPLE__
+	ShapeModelImporter shape_io_truth(
+	    "../resources/shape_models/cube.obj", 1 , true, false);
+#elif __linux__
+	ShapeModelImporter shape_io_truth(
+	    "/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
+#else
+	throw (std::runtime_error("Neither running on linux or mac os"));
+#endif
+
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree(false);
+
+
+
+	/**
+	#################### Testing ####################
+	*/
+
+
+
+
+	throw;
+	/**
+	################### /Testing ####################
+	*/
+
+
+
+
+
+
+
+
+
 
 
 

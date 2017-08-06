@@ -1002,8 +1002,6 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 		break;
 	}
 
-
-
 	std::vector<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
 
 	if (facets_to_recycle.size() > 2) {
@@ -1012,7 +1010,6 @@ bool ShapeModel::merge_shrunk_facet(Facet * facet,
 			std::cout << "Facet at " <<  facets_to_recycle[i] -> get_facet_center() -> t() << std::endl;
 			std::cout << "Normal : " <<  facets_to_recycle[i] -> get_facet_normal() -> t() << std::endl;
 			std::cout << "Area : " <<  facets_to_recycle[i] -> get_area() << std::endl;
-
 
 
 			std::cout << "\t v0 : " <<  facets_to_recycle[i] -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
