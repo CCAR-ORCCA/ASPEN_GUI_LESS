@@ -134,32 +134,18 @@ bool Facet::has_good_edge_quality(double angle) {
 
 bool Facet::has_good_surface_quality(double angle) const {
 
-	std::cout << "Reading the vertices (in facet)" << std::endl;
-
-
-
-	std::cout << this -> vertices  << std::endl;
-
-
-	std::cout << "moving on>" << std::endl;
-	std::cout << this -> vertices -> size() << std::endl;
-
-	std::cout << "moving on" << std::endl;
 
 	if (this -> vertices -> size() != 3) {
 		throw (std::runtime_error("this facet has " + std::to_string(this -> vertices -> size()) + " vertices"));
 	}
+
 	std::shared_ptr<Vertex> V0  = this -> vertices -> at(0);
 	std::shared_ptr<Vertex> V1  = this -> vertices -> at(1);
 	std::shared_ptr<Vertex> V2  = this -> vertices -> at(2);
 
-	std::cout << "Reading the coordinates (in facet)" << std::endl;
-
 	arma::vec * P0  = V0 -> get_coordinates();
 	arma::vec * P1  = V1 -> get_coordinates();
 	arma::vec * P2  = V2 -> get_coordinates();
-	std::cout << "Done reading the coordinates (in facet)" << std::endl;
-
 
 	arma::vec angles = arma::vec(3);
 	angles(0) = std::acos(arma::dot(arma::normalise(*P1 - *P0), arma::normalise( *P2 - *P0)));
@@ -212,20 +198,20 @@ std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 
 	else {
 		// Returns facets sharing edges with $this
-		std::vector<Facet *> neighboring_facets_e0 = V0 -> common_facets(V1);
-		std::vector<Facet *> neighboring_facets_e1 = V1 -> common_facets(V2);
-		std::vector<Facet *> neighboring_facets_e2 = V2 -> common_facets(V0);
+		std::set<Facet *> neighboring_facets_e0 = V0 -> common_facets(V1);
+		std::set<Facet *> neighboring_facets_e1 = V1 -> common_facets(V2);
+		std::set<Facet *> neighboring_facets_e2 = V2 -> common_facets(V0);
 
-		for (unsigned int i = 0; i <  neighboring_facets_e0.size(); ++i) {
-			neighbors.insert(neighboring_facets_e0[i]);
+		for (auto it = neighboring_facets_e0.begin(); it != neighboring_facets_e0.end(); ++it) {
+			neighbors.insert(*it);
 		}
 
-		for (unsigned int i = 0; i <  neighboring_facets_e1.size(); ++i) {
-			neighbors.insert(neighboring_facets_e1[i]);
+		for (auto it = neighboring_facets_e1.begin(); it != neighboring_facets_e1.end(); ++it) {
+			neighbors.insert(*it);
 		}
 
-		for (unsigned int i = 0; i <  neighboring_facets_e2.size(); ++i) {
-			neighbors.insert(neighboring_facets_e2[i]);
+		for (auto it = neighboring_facets_e2.begin(); it != neighboring_facets_e2.end(); ++it) {
+			neighbors.insert(*it);
 		}
 	}
 	return neighbors;

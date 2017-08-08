@@ -6,10 +6,10 @@ Edge::Edge(std::shared_ptr<Vertex> v0 ,
 	this ->  v0 = v0;
 	this ->  v1 = v1;
 
-	std::vector<Facet *>  common_facets = v0 -> common_facets(v1);
+	std::set<Facet *>  common_facets = v0 -> common_facets(v1);
 
-	this -> fA = common_facets.at(0);
-	this -> fB = common_facets.at(1);
+	this -> fA = *(common_facets.begin());
+	this -> fB =  *(++common_facets.begin());
 
 	this -> fA -> add_edge(this);
 	this -> fB -> add_edge(this);

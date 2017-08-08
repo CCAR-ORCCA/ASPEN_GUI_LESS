@@ -39,7 +39,7 @@ public:
 	Finds the facets owming both $this and $vertex
 	@return commons_facets Vector of Facet * owning the two vertices
 	*/
-	std::vector<Facet *>  common_facets(std::shared_ptr<Vertex> vertex) const;
+	std::set<Facet *>  common_facets(std::shared_ptr<Vertex> vertex) const;
 
 	/**
 	Determines if $this is owned by $facet
@@ -71,6 +71,8 @@ public:
 	@return N number of owning of facets
 	*/
 	unsigned int get_number_of_owning_facets() const ;
+
+	unsigned int recycle_counter = 0;
 
 protected:
 	std::shared_ptr<arma::vec> coordinates;

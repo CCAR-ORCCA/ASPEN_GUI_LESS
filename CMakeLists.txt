@@ -3,37 +3,77 @@
 # ORCCA
 # University of Colorado 
 
+
+
+################################################################################
+#
+# 								User-defined paths
+#						Should be checked for consistency
+#						Before running 'cmake ..' in build dir
+#
+################################################################################
+
+
+# OMP-friendly GCC Major version (will only be used on Mac OS systems)
+set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
+
+# Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
+set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.1.0/bin/)
+
+
+
+################################################################################
+#
+#
+# 		The following should normally not require any modification
+# 				Unless new files are added to the build tree
+#
+#
+################################################################################
+
+
+# Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(EXE_NAME ${dirName} CACHE STRING "Name of executable to be created.")
 
-if (${CMAKE_MINOR_VERSION} EQUAL 0 AND NOT APPLE) # if true, running on a CCAR computer
+if (${CMAKE_MINOR_VERSION} EQUAL 0 AND NOT APPLE) # if true, running on a CCAR computer (old CMAKE and RedHat)
 	set(CMAKE_C_COMPILER /usr/local/gcc/bin/gcc CACHE STRING "C Compiler" FORCE)
 	set(CMAKE_CXX_COMPILER /usr/local/gcc/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-else()
-	message("This is not a CCAR computer")
+elseif(NOT APPLE)
+	# Not sure about this. Should work on a modern Ubuntu system
+	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
+	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
+    set (CMAKE_CXX_STANDARD 17)
+	message("This is a Linux machine. CMAKE_CXX_STANDARD 17 used")
+
+
 endif()
 
 # Check what version of the compiler is installed
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
                 OUTPUT_VARIABLE GCC_VERSION)
-message("GCC version is " ${GCC_VERSION})
+message("Default compiler is " ${CMAKE_C_COMPILER})
+message("Default ${CMAKE_C_COMPILER} version is " ${GCC_VERSION})
 
-if (GCC_VERSION VERSION_LESS 4.7) # if true, either running on a CCAR computer or a Mac (Clang has messed-up version IDs)
-		if (NOT APPLE) # If NOT APPLE, then running on a CCAR computer
+# Set up the C++11 and OMP compile flags 
+if (GCC_VERSION VERSION_LESS 4.7 OR APPLE) # if true, either running on a CCAR computer or a Mac (Clang has messed-up version IDs)
+		if (NOT APPLE) # If NOT APPLE, then running on a CCAR computer. The proper compiler should have already been set
         	set(CMAKE_CXX_FLAGS "-std=c++0x")
-        else() # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC from Homebrew
-        	if(EXISTS /usr/local/Cellar/gcc/7.1.0/bin/) 
-	        	set(CMAKE_C_COMPILER /usr/local/Cellar/gcc/7.1.0/bin/gcc-7 CACHE STRING "C Compiler" FORCE)
-				set(CMAKE_CXX_COMPILER /usr/local/Cellar/gcc/7.1.0/bin/g++-7 CACHE STRING "C++ Compiler" FORCE)
+        elseif(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
+        		message("Switching to OMP-friendly GCC ")
+	        	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
+				set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
 				set(CMAKE_CXX_FLAGS "-std=c++17")
-			endif()
-        endif()
-    else() # Running on a proper Linux machine
-    	set(CMAKE_CXX_FLAGS "-std=c++11")
+			
+			else()
+				message(FATAL_ERROR "No OMP-compliant compiler was found on this mac. ")
+		endif()
 endif()
 
 
 project(${EXE_NAME})
+
+
 
 # Specify the version used
 if (${CMAKE_MAJOR_VERSION} LESS 3)
@@ -49,19 +89,16 @@ add_definitions(-Wall -O2)
 # Include directories
 include_directories(include)
 include_directories(external/Gnuplot/include)
-# include_directories(external/Quickhull/include)
-# include_directories(external/Quickhull/Tests)
 include_directories(external/CGAL_interface/include)
 
 
 # Find Boost
-set(BOOST_ROOT /usr/local/Cellar/boost/1.63.0/)
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
 include_directories(${Boost_INCLUDE_DIRS}) 
 
 
 # Find Armadillo 
-find_package(Armadillo REQUIRED)
+find_package(Armadillo REQUIRED )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 # Find RBK 

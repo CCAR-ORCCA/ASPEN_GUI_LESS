@@ -32,13 +32,9 @@ int main() {
 
 
 
-
-
-
-
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/cube.obj", 1 , true, false);
+	    "../resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
 	    "/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
@@ -49,30 +45,6 @@ int main() {
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree(false);
-
-
-
-	/**
-	#################### Testing ####################
-	*/
-
-
-
-
-	throw;
-	/**
-	################### /Testing ####################
-	*/
-
-
-
-
-
-
-
-
-
-
 
 
 // 1) Propagate small body attitude
