@@ -235,11 +235,12 @@ public:
 	void split_facet(Facet * facet, std::set<Facet *> & seen_facets);
 
 
-	
+
 
 	/**
 	Removes this facet from the shape model by merging together the two vertices
 	on the edge facing the smallest angle in the facet
+	@param minimum_angle If the smallest angle protacted by 2 of the facet's 
 	@param facet Pointer to the facet to recycle. THIS POINTER
 	WILL BECOME INVALID AFTER THE FACET IS SPLIT
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
@@ -248,7 +249,8 @@ public:
 	because they are flipped
 	@return true if the facet was recycled, false otherwise
 	*/
-	bool merge_shrunk_facet(Facet * facet,
+	bool merge_shrunk_facet(double minimum_angle,
+	                        Facet * facet,
 	                        std::set<Facet *> * seen_facets,
 	                        std::set<Facet *> * spurious_facets = nullptr);
 
@@ -305,14 +307,12 @@ public:
 	/**
 	Checks if every facets in the shape model has good quality.
 	@param min_facet_angle Minimum facet vertex angle indicating degeneracy
-	@param min_edge_angle Minimum edge angle indicating degeneracy
 	If not, some facets are recycled until the mesh becomes satisfying
 	@param max_recycled_facets maximum number of facets that will be recycled
 	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
 	This set will be edited to ensure that the facets that remain are all valid
 	*/
 	void enforce_mesh_quality(double min_facet_angle,
-	                          double min_edge_angle,
 	                          unsigned int max_recycled_facets,
 	                          std::set<Facet *> & seen_facets) ;
 

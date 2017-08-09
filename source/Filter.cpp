@@ -298,7 +298,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " / "<< times.n_rows-1  << ", Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " / " << times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
 		interpolated_orbit = interpolator_orbit.interpolate(times(time_index), false);
@@ -1038,6 +1038,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 			while (keep_removing_spurious_facets == true && spurious_facets.size() > 0) {
 
 				keep_removing_spurious_facets = this -> estimated_shape_model -> merge_shrunk_facet(
+				                                    std::numeric_limits<double>::infinity(),
 				                                    *spurious_facets.begin(),
 				                                    &seen_facets,
 				                                    &spurious_facets);
@@ -1046,8 +1047,6 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 		}
-
-
 
 		// Splitting the facet with the largest surface area if it has a larger standard deviation that the one that was specified
 		if (seen_facets.find(facet_to_split) != seen_facets.end()) {
@@ -1066,7 +1065,6 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 		if (this -> filter_arguments -> get_merge_shrunk_facets() == true) {
 			this -> estimated_shape_model -> enforce_mesh_quality(
 			    this -> filter_arguments -> get_min_facet_angle(),
-			    this -> filter_arguments -> get_min_edge_angle(),
 			    this -> filter_arguments -> get_max_recycled_facets(),
 			    seen_facets);
 		}

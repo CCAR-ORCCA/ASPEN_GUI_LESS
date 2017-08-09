@@ -72,8 +72,6 @@ public:
 	*/
 	unsigned int get_number_of_owning_facets() const ;
 
-	unsigned int recycle_counter = 0;
-
 protected:
 	std::shared_ptr<arma::vec> coordinates;
 	std::set<Facet * > owning_facets;

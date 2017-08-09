@@ -132,39 +132,6 @@ bool Facet::has_good_edge_quality(double angle) {
 
 }
 
-bool Facet::has_good_surface_quality(double angle) const {
-
-
-	if (this -> vertices -> size() != 3) {
-		throw (std::runtime_error("this facet has " + std::to_string(this -> vertices -> size()) + " vertices"));
-	}
-
-	std::shared_ptr<Vertex> V0  = this -> vertices -> at(0);
-	std::shared_ptr<Vertex> V1  = this -> vertices -> at(1);
-	std::shared_ptr<Vertex> V2  = this -> vertices -> at(2);
-
-	arma::vec * P0  = V0 -> get_coordinates();
-	arma::vec * P1  = V1 -> get_coordinates();
-	arma::vec * P2  = V2 -> get_coordinates();
-
-	arma::vec angles = arma::vec(3);
-	angles(0) = std::acos(arma::dot(arma::normalise(*P1 - *P0), arma::normalise( *P2 - *P0)));
-	angles(1) = std::acos(arma::dot(arma::normalise(*P2 - *P1), arma::normalise( *P0 - *P1)));
-	angles(2) = std::acos(arma::dot(arma::normalise(*P0 - *P2), arma::normalise( *P1 - *P2)));
-
-
-	if (angles.min() < angle) {
-		return false;
-	}
-	else {
-		return true;
-	}
-
-
-
-}
-
-
 
 std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 
