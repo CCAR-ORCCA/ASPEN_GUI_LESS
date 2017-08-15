@@ -2,6 +2,7 @@
 #define HEADER_INTERP
 
 #include <armadillo>
+#include <RigidBodyKinematics.hpp>
 
 class Interpolator {
 public:

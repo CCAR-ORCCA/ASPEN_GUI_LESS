@@ -77,7 +77,9 @@ int main() {
 	                 dt,
 	                 &args,
 	                 check_energy_conservation,
-	                 "attitude");
+	                 "attitude",
+
+	                 1e-5);
 
 	rk_attitude.run(&attitude_dxdt_wrapper,
 	                nullptr,
@@ -90,14 +92,18 @@ int main() {
 	Interpolator interpolator(rk_attitude . get_T(), rk_attitude . get_X());
 	args.set_interpolator(&interpolator);
 	args.set_is_attitude_bool(false);
+
 	args.set_density(DENSITY);
 	args.set_mass(DENSITY * true_shape_model . get_volume());
+
+
 
 // Initial condition of the orbiting spacecraft
 	arma::vec initial_pos = {3000 , 0, 0};
 	double v = std::sqrt(arma::datum::G * args.get_mass() / arma::norm(initial_pos));
 
 	arma::vec initial_vel_inertial = {0, 0, v};
+
 
 // arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
 //                      initial_pos);
@@ -175,7 +181,7 @@ int main() {
 
 	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
 	shape_filter_args.set_cm_bar_0(cm_bar_0);
-	shape_filter_args.set_Q_cm(1e-3 * arma::eye<arma::mat>(3, 3));
+	shape_filter_args.set_Q_cm(0e-3 * arma::eye<arma::mat>(3, 3));
 
 	shape_filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
 	shape_filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
@@ -183,6 +189,7 @@ int main() {
 
 	shape_filter_args.set_estimate_shape(false);
 	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1);
+	// shape_filter_args.set_shape_estimation_cm_trigger_thresh(0);
 
 
 

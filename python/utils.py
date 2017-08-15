@@ -78,9 +78,10 @@ def plot_cm_estimate(path = None,save = True):
     plt.plot(time / 86400., - 3 * sd_mat[1,1:],'--')
     plt.plot(time / 86400., - 3 * sd_mat[2,1:],'--')
 
-    max_val = np.amax(np.abs(estimate_error[2:]))
+    max_val = np.amax(np.std(estimate_error,axis = 0))
 
-    plt.ylim([- 0.1 * max_val,0.1 * max_val])
+
+    plt.ylim([- max_val,max_val])
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
     plt.xlabel("Measurement time (day)")

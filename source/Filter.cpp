@@ -342,6 +342,10 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 		// Getting the true observations (noise is added)
 		this -> lidar -> send_flash(this -> true_shape_model, false, false);
 
+		if (plot_measurements == true) {
+			this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
+		}
+
 		/*
 		Point cloud registration and attitude estimation occurs first
 		*/
@@ -385,7 +389,6 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 				this -> lidar -> plot_ranges("../output/measurements/computed_prefit_" + time_index_formatted, 1);
 
 				this -> lidar -> plot_ranges("../output/measurements/residuals_prefit_" + time_index_formatted, 2);
-				this -> lidar -> plot_ranges("../output/measurements/true_" + time_index_formatted, 0);
 			}
 
 
@@ -433,6 +436,9 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 
 		}
+		else {
+			std::cout << "Not estimating the shape" << std::endl;
+		}
 
 		if (this -> filter_arguments -> get_estimate_shape()) {
 			// The volume difference between the estimated shape and the true shape is stored
@@ -440,7 +446,7 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 			surface_dif(time_index) = std::abs(this -> estimated_shape_model -> get_surface_area() -  this -> true_shape_model -> get_surface_area()) / this -> true_shape_model -> get_surface_area();
 		}
 		else {
-			// The volume difference between the estimated shape and the true shape is stored
+			// The error is set to an arbitrary 100% since there is no comparison to be made yet
 			volume_dif(time_index) = 1;
 			surface_dif(time_index) = 1;
 		}
@@ -502,7 +508,6 @@ void Filter::register_pcs(int index, double time) {
 
 
 	// If the center of mass is still being figured out
-
 	if (this -> filter_arguments -> get_estimate_shape() == false ||
 	        this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
 
@@ -530,6 +535,8 @@ void Filter::register_pcs(int index, double time) {
 
 		// Angular velocity is measured
 		this -> measure_omega(dcm);
+
+		std::cout << "At time " << time << " " << RBK::dcm_to_prv(dcm).first << std::endl;
 
 		// Time is appended
 		this -> filter_arguments -> append_time(time);
@@ -607,7 +614,7 @@ void Filter::register_pcs(int index, double time) {
 		arma::mat dcm;
 		arma::vec X;
 		double J_res;
-
+		arma::mat R;
 
 		try {
 			ICP icp(this -> destination_pc, this -> source_pc);
@@ -615,9 +622,11 @@ void Filter::register_pcs(int index, double time) {
 			dcm = icp.get_DCM();
 			X = icp.get_X();
 			J_res =  icp.get_J_res();
+			R = icp.get_R();
+
 		}
 		catch (const ICPException & error ) {
-			std::cerr << "For consecutive registrationm, caught ICPException" << std::endl;
+			std::cerr << "For consecutive registration, caught ICPException" << std::endl;
 			std::cerr << error.what() << std::endl;
 
 			// Try another time
@@ -627,6 +636,8 @@ void Filter::register_pcs(int index, double time) {
 				dcm = icp.get_DCM();
 				X = icp.get_X();
 				J_res =  icp.get_J_res();
+				R = icp.get_R();
+
 			}
 			catch (const std::runtime_error & error) {
 				std::cerr << "For consecutive registration, caught runtime error" << std::endl;
@@ -653,8 +664,8 @@ void Filter::register_pcs(int index, double time) {
 		}
 
 
-		std::cout << " RMS residuals from the shape-based ICP: " << J_res_shape << " m" << std::endl;
-		std::cout << " RMS residuals from the point-cloud based ICP: " << J_res << " m" << std::endl;
+		std::cout << "At time " << time << " RMS residuals from the shape-based ICP: " << J_res_shape << " m" << std::endl;
+		std::cout << "At time " << time << " RMS residuals from the point-cloud based ICP: " << J_res << " m" << std::endl;
 
 
 		// Attitude is measured by fusing the absolute
@@ -667,22 +678,14 @@ void Filter::register_pcs(int index, double time) {
 
 			std::cout << "Difference in absolute alignment :" << std::endl;
 
-			std::cout << RBK::dcm_to_prv(RBK::mrp_to_dcm(mrp_mes_pc_N) * RBK::mrp_to_dcm(mrp_mes_shape_N).t()).first * 180 / arma::datum::pi << " deg";
+			std::cout << RBK::dcm_to_prv(RBK::mrp_to_dcm(mrp_mes_pc_N) * RBK::mrp_to_dcm(mrp_mes_shape_N).t()).first * 180 / arma::datum::pi << " deg" << std::endl;
 
 		}
-
-
 
 
 		if (J_res_shape < this -> filter_arguments -> get_maximum_J_rms_shape() ) {
 
 			J_res = 1e10;
-
-
-			std::cout << "Fusing MRPs. Weights:" << std::endl;
-			std::cout << "\tShape: " << J_res / (J_res_shape + J_res) << std::endl;
-			std::cout << "\tPoint clouds: " << J_res_shape / (J_res_shape + J_res) <<  std::endl;
-
 
 
 			// Attitude is measured by fusing the absolute
@@ -806,14 +809,20 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 	arma::vec lambdas = arma::solve(H.t() * H, - H.t() * x);
 	arma::vec cm_obs = v.cols(1, 2) * lambdas;
 
+	arma::mat P = arma::inv(H.t() * H) ;
+
+
 
 	// The measurement of the center of mass is fused with the past ones
-	double a = 1e8;
-	double b = 1e-2;
-	double c = 1e-2;
+
+	double b = P.row(0)(0);
+	double c = P.row(1)(1);
+
+	double a = 1e8 * std::max(b, c);
+
+
 
 	arma::mat R = a * v.col(0) * v.col(0).t() +  b * v.col(1) * v.col(1).t() +  c * v.col(2) * v.col(2).t();
-
 
 	// Measurement update for the center of mass
 	arma::vec cm_bar = this -> filter_arguments -> get_latest_cm_hat();
@@ -882,7 +891,6 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 void Filter::measure_omega(arma::mat & dcm) {
 
 	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
-
 	this -> filter_arguments -> append_omega_mes(this -> lidar -> get_frequency() * prv.first * this -> filter_arguments -> get_latest_spin_axis_mes());
 
 }
@@ -1027,7 +1035,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 
 
-		// One facet that was seen from behind are spuriously oriented and are thus removed from the shape model
+		// Spurious facets are removed until the next spurious facet is found at a corner
 		if (spurious_facets.size() > 0) {
 
 			std::cout << "Removing spurious facet " << std::endl;

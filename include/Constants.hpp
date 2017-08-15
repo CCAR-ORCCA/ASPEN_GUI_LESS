@@ -24,11 +24,14 @@
 #define FOCAL_LENGTH 1e1
 #define LOS_NOISE_3SD_BASELINE 5e-2
 
+
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times (s)
 #define T0 0
 #define TF 604800// 7 days
+
+
 
 
 

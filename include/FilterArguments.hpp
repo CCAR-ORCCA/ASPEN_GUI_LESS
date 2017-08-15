@@ -255,6 +255,16 @@ public:
 
 	}
 
+	arma::vec get_latest_mrp_true() const {
+		if (this -> mrp_true_history.size() == 0) {
+			return arma::zeros<arma::vec>(3);
+		}
+		else
+			return * (--this ->mrp_true_history.end());
+
+	}
+
+
 	/**
 	Spin axis
 	*/

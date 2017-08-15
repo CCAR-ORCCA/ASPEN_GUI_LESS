@@ -963,14 +963,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 		return false;
 	}
 
-
-
-
-
-
-
-
-
 	// This index indicates which vertices are to be merged
 	// - 0 : V1 and V2 shoud be merged
 	// - 1 : V0 and V2
@@ -1014,14 +1006,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 	}
 
 
-
-
-
-
-
-
-
-
 	std::set<Facet *> facets_to_recycle = V_merge_keep -> common_facets(V_merge_discard);
 
 
@@ -1045,7 +1029,7 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 				std::cout << "Facet no longer in shape model" << std::endl;
 			}
 		}
-
+		this -> save("erroneous_shape_model.obj");
 		throw (std::runtime_error("Two vertices can't share more than two facets: these shared " + std::to_string(facets_to_recycle.size()) + " facets"));
 	}
 
@@ -1078,6 +1062,43 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 		throw (std::runtime_error("Dangling vertex entering merge: V_keep_1 was owned by " + std::to_string(V_keep_1 -> get_number_of_owning_facets()) + " facets"));
 	}
 
+	if ( V_keep_1 -> common_facets(V_merge_keep).size() != 2) {
+
+		auto facets = V_keep_1 -> common_facets(V_merge_keep);
+
+		for (auto it = facets.begin() ; it != facets.end() ; ++it ) {
+			std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
+			std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
+			std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
+			std::cout << "\t v0 : " <<  (*it) -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v1 : " <<  (*it) -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v2 : " <<  (*it) -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
+		}
+
+		throw (std::runtime_error("At first, V_keep_1 and V_merge_keep share " + std::to_string(V_keep_1 -> common_facets(V_merge_keep).size()) + " facets"));
+
+	};
+
+	if ( V_keep_0 -> common_facets(V_merge_keep).size() != 2) {
+
+
+		auto facets = V_keep_0 -> common_facets(V_merge_keep);
+
+		for (auto it = facets.begin() ; it != facets.end() ; ++it ) {
+			std::cout << "Facet at " <<  (*it) -> get_facet_center() -> t() << std::endl;
+			std::cout << "Normal : " <<  (*it) -> get_facet_normal() -> t() << std::endl;
+			std::cout << "Area : " <<  (*it) -> get_area() << std::endl;
+
+			std::cout << "\t v0 : " <<  (*it) -> get_vertices() -> at(0) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v1 : " <<  (*it) -> get_vertices() -> at(1) -> get_coordinates() -> t() << std::endl;
+			std::cout << "\t v2 : " <<  (*it) -> get_vertices() -> at(2) -> get_coordinates() -> t() << std::endl;
+		}
+
+
+		throw (std::runtime_error("At first, V_keep_0 and V_merge_keep share " + std::to_string(V_keep_0 -> common_facets(V_merge_keep).size()) + " facets"));
+	};
+
+
 
 
 	std::set<Facet *> facets_owning_V_merge_keep = V_merge_keep -> get_owning_facets();
@@ -1100,9 +1121,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 	}
 
 
-
-
-
 	// If any of the facets to be updated was not seen, the method does not proceed
 	if (spurious_facets == nullptr) {
 		for (auto facet_it = facets_owning_V_merge_discard.begin();
@@ -1115,8 +1133,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 			}
 		}
 	}
-
-
 
 
 	// If any of the vertices to keep is on a corner (owned by three facets), nothing happens
@@ -1186,9 +1202,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 
 
 		V_merge_discard -> remove_facet_ownership(facet_to_update);
-
-
-
 		V_merge_keep -> add_facet_ownership(facet_to_update);
 
 	}
