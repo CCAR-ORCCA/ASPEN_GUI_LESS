@@ -1010,17 +1010,17 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 
 
 	// If any of the facets to be updated was not seen, the method does not proceed
-	if (spurious_facets == nullptr) {
-		for (auto facet_it = facets_to_keep_owning_V_merge_discard.begin();
-		        facet_it != facets_to_keep_owning_V_merge_discard.end();
-		        ++facet_it) {
+	// if (spurious_facets == nullptr) {
+	// 	for (auto facet_it = facets_to_keep_owning_V_merge_discard.begin();
+	// 	        facet_it != facets_to_keep_owning_V_merge_discard.end();
+	// 	        ++facet_it) {
 
-			if (seen_facets -> find(*facet_it) == seen_facets -> end()) {
-				std::cout << "Connected facet is invisible. Recycling aborted" << std::endl;
-				return false;
-			}
-		}
-	}
+	// 		if (seen_facets -> find(*facet_it) == seen_facets -> end()) {
+	// 			std::cout << "Connected facet is invisible. Recycling aborted" << std::endl;
+	// 			return false;
+	// 		}
+	// 	}
+	// }
 
 
 	// If any of the vertices to keep is on a corner (owned by three facets), nothing happens
