@@ -34,7 +34,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/cube_subdivided.obj", 1 , true, false);
+	    "../resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
 	    "/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
@@ -48,47 +48,6 @@ int main() {
 
 
 
-	/**
-	Begin debug
-	*/
-	std::set<Facet *> seen_facets;
-
-	for (unsigned int i = 0; i < true_shape_model.get_NFacets(); ++i) {
-		seen_facets.insert(true_shape_model.get_facets() -> at(i));
-
-	}
-
-
-	std::cout << "Facets before recycling: " << true_shape_model.get_NFacets() << std::endl;
-	arma::arma_rng::set_seed(true_shape_model.get_NFacets());
-	for (unsigned int i = 0; i < 44079; ++i) {
-
-
-		std::cout << i << std::endl;
-
-		unsigned int index = arma::randi( 1, arma::distr_param(0, true_shape_model.get_NFacets() - 1) )(0);
-
-		true_shape_model.merge_shrunk_facet(60,
-		                                    true_shape_model.get_facets() -> at(index),
-		                                    &seen_facets,
-		                                    nullptr
-		                                   );
-
-
-
-	}
-	true_shape_model.save("cleaned_cube.obj");
-
-	std::cout << "Facets after recycling: " << true_shape_model.get_NFacets() << std::endl;
-
-
-
-	throw;
-
-
-	/**
-	End debug
-	*/
 
 
 // 1) Propagate small body attitude
