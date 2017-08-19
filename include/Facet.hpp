@@ -20,7 +20,7 @@ public:
 	*/
 	Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices);
 
-	
+
 	/**
 	Get neighbors
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
@@ -146,6 +146,8 @@ public:
 	@return hit_count Number of time this facet has been hit by an inbound ray
 	*/
 	unsigned int get_hit_count() const;
+
+	unsigned int recycle_count = 0;
 
 protected:
 

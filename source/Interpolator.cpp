@@ -30,11 +30,6 @@ arma::vec Interpolator::interpolate(double t,bool is_attitude) {
 
 		X_before.rows(0, 2) = RBK::shadow_mrp(X_before.rows(0, 2),true);
 
-		// index_before += 1;
-		// index_after += 1;
-
-		// X_before = this -> X -> col(index_before);
-		// X_after = this -> X -> col(index_after);
 
 	}
 

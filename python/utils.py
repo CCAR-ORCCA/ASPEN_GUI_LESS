@@ -81,7 +81,7 @@ def plot_cm_estimate(path = None,save = True):
     max_val = np.amax(np.std(estimate_error,axis = 0))
 
 
-    plt.ylim([- max_val,max_val])
+    plt.ylim([- 0.3 * max_val,0.3 * max_val])
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
     plt.xlabel("Measurement time (day)")

@@ -29,8 +29,6 @@ Facet::Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > >   vertice
 
 }
 
-
-
 void Facet::set_split_counter(unsigned int split_counter) {
 	this -> split_counter = split_counter;
 }
@@ -61,76 +59,75 @@ void Facet::increase_hit_count() {
 }
 
 
+// bool Facet::has_good_edge_quality(double angle) {
 
-bool Facet::has_good_edge_quality(double angle) {
+// 	std::set < Facet * > neighbors = this -> get_neighbors(false);
 
-	std::set < Facet * > neighbors = this -> get_neighbors(false);
+// 	arma::vec * n = this -> facet_normal.get();
 
-	arma::vec * n = this -> facet_normal.get();
+// 	for (auto & neighbor : neighbors) {
 
-	for (auto & neighbor : neighbors) {
+// 		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
 
-		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
-
-			Vertex * V0 = nullptr;
-			Vertex * V1 = nullptr;
-			Vertex * V2 = nullptr;
-
-
-			// The two vertices of $this lying on the edge are found
-			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
-
-				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)) {
-					if (V0 == nullptr) {
-						V0 = this -> vertices -> at(vertex_index).get();
-					}
-					else {
-						V1 = this -> vertices -> at(vertex_index).get();
-
-					}
-				}
-
-			}
+// 			Vertex * V0 = nullptr;
+// 			Vertex * V1 = nullptr;
+// 			Vertex * V2 = nullptr;
 
 
-			// The other vertex in neighbor is found
-			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
+// 			// The two vertices of $this lying on the edge are found
+// 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
-				if (neighbor -> get_vertices() -> at(vertex_index).get() != V0 &&
-				        neighbor -> get_vertices() -> at(vertex_index).get() != V1 )
-				{
-					V2 = neighbor -> get_vertices() -> at(vertex_index).get();
-					break;
-				}
+// 				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)) {
+// 					if (V0 == nullptr) {
+// 						V0 = this -> vertices -> at(vertex_index).get();
+// 					}
+// 					else {
+// 						V1 = this -> vertices -> at(vertex_index).get();
 
-			}
+// 					}
+// 				}
 
-
-			arma::vec dir = arma::normalise(*n + *neighbor -> get_facet_normal());
-			arma::vec delta_V0 = arma::dot(*V2 -> get_coordinates() - *V0 -> get_coordinates(),
-			                               dir) * dir;
-			arma::vec delta_V1 = arma::dot(*V2 -> get_coordinates() - *V1 -> get_coordinates(),
-			                               dir) * dir;
-
-			arma::vec delta = (delta_V0 + delta_V1) / 2;
+// 			}
 
 
+// 			// The other vertex in neighbor is found
+// 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
-			*V0 -> get_coordinates() = *V0 -> get_coordinates() + delta;
-			*V1 -> get_coordinates() = *V1 -> get_coordinates() + delta;
+// 				if (neighbor -> get_vertices() -> at(vertex_index).get() != V0 &&
+// 				        neighbor -> get_vertices() -> at(vertex_index).get() != V1 )
+// 				{
+// 					V2 = neighbor -> get_vertices() -> at(vertex_index).get();
+// 					break;
+// 				}
+
+// 			}
 
 
-			return false;
+// 			arma::vec dir = arma::normalise(*n + *neighbor -> get_facet_normal());
+// 			arma::vec delta_V0 = arma::dot(*V2 -> get_coordinates() - *V0 -> get_coordinates(),
+// 			                               dir) * dir;
+// 			arma::vec delta_V1 = arma::dot(*V2 -> get_coordinates() - *V1 -> get_coordinates(),
+// 			                               dir) * dir;
 
-		}
-
-	}
-
-	return true;
+// 			arma::vec delta = (delta_V0 + delta_V1) / 2;
 
 
 
-}
+// 			*V0 -> get_coordinates() = *V0 -> get_coordinates() + delta;
+// 			*V1 -> get_coordinates() = *V1 -> get_coordinates() + delta;
+
+
+// 			return false;
+
+// 		}
+
+// 	}
+
+// 	return true;
+
+
+
+// }
 
 
 std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
