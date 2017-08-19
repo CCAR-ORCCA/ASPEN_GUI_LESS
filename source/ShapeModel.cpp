@@ -1023,15 +1023,15 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 	// }
 
 
-	// If any of the vertices to keep is on a corner (owned by three facets), nothing happens
+	// If any of the vertices to keep is on a corner (owned by four facets or less), nothing happens
 	if (
-	    V_merge_keep -> get_number_of_owning_facets() == 4 ||
-	    V_merge_discard -> get_number_of_owning_facets() == 4) {
+	    V_merge_keep -> get_number_of_owning_facets() <= 4 ||
+	    V_merge_discard -> get_number_of_owning_facets() <= 4) {
 		return false;
 	}
 
 	for (auto it = vertices_to_keep.begin(); it != vertices_to_keep.end(); ++it) {
-		if ((*it) -> get_number_of_owning_facets() == 4) {
+		if ((*it) -> get_number_of_owning_facets() <= 4) {
 			return false;
 		}
 	}
