@@ -103,72 +103,6 @@ arma::vec * Ray::get_origin_target_frame() {
 	return this -> origin_target_frame.get();
 }
 
-bool Ray::brute_force_ray_casting(bool computed_mes,ShapeModel * shape_model) {
-
-
-	bool hit = false;
-
-	// Every facet of the shape model is searched for a potential intersect
-	struct CompareRanges range_comp;
-
-
-	#pragma omp parallel for reduction(minimum:range_comp) if (USE_OMP_RAY)
-	for (unsigned int facet_index = 0;
-	        facet_index < shape_model -> get_NFacets();
-	        ++facet_index) {
-
-
-		Facet * facet = shape_model -> get_facets() -> at(facet_index);
-
-
-		// The ray is parametrized as R = At + B where (A,B) are respectively
-		// the direction and the origin of the ray. For an intersection to
-		// be valid, t must be positive
-		arma::vec * n = facet -> get_facet_normal();
-		arma::vec * p = facet -> get_facet_center();
-		double t = arma::dot(*n, *p - *this -> origin_target_frame) / arma::dot(*n, *this -> direction_target_frame);
-
-		// If the range is positive, this is further tested for
-		// potential intersection with this facet
-		if (t > 0) {
-
-			arma::vec H =  *this -> direction_target_frame * t + (*this -> origin_target_frame);
-
-			// If the intersect is indise the facet
-			if (this -> intersection_inside(H, facet) == true) {
-				double range = t;
-				hit = true;
-
-				// If the corresponding distance is less that what was already found,
-				// this is an interesting intersection to retain
-				if (range < range_comp . range || (range_comp.range > 1e10) == true) {
-					range_comp . range = range;
-					range_comp . hit_facet = facet;
-
-				}
-
-			}
-
-		}
-
-	}
-
-	// The observed target is the a-priori
-	if (computed_mes == true) {
-		this -> computed_range = range_comp.range;
-		this -> computed_hit_facet = range_comp.hit_facet;
-	}
-
-	// The observed target is the true target
-	else {
-		this -> true_range = range_comp.range;
-		this -> true_hit_facet = range_comp.hit_facet;
-	}
-
-	return hit;
-
-}
-
 void Ray::reset(bool computed_mes, ShapeModel * shape_model) {
 
 	if (computed_mes == true) {
@@ -240,7 +174,6 @@ arma::vec Ray::get_impact_point(bool computed_mes) const {
 }
 
 bool Ray::single_facet_ray_casting(Facet * facet, bool computed_mes ) {
-
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to

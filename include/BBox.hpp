@@ -20,7 +20,7 @@ public:
 	using provided geometric data
 	@param facets Facets bounded by this box
 	*/
-	void update(std::vector<Facet * > facets);
+	void update(std::vector<std::shared_ptr<Facet> > facets);
 
 
 	/**
@@ -28,7 +28,7 @@ public:
 	using provided geometric data
 	@param facet Facet bounded by this box
 	*/
-	void update(Facet * facet);
+	void update(std::shared_ptr<Facet> facet);
 
 	void print() const;
 
@@ -49,9 +49,6 @@ protected:
 	double xmin, xmax;
 	double ymin, ymax;
 	double zmin, zmax;
-
-	void make_consistent() ;
-
 
 
 

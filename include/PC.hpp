@@ -8,8 +8,10 @@
 #include "Ray.hpp"
 #include "PointNormal.hpp"
 #include "FrameGraph.hpp"
-#include "ShapeModel.hpp"
+#include "ShapeModelTri.hpp"
 
+class ShapeModelTri;
+class Ray;
 
 class PC {
 
@@ -39,7 +41,7 @@ public:
 	Constructor
 	@param shape_model pointer to shape model
 	*/
-	PC(ShapeModel * shape_model);
+	PC(ShapeModelTri * shape_model);
 
 
 	/**

@@ -965,7 +965,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
                            bool plot_measurements) {
 
 	std::vector<Ray * > good_rays;
-	std::set<Vertex * > seen_vertices;
+	std::set<ControlPoint * > seen_vertices;
 	std::set<Facet * > seen_facets;
 	std::set<Facet * > spurious_facets;
 
@@ -1085,7 +1085,7 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 }
 
 void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
-                                       std::set<Vertex *> & seen_vertices,
+                                       std::set<ControlPoint *> & seen_vertices,
                                        std::set<Facet *> & seen_facets,
                                        arma::mat & N_mat,
                                        std::map<Facet *, std::vector<unsigned int> > & facet_to_index_of_vertices) {
@@ -1176,7 +1176,7 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	// The location of the vertices is updated
 	for (unsigned int vertex_index = 0; vertex_index < seen_vertices.size(); ++vertex_index) {
 
-		Vertex * vertex = *std::next(seen_vertices.begin(), vertex_index);
+		ControlPoint * vertex = *std::next(seen_vertices.begin(), vertex_index);
 		*vertex-> get_coordinates() = *vertex -> get_coordinates() +
 		                              dV.rows(3 * vertex_index , 3 * vertex_index + 2 );
 
@@ -1192,7 +1192,7 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 }
 
 void Filter::get_observed_features(std::vector<Ray * > & good_rays,
-                                   std::set<Vertex *> & seen_vertices,
+                                   std::set<ControlPoint *> & seen_vertices,
                                    std::set<Facet *> & seen_facets,
                                    std::set<Facet *> & spurious_facets,
                                    arma::mat & N_mat,
@@ -1425,7 +1425,7 @@ std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::
 	// partial derivative
 	arma::vec n = 2 * facet -> get_area() * (*facet -> get_facet_normal());
 
-	std::vector<std::shared_ptr<Vertex > > * vertices = facet -> get_vertices();
+	std::vector<std::shared_ptr<ControlPoint > > * vertices = facet -> get_vertices();
 
 	arma::vec * V0 =  vertices -> at(0) -> get_coordinates();
 	arma::vec * V1 =  vertices -> at(1) -> get_coordinates();

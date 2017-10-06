@@ -79,7 +79,7 @@ double DynamicAnalyses::pgm_potential(double * point , double density) const {
 	#pragma omp parallel for reduction(+:potential) if (USE_OMP_DYNAMIC_ANALYSIS)
 	for (unsigned int facet_index = 0; facet_index < this -> shape_model -> get_NFacets(); ++ facet_index) {
 
-		std::vector<std::shared_ptr<Vertex > > * vertices = this -> shape_model -> get_facets() -> at(facet_index) -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> shape_model -> get_facets() -> at(facet_index) -> get_vertices();
 
 		const double * r1 =  vertices -> at(0) -> get_coordinates() -> colptr(0);
 		const double * r2 =  vertices -> at(1) -> get_coordinates() -> colptr(0);
@@ -213,7 +213,7 @@ arma::vec DynamicAnalyses::pgm_acceleration(double * point , double density) con
 	#pragma omp parallel for reduction(+:ax,ay,az) if (USE_OMP_DYNAMIC_ANALYSIS)
 	for (unsigned int facet_index = 0; facet_index < this -> shape_model -> get_NFacets(); ++ facet_index) {
 
-		std::vector<std::shared_ptr<Vertex > > * vertices = this -> shape_model -> get_facets() -> at(facet_index) -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> shape_model -> get_facets() -> at(facet_index) -> get_vertices();
 
 		const double * r1 =  vertices -> at(0) -> get_coordinates() -> colptr(0);
 		const double * r2 =  vertices -> at(1) -> get_coordinates() -> colptr(0);

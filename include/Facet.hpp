@@ -1,15 +1,15 @@
 #ifndef HEADER_FACET
 #define HEADER_FACET
 #include <armadillo>
-#include "Edge.hpp"
-#include "Vertex.hpp"
+#include "ControlPoint.hpp"
+#include "Element.hpp"
+
 #include <memory>
+#include <iostream>
 
 #include <set>
 
-class Edge;
-class Vertex;
-
+class ControlPoint;
 class Facet {
 
 public:
@@ -18,7 +18,7 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices);
+	Facet( std::vector<std::shared_ptr<ControlPoint > > vertices);
 
 
 	/**
@@ -29,31 +29,11 @@ public:
 	std::set < Facet * > get_neighbors(bool all_neighbors) const;
 
 	/**
-	Add an edge to this facet
-	@param Pointer to the edge to be added
-	*/
-	void add_edge(Edge * edge);
-
-
-	/**
-	Removes the specified edge from the
-	facet. The edge has to be present in the facet
-	for this to work
-	@param Pointer to the edge to be removed
-	*/
-	void remove_edge(Edge * edge);
-
-	/**
 	Get outbound facet normal
 	@return pointer to facet normal
 	*/
 	arma::vec * get_facet_normal()  ;
 
-	/**
-	Get facet dyad
-	@return pointer to facet dyad
-	*/
-	arma::mat * get_facet_dyad() ;
 
 	/**
 	Checks the degeneracy of the facet
@@ -68,22 +48,6 @@ public:
 	*/
 	void increase_hit_count();
 
-	/**
-	Checks the degeneracy of the facet edge
-	If the facet edge is found to be degenerate,
-	the facet geometry is altered so as to be recycled next time
-	@param angle minimum angle indicating that the facet is degenerate
-	@return
-	- If an edge is non-degenerate: returns false
-	- If edge is degenerate : returns true
-	*/
-	bool has_good_edge_quality(double angle) ;
-
-
-	/**
-	Not implemented
-	*/
-	std::vector<std::shared_ptr <Edge> > get_facet_edges() const;
 
 	/**
 	Returns pointer to the first vertex owned by $this that is
@@ -94,14 +58,13 @@ public:
 	@param v1 Pointer to first vertex to exclude
 	@return Pointer to the first vertex of $this that is neither $v0 and $v1
 	*/
-	std::shared_ptr<Vertex> vertex_not_on_edge(std::shared_ptr<Vertex> v0,
-	        std::shared_ptr<Vertex>v1) const ;
+	std::shared_ptr<ControlPoint> vertex_not_on_edge(std::shared_ptr<ControlPoint> v0,
+	        std::shared_ptr<ControlPoint>v1) const ;
 
 	/**
-	Recomputes the facet dyads, normal, surface area and center
-	@param compute_dyad true if this facet's dyad should be computed
+	Recomputes the facet normal, surface area and center
 	*/
-	void update(bool compute_dyad = true);
+	void update();
 
 
 
@@ -121,7 +84,7 @@ public:
 	Return the vector storing the vertices owned by this facet
 	@return vector storing the vertices owned by this facet
 	*/
-	std::vector<std::shared_ptr<Vertex > > * get_vertices() ;
+	std::vector<std::shared_ptr<ControlPoint > > * get_vertices() ;
 
 
 	/**
@@ -151,18 +114,14 @@ public:
 
 protected:
 
-	void compute_facet_dyad();
 	void compute_normal();
 	void compute_area();
 	void compute_facet_center();
 
 
-	std::shared_ptr< std::vector<std::shared_ptr<Vertex > > > vertices ;
-	std::shared_ptr<arma::mat> facet_dyad;
-	std::shared_ptr<arma::vec> facet_normal;
-	std::shared_ptr<arma::vec> facet_center;
-
-	std::set<Edge * > facet_edges;
+	std::vector<std::shared_ptr<ControlPoint > >  vertices ;
+	arma::vec facet_normal;
+	arma::vec facet_center;
 
 	double area;
 	unsigned int split_counter = 0;

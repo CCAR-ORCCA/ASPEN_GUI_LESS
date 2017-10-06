@@ -1,14 +1,14 @@
-#include "KDTree_Shape.hpp"
+#include "KDTree_shape.hpp"
 
-KDTree_Shape::KDTree_Shape() {
+KDTree_shape::KDTree_shape() {
 
 }
 
 
-std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,  int depth, bool verbose) {
+std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Facet > > & facets,  int depth, bool verbose) {
 
 	// Creating the node
-	std::shared_ptr<KDTree_Shape> node = std::make_shared<KDTree_Shape>( KDTree_Shape() );
+	std::shared_ptr<KDTree_shape> node = std::make_shared<KDTree_shape>( KDTree_shape() );
 	node -> facets = facets;
 	node -> left = nullptr;
 	node -> right = nullptr;
@@ -30,11 +30,11 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 
 		node -> bbox . update(facets[0]);
 
-		node -> left = std::make_shared<KDTree_Shape>( KDTree_Shape() );
-		node -> right = std::make_shared<KDTree_Shape>( KDTree_Shape() );
+		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
+		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
 
-		node -> left -> facets = std::vector<Facet * >();
-		node -> right -> facets = std::vector<Facet * >();
+		node -> left -> facets = std::vector<std::shared_ptr<Facet> >();
+		node -> right -> facets = std::vector<std::shared_ptr<Facet> >();
 
 
 		return node;
@@ -54,8 +54,8 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 	}
 
 	// Facets to be assigned to the left and right nodes
-	std::vector < Facet * > left_facets;
-	std::vector < Facet * > right_facets;
+	std::vector < std::shared_ptr<Facet> > left_facets;
+	std::vector < std::shared_ptr<Facet> > right_facets;
 
 	unsigned int longest_axis = node -> bbox.get_longest_axis();
 
@@ -108,7 +108,7 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 
 	// Subdivision stops if at least 50% of triangles are shared amongst the two leaves
 	// or if this node has reached the maximum depth
-	// specified in KDTree_Shape.hpp (1000 by default)
+	// specified in KDTree_shape.hpp (1000 by default)
 	if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets.size() < 0.5 && depth < this -> max_depth) {
 
 
@@ -120,11 +120,11 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 
 	else {
 
-		node -> left = std::make_shared<KDTree_Shape>( KDTree_Shape() );
-		node -> right = std::make_shared<KDTree_Shape>( KDTree_Shape() );
+		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
+		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
 
-		node -> left -> facets = std::vector<Facet * >();
-		node -> right -> facets = std::vector<Facet * >();
+		node -> left -> facets = std::vector<std::shared_ptr<Facet> >();
+		node -> right -> facets = std::vector<std::shared_ptr<Facet> >();
 
 		if (verbose) {
 
@@ -146,7 +146,7 @@ std::shared_ptr<KDTree_Shape> KDTree_Shape::build(std::vector<Facet *> & facets,
 }
 
 
-bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const {
+bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const {
 
 	// Check if the ray intersects the bounding box of the given node
 
@@ -171,7 +171,7 @@ bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const 
 			for (unsigned int i = 0; i < node -> facets.size(); ++i) {
 
 				// If there is a hit
-				if (ray -> single_facet_ray_casting(node -> facets[i], computed_mes)) {
+				if (ray -> single_facet_ray_casting(node -> facets[i].get(), computed_mes)) {
 					hit_facet = true;
 				}
 
@@ -189,13 +189,13 @@ bool KDTree_Shape::hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const 
 
 }
 
-void KDTree_Shape::set_depth(int depth) {
+void KDTree_shape::set_depth(int depth) {
 	this -> depth = depth;
 }
 
 
 
-bool KDTree_Shape::hit_bbox(Ray * ray, bool computed_mes) const {
+bool KDTree_shape::hit_bbox(Ray * ray, bool computed_mes) const {
 
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();

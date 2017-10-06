@@ -63,7 +63,7 @@ for i in range(n_rays):
 		ax.plot(ray[:,0],ray[:,1],ray[:,2],c = 'red')
 
 
-# Vertex data
+# ControlPoint data
 verts = [    
       (xmin, ymin, zmin), (xmin, ymin, zmax), (xmin, ymax, zmax), (xmin, ymax, zmin),
       (xmax, ymin, zmin), (xmax, ymin, zmax), (xmax, ymax, zmax), (xmax, ymax, zmin)

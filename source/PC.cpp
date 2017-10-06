@@ -48,7 +48,7 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 
 
-PC::PC(ShapeModel * shape_model) {
+PC::PC(ShapeModelTri * shape_model) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
@@ -57,8 +57,8 @@ PC::PC(ShapeModel * shape_model) {
 	// The center points to each facets are used
 	// The normals of each facet are directly used
 
-	for (unsigned int facet_index = 0; facet_index < shape_model -> get_NFacets(); ++facet_index) {
-		Facet * facet = shape_model -> get_facets() -> at(facet_index);
+	for (unsigned int facet_index = 0; facet_index < shape_model -> get_NElements(); ++facet_index) {
+		Facet * facet = shape_model -> get_facets() -> at(facet_index).get();
 
 		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(*facet -> get_facet_center(), *facet -> get_facet_normal())));
 

@@ -2,9 +2,8 @@
 #define HEADER_KDTree_Shape
 
 #include "Facet.hpp"
-#include "FrameGraph.hpp"
 #include "BBox.hpp"
-#include "Lidar.hpp"
+#include "Ray.hpp"
 
 #include <set>
 
@@ -15,20 +14,20 @@
 //
 class Ray;
 
-class KDTree_Shape {
+class KDTree_shape {
 
 public:
 	BBox bbox;
-	std::shared_ptr<KDTree_Shape> left;
-	std::shared_ptr<KDTree_Shape> right;
-	std::vector<Facet * > facets;
+	std::shared_ptr<KDTree_shape> left;
+	std::shared_ptr<KDTree_shape> right;
+	std::vector<std::shared_ptr<Facet> > facets;
 
-	KDTree_Shape();
+	KDTree_shape();
 
 
 
-	std::shared_ptr<KDTree_Shape> build(std::vector<Facet *> & facets, int depth, bool verbose = false);
-	bool hit(KDTree_Shape * node, Ray * ray, bool computed_mes) const;
+	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Facet >> & facets, int depth, bool verbose = false);
+	bool hit(KDTree_shape * node, Ray * ray, bool computed_mes) const;
 	bool hit_bbox(Ray * ray, bool computed_mes ) const;
 
 	int get_depth() const;

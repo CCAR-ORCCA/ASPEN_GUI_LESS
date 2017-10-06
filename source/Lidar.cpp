@@ -149,14 +149,20 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
 
-			if (shape_model -> has_kd_tree()) {
-				hit = shape_model -> get_kdtree().get() -> hit(shape_model -> get_kdtree().get(),
-				        this -> focal_plane[y_index][z_index].get(), computed_mes);
-			}
 
-			else {
-				hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes, shape_model);
-			}
+
+			hit = shape_model -> ray_trace(this -> focal_plane[y_index][z_index].get(),computed_mes);
+
+
+
+			// if (shape_model -> has_kd_tree()) {
+			// 	hit = shape_model -> get_kdtree().get() -> hit(shape_model -> get_kdtree().get(),
+			// 	        this -> focal_plane[y_index][z_index].get(), computed_mes);
+			// }
+
+			// else {
+			// 	hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes, shape_model);
+			// }
 
 			// If there's a hit, noise is added along the line of sight on the true measurement
 			if (hit) {

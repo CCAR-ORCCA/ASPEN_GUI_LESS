@@ -4,14 +4,14 @@
 #include "Facet.hpp"
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
-#include "ShapeModel.hpp"
+#include "ShapeModelTri.hpp"
 
 #include <memory>
 #include <armadillo>
 
 class Lidar;
 class Facet;
-class ShapeModel;
+// class ShapeModel;
 
 /**
 Convenience struct used in the parallelization of the ray casting procedure
@@ -67,14 +67,11 @@ public:
 	*/
 	void set_true_range(double true_range) ;
 
-
-
 	/**
 	Sets the computed range to the prescribed value
 	@param true_range Prescribed computed range value
 	*/
 	void set_computed_range(double computed_range) ;
-
 
 	/**
 	Sets the corresponding measurement ray
@@ -140,20 +137,6 @@ public:
 	*/
 	arma::vec get_impact_point(bool computed_mes) const;
 
-
-	/**
-	Cast a ray to the target and searches for intersections inside each of the
-	shape model's facets using a greedy search. Not recommended for high resolutins Lidars
-	or complex targets
-	Sets the $hit_facet and $range members depending on whether an intersect was found:
-	- no intersect found: range == oo and hit_facet == nullptr
-	- intersect found: hit_facet and range have valid values
-	@param computed_mes True if the measurements are collected from the a-priori
-	@param shape_model pointer to illuminated shape model
-	@return true if the ray hit the target, false otherwise
-	*/
-	bool brute_force_ray_casting(bool computed_mes ,ShapeModel * shape_model);
-
 	/**
 	Cast a ray to a single facet of the target
 	Sets the $hit_facet and $range members depending on whether an intersect was found:
@@ -165,16 +148,11 @@ public:
 	*/
 	bool single_facet_ray_casting(Facet * facet, bool computed_mes ) ;
 
-
-
 	/**
 	Accessor to lidar
 	@return pointer to parent Lidar
 	*/
 	Lidar * get_lidar();
-
-
-
 
 protected:
 

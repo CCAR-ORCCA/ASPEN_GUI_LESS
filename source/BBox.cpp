@@ -22,7 +22,7 @@ void BBox::print() const {
 
 }
 
-void BBox::update(Facet * facet) {
+void BBox::update(std::shared_ptr<Facet> facet) {
 
 	arma::vec * first_coordinates = facet -> get_vertices() -> at(0) -> get_coordinates();
 
@@ -62,11 +62,10 @@ void BBox::update(Facet * facet) {
 
 	}
 
-	// this -> make_consistent();
 
 }
 
-void BBox::update(std::vector<Facet * > facets) {
+void BBox::update(std::vector<std::shared_ptr<Facet > > facets) {
 
 	arma::vec * first_coordinates = facets . at(0) -> get_vertices() -> at(0) -> get_coordinates();
 
@@ -112,7 +111,6 @@ void BBox::update(std::vector<Facet * > facets) {
 		}
 	}
 
-	// this -> make_consistent();
 
 }
 
@@ -155,43 +153,6 @@ double BBox::get_zmax() const {
 }
 
 
-void BBox::make_consistent() {
-
-	double x_axis_length = this -> xmax - this -> xmin;
-	double y_axis_length = this -> ymax - this -> ymin;
-	double z_axis_length = this -> zmax - this -> zmin;
-
-	arma::vec axes_length = {x_axis_length, y_axis_length, z_axis_length};
-	arma::uvec axes_length_sorted_indices = arma::sort_index(axes_length);
-
-	// Increase of the other two axes based on the length
-	// of the longest one
-	double shortest_axis_increase = 0.1 * axes_length(axes_length_sorted_indices(2));
-
-	switch (axes_length_sorted_indices(0)) {
-	case 0:
-		this -> xmax += shortest_axis_increase / 2;
-		this -> xmin -= shortest_axis_increase / 2;
-
-		break;
-
-	case 1:
-		this -> ymax += shortest_axis_increase / 2;
-		this -> ymin -= shortest_axis_increase / 2;
-		break;
-
-
-	case 2:
-		this -> zmax += shortest_axis_increase / 2;
-		this -> zmin -= shortest_axis_increase / 2;
-		break;
-
-
-
-
-	}
-
-}
 
 void BBox::save_to_file(std::string path) const {
 

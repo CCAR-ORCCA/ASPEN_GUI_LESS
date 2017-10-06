@@ -1,11 +1,11 @@
-#include "../include/Vertex.hpp"
+#include "../include/ControlPoint.hpp"
 
-void Vertex::set_coordinates(std::shared_ptr<arma::vec> coordinates) {
+void ControlPoint::set_coordinates(std::shared_ptr<arma::vec> coordinates) {
 	this -> coordinates = coordinates;
 }
 
 
-void Vertex::add_facet_ownership(Facet * facet) {
+void ControlPoint::add_facet_ownership(Facet * facet) {
 
 	this -> owning_facets.insert(facet);
 
@@ -13,20 +13,20 @@ void Vertex::add_facet_ownership(Facet * facet) {
 }
 
 
-void Vertex::remove_facet_ownership(Facet * facet) {
+void ControlPoint::remove_facet_ownership(Facet * facet) {
 
 	this -> owning_facets.erase(facet);
 
 }
 
 
-std::set<Facet * > Vertex::get_owning_facets() const {
+std::set<Facet * > ControlPoint::get_owning_facets() const {
 	return this -> owning_facets;
 }
 
 
 
-std::set<Facet *>  Vertex::common_facets(std::shared_ptr<Vertex> vertex) const {
+std::set<Facet *>  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
 
 	std::set<Facet *> common_facets;
 
@@ -46,7 +46,7 @@ std::set<Facet *>  Vertex::common_facets(std::shared_ptr<Vertex> vertex) const {
 
 
 
-bool Vertex::is_owned_by(Facet * facet) const {
+bool ControlPoint::is_owned_by(Facet * facet) const {
 	if (this -> owning_facets.find(facet) == this -> owning_facets.end()) {
 		return false;
 
@@ -58,10 +58,10 @@ bool Vertex::is_owned_by(Facet * facet) const {
 }
 
 
-arma::vec * Vertex::get_coordinates()  {
+arma::vec * ControlPoint::get_coordinates()  {
 	return this -> coordinates.get();
 }
 
-unsigned int Vertex::get_number_of_owning_facets() const {
+unsigned int ControlPoint::get_number_of_owning_facets() const {
 	return this -> owning_facets.size();
 }

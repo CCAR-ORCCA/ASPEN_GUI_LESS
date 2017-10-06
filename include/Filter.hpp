@@ -234,7 +234,7 @@ protected:
 	                   bool plot_measurement);
 
 	void correct_observed_features(std::vector<Ray * > & good_rays,
-	                               std::set<Vertex *> & seen_vertices,
+	                               std::set<ControlPoint *> & seen_vertices,
 	                               std::set<Facet *> & seen_facets,
 
 	                               arma::mat & N_mat,
@@ -242,7 +242,7 @@ protected:
 	                               std::vector<unsigned int> > & facet_to_index_of_vertices) ;
 
 	void get_observed_features(std::vector<Ray * > & good_rays,
-	                           std::set<Vertex *> & seen_vertices,
+	                           std::set<ControlPoint *> & seen_vertices,
 	                           std::set<Facet *> & seen_facets,
 	                           std::set<Facet *> & spurious_facets,
 	                           arma::mat & N_mat,

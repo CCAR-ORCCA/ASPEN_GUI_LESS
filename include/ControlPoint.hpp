@@ -1,16 +1,14 @@
 #ifndef HEADER_VERTEX
 #define HEADER_VERTEX
 #include <armadillo>
-#include "Edge.hpp"
 #include "Facet.hpp"
 #include <memory>
 
 #include <set>
 
-class Edge;
 class Facet;
 
-class Vertex {
+class ControlPoint {
 
 public:
 
@@ -39,7 +37,7 @@ public:
 	Finds the facets owming both $this and $vertex
 	@return commons_facets Vector of Facet * owning the two vertices
 	*/
-	std::set<Facet *>  common_facets(std::shared_ptr<Vertex> vertex) const;
+	std::set<Facet *>  common_facets(std::shared_ptr<ControlPoint> vertex) const;
 
 	/**
 	Determines if $this is owned by $facet

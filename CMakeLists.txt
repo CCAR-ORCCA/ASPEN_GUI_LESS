@@ -134,54 +134,58 @@ endif()
 # Add source files in root directory
 add_executable(${EXE_NAME}
 source/main.cpp
-source/ShapeModel.cpp
-source/ShapeModelImporter.cpp
+source/BBox.cpp
+source/Element.cpp
 source/Facet.cpp
-source/Edge.cpp
-source/Vertex.cpp
+source/FrameGraph.cpp
+source/KDTree_pc.cpp
+source/KDTree_shape.cpp
 source/Lidar.cpp
+source/PointNormal.cpp
 source/Ray.cpp
 source/RefFrame.cpp
-source/FrameGraph.cpp
-source/Filter.cpp
-source/RK.cpp
-source/DynamicAnalyses.cpp
-source/Wrappers.cpp
-source/Interpolator.cpp
-source/BBox.cpp
-source/KDTree_Shape.cpp
-source/ICP.cpp
+source/ShapeModel.cpp
+source/ShapeModelBezier.cpp
+source/ShapeModelImporter.cpp
+source/ShapeModelTri.cpp
+source/ControlPoint.cpp
+# source/Filter.cpp
+# source/RK.cpp
+# source/DynamicAnalyses.cpp
+# source/Wrappers.cpp
+# source/Interpolator.cpp
+# source/ICP.cpp
 source/PC.cpp
-source/PointNormal.cpp
-source/KDTree_pc.cpp
-include/ShapeModel.hpp
-include/ShapeModelImporter.hpp
+include/Adjacency_List.hpp
+include/BBox.hpp
+include/Element.hpp
 include/Facet.hpp
-include/Edge.hpp
-include/Vertex.hpp
+include/FrameGraph.hpp
+include/KDTree_shape.hpp
 include/Lidar.hpp
+include/OMP_flags.hpp
+include/PointNormal.hpp
 include/Ray.hpp
 include/RefFrame.hpp
-include/Adjacency_List.hpp
-include/FrameGraph.hpp
-include/Filter.hpp
-include/RK.hpp
-include/DynamicAnalyses.hpp
-include/Wrappers.hpp
-include/Args.hpp
-include/Interpolator.hpp
-include/BBox.hpp
-include/KDTree_Shape.hpp
-include/ICP.hpp
+include/ShapeModel.hpp
+include/ShapeModelTri.hpp
+include/ShapeModelImporter.hpp
+include/ControlPoint.hpp
+# include/Filter.hpp
+# include/RK.hpp
+# include/DynamicAnalyses.hpp
+# include/Wrappers.hpp
+# include/Args.hpp
+# include/Interpolator.hpp
+# include/ICP.hpp
 include/PC.hpp
-include/FilterArguments.hpp
-include/PointNormal.hpp
-include/Constants.hpp
-include/ICPException.hpp
+# include/FilterArguments.hpp
+# include/Constants.hpp
+# include/ICPException.hpp
 external/Gnuplot/source/GNUPlot.cpp
 external/Gnuplot/include/GNUPlot.h
-external/CGAL_interface/include/CGAL_interface.hpp
-external/CGAL_interface/source/CGAL_interface.cpp
+# external/CGAL_interface/include/CGAL_interface.hpp
+# external/CGAL_interface/source/CGAL_interface.cpp
 )
 
 # Linking

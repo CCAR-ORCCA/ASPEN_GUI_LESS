@@ -1,22 +1,12 @@
 #include "../include/Facet.hpp"
 #include <memory>
 
-Facet::Facet(std::shared_ptr< std::vector<std::shared_ptr<Vertex > > >   vertices) {
+Facet::Facet(std::vector<std::shared_ptr<ControlPoint > > vertices) {
 	this -> vertices = vertices;
 
-	for (unsigned int vertex_index = 0; vertex_index < this -> vertices -> size(); ++vertex_index) {
-		this -> vertices -> at(vertex_index) -> add_facet_ownership(this);
+	for (unsigned int vertex_index = 0; vertex_index < this -> vertices . size(); ++vertex_index) {
+		this -> vertices[vertex_index]-> add_facet_ownership(this);
 	}
-
-	// Allocating memory for the facet normal
-	this -> facet_normal = std::make_shared<arma::vec>(arma::zeros(3));
-
-	// Allocating memory for the facet dyad
-	this -> facet_dyad = std::make_shared<arma::mat>(arma::zeros(3, 3));
-
-	// Allocating memory for the facet center
-	this -> facet_center = std::make_shared<arma::vec>(arma::zeros(3));;
-
 
 	// Computing surface area
 	this -> compute_area();
@@ -42,13 +32,11 @@ unsigned int Facet::get_split_count() const {
 	return this -> split_counter;
 }
 
-void Facet::update(bool compute_dyad) {
+void Facet::update() {
 	this -> compute_normal();
 	this -> compute_area();
 	this -> compute_facet_center();
-	if (compute_dyad) {
-		this -> compute_facet_dyad();
-	}
+	
 }
 
 /**
@@ -59,84 +47,14 @@ void Facet::increase_hit_count() {
 }
 
 
-// bool Facet::has_good_edge_quality(double angle) {
-
-// 	std::set < Facet * > neighbors = this -> get_neighbors(false);
-
-// 	arma::vec * n = this -> facet_normal.get();
-
-// 	for (auto & neighbor : neighbors) {
-
-// 		if (arma::dot(*n, *neighbor -> get_facet_normal()) < - std::cos(angle)) {
-
-// 			Vertex * V0 = nullptr;
-// 			Vertex * V1 = nullptr;
-// 			Vertex * V2 = nullptr;
-
-
-// 			// The two vertices of $this lying on the edge are found
-// 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
-
-// 				if (this -> vertices -> at(vertex_index) -> is_owned_by(neighbor)) {
-// 					if (V0 == nullptr) {
-// 						V0 = this -> vertices -> at(vertex_index).get();
-// 					}
-// 					else {
-// 						V1 = this -> vertices -> at(vertex_index).get();
-
-// 					}
-// 				}
-
-// 			}
-
-
-// 			// The other vertex in neighbor is found
-// 			for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
-
-// 				if (neighbor -> get_vertices() -> at(vertex_index).get() != V0 &&
-// 				        neighbor -> get_vertices() -> at(vertex_index).get() != V1 )
-// 				{
-// 					V2 = neighbor -> get_vertices() -> at(vertex_index).get();
-// 					break;
-// 				}
-
-// 			}
-
-
-// 			arma::vec dir = arma::normalise(*n + *neighbor -> get_facet_normal());
-// 			arma::vec delta_V0 = arma::dot(*V2 -> get_coordinates() - *V0 -> get_coordinates(),
-// 			                               dir) * dir;
-// 			arma::vec delta_V1 = arma::dot(*V2 -> get_coordinates() - *V1 -> get_coordinates(),
-// 			                               dir) * dir;
-
-// 			arma::vec delta = (delta_V0 + delta_V1) / 2;
-
-
-
-// 			*V0 -> get_coordinates() = *V0 -> get_coordinates() + delta;
-// 			*V1 -> get_coordinates() = *V1 -> get_coordinates() + delta;
-
-
-// 			return false;
-
-// 		}
-
-// 	}
-
-// 	return true;
-
-
-
-// }
-
 
 std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 
 	std::set<Facet *> neighbors;
 
-	std::shared_ptr<Vertex> V0 = this -> vertices -> at(0);
-	std::shared_ptr<Vertex> V1 = this -> vertices -> at(1);
-	std::shared_ptr<Vertex> V2 = this -> vertices -> at(2);
+	std::shared_ptr<ControlPoint> V0 = this -> vertices[0];
+	std::shared_ptr<ControlPoint> V1 = this -> vertices[1];
+	std::shared_ptr<ControlPoint> V2 = this -> vertices[2];
 
 
 	if (all_neighbors == true) {
@@ -186,50 +104,34 @@ std::set < Facet * > Facet::get_neighbors(bool all_neighbors) const {
 
 void Facet::compute_normal() {
 
-	arma::vec * P0 = this -> vertices -> at(0) -> get_coordinates();
-	arma::vec * P1 = this -> vertices -> at(1) -> get_coordinates();
-	arma::vec * P2 = this -> vertices -> at(2) -> get_coordinates();
-	*this -> facet_normal = arma::normalise(arma::cross(*P1 - *P0, *P2 - *P0));
+	arma::vec * P0 = this -> vertices[0] -> get_coordinates();
+	arma::vec * P1 = this -> vertices[1] -> get_coordinates();
+	arma::vec * P2 = this -> vertices[2] -> get_coordinates();
+	this -> facet_normal = arma::normalise(arma::cross(*P1 - *P0, *P2 - *P0));
 }
 
-void Facet::compute_facet_dyad() {
-
-	*this -> facet_dyad = *this -> facet_normal * (*this -> facet_normal).t();
-}
 
 arma::vec * Facet::get_facet_normal()  {
-	return this -> facet_normal.get();
+	return (&this -> facet_normal);
 }
 
 
-arma::mat * Facet::get_facet_dyad()  {
-	return this -> facet_dyad.get();
-}
+std::shared_ptr<ControlPoint> Facet::vertex_not_on_edge(std::shared_ptr<ControlPoint> v0,
+        std::shared_ptr<ControlPoint>v1) const {
+	for (unsigned int i = 0; i < this -> vertices . size(); ++i) {
 
-std::shared_ptr<Vertex> Facet::vertex_not_on_edge(std::shared_ptr<Vertex> v0,
-        std::shared_ptr<Vertex>v1) const {
-	for (unsigned int i = 0; i < this -> vertices -> size(); ++i) {
-
-		if (this -> vertices -> at(i) != v0 && this -> vertices -> at(i) != v1 ) {
-			return this -> vertices -> at(i);
+		if (this -> vertices [i]!= v0 && this -> vertices [i] != v1 ) {
+			return this -> vertices [i];
 		}
 	}
 	return nullptr;
 
 }
 
-void Facet::add_edge(Edge * edge) {
-	this -> facet_edges.insert(edge);
-}
-
-void Facet::remove_edge(Edge * edge) {
-	// Should throw exception if edge is not found
-	this -> facet_edges.erase(this -> facet_edges.find(edge));
-}
 
 
 arma::vec * Facet::get_facet_center()  {
-	return this -> facet_center.get();
+	return (&this -> facet_center);
 
 }
 
@@ -237,25 +139,25 @@ void Facet::compute_facet_center() {
 
 	arma::vec facet_center = arma::zeros(3);
 
-	for (unsigned int vertex_index = 0; vertex_index < this -> vertices -> size(); ++vertex_index) {
+	for (unsigned int vertex_index = 0; vertex_index < this -> vertices . size(); ++vertex_index) {
 
-		facet_center += *this -> vertices -> at(vertex_index) -> get_coordinates();
+		facet_center += *this -> vertices [vertex_index] -> get_coordinates();
 
 	}
 
-	*this -> facet_center = facet_center / this -> vertices -> size();
+	this -> facet_center = facet_center / this -> vertices . size();
 
 }
 
-std::vector<std::shared_ptr<Vertex > >  * Facet::get_vertices() {
-	return this -> vertices.get();
+std::vector<std::shared_ptr<ControlPoint > >  * Facet::get_vertices() {
+	return (&this -> vertices);
 }
 
 
 void Facet::compute_area() {
-	arma::vec * P0 = this -> vertices -> at(0) -> get_coordinates() ;
-	arma::vec * P1 = this -> vertices -> at(1) -> get_coordinates() ;
-	arma::vec * P2 = this -> vertices -> at(2) -> get_coordinates() ;
+	arma::vec * P0 = this -> vertices[0] -> get_coordinates() ;
+	arma::vec * P1 = this -> vertices[1] -> get_coordinates() ;
+	arma::vec * P2 = this -> vertices[2] -> get_coordinates() ;
 	this -> area = arma::norm( arma::cross(*P1 - *P0, *P2 - *P0)) / 2;
 }
 
