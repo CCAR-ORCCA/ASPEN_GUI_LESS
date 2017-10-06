@@ -6,6 +6,7 @@
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
 #include "PC.hpp"
+#include "OMP_flags.hpp"
 
 
 class Ray;

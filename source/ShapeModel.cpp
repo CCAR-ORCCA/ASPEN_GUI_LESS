@@ -148,7 +148,7 @@ bool ShapeModel::contains(double * point, double tol ) {
 }
 
 
-void ShapeModel::save(std::string path) const {
+void ShapeModel::save(std::string path, bool convert_to_instrument_frame) const {
 	std::ofstream shape_file;
 	shape_file.open(path);
 
@@ -158,7 +158,20 @@ void ShapeModel::save(std::string path) const {
 	        vertex_index < this -> get_NVertices();
 	        ++vertex_index) {
 
-		shape_file << "v " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
+		if (convert_to_instrument_frame) {
+			arma::vec converted_coords = this -> frame_graph -> convert(*this -> vertices[vertex_index] -> get_coordinates(),
+				"E","L");
+
+			shape_file << "v " << converted_coords[0] << " " << converted_coords[1] << " " << converted_coords[2] << std::endl;
+
+		}
+		else {
+
+			shape_file << "v " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
+
+
+		}
+
 		vertex_ptr_to_index[this -> vertices[vertex_index]] = vertex_index;
 	}
 
@@ -1009,20 +1022,6 @@ bool ShapeModel::merge_shrunk_facet(double minimum_angle,
 	}
 
 
-	// If any of the facets to be updated was not seen, the method does not proceed
-	// if (spurious_facets == nullptr) {
-	// 	for (auto facet_it = facets_to_keep_owning_V_merge_discard.begin();
-	// 	        facet_it != facets_to_keep_owning_V_merge_discard.end();
-	// 	        ++facet_it) {
-
-	// 		if (seen_facets -> find(*facet_it) == seen_facets -> end()) {
-	// 			std::cout << "Connected facet is invisible. Recycling aborted" << std::endl;
-	// 			return false;
-	// 		}
-	// 	}
-	// }
-
-
 	// If any of the vertices to keep is on a corner (owned by four facets or less), nothing happens
 	if (
 	    V_merge_keep -> get_number_of_owning_facets() <= 4 ||
@@ -1159,7 +1158,7 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 	double ymax =  - std::numeric_limits<double>::infinity();
 	double zmax =  - std::numeric_limits<double>::infinity();
 
-	#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
+	#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin) if (USE_OMP_SHAPE_MODEL)
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NVertices(); ++ vertex_index) {
 
 		double * vertex_cords = this -> vertices[vertex_index] -> get_coordinates() -> colptr(0);

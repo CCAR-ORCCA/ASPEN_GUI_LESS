@@ -18,7 +18,7 @@
 #define COL_FOV 20
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.0011111111111111111 // one flash 15 minutes
+#define INSTRUMENT_FREQUENCY 0.0011111111111111111 // one flash every 15 minutes
 
 // Noise
 #define FOCAL_LENGTH 1e1

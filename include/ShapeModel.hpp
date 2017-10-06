@@ -166,8 +166,10 @@ public:
 	/**
 	Saves the shape model in the form of an .obj file
 	@param path Location of the saved file
+	@param convert_to_instrument_frame if true, the coordinates of the shape model 
+	are expressed in the instrument frame (defaut is false)
 	*/
-	void save(std::string path) const;
+	void save(std::string path,bool convert_to_instrument_frame = false) const;
 
 
 	/**

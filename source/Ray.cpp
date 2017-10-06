@@ -239,8 +239,6 @@ arma::vec Ray::get_impact_point(bool computed_mes) const {
 	}
 }
 
-
-
 bool Ray::single_facet_ray_casting(Facet * facet, bool computed_mes ) {
 
 

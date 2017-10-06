@@ -95,7 +95,7 @@ void Lidar::compute_residuals() {
 	unsigned int y_res = this -> row_count;
 	unsigned int z_res = this -> col_count;
 
-	#pragma omp parallel for
+	#pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
@@ -144,7 +144,7 @@ void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_m
 	}
 
 
-	#pragma omp parallel for
+	#pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
 
 		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {

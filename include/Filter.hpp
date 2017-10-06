@@ -122,9 +122,11 @@ public:
 	facet recycling step)
 	@param time_index index
 	@param time_index_formatted string denoting the current time
+	@param plot_measurements true if measurements should be saved
 	*/
 	void shape_reconstruction_pass(unsigned int time_index,
-	                               std::string time_index_formatted);
+	                               std::string time_index_formatted,
+	                               bool plot_measurements);
 
 
 
@@ -228,7 +230,8 @@ public:
 
 protected:
 
-	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter);
+	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter,
+	                   bool plot_measurement);
 
 	void correct_observed_features(std::vector<Ray * > & good_rays,
 	                               std::set<Vertex *> & seen_vertices,

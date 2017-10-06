@@ -320,7 +320,7 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 
 void PC::construct_normals(arma::vec & los_dir) {
 
-	#pragma omp parallel for
+	#pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kd_tree -> get_points_normals() -> size(); ++i) {
 
 		std::shared_ptr<PointNormal> pn = this -> kd_tree -> get_points_normals() -> at(i);

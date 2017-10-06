@@ -398,7 +398,8 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 				unsigned int size_before = this -> estimated_shape_model -> get_NFacets();
 
 				this -> shape_reconstruction_pass(time_index,
-				                                  time_index_formatted);
+				                                  time_index_formatted,
+				                                  plot_measurements);
 
 				if (this -> estimated_shape_model -> get_NFacets() == size_before) {
 					std::cout << "Shape unchanged after " << pass + 1 << " passes. " << std::endl;
@@ -432,6 +433,8 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 
 			if (save_shape_model == true) {
 				this -> estimated_shape_model -> save("../output/shape_model/shape_model_" + time_index_formatted + ".obj");
+				this -> estimated_shape_model -> save("../output/shape_model/shape_model_from_instrument_" + time_index_formatted + ".obj", true);
+
 			}
 
 
@@ -463,7 +466,8 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
 }
 
 void Filter::shape_reconstruction_pass(unsigned int time_index,
-                                       std::string time_index_formatted) {
+                                       std::string time_index_formatted,
+                                       bool plot_measurements) {
 
 
 
@@ -481,15 +485,15 @@ void Filter::shape_reconstruction_pass(unsigned int time_index,
 
 		// First iteration
 		if (iteration ==  1) {
-			this -> correct_shape(time_index, true, false);
+			this -> correct_shape(time_index, true, false, plot_measurements);
 		}
 		// Last iteration
 		else if (iteration ==  this -> filter_arguments -> get_N_iterations()) {
 
-			this -> correct_shape(time_index, false, true);
+			this -> correct_shape(time_index, false, true, plot_measurements);
 		}
 		else {
-			this -> correct_shape(time_index, false, false);
+			this -> correct_shape(time_index, false, false, plot_measurements);
 		}
 
 	}
@@ -857,20 +861,20 @@ void Filter::estimate_cm_KF(arma::mat & dcm, arma::vec & x) {
 		// The points present in the point cloud are transformed back
 		// to the inertial frame using the last computed [EN] measurement
 		// and are saved to a file
-		this -> source_pc -> save("../output/pc/source_transformed_poisson.cgal", dcm, X, true, false);
-		this -> source_pc -> save("../output/pc/source_transformed_poisson.obj", dcm, X, false, true);
+		this -> source_pc -> save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.cgal", dcm, X, true, false);
+		this -> source_pc -> save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.obj", dcm, X, false, true);
 
 
 		// A poisson surface reconstruction is ran over the point cloud
 		// to obtained a partially covering, well behaved, apriori shape model
-		CGALINTERFACE::CGAL_interface("../output/pc/source_transformed_poisson.cgal",
-		                              "../output/shape_model/apriori.obj");
+		CGALINTERFACE::CGAL_interface("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.cgal",
+		                              "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/shape_model/apriori.obj");
 
 
 		// The estimated shape model is finally constructed using
 		// the convex hull
 		ShapeModelImporter shape_io_estimated(
-		    "../output/shape_model/apriori.obj",
+		    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/shape_model/apriori.obj",
 		    1, false, true);
 
 
@@ -957,7 +961,8 @@ void Filter::store_point_clouds(int index) {
 
 
 
-void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter) {
+void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_iter,
+                           bool plot_measurements) {
 
 	std::vector<Ray * > good_rays;
 	std::set<Vertex * > seen_vertices;
@@ -966,7 +971,6 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 	arma::mat N_mat;
 	std::map<Facet *, std::vector<unsigned int> > facet_to_index_of_vertices;
-	std::map<Facet *, arma::uvec> facet_to_N_mat_cols;
 
 	this -> get_observed_features(good_rays,
 	                              seen_vertices,
@@ -990,16 +994,13 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 		for (unsigned int ray_index = 0; ray_index < good_rays.size(); ++ray_index) {
 			facets_to_residuals[good_rays[ray_index] -> get_computed_hit_facet()].push_back(good_rays[ray_index] -> get_range_residual());
-
 		}
 
-
-		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_prefit" + std::to_string(time_index),
-		        facets_to_residuals);
-
-		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_prefit" + std::to_string(time_index));
-
-
+		if (plot_measurements == true) {
+			this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_prefit" + std::to_string(time_index),
+			        facets_to_residuals);
+			this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_prefit" + std::to_string(time_index));
+		}
 	}
 
 	else if (last_iter == true) {
@@ -1024,15 +1025,16 @@ void Filter::correct_shape(unsigned int time_index, bool first_iter, bool last_i
 
 			facets_to_residuals_sd[it -> first] = arma::stddev(facet_residuals_arma);
 
-			if (it-> first -> get_area() > max_area) {
+			if (it -> first -> get_area() > max_area) {
 				max_area = it -> first -> get_area();
 				facet_to_split = it -> first;
 			}
 		}
 
-		this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index), facets_to_residuals);
-		this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
-
+		if (plot_measurements == true) {
+			this -> lidar -> save_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index), facets_to_residuals);
+			this -> lidar -> plot_range_residuals_per_facet("../output/measurements/facets_residuals_postfit_" + std::to_string(time_index));
+		}
 
 
 		// Spurious facets are removed until the next spurious facet is found at a corner
@@ -1165,6 +1167,8 @@ void Filter::correct_observed_features(std::vector<Ray * > & good_rays,
 	arma::vec dV = N_mat * alpha;
 
 	// std::cout << "Info mat conditionning : " << arma::cond(info_mat) << std::endl;
+	// std::cout << "Info mat size: " << info_mat.n_rows << " , " << info_mat.n_cols << std::endl;
+
 	// std::cout << N_mat << std::endl;
 	// std::cout << alpha << std::endl;
 	// std::cout << dV << std::endl;
@@ -1321,85 +1325,23 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 	// Can only solve for displacements
 	// along independent directions
-	std::map<unsigned int, std::vector<arma::vec *> > vertex_to_normal;
+	std::map<unsigned int, std::vector<arma::vec > > vertex_to_normal;
 
 	for (unsigned int v_index = 0; v_index < seen_vertices.size(); ++ v_index) {
 
-		// Easy: that vertex can only move along one direction
-		if (vertex_to_owning_facets[v_index].size() == 1) {
-			vertex_to_normal[v_index].push_back(vertex_to_owning_facets[v_index][0] -> get_facet_normal());
-		}
+		arma::vec dir_update = {0, 0, 0};
+		for (unsigned int facet_index = 0; facet_index < vertex_to_owning_facets[v_index].size(); ++ facet_index ) {
+			unsigned int hits = facet_to_rays[vertex_to_owning_facets[v_index] . at(facet_index)].size();
 
-		// Easy: that vertex is owned by two facets and can move up to
-		//  2 independent directions
-		else if (vertex_to_owning_facets[v_index].size() == 2) {
-			arma::vec * n1 = vertex_to_owning_facets[v_index][0] -> get_facet_normal();
-			arma::vec * n2 = vertex_to_owning_facets[v_index][1] -> get_facet_normal();
-
-			if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference())) {
-				vertex_to_normal[v_index].push_back(n1);
-				vertex_to_normal[v_index].push_back(n2);
-			}
-			else {
-				vertex_to_normal[v_index].push_back(n2);
-			}
+			dir_update += hits * (*vertex_to_owning_facets[v_index][0] -> get_facet_normal());
 
 		}
 
-		// This vertex is owned by three facets or more. Have to determine
-		// a minimum set of normal to those facets spanning R3.
-		else {
-
-			arma::vec * n1;
-			arma::vec * n2;
-			arma::vec * n3;
+		dir_update = dir_update / arma::norm(dir_update);
 
 
-			// First of all, two non-colinear facet normals are found
-			// The first normal is used as a reference
-			// It will be used no matter what
-			n1 = vertex_to_owning_facets[v_index][0] -> get_facet_normal();
-			vertex_to_normal[v_index].push_back(n1);
+		vertex_to_normal[v_index].push_back(dir_update);
 
-			unsigned int n2_index = 0;
-
-			for (unsigned int facet_index = 1; facet_index < vertex_to_owning_facets[v_index].size();
-			        ++facet_index) {
-
-				n2 = vertex_to_owning_facets[v_index][facet_index] -> get_facet_normal();
-
-				// If true, we just found another independent normal.
-				// We need to select up to one more
-				if (arma::norm(arma::cross(*n1, *n2)) > std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference())) {
-					vertex_to_normal[v_index].push_back(n2);
-					n2_index = facet_index;
-					break;
-				}
-
-			}
-
-			// If all the facet normals were not colinear, then at least two were selected and we can
-			// try to look for a third one
-			if (n2_index != 0) {
-
-				for (unsigned int facet_index = 1; facet_index < vertex_to_owning_facets[v_index].size();
-				        ++facet_index) {
-
-					if (facet_index != n2_index) {
-
-						n3 = vertex_to_owning_facets[v_index][facet_index] -> get_facet_normal();
-						// If true, we found our third normal
-						if (std::abs(arma::dot(arma::cross(*n1, *n2), *n3)) > std::pow(
-						            std::sin(this -> filter_arguments -> get_min_facet_normal_angle_difference()), 2)) {
-							vertex_to_normal[v_index].push_back(n3);
-							break;
-						}
-
-					}
-				}
-			}
-
-		}
 
 	}
 
@@ -1418,7 +1360,7 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 		for (unsigned int normal_index_local = 0; normal_index_local < vertex_to_normal[v_index].size(); ++normal_index_local) {
 
-			N_mat.rows(3 * v_index, 3 * v_index + 2).col(col_index) = *vertex_to_normal[v_index][normal_index_local];
+			N_mat.rows(3 * v_index, 3 * v_index + 2).col(col_index) = vertex_to_normal[v_index][normal_index_local];
 			++col_index;
 
 		}

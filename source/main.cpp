@@ -34,7 +34,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-	    "../resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
 	    "/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , true, false);
@@ -45,9 +45,6 @@ int main() {
 
 	shape_io_truth.load_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree(false);
-
-
-
 
 
 // 1) Propagate small body attitude
@@ -88,7 +85,7 @@ int main() {
 	                nullptr,
 	                &event_function_mrp_omega,
 	                false,
-	                "../output/integrators/");
+	                "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
 
 // 2) Propagate spacecraft attitude about small body
 // using computed small body attitude
@@ -108,9 +105,6 @@ int main() {
 	arma::vec initial_vel_inertial = {0, 0, v};
 
 
-// arma::vec body_vel = initial_vel_inertial - arma::cross(attitude_0.rows(3, 5),
-//                      initial_pos);
-
 	arma::vec orbit_0(6);
 
 	orbit_0.rows(0, 2) = initial_pos;
@@ -129,7 +123,7 @@ int main() {
 	             nullptr,
 	             nullptr,
 	             false,
-	             "../output/integrators/");
+	             "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
 
 // The attitude of the asteroid is also interpolated
 	arma::mat interpolated_attitude = arma::mat(6, rk_orbit.get_T() -> n_rows);
@@ -137,7 +131,7 @@ int main() {
 	for (unsigned int i = 0; i < interpolated_attitude.n_cols; ++i) {
 		interpolated_attitude.col(i) = interpolator.interpolate( rk_orbit.get_T() -> at(i), true);
 	}
-	interpolated_attitude.save("../output/integrators/interpolated_attitude.txt", arma::raw_ascii);
+	interpolated_attitude.save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/interpolated_attitude.txt", arma::raw_ascii);
 
 // Lidar
 	Lidar lidar(&frame_graph,
@@ -154,11 +148,15 @@ int main() {
 
 
 // Filter filter_arguments
-	FilterArguments shape_filter_args = FilterArguments();
+	FilterArguments shape_filter_args;
 
 	shape_filter_args.set_max_ray_incidence(60 * arma::datum::pi / 180.);
+
+
 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
-	shape_filter_args.set_ridge_coef(5e1);
+
+	shape_filter_args.set_ridge_coef(1e1);
+
 
 	shape_filter_args.set_split_facets(true);
 	shape_filter_args.set_use_cholesky(false);
@@ -204,18 +202,18 @@ int main() {
 
 
 	shape_filter.run_shape_reconstruction(
-	    "../output/integrators/X_RK45_orbit_inertial.txt",
-	    "../output/integrators/T_RK45_orbit_inertial.txt",
-	    "../output/integrators/X_RK45_attitude.txt",
-	    "../output/integrators/T_RK45_attitude.txt",
-	    true,
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/X_RK45_orbit_inertial.txt",
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/T_RK45_orbit_inertial.txt",
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/X_RK45_attitude.txt",
+	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/T_RK45_attitude.txt",
+	    false,
 	    true,
 	    true);
 
 
 	shape_filter_args.save_estimate_time_history();
 	std::ofstream shape_file;
-	shape_file.open("../output/attitude/true_cm.obj");
+	shape_file.open("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/attitude/true_cm.obj");
 	shape_file << "v " << 0 << " " << 0 << " " << 0 << std::endl;
 
 
