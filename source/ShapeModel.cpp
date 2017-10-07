@@ -23,3 +23,21 @@ void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
 	this -> ref_frame_name = ref_frame_name;
 }
 
+
+std::vector<std::shared_ptr< ControlPoint> > * ShapeModel::get_control_points() {
+	return &this -> control_points;
+}
+
+
+unsigned int ShapeModel::get_NElements() const {
+	return this -> elements . size();
+}
+
+unsigned int ShapeModel::get_NControlPoints() const {
+	return this -> control_points . size();
+}
+
+
+std::vector<std::shared_ptr<Element> > * ShapeModel::get_elements() {
+	return &this -> elements;
+}

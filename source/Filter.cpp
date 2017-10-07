@@ -1284,8 +1284,8 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 
 
 	// This will help counting how many facets each vertex belongs to
-	// std::map<unsigned int, std::vector<unsigned int> > vertex_to_owning_facets;
-	std::map<unsigned int, std::vector<Facet *> > vertex_to_owning_facets;
+	// std::map<unsigned int, std::vector<unsigned int> > vertex_to_owning_elements;
+	std::map<unsigned int, std::vector<Facet *> > vertex_to_owning_elements;
 
 	for (unsigned int seen_facet_index = 0;
 	        seen_facet_index < seen_facets . size();
@@ -1312,9 +1312,9 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 		                                facet -> get_vertices() -> at(2).get())
 		                        );
 
-		vertex_to_owning_facets[v0_index].push_back(facet);
-		vertex_to_owning_facets[v1_index].push_back(facet);
-		vertex_to_owning_facets[v2_index].push_back(facet);
+		vertex_to_owning_elements[v0_index].push_back(facet);
+		vertex_to_owning_elements[v1_index].push_back(facet);
+		vertex_to_owning_elements[v2_index].push_back(facet);
 
 		facet_to_index_of_vertices[facet].push_back(v0_index);
 		facet_to_index_of_vertices[facet].push_back(v1_index);
@@ -1330,10 +1330,10 @@ void Filter::get_observed_features(std::vector<Ray * > & good_rays,
 	for (unsigned int v_index = 0; v_index < seen_vertices.size(); ++ v_index) {
 
 		arma::vec dir_update = {0, 0, 0};
-		for (unsigned int facet_index = 0; facet_index < vertex_to_owning_facets[v_index].size(); ++ facet_index ) {
-			unsigned int hits = facet_to_rays[vertex_to_owning_facets[v_index] . at(facet_index)].size();
+		for (unsigned int facet_index = 0; facet_index < vertex_to_owning_elements[v_index].size(); ++ facet_index ) {
+			unsigned int hits = facet_to_rays[vertex_to_owning_elements[v_index] . at(facet_index)].size();
 
-			dir_update += hits * (*vertex_to_owning_facets[v_index][0] -> get_facet_normal());
+			dir_update += hits * (*vertex_to_owning_elements[v_index][0] -> get_facet_normal());
 
 		}
 

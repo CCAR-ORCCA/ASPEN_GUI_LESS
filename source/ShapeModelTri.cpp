@@ -11,15 +11,15 @@ void ShapeModelTri::update_mass_properties() {
 
 void ShapeModelTri::update_facets() {
 
-	for (auto & facet : this -> facets) {
+	for (auto & facet : this -> elements) {
 		facet -> update();
 	}
 
 }
 
-void ShapeModelTri::update_facets(std::set<Facet *> & facets) {
+void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
-	for (auto & facet : facets) {
+	for (auto & facet : elements) {
 		facet -> update();
 	}
 
@@ -52,7 +52,7 @@ void ShapeModelTri::construct_kd_tree(bool verbose) {
 	start = std::chrono::system_clock::now();
 
 	this -> kd_tree = std::make_shared<KDTree_shape>(KDTree_shape());
-	this -> kd_tree = this -> kd_tree -> build(this -> facets, 0, verbose);
+	this -> kd_tree = this -> kd_tree -> build(this -> elements, 0, verbose);
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
@@ -71,7 +71,7 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 	#pragma omp parallel for reduction(+:lagrangian) if (USE_OMP_DYNAMIC_ANALYSIS)
 	for (unsigned int facet_index = 0; facet_index < this -> get_NElements(); ++ facet_index) {
 
-		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> get_facets() -> at(facet_index) -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> get_elements() -> at(facet_index) -> get_control_points();
 
 		const double * r1 =  vertices -> at(0) -> get_coordinates() -> colptr(0);
 		const double * r2 =  vertices -> at(1) -> get_coordinates() -> colptr(0);
@@ -147,17 +147,17 @@ void ShapeModelTri::save(std::string path) const {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		shape_file << "v " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> vertices[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
-	vertex_ptr_to_index[this -> vertices[vertex_index]] = vertex_index;
+		shape_file << "v " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
+	vertex_ptr_to_index[this -> control_points[vertex_index]] = vertex_index;
 }
 
 for (unsigned int facet_index = 0;
 	facet_index < this -> get_NElements();
 	++facet_index) {
 
-	unsigned int v0 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(0)] + 1;
-unsigned int v1 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(1)] + 1;
-unsigned int v2 =  vertex_ptr_to_index[this -> facets[facet_index] -> get_vertices() -> at(2)] + 1;
+	unsigned int v0 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(0)] + 1;
+unsigned int v1 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(1)] + 1;
+unsigned int v2 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(2)] + 1;
 
 shape_file << "f " << v0 << " " << v1 << " " << v2 << std::endl;
 
@@ -182,7 +182,7 @@ void ShapeModelTri::shift_to_barycenter() {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		*this -> vertices[vertex_index] -> get_coordinates() = *this -> vertices[vertex_index] -> get_coordinates() + x;
+		*this -> control_points[vertex_index] -> get_coordinates() = *this -> control_points[vertex_index] -> get_coordinates() + x;
 
 }
 
@@ -288,7 +288,7 @@ void ShapeModelTri::align_with_principal_axes() {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		*this -> vertices[vertex_index] -> get_coordinates() = axes.t() * (*this -> vertices[vertex_index] -> get_coordinates());
+		*this -> control_points[vertex_index] -> get_coordinates() = axes.t() * (*this -> control_points[vertex_index] -> get_coordinates());
 }
 
 this -> inertia = arma::diagmat(moments);
@@ -302,38 +302,15 @@ arma::mat ShapeModelTri::get_inertia() const {
 
 
 void ShapeModelTri::add_facet(std::shared_ptr<Facet> facet) {
-	this -> facets.push_back(facet);
+	this -> elements.push_back(facet);
 }
 
 
 
 void ShapeModelTri::add_vertex(std::shared_ptr<ControlPoint> vertex) {
-	this -> vertices.push_back(vertex);
+	this -> control_points.push_back(vertex);
 }
 
-// ShapeModelTri::~ShapeModelTri() {
-// 	for (unsigned int facet_index = 0; facet_index < this -> facets.size(); ++ facet_index) {
-// 		delete(this -> facets[facet_index]);
-// 	}
-// }
-
-unsigned int ShapeModelTri::get_NElements() const {
-	return this -> facets . size();
-}
-
-unsigned int ShapeModelTri::get_NControlPoints() const {
-	return this -> vertices . size();
-}
-
-
-std::vector<std::shared_ptr< ControlPoint> > * ShapeModelTri::get_vertices() {
-	return &this -> vertices;
-}
-
-
-std::vector<std::shared_ptr<Facet> > * ShapeModelTri::get_facets() {
-	return &this -> facets;
-}
 
 
 
@@ -345,9 +322,9 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 	double sz = 0;
 
 	#pragma omp parallel for reduction(+:facet_area_average,sx,sy,sz) if (USE_OMP_SHAPE_MODEL)
-	for (unsigned int facet_index = 0; facet_index < this -> facets.size(); ++facet_index) {
+	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
-		Facet * facet = this -> facets[facet_index].get();
+		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
 
 		sx += facet -> get_area() * facet -> get_facet_normal() -> at(0);
 		sy += facet -> get_area() * facet -> get_facet_normal() -> at(1);
@@ -359,7 +336,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 
 	arma::vec surface_sum = {sx, sy, sz};
 
-	facet_area_average = facet_area_average / this -> facets.size();
+	facet_area_average = facet_area_average / this -> elements.size();
 	if (arma::norm(surface_sum) / facet_area_average > tol) {
 		throw (std::runtime_error("Normals were incorrectly oriented. norm(sum(n * s))/sum(s)= " + std::to_string(arma::norm(surface_sum) / facet_area_average)));
 	}
@@ -373,10 +350,10 @@ void ShapeModelTri::compute_volume() {
 
 	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
-		facet_index < this -> facets.size();
+		facet_index < this -> elements.size();
 		++facet_index) {
 
-		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> facets[facet_index] -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
 	arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
 	arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
@@ -401,11 +378,11 @@ void ShapeModelTri::compute_center_of_mass() {
 
 	#pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
-		facet_index < this -> facets.size();
+		facet_index < this -> elements.size();
 		++facet_index) {
 
 
-		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> facets[facet_index] -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
 	arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
 	arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
@@ -449,11 +426,11 @@ void ShapeModelTri::compute_inertia() {
 
 	#pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
-		facet_index < this -> facets.size();
+		facet_index < this -> elements.size();
 		++facet_index) {
 
 
-		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> facets[facet_index] -> get_vertices();
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
 		// Normalized coordinates
 	arma::vec r0 =  (*vertices -> at(0) -> get_coordinates()) / l;
@@ -562,9 +539,9 @@ void ShapeModelTri::compute_surface_area() {
 	double surface_area = 0;
 
 	#pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
-	for (unsigned int facet_index = 0; facet_index < this -> facets.size(); ++facet_index) {
+	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
-		Facet * facet = this -> facets[facet_index].get();
+		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
 
 		surface_area += facet -> get_area();
 
@@ -597,7 +574,7 @@ void ShapeModelTri::compute_surface_area() {
 // void ShapeModelTri::split_facet(Facet * facet,
 //                              std::set<Facet *> & seen_facets) {
 
-// 	// The old facets are retrieved
+// 	// The old elements are retrieved
 // 	// together with the old vertices
 
 // 	std::set<Facet *> splitted_facets = facet -> get_neighbors(false);
@@ -607,7 +584,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	Facet * F3_old = nullptr;
 
 
-// 	std::vector<std::shared_ptr< ControlPoint> > * V_in_F0_old = facet -> get_vertices();
+// 	std::vector<std::shared_ptr< ControlPoint> > * V_in_F0_old = facet -> get_control_points();
 
 // 	std::shared_ptr<ControlPoint> V0 = V_in_F0_old -> at(0);
 // 	std::shared_ptr<ControlPoint> V1 = V_in_F0_old -> at(1);
@@ -625,9 +602,9 @@ void ShapeModelTri::compute_surface_area() {
 // 				F1_old = old_facet;
 // 				// Setting V4
 // 				for (unsigned int i = 0; i < 3; ++i) {
-// 					if (F1_old -> get_vertices() -> at(i) != V0 &&
-// 					        F1_old -> get_vertices() -> at(i) != V1) {
-// 						V4 = F1_old -> get_vertices() -> at(i);
+// 					if (F1_old -> get_control_points() -> at(i) != V0 &&
+// 					        F1_old -> get_control_points() -> at(i) != V1) {
+// 						V4 = F1_old -> get_control_points() -> at(i);
 // 						break;
 // 					}
 // 				}
@@ -637,9 +614,9 @@ void ShapeModelTri::compute_surface_area() {
 // 				F2_old = old_facet;
 // 				// Setting V5
 // 				for (unsigned int i = 0; i < 3; ++i) {
-// 					if (F2_old -> get_vertices() -> at(i) != V2 &&
-// 					        F2_old -> get_vertices() -> at(i) != V1) {
-// 						V5 = F2_old -> get_vertices() -> at(i);
+// 					if (F2_old -> get_control_points() -> at(i) != V2 &&
+// 					        F2_old -> get_control_points() -> at(i) != V1) {
+// 						V5 = F2_old -> get_control_points() -> at(i);
 // 						break;
 // 					}
 // 				}
@@ -650,9 +627,9 @@ void ShapeModelTri::compute_surface_area() {
 
 // 				// Setting V3
 // 				for (unsigned int i = 0; i < 3; ++i) {
-// 					if (F3_old -> get_vertices() -> at(i) != V2 &&
-// 					        F3_old -> get_vertices() -> at(i) != V0) {
-// 						V3 = F3_old -> get_vertices() -> at(i);
+// 					if (F3_old -> get_control_points() -> at(i) != V2 &&
+// 					        F3_old -> get_control_points() -> at(i) != V0) {
+// 						V3 = F3_old -> get_control_points() -> at(i);
 // 						break;
 // 					}
 // 				}
@@ -744,7 +721,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	F9_vertices.push_back(V2);
 // 	F9_vertices.push_back(V6);
 
-// 	// // The new facets are created
+// 	// // The new elements are created
 // 	Facet * F0 = new Facet(std::make_shared<std::vector<std::shared_ptr<ControlPoint>>>(F0_vertices));
 // 	Facet * F1 = new Facet(std::make_shared<std::vector<std::shared_ptr<ControlPoint>>>(F1_vertices));
 // 	Facet * F2 = new Facet(std::make_shared<std::vector<std::shared_ptr<ControlPoint>>>(F2_vertices));
@@ -767,7 +744,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	F8 -> set_split_counter(facet -> get_split_count() + 1);
 // 	F9 -> set_split_counter(facet -> get_split_count() + 1);
 
-// 	// // The new facets are added to the shape model
+// 	// // The new elements are added to the shape model
 // 	this -> add_facet(F0);
 // 	this -> add_facet(F1);
 // 	this -> add_facet(F2);
@@ -781,7 +758,7 @@ void ShapeModelTri::compute_surface_area() {
 
 
 
-// 	// The facets that replaced the recycled facets are added back
+// 	// The elements that replaced the recycled elements are added back
 // 	seen_facets.insert(F0);
 // 	seen_facets.insert(F1);
 // 	seen_facets.insert(F2);
@@ -794,7 +771,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	seen_facets.insert(F9);
 
 
-// 	// The facets that were seen and split are removed from the set
+// 	// The elements that were seen and split are removed from the set
 // 	seen_facets.erase(facet);
 // 	seen_facets.erase(F1_old);
 // 	seen_facets.erase(F2_old);
@@ -805,7 +782,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	// V0, V1, V2, V3, V4 and V5 still are still
 // 	// owned by $facet and its neighbors. Must remove this ownership (note that
 // 	// the new ownerships have already been created when constructing
-// 	// the new facets)
+// 	// the new elements)
 
 // 	V0 -> remove_facet_ownership(facet);
 // 	V1 -> remove_facet_ownership(facet);
@@ -826,39 +803,39 @@ void ShapeModelTri::compute_surface_area() {
 
 
 
-// 	if (F0 -> get_vertices() -> size() > 3 ||
-// 	        F1 -> get_vertices() -> size() > 3 ||
-// 	        F2 -> get_vertices() -> size() > 3 ||
-// 	        F3 -> get_vertices() -> size() > 3 ||
-// 	        F4 -> get_vertices() -> size() > 3 ||
-// 	        F5 -> get_vertices() -> size() > 3 ||
-// 	        F6 -> get_vertices() -> size() > 3 ||
-// 	        F7 -> get_vertices() -> size() > 3 ||
-// 	        F8 -> get_vertices() -> size() > 3 ||
-// 	        F9 -> get_vertices() -> size() > 3
+// 	if (F0 -> get_control_points() -> size() > 3 ||
+// 	        F1 -> get_control_points() -> size() > 3 ||
+// 	        F2 -> get_control_points() -> size() > 3 ||
+// 	        F3 -> get_control_points() -> size() > 3 ||
+// 	        F4 -> get_control_points() -> size() > 3 ||
+// 	        F5 -> get_control_points() -> size() > 3 ||
+// 	        F6 -> get_control_points() -> size() > 3 ||
+// 	        F7 -> get_control_points() -> size() > 3 ||
+// 	        F8 -> get_control_points() -> size() > 3 ||
+// 	        F9 -> get_control_points() -> size() > 3
 // 	   ) {
-// 		throw (std::runtime_error("One of the new facets has more than three vertices"));
+// 		throw (std::runtime_error("One of the new elements has more than three vertices"));
 // 	}
 
 
 
 
-// 	// The old facets are deleted and their pointer removed from the shape model
-// 	auto old_facet_F0 = std::find (this -> facets.begin(), this -> facets.end(), facet);
+// 	// The old elements are deleted and their pointer removed from the shape model
+// 	auto old_facet_F0 = std::find (this -> elements.begin(), this -> elements.end(), facet);
 // 	delete(*old_facet_F0);
-// 	this -> facets.erase(old_facet_F0);
+// 	this -> elements.erase(old_facet_F0);
 
-// 	auto old_facet_F1 = std::find (this -> facets.begin(), this -> facets.end(), F1_old);
+// 	auto old_facet_F1 = std::find (this -> elements.begin(), this -> elements.end(), F1_old);
 // 	delete(*old_facet_F1);
-// 	this -> facets.erase(old_facet_F1);
+// 	this -> elements.erase(old_facet_F1);
 
-// 	auto old_facet_F2 = std::find (this -> facets.begin(), this -> facets.end(), F2_old);
+// 	auto old_facet_F2 = std::find (this -> elements.begin(), this -> elements.end(), F2_old);
 // 	delete(*old_facet_F2);
-// 	this -> facets.erase(old_facet_F2);
+// 	this -> elements.erase(old_facet_F2);
 
-// 	auto old_facet_F3 = std::find (this -> facets.begin(), this -> facets.end(), F3_old);
+// 	auto old_facet_F3 = std::find (this -> elements.begin(), this -> elements.end(), F3_old);
 // 	delete(*old_facet_F3);
-// 	this -> facets.erase(old_facet_F3);
+// 	this -> elements.erase(old_facet_F3);
 
 
 // 	this -> update_mass_properties();
@@ -877,9 +854,9 @@ void ShapeModelTri::compute_surface_area() {
 
 
 // 	// The vertices in the facet are extracted
-// 	std::shared_ptr<ControlPoint> V0  = facet -> get_vertices() -> at(0);
-// 	std::shared_ptr<ControlPoint> V1  = facet -> get_vertices() -> at(1);
-// 	std::shared_ptr<ControlPoint> V2  = facet -> get_vertices() -> at(2);
+// 	std::shared_ptr<ControlPoint> V0  = facet -> get_control_points() -> at(0);
+// 	std::shared_ptr<ControlPoint> V1  = facet -> get_control_points() -> at(1);
+// 	std::shared_ptr<ControlPoint> V2  = facet -> get_control_points() -> at(2);
 
 
 // 	arma::vec * P0  = V0 -> get_coordinates();
@@ -931,8 +908,8 @@ void ShapeModelTri::compute_surface_area() {
 // 	for (auto it = facets_to_recycle.begin(); it != facets_to_recycle.end(); ++it) {
 
 // 		for (unsigned int i = 0; i < 3; ++i) {
-// 			if ((*it) -> get_vertices() -> at(i) != V_merge_discard && (*it) -> get_vertices() -> at(i) != V_merge_keep) {
-// 				vertices_to_keep.insert((*it) -> get_vertices() -> at(i));
+// 			if ((*it) -> get_control_points() -> at(i) != V_merge_discard && (*it) -> get_control_points() -> at(i) != V_merge_keep) {
+// 				vertices_to_keep.insert((*it) -> get_control_points() -> at(i));
 // 				break;
 // 			}
 // 		}
@@ -942,13 +919,13 @@ void ShapeModelTri::compute_surface_area() {
 
 
 
-// 	std::set<Facet *> facets_to_keep_owning_V_merge_discard = V_merge_discard -> get_owning_facets();
+// 	std::set<Facet *> facets_to_keep_owning_V_merge_discard = V_merge_discard -> get_owning_elements();
 // 	for (auto it = facets_to_recycle.begin(); it != facets_to_recycle.end(); ++it) {
 // 		facets_to_keep_owning_V_merge_discard.erase(*it);
 // 	}
 
 
-// 	// If any of the facets to be updated was not seen, the method does not proceed
+// 	// If any of the elements to be updated was not seen, the method does not proceed
 // 	// if (spurious_facets == nullptr) {
 // 	// 	for (auto facet_it = facets_to_keep_owning_V_merge_discard.begin();
 // 	// 	        facet_it != facets_to_keep_owning_V_merge_discard.end();
@@ -962,15 +939,15 @@ void ShapeModelTri::compute_surface_area() {
 // 	// }
 
 
-// 	// If any of the vertices to keep is on a corner (owned by four facets or less), nothing happens
+// 	// If any of the vertices to keep is on a corner (owned by four elements or less), nothing happens
 // 	if (
-// 	    V_merge_keep -> get_number_of_owning_facets() <= 4 ||
-// 	    V_merge_discard -> get_number_of_owning_facets() <= 4) {
+// 	    V_merge_keep -> get_number_of_owning_elements() <= 4 ||
+// 	    V_merge_discard -> get_number_of_owning_elements() <= 4) {
 // 		return false;
 // 	}
 
 // 	for (auto it = vertices_to_keep.begin(); it != vertices_to_keep.end(); ++it) {
-// 		if ((*it) -> get_number_of_owning_facets() <= 4) {
+// 		if ((*it) -> get_number_of_owning_elements() <= 4) {
 // 			return false;
 // 		}
 // 	}
@@ -980,7 +957,7 @@ void ShapeModelTri::compute_surface_area() {
 // 	                                     + *V_merge_discard -> get_coordinates());
 
 
-// 	// The facets owning V_merge_discard are
+// 	// The elements owning V_merge_discard are
 // 	// updated so as to have this vertex merging with
 // 	// V_merge_keep
 // 	for (auto facet_it = facets_to_keep_owning_V_merge_discard.begin();
@@ -996,9 +973,9 @@ void ShapeModelTri::compute_surface_area() {
 // 		bool vertex_found = false;
 // 		for (unsigned int vertex_index = 0; vertex_index < 3; ++vertex_index) {
 
-// 			if (facet_to_update -> get_vertices() -> at(vertex_index) == V_merge_discard) {
+// 			if (facet_to_update -> get_control_points() -> at(vertex_index) == V_merge_discard) {
 
-// 				facet_to_update -> get_vertices() -> at(vertex_index) = V_merge_keep;
+// 				facet_to_update -> get_control_points() -> at(vertex_index) = V_merge_keep;
 // 				vertex_found = true;
 // 				break;
 // 			}
@@ -1011,8 +988,8 @@ void ShapeModelTri::compute_surface_area() {
 
 // 		facet_to_update -> update();
 
-// 		if (facet_to_update -> get_vertices() -> size() != 3) {
-// 			throw (std::runtime_error("this updated facet has " + std::to_string(facet -> get_vertices() -> size()) + " vertices"));
+// 		if (facet_to_update -> get_control_points() -> size() != 3) {
+// 			throw (std::runtime_error("this updated facet has " + std::to_string(facet -> get_control_points() -> size()) + " vertices"));
 // 		}
 
 // 		/**
@@ -1041,10 +1018,10 @@ void ShapeModelTri::compute_surface_area() {
 // 		}
 
 
-// 		// The facets to recycle are removed from the shape model
-// 		auto old_facet = std::find (this -> facets.begin(), this -> facets.end(), *it_f);
+// 		// The elements to recycle are removed from the shape model
+// 		auto old_facet = std::find (this -> elements.begin(), this -> elements.end(), *it_f);
 // 		delete(*old_facet);
-// 		this -> facets.erase(old_facet);
+// 		this -> elements.erase(old_facet);
 
 // 	}
 
@@ -1063,18 +1040,18 @@ void ShapeModelTri::compute_surface_area() {
 // 	}
 
 
-// 	// The impacted facets are all updated to reflect their new geometry
+// 	// The impacted elements are all updated to reflect their new geometry
 // 	this -> update_facets();
 
 // 	// Check if there are any dangling vertex
-// 	if ( V_merge_keep -> get_number_of_owning_facets() < 3 ) {
-// 		throw (std::runtime_error("Dangling vertex leaving merge: V_merge_keep was owned by " + std::to_string(V_merge_keep -> get_number_of_owning_facets()) + " facets"));
+// 	if ( V_merge_keep -> get_number_of_owning_elements() < 3 ) {
+// 		throw (std::runtime_error("Dangling vertex leaving merge: V_merge_keep was owned by " + std::to_string(V_merge_keep -> get_number_of_owning_elements()) + " elements"));
 // 	}
 
 
 // 	for (auto it_v = vertices_to_keep.begin(); it_v != vertices_to_keep.end(); ++it_v) {
-// 		if ( (*it_v) -> get_number_of_owning_facets() < 3 ) {
-// 			throw (std::runtime_error("Dangling vertex leaving merge: this vertex was owned by " + std::to_string((*it_v) -> get_number_of_owning_facets()) + " facets"));
+// 		if ( (*it_v) -> get_number_of_owning_elements() < 3 ) {
+// 			throw (std::runtime_error("Dangling vertex leaving merge: this vertex was owned by " + std::to_string((*it_v) -> get_number_of_owning_elements()) + " elements"));
 // 		}
 // 	}
 
@@ -1101,7 +1078,7 @@ void ShapeModelTri::get_bounding_box(double * bounding_box) const {
 	#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
 
-		double * vertex_cords = this -> vertices[vertex_index] -> get_coordinates() -> colptr(0);
+		double * vertex_cords = this -> control_points[vertex_index] -> get_coordinates() -> colptr(0);
 
 		if (vertex_cords[0] >= xmax) {
 			xmax = vertex_cords[0];

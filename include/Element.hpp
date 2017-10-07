@@ -24,7 +24,7 @@ public:
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbors
 	@return Pointer to neighboring elements, plus the calling element
 	*/
-	std::set < Element * > get_neighbors(bool all_neighbors) const;
+	virtual std::set < Element *> get_neighbors(bool all_neighbors) const = 0;
 
 
 	/**
@@ -37,6 +37,13 @@ public:
 	@return pointer to facet center
 	*/
 	arma::vec * get_facet_center() ;
+
+
+	/**
+	Return the control points owned by this element
+	@return owned control points
+	*/	
+	std::vector<std::shared_ptr<ControlPoint > >  * get_control_points();
 
 protected:
 

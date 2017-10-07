@@ -44,17 +44,6 @@ public:
 	*/
 	void construct_kd_tree(bool verbose = false);
 
-	/**
-	Returns number of facets
-	@return number of facets
-	*/
-	unsigned int get_NFacets() const ;
-
-	/**
-	Returns number of vertices
-	@return number of vertices
-	*/
-	unsigned int get_NVertices() const ;
 
 	/**
 	Determines whether the provided point lies inside or outside the shape model.
@@ -102,17 +91,7 @@ public:
 	*/
 	void set_ref_frame_name(std::string ref_frame_name);
 
-	/**
-	Pointer to the shape model's vertices
-	@return vertices pointer to the vertices
-	*/
-	std::vector<std::shared_ptr< ControlPoint> > * get_vertices();
-
-	/**
-	Pointer to the shape model's facets
-	@return facets pointer to the facets
-	*/
-	std::vector<std::shared_ptr<Facet> >  * get_facets();
+	
 
 
 	/**
@@ -272,17 +251,6 @@ public:
 	*/
 	virtual void compute_inertia();
 
-	/**
-	Returns number of elements
-	@return number of elements
-	*/
-	virtual unsigned int get_NElements() const ;
-
-	/**
-	Returns number of control points
-	@return number of control points
-	*/
-	virtual unsigned int get_NControlPoints() const;
 
 	/**
 	Finds the intersect between the provided ray and the shape model
@@ -293,11 +261,7 @@ public:
 
 
 protected:
-
-
-	std::vector<std::shared_ptr<Facet  > > facets;
-	std::vector<std::shared_ptr< ControlPoint> >  vertices;
-
+	
 	double volume;
 	double surface_area;
 

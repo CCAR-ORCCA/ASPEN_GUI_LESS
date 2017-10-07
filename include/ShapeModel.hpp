@@ -57,20 +57,29 @@ public:
 	*/
 	std::string get_ref_frame_name() const;
 
-	std::vector<std::shared_ptr<Element> > * get_elements();
+	/**
+	Pointer to the shape model's control points
+	@return vertices pointer to the control points
+	*/
+	std::vector<std::shared_ptr< ControlPoint> > * get_control_points();
 
+	/**
+	Pointer to the shape model's element
+	@return pointer to the elements
+	*/
+	std::vector<std::shared_ptr<Element> >  * get_elements();
 
 	/**
 	Returns number of elements
 	@return number of elements
 	*/
-	virtual unsigned int get_NElements() const = 0 ;
+	unsigned int get_NElements() const  ;
 
 	/**
 	Returns number of control points
 	@return number of control points
 	*/
-	virtual unsigned int get_NControlPoints() const = 0;
+	unsigned int get_NControlPoints() const ;
 
 	/**
 	Computes the surface area of the shape model
@@ -98,6 +107,9 @@ public:
 
 
 protected:
+
+	std::vector<std::shared_ptr<Element  > > elements;
+	std::vector<std::shared_ptr< ControlPoint> >  control_points;
 
 
 	FrameGraph * frame_graph;

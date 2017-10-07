@@ -22,9 +22,9 @@ void BBox::print() const {
 
 }
 
-void BBox::update(std::shared_ptr<Facet> facet) {
+void BBox::update(std::shared_ptr<Element> element) {
 
-	arma::vec * first_coordinates = facet -> get_vertices() -> at(0) -> get_coordinates();
+	arma::vec * first_coordinates = element -> get_control_points() -> at(0) -> get_coordinates();
 
 	this -> xmin = first_coordinates -> at(0);
 	this -> ymin = first_coordinates -> at(1);
@@ -34,9 +34,9 @@ void BBox::update(std::shared_ptr<Facet> facet) {
 	this -> ymax = first_coordinates -> at(1);
 	this -> zmax = first_coordinates -> at(2);
 
-	for (unsigned int i = 1; i <  facet -> get_vertices() -> size() ; ++i) {
+	for (unsigned int i = 1; i <  element -> get_control_points() -> size() ; ++i) {
 
-		arma::vec * coordinates = facet -> get_vertices() -> at(i) -> get_coordinates();
+		arma::vec * coordinates = element -> get_control_points() -> at(i) -> get_coordinates();
 
 		if (coordinates -> at(0) > this -> xmax) {
 			this -> xmax = coordinates -> at(0);
@@ -65,9 +65,9 @@ void BBox::update(std::shared_ptr<Facet> facet) {
 
 }
 
-void BBox::update(std::vector<std::shared_ptr<Facet > > facets) {
+void BBox::update(std::vector<std::shared_ptr<Element > > elements) {
 
-	arma::vec * first_coordinates = facets . at(0) -> get_vertices() -> at(0) -> get_coordinates();
+	arma::vec * first_coordinates = elements . at(0) -> get_control_points() -> at(0) -> get_coordinates();
 
 	this -> xmin = first_coordinates -> at(0);
 	this -> ymin = first_coordinates -> at(1);
@@ -78,11 +78,11 @@ void BBox::update(std::vector<std::shared_ptr<Facet > > facets) {
 	this -> zmax = first_coordinates -> at(2);
 
 
-	for (unsigned int j = 1; j < facets.size() ; ++j) {
+	for (unsigned int j = 1; j < elements.size() ; ++j) {
 
-		for (unsigned int i = 1; i <  facets[j] -> get_vertices() -> size() ; ++i) {
+		for (unsigned int i = 1; i <  elements[j] -> get_control_points() -> size() ; ++i) {
 
-			arma::vec * coordinates = facets[j] -> get_vertices() -> at(i) -> get_coordinates();
+			arma::vec * coordinates = elements[j] -> get_control_points() -> at(i) -> get_coordinates();
 
 			if (coordinates -> at(0) > this -> xmax) {
 				this -> xmax = coordinates -> at(0);

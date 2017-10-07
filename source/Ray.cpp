@@ -124,9 +124,9 @@ void Ray::reset(bool computed_mes, ShapeModel * shape_model) {
 
 bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 
-	arma::vec * P0 = facet -> get_vertices() -> at(0) -> get_coordinates() ;
-	arma::vec * P1 = facet -> get_vertices() -> at(1) -> get_coordinates() ;
-	arma::vec * P2 = facet -> get_vertices() -> at(2) -> get_coordinates() ;
+	arma::vec * P0 = facet -> get_control_points() -> at(0) -> get_coordinates() ;
+	arma::vec * P1 = facet -> get_control_points() -> at(1) -> get_coordinates() ;
+	arma::vec * P2 = facet -> get_control_points() -> at(2) -> get_coordinates() ;
 
 	double epsilon = (facet -> get_area()
 	                  - 0.5 * (

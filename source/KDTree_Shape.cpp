@@ -5,18 +5,18 @@ KDTree_shape::KDTree_shape() {
 }
 
 
-std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Facet > > & facets,  int depth, bool verbose) {
+std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Element > > & elements,  int depth, bool verbose) {
 
 	// Creating the node
 	std::shared_ptr<KDTree_shape> node = std::make_shared<KDTree_shape>( KDTree_shape() );
-	node -> facets = facets;
+	node -> elements = elements;
 	node -> left = nullptr;
 	node -> right = nullptr;
 	node -> set_depth(depth);
 
 	node -> bbox = BBox();
 
-	if (facets.size() == 0) {
+	if (elements.size() == 0) {
 		if (verbose) {
 			std::cout << "Empty node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
@@ -26,58 +26,63 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Fa
 
 	// If the node only contains one triangle,
 	// there's no point in subdividing it more
-	if (facets.size() == 1) {
+	if (elements.size() == 1) {
 
-		node -> bbox . update(facets[0]);
+		node -> bbox . update(elements[0]);
 
 		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
 		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
 
-		node -> left -> facets = std::vector<std::shared_ptr<Facet> >();
-		node -> right -> facets = std::vector<std::shared_ptr<Facet> >();
+		node -> left -> elements = std::vector<std::shared_ptr<Element> >();
+		node -> right -> elements = std::vector<std::shared_ptr<Element> >();
 
 
 		return node;
 
 	}
 
-	node -> bbox.update(facets);
+	node -> bbox.update(elements);
 
 
 	arma::vec midpoint = arma::zeros<arma::vec>(3);
 
 	// Could multithread here
-	for (unsigned int i = 0; i < facets.size(); ++i) {
+	for (unsigned int i = 0; i < elements.size(); ++i) {
 
-		// The midpoint of all the facets is found
-		midpoint += (*facets[i] -> get_facet_center()) * (1. / facets.size());
+		// The midpoint of all the elements is found
+
+
+
+
+
+		midpoint += (*dynamic_cast<Facet *>(elements[i].get()) -> get_facet_center()) * (1. / elements.size());
 	}
 
 	// Facets to be assigned to the left and right nodes
-	std::vector < std::shared_ptr<Facet> > left_facets;
-	std::vector < std::shared_ptr<Facet> > right_facets;
+	std::vector < std::shared_ptr<Element> > left_facets;
+	std::vector < std::shared_ptr<Element> > right_facets;
 
 	unsigned int longest_axis = node -> bbox.get_longest_axis();
 
-	for (unsigned int i = 0; i < facets.size() ; ++i) {
+	for (unsigned int i = 0; i < elements.size() ; ++i) {
 
 		bool added_to_left = false;
 		bool added_to_right = false;
 
 		for (unsigned int v = 0; v < 3; ++v) {
 
-			// The facets currently owned by the node are split
+			// The elements currently owned by the node are split
 			// based on where their vertices lie
 
-			if ( midpoint(longest_axis) >= facets[i] -> get_vertices() -> at(v) -> get_coordinates() -> at(longest_axis)
+			if ( midpoint(longest_axis) >= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
 			        && added_to_left == false) {
-				left_facets.push_back(facets[i]);
+				left_facets.push_back(elements[i]);
 				added_to_left = true;
 			}
 
-			else if (midpoint(longest_axis) <= facets[i] -> get_vertices() -> at(v) -> get_coordinates() -> at(longest_axis)
+			else if (midpoint(longest_axis) <= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
 			         && added_to_right == false) {
-				right_facets.push_back(facets[i]);
+				right_facets.push_back(elements[i]);
 				added_to_right = true;
 			}
 
@@ -123,13 +128,13 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Fa
 		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
 		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
 
-		node -> left -> facets = std::vector<std::shared_ptr<Facet> >();
-		node -> right -> facets = std::vector<std::shared_ptr<Facet> >();
+		node -> left -> elements = std::vector<std::shared_ptr<Element> >();
+		node -> right -> elements = std::vector<std::shared_ptr<Element> >();
 
 		if (verbose) {
 
 			std::cout << "Leaf depth: " << depth << std::endl;
-			std::cout << "Leaf contains: " << node -> facets.size() << " facets " << std::endl;
+			std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
 
 			node -> bbox.print();
 			// Uncomment if willing to save the leaf bounding boxes to a
@@ -156,7 +161,7 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const 
 
 		// If there are triangles in the child leaves, those are checked
 		// for intersect. First, the method checks whether it is still on a branch
-		if (node -> left -> facets.size() > 0 || node -> right -> facets.size() > 0) {
+		if (node -> left -> elements.size() > 0 || node -> right -> elements.size() > 0) {
 
 			bool hitleft = this -> hit(node -> left.get(), ray, computed_mes);
 			bool hitright = this -> hit(node -> right.get(), ray, computed_mes);
@@ -168,10 +173,10 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const 
 		else {
 
 			// If not, the current node is a leaf
-			for (unsigned int i = 0; i < node -> facets.size(); ++i) {
+			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 				// If there is a hit
-				if (ray -> single_facet_ray_casting(node -> facets[i].get(), computed_mes)) {
+				if (ray -> single_facet_ray_casting( dynamic_cast<Facet * >(node -> elements[i].get()), computed_mes)) {
 					hit_facet = true;
 				}
 

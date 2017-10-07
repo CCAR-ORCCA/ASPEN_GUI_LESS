@@ -2,7 +2,7 @@
 #define HEADER_BBOX
 
 #include "FrameGraph.hpp"
-#include "Facet.hpp"
+#include "Element.hpp"
 #include <time.h>
 
 /**
@@ -18,17 +18,17 @@ public:
 	/**
 	Computes the bounding box boundaries
 	using provided geometric data
-	@param facets Facets bounded by this box
+	@param elements Facets bounded by this box
 	*/
-	void update(std::vector<std::shared_ptr<Facet> > facets);
+	void update(std::vector<std::shared_ptr<Element> > elements);
 
 
 	/**
 	Computes the bounding box boundaries
 	using provided geometric data
-	@param facet Facet bounded by this box
+	@param element Element bounded by this box
 	*/
-	void update(std::shared_ptr<Facet> facet);
+	void update(std::shared_ptr<Element> element);
 
 	void print() const;
 

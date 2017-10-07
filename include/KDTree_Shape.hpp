@@ -1,7 +1,9 @@
 #ifndef HEADER_KDTree_Shape
 #define HEADER_KDTree_Shape
 
+#include "Element.hpp"
 #include "Facet.hpp"
+
 #include "BBox.hpp"
 #include "Ray.hpp"
 
@@ -20,13 +22,13 @@ public:
 	BBox bbox;
 	std::shared_ptr<KDTree_shape> left;
 	std::shared_ptr<KDTree_shape> right;
-	std::vector<std::shared_ptr<Facet> > facets;
+	std::vector<std::shared_ptr<Element> > elements;
 
 	KDTree_shape();
 
 
 
-	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Facet >> & facets, int depth, bool verbose = false);
+	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Element >> & elements, int depth, bool verbose = false);
 	bool hit(KDTree_shape * node, Ray * ray, bool computed_mes) const;
 	bool hit_bbox(Ray * ray, bool computed_mes ) const;
 

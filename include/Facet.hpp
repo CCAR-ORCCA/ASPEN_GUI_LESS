@@ -10,7 +10,8 @@
 #include <set>
 
 class ControlPoint;
-class Facet {
+
+class Facet : public Element{
 
 public:
 
@@ -26,7 +27,7 @@ public:
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
 	@return Pointer to neighboring facets, plus the calling facet
 	*/
-	std::set < Facet * > get_neighbors(bool all_neighbors) const;
+	virtual std::set < Element * > get_neighbors(bool all_neighbors) const;
 
 	/**
 	Get outbound facet normal
@@ -81,13 +82,6 @@ public:
 	arma::vec * get_facet_center() ;
 
 	/**
-	Return the vector storing the vertices owned by this facet
-	@return vector storing the vertices owned by this facet
-	*/
-	std::vector<std::shared_ptr<ControlPoint > > * get_vertices() ;
-
-
-	/**
 	Sets the number of time this facet has been split
 	@param split_counter Number of time this facet and its parents
 	have been split
@@ -119,7 +113,6 @@ protected:
 	void compute_facet_center();
 
 
-	std::vector<std::shared_ptr<ControlPoint > >  vertices ;
 	arma::vec facet_normal;
 	arma::vec facet_center;
 
