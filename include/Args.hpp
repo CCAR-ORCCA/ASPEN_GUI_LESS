@@ -2,8 +2,9 @@
 #define HEADER_ARGS
 
 #include "FrameGraph.hpp"
-#include "ShapeModel.hpp"
+#include "ShapeModelTri.hpp"
 #include "Interpolator.hpp"
+#include "DynamicAnalyses.hpp"
 
 class Args {
 
@@ -13,7 +14,7 @@ public:
 		this -> frame_graph = frame_graph;
 	}
 
-	void set_shape_model(ShapeModel * shape_model) {
+	void set_shape_model(ShapeModelTri * shape_model) {
 		this -> shape_model = shape_model;
 	}
 
@@ -53,7 +54,7 @@ public:
 		return this -> frame_graph;
 	}
 
-	ShapeModel * get_shape_model() {
+	ShapeModelTri * get_shape_model() {
 		return this -> shape_model;
 	}
 
@@ -96,6 +97,13 @@ public:
 		return this -> time;
 	}
 
+	void set_dyn_analyses(DynamicAnalyses * dyn_analyses){
+		this -> dyn_analyses = dyn_analyses;
+	}
+
+	DynamicAnalyses * get_dyn_analyses() const{
+		return this -> dyn_analyses;
+	}
 	
 
 	void set_minimum_elevation(double el) {
@@ -118,6 +126,7 @@ public:
 
 
 protected:
+
 	double density;
 	double eccentricity;
 	double mu;
@@ -127,7 +136,8 @@ protected:
 	double mass;
 	bool stopping_bool = false;
 	FrameGraph * frame_graph;
-	ShapeModel * shape_model;
+	ShapeModelTri * shape_model;
+	DynamicAnalyses * dyn_analyses;
 	Interpolator * interpolator;
 
 	arma::vec constant_omega;

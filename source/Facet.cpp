@@ -71,7 +71,6 @@ std::set < Element *  > Facet::get_neighbors(bool all_neighbors) const {
 			neighbors.insert(*facet_it);
 		}
 
-
 	}
 
 	else {

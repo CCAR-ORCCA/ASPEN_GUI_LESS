@@ -72,7 +72,6 @@ void Filter::get_surface_point_cloud_from_trajectory(
 	arma::vec interpolated_attitude(6);
 
 
-
 	int N = (int)((orbit_time -> at(orbit_time -> n_rows - 1 ) - orbit_time -> at(0) ) * this -> lidar -> get_frequency());
 	arma::vec times = 1. / this -> lidar -> get_frequency() * arma::regspace(0, N);
 
@@ -85,7 +84,6 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		interpolated_attitude = interpolator_attitude.interpolate(times(time_index), true);
 
 		// L frame position and velocity (in T frame)
-
 		lidar_pos = interpolated_orbit.rows(0, 2);
 		lidar_vel = interpolated_orbit.rows(3, 5);
 
@@ -103,7 +101,6 @@ void Filter::get_surface_point_cloud_from_trajectory(
 		// LN DCM
 		mrp_LN = RBK::dcm_to_mrp(dcm_LT * dcm_TN);
 		lidar_pos_inertial = dcm_TN.t() * lidar_pos;
-
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos_inertial);
@@ -233,7 +230,6 @@ void Filter::run_shape_reconstruction(std::string orbit_path,
                                       bool plot_measurements,
                                       bool save_shape_model,
                                       bool inertial_traj) {
-
 
 
 	std::cout << "Running the filter" << std::endl;
@@ -791,11 +787,8 @@ void Filter::register_pcs(int index, double time) {
 
 void Filter::measure_spin_axis(arma::mat & dcm) {
 
-
 	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
-
 	this -> filter_arguments -> append_spin_axis_mes(prv.second);
-
 
 }
 

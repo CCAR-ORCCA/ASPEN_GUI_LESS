@@ -18,7 +18,7 @@
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
-set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.1.0/bin/)
+set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 
 
 
@@ -84,7 +84,7 @@ cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
-add_definitions(-Wall -O2 -g)
+add_definitions(-Wall -O2)
 
 # Include directories
 include_directories(include)
@@ -150,10 +150,10 @@ source/ShapeModelImporter.cpp
 source/ShapeModelTri.cpp
 source/ControlPoint.cpp
 # source/Filter.cpp
-# source/RK.cpp
-# source/DynamicAnalyses.cpp
-# source/Wrappers.cpp
-# source/Interpolator.cpp
+source/RK.cpp
+source/DynamicAnalyses.cpp
+source/Wrappers.cpp
+source/Interpolator.cpp
 # source/ICP.cpp
 source/PC.cpp
 include/Adjacency_List.hpp
@@ -174,13 +174,13 @@ include/ControlPoint.hpp
 # include/Filter.hpp
 # include/RK.hpp
 # include/DynamicAnalyses.hpp
-# include/Wrappers.hpp
-# include/Args.hpp
-# include/Interpolator.hpp
+include/Wrappers.hpp
+include/Args.hpp
+include/Interpolator.hpp
 # include/ICP.hpp
 include/PC.hpp
 # include/FilterArguments.hpp
-# include/Constants.hpp
+include/Constants.hpp
 # include/ICPException.hpp
 external/Gnuplot/source/GNUPlot.cpp
 external/Gnuplot/include/GNUPlot.h

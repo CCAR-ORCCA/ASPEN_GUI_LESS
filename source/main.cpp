@@ -2,12 +2,11 @@
 #include "ShapeModelTri.hpp"
 #include "ShapeModelImporter.hpp"
 // #include "Filter.hpp"
-// #include "RK.hpp"
-// #include "Wrappers.hpp"
-// #include "Interpolator.hpp"
-// #include "Constants.hpp"
-
-#include <chrono>
+#include "RK.hpp"
+#include "Wrappers.hpp"
+#include "Interpolator.hpp"
+#include "Constants.hpp"
+#include "DynamicAnalyses.hpp"
 #include <limits>
 
 
@@ -19,10 +18,8 @@ int main() {
 	frame_graph.add_frame("N");
 	frame_graph.add_frame("T");
 
-	// Shape model
+	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("T", &frame_graph);
-
-
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
@@ -38,46 +35,40 @@ int main() {
 	shape_io_truth.load_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree(false);
 
+// 1) Propagate small body attitude
+	arma::vec attitude_0(6);
 
-// // 1) Propagate small body attitude
-// 	arma::vec attitude_0(6);
+	double omega = 2 * arma::datum::pi / (12 * 3600);
 
-// 	double omega = 2 * arma::datum::pi / (12 * 3600);
+	arma::vec angular_vel = { 0.1 * omega,omega,  0.1 * omega};
 
-// 	arma::vec angular_vel = { 0, 0, omega};
+	attitude_0.rows(0, 2) = arma::zeros<arma::vec>(3);
+	attitude_0.rows(3, 5) = angular_vel;
 
-// 	attitude_0.rows(0, 2) = arma::zeros<arma::vec>(3);
-// 	attitude_0.rows(3, 5) = angular_vel;
 
-// 	double t0 = T0;
-// 	double tf = TF;
-// 	double dt = 0.1; //default timestep. Used as initial guess for RK45
 
-// 	bool check_energy_conservation = false;
+// Specifiying filter_arguments such as density, pointer to frame graph and
+// attracting shape model
+	Args args;
+	DynamicAnalyses dyn_analyses(&true_shape_model);
 
-// // Specifiying filter_arguments such as density, pointer to frame graph and
-// // attracting shape model
-// 	Args args;
+	args.set_frame_graph(&frame_graph);
+	args.set_shape_model(&true_shape_model);
+	args.set_is_attitude_bool(false);
+	args.set_dyn_analyses(&dyn_analyses);
 
-// 	args.set_frame_graph(&frame_graph);
-// 	args.set_shape_model(&true_shape_model);
-// 	args.set_is_attitude_bool(true);
+	RK45 rk_attitude(attitude_0,
+	                 T0,
+	                 TF,
+	                 TF-T0,
+	                 &args,
+	                 "attitude",
+	                 1e-10);
 
-// 	RK45 rk_attitude(attitude_0,
-// 	                 t0,
-// 	                 tf,
-// 	                 dt,
-// 	                 &args,
-// 	                 check_energy_conservation,
-// 	                 "attitude",
-
-// 	                 1e-5);
-
-// 	rk_attitude.run(&attitude_dxdt_wrapper,
-// 	                nullptr,
-// 	                &event_function_mrp_omega,
-// 	                false,
-// 	                "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
+	rk_attitude.run(&attitude_dxdt_wrapper,
+	                &event_function_mrp_omega,
+	                false,
+	                "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
 
 // // 2) Propagate spacecraft attitude about small body
 // // using computed small body attitude
@@ -146,8 +137,6 @@ int main() {
 
 
 // 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
-
-// 	shape_filter_args.set_ridge_coef(1e1);
 
 
 // 	shape_filter_args.set_split_facets(true);

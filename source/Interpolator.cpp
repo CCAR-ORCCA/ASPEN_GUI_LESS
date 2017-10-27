@@ -25,14 +25,13 @@ arma::vec Interpolator::interpolate(double t,bool is_attitude) {
 	arma::vec X_before = this -> X -> col(index_before);
 	arma::vec X_after = this -> X -> col(index_after);
 
-	if (arma::norm(X_after.rows(0, 2) - X_before.rows(0, 2)) > 1.5 && is_attitude) {
+	if (is_attitude){
+		if (arma::norm(X_after.rows(0, 2) - X_before.rows(0, 2)) > 1.5) {
 
+			X_before.rows(0, 2) = RBK::shadow_mrp(X_before.rows(0, 2),true);
 
-		X_before.rows(0, 2) = RBK::shadow_mrp(X_before.rows(0, 2),true);
-
-
+		}
 	}
-
 	double t_before = this -> T -> at(index_before);
 	double t_after = this -> T -> at(index_after);
 

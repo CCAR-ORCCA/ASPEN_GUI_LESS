@@ -17,7 +17,6 @@ public:
 	   double tf,
 	   double dt,
 	   Args * args,
-	   bool check_energy_conservation,
 	   std::string title = ""
 	  ) ;
 
@@ -33,7 +32,6 @@ protected:
 	arma::vec T;
 	arma::mat X;
 	arma::vec energy;
-	bool check_energy_conservation;
 
 	Args * args;
 	std::string title;
@@ -49,20 +47,29 @@ public:
 	     double tf,
 	     double dt,
 	     Args * args,
-	     bool check_energy_conservation,
 	     std::string title = "",
 	     double tol = 1e-4
 	    );
 
 	void run(
 	    arma::vec (*dXdt)(double, arma::vec, Args *),
-	    double (*energy_fun)(double , arma::vec, Args *),
 	    arma::vec (*event_function)(double t, arma::vec, Args *) = nullptr,
 	    bool verbose = false,
 	    std::string savepath = "");
 
 protected:
 	double tol;
+
+	void propagate(
+	    arma::vec (*dXdt)(double, arma::vec, Args *),
+	    const double t,
+	    const arma::vec & y,
+	    arma::vec & y_order_4,
+	    arma::vec & y_order_5,
+	    arma::mat & K);
+
+
+
 };
 
 class RK4 : public RK {
@@ -75,13 +82,11 @@ public:
 	    double tf,
 	    double dt,
 	    Args * args,
-	    bool check_energy_conservation,
 	    std::string title = ""
 	);
 
 	void run(
 	    arma::vec (*dXdt)(double, arma::vec , Args * args),
-	    double (*energy_fun)(double, arma::vec , Args * args),
 	    arma::vec (*event_function)(double t, arma::vec, Args *) = nullptr,
 	    std::string savepath = "");
 

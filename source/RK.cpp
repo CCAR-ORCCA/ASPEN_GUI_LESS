@@ -1,13 +1,11 @@
 #include "RK.hpp"
-
-
+#include <chrono>
 
 RK::RK(arma::vec X0,
        double t0,
        double tf,
        double dt,
        Args * args,
-       bool check_energy_conservation,
        std::string title
       ) {
 
@@ -16,7 +14,6 @@ RK::RK(arma::vec X0,
 	this -> tf = tf;
 	this -> dt = dt;
 	this -> args = args;
-	this -> check_energy_conservation = check_energy_conservation;
 	this -> title = title;
 
 }
@@ -35,8 +32,7 @@ RK4::RK4(
     double tf,
     double dt,
     Args * args,
-    bool check_energy_conservation,
-    std::string title) : RK(X0, t0, tf, dt, args, check_energy_conservation, title) {
+    std::string title) : RK(X0, t0, tf, dt, args, title) {
 
 	unsigned int n_times = (unsigned int)((tf - t0) / dt) + 2;
 	this -> T = arma::vec(n_times);
@@ -52,7 +48,6 @@ RK4::RK4(
 	// The first (initial) state is inserted
 	this -> X.col(0) = X0;
 
-	this -> energy = arma::vec(n_times);
 }
 
 
@@ -62,24 +57,17 @@ RK45::RK45(
     double tf,
     double dt,
     Args * args,
-    bool check_energy_conservation,
     std::string title,
-    double tol) : RK(X0, t0, tf, dt, args, check_energy_conservation, title) {
+    double tol) : RK(X0, t0, tf, dt, args, title) {
 	this -> tol = tol;
 
 }
 
 
 void RK4::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
-              double (*energy_fun)(double t, arma::vec , Args * args),
               arma::vec (*event_function)(double t, arma::vec, Args *),
               std::string savepath) {
 
-
-	if (this -> check_energy_conservation == true) {
-
-		this -> energy(0) = (*energy_fun)(this -> T(0), this -> X . col(0), args);
-	}
 
 	for (unsigned int i = 1; i < this -> T . n_rows; ++i) {
 		double dt = this -> T(i) - this -> T(i - 1);
@@ -95,19 +83,12 @@ void RK4::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 			this -> X . col(i) = (*event_function)(this -> T(i), this -> X . col(i), this -> args);
 		}
 
-		if (check_energy_conservation == true) {
-			this -> energy(i) = (*energy_fun)(this -> T(i), this -> X . col(i), this -> args);
-		}
-
 		if (this -> args -> get_stopping_bool() == true) {
 			break;
 		}
 
 	}
 
-	if (check_energy_conservation == true) {
-		energy.save(savepath + "energy_RK4_" + this -> title + ".txt", arma::raw_ascii);
-	}
 	if (savepath != "") {
 		this -> T.save(savepath + "T_RK4_" + this -> title + ".txt", arma::raw_ascii);
 		this -> X.save(savepath + "X_RK4_" + this -> title + ".txt", arma::raw_ascii);
@@ -115,8 +96,39 @@ void RK4::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 }
 
+
+
+void RK45::propagate(
+	    arma::vec (*dXdt)(double, arma::vec, Args *),
+	    const double t,
+	    const arma::vec & y,
+	    arma::vec & y_order_4,
+	    arma::vec & y_order_5,
+	    arma::mat & K){
+
+		// times
+		double tk0 = t;
+		double tk1 = t + 1. / 4. * this -> dt;
+		double tk2 = t + 3. / 8. * this -> dt;
+		double tk3 = t + 12. / 13. * this -> dt;
+		double tk4 = t + this -> dt;
+		double tk5 = t + 1. / 2. * this -> dt;
+
+		// K
+		K.col(0) = (*dXdt)(tk0, y, this -> args);
+		K.col(1) = (*dXdt)(tk1 , y + K.col(0) * this -> dt / 4, this -> args);
+		K.col(2) = (*dXdt)(tk2, y + K.col(0) * this -> dt * 3. / 32. + K.col(1) * this -> dt * 9. / 32., this -> args);
+		K.col(3) = (*dXdt)(tk3, y + K.col(0) * this -> dt * 1932. / 2197. - K.col(1) * this -> dt * 7200. / 2197. + K.col(2) * this -> dt * 7296. / 2197., this -> args);
+		K.col(4) = (*dXdt)(tk4 , y + K.col(0) * this -> dt * 439. / 216. - K.col(1) * this -> dt * 8. + K.col(2) * this -> dt * 3680. / 513. - K.col(3) * this -> dt * 845. / 4104., this -> args);
+		K.col(5) = (*dXdt)(tk5 , y - K.col(0) * this -> dt * 8. / 27. + 2 * K.col(1) * this -> dt - K.col(2) * this -> dt * 3544. / 2565. + K.col(3) * this -> dt * 1859. / 4104. - K.col(4) * this -> dt * 11. / 40., this -> args);
+
+		// Solutions
+		y_order_4 = y + this -> dt * (25. / 216 * K.col(0) + 1408. / 2565 * K.col(2) + 2197. / 4104 * K.col(3) - 1. / 5. * K.col(4));
+		y_order_5 = y + this -> dt * (16. / 135 * K.col(0) + 6656. / 12825 * K.col(2) + 28561. / 56430 * K.col(3) - 9. / 50. * K.col(4) + 2. / 55. * K.col(5));
+
+}
+
 void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
-               double (*energy_fun)(double, arma::vec, Args * args),
                arma::vec (*event_function)(double t, arma::vec, Args *),
                bool verbose,
                std::string savepath) {
@@ -124,120 +136,114 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 	std::vector<double> T_v;
 	std::vector<arma::vec> X_v;
-	std::vector<double> energy_v;
-
 
 	T_v.push_back(this -> t0);
 	X_v.push_back(this -> X0);
 
+	arma::vec y_order_4 = arma::zeros<arma::vec>(this -> X0.n_rows);
+	arma::vec y_order_5 = arma::zeros<arma::vec>(this -> X0.n_rows);
 
-	if (this -> check_energy_conservation == true) {
+	arma::mat K = arma::zeros<arma::mat>(this -> X0.n_rows,6);
+	arma::vec yk = arma::zeros<arma::vec>(this -> X0.n_rows);
 
-		energy_v.push_back((*energy_fun)(this -> t0, X_v[0], args));
+	// The time step guess is refined
+	bool time_step_guess_refined = false;
+
+
+	while(!time_step_guess_refined){
+		
+		this -> propagate(dXdt,T_v.back(),X_v.back(),y_order_4,y_order_5,K);
+		
+		double norm_diff =arma::norm(y_order_5 - y_order_4);
+				
+		// Timestep update
+		double factor = std::pow(this -> tol * this -> dt / (2 * norm_diff),0.25);
+		if (norm_diff < 1e-10){
+			factor = 2;
+		}
+		if (factor < 0.1){
+			factor = 0.1;
+		}
+		else if (factor > 2){
+			factor = 2;
+		}
+		
+		if (abs(1 - factor) < 1e-1 ){
+			time_step_guess_refined = true;
+		}
+
+		else{
+			this -> dt = this -> dt * factor;
+		}
+
+	}
+	if (verbose){
+		std::cout << " Initial dt: " << this -> dt << std::endl;
 	}
 
-	while (T_v[T_v.size() - 1 ] < this -> tf && this -> args -> get_stopping_bool() == false) {
+	while (T_v.back() < this -> tf && this -> args -> get_stopping_bool() == false) {
 
-		double tk = T_v[T_v.size() - 1 ];
-		arma::vec yk = X_v[X_v.size() - 1];
+		this -> propagate(dXdt,T_v.back(),X_v.back(),y_order_4,y_order_5,K);
+		double norm_diff =arma::norm(y_order_5 - y_order_4);
 
-		// times
-		double tk1 = tk;
-		double tk2 = tk + 1. / 4. * this -> dt;
-		double tk3 = tk + 3. / 8. * this -> dt;
-		double tk4 = tk + 12. / 13. * this -> dt;
-		double tk5 = tk + this -> dt;
-		double tk6 = tk + 1. / 2. * this -> dt;
-
-		// ks
-		arma::vec k1 = (*dXdt)(tk1, yk, this -> args);
-		arma::vec k2 = (*dXdt)(tk2 , yk + k1 * this -> dt / 4, this -> args);
-		arma::vec k3 = (*dXdt)(tk3, yk + k1 * this -> dt * 3. / 32. + k2 * this -> dt * 9. / 32., this -> args);
-		arma::vec k4 = (*dXdt)(tk4, yk + k1 * this -> dt * 1932. / 2197. - k2 * this -> dt * 7200. / 2197. + k3 * this -> dt * 7296. / 2197., this -> args);
-		arma::vec k5 = (*dXdt)(tk5 , yk + k1 * this -> dt * 439. / 216. - k2 * this -> dt * 8. + k3 * this -> dt * 3680. / 513. - k4 * this -> dt * 845. / 4104., this -> args);
-		arma::vec k6 = (*dXdt)(tk6 , yk - k1 * this -> dt * 8. / 27. + 2 * k2 * this -> dt - k3 * this -> dt * 3544. / 2565. + k4 * this -> dt * 1859. / 4104. - k5 * this -> dt * 11. / 40., this -> args);
-
-
-		// Solutions
-		arma::vec y_order_4 = yk + this -> dt * (25. / 216 * k1 + 1408. / 2565 * k3 + 2197. / 4101 * k4 - 1. / 5. * k5);
-		arma::vec y_order_5 = yk + this -> dt * (16. / 135 * k1 + 6656. / 12825 * k3 + 28561. / 56430 * k4 - 9. / 50. * k5 + 2. / 55. * k6);
-
-		X_v .push_back (y_order_5);
-		T_v.push_back(tk5);
+		X_v.push_back(y_order_5);
+		T_v.push_back(T_v.back() + this -> dt);
 
 		// Timestep update
-		this -> dt = std::pow(this -> tol / (2 * arma::norm(y_order_5 - y_order_4)), 0.25) * this -> dt;
+		double factor;
+		if (norm_diff < 1e-10){
+			factor = 2;
+		}
+		else{
+			factor = std::pow(this -> tol * this -> dt / (2 * norm_diff),0.25);
+		}
 
-		// Minimum timestep
-		this -> dt = std::min(this -> dt, (this -> tf - this -> t0) / 100);
+		if (factor < 0.1){
+			factor = 0.1;
+		}
+		else if (factor > 2){
+			factor = 2;
+		}
 
+		this -> dt = factor * this -> dt;
+		
 		// Applying event function to state if need be
-
 		if (event_function != nullptr) {
-			X_v[X_v.size() - 1] = (*event_function)( tk5, X_v[X_v.size() - 1], this -> args);
-		}
-
-		if (check_energy_conservation == true) {
-			energy_v.push_back((*energy_fun)(tk5, y_order_5, this -> args));
-		}
-
-		if (verbose == true) {
-			double percentage = std::abs((tk - this -> t0) / (this -> tf - this -> t0)) * 100 ;
-			std::cout << "Completion: " << percentage << " %" << std::endl;
+			X_v.back() = (*event_function)( T_v.back(), X_v.back(), this -> args);
 		}
 
 	}
-
-
 
 	this -> T = arma::vec(T_v.size());
 	this -> X = arma::mat(this -> X0.n_rows, T_v.size());
-	arma::vec energy = arma::vec(T_v.size());
-
-
 
 	for (unsigned int i = 0; i < this -> T . n_rows; ++i) {
 		this -> T(i) = T_v[i];
 		this -> X.col(i) = X_v[i];
-
-
-		if (check_energy_conservation == true) {
-			if (this -> args -> get_stopping_bool() == false) {
-				energy(i) = energy_v[i];
-			}
-			else {
-				if (i < this -> T.n_rows - 1) {
-					energy(i) = energy_v[i];
-				}
-				else {
-					energy(i) = energy(i - 1);
-				}
-			}
-		}
-
 	}
 
-	// Extrapolation "backwards" if need be
+
+	// The last value is obtained from an RK4 instantiated with a fraction of the last current timestep
 	if (this -> args -> get_stopping_bool() == false) {
 
-		Interpolator interpolator(&this -> T, &this -> X);
+		RK4 rk_4(this -> X.col(this -> T.n_rows - 2),
+	                 this -> T(this -> T.n_rows - 2),
+	                 this -> tf,
+	                 this -> dt / 5,
+	                 this -> args,
+	                 "");
 
-		this -> X.col(this -> T.n_rows - 1) = interpolator . interpolate(this -> tf, this -> args -> get_is_attitude_bool());
+		rk_4.run(dXdt,
+	                nullptr,
+	                "");
 
+		this -> X.col(this -> T.n_rows - 1) = rk_4.get_X() -> tail_cols( 1 );
 		this -> T(this -> T.n_rows - 1) = this -> tf;
 	}
 
-
-	if (check_energy_conservation == true) {
-		energy.save(savepath + "energy_RK45_" + this -> title + ".txt", arma::raw_ascii);
-	}
 	if (savepath != "") {
-
 		this -> T.save(savepath + "T_RK45_" + this -> title + ".txt", arma::raw_ascii);
 		this -> X.save(savepath + "X_RK45_" + this -> title + ".txt", arma::raw_ascii);
 	}
-
-
-
 
 }
