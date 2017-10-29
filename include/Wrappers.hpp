@@ -17,6 +17,11 @@ arma::vec sigma_dot_wrapper(double t, arma::vec X, Args * args);
 arma::vec validation_dxdt_wrapper(double t, arma::vec  X, Args * args);
 
 
+arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args);
+
+
+
+
 double energy_attitude(double t, arma::vec  X, Args * args);
 // double energy_orbit(double t, arma::vec X, Args * args);
 // double energy_orbit_body_frame(double t, arma::vec X , Args * args);

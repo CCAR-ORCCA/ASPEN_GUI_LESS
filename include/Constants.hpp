@@ -9,7 +9,7 @@
 #define HO3_LONGITUDE_PERIGEE 5.36213407427001
 
 // Central body density/mass
-#define DENSITY 2000
+#define DENSITY 1900
 
 // Lidar settings
 #define ROW_RESOLUTION 128

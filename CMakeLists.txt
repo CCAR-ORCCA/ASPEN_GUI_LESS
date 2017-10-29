@@ -111,6 +111,11 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 
+# Find SBGAT 
+find_package(SbgatCore REQUIRED)
+include_directories(${SBGATCORE_INCLUDE_HEADER})
+
+
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
@@ -156,36 +161,8 @@ source/Wrappers.cpp
 source/Interpolator.cpp
 # source/ICP.cpp
 source/PC.cpp
-include/Adjacency_List.hpp
-include/BBox.hpp
-include/Element.hpp
-include/Facet.hpp
-include/FrameGraph.hpp
-include/KDTree_shape.hpp
-include/Lidar.hpp
-include/OMP_flags.hpp
-include/PointNormal.hpp
-include/Ray.hpp
-include/RefFrame.hpp
-include/ShapeModel.hpp
-include/ShapeModelTri.hpp
-include/ShapeModelImporter.hpp
-include/ControlPoint.hpp
-# include/Filter.hpp
-# include/RK.hpp
-# include/DynamicAnalyses.hpp
-include/Wrappers.hpp
-include/Args.hpp
-include/Interpolator.hpp
-# include/ICP.hpp
-include/PC.hpp
-# include/FilterArguments.hpp
-include/Constants.hpp
-# include/ICPException.hpp
 external/Gnuplot/source/GNUPlot.cpp
-external/Gnuplot/include/GNUPlot.h
-# external/CGAL_interface/include/CGAL_interface.hpp
-# external/CGAL_interface/source/CGAL_interface.cpp
+
 )
 
 # Linking
@@ -195,6 +172,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
+${SBGATCORE_LIBRARY}
 )
 
 

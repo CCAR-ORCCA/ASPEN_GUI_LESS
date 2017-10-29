@@ -154,7 +154,7 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 		
 		this -> propagate(dXdt,T_v.back(),X_v.back(),y_order_4,y_order_5,K);
 		
-		double norm_diff =arma::norm(y_order_5 - y_order_4);
+		double norm_diff = arma::norm(y_order_5 - y_order_4);
 				
 		// Timestep update
 		double factor = std::pow(this -> tol * this -> dt / (2 * norm_diff),0.25);
@@ -184,7 +184,7 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 	while (T_v.back() < this -> tf && this -> args -> get_stopping_bool() == false) {
 
 		this -> propagate(dXdt,T_v.back(),X_v.back(),y_order_4,y_order_5,K);
-		double norm_diff =arma::norm(y_order_5 - y_order_4);
+		double norm_diff = arma::norm(y_order_5 - y_order_4);
 
 		X_v.push_back(y_order_5);
 		T_v.push_back(T_v.back() + this -> dt);

@@ -69,9 +69,10 @@ arma::vec validation_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 arma::vec event_function_mrp_omega(double t, arma::vec X, Args * args) {
 	if (arma::norm(X.rows(0, 2)) > 1) {
-		arma::vec mrp = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
-		arma::vec state = {mrp(0), mrp(1), mrp(2), X(3), X(4), X(5)};
-		return state;
+		
+		X.rows(0,2) = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
+
+		return X;
 	}
 	else {
 		return X;
@@ -124,17 +125,43 @@ double energy_attitude(double t, arma::vec X , Args * args) {
 
 	return 0.5 * arma::dot(omega, args -> get_shape_model() -> get_inertia() * omega);
 
+}
+
+arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args){
+
+	arma::vec dxdt(X.n_rows);
+
+	arma::vec sigma = X.rows(0,3);
+	arma::vec omega = X.rows(3,5);
+	arma::vec pos = X.rows(6,8);
+	arma::vec vel = X.rows(9,11);
+	
+
+	dxdt.rows(0,5) = attitude_dxdt_wrapper(t,X.rows(0,5),args);
+
+	arma::vec omega_dot = dxdt.rows(3,5);
+
+	arma::vec acc_sph = args -> get_dyn_analyses() -> spherical_harmo_acc(
+		args -> get_degree(),
+		args -> get_ref_radius(),
+		args -> get_mu(),
+		pos, 
+		args -> get_Cnm(),
+		args -> get_Snm());
+
+	dxdt.rows(6,8) = X.rows(9,11);
+	dxdt.rows(9,11) = (acc_sph - arma::cross(omega_dot,pos) - 2 * arma::cross(omega,vel)
+		- arma::cross(omega,arma::cross(omega,pos)));
+
+
+	return dxdt;
 
 }
 
-// double energy_orbit(double t, arma::vec X , Args * args) {
 
-	
 
-// 	arma::vec pos_inertial = X . rows(0, 2);
-// 	arma::vec pos_body = args -> get_frame_graph() -> convert(pos_inertial, "N", "T");
 
-// 	double potential = args -> get_dyn_analyses() -> pgm_potential(pos_body.colptr(0) , args -> get_density());
-// 	return 0.5 * arma::dot(X . rows(3, 5), X . rows(3, 5)) - potential;
 
-// }
+
+
+

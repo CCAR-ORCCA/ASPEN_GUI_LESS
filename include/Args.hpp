@@ -42,6 +42,34 @@ public:
 		return this -> mu;
 	}
 
+
+	void set_Cnm(arma::mat * Cnm){
+		this -> Cnm = Cnm;
+	}
+
+	void set_Snm(arma::mat * Snm){
+		this -> Snm = Snm;
+	}
+
+	arma::mat * get_Cnm(){
+		return this -> Cnm;
+	}
+
+	arma::mat * get_Snm(){
+		return this -> Snm;
+	}
+
+	void set_ref_radius(const double ref_radius){
+		this -> ref_radius = ref_radius;
+	}
+
+	double get_ref_radius() const{
+		return this -> ref_radius;
+	}
+
+
+
+
 	double get_density() const {
 		return this -> density;
 	}
@@ -71,6 +99,14 @@ public:
 	}
 	double get_mass() const {
 		return this -> mass;
+	}
+
+	unsigned int get_degree() const{
+		return this -> degree;
+	}
+
+	void set_degree (unsigned int degree ){
+		this -> degree = degree;
 	}
 
 	bool get_stopping_bool() {
@@ -141,6 +177,15 @@ protected:
 	Interpolator * interpolator;
 
 	arma::vec constant_omega;
+
+	unsigned int degree;
+	double ref_radius ;
+
+	arma::mat * Cnm;
+	arma::mat * Snm;
+
+
+
 
 	bool is_attitude_bool = false;
 
