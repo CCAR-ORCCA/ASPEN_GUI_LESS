@@ -1,31 +1,26 @@
 #include "PC.hpp"
 
-PC::PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane,
-       FrameGraph * frame_graph) {
+PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
+	FrameGraph * frame_graph) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
 	// The valid measurements used to form the point cloud are extracted
-	for (unsigned int y_index = 0; y_index < focal_plane -> size(); ++y_index) {
-		for (unsigned int z_index = 0; z_index < focal_plane -> at(0).size(); ++z_index) {
+	for (unsigned int pixel = 0; pixel < focal_plane -> size(); ++pixel) {
 
-			if (focal_plane -> at(y_index)[z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
+		if (focal_plane -> at(pixel) -> get_true_range() < std::numeric_limits<double>::infinity()) {
 
-				arma::vec impact_point_instrument = focal_plane -> at(y_index)[z_index] -> get_impact_point(false);
+			arma::vec impact_point_instrument = focal_plane -> at(pixel) -> get_impact_point();
 
-				arma::vec impact_point_inertial = frame_graph -> convert(impact_point_instrument, "L", "N");
-
-				points_normals.push_back(std::make_shared<PointNormal>(PointNormal(impact_point_inertial)));
-			}
-
+			points_normals.push_back(std::make_shared<PointNormal>(PointNormal(impact_point_instrument)));
+			
 		}
 	}
 
-
-	arma::vec converted_los = frame_graph -> convert(los_dir, "L", "N", true);
+	arma::vec los = {1,0,0};
 
 	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(converted_los);
+	this -> construct_normals(los);
 
 }
 
@@ -39,10 +34,8 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
 	}
-
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(los_dir);
-
 
 }
 
@@ -70,10 +63,10 @@ PC::PC(ShapeModelTri * shape_model) {
 
 
 PC::PC(arma::mat & dcm,
-       arma::vec & x,
-       std::shared_ptr<PC> destination_pc,
-       std::shared_ptr<PC> source_pc,
-       FrameGraph * frame_graph) {
+	arma::vec & x,
+	std::shared_ptr<PC> destination_pc,
+	std::shared_ptr<PC> source_pc,
+	FrameGraph * frame_graph) {
 
 
 	std::vector<arma::vec> points;
@@ -134,8 +127,6 @@ std::shared_ptr<PointNormal> PC::get_point(unsigned int index) const {
 
 
 
-
-
 arma::vec PC::get_point_normal(unsigned int index) const {
 	return *this -> kd_tree -> points_normals[index] -> get_normal();
 }
@@ -160,16 +151,16 @@ std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const
 	std::shared_ptr<PointNormal> closest_point;
 
 	this -> kd_tree -> closest_point_search(test_point,
-	                                        this -> kd_tree,
-	                                        closest_point,
-	                                        distance);
+		this -> kd_tree,
+		closest_point,
+		distance);
 
 	return closest_point;
 
 }
 
 std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
-    arma::vec & test_point, unsigned int N) const {
+	arma::vec & test_point, unsigned int N) const {
 
 	std::vector<std::shared_ptr<PointNormal> > closest_points;
 
@@ -179,10 +170,10 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 		std::shared_ptr<PointNormal> closest_point;
 
 		this -> kd_tree -> closest_point_search(test_point,
-		                                        this -> kd_tree,
-		                                        closest_point,
-		                                        distance,
-		                                        closest_points);
+			this -> kd_tree,
+			closest_point,
+			distance,
+			closest_points);
 
 		closest_points.push_back(closest_point);
 	}
@@ -214,7 +205,7 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 
 
 void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
-               bool format_like_obj) const {
+	bool format_like_obj) const {
 
 
 	std::ofstream shape_file;
@@ -225,25 +216,25 @@ void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
 	}
 
 	for (unsigned int vertex_index = 0;
-	        vertex_index < this -> get_size();
-	        ++vertex_index) {
+		vertex_index < this -> get_size();
+		++vertex_index) {
 
 		arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
 
-		if (format_like_obj) {
-			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
-		}
-		else if (save_normals) {
-
-			arma::vec n = dcm * this -> get_point_normal(vertex_index);
-
-			shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
-		}
-		else {
-			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
-
-		}
+	if (format_like_obj) {
+		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
 	}
+	else if (save_normals) {
+
+		arma::vec n = dcm * this -> get_point_normal(vertex_index);
+
+		shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+	}
+	else {
+		shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+
+	}
+}
 
 
 }
@@ -260,7 +251,7 @@ std::shared_ptr<PointNormal> PC::get_closest_point_index_brute_force(arma::vec &
 
 	for (unsigned int i = 0 ; i < pc_size ; ++i) {
 		double new_distance = arma::norm(test_point - *this -> kd_tree ->
-		                                 get_points_normals() -> at(i) -> get_point());
+			get_points_normals() -> at(i) -> get_point());
 
 		if (new_distance < distance) {
 			index_closest = i;
@@ -290,7 +281,7 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 	for (unsigned int i = 0 ; i < pc_size ; ++i) {
 
 		double new_distance = arma::norm(test_point - *this -> kd_tree ->
-		                                 get_points_normals() -> at(i) -> get_point());
+			get_points_normals() -> at(i) -> get_point());
 
 		if (new_distance > std::prev(distance_map.end()) -> first) {
 			continue;

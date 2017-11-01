@@ -14,30 +14,30 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 	double y, z;
 	double x = this -> lidar -> get_focal_length();
 
-	double py = this -> lidar -> get_size_y() / this -> lidar -> get_row_count();
-	double pz = this -> lidar -> get_size_z() / this -> lidar -> get_col_count();
+	double pz = this -> lidar -> get_size_z() / this -> lidar -> get_z_res();
+	double py = this -> lidar -> get_size_y() / this -> lidar -> get_y_res();
 
 	// Z coordinate
 	double a_z;
-	if (this -> lidar -> get_col_count() - 1 > 0) {
-		a_z = (this -> lidar -> get_size_z() - pz) / (this -> lidar -> get_col_count() - 1) ;
+	if (this -> lidar -> get_z_res() - 1 > 0) {
+		a_z = (this -> lidar -> get_size_z() - pz) / (this -> lidar -> get_z_res() - 1) ;
 	}
 	else {
 		a_z = 0;
 	}
 	double b_z = 0.5 * ( - this -> lidar -> get_size_z() + pz );
-	z =  a_z * col_index + b_z;
+	z =  a_z * row_index + b_z;
 
 	// Y coordinate
 	double a_y;
-	if (this -> lidar -> get_row_count() - 1 > 0) {
-		a_y = (this -> lidar -> get_size_y() - py) / (this -> lidar -> get_row_count() - 1) ;
+	if (this -> lidar -> get_y_res() - 1 > 0) {
+		a_y = (this -> lidar -> get_size_y() - py) / (this -> lidar -> get_y_res() - 1) ;
 	}
 	else {
 		a_y = 0;
 	}
 	double b_y = 0.5 * ( - this -> lidar -> get_size_y() + py );
-	y = a_y * row_index + b_y;
+	y = a_y * col_index + b_y;
 
 	// Origin and direction
 	arma::vec origin = {x, z, y};
@@ -54,34 +54,18 @@ Facet * Ray::get_true_hit_facet() {
 	return this -> true_hit_facet;
 }
 
-Facet * Ray::get_computed_hit_facet() {
-	return this -> computed_hit_facet;
-}
-
 double Ray::get_true_range() const {
 	return this -> true_range;
-}
-
-double Ray::get_computed_range() const {
-	return this -> computed_range;
 }
 
 void Ray::set_true_range(double true_range) {
 	this -> true_range = true_range;
 }
 
-void Ray::set_computed_range(double computed_range) {
-	this -> computed_range = computed_range;
-}
-
 
 
 Lidar * Ray::get_lidar() {
 	return this -> lidar;
-}
-
-double Ray::get_range_residual() const {
-	return this -> range_residual;
 }
 
 arma::vec * Ray::get_direction() {
@@ -103,22 +87,15 @@ arma::vec * Ray::get_origin_target_frame() {
 	return this -> origin_target_frame.get();
 }
 
-void Ray::reset(bool computed_mes, ShapeModel * shape_model) {
+void Ray::reset(ShapeModel * shape_model) {
 
-	if (computed_mes == true) {
-		this -> computed_range = std::numeric_limits<double>::infinity();
-		this -> computed_hit_facet = nullptr;
-	}
-	else {
-		this -> true_range = std::numeric_limits<double>::infinity();
-		this -> true_hit_facet = nullptr;
-	}
-
+	this -> true_range = std::numeric_limits<double>::infinity();
+	this -> true_hit_facet = nullptr;
+	
 	FrameGraph * frame_graph = this -> get_lidar() -> get_frame_graph();
 
 	(*this -> direction_target_frame) = frame_graph -> convert(*this -> get_direction(), "L", shape_model -> get_ref_frame_name(), true);
 	(*this -> origin_target_frame) = frame_graph -> convert(*this -> get_origin(), "L", shape_model -> get_ref_frame_name(), false);
-
 
 }
 
@@ -129,10 +106,10 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 	arma::vec * P2 = facet -> get_control_points() -> at(2) -> get_coordinates() ;
 
 	double epsilon = (facet -> get_area()
-	                  - 0.5 * (
-	                      arma::norm(arma::cross(H - *P0, H - *P1))
-	                      + arma::norm(arma::cross(H - *P1, H - *P2))
-	                      + arma::norm(arma::cross(H - *P2, H - *P0)) ));
+		- 0.5 * (
+			arma::norm(arma::cross(H - *P0, H - *P1))
+			+ arma::norm(arma::cross(H - *P1, H - *P2))
+			+ arma::norm(arma::cross(H - *P2, H - *P0)) ));
 
 	// If true, the intersection point is inside the surface
 	if (std::abs(epsilon) < tol)
@@ -141,39 +118,22 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 	else
 		return false;
 
-
 }
 
 
-void Ray::set_range_residual(double res) {
-	this -> range_residual = res;
-}
+arma::vec Ray::get_impact_point() const {
 
-
-arma::vec Ray::get_impact_point(bool computed_mes) const {
-
-	if (computed_mes) {
-		if (this -> computed_range < std::numeric_limits<double>::infinity()) {
-			return (*this -> direction) * this -> computed_range + (*this -> origin);
-		}
-		else {
-			throw std::runtime_error("Invalid ray");
-		}
-
+	if (this -> true_range < std::numeric_limits<double>::infinity()) {
+		return (*this -> direction) * this -> true_range + (*this -> origin);
 	}
 	else {
-
-		if (this -> true_range < std::numeric_limits<double>::infinity()) {
-			return (*this -> direction) * this -> true_range + (*this -> origin);
-		}
-		else {
-			throw std::runtime_error("Invalid ray");
-		}
-
+		throw std::runtime_error("Invalid ray");
 	}
+
+	
 }
 
-bool Ray::single_facet_ray_casting(Facet * facet, bool computed_mes ) {
+bool Ray::single_facet_ray_casting(Facet * facet) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
@@ -189,26 +149,15 @@ bool Ray::single_facet_ray_casting(Facet * facet, bool computed_mes ) {
 		arma::vec H = *this -> direction_target_frame * t + *this -> origin_target_frame;
 
 
-
 		if (this -> intersection_inside(H, facet)) {
-			if (computed_mes == true) {
-				if (this -> computed_range > t) {
 
-					this -> computed_range = t;
-					this -> computed_hit_facet = facet;
+			if (this -> true_range > t) {
 
-
-				}
-
+				this -> true_range = t;
+				this -> true_hit_facet = facet;
 			}
-			else {
-				if (this -> true_range > t) {
 
-					this -> true_range = t;
-					this -> true_hit_facet = facet;
-				}
-
-			}
+			
 			return true;
 		}
 

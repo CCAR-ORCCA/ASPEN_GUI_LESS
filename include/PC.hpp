@@ -19,12 +19,11 @@ public:
 
 	/**
 	Constructor
-	@param los_dir Not used
 	@param focal_plane Pointer to focal plane whose individual rays impacting with the target
 	yield the point cloud
 	@param frame_graph Pointer to reference frame graph
 	*/
-	PC(arma::vec los_dir, std::vector<std::vector<std::shared_ptr<Ray> > > * focal_plane,
+	PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
 	   FrameGraph * frame_graph);
 
 

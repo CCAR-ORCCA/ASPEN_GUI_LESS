@@ -154,6 +154,9 @@ arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args
 		- arma::cross(omega,arma::cross(omega,pos)));
 
 
+
+	
+
 	return dxdt;
 
 }

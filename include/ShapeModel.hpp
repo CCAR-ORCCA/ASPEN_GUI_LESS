@@ -101,9 +101,8 @@ public:
 	/**
 	Finds the intersect between the provided ray and the shape model
 	@param ray pointer to ray. If a hit is found, the ray's internal is changed to store the range to the hit point
-	@param computed_mes true if the target is the estimated shape
 	*/
-	virtual bool ray_trace(Ray * ray,bool computed_mes) = 0;
+	virtual bool ray_trace(Ray * ray) = 0;
 
 
 protected:

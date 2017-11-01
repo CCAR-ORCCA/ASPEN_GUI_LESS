@@ -2,6 +2,8 @@
 #define HEADER_FILTER
 
 #include "ShapeModel.hpp"
+#include "ShapeModelTri.hpp"
+
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
 #include "Interpolator.hpp"
@@ -11,9 +13,8 @@
 #include "ICPException.hpp"
 #include "Args.hpp"
 #include "Wrappers.hpp"
-#include "RK.hpp"
 #include "ShapeModelImporter.hpp"
-
+#include "ShapeFitter.hpp"
 
 #include "CGAL_interface.hpp"
 #include <RigidBodyKinematics.hpp>
@@ -49,10 +50,10 @@ public:
 	@param filter_arguments filter parameters
 	*/
 	Filter(FrameGraph * frame_graph,
-	       Lidar * lidar,
-	       ShapeModel * true_shape_model,
-	       ShapeModel * estimated_shape_model,
-	       FilterArguments * filter_arguments);
+		Lidar * lidar,
+		ShapeModelTri * true_shape_model,
+		ShapeModelTri * estimated_shape_model,
+		FilterArguments * filter_arguments);
 
 
 	/**
@@ -62,8 +63,8 @@ public:
 	@param true_shape_model Pointer to the true shape model
 	*/
 	Filter(FrameGraph * frame_graph,
-	       Lidar * lidar,
-	       ShapeModel * true_shape_model) ;
+		Lidar * lidar,
+		ShapeModelTri * true_shape_model) ;
 
 	/**
 	Constructor
@@ -73,95 +74,22 @@ public:
 	@param filter_arguments filter parameters
 	*/
 	Filter(FrameGraph * frame_graph,
-	       Lidar * lidar,
-	       ShapeModel * true_shape_model,
-	       FilterArguments * filter_arguments) ;
+		Lidar * lidar,
+		ShapeModelTri * true_shape_model,
+		FilterArguments * filter_arguments) ;
 
+	
 	/**
 	Runs the shape reconstruction filter
-	@param orbit_path Path to the orbit file
-	@param orbit_time_path Path to the orbit time file
-	@param attitude_path Path to the attitude file
-	@param attitude_time_path Path to the attitude time file
-	@param plot_measurement true if the measurements should be saved
-	@param save_shape_model true if the shape model should be saved after each measurement
-	@param inertial_traj True if provided trajectory is inertial
+	@param times vector of measurement times
+	@param interpolator pointer to state interpolator used within the filter
+	@param save_shape_model true if the true shape model must be saved prior 
+	to the run
 	*/
-	void run_shape_reconstruction(std::string orbit_path,
-	                              std::string orbit_time_path,
-	                              std::string attitude_path,
-	                              std::string attitude_time_path,
-	                              bool plot_measurements,
-	                              bool save_shape_model,
-	                              bool inertial_traj);
+	void run_shape_reconstruction(arma::vec &times ,
+		Interpolator * interpolator,
+		bool save_shape_model);
 
-
-
-	/**
-	Register the source and destination point clouds
-	@param index time index
-	@param time time
-	*/
-	void register_pcs(int index, double time);
-
-	/**
-	Extracts the spin axis from the rigid transform
-	@param dcm DCM
-	@param x
-	@param points_pairs Source/Destination point pairs
-	*/
-	void extract_spin_axis(arma::mat & dcm,
-	                       arma::vec & x,
-	                       std::vector<std::pair<std::shared_ptr<PointNormal>,
-	                       std::shared_ptr<PointNormal> > > * point_pairs) ;
-
-
-	/**
-
-	Runs one shape reconstruction pass (N shape correction updates followed by a
-	facet recycling step)
-	@param time_index index
-	@param time_index_formatted string denoting the current time
-	@param plot_measurements true if measurements should be saved
-	*/
-	void shape_reconstruction_pass(unsigned int time_index,
-	                               std::string time_index_formatted,
-	                               bool plot_measurements);
-
-
-
-	/**
-	Collects 3D point cloud measurements and stores them to an OBJ file
-	using a precomputed orbit and attracting body attitude
-	@param orbit_path Path to the orbit file
-	@param orbit_time_path Path to the orbit time file
-	@param attitude_path Path to the attitude file
-	@param attitude_time_path Path to the attitude time file
-	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
-	*/
-	void get_surface_point_cloud_from_trajectory(
-	    std::string orbit_path,
-	    std::string orbit_time_path,
-	    std::string attitude_path,
-	    std::string attitude_time_path,
-	    std::string savepath);
-
-
-	/**
-	Collects 3D point cloud measurements and stores them to an OBJ file
-	using a precomputed orbit and attracting body attitude
-	@param orbit_states Orbit states
-	@param orbit_time Orbit time
-	@param attitude_states Attitude states
-	@param attitude_time Attitude time
-	@param savepath Path to obj file of the form XXX.obj (ex: test.obj)
-	*/
-	void get_surface_point_cloud_from_trajectory(
-	    arma::mat * orbit_states,
-	    arma::vec * orbit_time,
-	    arma::mat * attitude_states,
-	    arma::vec * attitude_time,
-	    std::string savepath) ;
 
 
 
@@ -183,13 +111,55 @@ public:
 
 
 
-	/**
-	Computes a measurement of the angular velocity
-	@param point_pairs Pointer to the paired source and destination point clouds
-	*/
-	// void measure_omega(std::vector<std::pair<std::shared_ptr<PointNormal>,
-	//                    std::shared_ptr<PointNormal> > > * point_pairs);
+	
 
+
+
+protected:
+
+	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter,
+		bool plot_measurement);
+
+	void correct_observed_features(std::vector<Ray * > & good_rays,
+		std::set<ControlPoint *> & seen_vertices,
+		std::set<Facet *> & seen_facets,
+
+		arma::mat & N_mat,
+		std::map<Facet *,
+		std::vector<unsigned int> > & facet_to_index_of_vertices) ;
+
+	void get_observed_features(std::vector<Ray * > & good_rays,
+		std::set<ControlPoint *> & seen_vertices,
+		std::set<Facet *> & seen_facets,
+		std::set<Facet *> & spurious_facets,
+		arma::mat & N_mat,
+		std::map<Facet *,
+		std::vector<unsigned int> > & facet_to_index_of_vertices
+		) ;
+
+
+
+	std::vector<arma::rowvec> partial_range_partial_coordinates(const arma::vec & P,
+		const arma::vec & u, Facet * facet) ;
+
+
+
+	/**
+	Computes the new relative states from the (sigma,omega),(r,r') relative states
+	@param X_S relative state at present time (12x1)
+	@param dcm_LB reference to [LB] dcm at present time (12x1)
+	@param dcm_LB_t_D reference to [LB] dcm at past measurement time (12x1)
+	@param LN_t_S reference to [LN] dcm at current time
+	@param LN_t_D reference to [LN] dcm at past measurement time
+	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	@param mrp_BN_t_D reference to the mrp instantiating [BN] at the past measurement time
+	@param mrp_LB reference to the mrp instantiating [LB] at the current time
+	@param lidar_pos reference to relative position of the spacecraft w/r to the barycentric B frame
+	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
+	*/
+	void get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
+	arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
+	arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel );
 
 	/**
 	Computes a measurement of the angular velocity
@@ -199,74 +169,33 @@ public:
 
 
 	/**
-	Computes an estimate of angular velocity of the target
-	assuming that it is undergoing torque free motion using a CKF.
-	@param point_pairs Pointer to the paired source and destination point clouds
-	@param time Time
-	*/
-	void compute_omega_KF(std::vector<std::pair<std::shared_ptr<PointNormal>,
-	                      std::shared_ptr<PointNormal> > > * point_pairs,
-	                      double time) ;
-
-
-	/**
-	Computes an estimate of the center of mass of the target
-	assuming that it is undergoing torque free motion using a CKF.
-	@param dcm DCM obtained from the ICP rigid transform
-	@param X translation vector obtained from the ICP rigid transform
-	*/
-	void estimate_cm_KF(arma::mat & dcm, arma::vec & x);
-
-	/**
 	Computes a measurement of the direction of the rigid's body spin axis
 	@param dcm DCM obtained from the ICP rigid transform
 	*/
 	void measure_spin_axis(arma::mat & dcm);
 
-
-
-
-
-
-protected:
-
-	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter,
-	                   bool plot_measurement);
-
-	void correct_observed_features(std::vector<Ray * > & good_rays,
-	                               std::set<ControlPoint *> & seen_vertices,
-	                               std::set<Facet *> & seen_facets,
-
-	                               arma::mat & N_mat,
-	                               std::map<Facet *,
-	                               std::vector<unsigned int> > & facet_to_index_of_vertices) ;
-
-	void get_observed_features(std::vector<Ray * > & good_rays,
-	                           std::set<ControlPoint *> & seen_vertices,
-	                           std::set<Facet *> & seen_facets,
-	                           std::set<Facet *> & spurious_facets,
-	                           arma::mat & N_mat,
-	                           std::map<Facet *,
-	                           std::vector<unsigned int> > & facet_to_index_of_vertices
-	                          ) ;
-
-
-
-	std::vector<arma::rowvec> partial_range_partial_coordinates(const arma::vec & P,
-	        const arma::vec & u, Facet * facet) ;
+	/**
+	Computes the new relative states from the (sigma,omega),(r,r') relative states
+	@param X_S relative state at present time (12x1)
+	@param time measurement time
+	@param M matrix output from the ICP
+	@param LN_t_S reference to [LN] dcm at current time
+	@param LN_t_D reference to [LN] dcm at past measurement time
+	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	*/
+	void perform_measurements(const arma::vec & X_S, double time, const arma::mat & M,  arma::mat & LN_t_S, 
+	arma::mat & LN_t_D, arma::vec & mrp_BN);
 
 
 	FilterArguments * filter_arguments;
 	FrameGraph * frame_graph;
 	Lidar * lidar;
-	ShapeModel * true_shape_model;
-	ShapeModel * estimated_shape_model;
+	ShapeModelTri * true_shape_model;
+	ShapeModelTri * estimated_shape_model;
 
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
 	std::shared_ptr<PC> destination_pc_shape = nullptr;
-
-
 
 
 };

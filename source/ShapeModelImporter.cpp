@@ -99,9 +99,12 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 
-
-		
 		std::shared_ptr<Facet> facet = std::make_shared<Facet>(Facet(std::vector<std::shared_ptr<ControlPoint>>(vertices)));
+
+		v0 -> add_ownership(facet.get());
+		v1 -> add_ownership(facet.get());
+		v2 -> add_ownership(facet.get());
+
 
 		shape_model -> add_facet(facet);
 		++progress_facets;

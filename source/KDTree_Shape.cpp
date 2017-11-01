@@ -75,87 +75,87 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 			// based on where their vertices lie
 
 			if ( midpoint(longest_axis) >= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
-			        && added_to_left == false) {
+				&& added_to_left == false) {
 				left_facets.push_back(elements[i]);
-				added_to_left = true;
-			}
-
-			else if (midpoint(longest_axis) <= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
-			         && added_to_right == false) {
-				right_facets.push_back(elements[i]);
-				added_to_right = true;
-			}
-
+			added_to_left = true;
 		}
 
+		else if (midpoint(longest_axis) <= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
+			&& added_to_right == false) {
+			right_facets.push_back(elements[i]);
+		added_to_right = true;
 	}
+
+}
+
+}
 
 	// I guess this could be avoided
-	if (left_facets.size() == 0 && right_facets.size() > 0) {
-		left_facets = right_facets;
-	}
+if (left_facets.size() == 0 && right_facets.size() > 0) {
+	left_facets = right_facets;
+}
 
-	if (right_facets.size() == 0 && left_facets.size() > 0) {
-		right_facets = left_facets;
-	}
+if (right_facets.size() == 0 && left_facets.size() > 0) {
+	right_facets = left_facets;
+}
 
-	unsigned int matches = 0;
+unsigned int matches = 0;
 
-	for (unsigned int i = 0; i < left_facets.size(); ++i) {
-		for (unsigned int j = 0; j < right_facets.size(); ++j) {
-			if (left_facets[i] == right_facets[j]) {
-				++matches;
-			}
+for (unsigned int i = 0; i < left_facets.size(); ++i) {
+	for (unsigned int j = 0; j < right_facets.size(); ++j) {
+		if (left_facets[i] == right_facets[j]) {
+			++matches;
 		}
 	}
+}
 
 
 
 	// Subdivision stops if at least 50% of triangles are shared amongst the two leaves
 	// or if this node has reached the maximum depth
 	// specified in KDTree_shape.hpp (1000 by default)
-	if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets.size() < 0.5 && depth < this -> max_depth) {
+if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets.size() < 0.5 && depth < this -> max_depth) {
 
 
 		// Recursion continues
-		node -> left = build(left_facets, depth + 1, verbose);
-		node -> right = build(right_facets, depth + 1, verbose);
+	node -> left = build(left_facets, depth + 1, verbose);
+	node -> right = build(right_facets, depth + 1, verbose);
 
-	}
+}
 
-	else {
+else {
 
-		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
-		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
+	node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
+	node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
 
-		node -> left -> elements = std::vector<std::shared_ptr<Element> >();
-		node -> right -> elements = std::vector<std::shared_ptr<Element> >();
+	node -> left -> elements = std::vector<std::shared_ptr<Element> >();
+	node -> right -> elements = std::vector<std::shared_ptr<Element> >();
 
-		if (verbose) {
+	if (verbose) {
 
-			std::cout << "Leaf depth: " << depth << std::endl;
-			std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
 
-			node -> bbox.print();
+		node -> bbox.print();
 			// Uncomment if willing to save the leaf bounding boxes to a
 			// readable obj file
-			std::string path = std::to_string(rand() ) + ".obj";
-			node -> bbox.save_to_file(path);
-
-		}
+		std::string path = std::to_string(rand() ) + ".obj";
+		node -> bbox.save_to_file(path);
 
 	}
 
-	return node;
+}
+
+return node;
 
 }
 
 
-bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const {
+bool KDTree_shape::hit(KDTree_shape * node, Ray * ray) const {
 
 	// Check if the ray intersects the bounding box of the given node
 
-	if (node -> hit_bbox(ray, computed_mes)) {
+	if (node -> hit_bbox(ray)) {
 
 		bool hit_facet = false;
 
@@ -163,8 +163,8 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const 
 		// for intersect. First, the method checks whether it is still on a branch
 		if (node -> left -> elements.size() > 0 || node -> right -> elements.size() > 0) {
 
-			bool hitleft = this -> hit(node -> left.get(), ray, computed_mes);
-			bool hitright = this -> hit(node -> right.get(), ray, computed_mes);
+			bool hitleft = this -> hit(node -> left.get(), ray);
+			bool hitright = this -> hit(node -> right.get(), ray);
 
 			return (hitleft || hitright);
 
@@ -176,7 +176,7 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray, bool computed_mes) const 
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 				// If there is a hit
-				if (ray -> single_facet_ray_casting( dynamic_cast<Facet * >(node -> elements[i].get()), computed_mes)) {
+				if (ray -> single_facet_ray_casting( dynamic_cast<Facet * >(node -> elements[i].get()))) {
 					hit_facet = true;
 				}
 
@@ -200,7 +200,7 @@ void KDTree_shape::set_depth(int depth) {
 
 
 
-bool KDTree_shape::hit_bbox(Ray * ray, bool computed_mes) const {
+bool KDTree_shape::hit_bbox(Ray * ray) const {
 
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();
@@ -225,16 +225,11 @@ bool KDTree_shape::hit_bbox(Ray * ray, bool computed_mes) const {
 
 	// If the current minimum range for this Ray is less than the distance to this bounding box,
 	// this bounding box is ignored
-	if (computed_mes) {
-		if (ray -> get_computed_range() < all_t_sorted(2)) {
-			return false;
-		}
+	
+	if (ray -> get_true_range() < all_t_sorted(2)) {
+		return false;
 	}
-	else {
-		if (ray -> get_true_range() < all_t_sorted(2)) {
-			return false;
-		}
-	}
+	
 
 	if (test_point(0) <= this -> bbox . get_xmax() && test_point(0) >= this -> bbox . get_xmin()) {
 

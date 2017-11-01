@@ -12,8 +12,8 @@
 #define DENSITY 1900
 
 // Lidar settings
-#define ROW_RESOLUTION 128
-#define COL_RESOLUTION 128
+#define ROW_RESOLUTION 64
+#define COL_RESOLUTION 64
 #define ROW_FOV 20
 #define COL_FOV 20
 
@@ -22,8 +22,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_3SD_BASELINE 5e-2
-
+#define LOS_NOISE_3SD_BASELINE 0e-2
 
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 

@@ -150,18 +150,12 @@ def plot_omega_histories(path = None,save = True):
         omega_true_history = np.loadtxt(path + "omega_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
-        switch_time = np.loadtxt(path + "switch_time.txt")
 
 
     else:
         omega_mes_history = np.loadtxt("omega_mes_time_history_mat.txt").T
         omega_true_history = np.loadtxt("omega_true_time_history_mat.txt").T
         time = np.loadtxt("time_history.txt")
-        switch_time = np.loadtxt("switch_time.txt")
-
-
-
-
 
 
 
@@ -189,6 +183,55 @@ def plot_omega_histories(path = None,save = True):
     else:
         plt.show()
     plt.clf()
+
+def plot_angle_error_simple(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        mrp_mes_history = np.loadtxt(path + "mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
+
+
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+
+    else:
+        mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
+        mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
+
+        time = np.loadtxt("time_history.txt")
+
+
+
+
+    angle_error =[]
+
+    for i in range(len(time)):
+
+        dcm_mes = mrp_to_dcm(mrp_mes_history[i,:])
+        dcm_true = mrp_to_dcm(mrp_true_history[i,:])
+       
+
+
+        angle_error += [ np.arccos((np.trace(dcm_mes.T .dot( dcm_true)) - 1 )/2)]
+
+    angle_error = 180. / np.pi * np.array(angle_error)
+
+
+    # Truth 
+    # plt.plot(time/86400,angle_error,"-o")
+
+    plt.scatter(time/86400,angle_error,color = 'orange')
+
+    plt.xlabel("Measurement time (day)")
+    plt.ylabel("Angle error (deg)")
+    plt.show()
+    plt.clf()
+
 
 
 def plot_angle_error(path = None,save = True):
@@ -261,7 +304,6 @@ def plot_mrp_histories(path = None,save = True):
         mrp_true_history = np.loadtxt(path + "mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt(path + "time_history.txt")
-        switch_time = np.loadtxt(path + "switch_time.txt")
 
 
 
@@ -270,7 +312,6 @@ def plot_mrp_histories(path = None,save = True):
         mrp_true_history = np.loadtxt("mrp_true_time_history_mat.txt").T
 
         time = np.loadtxt( "time_history.txt")
-        switch_time = np.loadtxt("switch_time.txt")
 
     # Truth 
     plt.plot(time/86400.,mrp_true_history[:,0],"-o",label = "$\sigma_x$")

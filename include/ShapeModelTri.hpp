@@ -14,6 +14,8 @@
 #include "Facet.hpp"
 #include "ControlPoint.hpp"
 #include "KDTree_shape.hpp"
+#include "KDTree_facet.hpp"
+
 
  class KDTree_shape;
 
@@ -42,7 +44,14 @@ public:
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
-	void construct_kd_tree(bool verbose = false);
+	void construct_kd_tree_shape(bool verbose = false);
+
+	/**
+	Constructs the KDTree holding the facets of the shape model for closest facet detection
+	@param verbose true will save the bounding boxes to a file and display
+	kd tree construction details
+	*/
+	void construct_kd_tree_facet(bool verbose = false);
 
 
 	/**
@@ -57,10 +66,16 @@ public:
 
 
 	/**
-	Returns pointer to KDTree member.
-	@return pointer to KDtree
+	Returns pointer to KDTree_shape member.
+	@return pointer to KDtree_shape
 	*/
 	std::shared_ptr<KDTree_shape> get_kdtree() const ;
+
+	/**
+	Returns pointer to KDTree_facet member.
+	@return pointer to KDtree_facet
+	*/
+	std::shared_ptr<KDTree_facet> get_kdtree_facet() const ;
 
 	/**
 	Checks that the normals were consistently oriented. If not,
@@ -83,13 +98,6 @@ public:
 	@param vertex pointer to the new vertex to be inserted
 	*/
 	void add_vertex(std::shared_ptr<ControlPoint> vertex);
-
-	/**
-	Defines the reference frame attached to the shape model
-	@param ref_frame Pointer to the reference frame attached
-	to the shape model
-	*/
-	void set_ref_frame_name(std::string ref_frame_name);
 
 	
 
@@ -125,13 +133,7 @@ public:
 	*/
 	arma::vec * get_center_of_mass();
 
-	/**
-	Returns the name of the reference frame attached to this
-	ref frame
-	@return name of reference frame
-	*/
-	std::string get_ref_frame_name() const;
-
+	
 	/**
 	Splits the provided facets in four facets.
 				V4 --------------V0--------------V3
@@ -255,9 +257,8 @@ public:
 	/**
 	Finds the intersect between the provided ray and the shape model
 	@param ray pointer to ray. If a hit is found, the ray's internal is changed to store the range to the hit point
-	@param computed_mes true if the target is the estimated shape
 	*/
-	virtual bool ray_trace(Ray * ray,bool computed_mes);
+	virtual bool ray_trace(Ray * ray);
 
 
 protected:
@@ -269,9 +270,8 @@ protected:
 
 	arma::mat inertia;
 
-
 	std::shared_ptr<KDTree_shape> kd_tree = nullptr;
-
+	std::shared_ptr<KDTree_facet> kd_tree_facet = nullptr;
 
 
 };

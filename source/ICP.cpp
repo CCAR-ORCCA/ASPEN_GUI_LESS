@@ -55,7 +55,7 @@ arma::vec ICP::get_X() const {
 	return this -> X;
 }
 
-arma::mat ICP::get_DCM() const {
+arma::mat ICP::get_M() const {
 	return this -> DCM;
 }
 

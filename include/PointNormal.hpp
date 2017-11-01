@@ -26,15 +26,12 @@ public:
 
 	int get_inclusion_counter() const;
 
-
-
 protected:
 
 	arma::vec point;
 	arma::vec normal;
 
 	int inclusion_counter = 0;
-
 
 };
 

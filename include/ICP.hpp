@@ -13,7 +13,7 @@ public:
 	    arma::vec X_0 = arma::zeros<arma::vec>(3));
 
 	arma::vec get_X() const;
-	arma::mat get_DCM() const;
+	arma::mat get_M() const;
 	arma::mat get_R() const;
 	double get_J_res() const;
 

@@ -1,6 +1,6 @@
 #ifndef HEADER_FILTERARGS
 #define HEADER_FILTERARGS
-
+#include <cassert>
 
 /**
 Class storing the filter parameters
@@ -160,41 +160,10 @@ public:
 		this -> maximum_J_rms_shape = maximum_J_rms;
 	}
 
-	/**
-	Center of mass
-	*/
-	void set_cm_bar_0(arma::vec cm_bar) {
-		this -> cm_hat_history.clear();
-		this -> cm_bar = cm_bar;
-		this -> cm_hat_history.push_back(cm_bar);
-	}
-
-
-	arma::vec get_latest_cm_hat() const {
-		return *(--this -> cm_hat_history.end());
-	}
-
-
-	void set_P_cm_0(arma::mat P_cm_0) {
-		this -> P_cm_hat_history.clear();
-		this -> P_cm_0 = P_cm_0;
-		this -> P_cm_hat_history.push_back(P_cm_0);
-	}
-
-
-	arma::mat get_latest_P_cm_hat() const {
-		return *(--this -> P_cm_hat_history.end()) ;
-	}
+	
 
 
 
-	void set_Q_cm(arma::mat Q_cm) {
-		this -> Q_cm = Q_cm;
-	}
-
-	arma::mat get_Q_cm() const {
-		return this -> Q_cm;
-	}
 
 	void set_estimate_shape(bool estim_shape) {
 		this -> estimate_shape = estim_shape;
@@ -212,27 +181,7 @@ public:
 		this -> has_transitioned_to_shape = transition;
 	}
 
-	double get_shape_estimation_cm_trigger_thresh() const {
-		return this -> shape_estimation_cm_trigger_thresh;
-	}
-
-	void set_shape_estimation_cm_trigger_thresh(double threshold) {
-		this -> shape_estimation_cm_trigger_thresh = threshold;
-	}
-
-	void append_cm_hat(arma::vec cm) {
-		this -> cm_hat_history.push_back(cm);
-	}
-
-	void append_P_cm_hat(arma::mat P) {
-		this -> P_cm_hat_history.push_back(P);
-	}
-
-
-	std::vector<arma::vec> * get_cm_hat_history() {
-		return &this -> cm_hat_history;
-	}
-
+	
 	/**
 	MRP
 	*/
@@ -247,23 +196,14 @@ public:
 	}
 
 	arma::vec get_latest_mrp_mes() const {
-		if (this -> mrp_mes_history.size() == 0) {
-			return arma::zeros<arma::vec>(3);
-		}
-		else
-			return * (--this ->mrp_mes_history.end());
+			return this -> mrp_mes_history.back();
 
 	}
 
 	arma::vec get_latest_mrp_true() const {
-		if (this -> mrp_true_history.size() == 0) {
-			return arma::zeros<arma::vec>(3);
-		}
-		else
-			return * (--this ->mrp_true_history.end());
+			return this ->mrp_true_history.back();
 
 	}
-
 
 	/**
 	Spin axis
@@ -274,9 +214,7 @@ public:
 	}
 
 	arma::vec get_latest_spin_axis_mes() const {
-
-
-		return * (--this -> spin_axis_mes_history.end());
+		return this -> spin_axis_mes_history.back();
 	}
 
 
@@ -285,43 +223,6 @@ public:
 	Omega
 	*/
 
-	void set_omega_bar_0(arma::vec omega_bar) {
-		this -> omega_hat_history.clear();
-		this -> omega_bar = omega_bar;
-		this -> omega_hat_history.push_back(omega_bar);
-	}
-
-	void set_P_omega_0(arma::mat P_omega_0) {
-		this -> P_omega_hat_history.clear();
-		this -> P_omega_0 = P_omega_0;
-		this -> P_omega_hat_history.push_back(P_omega_0);
-	}
-
-
-	arma::vec get_latest_omega_hat() const {
-		return *(--this -> omega_hat_history.end());
-	}
-
-	arma::mat get_latest_P_omega_hat() const {
-		return *(--this -> P_omega_hat_history.end()) ;
-	}
-
-
-	void append_R_omega(arma::mat R_omega)  {
-		this -> R_omega.push_back(R_omega);
-	}
-
-	arma::mat get_latest_R_omega() const {
-		return *(--this -> R_omega.end());
-	}
-
-	void set_Q_omega(arma::mat Q_omega) {
-		this -> Q_omega = Q_omega;
-	}
-
-	arma::mat get_Q_omega() const {
-		return this -> Q_omega;
-	}
 
 
 	void append_omega_true(arma::vec omega) {
@@ -329,42 +230,27 @@ public:
 	}
 
 
-	void append_omega_hat(arma::vec omega) {
-		this -> omega_hat_history.push_back(omega);
-	}
-
+	
 	void append_omega_mes(arma::vec omega) {
 		this -> omega_mes_history.push_back(omega);
 	}
 
 	arma::vec get_latest_omega_mes() const {
-		return *(--this -> omega_mes_history.end());
+		return this -> omega_mes_history.back();
 	}
 
-
-	void append_P_omega_hat(arma::mat P) {
-		this -> P_omega_hat_history.push_back(P);
-	}
 
 	void append_time(double time) {
 		this -> time_history.push_back(time);
 	}
 
-	void append_time_used_pc(unsigned int index) {
-		this -> index_time_history_used_pc.push_back(index);
-	}
-
-
-	void append_time_used_shape(unsigned int index) {
-		this -> index_time_history_used_shape.push_back(index);
-	}
 
 	double get_latest_time() const {
-		return *(--this -> time_history.end()) ;
+		return this -> time_history.back() ;
 	}
 
-	unsigned int get_latest_time_index() const {
-		return this -> time_history.size() - 1 ;
+	unsigned int get_number_of_measurements() const{
+		return this -> time_history.size();
 	}
 
 
@@ -378,40 +264,19 @@ public:
 
 
 
-	void save_estimate_time_history() const {
-
-		arma::mat cm_hat_time_history_mat = arma::mat(3, this -> cm_hat_history.size());
-		arma::mat P_cm_hat_time_history_mat = arma::mat(9, this -> P_cm_hat_history.size());
-
+	void save_results() const {
 
 		arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
-		arma::uvec index_time_pc_vec = arma::uvec(this -> index_time_history_used_pc.size());
-		arma::uvec index_time_shape_vec = arma::uvec(this -> index_time_history_used_shape.size());
-
+		
 		arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
 		arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
 
 		arma::mat mrp_mes_time_history_mat = arma::mat(3, this -> mrp_mes_history.size());
 		arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
 
+		assert(this -> mrp_mes_history.size() == this -> mrp_true_history.size());
+		assert(this -> omega_mes_time_history_mat.size() == this -> omega_true_time_history_mat.size());
 
-
-		for (unsigned int i = 0; i < this -> index_time_history_used_pc.size(); ++i) {
-			index_time_pc_vec(i) = this -> index_time_history_used_pc[i];
-		}
-
-
-		for (unsigned int i = 0; i < this -> index_time_history_used_shape.size(); ++i) {
-			index_time_shape_vec(i) = this -> index_time_history_used_shape[i];
-		}
-
-
-		for (unsigned int i = 0; i < this -> cm_hat_history.size() ; ++i) {
-
-			cm_hat_time_history_mat.col(i) = this -> cm_hat_history[i];
-			P_cm_hat_time_history_mat.col(i) = arma::vectorise(this -> P_cm_hat_history[i]);
-
-		}
 
 
 		for (unsigned int i = 0; i < this -> omega_mes_history.size() ; ++i) {
@@ -432,8 +297,6 @@ public:
 		}
 
 
-		cm_hat_time_history_mat.save("../output/attitude/cm_time_history_mat.txt", arma::raw_ascii);
-		P_cm_hat_time_history_mat.save("../output/attitude/P_cm_hat_time_history_mat.txt", arma::raw_ascii);
 		omega_mes_time_history_mat.save("../output/attitude/omega_mes_time_history_mat.txt", arma::raw_ascii);
 		mrp_mes_time_history_mat.save("../output/attitude/mrp_mes_time_history_mat.txt", arma::raw_ascii);
 		mrp_true_time_history_mat.save("../output/attitude/mrp_true_time_history_mat.txt", arma::raw_ascii);
@@ -441,8 +304,8 @@ public:
 
 		omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
 		time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
-		index_time_pc_vec.save("../output/attitude/index_time_pc_vec_time_history.txt", arma::raw_ascii);
-		index_time_shape_vec.save("../output/attitude/index_time_shape_vec_time_history.txt", arma::raw_ascii);
+		// index_time_pc_vec.save("../output/attitude/index_time_pc_vec_time_history.txt", arma::raw_ascii);
+		// index_time_shape_vec.save("../output/attitude/index_time_shape_vec_time_history.txt", arma::raw_ascii);
 
 
 
@@ -457,7 +320,6 @@ protected:
 	double ridge_coef;
 	double min_facet_angle;
 	double min_edge_angle;
-	double shape_estimation_cm_trigger_thresh;
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
 
@@ -476,16 +338,6 @@ protected:
 	bool has_transitioned_to_shape = false;
 
 
-
-	arma::vec cm_bar;
-	arma::vec omega_bar;
-
-	arma::mat P_cm_0;
-	arma::mat P_omega_0;
-	arma::mat Q_cm;
-	arma::mat Q_omega;
-
-	std::vector<arma::vec> cm_hat_history;
 	std::vector<arma::vec> spin_axis_mes_history;
 	std::vector<arma::vec> omega_mes_history;
 	std::vector<arma::vec> omega_hat_history;
@@ -494,14 +346,9 @@ protected:
 	std::vector<arma::vec> mrp_true_history;
 
 	std::vector<arma::mat > R_omega;
-	std::vector<arma::mat> P_cm_hat_history;
-	std::vector<arma::mat> P_omega_hat_history;
 
 
 	std::vector<double> time_history;
-	std::vector<unsigned int> index_time_history_used_pc;
-	std::vector<unsigned int> index_time_history_used_shape;
-
 
 
 

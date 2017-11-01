@@ -37,7 +37,6 @@ void PointNormal::decrement_inclusion_counter() {
 	this -> inclusion_counter = this -> inclusion_counter - 1;
 }
 
-
 int PointNormal::get_inclusion_counter() const {
 	return this -> inclusion_counter ;
 }

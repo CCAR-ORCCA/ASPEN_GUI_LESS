@@ -1,49 +1,45 @@
 #include "Lidar.hpp"
 
 Lidar::Lidar(
-    FrameGraph * frame_graph,
-    std::string ref_frame_name,
-    double fov_y,
-    double fov_z,
-    unsigned int row_count,
-    unsigned int col_count,
-    double f,
-    double freq,
-    double los_noise_3sd_baseline,
-    double los_noise_fraction_mes_truth) {
+	FrameGraph * frame_graph,
+	std::string ref_frame_name,
+	double fov_y,
+	double fov_z,
+	unsigned int y_res,
+	unsigned int z_res,
+	double f,
+	double freq,
+	double los_noise_3sd_baseline,
+	double los_noise_fraction_mes_truth) {
 
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
 	this -> f = f;
 	this -> fov_y = fov_y;
 	this -> fov_z = fov_z;
-	this -> row_count = row_count;
-	this -> col_count = col_count;
+	this -> z_res = z_res;
+	this -> y_res = y_res;
 	this -> freq = freq;
 	this -> los_noise_3sd_baseline = los_noise_3sd_baseline;
 	this -> los_noise_fraction_mes_truth = los_noise_fraction_mes_truth;
 
 	// The focal plane of the lidar is populated
-	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
-
-		std::vector<std::shared_ptr<Ray> > h_row;
-
-		for (unsigned int z_index = 0; z_index < this -> col_count; ++z_index) {
-			h_row.push_back(std::make_shared<Ray>(Ray(y_index, z_index, this)));
+	for (unsigned int z_index = 0; z_index < this -> z_res; ++z_index) {	
+		for (unsigned int y_index = 0; y_index < this -> y_res; ++y_index) {
+			this -> focal_plane.push_back(std::make_shared<Ray>(Ray(y_index, z_index, this)));
 		}
 
-		this -> focal_plane.push_back(h_row);
 	}
 
 
 }
 
-double Lidar::get_row_count() const {
-	return (double)(this -> row_count);
+double Lidar::get_z_res() const {
+	return (double)(this -> z_res);
 }
 
-double Lidar::get_col_count() const {
-	return (double)(this -> col_count);
+double Lidar::get_y_res() const {
+	return (double)(this -> y_res);
 }
 
 double Lidar::get_focal_length() const {
@@ -89,100 +85,38 @@ double Lidar::get_size_y() const {
 }
 
 
-void Lidar::compute_residuals() {
+void Lidar::send_flash(ShapeModelTri * shape_model) {
 
+	unsigned int y_res = this -> z_res;
+	unsigned int z_res = this -> y_res;
 
-	unsigned int y_res = this -> row_count;
-	unsigned int z_res = this -> col_count;
+	
+	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
+		this -> focal_plane[pixel] -> reset( shape_model);
+	}
+	
 
 	#pragma omp parallel for if (USE_OMP_LIDAR)
-	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
+	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
 
-		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
-
-
-			if (this -> focal_plane[y_index][z_index] -> get_computed_range() < std::numeric_limits<double>::infinity()
-			        && this -> focal_plane[y_index][z_index] -> get_true_range() < std::numeric_limits<double>::infinity()) {
-				this -> focal_plane[y_index][z_index] -> set_range_residual(this -> focal_plane[y_index][z_index] -> get_true_range()  -
-				        this -> focal_plane[y_index][z_index] -> get_computed_range() );
-			}
-			else {
-
-				this -> focal_plane[y_index][z_index] -> set_range_residual( std::numeric_limits<double>::infinity());
-
-			}
-
-		}
-	}
-}
-
-
-
-
-
-
-
-
-void Lidar::send_flash(ShapeModel * shape_model, bool computed_mes, bool store_mes) {
-
-	unsigned int y_res = this -> row_count;
-	unsigned int z_res = this -> col_count;
-
-	bool hit;
-
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-
-	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
-		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
-
-			// Range measurements are reset
-			this -> focal_plane[y_index][z_index] -> reset(computed_mes, shape_model);
-
-		}
-	}
-
-
-	#pragma omp parallel for if (USE_OMP_LIDAR)
-	for (unsigned int y_index = 0; y_index < y_res; ++y_index) {
-
-		for (unsigned int z_index = 0; z_index < z_res; ++z_index) {
-
-
-
-			hit = shape_model -> ray_trace(this -> focal_plane[y_index][z_index].get(),computed_mes);
-
-
-
-			// if (shape_model -> has_kd_tree()) {
-			// 	hit = shape_model -> get_kdtree().get() -> hit(shape_model -> get_kdtree().get(),
-			// 	        this -> focal_plane[y_index][z_index].get(), computed_mes);
-			// }
-
-			// else {
-			// 	hit = this -> focal_plane[y_index][z_index] -> brute_force_ray_casting(computed_mes, shape_model);
-			// }
+		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
 
 			// If there's a hit, noise is added along the line of sight on the true measurement
-			if (hit) {
+		if (hit) {
 
-				if (computed_mes == false) {
+			double true_range = this -> focal_plane[pixel] -> get_true_range();
+			arma::vec random_vec = arma::randn(1);
 
-					double true_range = this -> focal_plane[y_index][z_index] -> get_true_range();
-					arma::vec random_vec = arma::randn(1);
+			double noise_sd = (1. / .3) * (this -> los_noise_3sd_baseline + this -> los_noise_fraction_mes_truth
+				* true_range);
 
-					double noise_sd = (1. / .3) * (this -> los_noise_3sd_baseline + this -> los_noise_fraction_mes_truth
-					                               * true_range);
+			double noise = noise_sd * random_vec(0);
 
-					double noise = noise_sd * random_vec(0);
-					
-					this -> focal_plane[y_index][z_index] -> set_true_range(true_range + noise);
+			this -> focal_plane[pixel] -> set_true_range(true_range + noise);
 
-				}
-			}
-
+			
 		}
+
 	}
 
 }
@@ -196,109 +130,36 @@ std::string Lidar::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
-std::vector<std::vector<std::shared_ptr<Ray> > > * Lidar::get_focal_plane() {
+std::vector<std::shared_ptr<Ray> > * Lidar::get_focal_plane() {
 	return &this -> focal_plane;
 }
 
 
 
-std::pair<double, double> Lidar::save_true_range(std::string path) const {
-
-	std::ofstream pixel_location_file;
-	pixel_location_file.open(path + ".txt");
-
-	double r_max = 	- std::numeric_limits<float>::infinity();
-	double r_min =  std::numeric_limits<float>::infinity();
+Ray * Lidar::get_ray(unsigned int pixel) {
+	return this -> focal_plane[pixel].get();
+}
 
 
-	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
+unsigned int Lidar::get_number_of_hits() const{
 
-		if (std::abs(this -> focal_plane[y_index][0] -> get_true_range()) < std::numeric_limits<double>::infinity() )
-			pixel_location_file << this -> focal_plane[y_index][0] -> get_true_range();
-		else
-			pixel_location_file << "nan";
+	unsigned int hit = 0;
+	
+	#pragma omp parallel for reduction(+:hit)
+	for (unsigned int pixel = 0; pixel < this -> focal_plane . size(); ++pixel) {
 
-
-		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
-
-			double range = this -> focal_plane[y_index][z_index] -> get_true_range() ;
-			if (std::abs(range) < std::numeric_limits<double>::infinity() ) {
-
-				pixel_location_file << " " << range ;
-				if (range > r_max) {
-					r_max = range;
-				}
-				if (range < r_min ) {
-					r_min = range;
-				}
-			}
-			else
-				pixel_location_file << " nan";
-
+		if (this ->  focal_plane[pixel] -> get_true_range() < std::numeric_limits<double>::infinity()) {
+			++hit;
 		}
-
-		pixel_location_file << "\n";
-
-
 	}
 
-	pixel_location_file.close();
-
-	return std::make_pair(r_min, r_max);
+	return hit;
 
 }
 
 
-std::pair<double, double> Lidar::save_computed_range(std::string path) const {
-
-	std::ofstream pixel_location_file;
-	pixel_location_file.open(path + ".txt");
-
-	double r_max = 	- std::numeric_limits<float>::infinity();
-	double r_min =  std::numeric_limits<float>::infinity();
 
 
-	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
-
-		if (std::abs(this -> focal_plane[y_index][0] -> get_computed_range()) < std::numeric_limits<double>::infinity() )
-			pixel_location_file << this -> focal_plane[y_index][0] -> get_computed_range();
-		else
-			pixel_location_file << "nan";
-
-
-
-		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
-
-			double range = this -> focal_plane[y_index][z_index] -> get_computed_range() ;
-
-
-			if (std::abs(range) < std::numeric_limits<double>::infinity() ) {
-
-				pixel_location_file << " " << range ;
-				if (range > r_max)
-					r_max = range;
-				if (range < r_min )
-					r_min = range;
-			}
-			else
-				pixel_location_file << " nan";
-
-		}
-
-		pixel_location_file << "\n";
-
-
-	}
-
-	pixel_location_file.close();
-
-	return std::make_pair(r_min, r_max);
-
-}
-
-Ray * Lidar::get_ray(unsigned int row_index, unsigned int col_index) {
-	return this -> focal_plane[row_index][col_index].get();
-}
 
 void Lidar::save_range_residuals_per_facet(std::string path, std::map<Facet * , std::vector<double> > & facets_to_residuals) const {
 
@@ -326,8 +187,6 @@ void Lidar::save_range_residuals_per_facet(std::string path, std::map<Facet * , 
 
 void Lidar::plot_range_residuals_per_facet(std::string path) {
 
-
-
 	std::vector<std::string> script;
 	script.push_back("set terminal png");
 	script.push_back("set output '" + path + ".png'");
@@ -351,99 +210,6 @@ void Lidar::plot_range_residuals_per_facet(std::string path) {
 
 }
 
-std::pair<double, double> Lidar::save_range_residuals(std::string path) const {
-
-	std::ofstream pixel_location_file;
-	pixel_location_file.open(path + ".txt");
-
-	double r_max = 	- std::numeric_limits<float>::infinity();
-	double r_min =  std::numeric_limits<float>::infinity();
-
-
-	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
-
-		if (std::abs(this -> focal_plane[y_index][0] -> get_range_residual()) < std::numeric_limits<double>::infinity() )
-			pixel_location_file << std::abs(this -> focal_plane[y_index][0] -> get_range_residual());
-		else
-			pixel_location_file << "nan";
-
-
-
-		for (unsigned int z_index = 1; z_index < this -> col_count; ++z_index) {
-
-			double range = std::abs(this -> focal_plane[y_index][z_index] -> get_range_residual()) ;
-
-
-			if (std::abs(range) < std::numeric_limits<double>::infinity()  ) {
-
-				pixel_location_file << " " << range ;
-				if (range > r_max)
-					r_max = range;
-				if (range < r_min )
-					r_min = range;
-			}
-			else
-				pixel_location_file << " nan";
-
-
-		}
-
-		pixel_location_file << "\n";
-
-
-	}
-
-	pixel_location_file.close();
-
-	return std::make_pair(r_min, r_max);
-
-}
-
-
-void Lidar::plot_ranges(std::string path, unsigned int type) const {
-
-	std::pair<double, double> range_lims;
-	switch (type) {
-	case 0:
-		range_lims = this -> save_true_range(path);
-		break;
-	case 1:
-		range_lims = this -> save_computed_range(path);
-		break;
-	case 2:
-		range_lims = this -> save_range_residuals(path);
-		break;
-	default:
-		throw (std::runtime_error("Type not equal to 0, 1 or 2. Got " + std::to_string(type)));
-		break;
-	}
-
-	std::vector<std::string> script;
-	script.push_back("set terminal png");
-	script.push_back("set output '" + path + ".png'");
-
-	script.push_back("set title ''");
-	script.push_back("set view map");
-	script.push_back("set palette rgb 33, 13, 10");
-	if (type != 2)
-		script.push_back("set palette negative");
-	script.push_back("set xrange [" + std::to_string(-1) + ":" + std::to_string(this -> col_count) + "]");
-	script.push_back("set yrange [" + std::to_string(-1) + ":" + std::to_string(this -> row_count) + "]");
-	script.push_back("set cbrange [" + std::to_string(range_lims.first) + ":" + std::to_string(range_lims.second) + "]");
-	script.push_back("set size square");
-	script.push_back("plot '" + path + ".txt' matrix with image notitle");
-
-
-	GNUPlot plotter;
-	plotter.open();
-	plotter.execute(script);
-	plotter.write("exit");
-	plotter.flush();
-	plotter.close();
-
-
-
-}
 
 void Lidar::save_surface_measurements(std::string path) const {
 
@@ -452,11 +218,11 @@ void Lidar::save_surface_measurements(std::string path) const {
 	shape_file.open(path);
 
 	for (unsigned int vertex_index = 0;
-	        vertex_index < this -> surface_measurements.size();
-	        ++vertex_index) {
+		vertex_index < this -> surface_measurements.size();
+		++vertex_index) {
 
 		shape_file << "v " << this -> surface_measurements[vertex_index](0) << " " << this -> surface_measurements[vertex_index](1) << " " << this -> surface_measurements[vertex_index](2) << std::endl;
-	}
+}
 
 
 
@@ -465,27 +231,3 @@ void Lidar::save_surface_measurements(std::string path) const {
 
 
 
-void Lidar::save_pixel_location(std::string path) const {
-
-	std::ofstream pixel_location_file;
-	pixel_location_file.open(path);
-
-	// The focal plane is populated row by row
-	for (unsigned int y_index = 0; y_index < this -> row_count; ++y_index) {
-
-
-		// column by column
-		for (unsigned int z_index = 0; z_index < this -> col_count; ++z_index) {
-
-			pixel_location_file << this -> focal_plane[y_index][z_index] -> get_origin() -> colptr(0)[0] << " "
-			                    << this -> focal_plane[y_index][z_index] -> get_origin() -> colptr(0)[1] << " "
-			                    << this -> focal_plane[y_index][z_index] -> get_origin() -> colptr(0)[2] << "\n";
-
-		}
-
-
-
-	}
-	pixel_location_file.close();
-
-}

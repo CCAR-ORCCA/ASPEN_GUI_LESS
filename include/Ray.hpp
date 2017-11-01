@@ -11,17 +11,6 @@
 
 class Lidar;
 class Facet;
-// class ShapeModel;
-
-/**
-Convenience struct used in the parallelization of the ray casting procedure
-*/
-struct CompareRanges {
-	double range = std::numeric_limits<double>::infinity();
-	Facet * hit_facet = nullptr;
-
-};
-#pragma omp declare reduction(minimum : struct CompareRanges : omp_out = omp_in.range < omp_out.range ? omp_in : omp_out)
 
 class Ray {
 
@@ -42,24 +31,12 @@ public:
 	Facet * get_true_hit_facet() ;
 
 	/**
-	Pointer to hit facet on the estimated target
-	@return pointer to hit facet (set to nullptr if no facet was hit)
-	*/
-	Facet * get_computed_hit_facet() ;
-
-
-	/**
 	Value of true range measurement (from pixel to facet)
 	@return range measurement (m)
 	*/
 	double get_true_range() const ;
 
-	/**
-	Value of computed range measurement (from pixel to facet)
-	@return range measurement (m)
-	*/
-	double get_computed_range() const ;
-
+	
 
 	/**
 	Sets the true range to the prescribed value
@@ -67,36 +44,14 @@ public:
 	*/
 	void set_true_range(double true_range) ;
 
-	/**
-	Sets the computed range to the prescribed value
-	@param true_range Prescribed computed range value
-	*/
-	void set_computed_range(double computed_range) ;
 
 	/**
 	Sets the corresponding measurement ray
-	to a default state. In particular, the origin and direction
-	of the ray are computed in the same reference frame
-	as the one corresponding to the Lidar's target coordinates
-	@param computed_mes True if the reset ray is the one targeted
-	at the computed shape. False if the true shape is targeted
+	to a default state, accounting for the attitude of the target
 	@param shape_model pointer to shape model about to be flashed by this ray
 	*/
-	void reset(bool computed_mes, ShapeModel * shape_model) ;
+	void reset(ShapeModel * shape_model) ;
 
-
-	/**
-	Value of range residual (from pixel to facet, true minus computed)
-	@return range residual (m)
-	*/
-	double get_range_residual() const;
-
-
-	/**
-	Sets range residual
-	@param res range residual
-	**/
-	void set_range_residual(double res) ;
 
 
 
@@ -132,10 +87,9 @@ public:
 	Returns the coordinates of the impacted point
 	expressed in the instrument frame.
 	Throws an exception if this ray has not impacted the target
-	@param computed_mes True if the ray is targeted at the computed shape (as opposed to the true shape)
 	@return Coordinates of the impacted point expressed in the instrument framme
 	*/
-	arma::vec get_impact_point(bool computed_mes) const;
+	arma::vec get_impact_point() const;
 
 	/**
 	Cast a ray to a single facet of the target
@@ -143,10 +97,9 @@ public:
 	- no intersect found: range == oo and hit_facet == nullptr
 	- intersect found: hit_facet and range have valid values
 	Rewrites previously found range and intersect if new range is less
-	@param computed_mes True if the measurements are collected from the a-priori
 	@param hit true if the facet was hit
 	*/
-	bool single_facet_ray_casting(Facet * facet, bool computed_mes ) ;
+	bool single_facet_ray_casting(Facet * facet) ;
 
 	/**
 	Accessor to lidar
@@ -170,10 +123,7 @@ protected:
 	double true_range;
 	Facet * true_hit_facet;
 
-	double computed_range;
-	Facet * computed_hit_facet;
 
-	double range_residual;
 
 
 	bool intersection_inside(arma::vec & H, Facet * facet, double tol = 1e-7) ;

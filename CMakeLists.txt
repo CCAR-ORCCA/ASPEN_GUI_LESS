@@ -145,6 +145,7 @@ source/Facet.cpp
 source/FrameGraph.cpp
 source/KDTree_pc.cpp
 source/KDTree_shape.cpp
+source/KDTree_facet.cpp
 source/Lidar.cpp
 source/PointNormal.cpp
 source/Ray.cpp
@@ -154,15 +155,17 @@ source/ShapeModelBezier.cpp
 source/ShapeModelImporter.cpp
 source/ShapeModelTri.cpp
 source/ControlPoint.cpp
-# source/Filter.cpp
+source/Filter.cpp
 source/RK.cpp
 source/DynamicAnalyses.cpp
 source/Wrappers.cpp
 source/Interpolator.cpp
-# source/ICP.cpp
+source/ICP.cpp
 source/PC.cpp
+source/ShapeFitter.cpp
 external/Gnuplot/source/GNUPlot.cpp
-
+external/CGAL_interface/include/CGAL_interface.hpp
+external/CGAL_interface/source/CGAL_interface.cpp
 )
 
 # Linking

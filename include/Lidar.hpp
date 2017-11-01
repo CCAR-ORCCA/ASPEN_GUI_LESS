@@ -2,11 +2,13 @@
 #define HEADER_LIDAR
 
 #include "ShapeModel.hpp"
+#include "ShapeModelTri.hpp"
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
 #include "GNUPlot.h"
 #include "PC.hpp"
 #include "OMP_flags.hpp"
+#include <assert.h>
 
 
 class Ray;
@@ -23,8 +25,8 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	@param fov_h horizontal field of view (degrees)
 	@param fov_v vertical field of view (degrees)
-	@param row_count horizontal resolution (number of pixel rows)
-	@param col_count vertical resolution (number of pixel columns)
+	@param y_res horizontal resolution (number of pixel columns)
+	@param z_res vertical resolution (number of pixel rows)
 	@param f focal length (m)
 	@param freq frequency of operation (Hz)
 	@param los_noise_3sd_baseline 3 standard deviation of the baseline line-of-sight gaussian noise
@@ -35,8 +37,8 @@ public:
 	      std::string ref_frame_name ,
 	      double fov_h ,
 	      double fov_v ,
-	      unsigned int row_count ,
-	      unsigned int col_count ,
+	      unsigned int y_res ,
+	      unsigned int z_res ,
 	      double f ,
 	      double freq ,
 	      double los_noise_3sd_baseline ,
@@ -81,13 +83,13 @@ public:
 	Get the number of pixel rows in the focal plane
 	@return number of pixel rows in the focal plane
 	*/
-	double get_row_count() const ;
+	double get_z_res() const ;
 
 	/**
 	Get the number of pixel columns in the focal plane
 	@return number of pixel columns in the focal plane
 	*/
-	double get_col_count() const ;
+	double get_y_res() const ;
 
 	/**
 	Returns the frequency of operation
@@ -104,10 +106,11 @@ public:
 
 
 	/**
-	Returns a pointer to the ray (row_index,col_index)
+	Returns a pointer to the ray (pixel)
+	@param pixel index index of ray
 	@return ray pointer to the ray
 	*/
-	Ray * get_ray(unsigned int row_index, unsigned int col_index);
+	Ray * get_ray(unsigned int pixel);
 
 
 	/**
@@ -122,24 +125,7 @@ public:
 	void plot_ranges(std::string path, unsigned int type) const;
 
 
-	/*
-	Saves the true ranges collected by each pixel in the focal plane
-	to a file
-	@param path Path to the file
-	@return Pair of min and max measured range
-	*/
-	std::pair<double, double> save_true_range(std::string path) const ;
-
-
-	/*
-	Saves the computed ranges collected by each pixel in the focal plane
-	to a file
-	@param path Path to the file
-	@return Pair of min and max measured range
-	*/
-	std::pair<double, double> save_computed_range(std::string path) const ;
-
-
+	
 	/*
 	Saves the range residuals collected by each pixel in the focal plane
 	to a file
@@ -149,25 +135,14 @@ public:
 	std::pair<double, double> save_range_residuals(std::string path) const ;
 
 
-
-
-	/**
-	Computes range residuals collected over the focal plane
-	*/
-	void compute_residuals();
-
 	/**
 	Sends a laser flash to the targeted shape model.
 	Every pixel present in the focal plane will cast a ray towards the target.
 	Depending on whether the target is hit or not,
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
-	@param computed_mes True is target is a-priori, false otherwise
-	@param store_mes True if all measurements must be stored
 	*/
-	void send_flash(ShapeModel * shape_model,
-	                bool computed_mes,
-	                bool store_mes) ;
+	void send_flash(ShapeModelTri * shape_model) ;
 
 
 	/**
@@ -186,6 +161,12 @@ public:
 	*/
 	void plot_range_residuals_per_facet(std::string path) ;
 
+	/**
+	Returns the number of rays that hit the target
+	@return number of rays that have hit the target
+	*/
+	unsigned int get_number_of_hits() const;
+
 
 	/**
 	Accessor to the shape model currently observed
@@ -199,7 +180,7 @@ public:
 
 	void save_surface_measurements(std::string path) const ;
 
-	std::vector<std::vector<std::shared_ptr<Ray> > > * get_focal_plane() ;
+	std::vector<std::shared_ptr<Ray> > * get_focal_plane() ;
 
 
 protected:
@@ -208,8 +189,8 @@ protected:
 
 	double fov_y ;
 	double fov_z ;
-	double row_count ;
-	double col_count ;
+	double z_res ;
+	double y_res ;
 	double los_noise_3sd_baseline;
 	double los_noise_fraction_mes_truth;
 
@@ -217,7 +198,7 @@ protected:
 	std::string ref_frame_name;
 
 	ShapeModel * shape_model = nullptr;
-	std::vector<std::vector<std::shared_ptr<Ray> > > focal_plane;
+	std::vector<std::shared_ptr<Ray> > focal_plane;
 
 	std::vector<arma::vec> surface_measurements;
 

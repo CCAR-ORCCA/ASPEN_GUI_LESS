@@ -1,24 +1,35 @@
 #include "Lidar.hpp"
 #include "ShapeModelTri.hpp"
 #include "ShapeModelImporter.hpp"
-// #include "Filter.hpp"
+#include "Filter.hpp"
 #include "RK.hpp"
 #include "Wrappers.hpp"
 #include "Interpolator.hpp"
 #include "Constants.hpp"
 #include "DynamicAnalyses.hpp"
 #include <limits>
-
+#include <chrono>
+#include <boost/progress.hpp>
 
 int main() {
 
 // Ref frame graph
 	FrameGraph frame_graph;
+	frame_graph.add_frame("B");
+	frame_graph.add_frame("L");
 	frame_graph.add_frame("N");
-	frame_graph.add_frame("T");
+	frame_graph.add_frame("E");
+
+
+	frame_graph.add_transform("B", "L");
+	frame_graph.add_transform("N", "B");
+	frame_graph.add_transform("N", "E");
+
 
 	// Shape model formed with triangles
-	ShapeModelTri true_shape_model("T", &frame_graph);
+	ShapeModelTri true_shape_model("B", &frame_graph);
+	ShapeModelTri estimated_shape_model("E", &frame_graph);
+
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
@@ -40,7 +51,7 @@ int main() {
 
 
 	shape_io_truth.load_shape_model(&true_shape_model);
-	true_shape_model.construct_kd_tree(false);
+	true_shape_model.construct_kd_tree_shape(false);
 
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
@@ -53,7 +64,7 @@ int main() {
 	args.set_dyn_analyses(&dyn_analyses);
 	args.set_Cnm(&Cnm);
 	args.set_Snm(&Snm);
-	args.set_degree(10);
+	args.set_degree(5);
 	args.set_ref_radius(175);
 	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
 
@@ -65,10 +76,16 @@ int main() {
 	arma::vec omega_0 = {0,0,omega};
 	X0.rows(3,5) = omega_0; // Omega_BN(0)
 
-	arma::vec pos_0 = {3000,0,0};
+	arma::vec pos_0 = {1000,0,0};
 	X0.rows(6,8) = pos_0; // r_LN(0) in body frame
 
-	arma::vec vel_0_inertial = {0,0.0,0.02};
+
+	// Velocity determined from sma
+	double a = 1000;
+
+	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
+
+	arma::vec vel_0_inertial = {0,0.0,v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0.rows(9,11) = vel_0_body; // r'_LN(0) in body frame
@@ -78,7 +95,7 @@ int main() {
 		TF,
 		TF-T0,
 		&args,
-		"attitude_orbit_n10",
+		"attitude_orbit_n5",
 		1e-11);
 
 	rk_coupled.run(&joint_sb_spacecraft_body_frame_dyn,
@@ -86,88 +103,43 @@ int main() {
 		true,
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
 
-// // Lidar
-// 	Lidar lidar(&frame_graph,
-// 	            "L",
-// 	            ROW_FOV,
-// 	            COL_FOV ,
-// 	            ROW_RESOLUTION,
-// 	            COL_RESOLUTION,
-// 	            FOCAL_LENGTH,
-// 	            INSTRUMENT_FREQUENCY,
-// 	            LOS_NOISE_3SD_BASELINE,
-// 	            LOS_NOISE_FRACTION_MES_TRUTH);
+
+	Interpolator state_interpolator(rk_coupled.get_T(),rk_coupled.get_X());
 
 
 
-// // Filter filter_arguments
-// 	FilterArguments shape_filter_args;
-
-// 	shape_filter_args.set_max_ray_incidence(60 * arma::datum::pi / 180.);
-
-
-// 	shape_filter_args.set_min_facet_normal_angle_difference(45 * arma::datum::pi / 180.);
-
-
-// 	shape_filter_args.set_split_facets(true);
-// 	shape_filter_args.set_use_cholesky(false);
-
-// 	shape_filter_args.set_min_edge_angle(0 * arma::datum::pi / 180);// Minimum edge angle indicating degeneracy
-// 	shape_filter_args.set_min_facet_angle(20 * arma::datum::pi / 180);// Minimum facet angle indicating degeneracy
-
-// // Minimum number of rays per facet to update the estimated shape
-// 	shape_filter_args.set_min_ray_per_facet(3);
-
-// // Iterations
-// 	shape_filter_args.set_N_iterations(5);
-// 	shape_filter_args.set_number_of_shape_passe(30);
-
-// // Facets recycling
-// 	shape_filter_args.set_merge_shrunk_facets(true);
-// 	shape_filter_args.set_max_recycled_facets(5);
-
-// 	shape_filter_args.set_convergence_facet_residuals( 5 * LOS_NOISE_3SD_BASELINE);
-
-// 	arma::vec cm_bar_0 = {1e3, -1e2, -1e3};
+// Lidar
+	Lidar lidar(&frame_graph,
+		"L",
+		ROW_FOV,
+		COL_FOV ,
+		ROW_RESOLUTION,
+		COL_RESOLUTION,
+		FOCAL_LENGTH,
+		INSTRUMENT_FREQUENCY,
+		LOS_NOISE_3SD_BASELINE,
+		LOS_NOISE_FRACTION_MES_TRUTH);
 
 
-// 	shape_filter_args.set_P_cm_0(1e6 * arma::eye<arma::mat>(3, 3));
-// 	shape_filter_args.set_cm_bar_0(cm_bar_0);
-// 	shape_filter_args.set_Q_cm(0e-3 * arma::eye<arma::mat>(3, 3));
-
-// 	shape_filter_args.set_P_omega_0(1e-3 * arma::eye<arma::mat>(3, 3));
-// 	shape_filter_args.set_omega_bar_0(arma::zeros<arma::vec>(3));
-// 	shape_filter_args.set_Q_omega(0e-4 * arma::eye<arma::mat>(3, 3));
-
-// 	shape_filter_args.set_estimate_shape(false);
-// 	shape_filter_args.set_shape_estimation_cm_trigger_thresh(1);
-// 	// shape_filter_args.set_shape_estimation_cm_trigger_thresh(0);
+	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
+	arma::mat X_interp(12,times.n_rows);
 
 
+// Filter filter_arguments
+	FilterArguments shape_filter_args;
 
-// 	Filter shape_filter(&frame_graph,
-// 	                    &lidar,
-// 	                    &true_shape_model,
-// 	                    &estimated_shape_model,
-// 	                    &shape_filter_args);
+	shape_filter_args.set_estimate_shape(false);
 
-
-// 	shape_filter.run_shape_reconstruction(
-// 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/X_RK45_orbit_inertial.txt",
-// 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/T_RK45_orbit_inertial.txt",
-// 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/X_RK45_attitude.txt",
-// 	    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/T_RK45_attitude.txt",
-// 	    false,
-// 	    true,
-// 	    true);
+	Filter shape_filter(&frame_graph,
+	                    &lidar,
+	                    &true_shape_model,
+	                    &estimated_shape_model,
+	                    &shape_filter_args);
 
 
-// 	shape_filter_args.save_estimate_time_history();
-// 	std::ofstream shape_file;
-// 	shape_file.open("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/attitude/true_cm.obj");
-// 	shape_file << "v " << 0 << " " << 0 << " " << 0 << std::endl;
+	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
 
-
+	shape_filter_args.save_results();
 
 	return 0;
 }
