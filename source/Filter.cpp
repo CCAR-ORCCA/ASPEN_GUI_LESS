@@ -67,13 +67,16 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 	arma::vec volume_dif = arma::vec(times.size());
 	arma::vec surface_dif = arma::vec(times.size());
+	arma::mat offset_DCM;
+	arma::vec OL_t0;
+	arma::mat LN_t0;
+
 
 	bool start_filter = false;
 	unsigned int pc_size = 0;
 
-	if (save_shape_model == true) {
-		this -> true_shape_model -> save("../output/shape_model/true_shape_model.obj");
-	}
+		
+	
 
 	for (unsigned int time_index = 0; time_index < times.size(); ++time_index) {
 
@@ -85,8 +88,16 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 		X_S = interpolator -> interpolate(times(time_index), true);
 
-		this -> get_new_relative_states(X_S,dcm_LB,dcm_LB_t_D,LN_t_S, 
-			LN_t_D,mrp_BN,mrp_BN_t_D,mrp_LB,lidar_pos,lidar_vel );
+		this -> get_new_relative_states(X_S,
+			dcm_LB,
+			dcm_LB_t_D,
+			LN_t_S, 
+			LN_t_D,
+			mrp_BN,
+			mrp_BN_t_D,
+			mrp_LB,
+			lidar_pos,
+			lidar_vel );
 
 		
 		// Setting the Lidar frame to its new state
@@ -121,19 +132,40 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 		
 		if(this -> source_pc == nullptr && this -> destination_pc != nullptr){
 
-			arma::mat I = arma::eye<arma::mat>(3,3);
-			this -> perform_measurements(X_S, times(time_index),I,I,I, mrp_BN);
+			arma::mat I = arma::eye<arma::mat>(3,3);	
+			
+			// This dcm is [LN](t_0)[NB](t_0)
+			offset_DCM = LN_t_S * RBK::mrp_to_dcm(mrp_BN).t();
+
+			// This is the position of the spacecraft in the body frame when measurements start to be accumulated
+			OL_t0 = X_S.rows(6,8);
+
+			LN_t0 = LN_t_S;
+
+
+			this -> perform_measurements_pc(X_S, 
+				times(time_index),
+				I,
+				arma::zeros<arma::vec>(3),
+				I,
+				I, 
+				mrp_BN,
+				offset_DCM,
+				OL_t0,
+				LN_t0);
+
+
+			
 
 			this -> destination_pc -> save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/destination_transformed_poisson.cgal", arma::eye<arma::mat>(3, 3), 
 				arma::zeros<arma::vec>(3), true, false);
 			this -> destination_pc -> save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/destination_transformed_poisson.obj", arma::eye<arma::mat>(3, 3), 
 				arma::zeros<arma::vec>(3), false, true);
 
-				// A poisson surface reconstruction is ran over the point cloud
-				// to obtained a partially covering, well behaved, apriori shape model
+			// A poisson surface reconstruction is ran over the point cloud
+			// to obtained a partially covering, well behaved, apriori shape model
 			CGALINTERFACE::CGAL_interface("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/destination_transformed_poisson.cgal",
 				"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/shape_model/apriori.obj");
-
 
 			// The estimated shape model is finally constructed using
 			// the convex hull
@@ -143,28 +175,151 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 
 			shape_io_estimated.load_shape_model(this -> estimated_shape_model);
-			this -> estimated_shape_model -> construct_kd_tree_facet(false);
 
-			ShapeFitter shape_fitter(this -> estimated_shape_model,this -> destination_pc.get());
-			shape_fitter.fit_shape();
 
+			// this -> fit_shape(this -> destination_pc.get(),20,1,arma::eye<arma::mat>(3,3),arma::zeros<arma::vec>(3));
+
+			this -> estimated_shape_model -> save("../output/shape_model/fitted_" + std::to_string(time_index) + ".obj");
+			this -> true_shape_model -> save("../output/shape_model/true_shape_model.obj",-offset_DCM * OL_t0,offset_DCM);
 		}
 
 
 		// The rigid transform best aligning the two point clouds is found
+		// The solution to this first registration will be used to prealign the 
+		// shape model and the source point cloud
 		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
-			ICP icp(this -> destination_pc, this -> source_pc);
+			// The point-cloud to point-cloud ICP is used for pre-alignment
+			ICP icp_pc(this -> destination_pc, this -> source_pc);
 
-			arma::mat M = icp.get_M();
-			arma::mat X = icp.get_X();
+			// These two align the consecutive point clouds 
+			// in the instrument frame at t_D
+			arma::mat M_pc = icp_pc.get_M();
+			arma::vec X_pc = icp_pc.get_X();
 
-			this -> perform_measurements(X_S, times(time_index),M,LN_t_S, 
-				LN_t_D, mrp_BN);
+			// Attitude is measured. The DCM extracted from the ICP 
+			// corresponds to M = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
+			// We want [NB](t_D)[BN](t_S)
+			// So we need to get
+			// M = [NL](t_D)M[LN](t_S)
+			// Now M_pc really measures an incremental rotation of the body frame
+			// M_pc = [NB](t_D)[BN](t_S)
+			
+			arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
 
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj");
-			this -> destination_pc -> save("../output/pc/destination_" + std::to_string(time_index) + ".obj");
-			this -> source_pc -> save("../output/pc/source_transformed_" + std::to_string(time_index) + ".obj", M, X);
+			arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
+			
+			arma::vec rel_pos_L_t0_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
+				+ offset_DCM * RBK::mrp_to_dcm(
+					this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_S .t() * X_pc);
+
+
+			// L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
+			// L_t0_L_tS_pc would be exact if the ICP was error-less
+			
+			// As a reminder, 
+			// offset_DCM = [LN](t_0)[NB](t_0)
+
+			arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
+
+
+			this -> source_pc -> save(
+				"../output/pc/source_pc_prealigned_" + std::to_string(time_index) + ".obj",
+				L_t0_L_tS_pc,rel_pos_L_t0_pc);
+
+			this -> source_pc -> save(
+				"../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
+
+			this -> destination_pc -> save(
+				"../output/pc/destination_" + std::to_string(time_index) + ".obj");
+
+			// The source point cloud is now registered to the shape
+			std::shared_ptr<PC> shape_pc = std::make_shared<PC>(PC(this -> estimated_shape_model));
+			ICP icp_shape(shape_pc, this -> source_pc,L_t0_L_tS_pc,rel_pos_L_t0_pc);
+
+			arma::mat M = icp_shape.get_M();
+			arma::vec X = icp_shape.get_X();
+
+			this -> estimated_shape_model -> save(
+				"../output/shape_model/before_fitting_" + std::to_string(time_index) + ".obj");
+
+			// Depending upong which ICP (between the shape-based one and the point-cloud to point-cloud one
+			// has the least residuals, the attitude is measured using the best method
+			
+			if (icp_pc.get_J_res() < icp_shape.get_J_res()){
+				std::cout << "Using point clouds\n";
+				
+				// Using the point clouds, measurements of the relative attitude, position are computed
+
+				this -> perform_measurements_pc(X_S, 
+					times(time_index),
+					NE_tD_EN_tS_pc,
+					X_pc, 
+					LN_t_S, 
+					LN_t_D, 
+					mrp_BN,
+					offset_DCM,
+					OL_t0,
+					LN_t0);
+
+
+				this -> source_pc -> save(
+					"../output/pc/source_shape_aligned_" + std::to_string(time_index) + ".obj",
+					L_t0_L_tS_pc,
+					rel_pos_L_t0_pc);
+
+
+				arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
+
+				this -> source_pc -> save(
+					"../output/pc/source_shape_aligned_true_" + std::to_string(time_index) + ".obj",
+					offset_DCM * RBK::mrp_to_dcm(mrp_BN) * LN_t_S.t(),
+					X_relative_true);
+
+				// The shape is fitted
+
+				// X here should be the X obtained from the ICP when provided
+				// with L_t0_L_tS_pc ... 
+				// this -> fit_shape(this -> source_pc.get(),
+				// 	10,
+				// 	0.1,
+				// 	L_t0_L_tS_pc,
+				// 	rel_pos_L_t0_pc);
+
+				// this -> estimated_shape_model -> save(
+				// 	"../output/shape_model/fitted" + std::to_string(time_index) + ".obj");
+				
+
+
+			}
+			else{
+				// Using the shape
+				std::cout << "Using shape\n";
+
+
+				arma::mat EN_dcm_shape =  offset_DCM.t() * M * LN_t_S;
+				this -> perform_measurements_shape(X_S, 
+					times(time_index),
+					EN_pc,
+					NE_tD_EN_tS_pc, 
+					arma::zeros<arma::vec>(3),
+					LN_t_S, 
+					LN_t_D,
+					mrp_BN,
+					offset_DCM,
+					OL_t0,
+					LN_t0);
+
+
+			// The shape is fitted
+				// this -> fit_shape(this -> source_pc.get(),10,0.1,M,X);
+				this -> estimated_shape_model -> save("../output/shape_model/fitted_" + std::to_string(time_index) + ".obj");
+
+			}
+
+
+			
+
 
 
 		}
@@ -184,7 +339,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 	}
 
 
-	void Filter::measure_spin_axis(arma::mat & dcm) {
+	void Filter::measure_spin_axis(const arma::mat & dcm) {
 
 		std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
 		this -> filter_arguments -> append_spin_axis_mes(prv.second);
@@ -195,7 +350,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 
 
-	void Filter::measure_omega(arma::mat & dcm) {
+	void Filter::measure_omega(const arma::mat & dcm) {
 		std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
 		this -> filter_arguments -> append_omega_mes(this -> lidar -> get_frequency() * prv.first * this -> filter_arguments -> get_latest_spin_axis_mes());
 	}
@@ -226,200 +381,186 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 		// Two point clouds have been collected : "nominal case")
 			else {
 
-			// If false, then the center of mass is still being figured out
-			// the source and destination point cloud are being exchanged
-				if (this -> filter_arguments -> get_estimate_shape() == false ||
-					this -> filter_arguments -> get_has_transitioned_to_shape() == false) {
-
 				// The source and destination point clouds are combined into the new source point cloud
-					this -> destination_pc = this -> source_pc;
+				this -> destination_pc = this -> source_pc;
 
 				this -> source_pc = std::make_shared<PC>(PC(
 					this -> lidar -> get_focal_plane(),
 					this -> frame_graph));
-			}
-
-			// Else, the center of mass is figured out and the
-			// shape model is used to produce the "destination" point cloud
-			else {
-
-			// this -> destination_pc = this -> source_pc;
-			// this -> destination_pc_shape = std::make_shared<PC>(PC(this -> estimated_shape_model));
-			// this -> source_pc = std::make_shared<PC>(PC(
-			// 	this -> lidar -> get_focal_plane(),
-			// 	this -> frame_graph));
 
 			}
 		}
 	}
-}
 
 
-
-
-
-
-
-
-
-
-arma::vec Filter::cholesky(arma::mat & info_mat, arma::mat & normal_mat) const {
-	arma::vec x = arma::vec(normal_mat.n_rows);
-
-	// // The cholesky decomposition of the information matrix is computed
-	// arma::mat R = arma::chol(info_mat);
-
-	// // R.t() * z = N is solved first
-	// arma::vec z = arma::vec(normal_mat.n_rows);
-	// z(0) = normal_mat(0) / R.row(0)(0);
-
-	// for (unsigned int i = 1; i < normal_mat.n_rows; ++i) {
-
-	// 	double partial_sum = 0;
-	// 	for (unsigned int j = 0; j < i ; ++j) {
-	// 		partial_sum += R.row(j)(i) * z(j);
-	// 	}
-
-	// 	z(i) = (normal_mat(i) - partial_sum) / R.row(i)(i);
-	// }
-
-
-	// // R * x = z is now solved
-	// x(x.n_rows - 1) = z(z.n_rows - 1) / R.row(z.n_rows - 1)(z.n_rows - 1);
-
-	// for (int i = x.n_rows - 2; i > -1; --i) {
-
-	// 	double partial_sum = 0;
-	// 	for (unsigned int j = i + 1; j < z.n_rows ; ++j) {
-	// 		partial_sum += R.row(i)(j) * x(j);
-	// 	}
-
-	// 	x(i) = (z(i) - partial_sum) / R.row(i)(i);
-	// }
-
-	return x;
-
-}
-
-
-
-
-
-std::vector<arma::rowvec> Filter::partial_range_partial_coordinates(const arma::vec & P, const arma::vec & u, Facet * facet) {
-
-	std::vector<arma::rowvec> partials;
-
-	// // It is required to "de-normalized" the normal
-	// // vector so as to have a consistent
-	// // partial derivative
-	// arma::vec n = 2 * facet -> get_area() * (*facet -> get_facet_normal());
-
-	// std::vector<std::shared_ptr<ControlPoint > > * vertices = facet -> get_vertices();
-
-	// arma::vec * V0 =  vertices -> at(0) -> get_coordinates();
-	// arma::vec * V1 =  vertices -> at(1) -> get_coordinates();
-	// arma::vec * V2 =  vertices -> at(2) -> get_coordinates();
-
-
-
-	// arma::rowvec drhodV0 = (n.t()) / arma::dot(u, n) + (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	// 	- n * u.t() / arma::dot(u, n)) * RBK::tilde(*V2 - *V1);
-
-
-	// arma::rowvec drhodV1 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	// 	- n * u.t() / arma::dot(u, n)) * RBK::tilde(*V0 - *V2);
-
-
-	// arma::rowvec drhodV2 = (*V0 - P).t() / arma::dot(u, n) * (arma::eye<arma::mat>(3, 3)
-	// 	- n * u.t() / arma::dot(u, n)) * RBK::tilde(*V1 - *V0);
-
-	// partials.push_back(drhodV0);
-	// partials.push_back(drhodV1);
-	// partials.push_back(drhodV2);
-
-	return partials;
-
-}
-
-void Filter::perform_measurements(const arma::vec & X_S, double time, const arma::mat & M,  arma::mat & LN_t_S, 
-	arma::mat & LN_t_D, arma::vec & mrp_BN){
-
-	// Attitude is measured. The DCM extracted from the ICP 
-			// corresponds to M = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
-			// We want [NB](t_D)[BN](t_S)
-			// So we need to get
-			// M = [NL](t_D)M[LN](t_S)
-
-	arma::mat M_p = LN_t_D.t() * M * LN_t_S;
+	void Filter::perform_measurements_pc(const arma::vec & X_S, 
+		double time, 
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_pc,
+		arma::mat & LN_t_S, 
+		arma::mat & LN_t_D, 
+		arma::vec & mrp_BN,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0){
 
 	// Measurements are stored
-	arma::vec mrp_mes_pc;
+		arma::vec mrp_mes_pc;
 
-	if (this -> filter_arguments -> get_number_of_measurements() == 0){
+		if (this -> filter_arguments -> get_number_of_measurements() == 0){
 
-		assert(arma::trace(LN_t_D) == 3);
-		this -> measure_spin_axis(LN_t_D);
-		this -> measure_omega(LN_t_D);
+			this -> measure_spin_axis(arma::eye<arma::mat>(3,3));
+			this -> measure_omega(arma::eye<arma::mat>(3,3));
 
-		this -> filter_arguments -> append_time(time);
-		this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
-		
+			this -> filter_arguments -> append_time(time);
+			this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
+
+			this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
+			this -> filter_arguments -> append_relative_pos_true(arma::zeros<arma::vec>(3));
+
+
 		// No need to remove the initial offset. It is added to the mrp measurement 
-		this -> filter_arguments -> append_mrp_true(mrp_BN);
-		this -> filter_arguments -> append_mrp_mes(mrp_BN);
+			this -> filter_arguments -> append_mrp_true(mrp_BN);
+			this -> filter_arguments -> append_mrp_mes(mrp_BN);
+
+		}
+
+		else {
+
+			// The relative position is incremented from the previous one, and the previous measured attitude
+			// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
+			arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
+				+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_S .t() * X_pc);
+
+			// This relative position is expressed in the original L frame at the time
+			// where measurements start to be accumulated 
+
+			// As a reminder, 
+			// offset_DCM = [LN](t_0)[NB](t_0)
+
+			arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
+
+			std::cout << "X_relative_true\n";
+			std::cout << X_relative_true;
+
+			std::cout << "X_relative_mes\n"; 
+			std::cout << X_relative_from_pc;
+
+			std::cout << "Error norm: " << arma::norm(X_relative_true - X_relative_from_pc) << " m" << std::endl;
+
+			mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * NE_tD_EN_tS_pc );
+
+			this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
+
+			this -> measure_spin_axis(NE_tD_EN_tS_pc);
+			this -> measure_omega(NE_tD_EN_tS_pc);
+
+			this -> filter_arguments -> append_time(time);
+			this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
+			this -> filter_arguments -> append_mrp_true(mrp_BN);
+
+			this -> filter_arguments -> append_relative_pos_mes(X_relative_from_pc);
+			this -> filter_arguments -> append_relative_pos_true(X_relative_true);
+
+		}
+		
 
 	}
-	else{
 
-		mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * M_p );
 
-		this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
+	void Filter::perform_measurements_shape(const arma::vec & X_S, 
+		double time, 
+		const arma::mat & M,
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_pc,
+		arma::mat & LN_t_S, 
+		arma::mat & LN_t_D, 
+		arma::vec & mrp_BN,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0){
 
-		this -> measure_spin_axis(M_p);
-		this -> measure_omega(M_p);
+
+		this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( M ));
+
+		this -> measure_spin_axis(NE_tD_EN_tS_pc);
+		this -> measure_omega(NE_tD_EN_tS_pc);
 
 		this -> filter_arguments -> append_time(time);
 		this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
 		this -> filter_arguments -> append_mrp_true(mrp_BN);
 
+		this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
+		this -> filter_arguments -> append_relative_pos_true(arma::zeros<arma::vec>(3));
+		
 	}
 
-}
 
 
-
-void Filter::get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
-	arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
-	arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel ){
+	void Filter::get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
+		arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
+		arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel ){
 
 	// Swapping new and old attitude
-	dcm_LB_t_D = dcm_LB;
-	mrp_BN_t_D = mrp_BN;
+		dcm_LB_t_D = dcm_LB;
+		mrp_BN_t_D = mrp_BN;
 
 
 	// Getting the new small body inertial attitude
 	// and spacecraft relative position
-	mrp_BN = X_S.rows(0,2);
-	lidar_pos = X_S.rows(6, 8);
-	lidar_vel = X_S.rows(9, 11);
+		mrp_BN = X_S.rows(0,2);
+		lidar_pos = X_S.rows(6, 8);
+		lidar_vel = X_S.rows(9, 11);
 
 
 	// The [LB] DCM is assembled. Note that e_r does not exactly have to point towards the target
 	// barycenter
-	arma::vec e_r = - arma::normalise(lidar_pos);
-	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
-	arma::vec e_t = arma::cross(e_h,e_r);
+		arma::vec e_r = - arma::normalise(lidar_pos);
+		arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
+		arma::vec e_t = arma::cross(e_h,e_r);
 
-	dcm_LB.row(0) = e_r.t();
-	dcm_LB.row(1) = e_t.t();
-	dcm_LB.row(2) = e_h.t();
+		dcm_LB.row(0) = e_r.t();
+		dcm_LB.row(1) = e_t.t();
+		dcm_LB.row(2) = e_h.t();
 
-	mrp_LB = RBK::dcm_to_mrp(dcm_LB);
+		mrp_LB = RBK::dcm_to_mrp(dcm_LB);
 
 
 	// The [LN] DCM at the present time (t_S) and at the past observation time (t_D) is built
-	LN_t_S = dcm_LB * RBK::mrp_to_dcm(mrp_BN);
-	LN_t_D = dcm_LB_t_D * RBK::mrp_to_dcm(mrp_BN_t_D);
-}
+		LN_t_S = dcm_LB * RBK::mrp_to_dcm(mrp_BN);
+		LN_t_D = dcm_LB_t_D * RBK::mrp_to_dcm(mrp_BN_t_D);
+	}
+
+
+	void Filter::fit_shape(PC * pc,
+		unsigned int N_iter,
+		double J,
+		const arma::mat & DS, 
+		const arma::vec & X_DS
+		){
+
+
+
+		ShapeFitter shape_fitter(this -> estimated_shape_model,pc);
+
+		for (unsigned int i = 0; i < N_iter ; ++ i){
+			std::cout << "Iteration " << i + 1 << "/" << N_iter << std::endl;
+				// The KD tree of the estimatd shape is rebuilt
+			this -> estimated_shape_model -> construct_kd_tree_control_points();
+
+
+
+			bool has_converged = shape_fitter.fit_shape_batch(J,DS,X_DS);
+			// bool has_converged = shape_fitter.fit_shape_KF(J,DS,X_DS);
+
+			if (has_converged){
+				break;
+			}
+		}
+
+
+	}
+
+
 
 

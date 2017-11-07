@@ -1,111 +1,100 @@
 #include "ShapeFitter.hpp"
 
 
+
+
+
 ShapeFitter::ShapeFitter(ShapeModelTri * shape_model,PC * pc){
 	this -> shape_model = shape_model;
 	this -> pc = pc;
 
 }
 
-void ShapeFitter::fit_shape(){
+bool ShapeFitter::fit_shape_batch(double J,const arma::mat & DS, const arma::vec & X_DS){
 
 	std::set<Facet *> seen_facets;
 	std::set<Facet *> under_observed_facets;
 	std::map<std::shared_ptr<ControlPoint> , unsigned int> seen_vertices;
-	std::vector<std::pair<arma::vec,Facet * > > measurement_pairs;
+	std::vector<std::pair<arma::vec,Footpoint > > measurement_pairs;
+
 
 	// Each measurement is associated to the closest facet on the shape
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
 		
-		double distance = std::numeric_limits<double>::infinity();
-		std::shared_ptr<Element> closest_point;
 
-		arma::vec Ptilde = this -> pc -> get_point_coordinates(i);
+		arma::vec Ptilde = DS * this -> pc -> get_point_coordinates(i) + X_DS;
 
-		this -> shape_model -> get_kdtree_facet() -> closest_point_search(
-			Ptilde,
-			this -> shape_model -> get_kdtree_facet(),
-			closest_point,
-			distance);
-		Facet * facet = dynamic_cast<Facet *>(closest_point.get());
-		
-		seen_facets.insert(facet);
-		measurement_pairs.push_back(std::make_pair(Ptilde,facet));
-
-		if (seen_vertices.find(facet -> get_control_points() -> at(0)) == seen_vertices.end()){
-			seen_vertices[facet -> get_control_points() -> at(0)] = seen_vertices.size();
-		}
-		
-		if (seen_vertices.find(facet -> get_control_points() -> at(1)) == seen_vertices.end()){
-			seen_vertices[facet -> get_control_points() -> at(1)] = seen_vertices.size();
+		Footpoint footpoint;
+		this -> find_footpoint(Ptilde,footpoint);
+		if(std::abs(arma::dot(*footpoint.n,Ptilde - footpoint.Pbar))< J){
+			continue;
 		}
 
-		if (seen_vertices.find(facet -> get_control_points() -> at(2)) == seen_vertices.end()){
-			seen_vertices[facet -> get_control_points() -> at(2)] = seen_vertices.size();
+
+		seen_facets.insert(footpoint.facet);
+		measurement_pairs.push_back(std::make_pair(Ptilde,footpoint));
+
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(0)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(0)] = seen_vertices.size();
 		}
 
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(1)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(1)] = seen_vertices.size();
+		}
+
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(2)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(2)] = seen_vertices.size();
+		}
 
 	}
 
-	// arma::sp_mat info_mat( 3 * seen_vertices.size(), 3 * seen_vertices.size());
-	arma::mat info_mat( 3 * seen_vertices.size(), 3 * seen_vertices.size());
+	std::cout << "Seen vertices: " << seen_vertices.size() << std::endl;
+	std::cout << "Measurements: " << measurement_pairs.size() << std::endl;
+	std::cout << "Residuals: " << this -> compute_residuals(measurement_pairs) << " m" << std::endl;
+
+
+
+	double W = 5;
+
+	arma::sp_mat info_mat = W * arma::eye<arma::sp_mat>(3 * seen_vertices.size(), 3 * seen_vertices.size());
 	arma::vec normal_mat = arma::zeros<arma::vec>( 3 * seen_vertices.size());
-	arma::mat Pbar_mat(3,measurement_pairs.size());
 	
-	info_mat.fill(0);
-	normal_mat.fill(0);
 
-	// The shape is pre-constrained so as to prevent 
-	// a singular information matrix
+	arma::vec Pbar(3);
+	arma::vec n(3);
+	arma::vec C(3);
+	double u,v;
 
-	for (auto iter = seen_facets.begin(); iter != seen_facets.end(); ++ iter){
-		this -> freeze_facet(*iter, 
-		seen_vertices,
-		info_mat,
-		normal_mat);
-	}
-	
+	// arma::mat Pbar_mat(3,measurement_pairs.size());
+	// unsigned int i = 0;
+
 	for (auto iter = measurement_pairs.begin(); iter < measurement_pairs.end(); ++ iter){
 
-		arma::vec C = * iter -> second -> get_facet_center();
-		arma::vec n =  * iter -> second -> get_facet_normal();
-
     	// The Pbar - Ptilde  is not exactly colinear to the surface normal. It is thus corrected
-		arma::vec Pbar = iter -> first - arma::dot(n,iter -> first - C) * n;
+		n =  * iter -> second.n;
+
+		Pbar = iter -> second.Pbar;
+
+		u = iter -> second.u;
+		v = iter -> second.v;
 
 
-    	// The barycentric coordinates of Pbar are found
-		arma::vec C0 = * iter -> second -> get_control_points() -> at(0) -> get_coordinates();
-		arma::vec C1 = * iter -> second -> get_control_points() -> at(1) -> get_coordinates();
-		arma::vec C2 = * iter -> second -> get_control_points() -> at(2) -> get_coordinates();
+		unsigned int iu = seen_vertices[iter -> second .facet ->  get_control_points() -> at(0)];
+		unsigned int iv = seen_vertices[iter -> second .facet ->  get_control_points() -> at(1)];
+		unsigned int iw  = seen_vertices[iter -> second .facet ->  get_control_points() -> at(2)];
 
-		arma::mat A(3,2);
-		arma::vec B(2);
 		
-		Pbar_mat.col(std::distance(measurement_pairs.begin(),iter)) = Pbar;
 
-		A.col(0) = C0 - C2;
-		A.col(1) = C1 - C2;
-
-		B(0) = arma::dot(Pbar - C2, A.col(0));
-		B(1) = arma::dot(Pbar - C2, A.col(1));
-
-		arma::vec X = arma::solve(A.t() * A, B);
-
-		double u = X(0);
-		double v = X(1);
-
-		unsigned int iu = seen_vertices[iter -> second -> get_control_points() -> at(0)];
-		unsigned int iv = seen_vertices[iter -> second -> get_control_points() -> at(1)];
-		unsigned int iw = seen_vertices[iter -> second -> get_control_points() -> at(2)];
+		
+		// Pbar_mat.col(i) = Pbar;
+		// ++i;
 
 		arma::rowvec Hii = arma::zeros<arma::rowvec>( 9 );
 
 		Hii.cols(0,2) = n.t() * u;
 		Hii.cols(3,5) = n.t() * v;
 		Hii.cols(6,8) = n.t() * (1 - u - v);
-		
-		arma::sp_mat Hi(1,3 * seen_vertices.size());
+
 
 		arma::sp_mat Mi(9,3 * seen_vertices.size());
 
@@ -113,154 +102,285 @@ void ShapeFitter::fit_shape(){
 		Mi.submat(3,3 * iv,5,3 * iv + 2) = arma::eye<arma::mat>(3,3);
 		Mi.submat(6,3 * iw,8,3 * iw + 2) = arma::eye<arma::mat>(3,3);
 
+		arma::sp_mat Hi(1,3 * seen_vertices.size());
+
 		Hi = Hii * Mi;
 		info_mat += Hi.t() * Hi;
-		normal_mat += Hi.t() * arma::dot(n, iter -> first);
+		normal_mat += Hi.t() * arma::dot(n, iter -> first - Pbar);
 
 	}
 
-	arma::vec los = {1,0,0};
-	// PC Pbar_pc(los,Pbar_mat);
-	// Pbar_pc.save("../output/pc/Pbar_pc.obj");
+	
+	// The new control point coordinates are found
+	arma::vec X = arma::spsolve(info_mat,normal_mat);
 
+	std::cout << "Update norm (average): " << arma::norm(X / seen_vertices.size()) << std::endl;
 
-	arma::vec X = arma::solve(info_mat,normal_mat);
-
-	arma::mat X_mat(3,int(X.n_rows / 3) );
-
-	for (int i = 0; i < int(X.n_rows / 3); ++i){
-		X_mat.col(i) = X.rows(3 * i, 3 * i + 2);
+	for (auto iter = seen_vertices.begin(); iter != seen_vertices.end(); ++iter){
+		unsigned int i = seen_vertices[iter -> first];
+		(*iter -> first -> get_coordinates()) = (*iter -> first -> get_coordinates()) + X.rows(3 *i, 3 * i + 2);
 	}
 
-	PC X_pc(los,X_mat);
-	X_pc.save("../output/pc/X_pc.obj");
+	this -> shape_model -> update_facets();
+	this -> shape_model -> update_mass_properties();
+
+	return false;
+
+}
 
 
-	throw;
 
+
+
+
+
+
+
+
+
+
+void ShapeFitter::find_footpoint(const arma::vec & Ptilde, 
+	Footpoint & footpoint){
+
+	double distance = std::numeric_limits<double>::infinity();
+	double u,v;
+	std::shared_ptr<ControlPoint> closest_point;
+
+	this -> shape_model -> get_KDTree_control_points() -> closest_point_search(
+		Ptilde,
+		this -> shape_model -> get_KDTree_control_points(),
+		closest_point,
+		distance);
+
+	std::set< Element *  > owning_elements = closest_point -> get_owning_elements();
+
+	Facet * closest_facet =  dynamic_cast<Facet*>(* owning_elements.begin());
+	double max_distance = std::abs(arma::dot(*closest_facet -> get_facet_normal(),
+		Ptilde - *closest_point -> get_coordinates()));
+
+	// The closest vertex belongs to a number of facets. the one yielding the smallest
+	// projection distance is chosen
+
+	for (auto iter = owning_elements.begin();iter != owning_elements.end(); ++iter){
+
+		Facet * facet = dynamic_cast<Facet *>(*iter);
+		
+		double distance = std::abs(arma::dot(*facet -> get_facet_normal(),
+			Ptilde - *closest_point -> get_coordinates()));
+
+		double u,v;
+		arma::vec Ptilde_in_facet = Ptilde - arma::dot(*facet -> get_facet_normal(),
+			Ptilde - *closest_point -> get_coordinates()) * (*facet -> get_facet_normal());
+
+		this -> get_barycentric_coordinates(Ptilde_in_facet , u,v,facet);
+		if (u < 0.99 && v < 0.99 && u > 0.01 && v > 0.01 && u + v > 0.01 && u + v < 0.99){
+			closest_facet = facet;
+			break;
+		}
+
+
+		if (distance > max_distance){
+			closest_facet = facet;
+			max_distance = distance;
+		}
+		
+	}
+
+	
+
+
+	footpoint.n = closest_facet -> get_facet_normal();
+	footpoint.Pbar = (Ptilde 
+		- arma::dot(*footpoint.n,Ptilde - *closest_facet -> get_facet_center()) * (*footpoint.n));
+
+
+
+	this -> get_barycentric_coordinates(footpoint.Pbar, u,v,closest_facet);
+	footpoint.u = u;
+	footpoint.v = v;
+	footpoint.facet = closest_facet;
+
+}
+
+
+
+
+
+
+
+
+
+
+bool ShapeFitter::fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS){
+
+	std::set<Facet *> seen_facets;
+	std::map<std::shared_ptr<ControlPoint> , unsigned int> seen_vertices;
+	std::vector<std::pair<arma::vec,Footpoint > > measurement_pairs;
+
+	// Each measurement is associated to the closest facet on the shape
+	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+
+		arma::vec Ptilde = DS * this -> pc -> get_point_coordinates(i) + X_DS;
+
+		Footpoint footpoint;
+		this -> find_footpoint(Ptilde,footpoint);
+
+
+		seen_facets.insert(footpoint.facet);
+		measurement_pairs.push_back(std::make_pair(Ptilde,footpoint));
+
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(0)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(0)] = seen_vertices.size();
+		}
+
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(1)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(1)] = seen_vertices.size();
+		}
+
+		if (seen_vertices.find(footpoint.facet -> get_control_points() -> at(2)) == seen_vertices.end()){
+			seen_vertices[footpoint.facet -> get_control_points() -> at(2)] = seen_vertices.size();
+		}
+
+	}
+
+	std::cout << "Seen vertices: " << seen_vertices.size() << std::endl;
+	std::cout << "Measurements: " << measurement_pairs.size() << std::endl;
+	std::cout << "Residuals: " << this -> compute_residuals(measurement_pairs) << " m" << std::endl;
+
+
+	// The shape is pre-constrained so as to prevent 
+	// a singular information matrix
+	arma::vec Pbar(3);
+	arma::vec n(3);
+	arma::vec C(3);
+
+
+	for (auto iter = measurement_pairs.begin(); iter < measurement_pairs.end(); ++ iter){
+
+    	// The Pbar - Ptilde  is not exactly colinear to the surface normal. It is thus corrected
+		n =  * iter -> second.n;
+
+		Pbar = iter -> second.Pbar;
+
+		double u = iter -> second.u;
+		double v = iter -> second.v;
+
+		arma::rowvec Hi = arma::zeros<arma::rowvec>( 9 );
+
+		Hi.cols(0,2) = n.t() * u;
+		Hi.cols(3,5) = n.t() * v;
+		Hi.cols(6,8) = n.t() * (1 - u - v);
+
+		double yi = arma::dot(n, iter -> first);
+
+		arma::vec X_vertices(9);
+
+		X_vertices.rows(0,2) = * iter -> second.facet -> get_control_points() -> at(0) -> get_coordinates();
+		X_vertices.rows(3,5) = * iter -> second.facet -> get_control_points() -> at(1) -> get_coordinates();
+		X_vertices.rows(6,8) = * iter -> second.facet -> get_control_points() -> at(2) -> get_coordinates();
+
+		// This generates the tangential directions n1 and n2 along which we want no displacement
+		arma::vec e1 = arma::randu(3);
+		arma::vec e2 = arma::randu(3);
+		arma::vec n1 = arma::normalise(arma::cross(n,e1));
+		arma::vec n2 = arma::cross(n,n1);
+
+		arma::mat P = arma::eye<arma::mat>(9,9);
+
+		double R = 0.2;
+
+		arma::vec K = P * Hi.t() * arma::inv(R + Hi * P * Hi.t());
+
+		X_vertices = X_vertices + K * (yi - Hi * X_vertices);
+
+		* iter -> second.facet -> get_control_points() -> at(0) -> get_coordinates() = X_vertices.rows(0,2);
+		* iter -> second.facet -> get_control_points() -> at(1) -> get_coordinates() = X_vertices.rows(3,5);
+		* iter -> second.facet -> get_control_points() -> at(2) -> get_coordinates() = X_vertices.rows(6,8);
+
+		iter -> second.facet -> update();
+
+
+	}
+
+
+	this -> shape_model -> update_mass_properties();
+
+	return false;
 
 
 }
 
-void ShapeFitter::freeze_facet(Facet * facet, 
-	std::map<std::shared_ptr<ControlPoint> , unsigned int> & seen_vertices,
-	arma::mat & info_mat,arma::vec & normal_mat){
 
-	arma::vec n = * facet -> get_facet_normal();
-	double u,v;
 
-    // The barycentric coordinates of Pbar are found
+
+
+void ShapeFitter::get_barycentric_coordinates(const arma::vec & Pbar,double & u, double & v, Facet * facet){
+
+
+	// The barycentric coordinates of Pbar are found
 	arma::vec C0 = * facet -> get_control_points() -> at(0) -> get_coordinates();
 	arma::vec C1 = * facet -> get_control_points() -> at(1) -> get_coordinates();
 	arma::vec C2 = * facet -> get_control_points() -> at(2) -> get_coordinates();
 
-	unsigned int iu = seen_vertices[facet -> get_control_points() -> at(0)];
-	unsigned int iv = seen_vertices[facet -> get_control_points() -> at(1)];
-	unsigned int iw = seen_vertices[facet -> get_control_points() -> at(2)];
-	
-	arma::vec n0 = arma::cross(n,arma::normalise(C0 - C1));
-	arma::vec n1 = arma::cross(n,arma::normalise(C1 - C2));
-	arma::vec n2 = arma::cross(n,arma::normalise(C2 - C0));
+	arma::mat A(3,2);
+	arma::vec B(2);
 
-	arma::sp_mat Mi(9,3 * seen_vertices.size());
+	A.col(0) = C0 - C2;
+	A.col(1) = C1 - C2;
 
-	Mi.submat(0,3 * iu,2,3 * iu + 2) = arma::eye<arma::mat>(3,3);
-	Mi.submat(3,3 * iv,5,3 * iv + 2) = arma::eye<arma::mat>(3,3);
-	Mi.submat(6,3 * iw,8,3 * iw + 2) = arma::eye<arma::mat>(3,3);
+	B(0) = arma::dot(Pbar - C2, A.col(0));
+	B(1) = arma::dot(Pbar - C2, A.col(1));
 
-	// First edge e0 : C0 -- C1
-	u = 0.4;
-	v = 0.6;
-	this -> apply_constraint_to_facet(C0,C1,C2,n0,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
+	arma::vec X = arma::solve(A.t() * A, B);
 
-	u = 0.6;
-	v = 0.4;
-	this -> apply_constraint_to_facet(C0,C1,C2,n0,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
+	u = X(0);
+	v = X(1);
 
-	// Second edge e1 : C1 -- C2
-	u = 0.;
-	v = 0.6;
-	this -> apply_constraint_to_facet(C0,C1,C2,n1,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	u = 0.;
-	v = 0.4;
-	this -> apply_constraint_to_facet(C0,C1,C2,n1,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	// Third edge e1 : C2 -- C0
-	u = 0.4;
-	v = 0.;
-	this -> apply_constraint_to_facet(C0,C1,C2,n2,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	u = 0.6;
-	v = 0.;
-	this -> apply_constraint_to_facet(C0,C1,C2,n2,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	// Facet : 
-
-	u = 0.6;
-	v = 0.2;
-	this -> apply_constraint_to_facet(C0,C1,C2,n,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	u = 0.2;
-	v = 0.6;
-	this -> apply_constraint_to_facet(C0,C1,C2,n,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
-
-	u = 0.2;
-	v = 0.2;
-	this -> apply_constraint_to_facet(C0,C1,C2,n,u,v,
-		info_mat,
-		normal_mat,
-		Mi);
 
 }
 
-void ShapeFitter::apply_constraint_to_facet(const arma::vec & C0, 
-	const arma::vec & C1,
-	const arma::vec & C2,
-	const arma::vec & n, 
-	double u, 
-	double v,
-	arma::mat & info_mat,
-	arma::vec & normal_mat,
-	const arma::sp_mat & Mi){
+double ShapeFitter::compute_residuals(std::vector<std::pair<arma::vec,Footpoint > > & measurement_pairs) const{
 
-	arma::rowvec Hii = arma::zeros<arma::rowvec>( 9 );
+	double res = 0;
 
-	arma::vec Pbar = u * C0 + v * C1 + ( 1 - u - v) * C2;
+	arma::vec C(3);
+	arma::vec n(3);
 
-	Hii.cols(0,2) = n.t() * u;
-	Hii.cols(3,5) = n.t() * v;
-	Hii.cols(6,8) = n.t() * (1 - u - v);
+	for (auto iter = measurement_pairs.begin(); iter != measurement_pairs.end(); ++iter){
 
-	arma::sp_mat Hi(1,info_mat.n_cols);
 
-	Hi = Hii * Mi;
-	info_mat += Hi.t() * Hi;
-	normal_mat += Hi.t() * arma::dot(n, Pbar);
+		C = * iter -> second.facet -> get_facet_center();
+		n =  * iter -> second.facet -> get_facet_normal();
+
+		res += std::pow(arma::dot(C - iter -> first,n),2);
+
+	}
+
+	return std::sqrt(res / measurement_pairs.size());
+
+
+}
+
+
+
+void ShapeFitter::save(std::string path, arma::mat & Pbar_mat) const {
+
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	
+
+	for (unsigned int vertex_index = 0;
+		vertex_index < Pbar_mat.n_cols;
+		++vertex_index) {
+
+		arma::vec p = Pbar_mat.col(vertex_index);
+
+	shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+	
+}
+
 
 }
 

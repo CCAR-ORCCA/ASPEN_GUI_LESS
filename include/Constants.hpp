@@ -12,8 +12,8 @@
 #define DENSITY 1900
 
 // Lidar settings
-#define ROW_RESOLUTION 64
-#define COL_RESOLUTION 64
+#define ROW_RESOLUTION 256
+#define COL_RESOLUTION 256
 #define ROW_FOV 20
 #define COL_FOV 20
 
@@ -28,7 +28,10 @@
 
 // Times (s)
 #define T0 0
-#define TF 604800// 7 days
+// #define TF 604800// 7 days
+#define TF 18001// 7 days
+
+
 
 
 

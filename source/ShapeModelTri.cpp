@@ -29,7 +29,7 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
 
 bool ShapeModelTri::ray_trace(Ray * ray){
-	bool hit = this -> kd_tree -> hit(this -> get_kdtree().get(),ray);
+	bool hit = this -> kd_tree -> hit(this -> get_KDTree_shape().get(),ray);
 	return hit;
 }
 
@@ -42,11 +42,11 @@ bool ShapeModelTri::ray_trace(Ray * ray){
 // 	}
 // }
 
-std::shared_ptr<KDTree_shape> ShapeModelTri::get_kdtree() const {
+std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
 	return this -> kd_tree;
 }
 
-std::shared_ptr<KDTree_facet> ShapeModelTri::get_kdtree_facet() const {
+std::shared_ptr<KDTree_control_points> ShapeModelTri::get_KDTree_control_points() const {
 	return this -> kd_tree_facet;
 }
 
@@ -67,13 +67,13 @@ void ShapeModelTri::construct_kd_tree_shape(bool verbose) {
 
 }
 
-void ShapeModelTri::construct_kd_tree_facet(bool verbose) {
+void ShapeModelTri::construct_kd_tree_control_points(bool verbose) {
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	this -> kd_tree_facet = std::make_shared<KDTree_facet>(KDTree_facet());
-	this -> kd_tree_facet = this -> kd_tree_facet -> build(this -> elements, 0, verbose);
+	this -> kd_tree_facet = std::make_shared<KDTree_control_points>(KDTree_control_points());
+	this -> kd_tree_facet = this -> kd_tree_facet -> build(this -> control_points, 0, verbose);
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
@@ -93,7 +93,7 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 	double lagrangian = 0;
 
 	// Facet loop
-	#pragma omp parallel for reduction(+:lagrangian) if (USE_OMP_DYNAMIC_ANALYSIS)
+	#// pragma omp parallel for reduction(+:lagrangian) if (USE_OMP_DYNAMIC_ANALYSIS)
 	for (unsigned int facet_index = 0; facet_index < this -> get_NElements(); ++ facet_index) {
 
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> get_elements() -> at(facet_index) -> get_control_points();
@@ -162,29 +162,33 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 }
 
 
-void ShapeModelTri::save(std::string path) const {
+void ShapeModelTri::save(std::string path,const arma::vec & X,const arma::mat & M) const {
 	std::ofstream shape_file;
 	shape_file.open(path);
 
+	
+
 	std::map<std::shared_ptr<ControlPoint> , unsigned int> vertex_ptr_to_index;
 
-	for (unsigned int vertex_index = 0;
-		vertex_index < this -> get_NControlPoints();
-		++vertex_index) {
+	for (unsigned int vertex_index = 0;vertex_index < this -> get_NControlPoints();++vertex_index) {
 
-		shape_file << "v " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[0] << " " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[1] << " " << this -> control_points[vertex_index] -> get_coordinates() -> colptr(0)[2] << std::endl;
-	vertex_ptr_to_index[this -> control_points[vertex_index]] = vertex_index;
-}
+		arma::vec coords = *this -> control_points[vertex_index] -> get_coordinates();
 
-for (unsigned int facet_index = 0;
-	facet_index < this -> get_NElements();
-	++facet_index) {
+		coords = M * coords + X;
 
-	unsigned int v0 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(0)] + 1;
-unsigned int v1 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(1)] + 1;
-unsigned int v2 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(2)] + 1;
+		shape_file << "v " << coords(0)  << " " << coords(1) << " " << coords(2) << std::endl;
+		vertex_ptr_to_index[this -> control_points[vertex_index]] = vertex_index;
+	}
 
-shape_file << "f " << v0 << " " << v1 << " " << v2 << std::endl;
+	for (unsigned int facet_index = 0;
+		facet_index < this -> get_NElements();
+		++facet_index) {
+
+		unsigned int v0 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(0)] + 1;
+	unsigned int v1 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(1)] + 1;
+	unsigned int v2 =  vertex_ptr_to_index[this -> elements[facet_index] -> get_control_points() -> at(2)] + 1;
+
+	shape_file << "f " << v0 << " " << v1 << " " << v2 << std::endl;
 
 }
 
@@ -346,7 +350,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 	double sy = 0;
 	double sz = 0;
 
-	#pragma omp parallel for reduction(+:facet_area_average,sx,sy,sz) if (USE_OMP_SHAPE_MODEL)
+	#// pragma omp parallel for reduction(+:facet_area_average,sx,sy,sz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
 		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
@@ -373,7 +377,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 void ShapeModelTri::compute_volume() {
 	double volume = 0;
 
-	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	#// pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {
@@ -401,7 +405,7 @@ void ShapeModelTri::compute_center_of_mass() {
 	double c_z = 0;
 	double volume = this -> get_volume();
 
-	#pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_SHAPE_MODEL)
+	#// pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {
@@ -449,7 +453,7 @@ void ShapeModelTri::compute_inertia() {
 
 	double l = std::pow(this -> volume, 1. / 3.);
 
-	#pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
+	#// pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {
@@ -563,7 +567,7 @@ arma::vec * ShapeModelTri::get_center_of_mass() {
 void ShapeModelTri::compute_surface_area() {
 	double surface_area = 0;
 
-	#pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
+	#// pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
 		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
@@ -1100,7 +1104,7 @@ void ShapeModelTri::get_bounding_box(double * bounding_box) const {
 	double ymax =  - std::numeric_limits<double>::infinity();
 	double zmax =  - std::numeric_limits<double>::infinity();
 
-	#pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
+	#// pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
 
 		double * vertex_cords = this -> control_points[vertex_index] -> get_coordinates() -> colptr(0);

@@ -98,6 +98,20 @@ public:
 	std::shared_ptr<PointNormal> get_point(unsigned int index) const;
 
 	/**
+	Return the coordinates of the point cloud's geometrical center
+	@return coordinates of geometrical center
+	*/
+	arma::vec get_center() const;
+
+
+	/**
+	Return the coordinates of the point cloud's bounding box geometrical center
+	@return coordinates of geometrical center
+	*/
+	arma::vec get_bbox_center() const;
+
+
+	/**
 	Returns pointer the coordinates of the to queried point
 	@param index Index of the queried point
 	@return queried point coordinatess
@@ -126,6 +140,13 @@ public:
 	@param size of point cloud
 	*/
 	unsigned int get_size() const;
+
+
+	/**
+	Returns length of diagonal
+	@return length of diagonal
+	*/
+	double get_bbox_diagonal() const;
 
 	
 	/**

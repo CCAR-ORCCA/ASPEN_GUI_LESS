@@ -84,7 +84,7 @@ cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
-add_definitions(-Wall -O2)
+add_definitions(-Wall -O2 )
 
 # Include directories
 include_directories(include)
@@ -145,7 +145,7 @@ source/Facet.cpp
 source/FrameGraph.cpp
 source/KDTree_pc.cpp
 source/KDTree_shape.cpp
-source/KDTree_facet.cpp
+source/KDTree_control_points.cpp
 source/Lidar.cpp
 source/PointNormal.cpp
 source/Ray.cpp

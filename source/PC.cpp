@@ -49,13 +49,47 @@ PC::PC(ShapeModelTri * shape_model) {
 	// The shape model is used to create the point cloud
 	// The center points to each facets are used
 	// The normals of each facet are directly used
-
 	for (unsigned int facet_index = 0; facet_index < shape_model -> get_NElements(); ++facet_index) {
 		Facet * facet = dynamic_cast<Facet *>(shape_model -> get_elements() -> at(facet_index).get());
 
-		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(*facet -> get_facet_center(), *facet -> get_facet_normal())));
+		arma::vec C = *facet -> get_facet_center();
+
+		arma::vec C0 = *facet -> get_control_points() -> at(0) -> get_coordinates();
+		arma::vec C1 = *facet -> get_control_points() -> at(1) -> get_coordinates();
+		arma::vec C2 = *facet -> get_control_points() -> at(2) -> get_coordinates();
+
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(C, *facet -> get_facet_normal())));
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal( 0.5 * (C0 + C), *facet -> get_facet_normal())));
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal( 0.5 * (C1 + C), *facet -> get_facet_normal())));
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal( 0.5 * (C2 + C), *facet -> get_facet_normal())));
+
 
 	}
+
+	for (unsigned int vertex_index = 0; vertex_index < shape_model -> get_NControlPoints(); ++vertex_index) {
+		
+		std::shared_ptr<ControlPoint> control_point = shape_model -> get_control_points() -> at(vertex_index);
+
+		arma::vec n = {0,0,0};
+
+		std::set< Element *  >  owning_elements = control_point -> get_owning_elements();
+		
+		for (auto iter = owning_elements.begin() ; iter != owning_elements.end(); ++iter){
+			n +=  * (dynamic_cast<Facet *>(*iter)) -> get_facet_normal();
+		}
+
+		n = arma::normalise(n);
+
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(* control_point -> get_coordinates(), n)));
+		
+
+
+	}
+
+
+
+
+
 
 	this -> construct_kd_tree(points_normals);
 
@@ -140,9 +174,9 @@ arma::vec PC::get_point_normal(unsigned int index) const {
 void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals) {
 
 	// The KD Tree is now constructed
+
 	this -> kd_tree = std::make_shared<KDTree_pc>(KDTree_pc());
 	this -> kd_tree = this -> kd_tree -> build(points_normals, 0, false);
-
 }
 
 std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const {
@@ -346,5 +380,95 @@ void PC::construct_normals(arma::vec & los_dir) {
 	}
 
 }
+
+arma::vec PC::get_center() const{
+
+	double c_x = 0;
+	double c_y = 0;
+	double c_z = 0;
+
+	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+
+	#pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_PC)
+	for (unsigned int i = 0; i < size; ++i) {
+
+		c_x += this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(0) / size;
+		c_y += this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(1) / size;
+		c_z += this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(2) / size;
+
+	}
+	arma::vec C = {c_x,c_y,c_z};
+
+
+	return C;
+}
+
+
+arma::vec PC::get_bbox_center() const{
+
+	double bbox_x_min = std::numeric_limits<double>::infinity();
+	double bbox_y_min = std::numeric_limits<double>::infinity();
+	double bbox_z_min = std::numeric_limits<double>::infinity();
+
+	double bbox_x_max = - bbox_x_min;
+	double bbox_y_max = - bbox_y_min;
+	double bbox_z_max = - bbox_z_min;
+
+	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+
+	#pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
+	for (unsigned int i = 0; i < size; ++i) {
+
+		bbox_x_max = std::max(bbox_x_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(0));
+		bbox_y_max = std::max(bbox_y_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(1));
+		bbox_z_max = std::max(bbox_z_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(2));
+
+		bbox_x_min = std::min(bbox_x_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(0));
+		bbox_y_min = std::min(bbox_y_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(1));
+		bbox_z_min = std::min(bbox_z_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(2));
+
+
+	}
+
+	arma::vec C = {(bbox_x_max + bbox_x_min)/2,(bbox_y_max + bbox_y_min)/2,(bbox_z_max + bbox_z_min)/2};
+	
+
+	return C;
+}
+
+double PC::get_bbox_diagonal() const{
+
+	double bbox_x_min = std::numeric_limits<double>::infinity();
+	double bbox_y_min = std::numeric_limits<double>::infinity();
+	double bbox_z_min = std::numeric_limits<double>::infinity();
+
+	double bbox_x_max = - bbox_x_min;
+	double bbox_y_max = - bbox_y_min;
+	double bbox_z_max = - bbox_z_min;
+
+	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+
+	#pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
+	for (unsigned int i = 0; i < size; ++i) {
+
+		bbox_x_max = std::max(bbox_x_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(0));
+		bbox_y_max = std::max(bbox_y_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(1));
+		bbox_z_max = std::max(bbox_z_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(2));
+
+		bbox_x_min = std::min(bbox_x_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(0));
+		bbox_y_min = std::min(bbox_y_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(1));
+		bbox_z_min = std::min(bbox_z_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point() -> at(2));
+
+
+	}
+	arma::vec top = {bbox_x_max,bbox_y_max,bbox_z_max};
+	arma::vec bottom = {bbox_x_min,bbox_y_min,bbox_z_min};
+
+
+	return arma::norm(top - bottom);
+
+}
+
+
 
 

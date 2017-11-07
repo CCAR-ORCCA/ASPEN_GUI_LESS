@@ -109,9 +109,18 @@ public:
 	*/
 	void store_point_clouds(int index);
 
-
-
-	
+	/**
+	Fits the shape using the prescribed point cloud
+	@param N_iter maximum number of iterations
+	@param J standard deviation of update norm below which convergence is reached
+	@param DS DCM aligning the provided point cloud with the shape
+	@param X_DS translation vector aligning the provided point cloud with the shape
+	*/
+	void fit_shape(PC * pc, 
+		unsigned int N_iter ,
+		double J ,
+		const arma::mat & DS , 
+		const arma::vec & X_DS );
 
 
 
@@ -165,26 +174,68 @@ protected:
 	Computes a measurement of the angular velocity
 	@param dcm M in f(C) = MC + x
 	*/
-	void measure_omega(arma::mat & dcm) ;
+	void measure_omega(const arma::mat & dcm) ;
 
 
 	/**
 	Computes a measurement of the direction of the rigid's body spin axis
 	@param dcm DCM obtained from the ICP rigid transform
 	*/
-	void measure_spin_axis(arma::mat & dcm);
+	void measure_spin_axis(const arma::mat & dcm);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
 	@param X_S relative state at present time (12x1)
 	@param time measurement time
-	@param M matrix output from the ICP
+	@param M matrix output from the ICP. May or may not measure an incremental rotation
+	@param M_incremental_pc matrix output from the pc to pc ICP. Always measures an incremental rotation
+	@param X_incremental_pc translational output from the pc to pc ICP
 	@param LN_t_S reference to [LN] dcm at current time
 	@param LN_t_D reference to [LN] dcm at past measurement time
 	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	@param from_shape true if M was obtained from registration of shape destination point cloud to source
+	@param offset_DCM DCM aligning the tracked body frame B and its estimate E at t0
+	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
+	@param LN_t0 [LN] DCM at the time observations are starting
 	*/
-	void perform_measurements(const arma::vec & X_S, double time, const arma::mat & M,  arma::mat & LN_t_S, 
-	arma::mat & LN_t_D, arma::vec & mrp_BN);
+	void perform_measurements_pc(const arma::vec & X_S, 
+		double time, 
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_pc,
+		arma::mat & LN_t_S, 
+		arma::mat & LN_t_D, 
+		arma::vec & mrp_BN,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0);
+
+
+	/**
+	Computes the new relative states from the (sigma,omega),(r,r') relative states
+	@param X_S relative state at present time (12x1)
+	@param time measurement time
+	@param M matrix output from the ICP.
+	@param NE_tD_EN_tS_pc matrix output from the pc to pc ICP. Always measures an incremental rotation
+	@param X_pc translational output from the pc to pc ICP
+	@param LN_t_S reference to [LN] dcm at current time
+	@param LN_t_D reference to [LN] dcm at past measurement time
+	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	@param offset_DCM DCM aligning the tracked body frame B and its estimate E at t0
+	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
+	@param LN_t0 [LN] DCM at the time observations are starting
+	*/
+	void perform_measurements_shape(
+		const arma::vec & X_S, 
+		double time, 
+		const arma::mat & M,
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_pc,
+		arma::mat & LN_t_S, 
+		arma::mat & LN_t_D, 
+		arma::vec & mrp_BN,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0);
 
 
 	FilterArguments * filter_arguments;

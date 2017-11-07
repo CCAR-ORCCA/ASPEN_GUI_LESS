@@ -7,7 +7,7 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath)
     // Poisson options
     FT sm_angle = 20.0; // Min triangle angle in degrees.
     FT sm_radius = 10; // Max triangle size w.r.t. point set average spacing.
-    FT sm_distance = 0.375; // Surface Approximation error w.r.t. point set average spacing.
+    FT sm_distance = 3; // Surface Approximation error w.r.t. point set average spacing.
 
     // Reads the point set file in points[].
     // Note: read_xyz_points_and_normals() requires an iterator over points

@@ -163,6 +163,26 @@ public:
 	
 
 
+	void append_relative_pos_mes(const arma::vec & relative_pos_mes){
+		this -> relative_pos_mes_history.push_back(relative_pos_mes);
+	}
+
+
+	void append_relative_pos_true(const arma::vec & relative_pos_true){
+		this -> relative_pos_true_history.push_back(relative_pos_true);
+	}
+
+
+
+	arma::vec get_latest_relative_pos_mes() const{
+		return this -> relative_pos_mes_history.back();
+	}
+
+
+	arma::vec get_latest_relative_pos_true() const{
+		return this -> relative_pos_true_history.back();
+	}
+
 
 
 	void set_estimate_shape(bool estim_shape) {
@@ -274,9 +294,14 @@ public:
 		arma::mat mrp_mes_time_history_mat = arma::mat(3, this -> mrp_mes_history.size());
 		arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
 
+		arma::mat relative_pos_mes_time_history_mat = arma::mat(3, this -> relative_pos_mes_history.size());
+		arma::mat relative_pos_true_time_history_mat = arma::mat(3, this -> relative_pos_true_history.size());
+
 		assert(this -> mrp_mes_history.size() == this -> mrp_true_history.size());
 		assert(this -> omega_mes_time_history_mat.size() == this -> omega_true_time_history_mat.size());
-
+		assert(this -> relative_pos_mes_time_history_mat.size() == this -> relative_pos_true_time_history_mat.size());
+		assert(this -> omega_mes_history.size() == this -> mrp_true_history.size());
+		
 
 
 		for (unsigned int i = 0; i < this -> omega_mes_history.size() ; ++i) {
@@ -285,15 +310,13 @@ public:
 			omega_true_time_history_mat.col(i) = this -> omega_true_history[i];
 			time_mat(i) = this -> time_history[i];
 
-
 		}
 
 		for (unsigned int i = 0; i < this -> mrp_mes_history.size() ; ++i) {
 			mrp_mes_time_history_mat.col(i) = this -> mrp_mes_history[i];
-		}
-
-		for (unsigned int i = 0; i < this -> mrp_true_history.size() ; ++i) {
 			mrp_true_time_history_mat.col(i) = this -> mrp_true_history[i];
+			relative_pos_true_time_history_mat.col(i) = this -> relative_pos_true_history[i];
+			relative_pos_mes_time_history_mat.col(i) = this -> relative_pos_mes_history[i];
 		}
 
 
@@ -301,6 +324,8 @@ public:
 		mrp_mes_time_history_mat.save("../output/attitude/mrp_mes_time_history_mat.txt", arma::raw_ascii);
 		mrp_true_time_history_mat.save("../output/attitude/mrp_true_time_history_mat.txt", arma::raw_ascii);
 
+		relative_pos_mes_time_history_mat.save("../output/attitude/relative_pos_mes_time_history_mat.txt", arma::raw_ascii);
+		relative_pos_true_time_history_mat.save("../output/attitude/relative_pos_true_time_history_mat.txt", arma::raw_ascii);
 
 		omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
 		time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
@@ -323,8 +348,6 @@ protected:
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
 
-
-
 	unsigned int minimum_ray_per_facet = 1;
 	unsigned int max_split_count = 1000;
 	unsigned int N_iterations;
@@ -344,6 +367,10 @@ protected:
 	std::vector<arma::vec> omega_true_history;
 	std::vector<arma::vec> mrp_mes_history;
 	std::vector<arma::vec> mrp_true_history;
+
+	std::vector<arma::vec> relative_pos_true_history;
+	std::vector<arma::vec> relative_pos_mes_history;
+
 
 	std::vector<arma::mat > R_omega;
 

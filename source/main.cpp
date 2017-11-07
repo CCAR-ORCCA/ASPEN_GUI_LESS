@@ -11,6 +11,9 @@
 #include <chrono>
 #include <boost/progress.hpp>
 
+#include "PC.hpp"
+#include "ShapeFitter.hpp"
+
 int main() {
 
 // Ref frame graph
@@ -20,16 +23,13 @@ int main() {
 	frame_graph.add_frame("N");
 	frame_graph.add_frame("E");
 
-
 	frame_graph.add_transform("B", "L");
 	frame_graph.add_transform("N", "B");
 	frame_graph.add_transform("N", "E");
 
-
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
 	ShapeModelTri estimated_shape_model("E", &frame_graph);
-
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
@@ -38,9 +38,9 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_150_scaled.obj", 1, false);
-	Cnm.load("../gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
-	Snm.load("../gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_128.obj", 1000, false);
+	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
+	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
@@ -49,10 +49,10 @@ int main() {
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
 
-
 	shape_io_truth.load_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape(false);
 
+	
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
 
@@ -106,8 +106,6 @@ int main() {
 
 	Interpolator state_interpolator(rk_coupled.get_T(),rk_coupled.get_X());
 
-
-
 // Lidar
 	Lidar lidar(&frame_graph,
 		"L",
@@ -131,13 +129,17 @@ int main() {
 	shape_filter_args.set_estimate_shape(false);
 
 	Filter shape_filter(&frame_graph,
-	                    &lidar,
-	                    &true_shape_model,
-	                    &estimated_shape_model,
-	                    &shape_filter_args);
+		&lidar,
+		&true_shape_model,
+		&estimated_shape_model,
+		&shape_filter_args);
 
-
+	auto start = std::chrono::system_clock::now();
 	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 	shape_filter_args.save_results();
 

@@ -14,7 +14,7 @@
 #include "Facet.hpp"
 #include "ControlPoint.hpp"
 #include "KDTree_shape.hpp"
-#include "KDTree_facet.hpp"
+#include "KDTree_control_points.hpp"
 
 
  class KDTree_shape;
@@ -40,7 +40,7 @@ public:
 
 
 	/**
-	Constructs the KDTree holding the shape model
+	Constructs the KDTree holding the shape model for ray-casting purposes
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
@@ -51,7 +51,7 @@ public:
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
-	void construct_kd_tree_facet(bool verbose = false);
+	void construct_kd_tree_control_points(bool verbose = false);
 
 
 	/**
@@ -69,13 +69,13 @@ public:
 	Returns pointer to KDTree_shape member.
 	@return pointer to KDtree_shape
 	*/
-	std::shared_ptr<KDTree_shape> get_kdtree() const ;
+	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
 
 	/**
-	Returns pointer to KDTree_facet member.
-	@return pointer to KDtree_facet
+	Returns pointer to KDTree_control_points member.
+	@return pointer to KDTree_control_points
 	*/
-	std::shared_ptr<KDTree_facet> get_kdtree_facet() const ;
+	std::shared_ptr<KDTree_control_points> get_KDTree_control_points() const ;
 
 	/**
 	Checks that the normals were consistently oriented. If not,
@@ -111,8 +111,12 @@ public:
 	/**
 	Saves the shape model in the form of an .obj file
 	@param path Location of the saved file
+	@param X translation component to apply
+	@param M rotational component to apply
 	*/
-	void save(std::string path) const;
+	void save(std::string path,
+		const arma::vec & X = arma::zeros<arma::vec>(3),
+		const arma::mat & M = arma::eye<arma::mat>(3,3)) const;
 
 
 	/**
@@ -271,7 +275,7 @@ protected:
 	arma::mat inertia;
 
 	std::shared_ptr<KDTree_shape> kd_tree = nullptr;
-	std::shared_ptr<KDTree_facet> kd_tree_facet = nullptr;
+	std::shared_ptr<KDTree_control_points> kd_tree_facet = nullptr;
 
 
 };

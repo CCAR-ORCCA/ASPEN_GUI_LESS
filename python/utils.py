@@ -14,7 +14,7 @@ rc('text', usetex=True)
 def plot_results(path = None,save = False):
 
 
-    plot_cm_estimate(path ,save )
+    # plot_cm_estimate(path ,save )
     plot_mrp_histories(path,save)
     plot_angle_error(path,save)
     plot_omega_histories(path,save)
@@ -214,10 +214,12 @@ def plot_angle_error_simple(path = None,save = True):
 
         dcm_mes = mrp_to_dcm(mrp_mes_history[i,:])
         dcm_true = mrp_to_dcm(mrp_true_history[i,:])
+
+        cos_angle = min(1,(np.trace(dcm_mes.T .dot( dcm_true)) - 1 )/2)
        
 
+        angle_error += [ np.arccos(cos_angle)]
 
-        angle_error += [ np.arccos((np.trace(dcm_mes.T .dot( dcm_true)) - 1 )/2)]
 
     angle_error = 180. / np.pi * np.array(angle_error)
 
@@ -245,11 +247,7 @@ def plot_angle_error(path = None,save = True):
         index_time_pc = np.loadtxt(path + "index_time_pc_vec_time_history.txt",dtype = int)
         index_time_shape = np.loadtxt(path + "index_time_shape_vec_time_history.txt",dtype = int)
 
-
-
         time = np.loadtxt(path + "time_history.txt")
-
-
 
     else:
         mrp_mes_history = np.loadtxt("mrp_mes_time_history_mat.txt").T
@@ -258,9 +256,6 @@ def plot_angle_error(path = None,save = True):
         time = np.loadtxt("time_history.txt")
         index_time_pc = np.loadtxt("index_time_pc_vec_time_history.txt",dtype = int)
         index_time_shape = np.loadtxt("index_time_shape_vec_time_history.txt",dtype = int)
-
-
-
 
     angle_error =[]
 

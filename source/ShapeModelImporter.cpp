@@ -63,7 +63,7 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 
 
 	// Vertices are added to the shape model
-	std::vector<std::shared_ptr<ControlPoint>> vertex_index_to_ptr(vertices.size(), nullptr);
+	std::vector<std::shared_ptr<ControlPoint>> vertex_index_to_ptr;
 
 	std::cout << std::endl << " Constructing Vertices " << std::endl  ;
 	boost::progress_display progress_vertices(vertices.size()) ;
@@ -75,14 +75,13 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 		std::shared_ptr<ControlPoint> vertex = std::make_shared<ControlPoint>(ControlPoint());
 		vertex -> set_coordinates(coordinates);
 
-		vertex_index_to_ptr[vertex_index] = vertex;
+		vertex_index_to_ptr.push_back(vertex);
 		shape_model -> add_vertex(vertex);
 		++progress_vertices;
 
 	}
 
 	std::cout << std::endl << " Constructing Facets " << std::endl ;
-
 
 	boost::progress_display progress_facets(facet_vertices.size()) ;
 
