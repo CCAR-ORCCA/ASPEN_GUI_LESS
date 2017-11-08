@@ -187,12 +187,12 @@ protected:
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
 	@param X_S relative state at present time (12x1)
 	@param time measurement time
-	@param M matrix output from the ICP. May or may not measure an incremental rotation
-	@param M_incremental_pc matrix output from the pc to pc ICP. Always measures an incremental rotation
-	@param X_incremental_pc translational output from the pc to pc ICP
-	@param LN_t_S reference to [LN] dcm at current time
-	@param LN_t_D reference to [LN] dcm at past measurement time
-	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	@param NE_tD_EN_tS_pc matrix output from the ICP. Incremental rotation measure
+	@param X_relative_from_pc new measure of the total relative displacement
+	@param LN_t_S true [LN] dcm at current time
+	@param LN_t_D true [LN] dcm at past measurement time
+	@param mrp_BN true mrp instantiating [BN] at the current time
+	@param X_relative_true true relatuve motion
 	@param from_shape true if M was obtained from registration of shape destination point cloud to source
 	@param offset_DCM DCM aligning the tracked body frame B and its estimate E at t0
 	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
@@ -201,10 +201,11 @@ protected:
 	void perform_measurements_pc(const arma::vec & X_S, 
 		double time, 
 		const arma::mat & NE_tD_EN_tS_pc,
-		const arma::vec & X_pc,
-		arma::mat & LN_t_S, 
-		arma::mat & LN_t_D, 
-		arma::vec & mrp_BN,
+		const arma::vec & X_relative_from_pc,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true ,
 		const arma::mat & offset_DCM,
 		const arma::vec & OL_t0,
 		const arma::mat & LN_t0);
@@ -220,6 +221,7 @@ protected:
 	@param LN_t_S reference to [LN] dcm at current time
 	@param LN_t_D reference to [LN] dcm at past measurement time
 	@param mrp_BN reference to the mrp instantiating [BN] at the current time
+	@param X_relative_true true relative motion
 	@param offset_DCM DCM aligning the tracked body frame B and its estimate E at t0
 	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
 	@param LN_t0 [LN] DCM at the time observations are starting
@@ -230,9 +232,10 @@ protected:
 		const arma::mat & M,
 		const arma::mat & NE_tD_EN_tS_pc,
 		const arma::vec & X_pc,
-		arma::mat & LN_t_S, 
-		arma::mat & LN_t_D, 
-		arma::vec & mrp_BN,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true,
 		const arma::mat & offset_DCM,
 		const arma::vec & OL_t0,
 		const arma::mat & LN_t0);

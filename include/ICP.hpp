@@ -4,13 +4,20 @@
 #include <memory>
 #include "PC.hpp"
 #include "ICPException.hpp"
+#include "OMP_flags.hpp"
+
+#pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\
+  initializer( omp_priv = omp_orig )
+#pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
+  initializer( omp_priv = omp_orig )
 
 
 class ICP {
 public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	    arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
-	    arma::vec X_0 = arma::zeros<arma::vec>(3));
+	    arma::vec X_0 = arma::zeros<arma::vec>(3),
+	    bool pedantic = false);
 
 	arma::vec get_X() const;
 	arma::mat get_M() const;
@@ -49,7 +56,7 @@ protected:
 	    const arma::mat & x,
 	    int h);
 
-	arma::mat compute_inertia(std::shared_ptr<PC> pc) ;
+	// arma::mat compute_inertia(std::shared_ptr<PC> pc) ;
 
 
 	arma::vec X;

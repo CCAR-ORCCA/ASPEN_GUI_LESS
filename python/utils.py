@@ -184,6 +184,8 @@ def plot_omega_histories(path = None,save = True):
         plt.show()
     plt.clf()
 
+
+
 def plot_angle_error_simple(path = None,save = True):
 
     plt.rc('text', usetex=True)
@@ -231,6 +233,37 @@ def plot_angle_error_simple(path = None,save = True):
 
     plt.xlabel("Measurement time (day)")
     plt.ylabel("Angle error (deg)")
+    plt.show()
+    plt.clf()
+
+
+
+def plot_relative_pos_error_simple(path = None,save = True):
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
+    if path is not None:
+        rel_pos_mes = np.loadtxt(path + "relative_pos_mes_time_history_mat.txt")
+        rel_pos_true = np.loadtxt(path + "relative_pos_true_time_history_mat.txt")
+
+
+
+        time = np.loadtxt(path + "time_history.txt")
+
+
+
+    else:
+        rel_pos_mes = np.loadtxt("relative_pos_mes_time_history_mat.txt")
+        rel_pos_true = np.loadtxt("relative_pos_true_time_history_mat.txt")
+
+        time = np.loadtxt("time_history.txt")
+
+
+    plt.scatter(time/86400,np.linalg.norm(rel_pos_mes - rel_pos_true,axis = 0),color = 'orange')
+
+    plt.xlabel("Measurement time (day)")
+    plt.ylabel("Relative position error norm (m)")
     plt.show()
     plt.clf()
 

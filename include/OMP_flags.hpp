@@ -19,3 +19,6 @@ Enable/Disable the corresponding functionality by setting the flag
 
 // Use OMP in Lidar methods
 #define USE_OMP_LIDAR 1
+
+// Use OMP in ICP methods
+#define USE_OMP_ICP 1

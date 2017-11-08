@@ -75,7 +75,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 	bool start_filter = false;
 	unsigned int pc_size = 0;
 
-		
+
 	
 
 	for (unsigned int time_index = 0; time_index < times.size(); ++time_index) {
@@ -150,6 +150,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 				I,
 				I, 
 				mrp_BN,
+				arma::zeros<arma::vec>(3),
 				offset_DCM,
 				OL_t0,
 				LN_t0);
@@ -189,8 +190,8 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 		// shape model and the source point cloud
 		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
-			// The point-cloud to point-cloud ICP is used for pre-alignment
-			ICP icp_pc(this -> destination_pc, this -> source_pc);
+			// The point-cloud to point-cloud ICP is used for point cloud registration
+			ICP icp_pc(this -> destination_pc, this -> source_pc,arma::eye<arma::mat>(3,3),arma::zeros<arma::vec>(3));
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D
@@ -206,14 +207,8 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 			// M_pc = [NB](t_D)[BN](t_S)
 			
 			arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
-
 			arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
 			
-			arma::vec rel_pos_L_t0_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
-				+ offset_DCM * RBK::mrp_to_dcm(
-					this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_S .t() * X_pc);
-
-
 			// L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
 			// L_t0_L_tS_pc would be exact if the ICP was error-less
 			
@@ -222,10 +217,21 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 			arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
 
+			// The relative position is incremented from the previous one, and the previous measured attitude
+			// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
+			arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
+				+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
+
+			arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
+
+
 
 			this -> source_pc -> save(
 				"../output/pc/source_pc_prealigned_" + std::to_string(time_index) + ".obj",
-				L_t0_L_tS_pc,rel_pos_L_t0_pc);
+				L_t0_L_tS_pc,X_relative_from_pc);
+
+			this -> source_pc -> save(
+				"../output/pc/source_pc_raw_" + std::to_string(time_index) + ".obj");
 
 			this -> source_pc -> save(
 				"../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
@@ -235,7 +241,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 			// The source point cloud is now registered to the shape
 			std::shared_ptr<PC> shape_pc = std::make_shared<PC>(PC(this -> estimated_shape_model));
-			ICP icp_shape(shape_pc, this -> source_pc,L_t0_L_tS_pc,rel_pos_L_t0_pc);
+			ICP icp_shape(shape_pc, this -> source_pc,L_t0_L_tS_pc,X_relative_from_pc);
 
 			arma::mat M = icp_shape.get_M();
 			arma::vec X = icp_shape.get_X();
@@ -249,15 +255,17 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 			if (icp_pc.get_J_res() < icp_shape.get_J_res()){
 				std::cout << "Using point clouds\n";
 				
-				// Using the point clouds, measurements of the relative attitude, position are computed
 
+
+				// Using the point clouds, measurements of the relative attitude, position are computed
 				this -> perform_measurements_pc(X_S, 
 					times(time_index),
 					NE_tD_EN_tS_pc,
-					X_pc, 
+					X_relative_from_pc, 
 					LN_t_S, 
 					LN_t_D, 
 					mrp_BN,
+					X_relative_true,
 					offset_DCM,
 					OL_t0,
 					LN_t0);
@@ -266,28 +274,15 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 				this -> source_pc -> save(
 					"../output/pc/source_shape_aligned_" + std::to_string(time_index) + ".obj",
 					L_t0_L_tS_pc,
-					rel_pos_L_t0_pc);
+					X_relative_from_pc);
 
 
-				arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
 
 				this -> source_pc -> save(
 					"../output/pc/source_shape_aligned_true_" + std::to_string(time_index) + ".obj",
 					offset_DCM * RBK::mrp_to_dcm(mrp_BN) * LN_t_S.t(),
 					X_relative_true);
 
-				// The shape is fitted
-
-				// X here should be the X obtained from the ICP when provided
-				// with L_t0_L_tS_pc ... 
-				// this -> fit_shape(this -> source_pc.get(),
-				// 	10,
-				// 	0.1,
-				// 	L_t0_L_tS_pc,
-				// 	rel_pos_L_t0_pc);
-
-				// this -> estimated_shape_model -> save(
-				// 	"../output/shape_model/fitted" + std::to_string(time_index) + ".obj");
 				
 
 
@@ -298,6 +293,10 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 
 				arma::mat EN_dcm_shape =  offset_DCM.t() * M * LN_t_S;
+				
+
+
+
 				this -> perform_measurements_shape(X_S, 
 					times(time_index),
 					EN_pc,
@@ -306,6 +305,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 					LN_t_S, 
 					LN_t_D,
 					mrp_BN,
+					X_relative_true,
 					offset_DCM,
 					OL_t0,
 					LN_t0);
@@ -396,10 +396,11 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 	void Filter::perform_measurements_pc(const arma::vec & X_S, 
 		double time, 
 		const arma::mat & NE_tD_EN_tS_pc,
-		const arma::vec & X_pc,
-		arma::mat & LN_t_S, 
-		arma::mat & LN_t_D, 
-		arma::vec & mrp_BN,
+		const arma::vec & X_relative_from_pc,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true,
 		const arma::mat & offset_DCM,
 		const arma::vec & OL_t0,
 		const arma::mat & LN_t0){
@@ -427,26 +428,8 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 		else {
 
-			// The relative position is incremented from the previous one, and the previous measured attitude
-			// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
-			arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
-				+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_S .t() * X_pc);
+			
 
-			// This relative position is expressed in the original L frame at the time
-			// where measurements start to be accumulated 
-
-			// As a reminder, 
-			// offset_DCM = [LN](t_0)[NB](t_0)
-
-			arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
-
-			std::cout << "X_relative_true\n";
-			std::cout << X_relative_true;
-
-			std::cout << "X_relative_mes\n"; 
-			std::cout << X_relative_from_pc;
-
-			std::cout << "Error norm: " << arma::norm(X_relative_true - X_relative_from_pc) << " m" << std::endl;
 
 			mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * NE_tD_EN_tS_pc );
 
@@ -473,9 +456,10 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 		const arma::mat & M,
 		const arma::mat & NE_tD_EN_tS_pc,
 		const arma::vec & X_pc,
-		arma::mat & LN_t_S, 
-		arma::mat & LN_t_D, 
-		arma::vec & mrp_BN,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true,
 		const arma::mat & offset_DCM,
 		const arma::vec & OL_t0,
 		const arma::mat & LN_t0){
