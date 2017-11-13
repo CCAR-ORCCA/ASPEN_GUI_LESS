@@ -1,5 +1,4 @@
-build/
-saved/            
+Apps/ShapeReconstruction/build/
 *.zip             
 *.pyc
 *.pdf            

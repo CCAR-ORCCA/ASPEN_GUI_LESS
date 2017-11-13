@@ -77,16 +77,26 @@ if (${CMAKE_MAJOR_VERSION} LESS 3)
 	message(FATAL_ERROR " You are running an outdated version of CMake")
 endif()
 
+
 cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
 add_definitions(-Wall -O2 )
 
+# Set path to include and source folders
+
+set(ASPEN_INCLUDES /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/include)
+set(ASPEN_EXTERNAL /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/external)
+set(ASPEN_SOURCE /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/source)
+
+
+
+
 # Include directories
-include_directories(include)
-include_directories(external/Gnuplot/include)
-include_directories(external/CGAL_interface/include)
+include_directories(${ASPEN_INCLUDES})
+include_directories(${ASPEN_EXTERNAL}/Gnuplot/include)
+include_directories(${ASPEN_EXTERNAL}/CGAL_interface/include)
 
 
 # Find Boost
@@ -134,35 +144,34 @@ endif()
 
 # Add source files in root directory
 add_executable(${EXE_NAME}
-source/main.cpp
-source/BBox.cpp
-source/Bezier.cpp
-source/Element.cpp
-source/Facet.cpp
-source/FrameGraph.cpp
-source/KDTree_pc.cpp
-source/KDTree_shape.cpp
-source/KDTree_control_points.cpp
-source/Lidar.cpp
-source/PointNormal.cpp
-source/Ray.cpp
-source/RefFrame.cpp
-source/ShapeModel.cpp
-source/ShapeModelBezier.cpp
-source/ShapeModelImporter.cpp
-source/ShapeModelTri.cpp
-source/ControlPoint.cpp
-source/Filter.cpp
-source/RK.cpp
-source/DynamicAnalyses.cpp
-source/Wrappers.cpp
-source/Interpolator.cpp
-source/ICP.cpp
-source/PC.cpp
-source/ShapeFitter.cpp
-external/Gnuplot/source/GNUPlot.cpp
-external/CGAL_interface/include/CGAL_interface.hpp
-external/CGAL_interface/source/CGAL_interface.cpp
+main.cpp
+${ASPEN_SOURCE}/BBox.cpp
+${ASPEN_SOURCE}/Bezier.cpp
+${ASPEN_SOURCE}/Element.cpp
+${ASPEN_SOURCE}/Facet.cpp
+${ASPEN_SOURCE}/FrameGraph.cpp
+${ASPEN_SOURCE}/KDTree_pc.cpp
+${ASPEN_SOURCE}/KDTree_shape.cpp
+${ASPEN_SOURCE}/KDTree_control_points.cpp
+${ASPEN_SOURCE}/Lidar.cpp
+${ASPEN_SOURCE}/PointNormal.cpp
+${ASPEN_SOURCE}/Ray.cpp
+${ASPEN_SOURCE}/RefFrame.cpp
+${ASPEN_SOURCE}/ShapeModel.cpp
+${ASPEN_SOURCE}/ShapeModelBezier.cpp
+${ASPEN_SOURCE}/ShapeModelImporter.cpp
+${ASPEN_SOURCE}/ShapeModelTri.cpp
+${ASPEN_SOURCE}/ControlPoint.cpp
+${ASPEN_SOURCE}/Filter.cpp
+${ASPEN_SOURCE}/RK.cpp
+${ASPEN_SOURCE}/DynamicAnalyses.cpp
+${ASPEN_SOURCE}/Wrappers.cpp
+${ASPEN_SOURCE}/Interpolator.cpp
+${ASPEN_SOURCE}/ICP.cpp
+${ASPEN_SOURCE}/PC.cpp
+${ASPEN_SOURCE}/ShapeFitter.cpp
+${ASPEN_EXTERNAL}/Gnuplot/source/GNUPlot.cpp
+${ASPEN_EXTERNAL}/CGAL_interface/source/CGAL_interface.cpp
 )
 
 # Linking
