@@ -14,8 +14,8 @@ struct Footpoint{
 	arma::vec Ptilde;
 	double u;
 	double v;
-	arma::vec * n;
-	Facet * facet;
+	arma::vec n;
+	Element * facet;
 
 };
 

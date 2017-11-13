@@ -35,9 +35,9 @@ double ICP::compute_rms_residuals(
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 	for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 
-		arma::vec source_point = *this -> point_pairs[pair_index].first -> get_point();
-		arma::vec destination_point = *this -> point_pairs[pair_index].second -> get_point();
-		arma::vec normal = *this -> point_pairs[pair_index].second -> get_normal();
+		arma::vec source_point = this -> point_pairs[pair_index].first -> get_point();
+		arma::vec destination_point = this -> point_pairs[pair_index].second -> get_point();
+		arma::vec normal = this -> point_pairs[pair_index].second -> get_normal();
 
 		J += pow(arma::dot(dcm * source_point
 			+ x - destination_point,
@@ -136,9 +136,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 
 
-				P_i = *this -> point_pairs[pair_index].first -> get_point();
-				Q_i = *this -> point_pairs[pair_index].second -> get_point();
-				n_i = *this -> point_pairs[pair_index].second -> get_normal();
+				P_i = this -> point_pairs[pair_index].first -> get_point();
+				Q_i = this -> point_pairs[pair_index].second -> get_point();
+				n_i = this -> point_pairs[pair_index].second -> get_normal();
 
 				// The partial derivative of the observation model is computed
 				H = this -> dGdSigma_multiplicative(mrp, P_i, n_i);
@@ -266,7 +266,7 @@ void ICP::compute_pairs_closest_minimum_distance(
 
 		std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > pair(this -> pc_source -> get_point(random_indices(i)), closest_destination_point);
 
-		double dist = arma::norm(test_source_point - *closest_destination_point -> get_point());
+		double dist = arma::norm(test_source_point - closest_destination_point -> get_point());
 
 		if (destination_to_source_pre_pairs.find(closest_destination_point) == destination_to_source_pre_pairs.end()) {
 
@@ -321,14 +321,14 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 		std::shared_ptr<PointNormal> closest_destination_point = this -> pc_destination -> get_closest_point(test_source_point);
 
-		arma::vec n_dest = *closest_destination_point -> get_normal();
+		arma::vec n_dest = closest_destination_point -> get_normal();
 		arma::vec n_source_transformed = dcm * (this -> pc_source -> get_point_normal(random_indices(i)));
 
 		// If the two normals are compatible, the points are matched
 		if (arma::dot(n_dest,
 			n_source_transformed) > std::sqrt(2) / 2 ) {
 
-			double dist = std::sqrt(std::pow(arma::dot(n_dest, dcm * test_source_point + x - *closest_destination_point -> get_point()), 2));
+			double dist = std::sqrt(std::pow(arma::dot(n_dest, dcm * test_source_point + x - closest_destination_point -> get_point()), 2));
 
 		if (destination_to_source_pre_pairs.find(closest_destination_point) == destination_to_source_pre_pairs.end()) {
 

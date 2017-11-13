@@ -36,7 +36,7 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 	if (node -> points_normals.size() == 1 ) {
 
-		double new_distance = arma::norm(* node -> points_normals[0] -> get_point() - test_point);
+		double new_distance = arma::norm(node -> points_normals[0] -> get_point() - test_point);
 
 		if (new_distance < distance) {
 			distance = new_distance;
@@ -112,7 +112,7 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 	if (node -> points_normals.size() == 1 ) {
 
-		double new_distance = arma::norm(* node -> points_normals[0] -> get_point() - test_point);
+		double new_distance = arma::norm( node -> points_normals[0] -> get_point() - test_point);
 
 		if (new_distance < distance && std::find(closest_points.begin(), closest_points.end(), node -> points_normals[0]) == closest_points.end()) {
 			distance = new_distance;
@@ -222,36 +222,25 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	}
 
 	arma::vec midpoint = arma::zeros<arma::vec>(3);
+	arma::vec start_point = points_normals[0] -> get_point();
 
-	double xmin = points_normals[0] -> get_point() -> at(0);
-	double xmax = points_normals[0] -> get_point() -> at(0);
-
-	double ymin = points_normals[0] -> get_point() -> at(1);
-	double ymax = points_normals[0] -> get_point() -> at(1);
-
-	double zmin = points_normals[0] -> get_point() -> at(2);
-	double zmax = points_normals[0] -> get_point() -> at(2);
-
+	arma::vec min_bounds = start_point;
+	arma::vec max_bounds = start_point;
 
 
 	// Could multithread here
 	for (unsigned int i = 0; i < points_normals.size(); ++i) {
 
-		xmin = std::min(points_normals[i] -> get_point() -> at(0), xmin);
-		xmax = std::max(points_normals[i] -> get_point() -> at(0), xmax);
+		arma::vec point = points_normals[i] -> get_point();
 
-		ymin = std::min(points_normals[i] -> get_point() -> at(1), ymin);
-		ymax = std::max(points_normals[i] -> get_point() -> at(1), ymax);
-
-		zmin = std::min(points_normals[i] -> get_point() -> at(2), zmin);
-		zmax = std::max(points_normals[i] -> get_point() -> at(2), zmax);
-
+		max_bounds = arma::max(max_bounds,point);
+		min_bounds = arma::min(min_bounds,point);
 
 		// The midpoint of all the facets is found
-		midpoint += (*points_normals[i] -> get_point()) * (1. / points_normals.size());
+		midpoint += (point / points_normals.size());
 	}
 
-	arma::vec bounding_box_lengths = {xmax - xmin, ymax - ymin, zmax - zmin};
+	arma::vec bounding_box_lengths = max_bounds - min_bounds;
 
 	// Facets to be assigned to the left and right nodes
 	std::vector < std::shared_ptr<PointNormal> > left_points;
@@ -261,7 +250,7 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 
 	for (unsigned int i = 0; i < points_normals.size() ; ++i) {
 
-		if (midpoint(longest_axis) >= points_normals[i] -> get_point() -> at(longest_axis)) {
+		if (midpoint(longest_axis) >= points_normals[i] -> get_point()(longest_axis)) {
 			left_points.push_back(points_normals[i]);
 		}
 

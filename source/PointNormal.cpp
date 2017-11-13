@@ -16,12 +16,12 @@ PointNormal::PointNormal(arma::vec point, int inclusion_counter) {
 }
 
 
-arma::vec * PointNormal::get_point() {
-	return &this -> point;
+arma::vec PointNormal::get_point() const {
+	return this -> point;
 }
 
-arma::vec * PointNormal::get_normal() {
-	return &this -> normal;
+arma::vec PointNormal::get_normal() const {
+	return this -> normal;
 }
 
 
@@ -30,7 +30,7 @@ void PointNormal::set_normal(arma::vec normal) {
 }
 
 double PointNormal::distance(std::shared_ptr<PointNormal> other_point) const {
-	return arma::norm(this -> point - *other_point -> get_point());
+	return arma::norm(this -> point - other_point -> get_point());
 }
 
 void PointNormal::decrement_inclusion_counter() {

@@ -9,6 +9,8 @@
 #include <set>
 #include <map>
 #include <limits>
+#include <cassert>
+
 
 #include "ShapeModel.hpp"
 #include "Facet.hpp"

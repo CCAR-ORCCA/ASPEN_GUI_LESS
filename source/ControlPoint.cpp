@@ -1,6 +1,6 @@
 #include "../include/ControlPoint.hpp"
 
-void ControlPoint::set_coordinates(std::shared_ptr<arma::vec> coordinates) {
+void ControlPoint::set_coordinates(arma::vec coordinates) {
 	this -> coordinates = coordinates;
 }
 
@@ -58,8 +58,8 @@ bool ControlPoint::is_owned_by(Element * facet) const {
 }
 
 
-arma::vec * ControlPoint::get_coordinates()  {
-	return this -> coordinates.get();
+arma::vec ControlPoint::get_coordinates()  const {
+	return this -> coordinates;
 }
 
 unsigned int ControlPoint::get_number_of_owning_elements() const {

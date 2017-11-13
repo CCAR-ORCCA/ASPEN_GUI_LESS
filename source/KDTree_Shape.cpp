@@ -52,10 +52,7 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 		// The midpoint of all the elements is found
 
 
-
-
-
-		midpoint += (*dynamic_cast<Facet *>(elements[i].get()) -> get_facet_center()) * (1. / elements.size());
+		midpoint += (elements[i] -> get_center() / elements.size());
 	}
 
 	// Facets to be assigned to the left and right nodes
@@ -74,13 +71,13 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 			// The elements currently owned by the node are split
 			// based on where their vertices lie
 
-			if ( midpoint(longest_axis) >= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
+			if ( midpoint(longest_axis) >= elements[i] -> get_control_points() -> at(v) -> get_coordinates()(longest_axis)
 				&& added_to_left == false) {
 				left_facets.push_back(elements[i]);
 			added_to_left = true;
 		}
 
-		else if (midpoint(longest_axis) <= elements[i] -> get_control_points() -> at(v) -> get_coordinates() -> at(longest_axis)
+		else if (midpoint(longest_axis) <= elements[i] -> get_control_points() -> at(v) -> get_coordinates()(longest_axis)
 			&& added_to_right == false) {
 			right_facets.push_back(elements[i]);
 		added_to_right = true;

@@ -1,5 +1,5 @@
-#ifndef HEADER_FACET
-#define HEADER_FACET
+#ifndef HEADER_Bezier
+#define HEADER_Bezier
 #include <armadillo>
 #include "ControlPoint.hpp"
 #include "Element.hpp"
@@ -11,7 +11,7 @@
 
 class ControlPoint;
 
-class Facet : public Element{
+class Bezier : public Element{
 
 public:
 
@@ -19,7 +19,7 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Facet( std::vector<std::shared_ptr<ControlPoint > > vertices);
+	Bezier( std::vector<std::shared_ptr<ControlPoint > > vertices);
 
 	/**
 	Get neighbors
@@ -41,12 +41,21 @@ public:
 	std::shared_ptr<ControlPoint> vertex_not_on_edge(std::shared_ptr<ControlPoint> v0,
 	        std::shared_ptr<ControlPoint>v1) const ;
 
+	/**
+	Returns patch order
+	@param order
+	*/
+	unsigned int get_order() const;
+	
+
 
 protected:
 
 	virtual void compute_normal();
 	virtual void compute_area();
 	virtual void compute_center();
+
+	unsigned int order;
 
 
 	unsigned int split_counter = 0;

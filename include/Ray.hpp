@@ -107,6 +107,12 @@ public:
 	*/
 	Lidar * get_lidar();
 
+	/**		
+	Get this ray's incidence angle at impact
+	@return incidence angle
+	*/
+	double get_incidence_angle() const;
+
 protected:
 
 	Lidar * lidar;
@@ -122,6 +128,8 @@ protected:
 
 	double true_range;
 	Facet * true_hit_facet;
+
+	double incidence_angle;
 
 
 

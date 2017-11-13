@@ -15,13 +15,13 @@ public:
 	Getter to the vertex's coordinates
 	@return coordinates vertex coordinates
 	*/
-	arma::vec * get_coordinates() ;
+	arma::vec get_coordinates() const;
 
 	/**
 	Setter to the vertex's coordinates
 	@param coordinates vertex coordinates
 	*/
-	void set_coordinates(std::shared_ptr<arma::vec> coordinates);
+	void set_coordinates(arma::vec coordinates);
 
 
 	/**
@@ -70,10 +70,8 @@ public:
 	unsigned int get_number_of_owning_elements() const ;
 
 protected:
-	std::shared_ptr<arma::vec> coordinates;
+	arma::vec coordinates;
 	std::set<Element * > owning_elements;
-
-
 
 
 };

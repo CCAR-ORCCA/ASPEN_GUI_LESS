@@ -3,45 +3,9 @@
 
 Facet::Facet(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
 	
-	// Computing surface area
-	this -> compute_area();
-
-	// Computing normals
-	this -> compute_normal();
-
-	// Computing facet center
-	this -> compute_facet_center();
-
+	this -> update();
 
 }
-
-void Facet::set_split_counter(unsigned int split_counter) {
-	this -> split_counter = split_counter;
-}
-
-unsigned int Facet::get_hit_count() const {
-	return this -> hit_count;
-}
-
-
-unsigned int Facet::get_split_count() const {
-	return this -> split_counter;
-}
-
-void Facet::update() {
-	this -> compute_normal();
-	this -> compute_area();
-	this -> compute_facet_center();
-	
-}
-
-/**
-Increases the hit counter by one
-*/
-void Facet::increase_hit_count() {
-	this -> hit_count = 1 + this -> hit_count;
-}
-
 
 
 std::set < Element *  > Facet::get_neighbors(bool all_neighbors) const {
@@ -93,21 +57,15 @@ std::set < Element *  > Facet::get_neighbors(bool all_neighbors) const {
 	}
 	return neighbors;
 
-
 }
 
 
 void Facet::compute_normal() {
 
-	arma::vec * P0 = this -> control_points[0] -> get_coordinates();
-	arma::vec * P1 = this -> control_points[1] -> get_coordinates();
-	arma::vec * P2 = this -> control_points[2] -> get_coordinates();
-	this -> facet_normal = arma::normalise(arma::cross(*P1 - *P0, *P2 - *P0));
-}
-
-
-arma::vec * Facet::get_facet_normal()  {
-	return (&this -> facet_normal);
+	arma::vec P0 = this -> control_points[0] -> get_coordinates();
+	arma::vec P1 = this -> control_points[1] -> get_coordinates();
+	arma::vec P2 = this -> control_points[2] -> get_coordinates();
+	this -> normal = arma::normalise(arma::cross(P1 - P0, P2 - P0));
 }
 
 
@@ -124,32 +82,25 @@ std::shared_ptr<ControlPoint> Facet::vertex_not_on_edge(std::shared_ptr<ControlP
 }
 
 
-arma::vec * Facet::get_facet_center()  {
-	return (&this -> facet_center);
 
-}
 
-void Facet::compute_facet_center() {
+void Facet::compute_center() {
 
-	arma::vec facet_center = arma::zeros(3);
+	arma::vec center = arma::zeros(3);
 
 	for (unsigned int vertex_index = 0; vertex_index < this -> control_points . size(); ++vertex_index) {
 
-		facet_center += *this -> control_points [vertex_index] -> get_coordinates();
+		center += this -> control_points [vertex_index] -> get_coordinates();
 
 	}
 
-	this -> facet_center = facet_center / this -> control_points . size();
+	this -> center = center / this -> control_points . size();
 
 }
 
 void Facet::compute_area() {
-	arma::vec * P0 = this -> control_points[0] -> get_coordinates() ;
-	arma::vec * P1 = this -> control_points[1] -> get_coordinates() ;
-	arma::vec * P2 = this -> control_points[2] -> get_coordinates() ;
-	this -> area = arma::norm( arma::cross(*P1 - *P0, *P2 - *P0)) / 2;
-}
-
-double Facet::get_area() const {
-	return this -> area;
+	arma::vec P0 = this -> control_points[0] -> get_coordinates() ;
+	arma::vec P1 = this -> control_points[1] -> get_coordinates() ;
+	arma::vec P2 = this -> control_points[2] -> get_coordinates() ;
+	this -> area = arma::norm( arma::cross(P1 - P0, P2 - P0)) / 2;
 }

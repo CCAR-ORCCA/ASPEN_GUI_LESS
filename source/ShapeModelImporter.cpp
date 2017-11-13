@@ -70,10 +70,9 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 
 	for (unsigned int vertex_index = 0; vertex_index < vertices.size(); ++vertex_index) {
 
-		std::shared_ptr<arma::vec> coordinates = std::make_shared<arma::vec>(vertices[vertex_index]);
 
 		std::shared_ptr<ControlPoint> vertex = std::make_shared<ControlPoint>(ControlPoint());
-		vertex -> set_coordinates(coordinates);
+		vertex -> set_coordinates(vertices[vertex_index]);
 
 		vertex_index_to_ptr.push_back(vertex);
 		shape_model -> add_vertex(vertex);

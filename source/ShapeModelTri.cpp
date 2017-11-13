@@ -33,14 +33,6 @@ bool ShapeModelTri::ray_trace(Ray * ray){
 	return hit;
 }
 
-// bool ShapeModelTri::has_kd_tree() const {
-// 	if (this -> kd_tree == nullptr) {
-// 		return false;
-// 	}
-// 	else {
-// 		return true;
-// 	}
-// }
 
 std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
 	return this -> kd_tree;
@@ -98,9 +90,9 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> get_elements() -> at(facet_index) -> get_control_points();
 
-		const double * r1 =  vertices -> at(0) -> get_coordinates() -> colptr(0);
-		const double * r2 =  vertices -> at(1) -> get_coordinates() -> colptr(0);
-		const double * r3 =  vertices -> at(2) -> get_coordinates() -> colptr(0);
+		const double * r1 =  vertices -> at(0) -> get_coordinates().colptr(0);
+		const double * r2 =  vertices -> at(1) -> get_coordinates().colptr(0);
+		const double * r3 =  vertices -> at(2) -> get_coordinates().colptr(0);
 
 		double r1m[3];
 		double r2m[3];
@@ -172,7 +164,7 @@ void ShapeModelTri::save(std::string path,const arma::vec & X,const arma::mat & 
 
 	for (unsigned int vertex_index = 0;vertex_index < this -> get_NControlPoints();++vertex_index) {
 
-		arma::vec coords = *this -> control_points[vertex_index] -> get_coordinates();
+		arma::vec coords = this -> control_points[vertex_index] -> get_coordinates();
 
 		coords = M * coords + X;
 
@@ -211,7 +203,7 @@ void ShapeModelTri::shift_to_barycenter() {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		*this -> control_points[vertex_index] -> get_coordinates() = *this -> control_points[vertex_index] -> get_coordinates() + x;
+		this -> control_points[vertex_index] -> get_coordinates() = this -> control_points[vertex_index] -> get_coordinates() + x;
 
 }
 
@@ -317,7 +309,7 @@ void ShapeModelTri::align_with_principal_axes() {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		*this -> control_points[vertex_index] -> get_coordinates() = axes.t() * (*this -> control_points[vertex_index] -> get_coordinates());
+		this -> control_points[vertex_index] -> get_coordinates() = axes.t() * this -> control_points[vertex_index] -> get_coordinates();
 }
 
 this -> inertia = arma::diagmat(moments);
@@ -346,24 +338,17 @@ void ShapeModelTri::add_vertex(std::shared_ptr<ControlPoint> vertex) {
 void ShapeModelTri::check_normals_consistency(double tol) const {
 	double facet_area_average = 0;
 
-	double sx = 0;
-	double sy = 0;
-	double sz = 0;
+	arma::vec surface_sum= arma::zeros<arma::vec>(3);
 
-	#// pragma omp parallel for reduction(+:facet_area_average,sx,sy,sz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
-		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
+		std::shared_ptr<Element> facet = this -> elements[facet_index];
 
-		sx += facet -> get_area() * facet -> get_facet_normal() -> at(0);
-		sy += facet -> get_area() * facet -> get_facet_normal() -> at(1);
-		sz += facet -> get_area() * facet -> get_facet_normal() -> at(2);
-
+		surface_sum += facet -> get_area() * facet -> get_normal();
 		facet_area_average += facet -> get_area();
 
 	}
 
-	arma::vec surface_sum = {sx, sy, sz};
 
 	facet_area_average = facet_area_average / this -> elements.size();
 	if (arma::norm(surface_sum) / facet_area_average > tol) {
@@ -384,10 +369,10 @@ void ShapeModelTri::compute_volume() {
 
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
-	arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
-	arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
-	arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
-	double dv = arma::dot(*r0, arma::cross(*r1 - *r0, *r2 - *r0)) / 6.;
+	arma::vec r0 =  vertices -> at(0) -> get_coordinates();
+	arma::vec r1 =  vertices -> at(1) -> get_coordinates();
+	arma::vec r2 =  vertices -> at(2) -> get_coordinates();
+	double dv = arma::dot(r0, arma::cross(r1 - r0, r2 - r0)) / 6.;
 	volume = volume + dv;
 
 }
@@ -404,38 +389,39 @@ void ShapeModelTri::compute_center_of_mass() {
 	double c_y = 0;
 	double c_z = 0;
 	double volume = this -> get_volume();
+	arma::vec C = arma::zeros<arma::vec>(3);
 
-	#// pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_SHAPE_MODEL)
-	for (unsigned int facet_index = 0;
-		facet_index < this -> elements.size();
-		++facet_index) {
+	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
 
 
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
-	arma::vec * r0 =  vertices -> at(0) -> get_coordinates();
-	arma::vec * r1 =  vertices -> at(1) -> get_coordinates();
-	arma::vec * r2 =  vertices -> at(2) -> get_coordinates();
+		arma::vec r0 =  vertices -> at(0) -> get_coordinates();
+		arma::vec r1 =  vertices -> at(1) -> get_coordinates();
+		arma::vec r2 =  vertices -> at(2) -> get_coordinates();
 
-	double * r0d =  vertices -> at(0) -> get_coordinates() -> colptr(0);
-	double * r1d =  vertices -> at(1) -> get_coordinates() -> colptr(0);
-	double * r2d =  vertices -> at(2) -> get_coordinates() -> colptr(0);
+		double * r0d =  vertices -> at(0) -> get_coordinates() . colptr(0);
+		double * r1d =  vertices -> at(1) -> get_coordinates() . colptr(0);
+		double * r2d =  vertices -> at(2) -> get_coordinates() . colptr(0);
 
-	double dv = 1. / 6. * arma::dot(*r1, arma::cross(*r1 - *r0, *r2 - *r0));
+		double dv = 1. / 6. * arma::dot(r1, arma::cross(r1 - r0, r2 - r0));
 
-	double dr_x = (r0d[0] + r1d[0] + r2d[0]) / 4.;
-	double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
-	double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
+		double dr_x = (r0d[0] + r1d[0] + r2d[0]) / 4.;
+		double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
+		double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
 
-	c_x = c_x + dv * dr_x / volume;
-	c_y = c_y + dv * dr_y / volume;
-	c_z = c_z + dv * dr_z / volume;
+		c_x = c_x + dv * dr_x / volume;
+		c_y = c_y + dv * dr_y / volume;
+		c_z = c_z + dv * dr_z / volume;
 
-}
+		C += (r0 + r1 + r2) / 4 * dv / volume;
 
-arma::vec cm = {c_x, c_y, c_z};
+	}
 
-this -> cm =  cm ;
+	arma::vec cm = {c_x, c_y, c_z};
+	assert(arma::norm(cm -C) == 0);
+
+	this -> cm =  cm ;
 
 
 }
@@ -462,9 +448,9 @@ void ShapeModelTri::compute_inertia() {
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
 		// Normalized coordinates
-	arma::vec r0 =  (*vertices -> at(0) -> get_coordinates()) / l;
-	arma::vec r1 =  (*vertices -> at(1) -> get_coordinates()) / l;
-	arma::vec r2 =  (*vertices -> at(2) -> get_coordinates()) / l;
+	arma::vec r0 =  (vertices -> at(0) -> get_coordinates()) / l;
+	arma::vec r1 =  (vertices -> at(1) -> get_coordinates()) / l;
+	arma::vec r2 =  (vertices -> at(2) -> get_coordinates()) / l;
 
 	double * r0d =  r0. colptr(0);
 	double * r1d =  r1. colptr(0);
@@ -1104,40 +1090,24 @@ void ShapeModelTri::get_bounding_box(double * bounding_box) const {
 	double ymax =  - std::numeric_limits<double>::infinity();
 	double zmax =  - std::numeric_limits<double>::infinity();
 
+
+	arma::vec bbox_min = arma::zeros<arma::vec>(3);
+	arma::vec bbox_max = arma::zeros<arma::vec>(3);
+
 	#// pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
 
-		double * vertex_cords = this -> control_points[vertex_index] -> get_coordinates() -> colptr(0);
-
-		if (vertex_cords[0] >= xmax) {
-			xmax = vertex_cords[0];
-		}
-		else if (vertex_cords[0] <= xmin) {
-			xmin = vertex_cords[0];
-		}
-
-		if (vertex_cords[1] >= ymax) {
-			ymax = vertex_cords[1];
-		}
-		else if (vertex_cords[1] <= ymin) {
-			ymin = vertex_cords[1];
-		}
-
-		if (vertex_cords[2] >= zmax) {
-			zmax = vertex_cords[2];
-		}
-		else if (vertex_cords[2] <= zmin) {
-			zmin = vertex_cords[2];
-		}
+		bbox_min = arma::min(bbox_min,this -> control_points[vertex_index] -> get_coordinates());
+		bbox_max = arma::min(bbox_max,this -> control_points[vertex_index] -> get_coordinates());
 
 	}
 
-	bounding_box[0] = xmin;
-	bounding_box[1] = ymin;
-	bounding_box[2] = zmin;
-	bounding_box[3] = xmax;
-	bounding_box[4] = ymax;
-	bounding_box[5] = zmax;
+	bounding_box[0] = bbox_min(0);
+	bounding_box[1] = bbox_min(1);
+	bounding_box[2] = bbox_min(2);
+	bounding_box[3] = bbox_max(0);
+	bounding_box[4] = bbox_max(1);
+	bounding_box[5] = bbox_max(2);
 
 
 	std::cout << "xmin : " << xmin << std::endl;

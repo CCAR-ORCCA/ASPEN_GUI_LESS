@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include <memory>
+#include <cassert>
 
 #include "KDTree_pc.hpp"
 #include "Ray.hpp"
@@ -132,7 +133,7 @@ public:
 	@param test_point 3-by-1 vector queried
 	@return Vector of pointers to closest points
 	*/
-	std::vector<std::shared_ptr<PointNormal> > get_closest_N_points(arma::vec & test_point, unsigned int N) const;
+	std::vector<std::shared_ptr<PointNormal> > get_closest_N_points(arma::vec test_point, unsigned int N) const;
 
 
 	/**

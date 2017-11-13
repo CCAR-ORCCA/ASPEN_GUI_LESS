@@ -24,40 +24,40 @@ void BBox::print() const {
 
 void BBox::update(std::shared_ptr<Element> element) {
 
-	arma::vec * first_coordinates = element -> get_control_points() -> at(0) -> get_coordinates();
+	arma::vec first_coordinates = element -> get_control_points() -> at(0) -> get_coordinates();
 
-	this -> xmin = first_coordinates -> at(0);
-	this -> ymin = first_coordinates -> at(1);
-	this -> zmin = first_coordinates -> at(2);
+	this -> xmin = first_coordinates(0);
+	this -> ymin = first_coordinates(1);
+	this -> zmin = first_coordinates(2);
 
-	this -> xmax = first_coordinates -> at(0);
-	this -> ymax = first_coordinates -> at(1);
-	this -> zmax = first_coordinates -> at(2);
+	this -> xmax = first_coordinates(0);
+	this -> ymax = first_coordinates(1);
+	this -> zmax = first_coordinates(2);
 
 	for (unsigned int i = 1; i <  element -> get_control_points() -> size() ; ++i) {
 
-		arma::vec * coordinates = element -> get_control_points() -> at(i) -> get_coordinates();
+		arma::vec coordinates = element -> get_control_points() -> at(i) -> get_coordinates();
 
-		if (coordinates -> at(0) > this -> xmax) {
-			this -> xmax = coordinates -> at(0);
+		if (coordinates(0) > this -> xmax) {
+			this -> xmax = coordinates(0);
 		}
-		if (coordinates -> at(0) < this -> xmin) {
-			this -> xmin = coordinates -> at(0);
-		}
-
-		if (coordinates -> at(1) > this -> ymax) {
-			this -> ymax = coordinates -> at(1);
-		}
-		if (coordinates -> at(1) < this -> ymin) {
-			this -> ymin = coordinates -> at(1);
+		if (coordinates(0) < this -> xmin) {
+			this -> xmin = coordinates(0);
 		}
 
-		if (coordinates -> at(2) > this -> zmax) {
-			this -> zmax = coordinates -> at(2);
+		if (coordinates(1) > this -> ymax) {
+			this -> ymax = coordinates(1);
+		}
+		if (coordinates(1) < this -> ymin) {
+			this -> ymin = coordinates(1);
 		}
 
-		if (coordinates -> at(2) < this -> zmin) {
-			this -> zmin = coordinates -> at(2);
+		if (coordinates(2) > this -> zmax) {
+			this -> zmax = coordinates(2);
+		}
+
+		if (coordinates(2) < this -> zmin) {
+			this -> zmin = coordinates(2);
 		}
 
 	}
@@ -67,45 +67,45 @@ void BBox::update(std::shared_ptr<Element> element) {
 
 void BBox::update(std::vector<std::shared_ptr<Element > > elements) {
 
-	arma::vec * first_coordinates = elements . at(0) -> get_control_points() -> at(0) -> get_coordinates();
+	arma::vec first_coordinates = elements . at(0) -> get_control_points() -> at(0) -> get_coordinates();
 
-	this -> xmin = first_coordinates -> at(0);
-	this -> ymin = first_coordinates -> at(1);
-	this -> zmin = first_coordinates -> at(2);
+	this -> xmin = first_coordinates(0);
+	this -> ymin = first_coordinates(1);
+	this -> zmin = first_coordinates(2);
 
-	this -> xmax = first_coordinates -> at(0);
-	this -> ymax = first_coordinates -> at(1);
-	this -> zmax = first_coordinates -> at(2);
+	this -> xmax = first_coordinates(0);
+	this -> ymax = first_coordinates(1);
+	this -> zmax = first_coordinates(2);
 
 
 	for (unsigned int j = 1; j < elements.size() ; ++j) {
 
 		for (unsigned int i = 1; i <  elements[j] -> get_control_points() -> size() ; ++i) {
 
-			arma::vec * coordinates = elements[j] -> get_control_points() -> at(i) -> get_coordinates();
+			arma::vec coordinates = elements[j] -> get_control_points() -> at(i) -> get_coordinates();
 
-			if (coordinates -> at(0) > this -> xmax) {
-				this -> xmax = coordinates -> at(0);
+			if (coordinates(0) > this -> xmax) {
+				this -> xmax = coordinates(0);
 			}
 
-			if (coordinates -> at(0) < this -> xmin) {
-				this -> xmin = coordinates -> at(0);
+			if (coordinates(0) < this -> xmin) {
+				this -> xmin = coordinates(0);
 			}
 
-			if (coordinates -> at(1) > this -> ymax) {
-				this -> ymax = coordinates -> at(1);
+			if (coordinates(1) > this -> ymax) {
+				this -> ymax = coordinates(1);
 			}
 
-			if (coordinates -> at(1) < this -> ymin) {
-				this -> ymin = coordinates -> at(1);
+			if (coordinates(1) < this -> ymin) {
+				this -> ymin = coordinates(1);
 			}
 
-			if (coordinates -> at(2) > this -> zmax) {
-				this -> zmax = coordinates -> at(2);
+			if (coordinates(2) > this -> zmax) {
+				this -> zmax = coordinates(2);
 			}
 
-			if (coordinates -> at(2) < this -> zmin) {
-				this -> zmin = coordinates -> at(2);
+			if (coordinates(2) < this -> zmin) {
+				this -> zmin = coordinates(2);
 			}
 
 		}

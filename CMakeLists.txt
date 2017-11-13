@@ -13,14 +13,11 @@
 #
 ################################################################################
 
-
 # OMP-friendly GCC Major version (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
-
-
 
 ################################################################################
 #
@@ -120,7 +117,6 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
 
-
 # Find OpenMP
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -140,6 +136,7 @@ endif()
 add_executable(${EXE_NAME}
 source/main.cpp
 source/BBox.cpp
+source/Bezier.cpp
 source/Element.cpp
 source/Facet.cpp
 source/FrameGraph.cpp

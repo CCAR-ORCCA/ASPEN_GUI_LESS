@@ -8,8 +8,6 @@ Class storing the filter parameters
 class FilterArguments {
 public:
 
-
-
 	/**
 	Constructor
 	@param t0 Initial time (s)
@@ -17,7 +15,7 @@ public:
 	@param orbit_rate Angular rate of the instrument about the target (rad/s), 313
 	@param body_spin_rate Angular rate of the instrument about the target (rad/s), RBK::M3
 	@param max_ray_incidence maximum incidence w/r to surface normal beyond which a ray is discarded (rad)
-	@param min_facet_normal_angle_difference Minimum angle separating to normals associated with the same vertex
+	@param min_normal_angle_difference Minimum angle separating to normals associated with the same vertex
 	@param ridge_coef Non-zero value regularizes the information matrix by introducing a bias
 	estimation process
 	@param min_facet_angle Minimum angle below which a facet's corner angle indicates facet degeneracy
@@ -42,8 +40,8 @@ public:
 
 	}
 
-	double get_min_facet_normal_angle_difference() const {
-		return this -> min_facet_normal_angle_difference;
+	double get_min_normal_angle_difference() const {
+		return this -> min_normal_angle_difference;
 
 	}
 
@@ -87,8 +85,8 @@ public:
 	}
 
 
-	void set_min_facet_normal_angle_difference(double min_facet_normal_angle_difference)  {
-		this -> min_facet_normal_angle_difference = min_facet_normal_angle_difference;
+	void set_min_normal_angle_difference(double min_normal_angle_difference)  {
+		this -> min_normal_angle_difference = min_normal_angle_difference;
 
 	}
 
@@ -341,7 +339,7 @@ protected:
 
 
 	double max_ray_incidence;
-	double min_facet_normal_angle_difference;
+	double min_normal_angle_difference;
 	double ridge_coef;
 	double min_facet_angle;
 	double min_edge_angle;
