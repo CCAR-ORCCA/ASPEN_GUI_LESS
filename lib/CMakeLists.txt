@@ -1,8 +1,7 @@
-# CMakeLists.txt for ShapeModelBezier
-# Benjamin Bercovici, 11/10/2017
-# ORCCA
-# University of Colorado 
-
+# @file   CMakeLists.txt
+# @Author Benjamin Bercovici (bebe0705@colorado.edu)
+# @date   July, 2017
+# @brief  CMake listing enabling compilation and installation of the RBK library
 
 
 ################################################################################
@@ -31,7 +30,7 @@ set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-set(EXE_NAME ${dirName} CACHE STRING "Name of executable to be created.")
+set(LIB_NAME ASPEN CACHE STRING "Name of library to be created.")
 
 if (${CMAKE_MINOR_VERSION} EQUAL 0 AND NOT APPLE) # if true, running on a CCAR computer (old CMAKE and RedHat)
 	set(CMAKE_C_COMPILER /usr/local/gcc/bin/gcc CACHE STRING "C Compiler" FORCE)
@@ -68,7 +67,7 @@ if (GCC_VERSION VERSION_LESS 4.7 OR APPLE) # if true, either running on a CCAR c
 endif()
 
 
-project(${EXE_NAME})
+project(${LIB_NAME})
 
 
 
@@ -84,18 +83,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 # Compiler flags
 add_definitions(-Wall -O2 )
 
+# Set path to include and source folders
+set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/include)
+set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/external)
+set(SOURCE_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/source)
 
-
-# Find ASPEN
-find_package(ASPEN REQUIRED) 
-include_directories(${ASPEN_INCLUDE_HEADER}) 
-include_directories(${ASPEN_INCLUDE_GNUPLOT}) 
-include_directories(${ASPEN_INCLUDE_CGAL}) 
-
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
+# Include directories
+include_directories(${INCLUDES_PATH})
+include_directories(${EXTERNAL_PATH}/Gnuplot/include)
+include_directories(${EXTERNAL_PATH}/CGAL_interface/include)
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
@@ -141,8 +137,35 @@ if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0)
 endif()
 
 # Add source files in root directory
-add_executable(${EXE_NAME}
-main.cpp)
+add_library(${LIB_NAME} SHARED
+${SOURCE_PATH}/BBox.cpp
+${SOURCE_PATH}/Bezier.cpp
+${SOURCE_PATH}/Element.cpp
+${SOURCE_PATH}/Facet.cpp
+${SOURCE_PATH}/FrameGraph.cpp
+${SOURCE_PATH}/KDTree_pc.cpp
+${SOURCE_PATH}/KDTree_shape.cpp
+${SOURCE_PATH}/KDTree_control_points.cpp
+${SOURCE_PATH}/Lidar.cpp
+${SOURCE_PATH}/PointNormal.cpp
+${SOURCE_PATH}/Ray.cpp
+${SOURCE_PATH}/RefFrame.cpp
+${SOURCE_PATH}/ShapeModel.cpp
+${SOURCE_PATH}/ShapeModelBezier.cpp
+${SOURCE_PATH}/ShapeModelImporter.cpp
+${SOURCE_PATH}/ShapeModelTri.cpp
+${SOURCE_PATH}/ControlPoint.cpp
+${SOURCE_PATH}/Filter.cpp
+${SOURCE_PATH}/RK.cpp
+${SOURCE_PATH}/DynamicAnalyses.cpp
+${SOURCE_PATH}/Wrappers.cpp
+${SOURCE_PATH}/Interpolator.cpp
+${SOURCE_PATH}/ICP.cpp
+${SOURCE_PATH}/PC.cpp
+${SOURCE_PATH}/ShapeFitter.cpp
+${EXTERNAL_PATH}/Gnuplot/source/GNUPlot.cpp
+${EXTERNAL_PATH}/CGAL_interface/source/CGAL_interface.cpp
+)
 
 # Linking
 set(library_dependencies
@@ -152,9 +175,20 @@ ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${SBGATCORE_LIBRARY}
-${ASPEN_LIBRARY}
 )
 
 
-target_link_libraries(${EXE_NAME} ${library_dependencies})
+target_link_libraries(${LIB_NAME} ${library_dependencies})
+
+file(GLOB includes "${INCLUDES_PATH}/*.hpp")
+file(GLOB includes_gnuplot "${EXTERNAL_PATH}/Gnuplot/include/*.hpp")
+file(GLOB includes_cgal "${EXTERNAL_PATH}/CGAL_interface/include/*.hpp")
+
+install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
+install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
+install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
+install(FILES ${includes_cgal} DESTINATION /usr/local/include/ASPEN/external/CGAL_interface/)
+
+install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /usr/local/lib/cmake/ASPEN/)
+
 

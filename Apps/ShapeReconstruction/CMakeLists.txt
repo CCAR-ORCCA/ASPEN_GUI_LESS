@@ -1,5 +1,5 @@
-# CMakeLists.txt for ASPEN_GUI_LESS
-# Benjamin Bercovici, 03/10/2017
+# CMakeLists.txt for ShapeReconstruction
+# Benjamin Bercovici, 11/10/2017
 # ORCCA
 # University of Colorado 
 
@@ -84,15 +84,18 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 # Compiler flags
 add_definitions(-Wall -O2 )
 
-# Set path to include and source folders
-set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/include)
-set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/external)
-set(SOURCE_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/source)
 
-# Include directories
-include_directories(${INCLUDES_PATH})
-include_directories(${EXTERNAL_PATH}/Gnuplot/include)
-include_directories(${EXTERNAL_PATH}/CGAL_interface/include)
+
+# Find ASPEN
+find_package(ASPEN REQUIRED) 
+include_directories(${ASPEN_INCLUDE_HEADER}) 
+include_directories(${ASPEN_INCLUDE_GNUPLOT}) 
+include_directories(${ASPEN_INCLUDE_CGAL}) 
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "dir='${dir}'")
+endforeach()
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
@@ -139,35 +142,7 @@ endif()
 
 # Add source files in root directory
 add_executable(${EXE_NAME}
-main.cpp
-${SOURCE_PATH}/BBox.cpp
-${SOURCE_PATH}/Bezier.cpp
-${SOURCE_PATH}/Element.cpp
-${SOURCE_PATH}/Facet.cpp
-${SOURCE_PATH}/FrameGraph.cpp
-${SOURCE_PATH}/KDTree_pc.cpp
-${SOURCE_PATH}/KDTree_shape.cpp
-${SOURCE_PATH}/KDTree_control_points.cpp
-${SOURCE_PATH}/Lidar.cpp
-${SOURCE_PATH}/PointNormal.cpp
-${SOURCE_PATH}/Ray.cpp
-${SOURCE_PATH}/RefFrame.cpp
-${SOURCE_PATH}/ShapeModel.cpp
-${SOURCE_PATH}/ShapeModelBezier.cpp
-${SOURCE_PATH}/ShapeModelImporter.cpp
-${SOURCE_PATH}/ShapeModelTri.cpp
-${SOURCE_PATH}/ControlPoint.cpp
-${SOURCE_PATH}/Filter.cpp
-${SOURCE_PATH}/RK.cpp
-${SOURCE_PATH}/DynamicAnalyses.cpp
-${SOURCE_PATH}/Wrappers.cpp
-${SOURCE_PATH}/Interpolator.cpp
-${SOURCE_PATH}/ICP.cpp
-${SOURCE_PATH}/PC.cpp
-${SOURCE_PATH}/ShapeFitter.cpp
-${EXTERNAL_PATH}/Gnuplot/source/GNUPlot.cpp
-${EXTERNAL_PATH}/CGAL_interface/source/CGAL_interface.cpp
-)
+main.cpp)
 
 # Linking
 set(library_dependencies
@@ -177,6 +152,7 @@ ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${SBGATCORE_LIBRARY}
+${ASPEN_LIBRARY}
 )
 
 

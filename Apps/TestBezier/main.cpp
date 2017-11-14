@@ -2,7 +2,10 @@
 #include "Facet.hpp"
 #include "PC.hpp"
 #include "ControlPoint.hpp"
+
 #include <chrono>
+
+
 int main(){
 
 	arma::arma_rng::set_seed(0);
