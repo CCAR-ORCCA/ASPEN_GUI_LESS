@@ -1,4 +1,6 @@
 Apps/ShapeReconstruction/build/
+Apps/ShapeModelBezier/build/
+Apps/TestBezier/build/
 *.zip             
 *.pyc
 *.pdf            

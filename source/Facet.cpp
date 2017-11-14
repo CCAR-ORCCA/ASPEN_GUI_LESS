@@ -2,9 +2,12 @@
 #include <memory>
 
 Facet::Facet(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
-	
-	this -> update();
 
+	if (control_points.size()!= 3){
+		throw(std::runtime_error("This facet was provided with " + std::to_string(control_points.size()) + " vertices"));
+	}
+
+	this -> update();
 }
 
 

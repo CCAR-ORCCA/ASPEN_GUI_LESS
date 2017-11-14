@@ -1,5 +1,5 @@
-#ifndef HEADER_VERTEX
-#define HEADER_VERTEX
+#ifndef HEADER_CONTROL_POINT
+#define HEADER_CONTROL_POINT
 #include <armadillo>
 #include "Element.hpp"
 #include <memory>
@@ -52,6 +52,11 @@ public:
 	@param facet Pointer to the facet owning this vertex
 	*/
 	void remove_ownership(Element *  el);
+
+	/**
+	Removes all ownership relationships 
+	*/
+	void reset_ownership();
 
 
 	/**

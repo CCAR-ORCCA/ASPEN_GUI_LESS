@@ -41,6 +41,8 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 
 
+
+
 PC::PC(ShapeModelTri * shape_model) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;

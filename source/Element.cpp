@@ -3,7 +3,6 @@
 
 Element::Element(std::vector<std::shared_ptr<ControlPoint > > control_points) {
 	this -> control_points = control_points;
-
 }
 
 

@@ -19,6 +19,10 @@ void ControlPoint::remove_ownership(Element *  el) {
 
 }
 
+void ControlPoint::reset_ownership(){
+	this -> owning_elements.clear();
+}
+
 
 std::set< Element *  > ControlPoint::get_owning_elements() const {
 	return this -> owning_elements;
