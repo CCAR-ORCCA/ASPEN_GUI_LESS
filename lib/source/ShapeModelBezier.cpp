@@ -24,11 +24,10 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	// The surface elements are almost the same, expect that they are 
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
-
 		auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
 
 		this -> elements.push_back(patch);
-			
+
 		patch -> get_control_points() -> at(0) -> add_ownership(patch.get());
 		patch -> get_control_points() -> at(1) -> add_ownership(patch.get());
 		patch -> get_control_points() -> at(2) -> add_ownership(patch.get());
@@ -36,20 +35,137 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	}
 
 
+}
+
+
+void ShapeModelBezier::compute_surface_area(){
+
+}
+
+void ShapeModelBezier::compute_volume(){
+
+}
+
+void ShapeModelBezier::compute_center_of_mass(){
+
+}
+
+void ShapeModelBezier::compute_inertia(){
+
+}
+
+bool ShapeModelBezier::ray_trace(Ray * ray){
+
+	return true;
+
+}
+
+void ShapeModelBezier::elevate_n(){
+
+	// All patches are elevated
+	// auto start = std::chrono::system_clock::now();
+
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
 
 
+		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_n();
+	}
+	// auto end = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_seconds = end-start;
+	// std::cout << elapsed_seconds.count() << std::endl;
+	
+
+}
+
+void ShapeModelBezier::save(std::string path) {
+
+	// An inverse map going from vertex pointer to global indices is created
+
+	// Note that the actual vertices on the shape model will not be be 
+	// the control points, but the points lying on the bezier patch
+ 	// they support
+
+	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
+	std::vector<arma::vec> vertices;
+	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
+
+	// The global indices of the control points are found. 
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+
+		Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+
+		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
+
+			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
+				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+				
+				auto local_indices = patch -> get_local_indices(index);
+				double u =  double(std::get<0>(local_indices)) / patch -> get_n();
+				double v =  double(std::get<1>(local_indices)) / patch -> get_n();
+
+				arma::vec surface_point = patch -> evaluate(u,v);
+				vertices.push_back(surface_point);
+			}
+
+		}
+
+
+	// The facets are created
+
+		for (unsigned int l = 0; l < patch -> get_n(); ++l){
+
+			for (unsigned int t = 0; t < l + 1; ++t){
+
+				if (t <= l){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_n() - l,l - t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_n() - l - 1,l - t + 1);
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_n() - l - 1,l-t);
+
+					facets.push_back(std::make_tuple(v0,v1,v2));
+				}
+
+				if (t > 0 ){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_n() - l,l-t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_n() - l,l - t + 1 );
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_n() - l -1,l - t + 1);
+
+					facets.push_back(std::make_tuple(v0,v1,v2));
+				}
+
+			}
+
+		}
+	}
+
+	// The coordinates are written to a file
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int i = 0; i < vertices.size(); ++i){
+		shape_file << "v " << vertices[i](0) << " " << vertices[i](1) << " " << vertices[i](2) << "\n";
+	}
+
+	for (unsigned int i = 0; i < facets.size(); ++i){
+		unsigned int indices[3];
+		indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
+		indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
+		indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
 
 
 
+		shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";
 
-
-
-
-
-
-
-
+	}
 
 
 }
+
+
+
+
+
+

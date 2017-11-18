@@ -48,6 +48,16 @@ std::set< Element * >  ControlPoint::common_facets(std::shared_ptr<ControlPoint>
 }
 
 
+void ControlPoint::add_local_numbering(Element * element,const arma::uvec & local_indices){
+	this -> local_numbering[element] = local_indices;
+}
+
+
+
+arma::uvec ControlPoint::get_local_numbering(Element * element) const{
+	return this -> local_numbering.at(element);
+}
+
 
 
 bool ControlPoint::is_owned_by(Element * facet) const {

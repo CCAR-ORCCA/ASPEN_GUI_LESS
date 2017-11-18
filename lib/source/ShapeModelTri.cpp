@@ -197,13 +197,14 @@ void ShapeModelTri::shift_to_barycenter() {
 
 	arma::vec x = - (*this -> get_center_of_mass());
 
+
 	// The vertices are shifted
 	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
 	for (unsigned int vertex_index = 0;
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		this -> control_points[vertex_index] -> get_coordinates() = this -> control_points[vertex_index] -> get_coordinates() + x;
+		this -> control_points[vertex_index] -> set_coordinates(this -> control_points[vertex_index] -> get_coordinates() + x);
 
 }
 
@@ -309,7 +310,7 @@ void ShapeModelTri::align_with_principal_axes() {
 		vertex_index < this -> get_NControlPoints();
 		++vertex_index) {
 
-		this -> control_points[vertex_index] -> get_coordinates() = axes.t() * this -> control_points[vertex_index] -> get_coordinates();
+		this -> control_points[vertex_index] -> set_coordinates(axes.t() * this -> control_points[vertex_index] -> get_coordinates());
 }
 
 this -> inertia = arma::diagmat(moments);

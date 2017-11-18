@@ -67,6 +67,18 @@ public:
 
 
 
+	/**
+	@param element owning element
+	@param local_indices triplet of indices numbering this control point within the owning element
+	*/
+	void add_local_numbering(Element * element,const arma::uvec & local_indices);
+
+	/**
+	Returns the local numbering of this control point within the specified element
+	@param element pointer to element to consider
+	*/
+	arma::uvec get_local_numbering(Element * element) const;
+
 
 	/**
 	Returns the number of facets owning this vertex
@@ -77,6 +89,7 @@ public:
 protected:
 	arma::vec coordinates;
 	std::set<Element * > owning_elements;
+	std::map<Element *,arma::uvec> local_numbering;
 
 
 };

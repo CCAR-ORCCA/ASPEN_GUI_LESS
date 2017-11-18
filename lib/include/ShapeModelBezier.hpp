@@ -26,10 +26,44 @@ public:
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
-protected:
 
-	std::vector<std::shared_ptr<Element  > > elements;
-	std::vector<std::shared_ptr< ControlPoint> >  control_points;
+	/**
+	Saves the shape model to an obj file
+	*/
+	void save(std::string pach) ;
+
+
+	/**
+	Elevates the degree of all Bezier patches in the shape model by one
+	*/
+	void elevate_n();
+
+
+	/**
+	Computes the surface area of the shape model
+	*/
+	virtual void compute_surface_area();
+	/**
+	Computes the volume of the shape model
+	*/
+	virtual void compute_volume();
+	/**
+	Computes the center of mass of the shape model
+	*/
+	virtual void compute_center_of_mass();
+	/**
+	Computes the inertia tensor of the shape model
+	*/
+	virtual void compute_inertia();
+
+	/**
+	Finds the intersect between the provided ray and the shape model
+	@param ray pointer to ray. If a hit is found, the ray's internal is changed to store the range to the hit point
+	*/
+	virtual bool ray_trace(Ray * ray);
+
+
+protected:
 
 
 };
