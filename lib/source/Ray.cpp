@@ -1,5 +1,8 @@
 #include "Ray.hpp"
 
+
+
+
 Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	this -> lidar = lidar;
@@ -46,9 +49,18 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	this -> origin_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
 	this -> direction_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
-
-
 }
+
+
+
+Ray::Ray(arma::vec origin, arma::vec direction){
+	this -> origin = std::make_shared<arma::vec>(origin);
+	this -> direction = std::make_shared<arma::vec>(direction);
+
+	this -> origin_target_frame = std::make_shared<arma::vec>(origin);
+	this -> direction_target_frame = std::make_shared<arma::vec>(direction);
+}
+
 
 Facet * Ray::get_true_hit_facet() {
 	return this -> true_hit_facet;
@@ -126,6 +138,7 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 arma::vec Ray::get_impact_point() const {
 
 	if (this -> true_range < std::numeric_limits<double>::infinity()) {
+		
 		return (*this -> direction) * this -> true_range + (*this -> origin);
 	}
 	else {
@@ -170,6 +183,58 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 	return false;
 
 }
+
+bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
+
+	arma::vec S = *this -> origin_target_frame;
+	arma::vec dir = *this -> direction_target_frame;
+	arma::mat u_tilde = RBK::tilde(dir);
+
+	// The ray caster iterates until a valid intersect is found
+	unsigned int N_iter_max = 10;
+
+	arma::vec chi = {1./3,1./3};
+	arma::vec dchi = arma::zeros<arma::vec>(2);
+
+	arma::mat H = arma::zeros<arma::mat>(3,2);
+	arma::vec Y = arma::zeros<arma::vec>(3);
+	arma::vec impact(3);
+	for (unsigned int i = 0; i < N_iter_max; ++i){
+		double u_t = chi(0);
+		double v_t = chi(1);
+
+		impact = patch -> evaluate(u_t,v_t);
+
+		if (arma::norm(u_tilde*(S - patch -> evaluate(u_t,v_t))) < 1e-8){
+
+			this -> true_range = arma::norm(S - impact);
+			u = u_t;
+			v = v_t;
+
+			return true;
+		}
+		
+		H = u_tilde * patch -> partial_bezier( u_t, v_t);
+		Y = u_tilde * (S - patch -> evaluate(u_t,v_t));
+
+		dchi = arma::solve(H.t() * H,H.t() * Y);
+
+		chi += dchi;
+		
+
+	}
+
+	return false;
+
+}
+
+
+
+
+
+
+
+
 
 double Ray::get_incidence_angle() const{
 	return this -> incidence_angle;

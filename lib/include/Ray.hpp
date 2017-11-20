@@ -5,6 +5,8 @@
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
 #include "ShapeModelTri.hpp"
+#include "Bezier.hpp"
+
 
 #include <memory>
 #include <armadillo>
@@ -23,6 +25,13 @@ public:
 	@param lidar pointer to the instrument owning the ray
 	*/
 	Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar);
+
+	/**
+	Constructor
+	@param origin ray origin
+	@param direction ray direction (unit vector)
+	*/
+	Ray(arma::vec origin, arma::vec direction);
 
 	/**
 	Pointer to hit facet on the true target
@@ -100,6 +109,21 @@ public:
 	@param hit true if the facet was hit
 	*/
 	bool single_facet_ray_casting(Facet * facet) ;
+
+
+	/*
+	Cast a ray to a single patch of the target
+	Sets the $hit_facet and $range members depending on whether an intersect was found:
+	- no intersect found: range == oo and hit_facet == nullptr
+	- intersect found: hit_facet and range have valid values
+	Rewrites previously found range and intersect if new range is less
+	@param patch pointer to ray traced patch
+	@param u first barycentric coordinate
+	@param v second barycentric coordinate
+	*/
+	
+	bool single_patch_ray_casting(Bezier * patch,double & u, double & v) ;
+
 
 	/**
 	Accessor to lidar

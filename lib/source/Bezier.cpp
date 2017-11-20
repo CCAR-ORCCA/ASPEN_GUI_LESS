@@ -78,7 +78,7 @@ void Bezier::elevate_n(){
 	new_points_to_add_index.erase(i_00n_after_elevation);
 
 
-   
+
 
 	for (auto neighbor =  this -> new_points.begin(); neighbor != this -> new_points.end(); ++ neighbor){
 
@@ -162,7 +162,7 @@ void Bezier::elevate_n(){
 
 	}
 
-   
+
 
 
 
@@ -311,6 +311,148 @@ double Bezier::bernstein(
 		* std::pow(1 - u - v, n - i - j ));
 
 }
+
+arma::rowvec Bezier::partial_bernstein( 
+	const double u, 
+	const double v,
+	const unsigned int i ,  
+	const unsigned int j, 
+	const unsigned int n) {
+
+	arma::rowvec partials(2);
+
+	partials(0) = n *( bernstein(u, v,i - 1,j,n - 1) - bernstein(u, v,i,j,n - 1));
+	partials(1) = n *( bernstein(u, v,i,j - 1,n - 1) - bernstein(u, v,i,j,n - 1));
+
+
+	return partials;
+}
+
+arma::mat Bezier::partial_bezier(
+	const double u,
+	const double v) {
+
+	arma::mat partials = arma::zeros<arma::mat>(3,2);
+	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
+		unsigned int i = std::get<0>(this -> forw_table[l]);
+		unsigned int j = std::get<1>(this -> forw_table[l]);
+
+		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
+	}
+	return partials;
+
+}
+
+arma::mat Bezier::covariance_surface_point(
+	const double u,
+	const double v,
+	const arma::vec & dir,
+	const arma::mat & P_CC){
+
+
+	arma::mat P = arma::zeros<arma::mat>(3,3);
+
+	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
+	arma::mat AAA = A * arma::inv(A .t() * A);
+
+
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+
+			P += (
+				bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
+				* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
+				* P_CC.submat( 3 * i, 3 * k, 3 * i + 2, 3 * k + 2 )
+				);
+		}
+	}
+	return P;
+
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+			for (unsigned int l = 0; l < this -> control_points.size(); ++l){
+
+				P += (
+					bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
+					* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
+					* P_CC.submat( 3 * i, 3 * l, 3 * i + 2, 3 * l + 2 )
+					* RBK::tilde(dir)
+					* AAA
+					* partial_bernstein(
+						u, 
+						v,
+						std::get<0>(this -> forw_table[k]) ,  
+						std::get<1>(this -> forw_table[k]), 
+						n).t()
+					* this -> control_points[k] -> get_coordinates().t() );
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		for (unsigned int j = 0; j < this -> control_points.size(); ++j){
+			for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+
+				P -= (
+					this -> control_points[i] -> get_coordinates()
+					* partial_bernstein(
+						u, 
+						v,
+						std::get<0>(this -> forw_table[i]) ,  
+						std::get<1>(this -> forw_table[i]), 
+						n)
+					* AAA.t()
+					* RBK::tilde(dir)
+
+					* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
+					* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
+					* P_CC.submat( 3 * j, 3 * k, 3 * j + 2, 3 * k + 2 ) );
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+			for (unsigned int l = 0; l < this -> control_points.size(); ++l){
+				for (unsigned int j = 0; j < this -> control_points.size(); ++j){
+
+					P -= (
+						this -> control_points[i] -> get_coordinates()
+						* partial_bernstein(
+							u, 
+							v,
+							std::get<0>(this -> forw_table[i]) ,  
+							std::get<1>(this -> forw_table[i]), 
+							n)
+						* AAA.t()
+						* RBK::tilde(dir)
+						* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
+						* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
+						* P_CC.submat( 3 * l, 3 * j, 3 * l + 2, 3 * j + 2 ) 
+						* RBK::tilde(dir)
+						* AAA
+						* partial_bernstein(
+							u, 
+							v,
+							std::get<0>(this -> forw_table[k]) ,  
+							std::get<1>(this -> forw_table[k]), 
+							n).t() * this -> control_points[k] -> get_coordinates().t() );
+				}
+			}
+		}
+	}
+
+	return P;
+
+
+
+
+}
+
+
+
+
+
 
 
 void Bezier::compute_normal(){

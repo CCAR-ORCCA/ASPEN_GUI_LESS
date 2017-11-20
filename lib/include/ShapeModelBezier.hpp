@@ -21,8 +21,7 @@ public:
 	reference frame relationships
 	@param frame_graph Pointer to the reference frame graph
 	*/
-	ShapeModelBezier(
-		ShapeModelTri * shape_model,
+	ShapeModelBezier(ShapeModelTri * shape_model,
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
