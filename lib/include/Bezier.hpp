@@ -76,14 +76,7 @@ public:
 	void elevate_n();
 
 
-	/**	
-	Returns the outgoing normal vector at (u,v)
-	@param u first barycentric coordinate
-	@param v second barycentric coordinate
-	@return normal vector at the queried point
-	*/
-	arma::vec get_normal(double u, double v) const;
-
+	
 
 
 	/**
@@ -94,6 +87,17 @@ public:
 	@return point at the surface of the bezier patch
 	*/
 	arma::vec evaluate(const double u, const double v) const;
+
+
+
+	/**
+	Evaluates the normal of the bezier patch at the barycentric 
+	coordinates (u,v). Note that 0<= u + v <= 1
+	@param u first barycentric coordinate
+	@param v second barycentric coordinate
+	@return point at the surface of the bezier patch
+	*/
+	arma::vec get_normal(const double u, const double v) ;
 
 
 
@@ -153,6 +157,23 @@ public:
 		const double v,
 		const arma::vec & dir,
 		const arma::mat & P_CC);
+
+
+
+	// Saves the patch to a file
+	void save(std::string path) ;
+
+	// Returns the partial derivative d^2P/(dchi dv)
+	arma::mat partial_bezier_dv(
+		const double u,
+		const double v) ;
+
+
+	// Returns the partial derivative d^2P/(dchi du)
+	arma::mat partial_bezier_du(
+		const double u,
+		const double v) ;
+
 
 
 
@@ -237,6 +258,20 @@ protected:
 
 
 
+	arma::mat partial_bernstein_dv( 
+		const double u, 
+		const double v,
+		const unsigned int i ,  
+		const unsigned int j, 
+		const unsigned int n) ;
+
+
+	arma::mat partial_bernstein_du( 
+		const double u, 
+		const double v,
+		const unsigned int i ,  
+		const unsigned int j, 
+		const unsigned int n) ;
 
 
 	unsigned int n;

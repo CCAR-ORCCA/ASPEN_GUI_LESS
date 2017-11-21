@@ -35,7 +35,7 @@ int main(){
 	}
 	shape_bezier.save("bezier_" + std::to_string(D)+ ".obj");
 
-
+	
 
 
 

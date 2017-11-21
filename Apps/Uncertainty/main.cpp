@@ -84,6 +84,8 @@ int main(){
 
 	// #pragma omp parallel for
 	arma::vec data(N_rays);
+	arma::vec simulated(N_rays);
+
 	for (unsigned int i = 0; i < N_rays; ++ i){
 
 		// A random displacement is applied to the control points
@@ -101,6 +103,9 @@ int main(){
 		// The patch is ray traced
 		ray.single_patch_ray_casting(&nominal_patch,u,v);
 		data(i) = ray.get_true_range();
+		arma::vec r = arma::randn(1);
+		simulated(i) = apriori_range +  r(0)* std::sqrt(arma::dot(dir,P * dir )) ;
+
 	}
 
 
@@ -114,6 +119,9 @@ int main(){
 	std::cout << " Standard deviation from data: " << std::sqrt(arma::var( data, 1 )) << std::endl;
 	std::cout << " Standard deviation from covariance: " << std::sqrt(arma::dot(dir,P * dir )) << std::endl;
 	std::cout << " Percentage of sd error: " << std::abs(std::sqrt(arma::var( data, 1 )) - std::sqrt(arma::dot(dir,P * dir ))) / std::sqrt(arma::dot(dir,P * dir )) * 100  << " % " << std::endl;
+
+	simulated.save("simulated.txt",arma::raw_ascii);
+	data.save("true.txt",arma::raw_ascii);
 
 
 
