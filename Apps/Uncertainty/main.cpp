@@ -104,7 +104,7 @@ int main(){
 		ray.single_patch_ray_casting(&nominal_patch,u,v);
 		data(i) = ray.get_true_range();
 		arma::vec r = arma::randn(1);
-		simulated(i) = apriori_range +  r(0)* std::sqrt(arma::dot(dir,P * dir )) ;
+		simulated(i) = apriori_range +  r(0) * std::sqrt(arma::dot(dir,P * dir )) ;
 
 	}
 
@@ -121,8 +121,14 @@ int main(){
 	std::cout << " Percentage of sd error: " << std::abs(std::sqrt(arma::var( data, 1 )) - std::sqrt(arma::dot(dir,P * dir ))) / std::sqrt(arma::dot(dir,P * dir )) * 100  << " % " << std::endl;
 
 	simulated.save("simulated.txt",arma::raw_ascii);
-	data.save("true.txt",arma::raw_ascii);
+	data.save("data.txt",arma::raw_ascii);
 
+	// The patch is also saved
+	nominal_patch.elevate_n();
+	nominal_patch.elevate_n();
+	nominal_patch.elevate_n();
+	nominal_patch.elevate_n();
+	nominal_patch.save("patch.obj") ;
 
 
 
