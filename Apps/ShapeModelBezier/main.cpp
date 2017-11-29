@@ -31,7 +31,7 @@ int main(){
 	unsigned int D = 2;
 	for (unsigned int i = 1; i < D + 1; ++i){
 		std::cout << i << std::endl;
-		shape_bezier.elevate_n();
+		shape_bezier.elevate_degree();
 	}
 	shape_bezier.save("bezier_" + std::to_string(D)+ ".obj");
 

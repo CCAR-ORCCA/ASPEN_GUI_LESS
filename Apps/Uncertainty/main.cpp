@@ -50,17 +50,13 @@ int main(){
 
 
 	// A 18 by 18 covariance is created
-	arma::mat P_CC = 1e-1 * arma::eye<arma::mat>(18,18);
-	
-	unsigned int p = 1;
-	unsigned int f = 2;
-	P_CC.submat(3 * p, 3 * f, 3* p + 2,3* f + 2) = 1e-2 * arma::eye<arma::mat>(3,3);
-	P_CC.submat(3 * f, 3 * p, 3* f + 2,3* p + 2) = 1e-2 * arma::eye<arma::mat>(3,3);
+	arma::mat P_CC = 1e-1 * arma::randu<arma::mat>(18,18);
+	P_CC = (P_CC + P_CC.t() + 1 * arma::eye<arma::mat>(18,18));
+	P_CC = P_CC / arma::trace(P_CC);
 
-	p = 4;
-	f = 5;
-	P_CC.submat(3 * p, 3 * f, 3* p + 2,3* f + 2) = 1e-2 * arma::eye<arma::mat>(3,3);
-	P_CC.submat(3 * f, 3 * p, 3* f + 2,3* p + 2) = 1e-2 * arma::eye<arma::mat>(3,3);
+	
+	P_CC.save("P_CC.txt",arma::raw_ascii);
+
 
 	arma::mat Z =  arma::chol( P_CC, "lower" ) ;
 	arma::vec E(18);
@@ -124,10 +120,14 @@ int main(){
 	data.save("data.txt",arma::raw_ascii);
 
 	// The patch is also saved
-	nominal_patch.elevate_n();
-	nominal_patch.elevate_n();
-	nominal_patch.elevate_n();
-	nominal_patch.elevate_n();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
+	nominal_patch.elevate_degree();
 	nominal_patch.save("patch.obj") ;
 
 

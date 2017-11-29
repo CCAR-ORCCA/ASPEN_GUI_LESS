@@ -36,7 +36,7 @@ void Bezier::construct_index_tables(){
 
 }
 
-void Bezier::elevate_n(){
+void Bezier::elevate_degree(){
 
 	// A vector storing the new coordinates is created
 	std::vector<std::shared_ptr<ControlPoint > > new_control_points;
@@ -266,7 +266,7 @@ void Bezier::elevate_n(){
 
 
 
-unsigned int Bezier::get_n() const{
+unsigned int Bezier::get_degree() const{
 	return this -> n;
 }
 
@@ -660,8 +660,8 @@ void Bezier::save(std::string path) {
 			pointer_to_global_indices[this -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
 
 			auto local_indices = this -> get_local_indices(index);
-			double u =  double(std::get<0>(local_indices)) / this -> get_n();
-			double v =  double(std::get<1>(local_indices)) / this -> get_n();
+			double u =  double(std::get<0>(local_indices)) / this -> get_degree();
+			double v =  double(std::get<1>(local_indices)) / this -> get_degree();
 
 			arma::vec surface_point = this -> evaluate(u,v);
 			vertices.push_back(surface_point);
@@ -672,24 +672,24 @@ void Bezier::save(std::string path) {
 
 	// The facets are created
 
-	for (unsigned int l = 0; l < this -> get_n(); ++l){
+	for (unsigned int l = 0; l < this -> get_degree(); ++l){
 
 		for (unsigned int t = 0; t < l + 1; ++t){
 
 			if (t <= l){
 
-				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_n() - l,l - t);
-				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_n() - l - 1,l - t + 1);
-				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_n() - l - 1,l-t);
+				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_degree() - l,l - t);
+				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_degree() - l - 1,l - t + 1);
+				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_degree() - l - 1,l-t);
 
 				facets.push_back(std::make_tuple(v0,v1,v2));
 			}
 
 			if (t > 0 ){
 
-				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_n() - l,l-t);
-				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_n() - l,l - t + 1 );
-				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_n() - l -1,l - t + 1);
+				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_degree() - l,l-t);
+				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_degree() - l,l - t + 1 );
+				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_degree() - l -1,l - t + 1);
 
 				facets.push_back(std::make_tuple(v0,v1,v2));
 			}

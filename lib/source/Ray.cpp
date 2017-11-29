@@ -199,6 +199,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 	arma::mat H = arma::zeros<arma::mat>(3,2);
 	arma::vec Y = arma::zeros<arma::vec>(3);
 	arma::vec impact(3);
+	
 	for (unsigned int i = 0; i < N_iter_max; ++i){
 		double u_t = chi(0);
 		double v_t = chi(1);

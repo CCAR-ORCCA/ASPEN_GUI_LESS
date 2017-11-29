@@ -1,7 +1,5 @@
-#include "Bezier.hpp"
-#include "Facet.hpp"
-#include "PC.hpp"
 #include "ControlPoint.hpp"
+#include "ShapeModelBezier.hpp"
 
 #include <chrono>
 
@@ -95,11 +93,7 @@ int main(){
  
     std::chrono::duration<double> elapsed_seconds = end-start;
  
-    std::cout << " Done  in " << elapsed_seconds.count() << " s\n";
-
-
-
-
+    std::cout << " Done in " << elapsed_seconds.count() << " s\n";
 
 	std::ofstream control_mesh_file;
 	control_mesh_file.open("control_.obj");
@@ -115,14 +109,17 @@ int main(){
 	P_bar_old_file.open("P_bar_old.obj");
 	P_bar_old_file << "v " << P_bar_old(0) << " " << P_bar_old(1) << " " << P_bar_old(2) << std::endl;
 	
-
-
+	ShapeModelBezier dummy(patch);
+	dummy.save("bezier.b");
+	
 	unsigned int D = 10;
 	for (unsigned int i = 1; i < D + 1; ++i){
 		std::cout << i << std::endl;
-		patch.elevate_n();
+		patch.elevate_degree();
 	}
-	patch.save("bezier_" + std::to_string(D)+ ".obj");
+	patch.save("bezier_" + std::to_string(D)+ ".b");
+
+
 
 	
 

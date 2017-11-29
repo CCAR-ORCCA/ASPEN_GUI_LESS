@@ -25,19 +25,46 @@ public:
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
+	/**
+	Constructor
+	@param frame_graph Pointer to the graph storing
+	reference frame relationships
+	@param frame_graph Pointer to the reference frame graph
+	*/
+	ShapeModelBezier(std::string ref_frame_name,
+		FrameGraph * frame_graph);
 
 	/**
-	Saves the shape model to an obj file
+	Constructor.
+	Takes a single patch as argument
+	@param patch pointer to patch the shape model will be comprised off
 	*/
-	void save(std::string pach) ;
+	ShapeModelBezier(Bezier patch);
 
+
+
+
+	/**
+	Saves the shape model to an obj file as a polyhedron
+	*/
+	void save_to_obj(std::string path) ;
+
+
+	/**
+	Saves the shape model as a collection of Bezier patches
+	*/
+	void save(std::string path) ;
 
 	/**
 	Elevates the degree of all Bezier patches in the shape model by one
 	*/
-	void elevate_n();
+	void elevate_degree();
 
-
+	/**
+	Gets the shape model degree
+	*/
+	unsigned int get_degree();
+ 
 	/**
 	Computes the surface area of the shape model
 	*/

@@ -70,6 +70,24 @@ public:
 	std::vector<std::shared_ptr<Element> >  * get_elements();
 
 	/**
+	Augment the internal container storing elements with a new (and not already inserted)
+	one
+	@param facet pointer to the new element to be inserted
+	*/
+	void add_element(std::shared_ptr<Element> el);
+	
+	
+
+	/**
+	Augment the internal container storing vertices with a new (and not already inserted)
+	one
+	@param control_point pointer to the new control point to be inserted
+	*/
+	void add_control_point(std::shared_ptr<ControlPoint> control_point);
+
+	
+
+	/**
 	Returns number of elements
 	@return number of elements
 	*/

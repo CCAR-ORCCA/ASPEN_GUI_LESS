@@ -323,15 +323,6 @@ arma::mat ShapeModelTri::get_inertia() const {
 }
 
 
-void ShapeModelTri::add_facet(std::shared_ptr<Facet> facet) {
-	this -> elements.push_back(facet);
-}
-
-
-
-void ShapeModelTri::add_vertex(std::shared_ptr<ControlPoint> vertex) {
-	this -> control_points.push_back(vertex);
-}
 
 
 
@@ -679,9 +670,9 @@ void ShapeModelTri::compute_surface_area() {
 
 
 // 	// The new vertices are added to the shape model
-// 	this -> add_vertex(V6);
-// 	this -> add_vertex(V7);
-// 	this -> add_vertex(V8);
+// 	this -> add_control_point(V6);
+// 	this -> add_control_point(V7);
+// 	this -> add_control_point(V8);
 
 // 	// The vertices are grouped accordingly
 // 	// to the indexing specified in ShapeModelTri.hpp
@@ -761,16 +752,16 @@ void ShapeModelTri::compute_surface_area() {
 // 	F9 -> set_split_counter(facet -> get_split_count() + 1);
 
 // 	// // The new elements are added to the shape model
-// 	this -> add_facet(F0);
-// 	this -> add_facet(F1);
-// 	this -> add_facet(F2);
-// 	this -> add_facet(F3);
-// 	this -> add_facet(F4);
-// 	this -> add_facet(F5);
-// 	this -> add_facet(F6);
-// 	this -> add_facet(F7);
-// 	this -> add_facet(F8);
-// 	this -> add_facet(F9);
+// 	this -> add_element(F0);
+// 	this -> add_element(F1);
+// 	this -> add_element(F2);
+// 	this -> add_element(F3);
+// 	this -> add_element(F4);
+// 	this -> add_element(F5);
+// 	this -> add_element(F6);
+// 	this -> add_element(F7);
+// 	this -> add_element(F8);
+// 	this -> add_element(F9);
 
 
 
@@ -1012,7 +1003,7 @@ void ShapeModelTri::compute_surface_area() {
 // 		I think this is where the bug is
 // 		*/
 // 		V_merge_discard -> remove_facet_ownership(facet_to_update);
-// 		V_merge_keep -> add_facet_ownership(facet_to_update);
+// 		V_merge_keep -> add_element_ownership(facet_to_update);
 
 // 	}
 

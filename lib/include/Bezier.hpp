@@ -68,12 +68,12 @@ public:
 	Returns patch degree
 	@param degree
 	*/
-	unsigned int get_n() const;
+	unsigned int get_degree() const;
 
 	/**
 	Elevates patch degree by one
 	*/
-	void elevate_n();
+	void elevate_degree();
 
 
 	

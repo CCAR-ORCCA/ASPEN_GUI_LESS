@@ -4,10 +4,6 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	std::string ref_frame_name,
 	FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
-
-	std::map<Facet * ,std::set<std::shared_ptr<ControlPoint> > > buckets;
-
-
 	// All the facets of the original shape model are browsed
 	// The shape starts as a uniform union of order-2 Bezier patches
 
@@ -34,9 +30,23 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 	}
 
+}
+
+
+ShapeModelBezier::ShapeModelBezier(std::string ref_frame_name,
+		FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
 }
 
+
+
+
+
+
+ShapeModelBezier::ShapeModelBezier(Bezier patch){
+
+	this -> elements.push_back(std::make_shared<Bezier>(patch));
+}
 
 void ShapeModelBezier::compute_surface_area(){
 
@@ -60,7 +70,7 @@ bool ShapeModelBezier::ray_trace(Ray * ray){
 
 }
 
-void ShapeModelBezier::elevate_n(){
+void ShapeModelBezier::elevate_degree(){
 
 	// All patches are elevated
 	// auto start = std::chrono::system_clock::now();
@@ -69,7 +79,7 @@ void ShapeModelBezier::elevate_n(){
 
 
 
-		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_n();
+		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_degree();
 	}
 	// auto end = std::chrono::system_clock::now();
 	// std::chrono::duration<double> elapsed_seconds = end-start;
@@ -78,7 +88,79 @@ void ShapeModelBezier::elevate_n(){
 
 }
 
+
+
 void ShapeModelBezier::save(std::string path) {
+	// An inverse map going from vertex pointer to global indices is created
+
+	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
+	std::map<unsigned int,std::shared_ptr<ControlPoint> > global_index_to_pointer;
+
+	std::vector<arma::vec> vertices;
+	std::vector< std::vector<unsigned int> > shape_patch_indices;
+
+	// The global indices of the control points are found. 
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+
+		auto patch = this -> get_elements() -> at(i);
+
+		std::vector<unsigned int> patch_indices;
+
+		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
+
+			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index)) == pointer_to_global_indices.end()){
+				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+				global_index_to_pointer[pointer_to_global_indices.size()] = patch -> get_control_points() -> at(index);
+			}
+
+			patch_indices.push_back(pointer_to_global_indices[patch -> get_control_points() -> at(index)]);
+
+		}
+
+
+
+		shape_patch_indices.push_back(patch_indices);
+
+	}
+
+	// The coordinates are written to a file
+	std::ofstream shape_file;
+	shape_file.open(path);
+	shape_file << this -> get_degree() << "\n";
+
+	for (auto iter = global_index_to_pointer.begin(); iter != global_index_to_pointer.end(); ++iter){
+		shape_file << "v " << iter -> second -> get_coordinates()(0) << " " << iter -> second -> get_coordinates()(1) << " " << iter -> second -> get_coordinates()(2) << "\n";
+	}
+
+	for (auto iter = shape_patch_indices.begin(); iter != shape_patch_indices.end(); ++iter){
+		shape_file << "f ";
+		
+		for (unsigned int index = 0; index < iter -> size(); ++index){
+			
+			if (index != iter -> size() - 1){
+				shape_file << iter -> at(index) << " ";
+			}
+			else if (index == iter -> size() - 1 && iter != shape_patch_indices.end() - 1 ){
+				shape_file << iter -> at(index) << "\n";
+			}
+			else{
+				shape_file << iter -> at(index);
+			}
+		}
+
+	}
+
+}
+
+unsigned int ShapeModelBezier::get_degree(){
+	if (this -> get_elements() -> size() == 0){
+		throw(std::runtime_error("This bezier shape model has no elements"));
+	}
+	return dynamic_cast<Bezier * >(this -> elements. begin() -> get()) -> get_degree();
+}
+
+
+void ShapeModelBezier::save_to_obj(std::string path) {
 
 	// An inverse map going from vertex pointer to global indices is created
 
@@ -101,8 +183,8 @@ void ShapeModelBezier::save(std::string path) {
 				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
 				
 				auto local_indices = patch -> get_local_indices(index);
-				double u =  double(std::get<0>(local_indices)) / patch -> get_n();
-				double v =  double(std::get<1>(local_indices)) / patch -> get_n();
+				double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
+				double v =  double(std::get<1>(local_indices)) / patch -> get_degree();
 
 				arma::vec surface_point = patch -> evaluate(u,v);
 				vertices.push_back(surface_point);
@@ -113,24 +195,24 @@ void ShapeModelBezier::save(std::string path) {
 
 	// The facets are created
 
-		for (unsigned int l = 0; l < patch -> get_n(); ++l){
+		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
 
 			for (unsigned int t = 0; t < l + 1; ++t){
 
 				if (t <= l){
 
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_n() - l,l - t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_n() - l - 1,l - t + 1);
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_n() - l - 1,l-t);
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
 
 					facets.push_back(std::make_tuple(v0,v1,v2));
 				}
 
 				if (t > 0 ){
 
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_n() - l,l-t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_n() - l,l - t + 1 );
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_n() - l -1,l - t + 1);
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
 
 					facets.push_back(std::make_tuple(v0,v1,v2));
 				}

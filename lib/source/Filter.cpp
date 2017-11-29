@@ -175,7 +175,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 				1, true);
 
 
-			shape_io_estimated.load_shape_model(this -> estimated_shape_model);
+			shape_io_estimated.load_obj_shape_model(this -> estimated_shape_model);
 
 
 			// this -> fit_shape(this -> destination_pc.get(),20,1,arma::eye<arma::mat>(3,3),arma::zeros<arma::vec>(3));

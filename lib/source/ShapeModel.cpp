@@ -41,3 +41,14 @@ unsigned int ShapeModel::get_NControlPoints() const {
 std::vector<std::shared_ptr<Element> > * ShapeModel::get_elements() {
 	return &this -> elements;
 }
+
+
+void ShapeModel::add_element(std::shared_ptr<Element> el) {
+	this -> elements.push_back(el);
+}
+
+
+void ShapeModel::add_control_point(std::shared_ptr<ControlPoint> vertex) {
+	this -> control_points.push_back(vertex);
+}
+

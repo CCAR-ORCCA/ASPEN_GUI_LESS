@@ -87,21 +87,6 @@ public:
 	void check_normals_consistency(double tol = 1e-3) const;
 
 
-	/**
-	Augment the internal container storing facets with a new (and not already inserted)
-	one
-	@param facet pointer to the new facet to be inserted
-	*/
-	void add_facet(std::shared_ptr<Facet> facet);
-
-	/**
-	Augment the internal container storing vertices with a new (and not already inserted)
-	one
-	@param vertex pointer to the new vertex to be inserted
-	*/
-	void add_vertex(std::shared_ptr<ControlPoint> vertex);
-
-	
 
 
 	/**

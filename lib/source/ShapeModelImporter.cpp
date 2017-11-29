@@ -6,7 +6,125 @@ ShapeModelImporter::ShapeModelImporter(std::string filename, double scaling_fact
 	this -> as_is = as_is;
 }
 
-void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
+
+
+void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model) const {
+
+	std::ifstream ifs(this -> filename);
+
+	if (!ifs.is_open()) {
+		std::cout << "There was a problem opening the input file!\n";
+		throw;
+	}
+
+	std::string line;
+	std::vector<arma::vec> control_point_coords;
+	std::vector<std::vector<unsigned int> > shape_patch_indices;
+
+	std::cout << " Reading " << this -> filename << std::endl;
+	int degree = -1;
+
+	while (std::getline(ifs, line)) {
+
+		std::stringstream linestream(line);
+
+		if (degree < 0){
+			linestream >> degree;
+			continue;
+		}
+
+		char type;
+		linestream >> type;
+
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+			continue;
+		}
+
+		else if (type == 'v') {
+			double vx, vy, vz;
+			linestream >> vx >> vy >> vz;
+			arma::vec vertex = {vx, vy, vz};
+			control_point_coords.push_back(this -> scaling_factor * vertex);
+
+		}
+
+		else if (type == 'f') {
+			std::vector<unsigned int> patch_indices;
+			
+			for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+				unsigned int v;
+				linestream >> v;
+				patch_indices.push_back(v);
+			}
+
+			shape_patch_indices.push_back(patch_indices);
+
+		}
+
+		else {
+			throw(std::runtime_error(" unrecognized type: "  + std::to_string(type)));
+		}
+
+	}
+
+	std::cout << " Number of control points: " << control_point_coords.size() << std::endl;
+	std::cout << " Number of patches: " << shape_patch_indices.size() << std::endl;
+
+
+	// Vertices are added to the shape model
+	std::vector<std::shared_ptr<ControlPoint>> vertex_index_to_ptr;
+
+	std::cout << std::endl << " Constructing control points " << std::endl  ;
+	boost::progress_display progress_vertices(control_point_coords.size()) ;
+
+	for (unsigned int vertex_index = 0; vertex_index < control_point_coords.size(); ++vertex_index) {
+
+		std::shared_ptr<ControlPoint> vertex = std::make_shared<ControlPoint>(ControlPoint());
+		vertex -> set_coordinates(control_point_coords[vertex_index]);
+
+		vertex_index_to_ptr.push_back(vertex);
+		shape_model -> add_control_point(vertex);
+		++progress_vertices;
+
+	}
+
+	std::cout << std::endl << " Constructing patches " << std::endl ;
+
+	boost::progress_display progress_facets(shape_patch_indices.size()) ;
+
+	// Patches are added to the shape model
+	for (unsigned int patch_index = 0; patch_index < shape_patch_indices.size(); ++patch_index) {
+
+		std::vector<std::shared_ptr<ControlPoint>> vertices;
+		
+		// The vertices stored in this patch are pulled.
+		for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+			vertices.push_back(vertex_index_to_ptr[shape_patch_indices[patch_index][i]]);
+		}
+
+		std::shared_ptr<Bezier> patch = std::make_shared<Bezier>(Bezier(vertices));
+
+		for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+			vertices[i] -> add_ownership(patch.get());
+		}
+
+
+		shape_model -> add_element(patch);
+		++progress_facets;
+	}
+
+	
+}
+
+
+
+
+
+
+
+
+
+void ShapeModelImporter::load_obj_shape_model(ShapeModelTri * shape_model) const {
 
 	std::ifstream ifs(this -> filename);
 
@@ -75,7 +193,7 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 		vertex -> set_coordinates(vertices[vertex_index]);
 
 		vertex_index_to_ptr.push_back(vertex);
-		shape_model -> add_vertex(vertex);
+		shape_model -> add_control_point(vertex);
 		++progress_vertices;
 
 	}
@@ -104,7 +222,7 @@ void ShapeModelImporter::load_shape_model(ShapeModelTri * shape_model) const {
 		v2 -> add_ownership(facet.get());
 
 
-		shape_model -> add_facet(facet);
+		shape_model -> add_element(facet);
 		++progress_facets;
 	}
 

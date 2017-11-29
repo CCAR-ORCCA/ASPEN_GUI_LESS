@@ -29,7 +29,6 @@ bool ShapeFitter::fit_shape_batch(double J,const arma::mat & DS, const arma::vec
 			continue;
 		}
 
-
 		seen_facets.insert(footpoint.facet);
 		measurement_pairs.push_back(std::make_pair(Ptilde,footpoint));
 

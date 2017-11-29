@@ -11,4 +11,5 @@ plt.hist(simulated, 50, normed=1, facecolor='red', alpha=0.5,label = "Predicted"
 plt.ylabel("Occurences")
 plt.xlabel("Range distribution")
 plt.legend(loc = "best")
-plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/status_report/Figures")
+# plt.show()
+plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/status_report/Figures/mc_results.pdf")
