@@ -8,7 +8,7 @@
 #include <Constants.hpp>
 #include <DynamicAnalyses.hpp>
 #include <PC.hpp>
-#include <ShapeFitter.hpp>
+#include <ShapeFitterTri.hpp>
 
 #include <limits>
 #include <chrono>

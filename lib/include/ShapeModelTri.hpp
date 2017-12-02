@@ -16,7 +16,6 @@
 #include "Facet.hpp"
 #include "ControlPoint.hpp"
 #include "KDTree_shape.hpp"
-#include "KDTree_control_points.hpp"
 
 
  class KDTree_shape;
@@ -49,14 +48,6 @@ public:
 	void construct_kd_tree_shape(bool verbose = false);
 
 	/**
-	Constructs the KDTree holding the facets of the shape model for closest facet detection
-	@param verbose true will save the bounding boxes to a file and display
-	kd tree construction details
-	*/
-	void construct_kd_tree_control_points(bool verbose = false);
-
-
-	/**
 	Determines whether the provided point lies inside or outside the shape model.
 	The shape model must have a closed surface for this method to be trusted
 	@param point coordinates of the point to be tested expressed in the shape model frame
@@ -72,12 +63,6 @@ public:
 	@return pointer to KDtree_shape
 	*/
 	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
-
-	/**
-	Returns pointer to KDTree_control_points member.
-	@return pointer to KDTree_control_points
-	*/
-	std::shared_ptr<KDTree_control_points> get_KDTree_control_points() const ;
 
 	/**
 	Checks that the normals were consistently oriented. If not,
@@ -261,8 +246,7 @@ protected:
 
 	arma::mat inertia;
 
-	std::shared_ptr<KDTree_shape> kd_tree = nullptr;
-	std::shared_ptr<KDTree_control_points> kd_tree_facet = nullptr;
+	std::shared_ptr<KDTree_shape> kdt_facet = nullptr;
 
 
 };

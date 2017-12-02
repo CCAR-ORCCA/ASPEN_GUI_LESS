@@ -150,21 +150,21 @@ PC::PC(arma::mat & dcm,
 
 
 unsigned int PC::get_size() const {
-	return this -> kd_tree -> points_normals.size();
+	return this -> kdt_points  -> points_normals.size();
 }
 
 arma::vec PC::get_point_coordinates(unsigned int index) const {
-	return this -> kd_tree -> points_normals[index] -> get_point();
+	return this -> kdt_points  -> points_normals[index] -> get_point();
 }
 
 std::shared_ptr<PointNormal> PC::get_point(unsigned int index) const {
-	return this -> kd_tree -> points_normals[index];
+	return this -> kdt_points  -> points_normals[index];
 }
 
 
 
 arma::vec PC::get_point_normal(unsigned int index) const {
-	return this -> kd_tree -> points_normals[index] -> get_normal();
+	return this -> kdt_points  -> points_normals[index] -> get_normal();
 }
 
 
@@ -177,8 +177,8 @@ void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_
 
 	// The KD Tree is now constructed
 
-	this -> kd_tree = std::make_shared<KDTree_pc>(KDTree_pc());
-	this -> kd_tree = this -> kd_tree -> build(points_normals, 0, false);
+	this -> kdt_points  = std::make_shared<KDTree_pc>(KDTree_pc());
+	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0, false);
 }
 
 std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const {
@@ -186,8 +186,8 @@ std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const
 	double distance = std::numeric_limits<double>::infinity();
 	std::shared_ptr<PointNormal> closest_point;
 
-	this -> kd_tree -> closest_point_search(test_point,
-		this -> kd_tree,
+	this -> kdt_points  -> closest_point_search(test_point,
+		this -> kdt_points,
 		closest_point,
 		distance);
 
@@ -205,8 +205,8 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 		double distance = std::numeric_limits<double>::infinity();
 		std::shared_ptr<PointNormal> closest_point;
 
-		this -> kd_tree -> closest_point_search(test_point,
-			this -> kd_tree,
+		this -> kdt_points  -> closest_point_search(test_point,
+			this -> kdt_points,
 			closest_point,
 			distance,
 			closest_points);
@@ -275,6 +275,19 @@ void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
 
 }
 
+void PC::save(arma::mat & points,std::string path) {
+
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int e = 0;e < points.n_cols;++e) {
+		shape_file << "v " << points(0,e) << " " << points(1,e) << " " << points(2,e) << std::endl;
+	}
+
+}
+
+
 
 
 
@@ -282,11 +295,11 @@ std::shared_ptr<PointNormal> PC::get_closest_point_index_brute_force(arma::vec &
 
 	double distance = std::numeric_limits<double>::infinity();
 
-	unsigned int pc_size = this -> kd_tree -> get_size();
+	unsigned int pc_size = this -> kdt_points  -> get_size();
 	int index_closest = 0;
 
 	for (unsigned int i = 0 ; i < pc_size ; ++i) {
-		double new_distance = arma::norm(test_point - this -> kd_tree ->
+		double new_distance = arma::norm(test_point - this -> kdt_points  ->
 			get_points_normals() -> at(i) -> get_point());
 
 		if (new_distance < distance) {
@@ -296,12 +309,12 @@ std::shared_ptr<PointNormal> PC::get_closest_point_index_brute_force(arma::vec &
 
 	}
 
-	return this -> kd_tree -> get_points_normals() -> at(index_closest);
+	return this -> kdt_points  -> get_points_normals() -> at(index_closest);
 }
 
 std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(arma::vec & test_point, unsigned int N) const {
 
-	unsigned int pc_size = this -> kd_tree -> get_size();
+	unsigned int pc_size = this -> kdt_points  -> get_size();
 
 	if (N > pc_size) {
 		throw "Point cloud has fewer points than requested neighborhood size";
@@ -316,7 +329,7 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 
 	for (unsigned int i = 0 ; i < pc_size ; ++i) {
 
-		double new_distance = arma::norm(test_point - this -> kd_tree ->
+		double new_distance = arma::norm(test_point - this -> kdt_points  ->
 			get_points_normals() -> at(i) -> get_point());
 
 		if (new_distance > std::prev(distance_map.end()) -> first) {
@@ -338,7 +351,7 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 	std::vector<std::shared_ptr<PointNormal> > closest_points;
 
 	for (auto it = distance_map.begin(); it != distance_map.end(); ++it ) {
-		closest_points.push_back(this -> kd_tree -> get_points_normals() -> at(it -> second));
+		closest_points.push_back(this -> kdt_points  -> get_points_normals() -> at(it -> second));
 	}
 
 	return closest_points;
@@ -348,9 +361,9 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 void PC::construct_normals(arma::vec & los_dir) {
 
 	#pragma omp parallel for if (USE_OMP_PC)
-	for (unsigned int i = 0; i < this -> kd_tree -> get_points_normals() -> size(); ++i) {
+	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
-		std::shared_ptr<PointNormal> pn = this -> kd_tree -> get_points_normals() -> at(i);
+		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
 
 		// Get the N nearest neighbors to this point
 		unsigned int N = 5;
@@ -373,10 +386,10 @@ void PC::construct_normals(arma::vec & los_dir) {
 
 		// The normal is flipped to make sure it is facing the los
 		if (arma::dot(n, los_dir) < 0) {
-			this -> kd_tree -> get_points_normals() -> at(i) -> set_normal(n);
+			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(n);
 		}
 		else {
-			this -> kd_tree -> get_points_normals() -> at(i) -> set_normal(-n);
+			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(-n);
 		}
 
 	}
@@ -389,17 +402,17 @@ arma::vec PC::get_center() const{
 	double c_y = 0;
 	double c_z = 0;
 
-	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	// #pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_PC)
 	arma::vec C = arma::zeros<arma::vec>(3);
 	for (unsigned int i = 0; i < size; ++i) {
 
-		c_x += this -> kd_tree -> get_points_normals() -> at(i) -> get_point()(0) / size;
-		c_y += this -> kd_tree -> get_points_normals() -> at(i) -> get_point()(1) / size;
-		c_z += this -> kd_tree -> get_points_normals() -> at(i) -> get_point()(2) / size;
+		c_x += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(0) / size;
+		c_y += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(1) / size;
+		c_z += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(2) / size;
 
-		C += this -> kd_tree -> get_points_normals() -> at(i) -> get_point()/ size;
+		C += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()/ size;
 	}
 	arma::vec center = {c_x,c_y,c_z};
 	assert(arma::norm(center - C) == 0);
@@ -412,7 +425,7 @@ arma::vec PC::get_center() const{
 arma::vec PC::get_bbox_center() const{
 
 	
-	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	arma::vec bbox_max = arma::zeros<arma::vec>(3);
 	arma::vec bbox_min = arma::zeros<arma::vec>(3);
@@ -421,8 +434,8 @@ arma::vec PC::get_bbox_center() const{
 	// #pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
 	for (unsigned int i = 0; i < size; ++i) {
 
-		bbox_max = arma::max(bbox_max,this -> kd_tree -> get_points_normals() -> at(i) -> get_point());
-		bbox_min = arma::min(bbox_min,this -> kd_tree -> get_points_normals() -> at(i) -> get_point());
+		bbox_max = arma::max(bbox_max,this -> kdt_points  -> get_points_normals() -> at(i) -> get_point());
+		bbox_min = arma::min(bbox_min,this -> kdt_points  -> get_points_normals() -> at(i) -> get_point());
 
 	}
 
@@ -434,7 +447,7 @@ arma::vec PC::get_bbox_center() const{
 
 double PC::get_bbox_diagonal() const{
 
-	unsigned int size = this -> kd_tree -> get_points_normals() -> size();
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	arma::vec bbox_max = arma::zeros<arma::vec>(3);
 	arma::vec bbox_min = arma::zeros<arma::vec>(3);
@@ -443,8 +456,8 @@ double PC::get_bbox_diagonal() const{
 	// #pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
 	for (unsigned int i = 0; i < size; ++i) {
 
-		bbox_max = arma::max(bbox_max,this -> kd_tree -> get_points_normals() -> at(i)  -> get_point());
-		bbox_min = arma::min(bbox_min,this -> kd_tree -> get_points_normals() -> at(i)  -> get_point());
+		bbox_max = arma::max(bbox_max,this -> kdt_points  -> get_points_normals() -> at(i)  -> get_point());
+		bbox_min = arma::min(bbox_min,this -> kdt_points  -> get_points_normals() -> at(i)  -> get_point());
 
 	}
 

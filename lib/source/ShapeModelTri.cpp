@@ -29,18 +29,15 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
 
 bool ShapeModelTri::ray_trace(Ray * ray){
-	bool hit = this -> kd_tree -> hit(this -> get_KDTree_shape().get(),ray);
+	bool hit = this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
 	return hit;
 }
 
 
 std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
-	return this -> kd_tree;
+	return this -> kdt_facet;
 }
 
-std::shared_ptr<KDTree_control_points> ShapeModelTri::get_KDTree_control_points() const {
-	return this -> kd_tree_facet;
-}
 
 
 void ShapeModelTri::construct_kd_tree_shape(bool verbose) {
@@ -48,8 +45,8 @@ void ShapeModelTri::construct_kd_tree_shape(bool verbose) {
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	this -> kd_tree = std::make_shared<KDTree_shape>(KDTree_shape());
-	this -> kd_tree = this -> kd_tree -> build(this -> elements, 0, verbose);
+	this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
+	this -> kdt_facet = this -> kdt_facet -> build(this -> elements, 0, verbose);
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
@@ -59,21 +56,6 @@ void ShapeModelTri::construct_kd_tree_shape(bool verbose) {
 
 }
 
-void ShapeModelTri::construct_kd_tree_control_points(bool verbose) {
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-
-	this -> kd_tree_facet = std::make_shared<KDTree_control_points>(KDTree_control_points());
-	this -> kd_tree_facet = this -> kd_tree_facet -> build(this -> control_points, 0, verbose);
-
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-
-
-	std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
-
-}
 
 
 

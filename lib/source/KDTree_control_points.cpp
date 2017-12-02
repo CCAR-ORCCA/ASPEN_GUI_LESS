@@ -28,9 +28,9 @@ void KDTree_control_points::set_axis(unsigned int axis) {
 }
 
 void KDTree_control_points::closest_point_search(const arma::vec & test_point,
-                                     std::shared_ptr<KDTree_control_points> node,
-                                     std::shared_ptr<ControlPoint> & best_guess,
-                                     double & distance) {
+	std::shared_ptr<KDTree_control_points> node,
+	std::shared_ptr<ControlPoint> & best_guess,
+	double & distance) {
 
 
 
@@ -64,16 +64,16 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance);
+					node -> left,
+					best_guess,
+					distance);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance);
+					node -> right,
+					best_guess,
+					distance);
 			}
 
 		}
@@ -82,16 +82,16 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance);
+					node -> right,
+					best_guess,
+					distance);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance);
+					node -> left,
+					best_guess,
+					distance);
 			}
 
 		}
@@ -103,10 +103,10 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 
 void KDTree_control_points::closest_point_search(const arma::vec & test_point,
-                                     std::shared_ptr<KDTree_control_points> node,
-                                     std::shared_ptr<ControlPoint> & best_guess,
-                                     double & distance,
-                                     std::vector<std::shared_ptr<ControlPoint> > & closest_points) {
+	std::shared_ptr<KDTree_control_points> node,
+	std::shared_ptr<ControlPoint> & best_guess,
+	double & distance,
+	std::vector<std::shared_ptr<ControlPoint> > & closest_points) {
 
 
 
@@ -140,18 +140,18 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> left,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> right,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 		}
@@ -160,18 +160,18 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> right,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> left,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 		}
@@ -181,10 +181,7 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 }
 
-
-
 std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth, bool verbose) {
-
 
 	// Creating the node
 	std::shared_ptr<KDTree_control_points> node = std::make_shared<KDTree_control_points>(KDTree_control_points());
@@ -192,6 +189,10 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	node -> left = nullptr;
 	node -> right = nullptr;
 	node -> set_depth(depth);
+
+	if (verbose) {
+		std::cout << "Points in node: " << control_points.size() <<  std::endl;
+	}
 
 	if (control_points.size() == 0) {
 		if (verbose) {
@@ -202,7 +203,7 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	}
 
 
-	// If the node only contains one triangle,
+	// If the node only contains one point,
 	// there's no point in subdividing it more
 	if (control_points.size() == 1) {
 
@@ -227,7 +228,6 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	arma::vec min_bounds = start_point;
 	arma::vec max_bounds = start_point;
 
-
 	// Could multithread here
 	for (unsigned int i = 0; i < control_points.size(); ++i) {
 
@@ -239,8 +239,20 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 		// The midpoint of all the facets is found
 		midpoint += (control_points[i] -> get_coordinates()/ control_points.size());
 	}
-
 	arma::vec bounding_box_lengths = max_bounds - min_bounds;
+
+	if (verbose){
+		std::cout << "Midpoint: " << midpoint.t() << std::endl;
+		std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
+	}
+
+
+	if (arma::norm(bounding_box_lengths) == 0) {
+		if (verbose) {
+			std::cout << "Cluttered node" << std::endl;
+		}
+		return node;
+	}
 
 	// Facets to be assigned to the left and right nodes
 	std::vector < std::shared_ptr<ControlPoint> > left_points;

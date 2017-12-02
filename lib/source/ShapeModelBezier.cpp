@@ -30,18 +30,14 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 	}
 
-}
+	this -> construct_kd_tree_control_points();
 
+}
 
 ShapeModelBezier::ShapeModelBezier(std::string ref_frame_name,
 		FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
 }
-
-
-
-
-
 
 ShapeModelBezier::ShapeModelBezier(Bezier patch){
 
@@ -73,22 +69,14 @@ bool ShapeModelBezier::ray_trace(Ray * ray){
 void ShapeModelBezier::elevate_degree(){
 
 	// All patches are elevated
-	// auto start = std::chrono::system_clock::now();
-
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
-
-
-
 		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_degree();
 	}
-	// auto end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end-start;
-	// std::cout << elapsed_seconds.count() << std::endl;
+	this -> construct_kd_tree_control_points();
+	
 	
 
 }
-
-
 
 void ShapeModelBezier::save(std::string path) {
 	// An inverse map going from vertex pointer to global indices is created
@@ -172,6 +160,13 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 	std::vector<arma::vec> vertices;
 	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
 
+
+	
+
+
+
+
+
 	// The global indices of the control points are found. 
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
@@ -182,7 +177,7 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
 				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
 				
-				auto local_indices = patch -> get_local_indices(index);
+				auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
 				double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
 				double v =  double(std::get<1>(local_indices)) / patch -> get_degree();
 

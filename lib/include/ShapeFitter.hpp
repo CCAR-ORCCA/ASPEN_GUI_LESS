@@ -1,12 +1,10 @@
-#ifndef HEADER_SHAPEFITTER
-#define HEADER_SHAPEFITTER
-
+#ifndef HEADER_ShapeFitter
+#define HEADER_ShapeFitter
 
 #include "ShapeModelTri.hpp"
 #include "PC.hpp"
 #include <assert.h>
 #include <map>
-
 
 
 struct Footpoint{
@@ -15,54 +13,36 @@ struct Footpoint{
 	double u;
 	double v;
 	arma::vec n;
-	Element * facet;
-
+	Element * element;
 };
 
 class ShapeFitter{
 	
 public:
 
-	ShapeFitter(ShapeModelTri * shape_model,PC * pc);
+	ShapeFitter(PC * pc) {
+		this -> pc = pc;
+	}
 
-	bool fit_shape_batch(double J,
+	virtual bool fit_shape_batch(unsigned int N_iter,
+		double J,
 		const arma::mat & DS, 
-		const arma::vec & X_DS );
+		const arma::vec & X_DS ) = 0;
 
-	bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS);
+	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS) = 0;
 
 
 protected:
 
-	ShapeModelTri * shape_model;
 	PC * pc;
 
-	void apply_constraint_to_facet(const arma::vec & C0, 
-		const arma::vec & C1,
-		const arma::vec & C2,
-		const arma::vec & n, 
-		double u, 
-		double v,
-		arma::sp_mat & info_mat,
-		arma::vec & normal_mat,
-		const arma::sp_mat & Mi,
-		double W);
+	virtual void get_barycentric_coordinates(const arma::vec & Pbar,double & u, double & v, Facet * facet) const = 0;
 
-	void freeze_facet(Facet * facet, 
-		std::map<std::shared_ptr<ControlPoint> , unsigned int> & seen_vertices,
-		arma::sp_mat & info_mat,
-		arma::vec & normal_mat,
-		double W);
+	virtual double compute_residuals(std::vector<std::pair<arma::vec,Footpoint > > & measurement_pairs) const = 0;
 
-	void get_barycentric_coordinates(const arma::vec & Pbar,double & u, double & v, Facet * facet);
+	virtual void find_footpoint(Footpoint & footpoint) const  = 0;
 
-	double compute_residuals(std::vector<std::pair<arma::vec,Footpoint > > & measurement_pairs) const;
-
-	void find_footpoint(const arma::vec & Ptilde, 
-	Footpoint & footpoint);
-
-	void save(std::string path, arma::mat & Pbar_mat) const ;
-
+	virtual void save(std::string path, arma::mat & Pbar_mat) const  = 0;
 
 };
 

@@ -16,17 +16,31 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 	this -> update();
 
+	this -> info_mat = arma::zeros<arma::mat>(3 * control_points.size(),3 * control_points.size());
+
 
 }
-
 
 std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j){
 
 	return this -> control_points[this -> rev_table[std::make_tuple(i,j,this -> n - i - j)]];
 }
 
-std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(unsigned int local_index){
-	return this -> forw_table[local_index];
+
+arma::mat * Bezier::get_info_mat(){
+	return &this -> info_mat;
+}
+
+std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point){
+	
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		if (this -> control_points[i] == point){
+			return this -> forw_table[i];
+		}
+	}
+
+	throw(std::runtime_error("The provided point should belong to this patch"));
+	
 }
 
 void Bezier::construct_index_tables(){
@@ -78,8 +92,6 @@ void Bezier::elevate_degree(){
 	new_points_to_add_index.erase(i_00n_after_elevation);
 
 
-
-
 	for (auto neighbor =  this -> new_points.begin(); neighbor != this -> new_points.end(); ++ neighbor){
 
 		for (unsigned int k = 0; k < neighbor -> second.size(); ++ k){
@@ -87,7 +99,7 @@ void Bezier::elevate_degree(){
 			// The local index of the invariant control point is found
 			NewPoint new_point = neighbor -> second[k];
 			std::shared_ptr<ControlPoint> invariant = new_point.end_point;
-			
+
 			auto local_index_endpoint_neighbor = new_point.indices_endpoint;
 			auto local_index_newpoint_neighbor = new_point.indices_newpoint;
 
@@ -108,7 +120,7 @@ void Bezier::elevate_degree(){
 			}
 
 			local_index_endpoint_current = forw_post_el[global_index];
-			
+
 
 			// Now, the local indices of the inserted point are found
 
@@ -125,14 +137,14 @@ void Bezier::elevate_degree(){
 			};
 
 			int distance_to_endpoint = arma::max(local_index_endpoint_neighbor_arma - local_index_newpoint_neighbor_arma);
-			
+
 			if (distance_to_endpoint <= 0){
 				throw(std::runtime_error("Negative or zero distance to endpoint for one new point: " + std::to_string(distance_to_endpoint)));
 			}
-			
+
 
 			if (std::get<0>(local_index_endpoint_current) != 0){
-				
+
 				// On the xy0 edge
 				local_index_newpoint_current = std::make_tuple(std::get<0>(local_index_endpoint_current) - distance_to_endpoint,distance_to_endpoint,0);
 
@@ -163,9 +175,6 @@ void Bezier::elevate_degree(){
 	}
 
 
-
-
-
 	// The new coordinates are calculated
 	for (auto iter = new_points_to_add_index.begin(); iter != new_points_to_add_index.end(); ++iter){
 
@@ -188,6 +197,10 @@ void Bezier::elevate_degree(){
 		std::shared_ptr<ControlPoint> new_control_point = std::make_shared<ControlPoint>(ControlPoint());
 		new_control_point -> set_coordinates(new_C);
 
+		new_control_point -> add_ownership(this);
+
+
+
 		sorted_control_points[i] = new_control_point;
 
 
@@ -199,10 +212,11 @@ void Bezier::elevate_degree(){
 		// The other facet can be determined by finding which side the 
 		// point is on, and by using the fact that the endpoints are invariant!
 		std::set<Element *> shared_elements;
-		
 
-		unsigned int i_end_point_after;
-		
+
+
+		int i_end_point_after;
+
 		if (std::get<0>(forw_post_el[i]) == 0){
 			shared_elements = sorted_control_points[i_0n0_after_elevation] -> common_facets(sorted_control_points[i_00n_after_elevation]);
 			shared_elements.erase(this);
@@ -230,40 +244,37 @@ void Bezier::elevate_degree(){
 		if (shared_elements.size() == 1){
 
 			std::shared_ptr<ControlPoint> end_point = sorted_control_points[i_end_point_after];
-			
+
 			auto indices_endpoint = forw_post_el[i_end_point_after];
 			auto indices_newpoint = forw_post_el[i];
 
 			NewPoint new_point(new_control_point,end_point,indices_newpoint,indices_endpoint);
+
+			new_control_point -> add_ownership(*shared_elements.begin());
+
 			dynamic_cast<Bezier *>(*shared_elements.begin()) -> add_point_from_neighbor(this,new_point);
 		}
 
 	}
 
-
-
 	// The control points are brought together in an array
-	for (unsigned int i = 0; i < sorted_control_points.size(); ++i){
+	for (
+		int i = 0; i < sorted_control_points.size(); ++i){
 		new_control_points.push_back(sorted_control_points[i]);
-	}
-
-
-	
-
-	this -> n = this -> n + 1;
-	this -> control_points = new_control_points;
-	this -> construct_index_tables();
-	// this -> update();
-
-	this -> new_points.clear();
-	
-
 }
 
 
+this -> n = this -> n + 1;
+this -> control_points = new_control_points;
+this -> construct_index_tables();
+	// this -> update();
+
+this -> new_points.clear();
+this -> info_mat = arma::zeros<arma::mat>(3 * this -> control_points.size(),3 * this -> control_points.size());
 
 
 
+}
 
 
 unsigned int Bezier::get_degree() const{
@@ -281,8 +292,9 @@ arma::vec Bezier::evaluate(const double u, const double v) const{
 
 	arma::vec P = arma::zeros<arma::vec>(3);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		unsigned int i = std::get<0>(this -> forw_table[l]);
-		unsigned int j = std::get<1>(this -> forw_table[l]);
+		
+		int i = std::get<0>(this -> forw_table[l]);
+		int j = std::get<1>(this -> forw_table[l]);
 
 		P += this -> bernstein(u,v,i,j,this -> n) * this -> control_points[l] -> get_coordinates();
 	}
@@ -297,19 +309,20 @@ arma::vec Bezier::get_normal(const double u, const double v) {
 
 
 
-
-
-
-
 double Bezier::bernstein(
 	const double u, 
 	const double v,
-	const unsigned int i,
-	const unsigned int j,
-	const unsigned int n) {
+	const int i,
+	const int j,
+	const int n) {
 
 	if (i < 0 || i > n || j < 0 || j > n || i + j > n){
 		return 0;
+	}
+
+	if (n == 0){
+		return 1;
+
 	}
 
 	double coef =  boost::math::factorial<double>(n) / (
@@ -325,15 +338,15 @@ double Bezier::bernstein(
 arma::rowvec Bezier::partial_bernstein( 
 	const double u, 
 	const double v,
-	const unsigned int i ,  
-	const unsigned int j, 
-	const unsigned int n) {
+	const int i ,  
+	const int j, 
+	const int n) {
 
 	arma::rowvec partials(2);
 
+
 	partials(0) = n *( bernstein(u, v,i - 1,j,n - 1) - bernstein(u, v,i,j,n - 1));
 	partials(1) = n *( bernstein(u, v,i,j - 1,n - 1) - bernstein(u, v,i,j,n - 1));
-
 
 	return partials;
 }
@@ -342,11 +355,14 @@ arma::rowvec Bezier::partial_bernstein(
 arma::mat Bezier::partial_bernstein_du( 
 	const double u, 
 	const double v,
-	const unsigned int i ,  
-	const unsigned int j, 
-	const unsigned int n) {
+	const int i ,  
+	const int j, 
+	const int n) {
 
 	arma::mat partials = n * ( partial_bernstein(u, v,i - 1,j,n - 1) - partial_bernstein(u, v,i,j,n - 1));
+
+
+
 
 	return partials;
 }
@@ -354,9 +370,9 @@ arma::mat Bezier::partial_bernstein_du(
 arma::mat Bezier::partial_bernstein_dv( 
 	const double u, 
 	const double v,
-	const unsigned int i ,  
-	const unsigned int j, 
-	const unsigned int n) {
+	const int i ,  
+	const int j, 
+	const int n) {
 
 	arma::mat partials = n * ( partial_bernstein(u, v,i,j-1,n - 1) - partial_bernstein(u, v,i,j,n - 1));
 
@@ -369,8 +385,10 @@ arma::mat Bezier::partial_bezier_du(
 
 	arma::mat partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		unsigned int i = std::get<0>(this -> forw_table[l]);
-		unsigned int j = std::get<1>(this -> forw_table[l]);
+		
+		int i = std::get<0>(this -> forw_table[l]);
+		
+		int j = std::get<1>(this -> forw_table[l]);
 
 		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
 	}
@@ -384,8 +402,10 @@ arma::mat Bezier::partial_bezier_dv(
 
 	arma::mat partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		unsigned int i = std::get<0>(this -> forw_table[l]);
-		unsigned int j = std::get<1>(this -> forw_table[l]);
+		
+		int i = std::get<0>(this -> forw_table[l]);
+		
+		int j = std::get<1>(this -> forw_table[l]);
 
 		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
 	}
@@ -402,8 +422,10 @@ arma::mat Bezier::partial_bezier(
 
 	arma::mat partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		unsigned int i = std::get<0>(this -> forw_table[l]);
-		unsigned int j = std::get<1>(this -> forw_table[l]);
+		
+		int i = std::get<0>(this -> forw_table[l]);
+		
+		int j = std::get<1>(this -> forw_table[l]);
 
 		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
 	}
@@ -535,9 +557,10 @@ void Bezier::compute_area(){
 	arma::vec v = {1./3.,1./5.,3./5,1./5};
 
 	this -> area = 0;
-	for (unsigned int i = 0; i < weights.n_rows; ++i){
+	for (
+		int i = 0; i < weights.n_rows; ++i){
 		this -> area += weights(i) * g(u(i),v(i));
-	}
+}
 
 
 
@@ -582,7 +605,8 @@ unsigned int Bezier::combinations(unsigned int k, unsigned int n){
 
 	// unsigned int v = n--;
 
-	// for (unsigned int i = 2; i < k + 1; ++i, --n){
+	// for (
+	// int i = 2; i < k + 1; ++i, --n){
 	// 	v = v * n / i;
 	// }
 
@@ -606,7 +630,8 @@ std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> Be
 	for (int i = n; i > -1 ; -- i){
 
 		for (unsigned int k = 0 ; k < n + 1 - i; ++k){
-			unsigned int j = n - i - k;
+			
+			int j = n - i - k;
 			auto indices = std::make_tuple(i,j,k);
 			map[indices] = l;
 
@@ -628,6 +653,7 @@ std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > Bezier::forwa
 		for (unsigned int k = 0 ; k < n + 1 - i; ++k){
 			int j = n - i - k;
 			auto indices = std::make_tuple(i,j,k);
+
 			table.push_back(indices);
 		}
 	}
@@ -636,92 +662,6 @@ std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > Bezier::forwa
 }
 
 
-
-
-
-
-void Bezier::save(std::string path) {
-
-	// An inverse map going from vertex pointer to global indices is created
-
-	// Note that the actual vertices on the shape model will not be be 
-	// the control points, but the points lying on the bezier patch
- 	// they support
-
-	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
-	std::vector<arma::vec> vertices;
-	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
-
-	
-
-	for (unsigned int index = 0; index < this -> get_control_points() -> size(); ++index){
-
-		if (pointer_to_global_indices.find(this -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
-			pointer_to_global_indices[this -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
-
-			auto local_indices = this -> get_local_indices(index);
-			double u =  double(std::get<0>(local_indices)) / this -> get_degree();
-			double v =  double(std::get<1>(local_indices)) / this -> get_degree();
-
-			arma::vec surface_point = this -> evaluate(u,v);
-			vertices.push_back(surface_point);
-		}
-
-	}
-
-
-	// The facets are created
-
-	for (unsigned int l = 0; l < this -> get_degree(); ++l){
-
-		for (unsigned int t = 0; t < l + 1; ++t){
-
-			if (t <= l){
-
-				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_degree() - l,l - t);
-				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_degree() - l - 1,l - t + 1);
-				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_degree() - l - 1,l-t);
-
-				facets.push_back(std::make_tuple(v0,v1,v2));
-			}
-
-			if (t > 0 ){
-
-				std::shared_ptr<ControlPoint> v0 = this -> get_control_point(this -> get_degree() - l,l-t);
-				std::shared_ptr<ControlPoint> v1 = this -> get_control_point(this -> get_degree() - l,l - t + 1 );
-				std::shared_ptr<ControlPoint> v2 = this -> get_control_point(this -> get_degree() - l -1,l - t + 1);
-
-				facets.push_back(std::make_tuple(v0,v1,v2));
-			}
-
-		}
-
-	}
-	
-
-	// The coordinates are written to a file
-
-	std::ofstream shape_file;
-	shape_file.open(path);
-
-	for (unsigned int i = 0; i < vertices.size(); ++i){
-		shape_file << "v " << vertices[i](0) << " " << vertices[i](1) << " " << vertices[i](2) << "\n";
-	}
-
-	for (unsigned int i = 0; i < facets.size(); ++i){
-		unsigned int indices[3];
-		indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
-		indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
-		indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
-
-
-
-		shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";
-
-	}
-
-
-}
 
 
 

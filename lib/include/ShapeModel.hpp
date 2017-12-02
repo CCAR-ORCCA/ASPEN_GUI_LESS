@@ -11,6 +11,7 @@
 #include "OMP_flags.hpp"
 #include "FrameGraph.hpp"
 #include "ControlPoint.hpp"
+#include "KDTree_control_points.hpp"
 
 
 class Ray ;
@@ -99,6 +100,21 @@ public:
 	*/
 	unsigned int get_NControlPoints() const ;
 
+
+	/**
+	Constructs the KDTree holding the facets of the shape model for closest facet detection
+	@param verbose true will save the bounding boxes to a file and display
+	kd tree construction details
+	*/
+	void construct_kd_tree_control_points(bool verbose = false);
+
+	/**
+	Returns pointer to KDTree_control_points member.
+	@return pointer to KDTree_control_points
+	*/
+	std::shared_ptr<KDTree_control_points> get_KDTree_control_points() const ;
+
+
 	/**
 	Computes the surface area of the shape model
 	*/
@@ -127,6 +143,7 @@ protected:
 
 	std::vector<std::shared_ptr<Element  > > elements;
 	std::vector<std::shared_ptr< ControlPoint> >  control_points;
+	std::shared_ptr<KDTree_control_points> kdt_control_points = nullptr;
 
 
 	FrameGraph * frame_graph;

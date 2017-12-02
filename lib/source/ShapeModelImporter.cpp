@@ -113,6 +113,8 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 		++progress_facets;
 	}
 
+
+	shape_model -> construct_kd_tree_control_points();
 	
 }
 

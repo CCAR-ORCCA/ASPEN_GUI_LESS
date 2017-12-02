@@ -1,8 +1,8 @@
 #include "Bezier.hpp"
-#include "Facet.hpp"
-#include "PC.hpp"
 #include "ControlPoint.hpp"
 #include "Ray.hpp"
+#include "ShapeModelBezier.hpp"
+
 
 
 #include <chrono>
@@ -47,6 +47,10 @@ int main(){
 	vertices.push_back(v5);
 	
 	Bezier nominal_patch(vertices);
+	ShapeModelBezier dummy(nominal_patch);
+	dummy.save_to_obj("patch.obj");
+	dummy.save("patch.b");
+
 
 
 	// A 18 by 18 covariance is created
@@ -128,7 +132,11 @@ int main(){
 	nominal_patch.elevate_degree();
 	nominal_patch.elevate_degree();
 	nominal_patch.elevate_degree();
-	nominal_patch.save("patch.obj") ;
+
+	ShapeModelBezier dummy_elevated(nominal_patch);
+	dummy_elevated.save_to_obj("patch_elevated.obj") ;
+	dummy_elevated.save("patch_elevated.b") ;
+
 
 
 

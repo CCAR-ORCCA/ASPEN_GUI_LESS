@@ -166,9 +166,12 @@ public:
 	          bool save_normals = false,
 	          bool format_like_obj = true) const;
 
-
-
-
+	/**
+	Saves pc to file after applying a rigid transform
+	@param path save path
+	@param Points to save
+	*/
+	static void save(arma::mat & points,std::string path);
 
 
 protected:
@@ -176,7 +179,7 @@ protected:
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec & los);
 
-	std::shared_ptr<KDTree_pc> kd_tree;
+	std::shared_ptr<KDTree_pc> kdt_points;
 
 
 

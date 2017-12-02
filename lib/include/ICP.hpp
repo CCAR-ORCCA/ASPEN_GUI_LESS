@@ -3,7 +3,7 @@
 #include <armadillo>
 #include <memory>
 #include "PC.hpp"
-#include "ICPException.hpp"
+#include "CustomException.hpp"
 #include "OMP_flags.hpp"
 
 #pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\

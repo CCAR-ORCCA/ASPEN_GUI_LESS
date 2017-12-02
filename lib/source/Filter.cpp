@@ -525,7 +525,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 
 
-		ShapeFitter shape_fitter(this -> estimated_shape_model,pc);
+		ShapeFitterTri shape_fitter(this -> estimated_shape_model,pc);
 
 		for (unsigned int i = 0; i < N_iter ; ++ i){
 			std::cout << "Iteration " << i + 1 << "/" << N_iter << std::endl;
@@ -534,7 +534,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 
 
-			bool has_converged = shape_fitter.fit_shape_batch(J,DS,X_DS);
+			bool has_converged = shape_fitter.fit_shape_batch(1,J,DS,X_DS);
 			// bool has_converged = shape_fitter.fit_shape_KF(J,DS,X_DS);
 
 			if (has_converged){

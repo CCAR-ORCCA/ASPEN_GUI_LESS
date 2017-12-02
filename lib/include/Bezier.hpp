@@ -121,10 +121,14 @@ public:
 
 	/**
 	Returns the tuple of local indices (i,j,k) of a control point within a bezier patch
-	given its local index
-	@param local_index index comprised between 0 and (n + 1)(n + 2)/ - 1, where n is the patch degree
+	@param point pointer to query point
+	@return local_indices (i,j,k) 
 	*/
-	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(unsigned int local_index);
+	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(std::shared_ptr<ControlPoint> point);
+
+
+
+	arma::mat * get_info_mat();
 
 
 	/**
@@ -159,10 +163,6 @@ public:
 		const arma::mat & P_CC);
 
 
-
-	// Saves the patch to a file
-	void save(std::string path) ;
-
 	// Returns the partial derivative d^2P/(dchi dv)
 	arma::mat partial_bezier_dv(
 		const double u,
@@ -174,7 +174,21 @@ public:
 		const double u,
 		const double v) ;
 
-
+	/**
+	Evaluates the Berstein polynomial
+	@param u first barycentric coordinate
+	@param v first barycentric coordinate
+	@param i first index
+	@param v second index
+	@param n polynomial order
+	@return evaluated bernstein polynomial
+	*/
+	static double bernstein(
+		const double u, 
+		const double v,
+		const int i,
+		const int j,
+		const int n) ;
 
 
 protected:
@@ -193,21 +207,7 @@ protected:
 	*/
 	double g(double u, double v) const;
 
-	/**
-	Evaluates the Berstein polynomial
-	@param u first barycentric coordinate
-	@param v first barycentric coordinate
-	@param i first index
-	@param v second index
-	@param n polynomial order
-	@return evaluated bernstein polynomial
-	*/
-	static double bernstein(
-		const double u, 
-		const double v,
-		const unsigned int i,
-		const unsigned int j,
-		const unsigned int n) ;
+
 
 	/**
 	Returns the partial derivative of the Bernstein polynomial B^n_{i,j,k} evaluated 
@@ -222,9 +222,9 @@ protected:
 	static arma::rowvec partial_bernstein(
 		const double u,
 		const double v,
-		const unsigned int i,
-		const unsigned int j,
-		const unsigned int n) ;
+		const int i,
+		const int j,
+		const int n) ;
 
 
 
@@ -261,17 +261,17 @@ protected:
 	arma::mat partial_bernstein_dv( 
 		const double u, 
 		const double v,
-		const unsigned int i ,  
-		const unsigned int j, 
-		const unsigned int n) ;
+		const int i ,  
+		const int j, 
+		const int n) ;
 
 
 	arma::mat partial_bernstein_du( 
 		const double u, 
 		const double v,
-		const unsigned int i ,  
-		const unsigned int j, 
-		const unsigned int n) ;
+		const int i ,  
+		const int j, 
+		const int n) ;
 
 
 	unsigned int n;
@@ -282,6 +282,10 @@ protected:
 
 
 	std::map< Element * , std::vector<NewPoint> > new_points;
+
+	arma::mat info_mat;
+
+
 
 
 };

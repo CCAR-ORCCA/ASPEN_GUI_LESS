@@ -10,11 +10,11 @@
 #include "FilterArguments.hpp"
 #include "PC.hpp"
 #include "ICP.hpp"
-#include "ICPException.hpp"
+#include "CustomException.hpp"
 #include "Args.hpp"
 #include "Wrappers.hpp"
 #include "ShapeModelImporter.hpp"
-#include "ShapeFitter.hpp"
+#include "ShapeFitterTri.hpp"
 
 #include "CGAL_interface.hpp"
 #include <RigidBodyKinematics.hpp>

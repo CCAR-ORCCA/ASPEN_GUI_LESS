@@ -18,6 +18,23 @@ std::string ShapeModel::get_ref_frame_name() const {
 }
 
 
+
+void ShapeModel::construct_kd_tree_control_points(bool verbose) {
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
+	this -> kdt_control_points = std::make_shared<KDTree_control_points>(KDTree_control_points());
+	this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0, verbose);
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+
+	std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+
+}
+
 void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
 
 	this -> ref_frame_name = ref_frame_name;
@@ -26,6 +43,10 @@ void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
 
 std::vector<std::shared_ptr< ControlPoint> > * ShapeModel::get_control_points() {
 	return &this -> control_points;
+}
+
+std::shared_ptr<KDTree_control_points> ShapeModel::get_KDTree_control_points() const {
+	return this -> kdt_control_points;
 }
 
 
