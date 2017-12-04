@@ -40,6 +40,9 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 }
 
 
+std::vector< std::shared_ptr<PointNormal> > PC::get_points() const{
+	return this -> kdt_points -> points_normals;
+}
 
 
 

@@ -128,9 +128,6 @@ public:
 
 
 
-	arma::mat * get_info_mat();
-
-
 	/**
 	Evaluates the partial derivative of Sum( B^n_{i,j,k}C_{ijk}) with respect to (u,v) evaluated 
 	at (u,v)
@@ -283,7 +280,6 @@ protected:
 
 	std::map< Element * , std::vector<NewPoint> > new_points;
 
-	arma::mat info_mat;
 
 
 

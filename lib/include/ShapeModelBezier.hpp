@@ -41,6 +41,9 @@ public:
 	*/
 	ShapeModelBezier(Bezier patch);
 
+	std::shared_ptr<arma::sp_mat> get_info_mat_ptr() const;
+
+	void initialize_info_mat();
 
 
 
@@ -91,6 +94,9 @@ public:
 
 protected:
 
+	std::shared_ptr<arma::sp_mat> info_mat_ptr = nullptr;
+
+	
 
 };
 

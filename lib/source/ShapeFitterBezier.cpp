@@ -33,7 +33,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J,const arma
 	}
 
 	// The information matrices of the patches that were seen are updated
-	this -> update_patches_info_matrices(info_mat,footpoints);
 
 
 	return false;
@@ -57,7 +56,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 		footpoint.Ptilde = this -> pc -> get_point_coordinates(i);
 		
-		try{
+		try {
 			this -> find_footpoint(footpoint);
 			footpoints.push_back(footpoint);
 		}
@@ -86,7 +85,6 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint) const {
 			closest_control_point,
 			distance);
 
-		
 		auto owning_elements = closest_control_point -> get_owning_elements();
 
 		// The patches that this control point belongs to are searched
@@ -191,29 +189,18 @@ void ShapeFitterBezier::save(std::string path, arma::mat & Pbar_mat) const {
 
 arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 
-
 	std::cout << "Updating shape from the " << footpoints.size()<<  " footpoints...\n";
 
-	// The forward/backward look up tables are created
-	std::map<unsigned int, std::shared_ptr<ControlPoint> > global_index_to_pointer;
-	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
-
-	for (auto iter = footpoints.begin(); iter != footpoints.end(); ++iter){
-
-		auto control_points = iter -> element -> get_control_points();
-		for (auto control_point = control_points -> begin(); control_point != control_points -> end(); ++ control_point){
-			if (pointer_to_global_index.find(*control_point) == pointer_to_global_index.end()){
-				pointer_to_global_index[*control_point] = pointer_to_global_index.size();
-				global_index_to_pointer[pointer_to_global_index.size()] = *control_point;
-			}
-		}
+	// Check if the info matrix has been initialized
+	if (this -> shape_model -> get_info_mat_ptr() == nullptr){
+		this -> shape_model -> initialize_info_mat();
+		this -> shape_model -> initialize_index_table();
 	}
 
 	// The normal and information matrices are created
-	unsigned int N = 3 * global_index_to_pointer.size();
-	arma::sp_mat info_mat(N,N);
-	arma::vec normal_mat = arma::zeros<arma::vec>(N);
-
+	arma::sp_mat info_mat(*this -> shape_model -> get_info_mat_ptr());
+	arma::vec normal_mat = arma::zeros<arma::vec>(info_mat.n_cols);
+	unsigned int N = info_mat.n_cols;
 
 	boost::progress_display progress(footpoints.size());
 
@@ -231,7 +218,7 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 		// The different control points for this patch have their contribution added
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 
-			unsigned int global_point_index = pointer_to_global_index[*iter_points];
+			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
 
 			auto local_indices = patch -> get_local_indices(*iter_points);
 
@@ -266,9 +253,11 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	std::cout << "Update norm: " << arma::norm(dC) << std::endl;
 
 	// The deviations are added to the coordinates
-	for (auto iter_points = pointer_to_global_index.begin(); iter_points != pointer_to_global_index.end(); ++iter_points){
-		unsigned int global_point_index = iter_points -> second;
-		iter_points -> first -> set_coordinates(iter_points -> first -> get_coordinates()
+	auto control_points = this -> shape_model -> get_control_points();
+	
+	for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
+		unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
+		(*iter_points) -> set_coordinates((*iter_points) -> get_coordinates()
 			+ dC.rows(3 * global_point_index, 3 * global_point_index + 2));
 	}
 
@@ -278,45 +267,3 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 
 }
 
-void ShapeFitterBezier::update_patches_info_matrices(arma::sp_mat & info_mat,std::vector<Footpoint> & footpoints){
-
-	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
-	std::set<Bezier *> seen_patches;
-
-	for (auto iter = footpoints.begin(); iter != footpoints.end(); ++iter){
-		auto control_points = iter -> element -> get_control_points();
-		for (auto control_point = control_points -> begin(); control_point != control_points -> end(); ++ control_point){
-			if (pointer_to_global_index.find(*control_point) == pointer_to_global_index.end()){
-				pointer_to_global_index[*control_point] = pointer_to_global_index.size();
-			}
-		}
-		seen_patches.insert(dynamic_cast<Bezier * >(iter -> element));
-	}
-
-	// Each patch's information matrix is updated
-	// Note that this formulation does not account for the 
-	// neighbours to the patch as only the cross correlations of 
-	// points within the same patch are tracked
-	for (auto patch = seen_patches.begin(); patch != seen_patches.end(); ++patch){
-		arma::mat * patch_info_mat = (*patch) -> get_info_mat();
-
-		unsigned int points_in_patch = (*patch) -> get_control_points() -> size();
-
-		for (unsigned int i = 0; i < points_in_patch; ++ i){
-			unsigned int i_global = pointer_to_global_index[(*patch) -> get_control_points() -> at(i)];
-			
-			for (unsigned int j = 0; j <= i; ++ j){
-				unsigned int j_global = pointer_to_global_index[(*patch) -> get_control_points() -> at(j)];
-				
-				patch_info_mat -> submat( 3 * i, 3 * j, 3 * i + 2, 3 * j + 2 ) += info_mat.submat(
-					3 * i_global,3 * j_global, 3 * i_global + 2, 3 * j_global + 2 );
-				
-				if (i != j){
-					patch_info_mat -> submat( 3 * j, 3 * i, 3 * j + 2, 3 * i + 2 ) += info_mat.submat(
-						3 * j_global,3 * i_global, 3 * j_global + 2, 3 * i_global + 2 );
-				}
-			}
-		}
-	}
-
-}

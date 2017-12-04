@@ -9,6 +9,8 @@
 #include <DynamicAnalyses.hpp>
 #include <PC.hpp>
 #include <ShapeFitterTri.hpp>
+#include <ShapeFitterBezier.hpp>
+
 
 #include <limits>
 #include <chrono>
@@ -35,10 +37,9 @@ int main() {
 	arma::mat Cnm;
 	arma::mat Snm;
 
-
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_128.obj", 1000, false);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64.obj", 1000, false);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
@@ -49,12 +50,10 @@ int main() {
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
 
-	shape_io_truth.load_shape_model(&true_shape_model);
+	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape(false);
 
-	
 	DynamicAnalyses dyn_analyses(&true_shape_model);
-
 
 	// Integrator extra arguments
 	Args args;
@@ -85,7 +84,7 @@ int main() {
 
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0,0.0,v};
+	arma::vec vel_0_inertial = {0,0,v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0.rows(9,11) = vel_0_body; // r'_LN(0) in body frame
@@ -98,10 +97,11 @@ int main() {
 		"attitude_orbit_n5",
 		1e-11);
 
+	std::cout << "Propagating spacecraft and attitude state" << std::endl;
 	rk_coupled.run(&joint_sb_spacecraft_body_frame_dyn,
 		&event_function_mrp_omega,
 		true,
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/integrators/");
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/integrators/");
 
 
 	Interpolator state_interpolator(rk_coupled.get_T(),rk_coupled.get_X());
@@ -134,12 +134,9 @@ int main() {
 		&estimated_shape_model,
 		&shape_filter_args);
 
-	auto start = std::chrono::system_clock::now();
-	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end-start;
 
-	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+	std::cout << "Running filter" << std::endl;
+	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
 
 	shape_filter_args.save_results();
 

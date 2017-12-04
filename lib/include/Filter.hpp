@@ -107,7 +107,7 @@ public:
 	and stores them to file
 	@param t time
 	*/
-	void store_point_clouds(int index);
+	void store_point_clouds(int index,const arma::mat & M_pc = arma::eye<arma::mat>(3,3),const arma::mat & X_pc = arma::zeros<arma::vec>(3));
 
 	/**
 	Fits the shape using the prescribed point cloud
@@ -167,8 +167,8 @@ protected:
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
 	void get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
-	arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
-	arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel );
+		arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
+		arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel );
 
 	/**
 	Computes a measurement of the angular velocity
@@ -212,6 +212,15 @@ protected:
 
 
 	/**
+	Concatenates the destination and source point clouds. The latter is merged into the former
+	@param M_pc dcm matrix from the ICP registering the source point cloud to the destination point cloud
+	@param X_pc translation vector from the ICP registering the source point cloud to the destination point cloud
+	*/
+	void concatenate_point_clouds(const arma::mat & M_pc,const arma::mat & X_pc);
+
+
+
+	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
 	@param X_S relative state at present time (12x1)
 	@param time measurement time
@@ -250,6 +259,8 @@ protected:
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
 	std::shared_ptr<PC> destination_pc_shape = nullptr;
+	std::shared_ptr<PC> destination_pc_concatenated = nullptr;
+
 
 
 };

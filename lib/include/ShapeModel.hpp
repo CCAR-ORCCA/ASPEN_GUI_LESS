@@ -44,6 +44,17 @@ public:
 	           FrameGraph * frame_graph);
 
 
+
+	/**
+	Applies the combination of a translation, rotation and strech transform to 
+	the shape
+	@param translation R3 vector defining the translation. The translation is expressed in the N frame
+	@param rotation rotation matrix vector defining the translation to be applied. here, the matrix is 
+	equivalent to [BN] where B is the current frame in which the shape coordinates are expressed
+	@param strech R3 vector defining the amplitude of the strech to apply to the shape
+	*/
+	void transform(arma::vec & translation,arma::mat & rotation, arma::vec & stretch);
+
 	/**
 	Defines the reference frame attached to the shape model
 	@param ref_frame Pointer to the reference frame attached
@@ -58,11 +69,23 @@ public:
 	*/
 	std::string get_ref_frame_name() const;
 
+
+	/**
+	Returns pointer to prescribed control point
+	@param i index of control point . must be between 0 and Nc - 1
+	*/
+	std::shared_ptr< ControlPoint>  get_control_point(unsigned int i) const ;
+
+
 	/**
 	Pointer to the shape model's control points
 	@return vertices pointer to the control points
 	*/
 	std::vector<std::shared_ptr< ControlPoint> > * get_control_points();
+
+
+
+	unsigned int get_control_point_index(std::shared_ptr<ControlPoint> point) const;
 
 	/**
 	Pointer to the shape model's element
@@ -76,6 +99,13 @@ public:
 	@param facet pointer to the new element to be inserted
 	*/
 	void add_element(std::shared_ptr<Element> el);
+
+
+	/**
+	Returns the geometrical center of the shape
+	@return geometrical center
+	*/
+	arma::vec get_center() const;
 	
 	
 
@@ -139,12 +169,21 @@ public:
 	virtual bool ray_trace(Ray * ray) = 0;
 
 
+
+	/**
+	Constructs a connectivity table associated a control point pointer to its index
+	in this shape model control points vector
+	*/
+	void initialize_index_table();
+
+
 protected:
 
 	std::vector<std::shared_ptr<Element  > > elements;
 	std::vector<std::shared_ptr< ControlPoint> >  control_points;
 	std::shared_ptr<KDTree_control_points> kdt_control_points = nullptr;
 
+	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;

@@ -16,7 +16,6 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 		this -> control_points[i] -> reset_ownership();
 	}
 
-
 	// The surface elements are almost the same, expect that they are 
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
@@ -34,8 +33,18 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 }
 
+std::shared_ptr<arma::sp_mat> ShapeModelBezier::get_info_mat_ptr() const{
+	return this -> info_mat_ptr;
+}
+
+
+void ShapeModelBezier::initialize_info_mat(){
+	unsigned int N = this -> control_points.size();
+	this -> info_mat_ptr = std::make_shared<arma::sp_mat>(arma::sp_mat(3 * N,3 * N ));
+}
+
 ShapeModelBezier::ShapeModelBezier(std::string ref_frame_name,
-		FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
+	FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
 }
 
@@ -72,10 +81,52 @@ void ShapeModelBezier::elevate_degree(){
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_degree();
 	}
+
+	std::vector<std::shared_ptr<ControlPoint> > new_control_points;
+	std::set<std::shared_ptr<ControlPoint> > new_control_points_set;
+
+
+
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+
+		auto points = this -> get_elements() -> at(i) -> get_control_points();
+		
+		for (auto point = points -> begin(); point != points -> end(); ++point){
+			if (new_control_points_set.find(*point) == new_control_points_set.end()){
+				new_control_points_set.insert(*point) ;
+				new_control_points.push_back(*point);
+			}
+		}
+	}
+
+
+	// The control point of this shape model are the same as that
+	// of the provided shape
+	this -> control_points = new_control_points;
+
+	// The ownership relationships are reset
+	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
+		this -> control_points[i] -> reset_ownership();
+	}
+
+	// The surface elements are almost the same, expect that they are 
+	// Bezier patches and not facets
+	for (auto patch = this -> elements.begin(); patch != this -> elements.end(); ++patch){
+
+		auto points = (*patch) -> get_control_points();
+
+		for (auto point = points -> begin(); point != points -> end(); ++point){
+
+			(*point) -> add_ownership(patch -> get());
+
+		}
+
+	
+	}
+
+
 	this -> construct_kd_tree_control_points();
 	
-	
-
 }
 
 void ShapeModelBezier::save(std::string path) {

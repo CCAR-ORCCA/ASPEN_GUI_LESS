@@ -16,8 +16,6 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 	this -> update();
 
-	this -> info_mat = arma::zeros<arma::mat>(3 * control_points.size(),3 * control_points.size());
-
 
 }
 
@@ -27,9 +25,6 @@ std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned
 }
 
 
-arma::mat * Bezier::get_info_mat(){
-	return &this -> info_mat;
-}
 
 std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point){
 	
@@ -258,21 +253,16 @@ void Bezier::elevate_degree(){
 	}
 
 	// The control points are brought together in an array
-	for (
-		int i = 0; i < sorted_control_points.size(); ++i){
+	for (int i = 0; i < sorted_control_points.size(); ++i){
 		new_control_points.push_back(sorted_control_points[i]);
-}
+	}
 
 
-this -> n = this -> n + 1;
-this -> control_points = new_control_points;
-this -> construct_index_tables();
-	// this -> update();
+	this -> n = this -> n + 1;
+	this -> control_points = new_control_points;
+	this -> construct_index_tables();
 
-this -> new_points.clear();
-this -> info_mat = arma::zeros<arma::mat>(3 * this -> control_points.size(),3 * this -> control_points.size());
-
-
+	this -> new_points.clear();
 
 }
 

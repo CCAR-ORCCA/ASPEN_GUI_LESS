@@ -149,6 +149,14 @@ public:
 	*/
 	double get_bbox_diagonal() const;
 
+
+	/**
+	Returns the points in this point cloud
+	@param points point in the point cloud
+	*/
+	std::vector< std::shared_ptr<PointNormal> > get_points() const;
+
+
 	
 	/**
 	Saves pc to file after applying a rigid transform
@@ -172,6 +180,8 @@ public:
 	@param Points to save
 	*/
 	static void save(arma::mat & points,std::string path);
+
+
 
 
 protected:

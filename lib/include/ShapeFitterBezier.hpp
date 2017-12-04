@@ -31,9 +31,7 @@ protected:
 	std::vector<Footpoint> find_footpoints() const;
 
 	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints);
-
-	void update_patches_info_matrices(arma::sp_mat & info_mat,std::vector<Footpoint> & footpoints);
-
+	
 
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
 
