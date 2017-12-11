@@ -5,7 +5,6 @@
 #include <RK.hpp>
 #include <Wrappers.hpp>
 #include <Interpolator.hpp>
-#include <Constants.hpp>
 #include <DynamicAnalyses.hpp>
 #include <PC.hpp>
 #include <ShapeFitterTri.hpp>
@@ -15,6 +14,28 @@
 #include <limits>
 #include <chrono>
 #include <boost/progress.hpp>
+
+
+// Various constants that set up the visibility emulator scenario
+
+// Lidar settings
+#define ROW_RESOLUTION 128
+#define COL_RESOLUTION 128
+#define ROW_FOV 20
+#define COL_FOV 20
+
+// Instrument operating frequency
+#define INSTRUMENT_FREQUENCY 0.001 // one flash every hour 
+
+// Noise
+#define FOCAL_LENGTH 1e1
+#define LOS_NOISE_3SD_BASELINE 5e-2
+#define LOS_NOISE_FRACTION_MES_TRUTH 0.
+
+// Times (s)
+#define T0 0
+#define TF 80000// 7 days
+
 
 int main() {
 
@@ -135,7 +156,6 @@ int main() {
 		&shape_filter_args);
 
 
-	std::cout << "Running filter" << std::endl;
 	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
 
 	shape_filter_args.save_results();

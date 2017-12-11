@@ -216,7 +216,7 @@ protected:
 	@param M_pc dcm matrix from the ICP registering the source point cloud to the destination point cloud
 	@param X_pc translation vector from the ICP registering the source point cloud to the destination point cloud
 	*/
-	void concatenate_point_clouds(const arma::mat & M_pc,const arma::mat & X_pc);
+	void concatenate_point_clouds(unsigned int index, const arma::mat & M_pc,const arma::mat & X_pc);
 
 
 

@@ -13,7 +13,7 @@ int main(){
 
 	FrameGraph frame_graph;
 
-	std::string asteroid = "67P_lowlowres";
+	std::string asteroid = "itokawa_hr";
 	std::string guess = "faceted_sphere";
 
 	// ShapeModelImporter shape_io(asteroid + ".obj", 1, true);
@@ -24,9 +24,9 @@ int main(){
 
 	// bezier.save(asteroid + ".b");
 
-	ShapeModelImporter shape_io(asteroid + ".b", 1, true);
-	ShapeModelBezier true_shape("",&frame_graph);
-	shape_io.load_bezier_shape_model(&true_shape);
+	// ShapeModelImporter shape_io(asteroid + ".b", 1, true);
+	// ShapeModelBezier true_shape("",&frame_graph);
+	// shape_io.load_bezier_shape_model(&true_shape);
 
 	ShapeModelImporter fit_shape_io(guess + ".b", 1, true);
 	ShapeModelBezier fit_shape("",&frame_graph);
@@ -37,23 +37,12 @@ int main(){
 
 	unsigned int degree = fit_shape.get_degree();
 
-
-	// A point cloud is collected over the surface of the object
-	unsigned int N_points = 15;
-
-	arma::mat points(3,N_points * true_shape.get_NElements());
-
-	for (unsigned int e = 0; e < true_shape.get_NElements(); ++e){
-		for (unsigned int i = 0; i < N_points; ++i){
-			arma::vec rand = arma::randu<arma::vec>(2);
-			double u = rand(0);
-			double v = (1 - u) * rand(1);
-			points.col(e * N_points + i) = dynamic_cast<Bezier *>(true_shape.get_elements() -> at(e).get()) -> evaluate(u,v) + 0.003 * arma::randn<arma::vec>(3);
-		}
-	}
-
-	PC::save(points,"pc.obj");
-
+	arma::mat points;
+	points.load("large_pc.txt");
+	arma::inplace_trans(points);
+	arma::vec mean =  arma::mean(points,1);
+	points.each_col() -= mean; 
+	points /= 1000.;
 
 	// Compute the latitude/longitude/radius of a number of a selected number of points in the point cloud
 
@@ -103,14 +92,14 @@ int main(){
 
 	fit_shape.construct_kd_tree_control_points();
 
-	// The point cloud is created
+	// // The point cloud is created
 	arma::vec u = {1,0,0};
 	PC pc(u,points);
 
 	fit_shape.save_to_obj("a_priori_" + asteroid + "_degree_" +std::to_string(degree) + ".obj");
 	fit_shape.save("a_priori_" + asteroid + "_degree_" +std::to_string(degree) + ".b");
 
-	// The shape is fit
+	// // The shape is fit
 	unsigned int N_iter = 5;
 
 	ShapeFitterBezier shape_fitter(&fit_shape,&pc);

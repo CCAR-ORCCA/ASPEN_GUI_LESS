@@ -111,6 +111,7 @@ void Ray::reset(ShapeModel * shape_model) {
 
 	this -> incidence_angle = std::numeric_limits<double>::infinity();
 
+
 }
 
 bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {

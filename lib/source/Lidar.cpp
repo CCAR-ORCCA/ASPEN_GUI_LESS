@@ -96,9 +96,8 @@ void Lidar::send_flash(ShapeModelTri * shape_model) {
 	}
 	
 
-	#pragma omp parallel for if (USE_OMP_LIDAR)
+	// #pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
-
 		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
 
 			// If there's a hit, noise is added along the line of sight on the true measurement

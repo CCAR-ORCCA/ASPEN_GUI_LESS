@@ -83,20 +83,8 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 		X_S = interpolator -> interpolate(times(time_index), true);
 
-		this -> get_new_relative_states(X_S,
-			dcm_LB,
-			dcm_LB_t_D,
-			LN_t_S, 
-			LN_t_D,
-			mrp_BN,
-			mrp_BN_t_D,
-			mrp_LB,
-			lidar_pos,
-			lidar_vel );
+		this -> get_new_relative_states(X_S,dcm_LB,dcm_LB_t_D,LN_t_S, LN_t_D,mrp_BN,mrp_BN_t_D,mrp_LB,lidar_pos,lidar_vel );
 
-		std::cout << times(time_index) << std::endl;
-
-		
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
@@ -106,7 +94,11 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN);
 
 		// Getting the true observations (noise is added)
+
+
+
 		this -> lidar -> send_flash(this -> true_shape_model);
+
 
 		
 		// The rigid transform best aligning the two point clouds is found
@@ -115,41 +107,7 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 
 		this -> store_point_clouds(time_index);
 
-
-		if (this -> destination_pc == nullptr){
-
-			
-			// if(this -> source_pc == nullptr && this -> destination_pc != nullptr){
-			arma::mat I = arma::eye<arma::mat>(3,3);	
-
-			// This dcm is [LN](t_0)[NB](t_0)
-			offset_DCM = LN_t_S * RBK::mrp_to_dcm(mrp_BN).t();
-
-			// This is the position of the spacecraft in the body frame when measurements start to be accumulated
-			OL_t0 = X_S.rows(6,8);
-
-			LN_t0 = LN_t_S;
-
-			this -> perform_measurements_pc(X_S, 
-				times(time_index),
-				I,
-				arma::zeros<arma::vec>(3),
-				I,
-				I, 
-				mrp_BN,
-				arma::zeros<arma::vec>(3),
-				offset_DCM,
-				OL_t0,
-				LN_t0);
-
-		}
-		
-		
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
-
-			this -> destination_pc -> save("../output/pc/destination_before.obj");
-			this -> source_pc -> save("../output/pc/source_before.obj");
-
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			ICP icp_pc(this -> destination_pc, this -> source_pc, arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
@@ -159,170 +117,197 @@ void Filter::run_shape_reconstruction(arma::vec &times ,
 			arma::mat M_pc = icp_pc.get_M();
 			arma::vec X_pc = icp_pc.get_X();
 
-
 			// Point cloud registration and attitude estimation occurs first
 			// this -> store_point_clouds(time_index,M_pc,X_pc);
 
-			this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
+			// this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
 
-			// Attitude is measured. The DCM extracted from the ICP 
-			// corresponds to M_pc = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
-			// We want [NB](t_D)[BN](t_S)
-			// So we need to get
-			// M = [NL](t_D)M_pc[LN](t_S)
-			// Now M_pc really measures an incremental rotation of the body frame
-			// M = [NB](t_D)[BN](t_S)
+			// // Attitude is measured. The DCM extracted from the ICP 
+			// // corresponds to M_pc = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
+			// // We want [NB](t_D)[BN](t_S)
+			// // So we need to get
+			// // M = [NL](t_D)M_pc[LN](t_S)
+			// // Now M_pc really measures an incremental rotation of the body frame
+			// // M = [NB](t_D)[BN](t_S)
 
-			arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
-			arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
+			// arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
+			// arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
 
-			// L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
-			// L_t0_L_tS_pc would be exact if the ICP was error-less
+			// // L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
+			// // L_t0_L_tS_pc would be exact if the ICP was error-less
 
-			// As a reminder, 
-			// offset_DCM = [LN](t_0)[NB](t_0)
+			// // As a reminder, 
+			// // offset_DCM = [LN](t_0)[NB](t_0)
 
-			arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
+			// arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
 
-			// The relative position is incremented from the previous one, and the previous measured attitude
-			// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
-			arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
-				+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
+			// // The relative position is incremented from the previous one, and the previous measured attitude
+			// // Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
+			// arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
+			// 	+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
 
-			arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
+			// arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
 
-
-
-			this -> source_pc -> save(
-				"../output/pc/source_pc_prealigned_" + std::to_string(time_index) + ".obj",
-				L_t0_L_tS_pc,X_relative_from_pc);
-
-		// 	// The source point cloud is now registered to the shape
-		// 	std::shared_ptr<PC> shape_pc = std::make_shared<PC>(PC(this -> estimated_shape_model));
-		// 	ICP icp_shape(shape_pc, this -> source_pc,L_t0_L_tS_pc,X_relative_from_pc);
-
-		// 	arma::mat M = icp_shape.get_M();
-		// 	arma::vec X = icp_shape.get_X();
-
-		// 	this -> estimated_shape_model -> save(
-		// 		"../output/shape_model/before_fitting_" + std::to_string(time_index) + ".obj");
-
-		// 	// Depending upong which ICP (between the shape-based one and the point-cloud to point-cloud one
-		// 	// has the least residuals, the attitude is measured using the best method
-
-		// 	if (icp_pc.get_J_res() < icp_shape.get_J_res()){
-		// 		std::cout << "Using point clouds\n";
-
-
-
-				// Using the point clouds, measurements of the relative attitude, position are computed
-			this -> perform_measurements_pc(X_S, 
-				times(time_index),
-				NE_tD_EN_tS_pc,
-				X_relative_from_pc, 
-				LN_t_S, 
-				LN_t_D, 
-				mrp_BN,
-				X_relative_true,
-				offset_DCM,
-				OL_t0,
-				LN_t0);
-
-
-		// 		this -> source_pc -> save(
-		// 			"../output/pc/source_shape_aligned_" + std::to_string(time_index) + ".obj",
-		// 			L_t0_L_tS_pc,
-		// 			X_relative_from_pc);
-
-
-
-		// 		this -> source_pc -> save(
-		// 			"../output/pc/source_shape_aligned_true_" + std::to_string(time_index) + ".obj",
-		// 			offset_DCM * RBK::mrp_to_dcm(mrp_BN) * LN_t_S.t(),
-		// 			X_relative_true);
-
-
-
+			this -> concatenate_point_clouds(time_index,M_pc,X_pc);
 
 		}
-		// 	else{
-		// 		// Using the shape
-		// 		std::cout << "Using shape\n";
-
-
-		// 		arma::mat EN_dcm_shape =  offset_DCM.t() * M * LN_t_S;
 
 
 
 
-		// 		this -> perform_measurements_shape(X_S, 
-		// 			times(time_index),
-		// 			EN_pc,
-		// 			NE_tD_EN_tS_pc, 
-		// 			arma::zeros<arma::vec>(3),
-		// 			LN_t_S, 
-		// 			LN_t_D,
-		// 			mrp_BN,
-		// 			X_relative_true,
-		// 			offset_DCM,
-		// 			OL_t0,
-		// 			LN_t0);
+	// 	if (this -> destination_pc == nullptr){
 
 
-		// 	// The shape is fitted
-		// 		// this -> fit_shape(this -> source_pc.get(),10,0.1,M,X);
-		// 		this -> estimated_shape_model -> save("../output/shape_model/fitted_" + std::to_string(time_index) + ".obj");
+	// 		// if(this -> source_pc == nullptr && this -> destination_pc != nullptr){
+	// 		arma::mat I = arma::eye<arma::mat>(3,3);	
 
-		// 	}
+	// 		// This dcm is [LN](t_0)[NB](t_0)
+	// 		offset_DCM = LN_t_S * RBK::mrp_to_dcm(mrp_BN).t();
+
+	// 		// This is the position of the spacecraft in the body frame when measurements start to be accumulated
+	// 		OL_t0 = X_S.rows(6,8);
+
+	// 		LN_t0 = LN_t_S;
+
+	// 		this -> perform_measurements_pc(X_S, 
+	// 			times(time_index),
+	// 			I,
+	// 			arma::zeros<arma::vec>(3),
+	// 			I,
+	// 			I, 
+	// 			mrp_BN,
+	// 			arma::zeros<arma::vec>(3),
+	// 			offset_DCM,
+	// 			OL_t0,
+	// 			LN_t0);
+
+	// 	}
+		
+		
+	// 	if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
+
+
+	// 		// The point-cloud to point-cloud ICP is used for point cloud registration
+	// 		ICP icp_pc(this -> destination_pc, this -> source_pc, arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+
+	// 		// These two align the consecutive point clouds 
+	// 		// in the instrument frame at t_D
+	// 		arma::mat M_pc = icp_pc.get_M();
+	// 		arma::vec X_pc = icp_pc.get_X();
+
+
+	// 		// Point cloud registration and attitude estimation occurs first
+	// 		// this -> store_point_clouds(time_index,M_pc,X_pc);
+
+	// 		this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
+
+	// 		// Attitude is measured. The DCM extracted from the ICP 
+	// 		// corresponds to M_pc = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
+	// 		// We want [NB](t_D)[BN](t_S)
+	// 		// So we need to get
+	// 		// M = [NL](t_D)M_pc[LN](t_S)
+	// 		// Now M_pc really measures an incremental rotation of the body frame
+	// 		// M = [NB](t_D)[BN](t_S)
+
+	// 		arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
+	// 		arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
+
+	// 		// L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
+	// 		// L_t0_L_tS_pc would be exact if the ICP was error-less
+
+	// 		// As a reminder, 
+	// 		// offset_DCM = [LN](t_0)[NB](t_0)
+
+	// 		arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
+
+	// 		// The relative position is incremented from the previous one, and the previous measured attitude
+	// 		// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
+	// 		arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
+	// 			+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
+
+	// 		arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
+
+
+
+	// 		this -> source_pc -> save(
+	// 			"../output/pc/source_pc_prealigned_" + std::to_string(time_index) + ".obj",
+	// 			L_t0_L_tS_pc,X_relative_from_pc);
+
+
+	// 			// Using the point clouds, measurements of the relative attitude, position are computed
+	// 		this -> perform_measurements_pc(X_S, 
+	// 			times(time_index),
+	// 			NE_tD_EN_tS_pc,
+	// 			X_relative_from_pc, 
+	// 			LN_t_S, 
+	// 			LN_t_D, 
+	// 			mrp_BN,
+	// 			X_relative_true,
+	// 			offset_DCM,
+	// 			OL_t0,
+	// 			LN_t0);
 
 
 
 
-
-
-		// }
-
-		// if (this -> filter_arguments -> get_number_of_measurements() > 0){
-		// 	// The attitude of the estimated shape model
-		// 	// is set using the latest mrp measurement
-		// 	arma::vec mrp_EN = this -> filter_arguments -> get_latest_mrp_mes();
-
-		// 	this -> frame_graph -> get_frame(
-		// 		this -> estimated_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(
-		// 		mrp_EN);
-		// 	}
-
+	// 	}
+		
 	}
 
 }
 
 
-void Filter::concatenate_point_clouds(const arma::mat & M_pc,const arma::mat & X_pc){
+void Filter::concatenate_point_clouds(unsigned int index,const arma::mat & M_pc,const arma::mat & X_pc){
+
+	int N_max = 200000;
 
 
 	// The destination point cloud is augmented with the source point cloud
+	std::vector< std::shared_ptr<PointNormal> > destination_points;
+	
+	if (this -> destination_pc_concatenated == nullptr){
+		destination_points = this -> destination_pc -> get_points();
+	}
+	else{
+		destination_points = this -> destination_pc_concatenated -> get_points();
+	}
 
-	std::vector< std::shared_ptr<PointNormal> > destination_points = this -> destination_pc -> get_points();
 	std::vector< std::shared_ptr<PointNormal> > source_points = this -> source_pc -> get_points();
 
+	arma::mat point_coords_all(3,destination_points.size() + source_points.size());
 
-
-	arma::mat point_coords(3,destination_points.size() + source_points.size());
-
+	
 	for (unsigned int i = 0; i < destination_points.size(); ++ i){
-		point_coords.col(i) = destination_points[i] -> get_point();
+		point_coords_all.col(i) = M_pc.t() * ( destination_points[i] -> get_point() - X_pc);
 	}
 
 	for (unsigned int i = 0; i < source_points.size(); ++ i){
-		point_coords.col(i + destination_points.size()) = M_pc * destination_points[i] -> get_point() + X_pc;
+		point_coords_all.col(i + destination_points.size()) = source_points[i] -> get_point();
 	}
 
-
 	arma::vec u = {1,0,0};
-	this -> destination_pc = this -> destination_pc = std::make_shared<PC>(PC(
-		u,
-		point_coords));
 
+	if (N_max > point_coords_all.n_cols){
+
+		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
+			u,
+			point_coords_all));
+		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
+
+
+	}
+	else{
+		point_coords_all.save("points.txt",arma::raw_ascii);
+		point_coords_all = arma::shuffle(point_coords_all,1);
+
+
+		arma::mat point_coords = point_coords_all.cols(0,std::min(N_max,int(point_coords_all.n_cols)));
+
+		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
+			u,
+			point_coords));
+		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
+	}
 
 }
 
@@ -355,8 +340,8 @@ void Filter::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat
 			this -> frame_graph));
 		std::cout << "Storing first destination point cloud" << std::endl;
 
-		this -> destination_pc -> save(
-			"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
+		// this -> destination_pc -> save(
+		// 	"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
 	}
 
 	else {
@@ -371,8 +356,8 @@ void Filter::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat
 			
 			std::cout << "Storing first source point cloud" << std::endl;
 
-			this -> source_pc -> save(
-				"../output/pc/source_pc_" + std::to_string(index) + ".obj");
+			// this -> source_pc -> save(
+			// 	"../output/pc/source_pc_" + std::to_string(index) + ".obj");
 
 		}
 
@@ -387,7 +372,7 @@ void Filter::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat
 			// cloud here
 
 
-			this -> concatenate_point_clouds(M_pc,X_pc);
+			// this -> concatenate_point_clouds(M_pc,X_pc);
 
 
 
@@ -399,11 +384,11 @@ void Filter::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat
 
 
 
-			this -> destination_pc -> save(
-				"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
+			// this -> destination_pc -> save(
+			// 	"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
 
-			this -> source_pc -> save(
-				"../output/pc/source_pc_" + std::to_string(index) + ".obj");
+			// this -> source_pc -> save(
+			// 	"../output/pc/source_pc_" + std::to_string(index) + ".obj");
 
 		}
 	}
