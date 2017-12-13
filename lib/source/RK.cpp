@@ -133,7 +133,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 	bool verbose,
 	std::string savepath) {
 
-
 	std::vector<double> T_v;
 	std::vector<arma::vec> X_v;
 
@@ -214,9 +213,6 @@ void RK45::run(arma::vec (*dXdt)(double, arma::vec , Args * args),
 
 		X_v.push_back(y_order_5);
 		T_v.push_back(T_v.back() + this -> dt);
-
-		
-
 
 	}
 

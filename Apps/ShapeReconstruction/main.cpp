@@ -1,7 +1,7 @@
 #include <Lidar.hpp>
 #include <ShapeModelTri.hpp>
 #include <ShapeModelImporter.hpp>
-#include <Filter.hpp>
+#include <ShapeBuilder.hpp>
 #include <RK.hpp>
 #include <Wrappers.hpp>
 #include <Interpolator.hpp>
@@ -144,12 +144,12 @@ int main() {
 	arma::mat X_interp(12,times.n_rows);
 
 
-// Filter filter_arguments
-	FilterArguments shape_filter_args;
+// ShapeBuilder filter_arguments
+	ShapeBuilderArguments shape_filter_args;
 
 	shape_filter_args.set_estimate_shape(false);
 
-	Filter shape_filter(&frame_graph,
+	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,
 		&true_shape_model,
 		&estimated_shape_model,

@@ -5,7 +5,7 @@
 /**
 Class storing the filter parameters
 	*/
-class FilterArguments {
+class ShapeBuilderArguments {
 public:
 
 	/**
@@ -30,7 +30,7 @@ public:
 	@param merge_shrunk_facets True if facets that are degenerated should be removed
 	*/
 
-	FilterArguments() {
+	ShapeBuilderArguments() {
 
 	}
 
