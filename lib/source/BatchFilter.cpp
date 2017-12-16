@@ -1,27 +1,35 @@
 #include "BatchFilter.hpp"
-
-BatchFilter::BatchFilter(const Args & args) : Filter(args){
+template <typename state_type> BatchFilter<state_type>::BatchFilter(const Args & args) : Filter<state_type>(args){
 }
 
-int BatchFilter::run(
-	unsigned int N_iter,
-	const arma::vec & X0_true,
-	const arma::vec & X_bar_0,
-	const std::vector<double> & T_obs,
-	const arma::mat & R) {
+template <typename state_type> int  BatchFilter<state_type>::run(
+unsigned int N_iter,
+const state_type & X0_true,
+const state_type & X_bar_0,
+const std::vector<double> & T_obs,
+const arma::mat & R,
+bool verbose) {
 
 	if (T_obs.size() == 0){
 		return -1;
 	}
 
+	if (verbose){
+		std::cout << "- Running filter" << std::endl;
+		std::cout << "-- Computing true state history" << std::endl;
+	}
+
 	// The true state history is computed
 	this -> compute_true_state_history(X0_true,T_obs);
+	if (verbose){
+		std::cout << "-- Computing true observations" << std::endl;
+	}
 
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
 	// Containers
-	std::vector<arma::vec> X_bar;
+	std::vector<state_type> X_bar;
 	std::vector<arma::mat> stm;
 	std::vector<arma::vec> Y_bar;
 	std::vector<arma::vec> y_bar;
@@ -45,19 +53,37 @@ int BatchFilter::run(
 	}
 
 	int iterations = N_iter;
-	
+
+	if (verbose){
+		std::cout << "-- Iterating the filter" << std::endl;
+	}
+
+
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
 
+		if (verbose){
+			std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
+		}
+
+		
+		if (verbose){
+			std::cout << "----  Computing reference trajectory" << std::endl;
+		}
+
 		// The reference trajectory is computed along with the STM
 		this -> compute_reference_state_history(T_obs,X_bar,stm);
+
+		if (verbose){
+			std::cout << "----  Computing prefit residuals" << std::endl;
+		}
 
 		// The prefit residuals are computed
 		this -> compute_prefit_residuals(T_obs,
 			X_bar,
 			y_bar,
 			has_converged,
-			previous_norm_res_squared);
+			previous_norm_res_squared,R);
 
 		// If the batch was only run for the pass-trough
 		if (N_iter == 0){
@@ -85,14 +111,20 @@ int BatchFilter::run(
 		normal_mat = this ->  info_mat_bar_0 * dx_bar_0;
 
 
+		if (verbose){
+			std::cout << "----  Assembling normal equations" << std::endl;
+		}
+
 		for (unsigned int p = 0; p < T_obs.size(); ++ p){
 
 			if (arma::norm(y_bar[p]) == 0){
 				// A residual can't have a zero norm. This means that no observation was available
 				continue;
 			}
+			
 
-			H = this -> jacobian_observations_fun(T_obs[p], X_bar[p] ,this -> args) * stm[p];
+			H = this -> jacobian_observations_fun(T_obs[p], X_bar[p] ,
+				this -> args) * stm[p];
 
 			info_mat += H.t() * W * H;
 
@@ -112,6 +144,7 @@ int BatchFilter::run(
 		// The a-priori deviation is adjusted
 		dx_bar_0 = dx_bar_0 - dx_hat;
 
+
 	}
 
 	// The results are saved
@@ -127,12 +160,13 @@ int BatchFilter::run(
 
 }
 
-void BatchFilter::compute_prefit_residuals(
-	const std::vector<double> & T_obs,
-	const std::vector<arma::vec> & X_bar,
-	std::vector<arma::vec> & y_bar,
-	bool & has_converged,
-	arma::vec & previous_norm_res_squared){
+template <typename state_type> void BatchFilter<state_type>::compute_prefit_residuals(
+const std::vector<double> & T_obs,
+const std::vector<state_type> & X_bar,
+std::vector<arma::vec> & y_bar,
+bool & has_converged,
+arma::vec & previous_norm_res_squared,
+const arma::mat & R){
 
 	// The previous residuals are discarded
 	y_bar.clear();
@@ -142,6 +176,7 @@ void BatchFilter::compute_prefit_residuals(
 	for (unsigned int p = 0; p < T_obs.size(); ++ p){
 
 		arma::vec residual = this -> true_obs_history[p] - this -> observation_fun(T_obs[p], X_bar[p] ,this -> args);
+
 		if (residual.has_nan() == false){
 			y_bar.push_back(residual);
 		}
@@ -153,9 +188,10 @@ void BatchFilter::compute_prefit_residuals(
 	}
 
 	// The convergence is checked. Could replace by norm?
-	arma::vec rel_change = arma::abs(norm_res_squared - previous_norm_res_squared) / arma::norm(norm_res_squared);
-	
-	if (arma::max(rel_change) < 1e-8){
+
+	arma::vec rel_change = arma::abs(norm_res_squared - previous_norm_res_squared) / R.diag();
+
+	if (arma::max(rel_change) * 100 < 1e-3){
 		has_converged = true;
 	}
 	
@@ -166,33 +202,30 @@ void BatchFilter::compute_prefit_residuals(
 
 }
 
-void BatchFilter::compute_reference_state_history(
-	const std::vector<double> & T_obs,
-	std::vector<arma::vec> & X_bar,
-	std::vector<arma::mat> & stm){
+template <typename state_type> void BatchFilter<state_type>::compute_reference_state_history(
+const std::vector<double> & T_obs,
+std::vector<state_type> & X_bar,
+std::vector<arma::mat> & stm){
 
 	// If the estimated state has no dynamics,
 	// all the STMs are equal to the identity and the state is constant
 	if (this -> estimate_dynamics_fun == nullptr){
 
-		if (X_bar.size() == T_obs.size()){
+		arma::vec X_bar_0 = X_bar[0];
 
-			// The first state is copied accross 
-			for (unsigned int i = 1; i < T_obs.size(); ++i){
+		X_bar.clear();
+		stm.clear();
 
-				X_bar[i] = X_bar[0];
-				stm[i] = stm[0];
-			}	
+		X_bar.push_back(X_bar_0);
+
+		// X_bar already has one state in - the a-priori
+		stm.push_back(arma::eye<arma::mat>(X_bar[0].n_rows,X_bar[0].n_rows));
+
+		for (unsigned int i = 1; i < T_obs.size(); ++i){
+			X_bar.push_back(X_bar[0]);
+			stm.push_back(stm[0]);
 		}
-		else{
-			// X_bar already has one state in - the a-priori
-			stm.push_back(arma::eye<arma::mat>(X_bar[0].n_rows,X_bar[0].n_rows));
-
-			for (unsigned int i = 1; i < T_obs.size(); ++i){
-				X_bar.push_back(X_bar[0]);
-				stm.push_back(stm[0]);
-			}
-		}
+		
 
 	}
 
@@ -205,31 +238,50 @@ void BatchFilter::compute_reference_state_history(
 		// along with the state transition matrices
 		//
 
-		std::vector<arma::vec> X_bar_from_integrator;
-		std::vector<arma::mat> stm_from_integrator;
+		unsigned int N_est = X_bar[0].n_rows;
+		unsigned int N_true = 0;
 
+		arma::vec X_bar_0 = X_bar[0];
 
-		if (X_bar.size() == T_obs.size()){
-			for (unsigned int i = 0; i < T_obs.size(); ++i){
-				X_bar[i]= (X_bar_from_integrator[i]);
-				stm[i]= (stm_from_integrator[i]);
-			}
+		System<state_type> dynamics(this -> args,
+			N_est,
+			this -> estimate_dynamics_fun ,
+			this -> jacobian_estimate_dynamics_fun,
+			N_true,
+			nullptr );
+		
+
+		arma::vec x(N_est + N_est * N_est);
+		x.rows(0,N_est - 1) = X_bar[0];
+		x.rows(N_est,N_est + N_est * N_est - 1) = arma::vectorise(arma::eye<arma::mat>(N_est,N_est));
+
+		std::vector <arma::vec> augmented_state_history;
+		typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
+		auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 ,
+			1.0e-16 );
+		
+		auto tbegin = T_obs.begin();
+		auto tend = T_obs.end();
+		boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
+			Observer::push_back_state(augmented_state_history));
+
+		
+		X_bar.clear();
+		stm.clear();
+
+		for (unsigned int i = 0; i < T_obs.size(); ++i){
+			X_bar.push_back(augmented_state_history[i].rows(0,N_est - 1));
+			stm.push_back(arma::reshape(augmented_state_history[i].rows(N_est,N_est + N_est * N_est - 1),N_est,N_est));
 		}
-
-		else{
-			for (unsigned int i = 0; i < T_obs.size(); ++i){
-				X_bar.push_back(X_bar_from_integrator[i]);
-				stm.push_back(stm_from_integrator[i]);
-			}
-		}
+		
 
 
 	}
 
 }
 
-void BatchFilter::compute_covariances(const arma::mat & P_hat_0,
-	const std::vector<arma::mat> & stm){
+template <typename state_type> void BatchFilter<state_type>::compute_covariances(const arma::mat & P_hat_0,
+const std::vector<arma::mat> & stm){
 
 	this -> estimated_covariance_history.clear();
 	for (unsigned int i = 0; i < stm.size(); ++i){
@@ -238,3 +290,85 @@ void BatchFilter::compute_covariances(const arma::mat & P_hat_0,
 	}
 
 }
+
+
+template <typename state_type> void BatchFilter<state_type>::compute_true_state_history(const state_type & X0_true,
+const std::vector<double> & T_obs){
+
+
+	if (this -> true_dynamics_fun == nullptr){
+		this -> true_state_history.push_back(X0_true);
+
+		// true_state_history  already has one state 
+		for (unsigned int i = 1; i < T_obs.size(); ++i){
+			this -> true_state_history.push_back(this -> true_state_history[0]);
+		}
+
+	}
+	else{
+
+		//
+		// Odeint is called here. the state is propagated
+		// along with the state transition matrices
+		//
+
+		unsigned int N_true = X0_true.n_rows;
+		state_type X0_true_copy(X0_true);
+
+		System<state_type> dynamics(this -> args,
+			N_true,
+			this -> true_dynamics_fun );
+		
+		typedef boost::numeric::odeint::runge_kutta_cash_karp54< state_type > error_stepper_type;
+		auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 , 1.0e-16 );
+		
+		auto tbegin = T_obs.begin();
+		auto tend = T_obs.end();
+
+		boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_copy, tbegin, tend,1e-10,
+			Observer::push_back_state(this -> true_state_history));
+
+
+	}
+
+}
+
+template <typename state_type> void BatchFilter<state_type>::compute_true_observations(const std::vector<double> & T_obs,const arma::mat & R ){
+
+this -> true_obs_history.clear();
+arma::mat S =  arma::chol( R, "lower" ) ;
+
+for (unsigned int i = 0; i < T_obs.size(); ++i){
+
+	arma::vec Y = this -> observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
+
+	Y += S * arma::randn<arma::vec>( S.n_rows ) ;
+
+	this -> true_obs_history.push_back(Y);
+}
+
+}
+
+
+template<typename state_type> void BatchFilter<state_type>::write_estimated_covariance(std::string path_to_covariance) const{
+
+unsigned int state_dim = this -> true_state_history.at(0).n_rows;
+
+arma::mat P_hat_history = arma::zeros<arma::mat>(state_dim,state_dim * this -> true_state_history.size());
+for (unsigned int i =0 ; i < this -> true_state_history.size(); ++i ){
+
+	P_hat_history.cols(i * state_dim,i * state_dim + state_dim - 1) = this -> estimated_covariance_history[i];
+
+}
+P_hat_history.save(path_to_covariance,arma::raw_ascii);
+
+
+}
+
+
+// Explicit instantiation
+template class BatchFilter< arma::vec >;
+
+
+
+

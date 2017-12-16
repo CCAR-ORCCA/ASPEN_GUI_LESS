@@ -166,7 +166,7 @@ ${SOURCE_PATH}/ShapeModelBezier.cpp
 ${SOURCE_PATH}/ShapeModelImporter.cpp
 ${SOURCE_PATH}/ShapeModelTri.cpp
 ${SOURCE_PATH}/RK.cpp
-${SOURCE_PATH}/Wrappers.cpp
+${SOURCE_PATH}/Wrapper.cpp
 ${EXTERNAL_PATH}/Gnuplot/source/GNUPlot.cpp
 ${EXTERNAL_PATH}/CGAL_interface/source/CGAL_interface.cpp
 )

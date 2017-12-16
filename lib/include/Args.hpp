@@ -159,6 +159,13 @@ public:
 		return this -> constant_omega;
 	}
 
+	arma::vec get_coords_station() const{
+		return this -> coords_station;
+	}
+
+	void set_coords_station(arma::vec coords_station){
+		this -> coords_station = coords_station;
+	}
 
 
 protected:
@@ -177,6 +184,7 @@ protected:
 	Interpolator * interpolator;
 
 	arma::vec constant_omega;
+	arma::vec coords_station;
 
 	unsigned int degree;
 	double ref_radius ;

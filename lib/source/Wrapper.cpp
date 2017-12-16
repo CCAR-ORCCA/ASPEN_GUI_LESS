@@ -1,8 +1,7 @@
-#include "Wrappers.hpp"
+#include "Wrapper.hpp"
 
 
-
-arma::vec point_mass_dxdt_wrapper(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::point_mass_dxdt_wrapper(double t, arma::vec X, Args * args) {
 
 	
 
@@ -16,7 +15,27 @@ arma::vec point_mass_dxdt_wrapper(double t, arma::vec X, Args * args) {
 }
 
 
-arma::vec sigma_dot_wrapper(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::point_mass_dxdt_wrapper_odeint(double t, const arma::vec & x, const Args & args) {
+	arma::vec pos_inertial = x . rows(0, 2);
+	arma::vec acc_inertial = args.get_dyn_analyses() -> point_mass_acceleration(pos_inertial , args . get_mass());
+
+	arma::vec dxdt = { x(3), x(4), x(5), acc_inertial(0), acc_inertial(1), acc_inertial(2)};
+
+	return dxdt;
+
+}
+
+arma::mat Wrapper::point_mass_jac_wrapper_odeint(double t, const arma::vec & x, const Args & args) {
+
+	arma::vec pos_inertial = x . rows(0, 2);
+	return args.get_dyn_analyses() -> point_mass_jacobian(pos_inertial , args . get_mass());
+
+
+}
+
+
+
+arma::vec Wrapper::sigma_dot_wrapper(double t, arma::vec X, Args * args) {
 
 
 	arma::vec omega = args -> get_constant_omega();
@@ -30,7 +49,7 @@ arma::vec sigma_dot_wrapper(double t, arma::vec X, Args * args) {
 
 
 
-arma::vec point_mass_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::point_mass_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args) {
 
 	
 	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t, true);
@@ -50,7 +69,7 @@ arma::vec point_mass_dxdt_wrapper_body_frame(double t, arma::vec X, Args * args)
 }
 
 
-arma::vec attitude_dxdt_wrapper(double t, arma::vec  X, Args * args) {
+arma::vec Wrapper::attitude_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 	arma::vec dxdt = RBK::dXattitudedt(t, X , args -> get_shape_model() -> get_inertia());
 
@@ -59,7 +78,7 @@ arma::vec attitude_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 }
 
 
-arma::vec validation_dxdt_wrapper(double t, arma::vec  X, Args * args) {
+arma::vec Wrapper::validation_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 	arma::vec dxdt = {cos(t),sin(t)};
 
@@ -67,7 +86,7 @@ arma::vec validation_dxdt_wrapper(double t, arma::vec  X, Args * args) {
 
 }
 
-arma::vec event_function_mrp_omega(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::event_function_mrp_omega(double t, arma::vec X, Args * args) {
 	if (arma::norm(X.rows(0, 2)) > 1) {
 		
 		X.rows(0,2) = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
@@ -80,7 +99,7 @@ arma::vec event_function_mrp_omega(double t, arma::vec X, Args * args) {
 }
 
 
-arma::vec event_function_mrp(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::event_function_mrp(double t, arma::vec X, Args * args) {
 	if (arma::norm(X.rows(0, 2)) > 1) {
 		arma::vec mrp = - X.rows(0, 2) / arma::dot(X . rows(0, 2), X . rows(0, 2));
 		return mrp;
@@ -90,7 +109,7 @@ arma::vec event_function_mrp(double t, arma::vec X, Args * args) {
 	}
 }
 
-arma::vec event_function_collision(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::event_function_collision(double t, arma::vec X, Args * args) {
 
 	arma::vec mrp_TN = args -> get_interpolator() -> interpolate(t, true).rows(0, 2);
 
@@ -106,7 +125,7 @@ arma::vec event_function_collision(double t, arma::vec X, Args * args) {
 }
 
 
-arma::vec event_function_collision_body_frame(double t, arma::vec X, Args * args) {
+arma::vec Wrapper::event_function_collision_body_frame(double t, arma::vec X, Args * args) {
 
 
 	arma::vec pos_body = X . rows(0, 2);
@@ -119,7 +138,7 @@ arma::vec event_function_collision_body_frame(double t, arma::vec X, Args * args
 }
 
 
-double energy_attitude(double t, arma::vec X , Args * args) {
+double Wrapper::energy_attitude(double t, arma::vec X , Args * args) {
 
 	arma::vec omega = X . rows(3, 5);
 
@@ -127,7 +146,7 @@ double energy_attitude(double t, arma::vec X , Args * args) {
 
 }
 
-arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args){
+arma::vec Wrapper::joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args){
 
 	arma::vec dxdt(X.n_rows);
 
@@ -161,10 +180,59 @@ arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args
 
 }
 
+arma::vec Wrapper::obs_long_lat(double t,const arma::vec & x, const Args & args){
+
+	arma::vec X = {1,0,0};
+	arma::vec Y = {0,1,0};
+	arma::vec Z = {0,0,1};
+	arma::mat XY = {{1,0,0},
+	{0,1,0},
+	{0,0,0}};
+
+	arma::vec long_lat(2);
+
+	arma::vec coords_station = args.get_coords_station();
+	arma::vec omega = args.get_constant_omega();
+	arma::mat DCM = RBK::M2(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
+	arma::vec pos_station = {args.get_ref_radius(),0,0};
+	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
+
+	long_lat(0) = std::atan2(arma::dot(Y, rho),
+		arma::dot(X, rho));
+
+	long_lat(1) = std::atan2(arma::dot(Z, rho),
+		arma::dot(rho, XY * rho));
+
+	return long_lat;
+}
+
+arma::mat Wrapper::obs_jac_long_lat(double t,const arma::vec & x, const Args & args){
+
+	arma::vec X = {1,0,0};
+	arma::vec Y = {0,1,0};
+	arma::vec Z = {0,0,1};
+	arma::mat XY = {{1,0,0},
+	{0,1,0},
+	{0,0,0}};
 
 
+	arma::vec coords_station = args.get_coords_station();
+	arma::vec omega = args.get_constant_omega();
+	arma::mat DCM = RBK::M2(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
+	arma::vec pos_station = {args.get_ref_radius(),0,0};
+	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
 
+	arma::mat jacobian = arma::zeros<arma::mat>(2,x.n_rows);
 
+	jacobian.row(0).cols(0,2) = (rho.t() * (X * Y.t() - Y * X.t())
+		/arma::dot(rho, XY * rho));
+
+	jacobian.row(1).cols(0,2) = std::sqrt(arma::dot(rho, XY * rho)) / arma::dot(rho,rho) * Z.t() * (arma::eye<arma::mat>(3,3)
+		- rho * rho.t() * XY / arma::dot(rho, XY * rho));
+
+	return jacobian;
+
+}
 
 
 

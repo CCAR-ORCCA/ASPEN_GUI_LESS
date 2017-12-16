@@ -21,9 +21,17 @@ public:
 	Evaluates the acceleration due to gravity at the provided point using a point mass model
 	@param point Array of coordinates at which the acceleration is evaluated
 	@param mass Mass of the point mass (kg)
-	@return PGM acceleration expressed in the body frame
+	@return point mass acceleration expressed in the body frame
 	*/
 	arma::vec point_mass_acceleration(arma::vec & point , double mass) const ;
+
+	/**
+	Evaluates the gravity gradient matrix at the provided point using a point mass model
+	@param point Array of coordinates at which the acceleration is evaluated
+	@param mass Mass of the point mass (kg)
+	@return gravity gradient expressed in the inertial frame of reference
+	*/
+	arma::mat point_mass_jacobian(arma::vec & point , double mass) const ;
 
 	/**
 	Evaluates the gravity acceleration from the provided spherical harmonics 

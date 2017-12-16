@@ -1,48 +1,65 @@
 #include "BatchFilter.hpp"
+#include "Wrapper.hpp"
 
-
-arma::vec sinusoid(double t, arma::vec X , const Args & args){
-	
-	arma::vec Y = {X[0] * std::cos(X[1] * t)};
-	return Y;
-}
-
-arma::mat H_sinusoid(double t, arma::vec X , const Args & args){
-	
-	arma::mat H = arma::zeros<arma::mat>(1,X.n_rows);
-
-	H(0,0) = std::cos(X[1] * t);
-	H(0,1) = - X[0] * t * std::sin(X[1] * t);
-
-	return H;
-}
+typedef arma::vec state_type;
 
 int main(){
 
+
+	double a = 10000.;
+	double tau = std::sqrt(std::pow(a,3)/398600.);
+	double earth_mass = 1./arma::datum::G;
+	double earth_radius = 6371./a;
+	double rotation_rate = 2 * arma::datum::pi / (86400.) * tau;
+
+	arma::vec omega = {0,0,rotation_rate};
+	arma::vec station_coords = {48.8566, 2.3522};
+	station_coords = station_coords / 180. * arma::datum::pi;
+
 	Args args;
-	BatchFilter filter(args);
-	filter.set_observations_fun(sinusoid,H_sinusoid);
+	DynamicAnalyses dyn_an(nullptr);
+	args.set_mass(earth_mass);
+	args.set_dyn_analyses(&dyn_an);
+	args.set_constant_omega(omega);
+	args.set_ref_radius(earth_radius);
+	args.set_coords_station(station_coords);
 
-	std::vector<double> T_obs;
 
-	unsigned int N = 2000;
-	for (unsigned int i =0; i < N; ++i){
-		T_obs.push_back( double(i)/(N - 1) * 4 * arma::datum::pi );
+	BatchFilter<state_type > filter(args);
+	filter.set_observations_fun(Wrapper::obs_long_lat,
+		Wrapper::obs_jac_long_lat);
+	filter.set_true_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint);
+	filter.set_estimate_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint,
+		Wrapper::point_mass_jac_wrapper_odeint);
+
+
+	double N_orbits = 1;
+	unsigned N = 500;
+	std::vector<double> times;
+
+
+	for (unsigned int i = 0; i < N; ++i){
+
+		times.push_back( 2 * arma::datum::pi * double(i) / (N - 1) * N_orbits  );
+
 	}
 
-	arma::vec X0_true = {1,0.5};
-	arma::vec X_bar_0 = {0.9,0.6};
-	arma::mat R = 0.0025 * arma::eye<arma::mat>(1,1);
+	state_type X0_true = {0,0,1.1,1,0,0.001};
+	state_type X_bar_0 = {0,0,1.01,0.99,0,0};
 
-	int iter = filter.run(20,X0_true,X_bar_0,T_obs,R);
+	arma::mat R = std::pow(1./3600 * arma::datum::pi / 180,2) * arma::eye<arma::mat>(2,2);
+
+	int iter = filter.run(20,X0_true,X_bar_0,times,R,true);
+	
 	std::cout << "Converged in " << iter << " iterations\n";
 	std::cout << filter.get_estimated_state_history()[0] << std::endl;
 
 	filter.write_estimated_state("./X_hat.txt");
 	filter.write_true_obs("./Y_true.txt");
-	filter.write_T_obs(T_obs,"./T_obs.txt");
+	filter.write_true_state("./X_true.txt");
+	filter.write_T_obs(times,"./T_obs.txt");
 	filter.write_residuals("./residuals.txt");
-
+	filter.write_estimated_covariance("./covariances.txt");
 
 
 	return 0;

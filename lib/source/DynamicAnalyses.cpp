@@ -6,11 +6,35 @@ DynamicAnalyses::DynamicAnalyses(ShapeModelTri * shape_model) {
 
 arma::vec DynamicAnalyses::point_mass_acceleration(arma::vec & point , double mass) const {
 
+
+	if (point.n_rows != 3){
+		throw (std::runtime_error("vector argument should have 3 components, not" + std::to_string(point.n_rows)));
+	}
+
 	arma::vec acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
 	return acc;
 
 
 }
+
+arma::mat DynamicAnalyses::point_mass_jacobian(arma::vec & point , double mass) const {
+
+
+	if (point.n_rows != 3){
+		throw (std::runtime_error("vector argument should have 3 components, not" + std::to_string(point.n_rows)));
+	}
+
+	arma::mat A = arma::zeros<arma::mat>(6,6);
+
+	A.submat(0,3,2,5) = arma::eye<arma::mat>(3,3);
+	A.submat(3,0,5,2) = - mass * arma::datum::G * (
+		arma::eye<arma::mat>(3,3) / std::pow(arma::norm(point),3) 
+		- 3 * point * point.t() / std::pow(arma::norm(point),5));
+
+	return A;
+
+}
+
 
 
 void DynamicAnalyses::GetBnmNormalizedExterior(int n_degree,
@@ -100,8 +124,8 @@ arma::vec DynamicAnalyses::spherical_harmo_acc(const unsigned int n_degree,
 	const double ref_radius,
 	const double  mu,
 	arma::vec pos, 
-	 arma::mat * Cbar,
-	 arma::mat * Sbar) {
+	arma::mat * Cbar,
+	arma::mat * Sbar) {
 
 	int n_max = 50;
 
