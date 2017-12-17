@@ -1,14 +1,15 @@
 #include "BatchFilter.hpp"
-template <typename state_type> BatchFilter<state_type>::BatchFilter(const Args & args) : Filter<state_type>(args){
+BatchFilter::BatchFilter(const Args & args) : Filter(args){
 }
 
-template <typename state_type> int  BatchFilter<state_type>::run(
-unsigned int N_iter,
-const state_type & X0_true,
-const state_type & X_bar_0,
-const std::vector<double> & T_obs,
-const arma::mat & R,
-bool verbose) {
+int  BatchFilter::run(
+	unsigned int N_iter,
+	const arma::vec & X0_true,
+	const arma::vec & X_bar_0,
+	const std::vector<double> & T_obs,
+	const arma::mat & R,
+	const arma::mat & Q,
+	bool verbose) {
 
 	if (T_obs.size() == 0){
 		return -1;
@@ -29,7 +30,7 @@ bool verbose) {
 	this -> compute_true_observations(T_obs,R);
 
 	// Containers
-	std::vector<state_type> X_bar;
+	std::vector<arma::vec> X_bar;
 	std::vector<arma::mat> stm;
 	std::vector<arma::vec> Y_bar;
 	std::vector<arma::vec> y_bar;
@@ -160,13 +161,13 @@ bool verbose) {
 
 }
 
-template <typename state_type> void BatchFilter<state_type>::compute_prefit_residuals(
-const std::vector<double> & T_obs,
-const std::vector<state_type> & X_bar,
-std::vector<arma::vec> & y_bar,
-bool & has_converged,
-arma::vec & previous_norm_res_squared,
-const arma::mat & R){
+void BatchFilter::compute_prefit_residuals(
+	const std::vector<double> & T_obs,
+	const std::vector<arma::vec> & X_bar,
+	std::vector<arma::vec> & y_bar,
+	bool & has_converged,
+	arma::vec & previous_norm_res_squared,
+	const arma::mat & R){
 
 	// The previous residuals are discarded
 	y_bar.clear();
@@ -202,10 +203,10 @@ const arma::mat & R){
 
 }
 
-template <typename state_type> void BatchFilter<state_type>::compute_reference_state_history(
-const std::vector<double> & T_obs,
-std::vector<state_type> & X_bar,
-std::vector<arma::mat> & stm){
+void BatchFilter::compute_reference_state_history(
+	const std::vector<double> & T_obs,
+	std::vector<arma::vec> & X_bar,
+	std::vector<arma::mat> & stm){
 
 	// If the estimated state has no dynamics,
 	// all the STMs are equal to the identity and the state is constant
@@ -243,7 +244,7 @@ std::vector<arma::mat> & stm){
 
 		arma::vec X_bar_0 = X_bar[0];
 
-		System<state_type> dynamics(this -> args,
+		System dynamics(this -> args,
 			N_est,
 			this -> estimate_dynamics_fun ,
 			this -> jacobian_estimate_dynamics_fun,
@@ -255,7 +256,7 @@ std::vector<arma::mat> & stm){
 		x.rows(0,N_est - 1) = X_bar[0];
 		x.rows(N_est,N_est + N_est * N_est - 1) = arma::vectorise(arma::eye<arma::mat>(N_est,N_est));
 
-		std::vector <arma::vec> augmented_state_history;
+		std::vector<arma::vec> augmented_state_history;
 		typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 		auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 ,
 			1.0e-16 );
@@ -280,8 +281,8 @@ std::vector<arma::mat> & stm){
 
 }
 
-template <typename state_type> void BatchFilter<state_type>::compute_covariances(const arma::mat & P_hat_0,
-const std::vector<arma::mat> & stm){
+void BatchFilter::compute_covariances(const arma::mat & P_hat_0,
+	const std::vector<arma::mat> & stm){
 
 	this -> estimated_covariance_history.clear();
 	for (unsigned int i = 0; i < stm.size(); ++i){
@@ -292,82 +293,11 @@ const std::vector<arma::mat> & stm){
 }
 
 
-template <typename state_type> void BatchFilter<state_type>::compute_true_state_history(const state_type & X0_true,
-const std::vector<double> & T_obs){
 
-
-	if (this -> true_dynamics_fun == nullptr){
-		this -> true_state_history.push_back(X0_true);
-
-		// true_state_history  already has one state 
-		for (unsigned int i = 1; i < T_obs.size(); ++i){
-			this -> true_state_history.push_back(this -> true_state_history[0]);
-		}
-
-	}
-	else{
-
-		//
-		// Odeint is called here. the state is propagated
-		// along with the state transition matrices
-		//
-
-		unsigned int N_true = X0_true.n_rows;
-		state_type X0_true_copy(X0_true);
-
-		System<state_type> dynamics(this -> args,
-			N_true,
-			this -> true_dynamics_fun );
-		
-		typedef boost::numeric::odeint::runge_kutta_cash_karp54< state_type > error_stepper_type;
-		auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 , 1.0e-16 );
-		
-		auto tbegin = T_obs.begin();
-		auto tend = T_obs.end();
-
-		boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_copy, tbegin, tend,1e-10,
-			Observer::push_back_state(this -> true_state_history));
-
-
-	}
-
+void BatchFilter::set_gamma_fun(arma::mat (*gamma_fun)(double dt)){
+// Does nothing
 }
 
-template <typename state_type> void BatchFilter<state_type>::compute_true_observations(const std::vector<double> & T_obs,const arma::mat & R ){
-
-this -> true_obs_history.clear();
-arma::mat S =  arma::chol( R, "lower" ) ;
-
-for (unsigned int i = 0; i < T_obs.size(); ++i){
-
-	arma::vec Y = this -> observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
-
-	Y += S * arma::randn<arma::vec>( S.n_rows ) ;
-
-	this -> true_obs_history.push_back(Y);
-}
-
-}
-
-
-template<typename state_type> void BatchFilter<state_type>::write_estimated_covariance(std::string path_to_covariance) const{
-
-unsigned int state_dim = this -> true_state_history.at(0).n_rows;
-
-arma::mat P_hat_history = arma::zeros<arma::mat>(state_dim,state_dim * this -> true_state_history.size());
-for (unsigned int i =0 ; i < this -> true_state_history.size(); ++i ){
-
-	P_hat_history.cols(i * state_dim,i * state_dim + state_dim - 1) = this -> estimated_covariance_history[i];
-
-}
-P_hat_history.save(path_to_covariance,arma::raw_ascii);
-
-
-}
-
-
-// Explicit instantiation
-template class BatchFilter< arma::vec >;
 
 
 

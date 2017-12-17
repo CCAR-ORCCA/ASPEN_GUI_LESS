@@ -28,8 +28,9 @@ namespace Wrapper{
 
 	arma::vec obs_long_lat(double t,const arma::vec & x, const Args & args);
 	arma::mat obs_jac_long_lat(double t,const arma::vec & x, const Args & args);
-		
+
 	
+	arma::mat gamma_OD(double dt);
 
 
 	double energy_attitude(double t, arma::vec  X, Args * args);

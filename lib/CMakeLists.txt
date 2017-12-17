@@ -144,6 +144,7 @@ ${SOURCE_PATH}/Bezier.cpp
 ${SOURCE_PATH}/ControlPoint.cpp
 ${SOURCE_PATH}/DynamicAnalyses.cpp
 ${SOURCE_PATH}/Element.cpp
+${SOURCE_PATH}/ExtendedKalmanFilter.cpp
 ${SOURCE_PATH}/Facet.cpp
 ${SOURCE_PATH}/Filter.cpp
 ${SOURCE_PATH}/FrameGraph.cpp
@@ -157,6 +158,7 @@ ${SOURCE_PATH}/PC.cpp
 ${SOURCE_PATH}/PointNormal.cpp
 ${SOURCE_PATH}/Ray.cpp
 ${SOURCE_PATH}/RefFrame.cpp
+${SOURCE_PATH}/SequentialFilter.cpp
 ${SOURCE_PATH}/ShapeBuilder.cpp
 ${SOURCE_PATH}/ShapeFitter.cpp
 ${SOURCE_PATH}/ShapeFitterBezier.cpp

@@ -1,7 +1,7 @@
 #include "BatchFilter.hpp"
-#include "Wrapper.hpp"
+#include "ExtendedKalmanFilter.hpp"
 
-typedef arma::vec state_type;
+#include "Wrapper.hpp"
 
 int main(){
 
@@ -11,6 +11,10 @@ int main(){
 	double earth_mass = 1./arma::datum::G;
 	double earth_radius = 6371./a;
 	double rotation_rate = 2 * arma::datum::pi / (86400.) * tau;
+
+
+	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001};
+	arma::mat P0 = arma::diagmat(P0_diag);
 
 	arma::vec omega = {0,0,rotation_rate};
 	arma::vec station_coords = {48.8566, 2.3522};
@@ -24,19 +28,22 @@ int main(){
 	args.set_ref_radius(earth_radius);
 	args.set_coords_station(station_coords);
 
-
-	BatchFilter<state_type > filter(args);
+	ExtendedKalmanFilter filter(args);
 	filter.set_observations_fun(Wrapper::obs_long_lat,
 		Wrapper::obs_jac_long_lat);
 	filter.set_true_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint);
 	filter.set_estimate_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint,
 		Wrapper::point_mass_jac_wrapper_odeint);
+	filter.set_initial_information_matrix(arma::inv(P0));
+
+	filter.set_gamma_fun(Wrapper::gamma_OD);
+
+	arma::mat Q = std::pow(1e-6 / (a / (tau * tau)),2) * arma::eye<arma::mat>(3,3);
 
 
 	double N_orbits = 1;
-	unsigned N = 500;
+	unsigned N = 1000;
 	std::vector<double> times;
-
 
 	for (unsigned int i = 0; i < N; ++i){
 
@@ -44,21 +51,18 @@ int main(){
 
 	}
 
-	state_type X0_true = {0,0,1.1,1,0,0.001};
-	state_type X_bar_0 = {0,0,1.01,0.99,0,0};
+	arma::vec X0_true = {0,0,1.1,1,0,0.01};
+	arma::vec X_bar_0 = {0,0,1.1,1,0,0.01};
 
 	arma::mat R = std::pow(1./3600 * arma::datum::pi / 180,2) * arma::eye<arma::mat>(2,2);
 
-	int iter = filter.run(20,X0_true,X_bar_0,times,R,true);
+	int iter = filter.run(1,X0_true,X_bar_0,times,R,Q,true);
 	
-	std::cout << "Converged in " << iter << " iterations\n";
-	std::cout << filter.get_estimated_state_history()[0] << std::endl;
-
 	filter.write_estimated_state("./X_hat.txt");
 	filter.write_true_obs("./Y_true.txt");
 	filter.write_true_state("./X_true.txt");
 	filter.write_T_obs(times,"./T_obs.txt");
-	filter.write_residuals("./residuals.txt");
+	filter.write_residuals("./residuals.txt",R);
 	filter.write_estimated_covariance("./covariances.txt");
 
 

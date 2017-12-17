@@ -4,15 +4,15 @@
 #include <armadillo>
 #include "FixVectorSize.hpp"
 
-template <typename state_type,typename jacobian_type = arma::mat> class System {
+class System {
 public:
 
 	System(const Args & args,
 		unsigned int N_est,
-		state_type (*estimate_dynamics_fun)(double, const state_type & , const Args & args) ,
-		jacobian_type (*jacobian_estimate_dynamics_fun)(double, const state_type & , const Args & args),
+		arma::vec (*estimate_dynamics_fun)(double, const arma::vec & , const Args & args) ,
+		arma::mat (*jacobian_estimate_dynamics_fun)(double, const arma::vec & , const Args & args),
 		unsigned int N_true = 0,
-		state_type (*true_dynamics_fun)(double, const state_type & , const Args & args) = nullptr) 
+		arma::vec (*true_dynamics_fun)(double, const arma::vec & , const Args & args) = nullptr) 
 	: N_est(N_est), N_true(N_true){
 		
 		this -> estimate_dynamics_fun = estimate_dynamics_fun;
@@ -24,13 +24,13 @@ public:
 
 	System(const Args & args,
 		unsigned int N_true,
-		state_type (*true_dynamics_fun)(double, const state_type & , const Args & args)) 
+		arma::vec (*true_dynamics_fun)(double, const arma::vec & , const Args & args)) 
 	: N_est(0), N_true(N_true){
 		this -> true_dynamics_fun = true_dynamics_fun;
 		this -> args = args;
 	}
 
-	void operator() (const state_type & x , state_type & dxdt , const double t ){
+	void operator() (const arma::vec & x , arma::vec & dxdt , const double t ){
 
 
 		if (this -> true_dynamics_fun != nullptr){
@@ -63,9 +63,9 @@ public:
 	protected:
 		const unsigned int N_est;
 		const unsigned int N_true;
-		state_type (*estimate_dynamics_fun)(double, const state_type &  , const Args & args) = nullptr;
-		state_type (*true_dynamics_fun)(double, const state_type &  , const Args & args) = nullptr;
-		jacobian_type (*jacobian_estimate_dynamics_fun)(double, const state_type &  , const Args & args) = nullptr;
+		arma::vec (*estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
+		arma::vec (*true_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
+		arma::mat (*jacobian_estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
 		Args args;
 	};
 

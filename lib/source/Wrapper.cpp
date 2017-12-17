@@ -34,6 +34,14 @@ arma::mat Wrapper::point_mass_jac_wrapper_odeint(double t, const arma::vec & x, 
 }
 
 
+arma::mat Wrapper::gamma_OD(double dt){
+	arma::mat gamma = arma::zeros<arma::mat>(6,3);
+	gamma.submat(0,0,2,2) = 0.5 * dt * arma::eye<arma::mat>(3,3);
+	gamma.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
+
+	gamma = dt * gamma;
+	return gamma;
+}
 
 arma::vec Wrapper::sigma_dot_wrapper(double t, arma::vec X, Args * args) {
 
@@ -193,7 +201,7 @@ arma::vec Wrapper::obs_long_lat(double t,const arma::vec & x, const Args & args)
 
 	arma::vec coords_station = args.get_coords_station();
 	arma::vec omega = args.get_constant_omega();
-	arma::mat DCM = RBK::M2(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
+	arma::mat DCM = RBK::M1(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
 	arma::vec pos_station = {args.get_ref_radius(),0,0};
 	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
 
@@ -218,7 +226,7 @@ arma::mat Wrapper::obs_jac_long_lat(double t,const arma::vec & x, const Args & a
 
 	arma::vec coords_station = args.get_coords_station();
 	arma::vec omega = args.get_constant_omega();
-	arma::mat DCM = RBK::M2(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
+	arma::mat DCM = RBK::M1(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
 	arma::vec pos_station = {args.get_ref_radius(),0,0};
 	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
 
