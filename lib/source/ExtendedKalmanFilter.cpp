@@ -40,7 +40,7 @@ int ExtendedKalmanFilter::run(
 		throw(std::runtime_error("The EKF needs an a-priori covariance matrix at initialization"));
 	}
 
-	arma::vec X_hat = X0_true;
+	arma::vec X_hat = X_bar_0;
 	arma::mat P_hat = arma::inv(this -> info_mat_bar_0);
 
 	arma::vec previous_norm_res_squared = arma::zeros<arma::vec>(this -> true_obs_history[0].n_rows);
@@ -200,7 +200,7 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	auto H = this -> jacobian_observations_fun(t, X_bar , this -> args);
 
 	// The Kalman gain is computed
-	arma::mat K = 0 * P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
+	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;

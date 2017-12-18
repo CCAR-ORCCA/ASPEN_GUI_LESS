@@ -38,7 +38,7 @@ int main(){
 
 	filter.set_gamma_fun(Wrapper::gamma_OD);
 
-	arma::mat Q = std::pow(1e-6 / (a / (tau * tau)),2) * arma::eye<arma::mat>(3,3);
+	arma::mat Q = std::pow(1e-4 / (a / (tau * tau)),2) * arma::eye<arma::mat>(3,3);
 
 
 	double N_orbits = 1;
@@ -52,7 +52,7 @@ int main(){
 	}
 
 	arma::vec X0_true = {0,0,1.1,1,0,0.01};
-	arma::vec X_bar_0 = {0,0,1.1,1,0,0.01};
+	arma::vec X_bar_0 = {0.01,0.01,1.15,1,0.01,0.02};
 
 	arma::mat R = std::pow(1./3600 * arma::datum::pi / 180,2) * arma::eye<arma::mat>(2,2);
 

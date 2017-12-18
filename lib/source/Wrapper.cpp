@@ -188,6 +188,25 @@ arma::vec Wrapper::joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Ar
 
 }
 
+
+arma::vec Wrapper::obs_debug(double t,const arma::vec & x, const Args & args){
+
+	return x.rows(0,1);
+}
+
+
+
+arma::mat Wrapper::obs_jac_debug(double t,const arma::vec & x, const Args & args){
+	
+
+	arma::mat H = arma::zeros<arma::mat>(2,x.n_rows);
+
+	H(0,0) = 1.;
+	H(1,1) = 1.;
+
+	return H;
+}
+
 arma::vec Wrapper::obs_long_lat(double t,const arma::vec & x, const Args & args){
 
 	arma::vec X = {1,0,0};
@@ -209,7 +228,7 @@ arma::vec Wrapper::obs_long_lat(double t,const arma::vec & x, const Args & args)
 		arma::dot(X, rho));
 
 	long_lat(1) = std::atan2(arma::dot(Z, rho),
-		arma::dot(rho, XY * rho));
+		std::sqrt(arma::dot(rho, XY * rho)));
 
 	return long_lat;
 }
@@ -222,7 +241,6 @@ arma::mat Wrapper::obs_jac_long_lat(double t,const arma::vec & x, const Args & a
 	arma::mat XY = {{1,0,0},
 	{0,1,0},
 	{0,0,0}};
-
 
 	arma::vec coords_station = args.get_coords_station();
 	arma::vec omega = args.get_constant_omega();

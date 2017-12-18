@@ -29,6 +29,10 @@ namespace Wrapper{
 	arma::vec obs_long_lat(double t,const arma::vec & x, const Args & args);
 	arma::mat obs_jac_long_lat(double t,const arma::vec & x, const Args & args);
 
+
+	arma::vec obs_debug(double t,const arma::vec & x, const Args & args);
+	arma::mat obs_jac_debug(double t,const arma::vec & x, const Args & args);
+
 	
 	arma::mat gamma_OD(double dt);
 

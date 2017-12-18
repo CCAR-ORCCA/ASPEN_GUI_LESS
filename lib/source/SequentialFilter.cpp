@@ -1,7 +1,5 @@
 #include "SequentialFilter.hpp"
 
-
-
 arma::vec SequentialFilter::compute_residual(double t,const arma::vec & X_hat,
 	const arma::vec & Y_true){
 
