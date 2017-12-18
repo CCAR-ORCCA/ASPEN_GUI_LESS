@@ -207,7 +207,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 
 		impact = patch -> evaluate(u_t,v_t);
 
-		if (arma::norm(u_tilde*(S - patch -> evaluate(u_t,v_t))) < 1e-8){
+		if (arma::norm(u_tilde*(S - impact)) < 1e-8){
 
 			this -> true_range = arma::norm(S - impact);
 			u = u_t;

@@ -124,7 +124,7 @@ int  BatchFilter::run(
 			}
 			
 
-			H = this -> jacobian_observations_fun(T_obs[p], X_bar[p] ,
+			H = this -> estimate_jacobian_observations_fun(T_obs[p], X_bar[p] ,
 				this -> args) * stm[p];
 
 			info_mat += H.t() * W * H;
@@ -176,7 +176,7 @@ void BatchFilter::compute_prefit_residuals(
 	// The new residuals are computed
 	for (unsigned int p = 0; p < T_obs.size(); ++ p){
 
-		arma::vec residual = this -> true_obs_history[p] - this -> observation_fun(T_obs[p], X_bar[p] ,this -> args);
+		arma::vec residual = this -> true_obs_history[p] - this -> estimate_observation_fun(T_obs[p], X_bar[p] ,this -> args);
 
 		if (residual.has_nan() == false){
 			y_bar.push_back(residual);
@@ -247,7 +247,7 @@ void BatchFilter::compute_reference_state_history(
 		System dynamics(this -> args,
 			N_est,
 			this -> estimate_dynamics_fun ,
-			this -> jacobian_estimate_dynamics_fun,
+			this -> estimate_jacobian_dynamics_fun,
 			N_true,
 			nullptr );
 		

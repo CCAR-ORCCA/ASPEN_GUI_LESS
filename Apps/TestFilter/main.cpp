@@ -1,7 +1,9 @@
 #include "BatchFilter.hpp"
 #include "ExtendedKalmanFilter.hpp"
 
-#include "Wrapper.hpp"
+#include "Observations.hpp"
+#include "Dynamics.hpp"
+
 
 int main(){
 
@@ -29,14 +31,13 @@ int main(){
 	args.set_coords_station(station_coords);
 
 	ExtendedKalmanFilter filter(args);
-	filter.set_observations_fun(Wrapper::obs_long_lat,
-		Wrapper::obs_jac_long_lat);
-	filter.set_true_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint);
-	filter.set_estimate_dynamics_fun(Wrapper::point_mass_dxdt_wrapper_odeint,
-		Wrapper::point_mass_jac_wrapper_odeint);
+	filter.set_observations_fun(Observations::obs_long_lat,
+		Observations::obs_jac_long_lat);	
+	filter.set_estimate_dynamics_fun(Dynamics::point_mass_dxdt_odeint,
+		Dynamics::point_mass_jac_odeint);
 	filter.set_initial_information_matrix(arma::inv(P0));
 
-	filter.set_gamma_fun(Wrapper::gamma_OD);
+	filter.set_gamma_fun(Dynamics::gamma_OD);
 
 	arma::mat Q = std::pow(1e-4 / (a / (tau * tau)),2) * arma::eye<arma::mat>(3,3);
 

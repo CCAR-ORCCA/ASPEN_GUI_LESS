@@ -15,7 +15,7 @@ public:
 		const arma::vec & X0_true,
 		const arma::vec & X_bar_0,
 		const std::vector<double> & T_obs,
-		const arma::mat & R,
+		const arma::mat & R = arma::zeros<arma::mat>(1,1),
 		const arma::mat & Q = arma::zeros<arma::mat>(1,1),
 		bool verbose = false) ;
 

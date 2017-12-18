@@ -5,19 +5,35 @@ Filter ::Filter(const Args & args){
 }
 
 void Filter::set_estimate_dynamics_fun(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args),
-	arma::mat (*jacobian_estimate_dynamics_fun)(double, const arma::vec &, const Args & args)){
+	arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args),
+	arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
+	
 	this -> estimate_dynamics_fun = estimate_dynamics_fun;
-	this -> jacobian_estimate_dynamics_fun = jacobian_estimate_dynamics_fun;
+	this -> estimate_jacobian_dynamics_fun = estimate_jacobian_dynamics_fun;
+
+	if (true_dynamics_fun == nullptr){
+		this -> true_dynamics_fun = estimate_dynamics_fun;
+	}
+	else{
+		this -> true_dynamics_fun = true_dynamics_fun;
+	}
 }
 
-void Filter ::set_true_dynamics_fun(arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
-	this -> true_dynamics_fun = true_dynamics_fun;
-}
 
-void Filter::set_observations_fun(arma::vec (*observation_fun)(double, const arma::vec &, const Args & args),
-	arma::mat (*jacobian_observations_fun)(double, const arma::vec &, const Args & args)){
-	this -> observation_fun = observation_fun;
-	this -> jacobian_observations_fun = jacobian_observations_fun;
+void Filter::set_observations_fun(
+	arma::vec (*estimate_observation_fun)(double, const arma::vec &, const Args & args),
+	arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec &, const Args & args),
+	arma::vec (*true_observation_fun)(double, const arma::vec &, const Args & args)){
+	this -> estimate_observation_fun = estimate_observation_fun;
+	this -> estimate_jacobian_observations_fun = estimate_jacobian_observations_fun;
+
+	if (true_observation_fun == nullptr){
+		this -> true_observation_fun = estimate_observation_fun;
+	}
+	else{
+		this -> true_observation_fun = true_observation_fun;
+	}
+
 }
 
 
@@ -170,19 +186,33 @@ void Filter::compute_true_state_history(const arma::vec & X0_true,
 
 }
 
-void Filter::compute_true_observations(const std::vector<double> & T_obs,const arma::mat & R ){
+void Filter::compute_true_observations(const std::vector<double> & T_obs,
+	const arma::mat & R,
+	const arma::mat & R_prop ){
 
 	this -> true_obs_history.clear();
 	arma::mat S =  arma::chol( R, "lower" ) ;
 
 	for (unsigned int i = 0; i < T_obs.size(); ++i){
 
-		arma::vec Y = this -> observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
+		arma::vec Y = this -> true_observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
+
+
+		if (R_prop.max() != 0){
+			arma::mat S_prop =  arma::chol( R_prop, "lower" ) ;
+
+			arma::mat prop_noise_mat = arma::diagmat(S_prop * arma::randn<arma::vec>( Y.n_rows ));
+
+			Y += prop_noise_mat * Y;
+		}
+
 
 		Y += S * arma::randn<arma::vec>( S.n_rows ) ;
 
 		this -> true_obs_history.push_back(Y);
 	}
+
+
 
 }
 

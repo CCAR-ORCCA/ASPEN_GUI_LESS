@@ -12,7 +12,9 @@
 #include "ICP.hpp"
 #include "CustomException.hpp"
 #include "Args.hpp"
-#include "Wrapper.hpp"
+#include "Dynamics.hpp"
+#include "EventFunction.hpp"
+
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterTri.hpp"
 

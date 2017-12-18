@@ -84,7 +84,6 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-
 void Lidar::send_flash(ShapeModelTri * shape_model) {
 
 	unsigned int y_res = this -> z_res;

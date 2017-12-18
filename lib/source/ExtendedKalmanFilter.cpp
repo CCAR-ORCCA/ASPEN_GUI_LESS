@@ -157,7 +157,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	System dynamics(this -> args,
 		N_est,
 		this -> estimate_dynamics_fun ,
-		this -> jacobian_estimate_dynamics_fun,
+		this -> estimate_jacobian_dynamics_fun,
 		N_true,
 		nullptr );
 
@@ -197,7 +197,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::mat & P_bar,
 	const arma::vec & res,const arma::mat & R) const{
 
-	auto H = this -> jacobian_observations_fun(t, X_bar , this -> args);
+	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
 
 	// The Kalman gain is computed
 	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);

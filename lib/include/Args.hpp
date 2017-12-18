@@ -5,6 +5,7 @@
 #include "ShapeModelTri.hpp"
 #include "Interpolator.hpp"
 #include "DynamicAnalyses.hpp"
+#include "Lidar.hpp"
 
 class Args {
 
@@ -14,8 +15,20 @@ public:
 		this -> frame_graph = frame_graph;
 	}
 
-	void set_shape_model(ShapeModelTri * shape_model) {
-		this -> shape_model = shape_model;
+	void set_estimated_shape_model(ShapeModelTri * shape_model) {
+		this -> estimated_shape_model = shape_model;
+	}
+
+	void set_true_shape_model(ShapeModelTri * shape_model) {
+		this -> true_shape_model = shape_model;
+	}
+
+	ShapeModelTri * get_true_shape_model() const {
+		return this -> true_shape_model;
+	}
+
+	ShapeModelTri * get_estimated_shape_model() const {
+		return this -> estimated_shape_model;
 	}
 
 	void set_density(double density) {
@@ -51,11 +64,11 @@ public:
 		this -> Snm = Snm;
 	}
 
-	arma::mat * get_Cnm(){
+	arma::mat * get_Cnm() const {
 		return this -> Cnm;
 	}
 
-	arma::mat * get_Snm(){
+	arma::mat * get_Snm()const {
 		return this -> Snm;
 	}
 
@@ -78,13 +91,11 @@ public:
 		return this -> eccentricity;
 	}
 
-	FrameGraph * get_frame_graph() {
+	FrameGraph * get_frame_graph() const{
 		return this -> frame_graph;
 	}
 
-	ShapeModelTri * get_shape_model() {
-		return this -> shape_model;
-	}
+	
 
 	void set_interpolator(Interpolator * interpolator) {
 		this -> interpolator = interpolator;
@@ -109,7 +120,7 @@ public:
 		this -> degree = degree;
 	}
 
-	bool get_stopping_bool() {
+	bool get_stopping_bool() const {
 		return this -> stopping_bool;
 	}
 
@@ -121,9 +132,27 @@ public:
 		this -> is_attitude_bool = is_attitude;
 	}
 
-	Interpolator * get_interpolator() {
+	Interpolator * get_interpolator() const{
 		return this -> interpolator;
 	}
+
+	void set_sd_noise(double sd_noise){
+		this -> sd_noise = sd_noise;
+	}
+
+	double get_sd_noise() const {
+		return this -> sd_noise ;
+	}
+
+	void set_sd_noise_prop(double sd_noise_prop){
+		this -> sd_noise_prop = sd_noise_prop;
+	}
+
+	double get_sd_noise_prop() const {
+		return this -> sd_noise_prop ;
+	}
+
+
 
 	void set_time(double time) {
 		this -> time = time;
@@ -167,6 +196,59 @@ public:
 		this -> coords_station = coords_station;
 	}
 
+	void set_lidar(Lidar * lidar){
+		this -> lidar = lidar;
+	}
+
+	Lidar * get_lidar() const{
+		return this -> lidar;
+	}
+
+	std::shared_ptr<arma::mat> get_lidar_position_covariance_ptr() const{
+		return this -> lidar_position_covariance_ptr;
+	}
+
+	arma::mat get_active_inertia() const{
+		return this -> active_inertia;
+	}
+
+	void set_active_inertia(arma::mat inertia){
+		this -> active_inertia = inertia;
+	}
+
+	void set_true_small_body_attitude(std::vector<arma::vec> * true_small_body_attitude){
+		this -> true_small_body_attitude = true_small_body_attitude;
+	}
+
+	void set_estimated_small_body_attitude(std::vector<arma::vec> * estimated_small_body_attitude){
+		this -> estimated_small_body_attitude = estimated_small_body_attitude;
+	}
+	
+	std::vector<arma::vec> * get_true_small_body_attitude() const{
+		return this -> true_small_body_attitude;
+	}
+
+	std::vector<arma::vec> * get_estimated_small_body_attitude() const{
+		return this -> estimated_small_body_attitude;
+	}
+
+
+	std::shared_ptr<arma::vec> get_mrp_BN_true() const{
+		return this -> mrp_BN_true;
+	}
+
+	std::shared_ptr<arma::vec> get_mrp_BN_estimated() const{
+		return this -> mrp_BN_estimated;
+	}
+
+	std::shared_ptr<arma::vec> get_mrp_LN_true() const{
+		return this -> mrp_LN;
+	}
+
+	std::shared_ptr<arma::vec> get_true_pos() const{
+		return this -> true_pos;
+	}
+
 
 protected:
 
@@ -177,23 +259,42 @@ protected:
 	double time;
 	double minimum_elevation;
 	double mass;
-	bool stopping_bool = false;
-	FrameGraph * frame_graph;
-	ShapeModelTri * shape_model;
-	DynamicAnalyses * dyn_analyses;
-	Interpolator * interpolator;
 
-	arma::vec constant_omega;
-	arma::vec coords_station;
+	double sd_noise;
+	double sd_noise_prop = 0;
 
 	unsigned int degree;
 	double ref_radius ;
 
+	bool stopping_bool = false;
+
+	FrameGraph * frame_graph;
+	ShapeModelTri * estimated_shape_model;
+	ShapeModelTri * true_shape_model;
+
+	DynamicAnalyses * dyn_analyses;
+	Interpolator * interpolator;
+	Lidar * lidar;
+
+	arma::vec constant_omega;
+	arma::vec coords_station;
+
+
 	arma::mat * Cnm;
 	arma::mat * Snm;
 
+	arma::mat active_inertia;
+
+	std::shared_ptr<arma::mat> lidar_position_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
+
+	std::shared_ptr<arma::vec> mrp_BN_true = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+	std::shared_ptr<arma::vec> mrp_BN_estimated = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+	std::shared_ptr<arma::vec> mrp_LN = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+	std::shared_ptr<arma::vec> true_pos = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
 
 
+	std::vector<arma::vec> * true_small_body_attitude;
+	std::vector<arma::vec> * estimated_small_body_attitude;
 
 	bool is_attitude_bool = false;
 

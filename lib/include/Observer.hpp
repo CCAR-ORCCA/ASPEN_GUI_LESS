@@ -32,6 +32,22 @@ void operator()( state_type & x,  double t){
 }
 };
 
+
+template <typename state_type> struct push_back_attitude_state {
+
+std::vector< state_type > & m_states;
+
+push_back_attitude_state( std::vector< state_type > & states ) : m_states( states )  { 
+}
+
+void operator()( state_type & x,  double t){
+	if (arma::norm(x.rows(0,2)) > 1){
+		x.rows(0,2) = - x.rows(0,2) / arma::dot(x.rows(0,2),x.rows(0,2));
+	}
+	m_states.push_back( x );
+}
+};
+
 template <typename state_type> struct push_back_state_and_energy{
 
 std::vector< state_type > & m_states;
@@ -42,7 +58,7 @@ push_back_state_and_energy( std::vector< state_type > & states, std::vector< dou
 
 void operator()( state_type & x,  double t){
 	m_states.push_back( x );
-	m_energy.push_back( 0.5 * arma::dot(x.rows(3,5),x.rows(3,5))- 1./arma::norm(x.rows(0,2)));
+	m_energy.push_back( 0.5 * dot(x.rows(3,5),x.rows(3,5))- 1./arma::norm(x.rows(0,2)));
 }
 };
 
