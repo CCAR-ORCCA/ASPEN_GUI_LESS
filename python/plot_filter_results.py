@@ -7,7 +7,7 @@ rc('text', usetex=True)
 
 def plot_all_results(path = "",save = False):
 
-    plot_residuals(path,save)
+    # plot_residuals(path,save)
     plot_state_error(path,save)
 
 def plot_residuals(path = "",save = False):
@@ -28,6 +28,8 @@ def plot_state_error(path = "",save = False):
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
     P = np.loadtxt(path + "covariances.txt")
+    T_obs = np.loadtxt(path + "T_obs.txt") / 60
+
 
     sd = []
 
@@ -37,21 +39,25 @@ def plot_state_error(path = "",save = False):
     sd = np.vstack(sd).T
   
     # Position
-    plt.plot(range(sd.shape[1]),X_true[0,:] - X_hat[0,:])
-    plt.plot(range(sd.shape[1]),X_true[1,:] - X_hat[1,:])
-    plt.plot(range(sd.shape[1]),X_true[2,:] - X_hat[2,:])
+    plt.plot(T_obs,X_true[0,:] - X_hat[0,:],'-o',label = "radial")
+    plt.plot(T_obs,X_true[1,:] - X_hat[1,:],'-o',label = "in-track")
+    plt.plot(T_obs,X_true[2,:] - X_hat[2,:],'-o',label = "cross-track")
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(range(sd.shape[1]),3 * sd[0,:],'--')
-    plt.plot(range(sd.shape[1]),3 * sd[1,:],'--')
-    plt.plot(range(sd.shape[1]),3 * sd[2,:],'--')
+    plt.scatter(T_obs,3 * sd[0,:])
+    plt.scatter(T_obs,3 * sd[1,:])
+    plt.scatter(T_obs,3 * sd[2,:])
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(range(sd.shape[1]),- 3 * sd[0,:],'--')
-    plt.plot(range(sd.shape[1]),- 3 * sd[1,:],'--')
-    plt.plot(range(sd.shape[1]),- 3 * sd[2,:],'--')
+    plt.scatter(T_obs,- 3 * sd[0,:])
+    plt.scatter(T_obs,- 3 * sd[1,:])
+    plt.scatter(T_obs,- 3 * sd[2,:])
+    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
+    plt.xlabel("Time (min)")
+    plt.ylabel("Position error (m)")
+
 
     if save is False:
         plt.show()
@@ -61,25 +67,30 @@ def plot_state_error(path = "",save = False):
     plt.clf()
     
     # Velocity
-    plt.plot(range(X_true.shape[1]),X_true[3,:] - X_hat[3,:])
-    plt.plot(range(X_true.shape[1]),X_true[4,:] - X_hat[4,:])
-    plt.plot(range(X_true.shape[1]),X_true[5,:] - X_hat[5,:])
+    plt.plot(T_obs,100 * (X_true[3,:] - X_hat[3,:]),'-o',label = "radial")
+    plt.plot(T_obs,100 * (X_true[4,:] - X_hat[4,:]),'-o',label = "in-track")
+    plt.plot(T_obs,100 * (X_true[5,:] - X_hat[5,:]),'-o',label = "cross-track")
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(range(sd.shape[1]),3 * sd[3,:],'--')
-    plt.plot(range(sd.shape[1]),3 * sd[4,:],'--')
-    plt.plot(range(sd.shape[1]),3 * sd[5,:],'--')
+    plt.scatter(T_obs,3 * sd[3,:] * 100)
+    plt.scatter(T_obs,3 * sd[4,:] * 100)
+    plt.scatter(T_obs,3 * sd[5,:] * 100)
 
     plt.gca().set_color_cycle(None)
 
-    plt.plot(range(sd.shape[1]),- 3 * sd[3,:],'--')
-    plt.plot(range(sd.shape[1]),- 3 * sd[4,:],'--')
-    plt.plot(range(sd.shape[1]),- 3 * sd[5,:],'--')
+    plt.scatter(T_obs,- 3 * sd[3,:] * 100)
+    plt.scatter(T_obs,- 3 * sd[4,:] * 100)
+    plt.scatter(T_obs,- 3 * sd[5,:] * 100)
+
+    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.1),ncol = 3)
+    plt.xlabel("Time (min)")
+    plt.ylabel("Velocity error (cm/s)")
+    plt.ylim([-1e-3,1e-3])
 
     if save is False:
         plt.show()
     else:
         plt.savefig("velocity_error.pdf")
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/TestFilter/build/",save = False)
+plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)

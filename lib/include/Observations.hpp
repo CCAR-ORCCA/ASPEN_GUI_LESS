@@ -16,10 +16,9 @@ namespace Observations{
 	arma::vec obs_debug(double t,const arma::vec & x, const Args & args);
 	arma::mat obs_jac_debug(double t,const arma::vec & x, const Args & args);
 
-	arma::vec obs_pos_lidar(double t,const arma::vec & x,const Args & args);
-	arma::vec obs_pos_computed(double t,const arma::vec & x,const Args & args);
-
-	arma::mat obs_pos_jac(double t,const arma::vec & x,const Args & args);
+	arma::vec obs_pos_ekf_lidar(double t,const arma::vec & x,const Args & args);
+	arma::vec obs_pos_ekf_computed(double t,const arma::vec & x,const Args & args);
+	arma::mat obs_pos_ekf_computed_jac(double t,const arma::vec & x,const Args & args);
 
 	arma::vec obs_lidar_range_true(double t,const arma::vec & x, const Args & args);
 	arma::vec obs_lidar_range_computed(double t,const arma::vec & x, const Args & args);

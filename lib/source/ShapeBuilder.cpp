@@ -97,7 +97,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 
 
-		this -> lidar -> send_flash(this -> true_shape_model);
+		this -> lidar -> send_flash(this -> true_shape_model,true);
 
 
 		

@@ -191,12 +191,10 @@ void Filter::compute_true_observations(const std::vector<double> & T_obs,
 	const arma::mat & R_prop ){
 
 	this -> true_obs_history.clear();
-	arma::mat S =  arma::chol( R, "lower" ) ;
 
 	for (unsigned int i = 0; i < T_obs.size(); ++i){
 
 		arma::vec Y = this -> true_observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
-
 
 		if (R_prop.max() != 0){
 			arma::mat S_prop =  arma::chol( R_prop, "lower" ) ;
@@ -207,9 +205,20 @@ void Filter::compute_true_observations(const std::vector<double> & T_obs,
 		}
 
 
-		Y += S * arma::randn<arma::vec>( S.n_rows ) ;
+		if (R.n_rows == 1){
+			Y += std::sqrt(R(0,0)) * arma::randn<arma::vec>( Y.n_rows ) ;
+		}
+		else{
 
+			arma::mat S =  arma::chol( R, "lower" ) ;
+
+			Y += S * arma::randn<arma::vec>( Y.n_rows ) ;
+
+		}
 		this -> true_obs_history.push_back(Y);
+
+
+
 	}
 
 

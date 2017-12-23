@@ -28,7 +28,6 @@ protected:
 		const std::vector<arma::vec> & X_bar,
 		std::vector<arma::vec> & y_bar,
 		bool & has_converged,
-		arma::vec & previous_norm_res_squared,
 		const arma::mat & R);
 
 

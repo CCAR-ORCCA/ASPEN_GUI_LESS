@@ -8,25 +8,28 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 128
-#define COL_RESOLUTION 128
+#define ROW_RESOLUTION 64
+#define COL_RESOLUTION 64
 #define ROW_FOV 20
 #define COL_FOV 20
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.001 // one flash every hour 
+#define INSTRUMENT_FREQUENCY 0.000145 // one flash every 2 hours
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_3SD_BASELINE 5e-2
-#define LOS_NOISE_FRACTION_MES_TRUTH 0.
+#define LOS_NOISE_3SD_BASELINE 3e-2
+#define LOS_NOISE_FRACTION_MES_TRUTH 0e-5
 
 // Times (s)
 #define T0 0
-#define TF 80000// 7 days
+#define TF 604800// 7 days
 
 
 int main() {
+
+
+	arma::arma_rng::set_seed(0);
 
 	// Ref frame graph
 	FrameGraph frame_graph;
@@ -55,95 +58,148 @@ int main() {
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape(false);
 
-	DynamicAnalyses dyn_analyses(&true_shape_model);
+	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
+	shape_io_truth.load_obj_shape_model(&estimated_shape_model);
+	estimated_shape_model.construct_kd_tree_shape(false);
+
+
+
+
+	// Itokawa angular velocity
+	double omega = 2 * arma::datum::pi / (12 * 3600);
 
 	// Integrator extra arguments
 	Args args;
+	DynamicAnalyses dyn_analyses(&true_shape_model);
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
+	args.set_estimated_shape_model(&estimated_shape_model);
+
 	args.set_is_attitude_bool(false);
 	args.set_dyn_analyses(&dyn_analyses);
-	args.set_Cnm(&Cnm);
-	args.set_Snm(&Snm);
-	args.set_degree(5);
-	args.set_ref_radius(175);
+	// args.set_Cnm(&Cnm);
+	// args.set_Snm(&Snm);
+	// args.set_degree(5);
+	// args.set_ref_radius(175);
 	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
+	args.set_mass(true_shape_model . get_volume() * 1900);
+	args.set_sd_noise(LOS_NOISE_3SD_BASELINE / 3);
+	
 
-	// Initial state
-	arma::vec X0_true = arma::zeros<arma::vec>(12);
-	double omega = 2 * arma::datum::pi / (12 * 3600);
-	arma::vec omega_0 = {0,0,omega};
-	X0_true.rows(3,5) = omega_0; // Omega_BN(0)
+	// Spacecraft initial state
+	// Initial spacecraft state
+	arma::vec X0_true_spacecraft = arma::zeros<arma::vec>(6);
 
 	arma::vec pos_0 = {2000,0,0};
-	X0_true.rows(6,8) = pos_0; // r_LN(0) in body frame
+	X0_true_spacecraft.rows(0,2) = pos_0; // r_LN(0) in body frame
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
+	arma::vec omega_0 = {0,0,omega};
 	arma::vec vel_0_inertial = {0,0,v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
-	X0_true.rows(9,11) = vel_0_body; // r'_LN(0) in body frame
+	X0_true_spacecraft.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
+
+	// DEBUG: Asteroid estimated state == spacecraft initial state
+	arma::vec X0_true_small_body = {0,0,0,0,0,omega};
+	arma::vec X0_estimated_small_body = {0,0,0,0,0,omega};
+
+
+
+	// Initial spacecraft position estimate
+	arma::vec P0_spacecraft_vec = {100,100,100,1e-6,1e-6,1e-6};
+	arma::mat P0_spacecraft_mat = arma::diagmat(P0_spacecraft_vec);
+
+	arma::vec X0_estimated_spacecraft = X0_true_spacecraft + arma::sqrt(P0_spacecraft_mat) * arma::randn<arma::vec>(6);
+
+	arma::vec X0_true_augmented = arma::zeros<arma::vec>(12);
+	X0_true_augmented.subvec(0,5) = X0_true_spacecraft;
+	X0_true_augmented.subvec(6,11) = X0_true_small_body;
+
+	arma::vec X0_estimated_augmented = arma::zeros<arma::vec>(12);
+	X0_estimated_augmented.subvec(0,5) = X0_estimated_spacecraft;
+	X0_estimated_augmented.subvec(6,11) = X0_estimated_small_body;
+
 
 	// Lidar
 	Lidar lidar(&frame_graph,"L",ROW_FOV,COL_FOV ,ROW_RESOLUTION,COL_RESOLUTION,FOCAL_LENGTH,
 		INSTRUMENT_FREQUENCY,LOS_NOISE_3SD_BASELINE,LOS_NOISE_FRACTION_MES_TRUTH);
 
+	args.set_lidar(&lidar);
+
 	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
+	
+	// Times
 	std::vector<double> T_obs;
 	for (unsigned int i = 0; i < times.n_rows; ++i){
 		T_obs.push_back( times(i));
 	}
 
-	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001};
-	arma::mat P0 = arma::diagmat(P0_diag);
+	// A-priori covariance on spacecraft state and asteroid state.
+	// Since the asteroid state is not estimated, it is frozen
+	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,
+		1e-14,1e-14,1e-14,1e-14,1e-14,1e-14};
 
-	NavigationFilter filter(args);
-	filter.set_observations_fun(Observations::obs_long_lat,
-		Observations::obs_jac_long_lat);	
-	filter.set_estimate_dynamics_fun(Dynamics::point_mass_dxdt_odeint,
-		Dynamics::point_mass_jac_odeint);
-	filter.set_initial_information_matrix(arma::inv(P0));
+		P0_diag.subvec(0,5) = P0_spacecraft_vec;
 
-	filter.set_gamma_fun(Dynamics::gamma_OD);
+		arma::mat P0 = arma::diagmat(P0_diag);
 
-	arma::mat Q = std::pow(1e-6,2) * arma::eye<arma::mat>(3,3);
+		NavigationFilter filter(args);
+		filter.set_observations_fun(
+			Observations::obs_pos_ekf_computed,
+			Observations::obs_pos_ekf_computed_jac,
+			Observations::obs_pos_ekf_lidar);	
 
-	arma::vec X0_true = {0,0,1.1,1,0,0.01};
-	arma::vec X_bar_0 = {0.01,0.01,1.15,1,0.01,0.02};
-
-	arma::mat R = std::pow(1./3600 * arma::datum::pi / 180,2) * arma::eye<arma::mat>(2,2);
-
-	int iter = filter.run(1,X0_true,X_bar_0,T_obs,R,Q,true);
-	
-	filter.write_estimated_state("./X_hat.txt");
-	filter.write_true_obs("./Y_true.txt");
-	filter.write_true_state("./X_true.txt");
-	filter.write_T_obs(times,"./T_obs.txt");
-	filter.write_residuals("./residuals.txt",R);
-	filter.write_estimated_covariance("./covariances.txt");
+		filter.set_estimate_dynamics_fun(
+			Dynamics::point_mass_attitude_dxdt_body_frame,
+			Dynamics::point_mass_jac_attitude_dxdt_body_frame,
+			Dynamics::point_mass_attitude_dxdt_body_frame);
 
 
+		filter.set_initial_information_matrix(arma::inv(P0));
+		filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
+
+		arma::mat Q = std::pow(1e-9,2) * arma::eye<arma::mat>(3,3);
 
 
+		arma::mat R = arma::zeros<arma::mat>(1,1);
 
 
+		int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,T_obs,
+			R,Q,true);
 
 
+		filter.write_estimated_state("./X_hat.txt");
+
+		filter.write_true_state("./X_true.txt");
+
+		filter.write_T_obs(T_obs,"./T_obs.txt");
 
 
-
-
-
-
-
-
-
+		filter.write_estimated_covariance("./covariances.txt");
 
 
 
 
 
-	return 0;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		return 0;
+	}
 

@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include "FixVectorSize.hpp"
+#include <assert.h>
 
 class System {
 public:
@@ -30,44 +31,66 @@ public:
 		this -> args = args;
 	}
 
-	void operator() (const arma::vec & x , arma::vec & dxdt , const double t ){
+	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
+		
+		
+		if (this -> N_est == 0){
+			arma::vec derivative =  this -> true_dynamics_fun(t,X,args);
+			dxdt = derivative;
+
+		}
+		else{
+
+			if (this -> true_dynamics_fun != nullptr){
 
 
-		if (this -> true_dynamics_fun != nullptr){
+				arma::vec derivative = this -> true_dynamics_fun(t,
 
-			dxdt.rows(this -> N_est + this -> N_est * this -> N_est,
-				this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1) = this -> true_dynamics_fun(t,
-				
-				x.rows(this -> N_est + this -> N_est * this -> N_est,
-					this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1),args);
+					X.subvec(this -> N_est + this -> N_est * this -> N_est,
+						this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1),args);
+				dxdt.subvec(this -> N_est + this -> N_est * this -> N_est,
+					this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1) = derivative;
 
 			}	
 
 			if (this -> estimate_dynamics_fun != nullptr){
 
-				arma::mat Phi = arma::reshape(x.rows(this -> N_est,
+				arma::vec X_spc_estimated = arma::vec(12);
+
+				for (unsigned int i = 0; i < X_spc_estimated.n_rows; ++i){
+					X_spc_estimated(i) = X(i);
+				}
+				
+
+				arma::mat Phi = arma::reshape(X.subvec(this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est - 1), this -> N_est, this -> N_est );
+				
+				arma::mat A = this -> jacobian_estimate_dynamics_fun(t,
+					X_spc_estimated,this -> args);
 
-				arma::mat A = this -> jacobian_estimate_dynamics_fun(t,x.rows(0,this -> N_est - 1),this -> args);
 
-				dxdt.rows(0,this -> N_est - 1) = this -> estimate_dynamics_fun(t,x.rows(0,this -> N_est - 1),this -> args);
-				dxdt.rows(this -> N_est,
+
+
+				arma::vec derivative = this -> estimate_dynamics_fun(t,
+					X_spc_estimated,this -> args);
+
+				dxdt.subvec(0,this -> N_est - 1) = derivative;
+				dxdt.subvec(this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est - 1) = arma::vectorise(A * Phi);
-
 			}
 
 
-
 		}
+	}
 
-	protected:
-		const unsigned int N_est;
-		const unsigned int N_true;
-		arma::vec (*estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
-		arma::vec (*true_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
-		arma::mat (*jacobian_estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
-		Args args;
-	};
+protected:
+	const unsigned int N_est;
+	const unsigned int N_true;
+	arma::vec (*estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
+	arma::vec (*true_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
+	arma::mat (*jacobian_estimate_dynamics_fun)(double, const arma::vec &  , const Args & args) = nullptr;
+	Args args;
+};
 
 
 

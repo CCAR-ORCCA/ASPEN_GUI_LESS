@@ -12,6 +12,8 @@ arma::vec DynamicAnalyses::point_mass_acceleration(arma::vec & point , double ma
 	}
 
 	arma::vec acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
+	
+
 	return acc;
 
 

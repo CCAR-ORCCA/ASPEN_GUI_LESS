@@ -22,12 +22,19 @@ namespace Dynamics{
 
 	arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args);
 
+	arma::vec point_mass_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);
+	arma::mat point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);
+
+
 	arma::mat gamma_OD(double dt);
+	arma::mat gamma_OD_augmented(double dt);
+
+	arma::vec debug(double t,const arma::vec & X, const Args & args) ;
 
 
 	double energy_attitude(double t, arma::vec  X, Args * args);
 
-	
+
 
 }
 

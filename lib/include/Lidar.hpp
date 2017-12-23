@@ -143,7 +143,7 @@ public:
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
 	*/
-	void send_flash(ShapeModelTri * shape_model) ;
+	void send_flash(ShapeModelTri * shape_model,bool add_noise) ;
 
 
 	/**
@@ -192,7 +192,7 @@ protected:
 	double fov_z ;
 	double z_res ;
 	double y_res ;
-	double los_noise_3sd_baseline;
+	double los_noise_sd_baseline;
 	double los_noise_fraction_mes_truth;
 
 	FrameGraph * frame_graph;

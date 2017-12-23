@@ -20,7 +20,7 @@ Lidar::Lidar(
 	this -> z_res = z_res;
 	this -> y_res = y_res;
 	this -> freq = freq;
-	this -> los_noise_3sd_baseline = los_noise_3sd_baseline;
+	this -> los_noise_sd_baseline = los_noise_3sd_baseline / 3;
 	this -> los_noise_fraction_mes_truth = los_noise_fraction_mes_truth;
 
 	// The focal plane of the lidar is populated
@@ -84,7 +84,7 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-void Lidar::send_flash(ShapeModelTri * shape_model) {
+void Lidar::send_flash(ShapeModelTri * shape_model,bool add_noise) {
 
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
@@ -103,15 +103,21 @@ void Lidar::send_flash(ShapeModelTri * shape_model) {
 		if (hit) {
 
 			double true_range = this -> focal_plane[pixel] -> get_true_range();
-			arma::vec random_vec = arma::randn(1);
 
-			double noise_sd = (1. / .3) * (this -> los_noise_3sd_baseline + this -> los_noise_fraction_mes_truth
-				* true_range);
+			if (add_noise){
+				arma::vec random_vec = arma::randn(1);
 
-			double noise = noise_sd * random_vec(0);
+				double noise_sd = this -> los_noise_sd_baseline + this -> los_noise_fraction_mes_truth * true_range;			
 
-			this -> focal_plane[pixel] -> set_true_range(true_range + noise);
+				double noise = noise_sd * random_vec(0);
 
+
+				this -> focal_plane[pixel] -> set_true_range(true_range + noise);
+			}
+			else{
+				this -> focal_plane[pixel] -> set_true_range(true_range);
+
+			}
 			
 		}
 

@@ -4,7 +4,7 @@ arma::vec SequentialFilter::compute_residual(double t,const arma::vec & X_hat,
 	const arma::vec & Y_true){
 
 	arma::vec y_bar = Y_true - this -> estimate_observation_fun(t,X_hat,this -> args);
-
+	
 	return y_bar;
 
 }

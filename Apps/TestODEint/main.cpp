@@ -5,12 +5,11 @@
 #include <armadillo>
 #include "Args.hpp"
 #include "System.hpp"
-#include "Wrapper.hpp"
+#include "Dynamics.hpp"
 #include "DynamicAnalyses.hpp"
 #include "Observer.hpp"
 
-// typedef arma::vec::fixed<6> state_type;
-typedef arma::vec state_type;
+// typedef arma::vec::fixed<6> arma::vec;
 
 // 
 
@@ -18,17 +17,17 @@ int main( ){
 
     Args args;
     DynamicAnalyses dyn_an(nullptr);
-    args.set_mass(1e9./arma::datum::G);
+    args.set_mass(1./arma::datum::G);
     args.set_dyn_analyses(&dyn_an);
 
-    System<state_type> dynamics(args,6, Wrapper::point_mass_dxdt_wrapper_odeint);
+    System dynamics(args,6, Dynamics::point_mass_dxdt_odeint);
 
-    state_type x0 =  {0,0,1,1,0.,0};
+    arma::vec x0 =  {0,0,1,1,0.,0};
 
     double R = 10000;
     double tau = std::sqrt(std::pow(R,3)/398600.);
 
-    std::vector<state_type> states;
+    std::vector<arma::vec> states;
     std::vector<double> energy;
     std::vector<double> times;
 
@@ -46,14 +45,14 @@ int main( ){
 
     }
 
-    typedef boost::numeric::odeint::runge_kutta_cash_karp54< state_type  > error_stepper_type;
+    typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec  > error_stepper_type;
     auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
     boost::numeric::odeint::integrate_times(stepper, dynamics, x0, times.begin(), times.end(), 
-        0.1,Observer::push_back_state_and_energy<state_type>(states,energy));
+        1e-10,Observer::push_back_state_and_energy(states,energy));
 
     arma::mat states_mat = arma::zeros<arma::mat> (states.size(),x0.n_rows);
-    arma::mat energy_vec = arma::zeros<arma::vec> (states.size());
+    arma::mat energy_vec = arma::zeros (states.size());
 
     for (unsigned int i = 0; i < states.size(); ++i){
         states_mat.row(i) = states[i].t();

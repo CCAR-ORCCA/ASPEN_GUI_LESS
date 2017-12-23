@@ -29,6 +29,11 @@ int  BatchFilter::run(
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
+	if (verbose){
+		std::cout << "-- Done computing true observations" << std::endl;
+	}
+
+
 	// Containers
 	std::vector<arma::vec> X_bar;
 	std::vector<arma::mat> stm;
@@ -46,7 +51,6 @@ int  BatchFilter::run(
 
 	// The filter is initialized
 	X_bar.push_back(X_bar_0);
-	arma::vec previous_norm_res_squared = arma::zeros<arma::vec>(this -> true_obs_history[0].n_rows);
 	arma::mat W = arma::inv(R);
 
 	if (this -> info_mat_bar_0.n_cols == 0 && this -> info_mat_bar_0.n_rows == 0){
@@ -83,8 +87,13 @@ int  BatchFilter::run(
 		this -> compute_prefit_residuals(T_obs,
 			X_bar,
 			y_bar,
-			has_converged,
-			previous_norm_res_squared,R);
+			has_converged
+			,R);
+
+		if (verbose){
+			std::cout << "----  Done computing prefit residuals" << std::endl;
+			std::cout << "----  Has converged? " << has_converged << std::endl;
+		}
 
 		// If the batch was only run for the pass-trough
 		if (N_iter == 0){
@@ -102,9 +111,22 @@ int  BatchFilter::run(
 		}
 
 		// The state is checked for convergence based on the residuals
-		if (has_converged){
+		if (has_converged && i != 0){
 			iterations = i;
 			break;
+		}
+		else{
+			if (verbose){
+
+				arma::vec y_non_zero = y_bar.back().elem(arma::find(y_bar.back()));
+
+				double rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+
+
+
+				std::cout << "-----  Has not converged" << std::endl;
+				std::cout << "-----  Residuals: " << rms_res << std::endl;
+			}
 		}
 
 		// The normal and information matrices are assembled
@@ -122,29 +144,42 @@ int  BatchFilter::run(
 				// A residual can't have a zero norm. This means that no observation was available
 				continue;
 			}
-			
+
 
 			H = this -> estimate_jacobian_observations_fun(T_obs[p], X_bar[p] ,
 				this -> args) * stm[p];
 
-			info_mat += H.t() * W * H;
-
-			normal_mat += H.t() * W * y_bar[p];
+			if (W.n_rows > 1){
+				info_mat += H.t() * W * H;
+				normal_mat += H.t() * W * y_bar[p];
+			}
+			else{
+				info_mat += H.t() * W(0,0) * H;
+				normal_mat += H.t() * W(0,0) * y_bar[p];
+			}
 		}
+
 
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
+
+		if (verbose){
+			std::cout << "---  Deviation: "<< std::endl;
+			std::cout << dx_hat << std::endl;
+		}
 
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat);
 
 		// The deviation is applied to the state
+
 		arma::vec X_hat_0 = X_bar[0] + dx_hat;
+
 		X_bar[0] = X_hat_0;
+
 
 		// The a-priori deviation is adjusted
 		dx_bar_0 = dx_bar_0 - dx_hat;
-
 
 	}
 
@@ -157,6 +192,10 @@ int  BatchFilter::run(
 	
 	this -> residuals = y_bar;
 
+	if (verbose){
+			std::cout << "-- Exiting batch "<< std::endl;
+		}
+
 	return iterations;
 
 }
@@ -166,39 +205,45 @@ void BatchFilter::compute_prefit_residuals(
 	const std::vector<arma::vec> & X_bar,
 	std::vector<arma::vec> & y_bar,
 	bool & has_converged,
-	arma::vec & previous_norm_res_squared,
 	const arma::mat & R){
 
 	// The previous residuals are discarded
 	y_bar.clear();
-	arma::vec norm_res_squared = arma::zeros<arma::vec>(this -> true_obs_history[0].n_rows);
+	double rms_res = 0;
 
 	// The new residuals are computed
 	for (unsigned int p = 0; p < T_obs.size(); ++ p){
 
-		arma::vec residual = this -> true_obs_history[p] - this -> estimate_observation_fun(T_obs[p], X_bar[p] ,this -> args);
+		arma::vec true_obs = this -> true_obs_history[p];
+		arma::vec computed_obs = this -> estimate_observation_fun(T_obs[p], X_bar[p] ,this -> args);
 
-		if (residual.has_nan() == false){
-			y_bar.push_back(residual);
-		}
-		else{
-			y_bar.push_back(arma::zeros<arma::vec>(residual.n_cols));
+		// Potentials nan are looked for and turned into zeros
+		// the corresponding row in H will be set to zero
+		arma::vec residual = true_obs - computed_obs;
+
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < residual.n_rows; ++i){
+			if (residual.subvec(i,i).has_nan() || std::abs(residual(i)) > 1e10 ){
+				residual(i) = 0;
+
+			}
 		}
 
-		norm_res_squared += arma::dot(y_bar.back(),y_bar.back())/T_obs.size();
+		y_bar.push_back(residual);
+
+		arma::vec y_non_zero = residual.elem(arma::find(residual));
+		
+		rms_res += std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+
 	}
 
-	// The convergence is checked. Could replace by norm?
-
-	arma::vec rel_change = arma::abs(norm_res_squared - previous_norm_res_squared) / R.diag();
-
-	if (arma::max(rel_change) * 100 < 1e-3){
+	// The convergence is checked. 
+	if (rms_res < 1.1 * std::sqrt(R(0,0))){
 		has_converged = true;
+
 	}
-	
 	else{
 		has_converged = false;
-		previous_norm_res_squared = norm_res_squared;
 	}
 
 }

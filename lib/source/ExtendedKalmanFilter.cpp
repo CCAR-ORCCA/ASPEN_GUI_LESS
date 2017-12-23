@@ -150,7 +150,6 @@ int ExtendedKalmanFilter::run(
 void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	arma::vec & X_hat, arma::mat & P_hat) const{
 
-
 	unsigned int N_est = X_hat.n_rows;
 	unsigned int N_true = 0;
 
@@ -177,20 +176,27 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	auto tbegin = times.begin();
 	auto tend = times.end();
 
+
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
-		Observer::push_back_state(augmented_state_history));
+		Observer::push_back_augmented_state(augmented_state_history));
 
 	if (augmented_state_history.size() != 2){
 		throw(std::runtime_error("augmented_state_history should have two elements only"));
 	}
 
-	X_hat = augmented_state_history[1].rows(0,N_est - 1);
+	for (unsigned int i = 0; i < N_est; ++i){
+		X_hat(i) = augmented_state_history[1](i);
+	}
+	
 
 	arma::mat stm = arma::reshape(
 		augmented_state_history[1].rows(N_est,N_est + N_est * N_est - 1),
 		N_est,N_est);
 
+	
+
 	P_hat = stm * P_hat * stm.t();
+
 
 }
 
@@ -204,6 +210,7 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;
+	
 
 	// The covariance is updated
 	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
