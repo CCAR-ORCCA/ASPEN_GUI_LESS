@@ -1,4 +1,5 @@
 #include "BatchFilter.hpp"
+
 BatchFilter::BatchFilter(const Args & args) : Filter(args){
 }
 
@@ -193,8 +194,8 @@ int  BatchFilter::run(
 	this -> residuals = y_bar;
 
 	if (verbose){
-			std::cout << "-- Exiting batch "<< std::endl;
-		}
+		std::cout << "-- Exiting batch "<< std::endl;
+	}
 
 	return iterations;
 
@@ -217,6 +218,8 @@ void BatchFilter::compute_prefit_residuals(
 		arma::vec true_obs = this -> true_obs_history[p];
 		arma::vec computed_obs = this -> estimate_observation_fun(T_obs[p], X_bar[p] ,this -> args);
 
+		
+		
 		// Potentials nan are looked for and turned into zeros
 		// the corresponding row in H will be set to zero
 		arma::vec residual = true_obs - computed_obs;

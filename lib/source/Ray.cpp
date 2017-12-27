@@ -62,8 +62,8 @@ Ray::Ray(arma::vec origin, arma::vec direction){
 }
 
 
-Facet * Ray::get_true_hit_facet() {
-	return this -> true_hit_facet;
+Element * Ray::get_hit_element() {
+	return this -> hit_element;
 }
 
 double Ray::get_true_range() const {
@@ -102,7 +102,7 @@ arma::vec * Ray::get_origin_target_frame() {
 void Ray::reset(ShapeModel * shape_model) {
 
 	this -> true_range = std::numeric_limits<double>::infinity();
-	this -> true_hit_facet = nullptr;
+	this -> hit_element = nullptr;
 	
 	FrameGraph * frame_graph = this -> get_lidar() -> get_frame_graph();
 
@@ -146,7 +146,6 @@ arma::vec Ray::get_impact_point() const {
 		throw std::runtime_error("Invalid ray");
 	}
 
-	
 }
 
 bool Ray::single_facet_ray_casting(Facet * facet) {
@@ -167,9 +166,8 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 		if (this -> intersection_inside(H, facet)) {
 
 			if (this -> true_range > t) {
-
 				this -> true_range = t;
-				this -> true_hit_facet = facet;
+				this -> hit_element = facet;
 				this -> incidence_angle = std::abs(std::acos(arma::dot(*this -> direction_target_frame,n)));
 
 			}
@@ -187,6 +185,7 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 
 bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 
+	std::cout << "ray casting" << std::endl;
 	arma::vec S = *this -> origin_target_frame;
 	arma::vec dir = *this -> direction_target_frame;
 	arma::mat u_tilde = RBK::tilde(dir);
@@ -200,20 +199,31 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 	arma::mat H = arma::zeros<arma::mat>(3,2);
 	arma::vec Y = arma::zeros<arma::vec>(3);
 	arma::vec impact(3);
+
 	
 	for (unsigned int i = 0; i < N_iter_max; ++i){
 		double u_t = chi(0);
 		double v_t = chi(1);
 
 		impact = patch -> evaluate(u_t,v_t);
-
+		std::cout << arma::norm(u_tilde*(S - impact)) << std::endl;
 		if (arma::norm(u_tilde*(S - impact)) < 1e-8){
+			if (u_t + v_t > 1. || u_t < 0. || v_t < 0. || u_t > 1. || v_t > 1.){
+				return false;
+			}
 
-			this -> true_range = arma::norm(S - impact);
-			u = u_t;
-			v = v_t;
+			else if (this -> true_range > arma::norm(S - impact)){
+				this -> true_range = arma::norm(S - impact);
+				u = u_t;
+				v = v_t;
+				this -> set_impact_coords(u,v);
+				this -> hit_element = patch;
+				return true;
+			}
 
-			return true;
+			else{
+				return false;
+			}
 		}
 		
 		H = u_tilde * patch -> partial_bezier( u_t, v_t);
@@ -242,3 +252,13 @@ double Ray::get_incidence_angle() const{
 	return this -> incidence_angle;
 }
 
+
+void Ray::set_impact_coords(const double & u,const double & v){
+	this -> u = u;
+	this -> v = v;
+}
+
+void Ray::get_impact_coords(double & u_t, double & v_t){
+	u_t = this -> u;
+	v_t = this -> v;
+}

@@ -24,7 +24,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	FrameGraph *  frame_graph = args.get_frame_graph();
 
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
-	
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
 
 
@@ -36,7 +35,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
 	lidar -> send_flash(args.get_true_shape_model(),false);
-
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
 	auto focal_plane = lidar -> get_focal_plane();
@@ -84,10 +82,12 @@ arma::vec Observations::obs_lidar_range_computed(
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	
+	lidar -> save("pc_bezier.obj");
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}
+
+	
 
 	return ranges;
 
@@ -101,10 +101,10 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
-		if (focal_plane -> at(i) -> get_true_hit_facet() != nullptr){
+		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
 
 			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
-			arma::vec n = focal_plane -> at(i) -> get_true_hit_facet() -> get_normal();
+			arma::vec n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
 
 			H.row(i) = - n.t() / arma::dot(n,u);
 		}
@@ -205,7 +205,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 
 	arma::vec x_bar_bar = x.rows(0,2);
 	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,R,arma::zeros<arma::mat>(1,1),
-		false);
+		true);
 
 
 	// The covariance in the position is extracted here

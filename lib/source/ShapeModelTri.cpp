@@ -299,11 +299,6 @@ this -> inertia = arma::diagmat(moments);
 
 }
 
-arma::mat ShapeModelTri::get_inertia() const {
-	return this -> inertia;
-
-}
-
 
 
 

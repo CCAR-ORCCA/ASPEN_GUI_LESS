@@ -29,6 +29,7 @@ int main(){
 	// shape_io.load_bezier_shape_model(&true_shape);
 
 	ShapeModelImporter fit_shape_io(guess + ".b", 1, true);
+	
 	ShapeModelBezier fit_shape("",&frame_graph);
 	fit_shape_io.load_bezier_shape_model(&fit_shape);
 
@@ -106,7 +107,7 @@ int main(){
 
 	shape_fitter.fit_shape_batch(N_iter,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
-	fit_shape.save_to_obj(guess + "_fit_degree_" + std::to_string(degree) +"_iter_" + std::to_string(N_iter) + ".b");
+	fit_shape.save(guess + "_fit_degree_" + std::to_string(degree) +"_iter_" + std::to_string(N_iter) + ".b");
 
 	fit_shape.elevate_degree();
 	fit_shape.elevate_degree();

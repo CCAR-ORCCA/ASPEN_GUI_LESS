@@ -30,6 +30,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	}
 
 	this -> construct_kd_tree_control_points();
+	this -> inertia = shape_model -> get_inertia();
 
 }
 
@@ -71,7 +72,20 @@ void ShapeModelBezier::compute_inertia(){
 
 bool ShapeModelBezier::ray_trace(Ray * ray){
 
-	return true;
+	double u,v;
+	bool hit = false;
+	// Not really elegant and not parallelizable
+	std::cout << "Ray tracing elements" << std::endl;
+	
+	std::cout << this -> elements.size() << std::endl;
+	for (unsigned int i = 0; i < this -> elements.size(); ++i){
+		std::cout << i << std::endl;
+		Bezier * patch = dynamic_cast<Bezier *>(this -> elements[i].get());
+		hit = ray -> single_patch_ray_casting(patch,u,v);
+	}
+
+
+	return hit;
 
 }
 
@@ -121,7 +135,7 @@ void ShapeModelBezier::elevate_degree(){
 
 		}
 
-	
+
 	}
 
 

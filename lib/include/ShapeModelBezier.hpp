@@ -1,12 +1,9 @@
 #ifndef HEADER_SHAPEMODELBEZIER
 #define HEADER_SHAPEMODELBEZIER
 
-
 #include "ShapeModel.hpp"
 #include "ShapeModelTri.hpp"
 #include "Bezier.hpp"
-
-
 
 class ShapeModelBezier : public ShapeModel{
 
@@ -67,7 +64,7 @@ public:
 	Gets the shape model degree
 	*/
 	unsigned int get_degree();
- 
+
 	/**
 	Computes the surface area of the shape model
 	*/

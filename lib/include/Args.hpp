@@ -23,11 +23,15 @@ public:
 		this -> true_shape_model = shape_model;
 	}
 
+	void set_estimated_shape_model(ShapeModel * shape_model) {
+		this -> estimated_shape_model = shape_model;
+	}
+
 	ShapeModelTri * get_true_shape_model() const {
 		return this -> true_shape_model;
 	}
 
-	ShapeModelTri * get_estimated_shape_model() const {
+	ShapeModel * get_estimated_shape_model() const {
 		return this -> estimated_shape_model;
 	}
 
@@ -122,14 +126,6 @@ public:
 
 	bool get_stopping_bool() const {
 		return this -> stopping_bool;
-	}
-
-	bool get_is_attitude_bool() const {
-		return this -> is_attitude_bool;
-	}
-
-	void set_is_attitude_bool(bool is_attitude) {
-		this -> is_attitude_bool = is_attitude;
 	}
 
 	Interpolator * get_interpolator() const{
@@ -269,7 +265,7 @@ protected:
 	bool stopping_bool = false;
 
 	FrameGraph * frame_graph;
-	ShapeModelTri * estimated_shape_model;
+	ShapeModel * estimated_shape_model;
 	ShapeModelTri * true_shape_model;
 
 	DynamicAnalyses * dyn_analyses;
@@ -295,8 +291,6 @@ protected:
 
 	std::vector<arma::vec> * true_small_body_attitude;
 	std::vector<arma::vec> * estimated_small_body_attitude;
-
-	bool is_attitude_bool = false;
 
 
 };

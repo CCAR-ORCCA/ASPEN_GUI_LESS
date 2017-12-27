@@ -2,14 +2,17 @@
 #include <ShapeModelTri.hpp>
 #include <ShapeModelImporter.hpp>
 #include <ShapeBuilder.hpp>
-#include <RK.hpp>
 #include <Wrappers.hpp>
-#include <Interpolator.hpp>
 #include <DynamicAnalyses.hpp>
-#include <PC.hpp>
+#include <Dynamics.hpp>
+#include <Observer.hpp>
+#include <boost/numeric/odeint.hpp>
+#include "System.hpp"
+#include "Observer.hpp"
+
+
 #include <ShapeFitterTri.hpp>
 #include <ShapeFitterBezier.hpp>
-
 
 #include <limits>
 #include <chrono>
@@ -25,7 +28,7 @@
 #define COL_FOV 20
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.001 // one flash every hour 
+#define INSTRUMENT_FREQUENCY 0.002
 
 // Noise
 #define FOCAL_LENGTH 1e1
@@ -79,8 +82,7 @@ int main() {
 	// Integrator extra arguments
 	Args args;
 	args.set_frame_graph(&frame_graph);
-	args.set_shape_model(&true_shape_model);
-	args.set_is_attitude_bool(false);
+	args.set_true_shape_model(&true_shape_model);
 	args.set_dyn_analyses(&dyn_analyses);
 	args.set_Cnm(&Cnm);
 	args.set_Snm(&Snm);
@@ -89,43 +91,55 @@ int main() {
 	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
 
 	// Initial state
-	arma::vec X0 = arma::zeros<arma::vec>(12);
+	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	double omega = 2 * arma::datum::pi / (12 * 3600);
 
 	arma::vec omega_0 = {0,0,omega};
-	X0.rows(3,5) = omega_0; // Omega_BN(0)
+	X0_augmented.rows(9,11) = omega_0; // Omega_BN(0)
 
 	arma::vec pos_0 = {1000,0,0};
-	X0.rows(6,8) = pos_0; // r_LN(0) in body frame
-
+	X0_augmented.rows(0,2) = pos_0; // r_LN(0) in body frame
 
 	// Velocity determined from sma
 	double a = 1000;
 
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0,0,v};
+	arma::vec vel_0_inertial = {0,0.9 * v,0.1 * v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
-	X0.rows(9,11) = vel_0_body; // r'_LN(0) in body frame
-
-	RK45 rk_coupled(X0,
-		T0,
-		TF,
-		TF-T0,
-		&args,
-		"attitude_orbit_n5",
-		1e-11);
-
-	std::cout << "Propagating spacecraft and attitude state" << std::endl;
-	rk_coupled.run(&joint_sb_spacecraft_body_frame_dyn,
-		&event_function_mrp_omega,
-		true,
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/integrators/");
+	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
 
 
-	Interpolator state_interpolator(rk_coupled.get_T(),rk_coupled.get_X());
+	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
+	std::vector<double> T_obs;
+	for (unsigned int i =0; i < times.n_rows; ++i){
+		T_obs.push_back(times(i));
+	}
+
+	// Containers
+	std::vector<arma::vec> X_augmented;
+	auto N_true = X0_augmented.n_rows;
+
+
+	// Set active inertia here
+	args.set_active_inertia(true_shape_model.get_inertia());
+
+	System dynamics(args,
+		N_true,
+		Dynamics::point_mass_attitude_dxdt_body_frame );
+
+	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
+	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
+
+	auto tbegin = T_obs.begin();
+	auto tend = T_obs.end();
+
+	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, tbegin, tend,1e-3,
+		Observer::push_back_augmented_state(X_augmented));
+
+	
 
 // Lidar
 	Lidar lidar(&frame_graph,
@@ -140,8 +154,6 @@ int main() {
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
 
-	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
-	arma::mat X_interp(12,times.n_rows);
 
 
 // ShapeBuilder filter_arguments
@@ -156,7 +168,7 @@ int main() {
 		&shape_filter_args);
 
 
-	shape_filter.run_shape_reconstruction(times,&state_interpolator,true);
+	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 
 	shape_filter_args.save_results();
 

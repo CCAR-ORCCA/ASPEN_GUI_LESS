@@ -1,4 +1,3 @@
-
 #ifndef HEADER_SHAPEMODEL
 #define HEADER_SHAPEMODEL
 
@@ -41,7 +40,7 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	*/
 	ShapeModel(std::string ref_frame_name,
-	           FrameGraph * frame_graph);
+		FrameGraph * frame_graph);
 
 
 
@@ -176,6 +175,13 @@ public:
 	*/
 	void initialize_index_table();
 
+	/**
+	Returns the non-dimensional inertia tensor of the body in the body-fixed
+	principal axes. (rho == 1, l = (volume)^(1/3))
+	@return principal inertia tensor
+	*/
+	arma::mat get_inertia() const;
+
 
 protected:
 
@@ -187,6 +193,9 @@ protected:
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;
+
+	arma::mat inertia;
+
 
 };
 

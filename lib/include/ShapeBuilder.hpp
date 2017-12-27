@@ -6,14 +6,12 @@
 
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
-#include "Interpolator.hpp"
 #include "ShapeBuilderArguments.hpp"
 #include "PC.hpp"
 #include "ICP.hpp"
 #include "CustomException.hpp"
 #include "Args.hpp"
 #include "Dynamics.hpp"
-#include "EventFunction.hpp"
 
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterTri.hpp"
@@ -21,6 +19,8 @@
 #include "CGAL_interface.hpp"
 #include <RigidBodyKinematics.hpp>
 #include <boost/progress.hpp>
+// #include "FixVectorSize.hpp"
+
 #include <numeric>
 #include <sstream>
 #include <iomanip>
@@ -84,12 +84,12 @@ public:
 	/**
 	Runs the shape reconstruction filter
 	@param times vector of measurement times
-	@param interpolator pointer to state interpolator used within the filter
+	@param X reference to state used within the filter
 	@param save_shape_model true if the true shape model must be saved prior 
 	to the run
 	*/
 	void run_shape_reconstruction(arma::vec &times ,
-		Interpolator * interpolator,
+		const std::vector<arma::vec> & X,
 		bool save_shape_model);
 
 

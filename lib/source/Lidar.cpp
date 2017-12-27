@@ -1,4 +1,5 @@
 #include "Lidar.hpp"
+#include "ShapeModelBezier.hpp"
 
 Lidar::Lidar(
 	FrameGraph * frame_graph,
@@ -84,7 +85,8 @@ double Lidar::get_size_y() const {
 	return 2 * this -> get_focal_length() * std::tan(this ->  get_fov_y() / 2);
 }
 
-void Lidar::send_flash(ShapeModelTri * shape_model,bool add_noise) {
+
+void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
@@ -95,11 +97,12 @@ void Lidar::send_flash(ShapeModelTri * shape_model,bool add_noise) {
 	}
 	
 
-	// #pragma omp parallel for if (USE_OMP_LIDAR)
+	#pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
+
 		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
 
-			// If there's a hit, noise is added along the line of sight on the true measurement
+		// If there's a hit, noise is added along the line of sight on the true measurement
 		if (hit) {
 
 			double true_range = this -> focal_plane[pixel] -> get_true_range();
@@ -108,9 +111,7 @@ void Lidar::send_flash(ShapeModelTri * shape_model,bool add_noise) {
 				arma::vec random_vec = arma::randn(1);
 
 				double noise_sd = this -> los_noise_sd_baseline + this -> los_noise_fraction_mes_truth * true_range;			
-
 				double noise = noise_sd * random_vec(0);
-
 
 				this -> focal_plane[pixel] -> set_true_range(true_range + noise);
 			}
@@ -124,6 +125,8 @@ void Lidar::send_flash(ShapeModelTri * shape_model,bool add_noise) {
 	}
 
 }
+
+
 
 
 ShapeModel * Lidar::get_shape_model() {
@@ -215,18 +218,22 @@ void Lidar::plot_range_residuals_per_facet(std::string path) {
 }
 
 
-void Lidar::save_surface_measurements(std::string path) const {
+void Lidar::save(std::string path) {
 
 
 	std::ofstream shape_file;
 	shape_file.open(path);
 
-	for (unsigned int vertex_index = 0;
-		vertex_index < this -> surface_measurements.size();
-		++vertex_index) {
+	for (unsigned int i = 0;i < this -> focal_plane.size();++i) {
 
-		shape_file << "v " << this -> surface_measurements[vertex_index](0) << " " << this -> surface_measurements[vertex_index](1) << " " << this -> surface_measurements[vertex_index](2) << std::endl;
-}
+		Ray  * ray = this -> get_ray(i);
+
+		if (ray-> get_hit_element() != nullptr){
+			arma::vec p = (*ray-> get_direction_target_frame()) * ray-> get_true_range() + *ray-> get_origin_target_frame();
+			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		}
+
+	}
 
 
 

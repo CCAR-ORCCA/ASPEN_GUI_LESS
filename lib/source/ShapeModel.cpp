@@ -18,6 +18,11 @@ std::string ShapeModel::get_ref_frame_name() const {
 }
 
 
+arma::mat ShapeModel::get_inertia() const {
+	return this -> inertia;
+
+}
+
 
 void ShapeModel::construct_kd_tree_control_points(bool verbose) {
 

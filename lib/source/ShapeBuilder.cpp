@@ -40,16 +40,16 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 
 
 void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
-	Interpolator * interpolator,
+	const std::vector<arma::vec> & X,
 	bool save_shape_model) {
 
 
 	std::cout << "Running the filter" << std::endl;
 
-	arma::vec X_S = interpolator -> interpolate(times(0), true);
+	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 
-	arma::vec lidar_pos = X_S.rows(6,8);
-	arma::vec lidar_vel = X_S.rows(9,11);
+	arma::vec lidar_pos = X_S.rows(0,2);
+	arma::vec lidar_vel = X_S.rows(3,5);
 
 	arma::vec e_r;
 	arma::vec e_t;
@@ -81,7 +81,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 		std::cout << "\n################### Index : " << time_index << " / " << times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times(times.n_rows - 1) << " ########################" << std::endl;
 
-		X_S = interpolator -> interpolate(times(time_index), true);
+		X_S = X[time_index];
 
 		this -> get_new_relative_states(X_S,dcm_LB,dcm_LB_t_D,LN_t_S, LN_t_D,mrp_BN,mrp_BN_t_D,mrp_LB,lidar_pos,lidar_vel );
 
@@ -417,7 +417,7 @@ void ShapeBuilder::perform_measurements_pc(
 		this -> measure_omega(arma::eye<arma::mat>(3,3));
 
 		this -> filter_arguments -> append_time(time);
-		this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
+		this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
 
 		this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
 		this -> filter_arguments -> append_relative_pos_true(arma::zeros<arma::vec>(3));
@@ -438,7 +438,7 @@ void ShapeBuilder::perform_measurements_pc(
 		this -> measure_omega(NE_tD_EN_tS_pc);
 
 		this -> filter_arguments -> append_time(time);
-		this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
+		this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
 		this -> filter_arguments -> append_mrp_true(mrp_BN);
 
 		this -> filter_arguments -> append_relative_pos_mes(X_relative_from_pc);
@@ -470,7 +470,7 @@ void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S,
 	this -> measure_omega(NE_tD_EN_tS_pc);
 
 	this -> filter_arguments -> append_time(time);
-	this -> filter_arguments -> append_omega_true(X_S.rows(3, 5));
+	this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
 	this -> filter_arguments -> append_mrp_true(mrp_BN);
 
 	this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
@@ -498,9 +498,9 @@ void ShapeBuilder::get_new_relative_states(
 
 	// Getting the new small body inertial attitude
 	// and spacecraft relative position
-	mrp_BN = X_S.rows(0,2);
-	lidar_pos = X_S.rows(6, 8);
-	lidar_vel = X_S.rows(9, 11);
+	mrp_BN = X_S.rows(6,8);
+	lidar_pos = X_S.rows(0, 2);
+	lidar_vel = X_S.rows(3, 5);
 
 	// The [LB] DCM is assembled. Note that e_r does not exactly have to point towards the target
 	// barycenter

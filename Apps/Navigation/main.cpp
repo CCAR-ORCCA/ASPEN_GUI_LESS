@@ -8,10 +8,14 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64
-#define COL_RESOLUTION 64
-#define ROW_FOV 20
-#define COL_FOV 20
+#define ROW_RESOLUTION 4
+#define COL_RESOLUTION 4
+// #define ROW_FOV 20
+// #define COL_FOV 20
+#define ROW_FOV 2
+
+#define COL_FOV 2
+
 
 // Instrument operating frequency
 #define INSTRUMENT_FREQUENCY 0.000145 // one flash every 2 hours
@@ -23,7 +27,7 @@
 
 // Times (s)
 #define T0 0
-#define TF 604800// 7 days
+#define TF 864000// 10 days
 
 
 int main() {
@@ -44,7 +48,8 @@ int main() {
 
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
-	ShapeModelTri estimated_shape_model("E", &frame_graph);
+	// ShapeModelTri estimated_shape_model("E", &frame_graph);
+	ShapeModelBezier estimated_shape_model("E", &frame_graph);
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
@@ -52,6 +57,10 @@ int main() {
 
 	ShapeModelImporter shape_io_truth(
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64.obj", 1000, false);
+	
+	ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/PatchFitting/build/faceted_sphere_fit_degree_2_iter_5.b", 1000, true);
+
+
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
@@ -59,11 +68,14 @@ int main() {
 	true_shape_model.construct_kd_tree_shape(false);
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
-	shape_io_truth.load_obj_shape_model(&estimated_shape_model);
-	estimated_shape_model.construct_kd_tree_shape(false);
+
+	// shape_io_truth.load_obj_shape_model(&estimated_shape_model);
+	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
+
+	std::cout << "done loading bezier shape" << std::endl;
 
 
-
+	// estimated_shape_model.construct_kd_tree_shape(false);
 
 	// Itokawa angular velocity
 	double omega = 2 * arma::datum::pi / (12 * 3600);
@@ -75,7 +87,6 @@ int main() {
 	args.set_true_shape_model(&true_shape_model);
 	args.set_estimated_shape_model(&estimated_shape_model);
 
-	args.set_is_attitude_bool(false);
 	args.set_dyn_analyses(&dyn_analyses);
 	// args.set_Cnm(&Cnm);
 	// args.set_Snm(&Snm);
@@ -90,7 +101,7 @@ int main() {
 	// Initial spacecraft state
 	arma::vec X0_true_spacecraft = arma::zeros<arma::vec>(6);
 
-	arma::vec pos_0 = {2000,0,0};
+	arma::vec pos_0 = {1000,0,0};
 	X0_true_spacecraft.rows(0,2) = pos_0; // r_LN(0) in body frame
 
 	// Velocity determined from sma
@@ -120,7 +131,6 @@ int main() {
 	arma::vec X0_estimated_augmented = arma::zeros<arma::vec>(12);
 	X0_estimated_augmented.subvec(0,5) = X0_estimated_spacecraft;
 	X0_estimated_augmented.subvec(6,11) = X0_estimated_small_body;
-
 
 	// Lidar
 	Lidar lidar(&frame_graph,"L",ROW_FOV,COL_FOV ,ROW_RESOLUTION,COL_RESOLUTION,FOCAL_LENGTH,
@@ -165,9 +175,16 @@ int main() {
 
 		arma::mat R = arma::zeros<arma::mat>(1,1);
 
+		auto start = std::chrono::system_clock::now();
+
 
 		int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,T_obs,
 			R,Q,true);
+		auto end = std::chrono::system_clock::now();
+
+		std::chrono::duration<double> elapsed_seconds = end-start;
+
+		std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
 
 		filter.write_estimated_state("./X_hat.txt");

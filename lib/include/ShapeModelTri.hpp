@@ -18,7 +18,7 @@
 #include "KDTree_shape.hpp"
 
 
- class KDTree_shape;
+class KDTree_shape;
 
 
 /**
@@ -37,7 +37,7 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	*/
 	ShapeModelTri(std::string ref_frame_name,
-	           FrameGraph * frame_graph) : ShapeModel(ref_frame_name,frame_graph){};
+		FrameGraph * frame_graph) : ShapeModel(ref_frame_name,frame_graph){};
 
 
 	/**
@@ -160,9 +160,9 @@ public:
 	@return true if the facet was recycled, false otherwise
 	*/
 	bool merge_shrunk_facet(double minimum_angle,
-	                        Facet * facet,
-	                        std::set<Facet *> * seen_facets,
-	                        std::set<Facet *> * spurious_facets = nullptr);
+		Facet * facet,
+		std::set<Facet *> * seen_facets,
+		std::set<Facet *> * spurious_facets = nullptr);
 
 
 	/**
@@ -204,12 +204,7 @@ public:
 	*/
 	void align_with_principal_axes();
 
-	/**
-	Returns the non-dimensional inertia tensor of the body in the body-fixed
-	principal axes. (rho == 1, l = (volume)^(1/3))
-	@return principal inertia tensor
-	*/
-	arma::mat get_inertia() const;
+	
 
 
 	/**
@@ -244,7 +239,6 @@ protected:
 
 	arma::vec cm;
 
-	arma::mat inertia;
 
 	std::shared_ptr<KDTree_shape> kdt_facet = nullptr;
 

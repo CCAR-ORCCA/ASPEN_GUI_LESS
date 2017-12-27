@@ -3,6 +3,8 @@
 
 #include "ShapeModel.hpp"
 #include "ShapeModelTri.hpp"
+// #include "ShapeModelBezier.hpp"
+
 #include "Ray.hpp"
 #include "FrameGraph.hpp"
 #include "GNUPlot.hpp"
@@ -14,6 +16,8 @@
 
 class Ray;
 class ShapeModel;
+class ShapeModelBezier;
+
 class PC;
 
 class Lidar {
@@ -35,16 +39,16 @@ public:
 	@param los_noise_fraction_mes_truth truth-proportional fraction of the range measurement error
 	*/
 	Lidar(FrameGraph * frame_graph,
-	      std::string ref_frame_name ,
-	      double fov_h ,
-	      double fov_v ,
-	      unsigned int y_res ,
-	      unsigned int z_res ,
-	      double f ,
-	      double freq ,
-	      double los_noise_3sd_baseline ,
-	      double los_noise_fraction_mes_truth
-	     );
+		std::string ref_frame_name ,
+		double fov_h ,
+		double fov_v ,
+		unsigned int y_res ,
+		unsigned int z_res ,
+		double f ,
+		double freq ,
+		double los_noise_3sd_baseline ,
+		double los_noise_fraction_mes_truth
+		);
 
 
 
@@ -143,7 +147,8 @@ public:
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
 	*/
-	void send_flash(ShapeModelTri * shape_model,bool add_noise) ;
+
+	void send_flash(ShapeModel * shape_model,bool add_noise) ;
 
 
 	/**
@@ -179,7 +184,7 @@ public:
 
 	std::string get_ref_frame_name() const;
 
-	void save_surface_measurements(std::string path) const ;
+	void save(std::string path)  ;
 
 	std::vector<std::shared_ptr<Ray> > * get_focal_plane() ;
 

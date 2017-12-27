@@ -8,6 +8,7 @@ rc('text', usetex=True)
 def plot_all_results(path = "",save = False):
 
     # plot_residuals(path,save)
+    plot_orbit(path,save)
     plot_state_error(path,save)
 
 def plot_residuals(path = "",save = False):
@@ -22,6 +23,21 @@ def plot_residuals(path = "",save = False):
     else:
         plt.savefig("residuals.pdf")
     plt.clf()
+
+
+def plot_orbit(path = "",save = False):
+
+    X_true = np.loadtxt(path + "X_true.txt")
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(X_true[0,:]/1000.,X_true[1,:]/1000.,X_true[2,:]/1000.)
+    ax.set_xlabel("X (km)")
+    ax.set_ylabel("Y (km)")
+    ax.set_zlabel("Y (km)")
+    plt.show()
+
+
 
 def plot_state_error(path = "",save = False):
 

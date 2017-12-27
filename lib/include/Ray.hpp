@@ -2,6 +2,8 @@
 #define HEADER_RAY
 
 #include "Facet.hpp"
+#include "Element.hpp"
+
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
 #include "ShapeModelTri.hpp"
@@ -34,10 +36,10 @@ public:
 	Ray(arma::vec origin, arma::vec direction);
 
 	/**
-	Pointer to hit facet on the true target
+	Pointer to hit element on the target
 	@return pointer to hit facet (set to nullptr if no facet was hit)
 	*/
-	Facet * get_true_hit_facet() ;
+	Element * get_hit_element() ;
 
 	/**
 	Value of true range measurement (from pixel to facet)
@@ -137,6 +139,10 @@ public:
 	*/
 	double get_incidence_angle() const;
 
+	void set_impact_coords(const double & u,const double & v);
+
+	void get_impact_coords(double & u_t, double & v_t);
+
 protected:
 
 	Lidar * lidar;
@@ -151,9 +157,12 @@ protected:
 	unsigned int col_index;
 
 	double true_range;
-	Facet * true_hit_facet;
+	Element * hit_element;
 
 	double incidence_angle;
+
+	double u;
+	double v;
 
 
 
