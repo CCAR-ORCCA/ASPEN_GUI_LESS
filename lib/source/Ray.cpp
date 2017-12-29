@@ -185,7 +185,6 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 
 bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 
-	std::cout << "ray casting" << std::endl;
 	arma::vec S = *this -> origin_target_frame;
 	arma::vec dir = *this -> direction_target_frame;
 	arma::mat u_tilde = RBK::tilde(dir);
@@ -206,8 +205,9 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 		double v_t = chi(1);
 
 		impact = patch -> evaluate(u_t,v_t);
-		std::cout << arma::norm(u_tilde*(S - impact)) << std::endl;
-		if (arma::norm(u_tilde*(S - impact)) < 1e-8){
+		double distance = arma::norm(u_tilde*(S - impact));
+
+		if (distance < 1e-8){
 			if (u_t + v_t > 1. || u_t < 0. || v_t < 0. || u_t > 1. || v_t > 1.){
 				return false;
 			}

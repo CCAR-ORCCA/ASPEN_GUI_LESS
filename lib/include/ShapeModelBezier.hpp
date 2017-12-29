@@ -39,9 +39,13 @@ public:
 	ShapeModelBezier(Bezier patch);
 
 	std::shared_ptr<arma::sp_mat> get_info_mat_ptr() const;
+	std::shared_ptr<arma::vec> get_dX_bar_ptr() const;
+
 
 	void initialize_info_mat();
+	void initialize_dX_bar();
 
+	arma::mat random_sampling(unsigned int N,const arma::mat & R) const;
 
 
 	/**
@@ -92,7 +96,7 @@ public:
 protected:
 
 	std::shared_ptr<arma::sp_mat> info_mat_ptr = nullptr;
-
+	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
 	
 
 };

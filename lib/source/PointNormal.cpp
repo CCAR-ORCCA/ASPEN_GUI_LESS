@@ -29,6 +29,11 @@ void PointNormal::set_normal(arma::vec normal) {
 	this -> normal = normal;
 }
 
+
+void PointNormal::set_point(arma::vec point) {
+	this -> point = point;
+}
+
 double PointNormal::distance(std::shared_ptr<PointNormal> other_point) const {
 	return arma::norm(this -> point - other_point -> get_point());
 }

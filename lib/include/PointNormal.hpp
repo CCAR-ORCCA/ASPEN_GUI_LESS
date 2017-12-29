@@ -21,6 +21,8 @@ public:
 	arma::vec get_normal() const;
 
 	void set_normal(arma::vec normal) ;
+	void set_point(arma::vec point) ;
+
 
 	void decrement_inclusion_counter();
 

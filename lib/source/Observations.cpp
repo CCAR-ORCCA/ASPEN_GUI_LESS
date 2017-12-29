@@ -16,7 +16,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	arma::vec lidar_pos = x.rows(0,2);
 
 
-
 	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
 
 	// Setting the Lidar frame to its new state
@@ -40,7 +39,15 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	
+	// lidar -> save("pc_true.obj");
+
+	lidar -> save("focal_plane_true_" + std::to_string(int(t)) + ".txt",true);
+
+		
+
+
+
+
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}
@@ -104,7 +111,17 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
 
 			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
-			arma::vec n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+			arma::vec n;
+
+			Bezier * bezier = dynamic_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
+			if (bezier == nullptr){
+				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+			}	
+			else{
+				double u_t, v_t;
+				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
+				n = bezier -> get_normal(u_t,v_t);
+			}
 
 			H.row(i) = - n.t() / arma::dot(n,u);
 		}
@@ -205,7 +222,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 
 	arma::vec x_bar_bar = x.rows(0,2);
 	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,R,arma::zeros<arma::mat>(1,1),
-		true);
+		false);
 
 
 	// The covariance in the position is extracted here

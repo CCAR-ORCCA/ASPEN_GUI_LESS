@@ -142,7 +142,6 @@ std::vector<std::shared_ptr<Ray> > * Lidar::get_focal_plane() {
 }
 
 
-
 Ray * Lidar::get_ray(unsigned int pixel) {
 	return this -> focal_plane[pixel].get();
 }
@@ -218,21 +217,44 @@ void Lidar::plot_range_residuals_per_facet(std::string path) {
 }
 
 
-void Lidar::save(std::string path) {
+void Lidar::save(std::string path,bool conserve_format) {
 
 
-	std::ofstream shape_file;
-	shape_file.open(path);
+	
 
-	for (unsigned int i = 0;i < this -> focal_plane.size();++i) {
+	if (conserve_format){
 
-		Ray  * ray = this -> get_ray(i);
+		unsigned int res = std::sqrt(this -> focal_plane.size());
+		
+		arma::mat formatted_focal_plane = arma::zeros<arma::mat>(res,res);
 
-		if (ray-> get_hit_element() != nullptr){
-			arma::vec p = (*ray-> get_direction_target_frame()) * ray-> get_true_range() + *ray-> get_origin_target_frame();
-			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		for (unsigned int z_index = 0; z_index < res; ++z_index){
+			for (unsigned int y_index = 0; y_index < res; ++y_index){
+
+
+				formatted_focal_plane(res - y_index - 1,z_index) = this -> focal_plane[y_index + z_index * res] -> get_true_range();
+
+			}
 		}
 
+		formatted_focal_plane.save(path,arma::raw_ascii);
+
+
+
+
+	}
+	else{
+		std::ofstream file;
+		file.open(path);
+		for (unsigned int i = 0;i < this -> focal_plane.size();++i) {
+			Ray  * ray = this -> get_ray(i);
+
+			if (ray-> get_hit_element() != nullptr){
+				arma::vec p = (*ray-> get_direction_target_frame()) * ray-> get_true_range() + *ray-> get_origin_target_frame();
+				file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+			}
+
+		}
 	}
 
 

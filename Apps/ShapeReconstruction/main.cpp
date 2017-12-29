@@ -9,7 +9,7 @@
 #include <boost/numeric/odeint.hpp>
 #include "System.hpp"
 #include "Observer.hpp"
-
+#include "PC.hpp"
 
 #include <ShapeFitterTri.hpp>
 #include <ShapeFitterBezier.hpp>
@@ -28,16 +28,16 @@
 #define COL_FOV 20
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.002
+#define INSTRUMENT_FREQUENCY 0.0016
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_3SD_BASELINE 5e-2
+#define LOS_NOISE_3SD_BASELINE 1e0
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times (s)
 #define T0 0
-#define TF 80000// 7 days
+#define TF 36000// 7 days
 
 
 int main() {
@@ -55,7 +55,6 @@ int main() {
 
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
-	ShapeModelTri estimated_shape_model("E", &frame_graph);
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
@@ -63,7 +62,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64.obj", 1000, false);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/bennu_scaled.obj", 1, true);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
@@ -75,7 +74,17 @@ int main() {
 #endif
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
+
+	
 	true_shape_model.construct_kd_tree_shape(false);
+
+	// ShapeModelBezier true_bezier(&true_shape_model,"",&frame_graph);
+	
+	// arma::mat R = arma::eye<arma::mat>(3,3);
+	
+	// arma::mat points = true_bezier.random_sampling(30000,R);
+	// points.save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/sampled_pc_itokawa_scaled_aligned.txt",arma::raw_ascii);
+	// PC::save(points,"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/sampled_pc_itokawa_scaled_aligned.obj");
 
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
@@ -83,12 +92,12 @@ int main() {
 	Args args;
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
-	args.set_dyn_analyses(&dyn_analyses);
-	args.set_Cnm(&Cnm);
-	args.set_Snm(&Snm);
-	args.set_degree(5);
-	args.set_ref_radius(175);
-	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
+	// args.set_dyn_analyses(&dyn_analyses);
+	// args.set_Cnm(&Cnm);
+	// args.set_Snm(&Snm);
+	// args.set_degree(5);
+	// args.set_ref_radius(175);
+	// args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
@@ -106,7 +115,7 @@ int main() {
 
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0,0.9 * v,0.1 * v};
+	arma::vec vel_0_inertial = {0.1 * v,0,0.9 * v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
@@ -164,7 +173,6 @@ int main() {
 	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,
 		&true_shape_model,
-		&estimated_shape_model,
 		&shape_filter_args);
 
 

@@ -3,6 +3,8 @@
 
 #include "ShapeModel.hpp"
 #include "ShapeModelTri.hpp"
+#include "ShapeModelBezier.hpp"
+
 
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
@@ -15,11 +17,12 @@
 
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterTri.hpp"
+#include "ShapeFitterBezier.hpp"
+#include "EllipsoidFitter.hpp"
 
 #include "CGAL_interface.hpp"
 #include <RigidBodyKinematics.hpp>
 #include <boost/progress.hpp>
-// #include "FixVectorSize.hpp"
 
 #include <numeric>
 #include <sstream>
@@ -41,21 +44,6 @@ class ShapeBuilder {
 
 public:
 
-
-
-	/**
-	Constructor
-	@param frame_graph Pointer to the graph storing the reference frames
-	@param lidar Pointer to instrument
-	@param true_shape_model Pointer to the true shape model
-	@param estimated_shape_model Pointer to the estimated shape model
-	@param filter_arguments filter parameters
-	*/
-	ShapeBuilder(FrameGraph * frame_graph,
-		Lidar * lidar,
-		ShapeModelTri * true_shape_model,
-		ShapeModelTri * estimated_shape_model,
-		ShapeBuilderArguments * filter_arguments);
 
 
 	/**
@@ -218,7 +206,9 @@ protected:
 	@param M_pc dcm matrix from the ICP registering the source point cloud to the destination point cloud
 	@param X_pc translation vector from the ICP registering the source point cloud to the destination point cloud
 	*/
-	void concatenate_point_clouds(unsigned int index, const arma::mat & M_pc,const arma::mat & X_pc);
+	void concatenate_point_clouds(unsigned int index, 
+		const arma::mat & M_pc,const arma::mat & X_pc,
+		const arma::mat & dcm_LB,const arma::vec & lidar_pos);
 
 
 
@@ -256,7 +246,7 @@ protected:
 	FrameGraph * frame_graph;
 	Lidar * lidar;
 	ShapeModelTri * true_shape_model;
-	ShapeModelTri * estimated_shape_model;
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model;
 
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;

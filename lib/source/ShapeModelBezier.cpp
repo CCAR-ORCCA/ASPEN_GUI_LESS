@@ -38,16 +38,54 @@ std::shared_ptr<arma::sp_mat> ShapeModelBezier::get_info_mat_ptr() const{
 	return this -> info_mat_ptr;
 }
 
+std::shared_ptr<arma::vec> ShapeModelBezier::get_dX_bar_ptr() const{
+	return this -> dX_bar_ptr;
+}
+
 
 void ShapeModelBezier::initialize_info_mat(){
 	unsigned int N = this -> control_points.size();
 	this -> info_mat_ptr = std::make_shared<arma::sp_mat>(arma::sp_mat(3 * N,3 * N ));
 }
 
+void ShapeModelBezier::initialize_dX_bar(){
+	unsigned int N = this -> control_points.size();
+	this -> dX_bar_ptr = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3 * N));
+
+}
 ShapeModelBezier::ShapeModelBezier(std::string ref_frame_name,
 	FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
 }
+
+
+
+arma::mat ShapeModelBezier::random_sampling(unsigned int N,const arma::mat & R) const{
+
+	arma::mat points = arma::zeros<arma::mat>(3,N);
+	arma::mat S = arma::chol(R,"lower");
+
+	// N points are randomly sampled from the surface of the shape model
+	// #pragma omp parallel for
+	for (unsigned int i = 0; i < N; ++i){
+
+		unsigned int element_index = arma::randi<arma::vec>( 1, arma::distr_param(0,this -> elements.size() - 1) ) (0);
+
+		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[element_index].get());
+		arma::vec random = arma::randu<arma::vec>(2);
+		double u = random(0);
+		double v = (1 - u) * random(1);
+
+		points.col(i) = patch -> evaluate(u,v) + S * arma::randn<arma::vec>(3) ;
+
+	}
+
+	return points;
+
+
+
+}
+
 
 ShapeModelBezier::ShapeModelBezier(Bezier patch){
 
@@ -75,11 +113,8 @@ bool ShapeModelBezier::ray_trace(Ray * ray){
 	double u,v;
 	bool hit = false;
 	// Not really elegant and not parallelizable
-	std::cout << "Ray tracing elements" << std::endl;
 	
-	std::cout << this -> elements.size() << std::endl;
 	for (unsigned int i = 0; i < this -> elements.size(); ++i){
-		std::cout << i << std::endl;
 		Bezier * patch = dynamic_cast<Bezier *>(this -> elements[i].get());
 		hit = ray -> single_patch_ray_casting(patch,u,v);
 	}

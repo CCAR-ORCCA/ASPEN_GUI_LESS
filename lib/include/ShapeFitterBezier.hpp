@@ -30,7 +30,8 @@ protected:
 	ShapeModelBezier * shape_model;
 	std::vector<Footpoint> find_footpoints() const;
 
-	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints);
+	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints,
+		bool & has_converged);
 	
 
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);

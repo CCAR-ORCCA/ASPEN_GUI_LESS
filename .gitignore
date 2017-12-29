@@ -1,6 +1,15 @@
 Apps/ShapeReconstruction/build/
+Apps/ShapeReconstruction/output/
+Apps/Navigation/build/
+Apps/TestEllipsoidFitter/build/
+Apps/DebugArma/build/
 Apps/ShapeModelBezier/build/
 Apps/TestBezier/build/
+Apps/RayTracing/build/
+Apps/Uncertainty/build/
+Apps/PatchFitting/build/
+Apps/TestFilter/build/
+Apps/TestODEint/build/
 lib/build/
 *.zip             
 *.pyc

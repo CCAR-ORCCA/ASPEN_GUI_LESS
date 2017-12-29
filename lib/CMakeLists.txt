@@ -145,6 +145,7 @@ ${SOURCE_PATH}/ControlPoint.cpp
 ${SOURCE_PATH}/DynamicAnalyses.cpp
 ${SOURCE_PATH}/Dynamics.cpp
 ${SOURCE_PATH}/Element.cpp
+${SOURCE_PATH}/EllipsoidFitter.cpp
 ${SOURCE_PATH}/EventFunction.cpp
 ${SOURCE_PATH}/ExtendedKalmanFilter.cpp
 ${SOURCE_PATH}/Facet.cpp

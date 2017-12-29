@@ -1,7 +1,6 @@
 #include "PC.hpp"
 
-PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
-	FrameGraph * frame_graph) {
+PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
@@ -18,7 +17,7 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
 	}
 
 	arma::vec los = {1,0,0};
-
+	
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(los);
 
@@ -27,15 +26,36 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
 
 
 PC::PC(arma::vec los_dir, arma::mat & points) {
-
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
 	for (unsigned int index = 0; index < points . n_cols; ++index) {
-
 		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index))));
 	}
 	this -> construct_kd_tree(points_normals);
+
 	this -> construct_normals(los_dir);
+
+}
+
+
+void PC::transform(const arma::mat & dcm, const arma::vec & x){
+
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+
+	// The valid measurements used to form the point cloud are extracted
+	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
+
+		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
+
+		pn -> set_point(dcm * pn -> get_point() + x);
+		points_normals.push_back(pn);
+	}
+
+	arma::vec los = {1,0,0};
+	
+	this -> construct_kd_tree(points_normals);
+	this -> construct_normals(dcm * los);
+
 
 }
 
@@ -90,11 +110,6 @@ PC::PC(ShapeModelTri * shape_model) {
 
 
 	}
-
-
-
-
-
 
 	this -> construct_kd_tree(points_normals);
 
@@ -173,9 +188,6 @@ arma::vec PC::get_point_normal(unsigned int index) const {
 
 
 
-
-
-
 void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals) {
 
 	// The KD Tree is now constructed
@@ -246,7 +258,6 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
 	bool format_like_obj) const {
 
-
 	std::ofstream shape_file;
 	shape_file.open(path);
 
@@ -289,6 +300,8 @@ void PC::save(arma::mat & points,std::string path) {
 	}
 
 }
+
+
 
 
 
@@ -361,9 +374,9 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(
 }
 
 
-void PC::construct_normals(arma::vec & los_dir) {
+void PC::construct_normals(arma::vec los_dir) {
 
-	#pragma omp parallel for if (USE_OMP_PC)
+	// #pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
 		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
@@ -411,9 +424,11 @@ arma::vec PC::get_center() const{
 	arma::vec C = arma::zeros<arma::vec>(3);
 	for (unsigned int i = 0; i < size; ++i) {
 
-		c_x += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(0) / size;
-		c_y += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(1) / size;
-		c_z += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()(2) / size;
+		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
+
+		c_x += point(0) / size;
+		c_y += point(1) / size;
+		c_z += point(2) / size;
 
 		C += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()/ size;
 	}
@@ -430,37 +445,58 @@ arma::vec PC::get_bbox_center() const{
 	
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
-	arma::vec bbox_max = arma::zeros<arma::vec>(3);
-	arma::vec bbox_min = arma::zeros<arma::vec>(3);
-
+	arma::vec bbox_min = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
+	arma::vec bbox_max = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
 
 	// #pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
 	for (unsigned int i = 0; i < size; ++i) {
-
-		bbox_max = arma::max(bbox_max,this -> kdt_points  -> get_points_normals() -> at(i) -> get_point());
-		bbox_min = arma::min(bbox_min,this -> kdt_points  -> get_points_normals() -> at(i) -> get_point());
+		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
+		bbox_max = arma::max(bbox_max,point);
+		bbox_min = arma::min(bbox_min,point);
 
 	}
-
+	
 	arma::vec C = 0.5 * (bbox_max + bbox_min);
 	
 
 	return C;
 }
 
-double PC::get_bbox_diagonal() const{
+arma::vec PC::get_bbox_dim() const{
 
+	
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
-	arma::vec bbox_max = arma::zeros<arma::vec>(3);
-	arma::vec bbox_min = arma::zeros<arma::vec>(3);
+	arma::vec bbox_max = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
+	arma::vec bbox_min = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
 
 
 	// #pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
 	for (unsigned int i = 0; i < size; ++i) {
+		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
 
-		bbox_max = arma::max(bbox_max,this -> kdt_points  -> get_points_normals() -> at(i)  -> get_point());
-		bbox_min = arma::min(bbox_min,this -> kdt_points  -> get_points_normals() -> at(i)  -> get_point());
+		bbox_max = arma::max(bbox_max,point);
+		bbox_min = arma::min(bbox_min,point);
+
+	}
+	
+
+	return 0.5 *(bbox_max - bbox_min);
+}
+
+double PC::get_bbox_diagonal() const{
+
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+
+	arma::vec bbox_max = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
+	arma::vec bbox_min = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
+
+	// #pragma omp parallel for reduction(min:bbox_x_min,bbox_y_min,bbox_z_min) reduction(max:bbox_x_max,bbox_y_max,bbox_z_max) if (USE_OMP_PC)
+	for (unsigned int i = 0; i < size; ++i) {
+		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
+
+		bbox_max = arma::max(bbox_max,point);
+		bbox_min = arma::min(bbox_min,point);
 
 	}
 

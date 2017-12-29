@@ -184,9 +184,11 @@ public:
 
 	std::string get_ref_frame_name() const;
 
-	void save(std::string path)  ;
+	void save(std::string path,bool conserve_format = false)  ;
 
 	std::vector<std::shared_ptr<Ray> > * get_focal_plane() ;
+
+
 
 
 protected:

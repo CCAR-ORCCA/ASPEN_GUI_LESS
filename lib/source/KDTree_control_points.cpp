@@ -126,7 +126,6 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 		bool search_left_first;
 
 
-
 		if (test_point(node -> get_axis()) <= node -> get_value()) {
 			search_left_first = true;
 		}

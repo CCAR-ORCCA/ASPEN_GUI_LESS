@@ -8,7 +8,6 @@
 #include "KDTree_pc.hpp"
 #include "Ray.hpp"
 #include "PointNormal.hpp"
-#include "FrameGraph.hpp"
 #include "ShapeModelTri.hpp"
 
 class ShapeModelTri;
@@ -22,10 +21,8 @@ public:
 	Constructor
 	@param focal_plane Pointer to focal plane whose individual rays impacting with the target
 	yield the point cloud
-	@param frame_graph Pointer to reference frame graph
 	*/
-	PC(std::vector<std::shared_ptr<Ray> > * focal_plane,
-	   FrameGraph * frame_graph);
+	PC(std::vector<std::shared_ptr<Ray> > * focal_plane);
 
 
 
@@ -149,6 +146,13 @@ public:
 	*/
 	double get_bbox_diagonal() const;
 
+	/**
+	Returns bbox dimensions
+	@return bbox dimensions along (x,y,z) axes
+	*/
+	arma::vec get_bbox_dim() const;	
+
+	void transform(const arma::mat & dcm, const arma::vec & x);
 
 	/**
 	Returns the points in this point cloud
@@ -187,7 +191,7 @@ public:
 protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
-	void construct_normals(arma::vec & los);
+	void construct_normals(arma::vec los);
 
 	std::shared_ptr<KDTree_pc> kdt_points;
 

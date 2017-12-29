@@ -56,7 +56,7 @@ protected:
 	int depth;
 	int max_depth = 1000;
 	double value;
-	unsigned int axis;
+	unsigned int axis = 0;
 
 };
 

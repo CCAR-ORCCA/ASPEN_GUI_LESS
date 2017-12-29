@@ -28,22 +28,21 @@ int main(){
 	// ShapeModelBezier true_shape("",&frame_graph);
 	// shape_io.load_bezier_shape_model(&true_shape);
 
-	ShapeModelImporter fit_shape_io(guess + ".b", 1, true);
+	ShapeModelImporter fit_shape_io(guess + ".b", 500, true);
 	
 	ShapeModelBezier fit_shape("",&frame_graph);
 	fit_shape_io.load_bezier_shape_model(&fit_shape);
 
+
 	fit_shape.elevate_degree();
-	// fit_shape.elevate_degree();
+	fit_shape.elevate_degree();
 
 	unsigned int degree = fit_shape.get_degree();
 
 	arma::mat points;
-	points.load("large_pc.txt");
-	arma::inplace_trans(points);
-	arma::vec mean =  arma::mean(points,1);
-	points.each_col() -= mean; 
-	points /= 1000.;
+	points.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/sampled_pc_itokawa_scaled_aligned.txt");
+	if (points.n_rows > points.n_cols)
+		arma::inplace_trans(points);
 
 	// Compute the latitude/longitude/radius of a number of a selected number of points in the point cloud
 
@@ -54,7 +53,6 @@ int main(){
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < indices.n_rows; ++i){
-
 		arma::vec point = points.col(indices(i));
 		double longitude = std::atan2(point(1),point(0));
 		double latitude = std::atan2(point(2),arma::norm(point.rows(0,1)));
@@ -97,17 +95,18 @@ int main(){
 	arma::vec u = {1,0,0};
 	PC pc(u,points);
 
+
 	fit_shape.save_to_obj("a_priori_" + asteroid + "_degree_" +std::to_string(degree) + ".obj");
 	fit_shape.save("a_priori_" + asteroid + "_degree_" +std::to_string(degree) + ".b");
 
 	// // The shape is fit
-	unsigned int N_iter = 5;
+	unsigned int N_iter = 10;
 
 	ShapeFitterBezier shape_fitter(&fit_shape,&pc);
 
 	shape_fitter.fit_shape_batch(N_iter,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
-	fit_shape.save(guess + "_fit_degree_" + std::to_string(degree) +"_iter_" + std::to_string(N_iter) + ".b");
+	fit_shape.save(asteroid + "_fit_degree_" + std::to_string(degree) +"_iter_" + std::to_string(N_iter) + ".b");
 
 	fit_shape.elevate_degree();
 	fit_shape.elevate_degree();

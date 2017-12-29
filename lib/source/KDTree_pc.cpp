@@ -28,9 +28,9 @@ void KDTree_pc::set_axis(unsigned int axis) {
 }
 
 void KDTree_pc::closest_point_search(const arma::vec & test_point,
-                                     std::shared_ptr<KDTree_pc> node,
-                                     std::shared_ptr<PointNormal> & best_guess,
-                                     double & distance) {
+	std::shared_ptr<KDTree_pc> node,
+	std::shared_ptr<PointNormal> & best_guess,
+	double & distance) {
 
 
 
@@ -64,16 +64,16 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance);
+					node -> left,
+					best_guess,
+					distance);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance);
+					node -> right,
+					best_guess,
+					distance);
 			}
 
 		}
@@ -82,16 +82,16 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance);
+					node -> right,
+					best_guess,
+					distance);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance);
+					node -> left,
+					best_guess,
+					distance);
 			}
 
 		}
@@ -103,11 +103,10 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 
 void KDTree_pc::closest_point_search(const arma::vec & test_point,
-                                     std::shared_ptr<KDTree_pc> node,
-                                     std::shared_ptr<PointNormal> & best_guess,
-                                     double & distance,
-                                     std::vector<std::shared_ptr<PointNormal> > & closest_points) {
-
+	std::shared_ptr<KDTree_pc> node,
+	std::shared_ptr<PointNormal> & best_guess,
+	double & distance,
+	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
 
 
 	if (node -> points_normals.size() == 1 ) {
@@ -126,32 +125,31 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 		bool search_left_first;
 
 
-
 		if (test_point(node -> get_axis()) <= node -> get_value()) {
 			search_left_first = true;
 		}
 		else {
 			search_left_first = false;
 		}
-
+	
 		if (search_left_first) {
 
 
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> left,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> right,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 		}
@@ -160,18 +158,18 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> right,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> right,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
-				                             node -> left,
-				                             best_guess,
-				                             distance,
-				                             closest_points);
+					node -> left,
+					best_guess,
+					distance,
+					closest_points);
 			}
 
 		}
@@ -192,6 +190,11 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	node -> left = nullptr;
 	node -> right = nullptr;
 	node -> set_depth(depth);
+
+
+	if (verbose) {
+		std::cout << "Points in node: " << points_normals.size() <<  std::endl;
+	}
 
 	if (points_normals.size() == 0) {
 		if (verbose) {
@@ -239,6 +242,8 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 		// The midpoint of all the facets is found
 		midpoint += (point / points_normals.size());
 	}
+	
+
 
 	arma::vec bounding_box_lengths = max_bounds - min_bounds;
 
@@ -246,7 +251,24 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	std::vector < std::shared_ptr<PointNormal> > left_points;
 	std::vector < std::shared_ptr<PointNormal> > right_points;
 
+	if (verbose){
+		std::cout << "Midpoint: " << midpoint.t() << std::endl;
+		std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
+	}
+
+
+	if (arma::norm(bounding_box_lengths) == 0) {
+		if (verbose) {
+			std::cout << "Cluttered node" << std::endl;
+		}
+		// return node;
+	}
+
 	unsigned int longest_axis = bounding_box_lengths.index_max();
+
+	if (longest_axis < 0 || longest_axis > 2){
+		throw(std::runtime_error("overflow in longest_axis"));
+	}
 
 	for (unsigned int i = 0; i < points_normals.size() ; ++i) {
 
@@ -271,6 +293,8 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	if (right_points.size() == 0 && left_points.size() > 0) {
 		right_points = left_points;
 	}
+
+	
 
 	// Recursion continues
 	node -> left = build(left_points, depth + 1, verbose);

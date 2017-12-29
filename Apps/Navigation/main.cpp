@@ -8,13 +8,13 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 4
-#define COL_RESOLUTION 4
+#define ROW_RESOLUTION 64
+#define COL_RESOLUTION 64
 // #define ROW_FOV 20
 // #define COL_FOV 20
-#define ROW_FOV 2
+#define ROW_FOV 20
 
-#define COL_FOV 2
+#define COL_FOV 20
 
 
 // Instrument operating frequency
@@ -48,18 +48,17 @@ int main() {
 
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
-	// ShapeModelTri estimated_shape_model("E", &frame_graph);
-	ShapeModelBezier estimated_shape_model("E", &frame_graph);
+	ShapeModelTri estimated_shape_model("E", &frame_graph);
+	// ShapeModelBezier estimated_shape_model("E", &frame_graph);
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
 	arma::mat Snm;
 
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64.obj", 1000, false);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
-	ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/PatchFitting/build/faceted_sphere_fit_degree_2_iter_5.b", 1000, true);
-
+	ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/itokawa_hr_fit_degree_3_iter_10.b", 1, true);
 
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
@@ -69,13 +68,11 @@ int main() {
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
 
-	// shape_io_truth.load_obj_shape_model(&estimated_shape_model);
-	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
-
-	std::cout << "done loading bezier shape" << std::endl;
+	shape_io_truth.load_obj_shape_model(&estimated_shape_model);
+	// shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
 
-	// estimated_shape_model.construct_kd_tree_shape(false);
+	estimated_shape_model.construct_kd_tree_shape(false);
 
 	// Itokawa angular velocity
 	double omega = 2 * arma::datum::pi / (12 * 3600);
@@ -149,7 +146,7 @@ int main() {
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
 	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,
-		1e-14,1e-14,1e-14,1e-14,1e-14,1e-14};
+		1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
 
 		P0_diag.subvec(0,5) = P0_spacecraft_vec;
 
@@ -170,7 +167,7 @@ int main() {
 		filter.set_initial_information_matrix(arma::inv(P0));
 		filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
 
-		arma::mat Q = std::pow(1e-9,2) * arma::eye<arma::mat>(3,3);
+		arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
 
 
 		arma::mat R = arma::zeros<arma::mat>(1,1);

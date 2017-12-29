@@ -7,33 +7,33 @@ ShapeFitterBezier::ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc) : S
 	this -> shape_model = shape_model;
 }
 
-bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J,const arma::mat & DS, const arma::vec & X_DS){
+bool ShapeFitterBezier::fit_shape_batch(
+	unsigned int N_iter, 
+	double J,
+	const arma::mat & DS, 
+	const arma::vec & X_DS){
 
 
 	arma::sp_mat info_mat;
 	std::vector<Footpoint> footpoints;
+	bool has_converged  = false;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
 		
 		// The foodpoints are found
 		footpoints = this -> find_footpoints();
-		arma::mat Pbar_mat = arma::mat(3,footpoints.size());
-		for (unsigned int k = 0; k < footpoints.size(); ++k){
-			Pbar_mat.col(k) = footpoints[k].Pbar;
-		}
-
-		arma::vec u = {1,0,0};
-		PC pc(u,Pbar_mat);
-		pc.save("Pbar_" + std::to_string(i) + ".obj");
-
-
+		
 		// The shape is updated
-		info_mat = this -> update_shape(footpoints);
+		info_mat = this -> update_shape(footpoints,has_converged);
+		if (has_converged){
+			break;
+		}
 
 	}
 
-	// The information matrices of the patches that were seen are updated
-
+	// The information matrix is updated
+	*this -> shape_model -> get_info_mat_ptr() = info_mat;
+	this -> shape_model -> get_dX_bar_ptr() -> fill(0);
 
 	return false;
 
@@ -113,10 +113,8 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint) const {
 		ShapeFitterBezier::find_footpoint_in_patch(patch,footpoint);
 	}
 
-	
 
 }
-
 
 void ShapeFitterBezier::find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint){
 
@@ -183,23 +181,21 @@ void ShapeFitterBezier::save(std::string path, arma::mat & Pbar_mat) const {
 
 }
 
-
-
-
-
-arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
+arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,
+	bool & has_converged){
 
 	std::cout << "Updating shape from the " << footpoints.size()<<  " footpoints...\n";
 
 	// Check if the info matrix has been initialized
 	if (this -> shape_model -> get_info_mat_ptr() == nullptr){
 		this -> shape_model -> initialize_info_mat();
+		this -> shape_model -> initialize_dX_bar();
 		this -> shape_model -> initialize_index_table();
 	}
 
 	// The normal and information matrices are created
 	arma::sp_mat info_mat(*this -> shape_model -> get_info_mat_ptr());
-	arma::vec normal_mat = arma::zeros<arma::vec>(info_mat.n_cols);
+	arma::vec normal_mat = info_mat * (*this -> shape_model -> get_dX_bar_ptr());
 	unsigned int N = info_mat.n_cols;
 
 	boost::progress_display progress(footpoints.size());
@@ -235,22 +231,33 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 			- arma::dot(footpoint -> n,patch -> evaluate(footpoint -> u,footpoint -> v)));
 
 		normal_mat += Hi.t() * y;
-
-		arma::sp_mat Li = Hi.t() * Hi;
 		
-		info_mat = info_mat + Li;
+		info_mat +=  Hi.t() * Hi;
 
 	}
-
 	
 	// The information matrix is regularized
 	info_mat += 0.001 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
-	// arma::vec dC = arma::solve(eigvec * arma::diagmat(eigval) * eigvec.t(),normal_mat);
-
+	
+	// The deviation is computed
 	arma::vec dC = arma::spsolve(info_mat,normal_mat);
 
+	// The a-priori deviation is adjusted
+	*this -> shape_model -> get_dX_bar_ptr() = *this -> shape_model -> get_dX_bar_ptr() - dC;
 
-	std::cout << "Update norm: " << arma::norm(dC) << std::endl;
+	double update_norm = 0;
+	unsigned int size = int(N / 3.);
+
+	for (unsigned int k = 0; k < size; ++k){
+		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/size;
+
+	}
+
+	std::cout << "Average update norm: " << update_norm << std::endl;
+	
+	if (update_norm < 1e-1){
+		has_converged = true;
+	}
 
 	// The deviations are added to the coordinates
 	auto control_points = this -> shape_model -> get_control_points();

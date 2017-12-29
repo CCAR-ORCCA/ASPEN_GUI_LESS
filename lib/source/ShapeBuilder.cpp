@@ -5,19 +5,6 @@
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
 	ShapeModelTri * true_shape_model,
-	ShapeModelTri * estimated_shape_model,
-	ShapeBuilderArguments * filter_arguments) {
-
-	this -> frame_graph = frame_graph;
-	this -> lidar = lidar;
-	this -> true_shape_model = true_shape_model;
-	this -> estimated_shape_model = estimated_shape_model;
-	this -> filter_arguments = filter_arguments;
-}
-
-ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
-	Lidar * lidar,
-	ShapeModelTri * true_shape_model,
 	ShapeBuilderArguments * filter_arguments) {
 
 	this -> frame_graph = frame_graph;
@@ -71,7 +58,8 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 	arma::vec OL_t0;
 	arma::mat LN_t0;
 
-
+	arma::mat M_pc = arma::eye<arma::mat>(3,3);
+	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
 	for (unsigned int time_index = 0; time_index < times.size(); ++time_index) {
 
@@ -95,12 +83,8 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 		// Getting the true observations (noise is added)
 
-
-
 		this -> lidar -> send_flash(this -> true_shape_model,true);
 
-
-		
 		// The rigid transform best aligning the two point clouds is found
 		// The solution to this first registration will be used to prealign the 
 		// shape model and the source point cloud
@@ -110,154 +94,56 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
-			ICP icp_pc(this -> destination_pc, this -> source_pc, arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+			ICP icp_pc(
+				this -> destination_pc, 
+				this -> source_pc, 
+				M_pc, 
+				X_pc);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D
-			arma::mat M_pc = icp_pc.get_M();
-			arma::vec X_pc = icp_pc.get_X();
+			M_pc = icp_pc.get_M();
+			X_pc = icp_pc.get_X();
 
-			// Point cloud registration and attitude estimation occurs first
-			// this -> store_point_clouds(time_index,M_pc,X_pc);
+			this -> source_pc -> save("../output/pc/source_pc_" + std::to_string(time_index)+ ".obj");
+			this -> source_pc -> transform(M_pc,X_pc);
+			this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
-			// this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
+			ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> destination_pc.get());
 
-			// // Attitude is measured. The DCM extracted from the ICP 
-			// // corresponds to M_pc = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
-			// // We want [NB](t_D)[BN](t_S)
-			// // So we need to get
-			// // M = [NL](t_D)M_pc[LN](t_S)
-			// // Now M_pc really measures an incremental rotation of the body frame
-			// // M = [NB](t_D)[BN](t_S)
+			shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
-			// arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
-			// arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
+			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
-			// // L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
-			// // L_t0_L_tS_pc would be exact if the ICP was error-less
-
-			// // As a reminder, 
-			// // offset_DCM = [LN](t_0)[NB](t_0)
-
-			// arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
-
-			// // The relative position is incremented from the previous one, and the previous measured attitude
-			// // Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
-			// arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
-			// 	+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
-
-			// arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
-
-			this -> concatenate_point_clouds(time_index,M_pc,X_pc);
+			ShapeModelImporter shape_io_fit("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b", 1, true);
+			ShapeModelBezier fit_source("", this -> frame_graph);
+			shape_io_fit.load_bezier_shape_model(&fit_source);
+			fit_source.elevate_degree();
+			fit_source.elevate_degree();
+			fit_source.elevate_degree();
+			fit_source.elevate_degree();
+			fit_source.elevate_degree();
+			fit_source.save_to_obj("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".obj");
+			
+			// this -> concatenate_point_clouds(time_index,M_pc,X_pc,dcm_LB,lidar_pos);
 
 		}
 
 
 
 
-	// 	if (this -> destination_pc == nullptr){
-
-
-	// 		// if(this -> source_pc == nullptr && this -> destination_pc != nullptr){
-	// 		arma::mat I = arma::eye<arma::mat>(3,3);	
-
-	// 		// This dcm is [LN](t_0)[NB](t_0)
-	// 		offset_DCM = LN_t_S * RBK::mrp_to_dcm(mrp_BN).t();
-
-	// 		// This is the position of the spacecraft in the body frame when measurements start to be accumulated
-	// 		OL_t0 = X_S.rows(6,8);
-
-	// 		LN_t0 = LN_t_S;
-
-	// 		this -> perform_measurements_pc(X_S, 
-	// 			times(time_index),
-	// 			I,
-	// 			arma::zeros<arma::vec>(3),
-	// 			I,
-	// 			I, 
-	// 			mrp_BN,
-	// 			arma::zeros<arma::vec>(3),
-	// 			offset_DCM,
-	// 			OL_t0,
-	// 			LN_t0);
-
-	// 	}
-		
-		
-	// 	if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
-
-
-	// 		// The point-cloud to point-cloud ICP is used for point cloud registration
-	// 		ICP icp_pc(this -> destination_pc, this -> source_pc, arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
-
-	// 		// These two align the consecutive point clouds 
-	// 		// in the instrument frame at t_D
-	// 		arma::mat M_pc = icp_pc.get_M();
-	// 		arma::vec X_pc = icp_pc.get_X();
-
-
-	// 		// Point cloud registration and attitude estimation occurs first
-	// 		// this -> store_point_clouds(time_index,M_pc,X_pc);
-
-	// 		this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj",M_pc,X_pc);
-
-	// 		// Attitude is measured. The DCM extracted from the ICP 
-	// 		// corresponds to M_pc = [LN](t_D)[NB](t_D)[BN](t_S)[NL](t_S)
-	// 		// We want [NB](t_D)[BN](t_S)
-	// 		// So we need to get
-	// 		// M = [NL](t_D)M_pc[LN](t_S)
-	// 		// Now M_pc really measures an incremental rotation of the body frame
-	// 		// M = [NB](t_D)[BN](t_S)
-
-	// 		arma::mat NE_tD_EN_tS_pc = LN_t_D.t() * M_pc * LN_t_S;
-	// 		arma::mat EN_pc = RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * NE_tD_EN_tS_pc;
-
-	// 		// L_t0_L_tS_pc and rel_pos_L_t0_pc measure source-point-to-shape rotation and translation
-	// 		// L_t0_L_tS_pc would be exact if the ICP was error-less
-
-	// 		// As a reminder, 
-	// 		// offset_DCM = [LN](t_0)[NB](t_0)
-
-	// 		arma::mat L_t0_L_tS_pc = offset_DCM * EN_pc * LN_t_S .t();
-
-	// 		// The relative position is incremented from the previous one, and the previous measured attitude
-	// 		// Note that the current measurement of the attitude (EN_pc and L_t0_L_tS_pc) is not used
-	// 		arma::vec X_relative_from_pc = (this -> filter_arguments -> get_latest_relative_pos_mes() 
-	// 			+ offset_DCM * RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes()) * LN_t_D .t() * X_pc);
-
-	// 		arma::vec X_relative_true =  offset_DCM * X_S.rows(6,8) - offset_DCM * OL_t0 ;
-
-
-
-	// 		this -> source_pc -> save(
-	// 			"../output/pc/source_pc_prealigned_" + std::to_string(time_index) + ".obj",
-	// 			L_t0_L_tS_pc,X_relative_from_pc);
-
-
-	// 			// Using the point clouds, measurements of the relative attitude, position are computed
-	// 		this -> perform_measurements_pc(X_S, 
-	// 			times(time_index),
-	// 			NE_tD_EN_tS_pc,
-	// 			X_relative_from_pc, 
-	// 			LN_t_S, 
-	// 			LN_t_D, 
-	// 			mrp_BN,
-	// 			X_relative_true,
-	// 			offset_DCM,
-	// 			OL_t0,
-	// 			LN_t0);
-
-
-
-
-	// 	}
 		
 	}
 
 }
 
 
-void ShapeBuilder::concatenate_point_clouds(unsigned int index,const arma::mat & M_pc,const arma::mat & X_pc){
+void ShapeBuilder::concatenate_point_clouds(unsigned int index,
+	const arma::mat & M_pc,
+	const arma::mat & X_pc,
+	const arma::mat & dcm_LB,
+	const arma::vec & lidar_pos
+	){
 
 	int N_max = 200000;
 
@@ -276,7 +162,6 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index,const arma::mat &
 
 	arma::mat point_coords_all(3,destination_points.size() + source_points.size());
 
-	
 	for (unsigned int i = 0; i < destination_points.size(); ++ i){
 		point_coords_all.col(i) = M_pc.t() * ( destination_points[i] -> get_point() - X_pc);
 	}
@@ -292,7 +177,8 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index,const arma::mat &
 		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
 			u,
 			point_coords_all));
-		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
+		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj",
+			dcm_LB.t(), lidar_pos);
 
 
 	}
@@ -300,13 +186,13 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index,const arma::mat &
 		point_coords_all.save("points.txt",arma::raw_ascii);
 		point_coords_all = arma::shuffle(point_coords_all,1);
 
-
 		arma::mat point_coords = point_coords_all.cols(0,std::min(N_max,int(point_coords_all.n_cols)));
 
 		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
 			u,
 			point_coords));
-		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
+		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj",
+			dcm_LB.t(), lidar_pos);
 	}
 
 }
@@ -335,13 +221,61 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 	// No point cloud has been collected yet
 	if (this -> destination_pc == nullptr) {
 
-		this -> destination_pc = std::make_shared<PC>(PC(
-			this -> lidar -> get_focal_plane(),
-			this -> frame_graph));
-		std::cout << "Storing first destination point cloud" << std::endl;
+		this -> destination_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
+		
 
-		// this -> destination_pc -> save(
-		// 	"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
+		std::cout << "Storing first destination point cloud" << std::endl;	
+		this -> destination_pc -> save(
+			"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
+
+
+		std::cout << "Fitting first point cloud with ellipsoid" << std::endl;
+		
+		EllipsoidFitter fitter(this -> destination_pc.get());
+		
+		arma::vec center_guess = this -> destination_pc -> get_bbox_center();
+		arma::vec dim_guess = this -> destination_pc -> get_bbox_dim();
+		arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
+		arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
+
+		arma::vec X = fitter.run(X_bar,P_bar,10,false);
+
+		arma::vec stretch = X.subvec(0,2);
+		arma::vec translation = X.subvec(3,5);
+		arma::mat rotation = arma::eye<arma::mat>(3,3);
+
+		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere_320.obj", 1, true);
+		ShapeModelTri sphere_obj("", nullptr);
+
+		shape_io_guess.load_obj_shape_model(&sphere_obj);
+		sphere_obj. transform(translation, rotation, stretch);
+
+		std::shared_ptr<ShapeModelBezier> sphere_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&sphere_obj,"E", this -> frame_graph));
+		sphere_bezier -> elevate_degree();
+		sphere_bezier -> save_to_obj("../output/shape_model/a_priori.obj");
+
+		std::cout << "Fitting bezier ellipsoid" << std::endl;
+
+		ShapeFitterBezier shape_fitter(sphere_bezier.get(),this -> destination_pc.get());
+
+		shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+
+		sphere_bezier -> save("../output/shape_model/fit_a_priori.b");
+
+		ShapeModelImporter shape_io_fit("../output/shape_model/fit_a_priori.b", 1, true);
+		ShapeModelBezier fit_a_priori("", this -> frame_graph);
+		shape_io_fit.load_bezier_shape_model(&fit_a_priori);
+		fit_a_priori.elevate_degree();
+		fit_a_priori.elevate_degree();
+		fit_a_priori.elevate_degree();
+		fit_a_priori.elevate_degree();
+		fit_a_priori.elevate_degree();
+		fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
+
+		this -> estimated_shape_model = sphere_bezier;
+
+
+
 	}
 
 	else {
@@ -350,11 +284,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		if (this -> source_pc == nullptr) {
 
 
-			this -> source_pc = std::make_shared<PC>(PC(
-				this -> lidar -> get_focal_plane(),
-				this -> frame_graph));
-			
-			std::cout << "Storing first source point cloud" << std::endl;
+			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
 			// this -> source_pc -> save(
 			// 	"../output/pc/source_pc_" + std::to_string(index) + ".obj");
@@ -372,23 +302,8 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 			// cloud here
 
 
-			// this -> concatenate_point_clouds(M_pc,X_pc);
 
-
-
-			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),this -> frame_graph));
-
-
-
-
-
-
-
-			// this -> destination_pc -> save(
-			// 	"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
-
-			// this -> source_pc -> save(
-			// 	"../output/pc/source_pc_" + std::to_string(index) + ".obj");
+			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
 		}
 	}
