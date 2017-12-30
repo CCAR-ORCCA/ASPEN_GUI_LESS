@@ -20,8 +20,19 @@ bool ShapeFitterBezier::fit_shape_batch(
 
 	for (unsigned int i = 0; i < N_iter; ++i){
 		
-		// The foodpoints are found
+		// The footpoints are found
 		footpoints = this -> find_footpoints();
+
+		if (i == 0){
+			arma::mat Pbar_mat = arma::mat(3,footpoints.size());		 		
+			for (unsigned int k = 0; k < footpoints.size(); ++k){		
+				Pbar_mat.col(k) = footpoints[k].Pbar;		
+			}		
+
+			arma::vec u = {1,0,0};		
+			PC pc(u,Pbar_mat);		
+			pc.save("../output/pc/Pbar_.obj");
+		}
 		
 		// The shape is updated
 		info_mat = this -> update_shape(footpoints,has_converged);
@@ -143,7 +154,7 @@ void ShapeFitterBezier::find_footpoint_in_patch(Bezier * patch,Footpoint & footp
 		Pbar = patch -> evaluate(chi(0),chi(1));
 
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
-		if (error < 1e-8){
+		if (error < 1e-4){
 
 			if (arma::max(chi) > 0.99 || arma::min(chi) < 0.01 || arma::sum(chi) > 0.99 || arma::sum(chi) < 0.01 ){
 				throw MissingFootpointException();
@@ -196,18 +207,20 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	// The normal and information matrices are created
 	arma::sp_mat info_mat(*this -> shape_model -> get_info_mat_ptr());
 	arma::vec normal_mat = info_mat * (*this -> shape_model -> get_dX_bar_ptr());
+	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 	unsigned int N = info_mat.n_cols;
 
 	boost::progress_display progress(footpoints.size());
 
-	// All the measurements are processed
-	
-	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
-
+	// All the measurements are processed	
+	#pragma omp parallel for reduction (+:info_mat,normal_mat)
+	for (unsigned int k = 0; k < footpoints.size(); ++k){
 		++ progress;
+		
+		Footpoint footpoint = footpoints[k];
 
 		arma::sp_mat Hi(1,N);
-		Bezier * patch = dynamic_cast<Bezier *>(footpoint -> element);
+		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
 
 		auto control_points = patch -> get_control_points();
 
@@ -222,25 +235,27 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 			unsigned int j = std::get<1>(local_indices);
 			unsigned int degree = patch -> get_degree();
 
-			double bezier = Bezier::bernstein(footpoint -> u,footpoint -> v,i,j,degree);
+			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
 			
-			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = bezier * footpoint -> n.t();
+			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
 		}
 		
-		double y = (arma::dot(footpoint -> n,footpoint -> Ptilde)
-			- arma::dot(footpoint -> n,patch -> evaluate(footpoint -> u,footpoint -> v)));
-
-		normal_mat += Hi.t() * y;
+		double y = arma::dot(footpoint . n,footpoint . Ptilde
+			- patch -> evaluate(footpoint . u,footpoint . v));
 		
+		residuals(k) = y;
+		
+		normal_mat += Hi.t() * y;
 		info_mat +=  Hi.t() * Hi;
 
 	}
-	
+
 	// The information matrix is regularized
-	info_mat += 0.001 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
+	arma::sp_mat regularized_info_mat = info_mat;
+	regularized_info_mat +=  0.001 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
 	
 	// The deviation is computed
-	arma::vec dC = arma::spsolve(info_mat,normal_mat);
+	arma::vec dC = arma::spsolve(regularized_info_mat,normal_mat);
 
 	// The a-priori deviation is adjusted
 	*this -> shape_model -> get_dX_bar_ptr() = *this -> shape_model -> get_dX_bar_ptr() - dC;
@@ -253,9 +268,13 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 
 	}
 
-	std::cout << "Average update norm: " << update_norm << std::endl;
+	std::cout << "\nAverage update norm: " << update_norm << std::endl;
+	std::cout << "Residuals: \n";
+	std::cout << "- Mean: " << arma::mean(residuals) << std::endl;
+	std::cout << "- Standard deviation: " << arma::stddev(residuals) << std::endl;
+
 	
-	if (update_norm < 1e-1){
+	if (update_norm < 1e-2){
 		has_converged = true;
 	}
 

@@ -109,7 +109,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
-			ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> destination_pc.get());
+			ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
 			shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
@@ -244,7 +244,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		arma::vec translation = X.subvec(3,5);
 		arma::mat rotation = arma::eye<arma::mat>(3,3);
 
-		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere_320.obj", 1, true);
+		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere.obj", 1, true);
 		ShapeModelTri sphere_obj("", nullptr);
 
 		shape_io_guess.load_obj_shape_model(&sphere_obj);
