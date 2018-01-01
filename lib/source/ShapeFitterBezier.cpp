@@ -36,14 +36,28 @@ bool ShapeFitterBezier::fit_shape_batch(
 		
 		// The shape is updated
 		info_mat = this -> update_shape(footpoints,has_converged);
+
+		arma::mat info_mat_dense(info_mat);
+		info_mat_dense.save("../output/shape_model/info_mat_txt",arma::raw_ascii);
+
+
+
 		if (has_converged){
 			break;
 		}
 
 	}
+	
+	
 
 	// The information matrix is updated
-	*this -> shape_model -> get_info_mat_ptr() = info_mat;
+
+
+	arma::mat info_mat_floored(info_mat);
+	info_mat_floored = arma::inv(arma::inv(info_mat_floored) + 0.1 * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols)); 
+	arma::sp_mat info_mat_floored_sp(info_mat_floored);
+
+	*this -> shape_model -> get_info_mat_ptr() = info_mat_floored_sp;
 	this -> shape_model -> get_dX_bar_ptr() -> fill(0);
 
 	return false;
@@ -55,9 +69,10 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 	std::vector<Footpoint> footpoints;
 
 	std::cout << "Finding footpoints...\n";
+	Element * element_guess = nullptr;
+
 
 	boost::progress_display progress(this -> pc -> get_size());
-
 
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
 		Footpoint footpoint;
@@ -68,7 +83,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 		footpoint.Ptilde = this -> pc -> get_point_coordinates(i);
 		
 		try {
-			this -> find_footpoint(footpoint);
+			this -> find_footpoint(footpoint,element_guess);
 			footpoints.push_back(footpoint);
 		}
 
@@ -82,11 +97,33 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 	return footpoints;
 }
 
-void ShapeFitterBezier::find_footpoint(Footpoint & footpoint) const {
+void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element_guess) const {
 
 	if (this -> shape_model -> get_NElements() > 1){
 
-		// The closest control to this measurement is found
+
+		// if a guess is available, this footpoint is looked for in this element
+		if (element_guess != nullptr){
+
+			try{
+				ShapeFitterBezier::find_footpoint_in_patch(dynamic_cast<Bezier *>(element_guess),footpoint);
+				return;
+
+			}
+
+
+			// If the exception is thrown, this guess was the wrong one
+			catch(const MissingFootpointException & e){
+				element_guess = nullptr;
+			}
+
+
+		}
+
+
+		// The closest control point to this measurement is looked for across the 
+		// shape model using the KD tree
+
 		double distance = std::numeric_limits<double>::infinity();
 		std::shared_ptr<ControlPoint> closest_control_point;
 
@@ -104,6 +141,8 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint) const {
 			
 			try{
 				ShapeFitterBezier::find_footpoint_in_patch(patch,footpoint);
+				element_guess = patch;
+				
 				break;
 			}
 			catch(const MissingFootpointException & e){
@@ -206,6 +245,7 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 
 	// The normal and information matrices are created
 	arma::sp_mat info_mat(*this -> shape_model -> get_info_mat_ptr());
+
 	arma::vec normal_mat = info_mat * (*this -> shape_model -> get_dX_bar_ptr());
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 	unsigned int N = info_mat.n_cols;
@@ -213,7 +253,7 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	boost::progress_display progress(footpoints.size());
 
 	// All the measurements are processed	
-	#pragma omp parallel for reduction (+:info_mat,normal_mat)
+	// #pragma omp parallel for reduction (+:info_mat,normal_mat)
 	for (unsigned int k = 0; k < footpoints.size(); ++k){
 		++ progress;
 		
@@ -252,10 +292,10 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 
 	// The information matrix is regularized
 	arma::sp_mat regularized_info_mat = info_mat;
-	regularized_info_mat +=  0.001 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
+	regularized_info_mat +=  1e-3 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
 	
 	// The deviation is computed
-	arma::vec dC = arma::spsolve(regularized_info_mat,normal_mat);
+	arma::vec dC = 0.5 * arma::spsolve(regularized_info_mat,normal_mat);
 
 	// The a-priori deviation is adjusted
 	*this -> shape_model -> get_dX_bar_ptr() = *this -> shape_model -> get_dX_bar_ptr() - dC;
@@ -268,10 +308,15 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 
 	}
 
-	std::cout << "\nAverage update norm: " << update_norm << std::endl;
-	std::cout << "Residuals: \n";
-	std::cout << "- Mean: " << arma::mean(residuals) << std::endl;
-	std::cout << "- Standard deviation: " << arma::stddev(residuals) << std::endl;
+
+
+	std::cout << "\nSignificant figures: " << std::endl;
+	std::cout << "\n- Maximum information: " << arma::abs(info_mat).max() << std::endl;
+	std::cout << "\n- Information matrix conditioning: " << arma::cond(arma::mat(info_mat)) << std::endl;
+	std::cout << "\n- Average update norm: " << update_norm << std::endl;
+	std::cout << "\n- Residuals: \n";
+	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
+	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
 
 	
 	if (update_norm < 1e-2){

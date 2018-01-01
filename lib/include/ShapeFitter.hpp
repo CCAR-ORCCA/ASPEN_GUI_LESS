@@ -40,7 +40,7 @@ protected:
 
 	virtual double compute_residuals(std::vector<std::pair<arma::vec,Footpoint > > & measurement_pairs) const = 0;
 
-	virtual void find_footpoint(Footpoint & footpoint) const  = 0;
+	virtual void find_footpoint(Footpoint & footpoint,Element * & element_guess) const  = 0;
 
 	virtual void save(std::string path, arma::mat & Pbar_mat) const  = 0;
 

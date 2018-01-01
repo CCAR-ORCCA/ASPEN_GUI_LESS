@@ -37,7 +37,7 @@
 
 // Times (s)
 #define T0 0
-#define TF 30000// 7 days
+#define TF 5000// 7 days
 
 
 int main() {
