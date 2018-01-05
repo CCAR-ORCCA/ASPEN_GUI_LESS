@@ -46,7 +46,7 @@ public:
 
 	/**
 	Get neighbors
-	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
+	@param if false, only return neighbors sharing an edge. Else, returns all neighbors
 	@return Pointer to neighboring facets, plus the calling facet
 	*/
 	virtual std::set < Element * > get_neighbors(bool all_neighbors) const;

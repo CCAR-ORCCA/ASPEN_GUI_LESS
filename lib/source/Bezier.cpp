@@ -274,6 +274,7 @@ unsigned int Bezier::get_degree() const{
 
 std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
 	std::set < Element * > neighbors;
+	throw(std::runtime_error("Bezier::get_neighbors is not implemented"));
 	return neighbors;
 }
 

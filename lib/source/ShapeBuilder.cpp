@@ -91,6 +91,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 		this -> store_point_clouds(time_index);
 
+
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
@@ -109,9 +110,37 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
+			// // The shape model is prefit
+			// EllipsoidFitter fitter(this -> source_pc.get());
+
+			// arma::vec center_guess = this -> source_pc -> get_bbox_center();
+			// arma::vec dim_guess = this -> source_pc -> get_bbox_dim();
+			// arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
+			// arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
+
+
+			// arma::vec X = fitter.run(X_bar,P_bar,10,true);
+
+			// arma::vec stretch = X.subvec(0,2);
+			// stretch(0) = stretch(0) / dim_guess(0);
+			// stretch(1) = stretch(1) / dim_guess(1);
+			// stretch(2) = stretch(2) / dim_guess(2);
+
+			// arma::vec translation = X.subvec(3,5);
+			
+			// translation(0) = translation(0) / center_guess(0);
+			// translation(1) = translation(1) / center_guess(1);
+			// translation(2) = translation(2) / center_guess(2);
+			
+
+			// arma::mat rotation = arma::eye<arma::mat>(3,3);
+
+			// this -> estimated_shape_model -> transform(translation, rotation, stretch);
+
 			ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
-			shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+			// shape_fitter.fit_shape_batch(15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+			shape_fitter.fit_shape_KF(6,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
 			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
@@ -244,11 +273,11 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		arma::vec translation = X.subvec(3,5);
 		arma::mat rotation = arma::eye<arma::mat>(3,3);
 
-		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere.obj", 1, true);
+		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere_320.obj", 1, true);
 		ShapeModelTri sphere_obj("", nullptr);
 
 		shape_io_guess.load_obj_shape_model(&sphere_obj);
-		sphere_obj. transform(translation, rotation, stretch);
+		sphere_obj.transform(translation, rotation, stretch);
 
 		std::shared_ptr<ShapeModelBezier> sphere_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&sphere_obj,"E", this -> frame_graph));
 		sphere_bezier -> elevate_degree();
@@ -258,7 +287,8 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 		ShapeFitterBezier shape_fitter(sphere_bezier.get(),this -> destination_pc.get());
 
-		shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+		// shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+		shape_fitter.fit_shape_KF(6,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
 		sphere_bezier -> save("../output/shape_model/fit_a_priori.b");
 
@@ -273,9 +303,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
 
 		this -> estimated_shape_model = sphere_bezier;
-
-
-
+		throw;
 	}
 
 	else {

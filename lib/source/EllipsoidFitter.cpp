@@ -46,6 +46,11 @@ arma::vec EllipsoidFitter::run(const arma::vec & X_bar,const arma::mat Pbar,
 		}
 
 
+		
+
+
+
+
 		// The deviation in the state is solved
 		arma::vec dX = arma::solve(info_mat,normal_mat);
 
@@ -55,6 +60,10 @@ arma::vec EllipsoidFitter::run(const arma::vec & X_bar,const arma::mat Pbar,
 
 
 		X += dX;
+		if (verbose){
+			std::cout << X << std::endl;
+
+		}
 
 		if (norm_res < 0){
 			norm_res = arma::norm(y);

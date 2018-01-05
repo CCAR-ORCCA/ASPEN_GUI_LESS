@@ -23,6 +23,12 @@ bool ShapeFitterBezier::fit_shape_batch(
 		// The footpoints are found
 		footpoints = this -> find_footpoints();
 
+
+		if (footpoints.size() == 0){
+			return false;
+		}
+
+
 		if (i == 0){
 			arma::mat Pbar_mat = arma::mat(3,footpoints.size());		 		
 			for (unsigned int k = 0; k < footpoints.size(); ++k){		
@@ -37,9 +43,8 @@ bool ShapeFitterBezier::fit_shape_batch(
 		// The shape is updated
 		info_mat = this -> update_shape(footpoints,has_converged);
 
-		arma::mat info_mat_dense(info_mat);
-		info_mat_dense.save("../output/shape_model/info_mat_txt",arma::raw_ascii);
-
+		// arma::mat info_mat_dense(info_mat);
+		// info_mat_dense.save("../output/shape_model/info_mat_txt",arma::raw_ascii);
 
 
 		if (has_converged){
@@ -49,20 +54,223 @@ bool ShapeFitterBezier::fit_shape_batch(
 	}
 	
 	
-
 	// The information matrix is updated
 
+	// arma::mat info_mat_floored(info_mat);
+	// info_mat_floored = arma::inv(arma::inv(info_mat_floored) + 0.1 * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols)); 
+	// arma::sp_mat info_mat_floored_sp(info_mat_floored);
 
-	arma::mat info_mat_floored(info_mat);
-	info_mat_floored = arma::inv(arma::inv(info_mat_floored) + 0.1 * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols)); 
-	arma::sp_mat info_mat_floored_sp(info_mat_floored);
-
-	*this -> shape_model -> get_info_mat_ptr() = info_mat_floored_sp;
+	// *this -> shape_model -> get_info_mat_ptr() = info_mat;
 	this -> shape_model -> get_dX_bar_ptr() -> fill(0);
 
 	return false;
 
 }
+
+
+
+
+
+bool ShapeFitterBezier::fit_shape_KF(
+	unsigned int N_iter, 
+	double J,
+	const arma::mat & DS, 
+	const arma::vec & X_DS){
+
+
+	
+	// The footpoints are first found
+	std::vector<Footpoint> 	footpoints = this -> find_footpoints();
+	bool element_has_converged  = false;
+
+	std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
+
+	for (unsigned int i = 0; i < footpoints.size(); ++i){
+		Footpoint footpoint = footpoints[i];
+
+		if (fit_elements_to_footpoints.find(footpoint.element) == fit_elements_to_footpoints.end()){
+			std::vector<Footpoint> element_footpoints;
+			element_footpoints.push_back(footpoint);
+			fit_elements_to_footpoints.insert(std::make_pair(footpoint.element,element_footpoints));
+		}
+		else{
+			fit_elements_to_footpoints[footpoint.element].push_back(footpoint);
+		}
+	}
+
+
+	// fit_elements has the pointers to the elements to be fit
+	for (unsigned int j = 0; j < N_iter; ++j){
+
+		std::cout << "- Outer iteration : " << j + 1<< "/" << N_iter - 1 <<std::endl;
+
+		
+		
+	// Only footpoints over "good" elements are kept
+
+		if (footpoints.size() == 0){
+			return false;
+		}
+
+		if (j == 0){
+			arma::mat Pbar_mat = arma::mat(3,footpoints.size());		 		
+			for (unsigned int k = 0; k < footpoints.size(); ++k){		
+				Pbar_mat.col(k) = footpoints[k].Pbar;		
+			}		
+
+			arma::vec u = {1,0,0};		
+			PC pc(u,Pbar_mat);		
+			pc.save("../output/pc/Pbar_.obj");
+		}
+
+
+		for (auto element_pair = fit_elements_to_footpoints.begin(); 
+			element_pair != fit_elements_to_footpoints.end(); ++element_pair){
+
+			for (unsigned int i = 0; i < N_iter; ++i){
+
+				std::cout << "--- Recomputing footpoints" << std::endl;
+				element_pair -> second = this -> recompute_footpoints(element_pair -> second);
+
+				std::cout << "-- Inner iteration : " << i + 1 << "/" << N_iter - 1 <<std::endl;
+
+				element_has_converged = this -> update_element(element_pair -> first,element_pair -> second);
+				
+				if (element_has_converged){
+					std::cout << "-- Element has converged\n";
+					break;
+				}
+
+			}
+
+
+		}
+
+		if (element_has_converged){
+			std::cout << "- Fit elements have all converged\n";
+			break;
+		}
+
+	}
+
+
+	// Once all elements have converged, the neighboring elements are adjusted
+
+
+	for (auto el_pair = fit_elements_to_footpoints.begin();el_pair != fit_elements_to_footpoints.end(); ++el_pair){
+
+		Bezier * patch = dynamic_cast<Bezier *>(el_pair -> first);
+
+		auto V0 = patch -> get_control_point(patch -> get_degree(),0);
+		auto V1 = patch -> get_control_point(0,patch -> get_degree());
+		auto V2 = patch -> get_control_point(0,0);
+
+		arma::vec P0 = V0 -> get_coordinates();
+		arma::vec P1 = V1 -> get_coordinates();
+		arma::vec P2 = V2 -> get_coordinates();
+
+
+		std::set<Element *> V0_owners = V0 -> get_owning_elements();
+		std::set<Element *> V1_owners = V1 -> get_owning_elements();
+		std::set<Element *> V2_owners = V2 -> get_owning_elements();
+
+		V0_owners.erase(patch);
+		V1_owners.erase(patch);
+		V2_owners.erase(patch);
+
+		arma::vec n0 = patch -> get_normal(patch -> get_degree(),0);
+		arma::vec n1 = patch -> get_normal(0,patch -> get_degree());
+		arma::vec n2 = patch -> get_normal(0,0);
+
+		for (auto el = V0_owners.begin(); el != V0_owners.end(); ++el){
+			if ((*el) -> get_info_mat_ptr() == nullptr){
+				auto control_points = (*el) -> get_control_points();
+
+				for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
+
+					arma::vec coords= (*point) -> get_coordinates();
+
+					coords = coords + n0 * arma::dot(P0 - coords,n0);
+
+					(*point) -> set_coordinates(coords);
+
+				}
+
+			}
+		}
+
+		for (auto el = V1_owners.begin(); el != V1_owners.end(); ++el){
+			if ((*el) -> get_info_mat_ptr() == nullptr){
+				auto control_points = (*el) -> get_control_points();
+
+				for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
+
+					arma::vec coords= (*point) -> get_coordinates();
+
+
+					coords = coords + n1 * arma::dot(P1 - coords,n1);
+
+					(*point) -> set_coordinates(coords);
+
+				}
+
+			}
+		}
+
+		for (auto el = V2_owners.begin(); el != V2_owners.end(); ++el){
+			if ((*el) -> get_info_mat_ptr() == nullptr){
+				auto control_points = (*el) -> get_control_points();
+
+				for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
+
+					arma::vec coords= (*point) -> get_coordinates();
+
+					coords = coords + n2 * arma::dot(P2 - coords,n2);
+
+					(*point) -> set_coordinates(coords);
+
+				}
+
+			}
+		}
+
+	}
+
+
+
+	return false;
+
+}
+
+
+std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector<Footpoint> & footpoints)const {
+
+	std::vector<Footpoint> new_footpoints;
+
+	for (unsigned int i = 0; i < footpoints.size(); ++i){
+
+		Footpoint footpoint;
+		footpoint.element = NULL;
+
+		footpoint.Ptilde = footpoints[i].Ptilde;
+		Element * element = footpoints[i].element;
+		
+		try{
+			this -> find_footpoint(footpoint,element);
+
+			if (footpoint.element == footpoints[i].element){
+				new_footpoints.push_back(footpoint);
+			}
+		}
+		catch(const MissingFootpointException & e){
+		}
+
+	}
+	return new_footpoints;
+
+
+}
+
 
 std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
@@ -70,6 +278,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	std::cout << "Finding footpoints...\n";
 	Element * element_guess = nullptr;
+	std::map<Element *,arma::vec> element_quality;
 
 
 	boost::progress_display progress(this -> pc -> get_size());
@@ -85,6 +294,28 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 		try {
 			this -> find_footpoint(footpoint,element_guess);
 			footpoints.push_back(footpoint);
+
+			if (element_quality.find(footpoint.element) == element_quality.end()){
+
+				arma::vec quality = {
+					footpoint.u,
+					footpoint.u,
+					footpoint.v,
+					footpoint.v
+				};
+
+				element_quality.insert(std::make_pair(footpoint.element,quality));
+
+			}
+			else{
+				arma::vec quality = element_quality[footpoint.element];
+				quality(0) = std::min(footpoint.u,quality(0));
+				quality(1) = std::max(footpoint.u,quality(1));
+				quality(2) = std::min(footpoint.v,quality(2));
+				quality(3) = std::max(footpoint.v,quality(3));
+				element_quality[footpoint.element] = quality;
+			}
+
 		}
 
 		catch(const MissingFootpointException & e){
@@ -94,7 +325,30 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	}
 
-	return footpoints;
+
+	// Only the footpoints whose footpoints 
+    // have been sufficiently covered are kept
+	std::vector<Footpoint> footpoints_clean;
+
+	for (unsigned int i =0; i < footpoints.size(); ++i){
+		arma::vec quality = element_quality[footpoints[i].element];
+
+		double area = (quality(1) - quality(0)) * (quality(3) - quality(2));
+
+		// If at least two thirds of the unit triangle has been seen
+		if (std::abs(area - 1) < 0.5){
+			footpoints_clean.push_back(footpoints[i]);
+		}
+
+	}
+
+	std::cout << "- Total footpoints: " << footpoints.size() << std::endl;
+	std::cout << "- Kept footpoints: " << footpoints_clean.size() << std::endl;
+
+
+
+
+	return footpoints_clean;
 }
 
 void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element_guess) const {
@@ -138,11 +392,11 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element
 		// The patches that this control point belongs to are searched
 		for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
 			Bezier * patch = dynamic_cast<Bezier *> (*el);
-			
+
 			try{
 				ShapeFitterBezier::find_footpoint_in_patch(patch,footpoint);
 				element_guess = patch;
-				
+
 				break;
 			}
 			catch(const MissingFootpointException & e){
@@ -183,7 +437,7 @@ void ShapeFitterBezier::find_footpoint_in_patch(Bezier * patch,Footpoint & footp
 
 		H.row(0) = dbezier_dchi.col(0).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_du(chi(0),chi(1));
 		H.row(1) = dbezier_dchi.col(1).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_dv(chi(0),chi(1));
-		
+
 		Y(0) =  arma::dot(dbezier_dchi.col(0),footpoint.Ptilde - Pbar);
 		Y(1) =  arma::dot(dbezier_dchi.col(1),footpoint.Ptilde - Pbar);
 
@@ -231,6 +485,138 @@ void ShapeFitterBezier::save(std::string path, arma::mat & Pbar_mat) const {
 
 }
 
+
+bool ShapeFitterBezier::update_element(Element * element, std::vector<Footpoint> & footpoints){
+
+	std::cout << "Updating element from the " << footpoints.size()<<  " footpoints...\n";
+
+	// Check if the info matrix has been initialized
+	if (element -> get_info_mat_ptr() == nullptr){
+		element -> initialize_info_mat();
+		element -> initialize_dX_bar();
+	}
+
+	// The normal and information matrices are created
+	arma::mat info_mat(*element -> get_info_mat_ptr());
+
+	unsigned int N = info_mat.n_cols;
+
+	arma::vec normal_mat = info_mat * (*element -> get_dX_bar_ptr());
+	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
+
+	boost::progress_display progress(footpoints.size());
+
+	Bezier * patch = dynamic_cast<Bezier *>(element);
+	auto control_points = patch -> get_control_points();
+
+	// All the measurements are processed	
+	#pragma omp parallel for reduction (+:info_mat,normal_mat)
+	
+	for (unsigned int k = 0; k < footpoints.size(); ++k){
+		++ progress;
+
+		Footpoint footpoint = footpoints[k];
+
+		arma::mat Hi(1,N);
+
+		// The different control points for this patch have their contribution added
+		for (unsigned int point_index = 0; point_index < control_points -> size(); ++point_index){
+
+			std::shared_ptr<ControlPoint> point = control_points -> at(point_index);
+
+			auto local_indices = patch -> get_local_indices(point);
+
+			unsigned int i = std::get<0>(local_indices);
+			unsigned int j = std::get<1>(local_indices);
+			unsigned int degree = patch -> get_degree();
+
+			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
+
+			Hi.cols(3 * point_index, 3 * point_index + 2) = B * footpoint . n.t();
+		}
+
+		double y = arma::dot(footpoint . n,footpoint . Ptilde
+			- patch -> evaluate(footpoint . u,footpoint . v));
+
+		residuals(k) = y;
+
+		normal_mat += Hi.t() * y;
+		info_mat +=  Hi.t() * Hi;
+
+	}
+
+	arma::vec eigval;
+	arma::mat eigvec;
+	arma::eig_sym( eigval, eigvec, info_mat ) ;
+
+	for (unsigned int val = 0; val < eigval.n_rows; ++ val){
+		if (eigval(val) < 5e-1){
+			eigval(val) = 5e-1;
+		}
+	}
+
+	info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
+	
+	// The information matrix is regularized
+	// info_mat +=  1e-3 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
+
+	// The deviation is computed
+	arma::vec dC = 0.5 * arma::solve(info_mat,normal_mat);
+
+	// The a-priori deviation is adjusted
+	*element -> get_dX_bar_ptr() = *element -> get_dX_bar_ptr() - dC;
+	
+
+	double update_norm = 0;
+	unsigned int size = int(N / 3.);
+
+	for (unsigned int k = 0; k < size; ++k){
+		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/size;
+
+	}
+
+	std::cout << "\nSignificant figures: " << std::endl;
+	std::cout << "\n- Maximum information: " << arma::abs(info_mat).max() << std::endl;
+	std::cout << "\n- Information matrix conditioning: " << arma::cond(arma::mat(info_mat)) << std::endl;
+	std::cout << "\n- Average update norm: " << update_norm << std::endl;
+	std::cout << "\n- Residuals: \n";
+	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
+	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
+
+
+	// The deviations are added to the coordinates
+
+	for (unsigned int i = 0; i < control_points -> size(); ++i){
+
+		std::shared_ptr<ControlPoint> point = control_points -> at(i);
+
+		point -> set_coordinates(point -> get_coordinates()
+			+ dC.rows(3 * i, 3 * i + 2));
+	}
+
+
+
+
+	if (std::abs(arma::mean(residuals)) < 1e-2){
+		return true;
+	}
+	else{
+		return false;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,
 	bool & has_converged){
 
@@ -253,10 +639,10 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	boost::progress_display progress(footpoints.size());
 
 	// All the measurements are processed	
-	// #pragma omp parallel for reduction (+:info_mat,normal_mat)
+	#pragma omp parallel for reduction (+:info_mat,normal_mat)
 	for (unsigned int k = 0; k < footpoints.size(); ++k){
 		++ progress;
-		
+
 		Footpoint footpoint = footpoints[k];
 
 		arma::sp_mat Hi(1,N);
@@ -276,15 +662,15 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 			unsigned int degree = patch -> get_degree();
 
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
-			
+
 			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
 		}
-		
+
 		double y = arma::dot(footpoint . n,footpoint . Ptilde
 			- patch -> evaluate(footpoint . u,footpoint . v));
-		
+
 		residuals(k) = y;
-		
+
 		normal_mat += Hi.t() * y;
 		info_mat +=  Hi.t() * Hi;
 
@@ -293,9 +679,9 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	// The information matrix is regularized
 	arma::sp_mat regularized_info_mat = info_mat;
 	regularized_info_mat +=  1e-3 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
-	
+
 	// The deviation is computed
-	arma::vec dC = 0.5 * arma::spsolve(regularized_info_mat,normal_mat);
+	arma::vec dC = arma::spsolve(regularized_info_mat,normal_mat);
 
 	// The a-priori deviation is adjusted
 	*this -> shape_model -> get_dX_bar_ptr() = *this -> shape_model -> get_dX_bar_ptr() - dC;
@@ -318,14 +704,14 @@ arma::sp_mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints
 	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
 	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
 
-	
+
 	if (update_norm < 1e-2){
 		has_converged = true;
 	}
 
 	// The deviations are added to the coordinates
 	auto control_points = this -> shape_model -> get_control_points();
-	
+
 	for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 		unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
 		(*iter_points) -> set_coordinates((*iter_points) -> get_coordinates()

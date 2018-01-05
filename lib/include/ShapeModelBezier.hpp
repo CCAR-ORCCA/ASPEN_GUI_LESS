@@ -98,7 +98,7 @@ protected:
 	std::shared_ptr<arma::sp_mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
 	
-
+	
 };
 
 

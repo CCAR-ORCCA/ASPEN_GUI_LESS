@@ -52,13 +52,12 @@ void ShapeModelBezier::initialize_info_mat(){
 void ShapeModelBezier::initialize_dX_bar(){
 	unsigned int N = this -> control_points.size();
 	this -> dX_bar_ptr = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3 * N));
-
 }
+
 ShapeModelBezier::ShapeModelBezier(std::string ref_frame_name,
 	FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
 }
-
 
 
 arma::mat ShapeModelBezier::random_sampling(unsigned int N,const arma::mat & R) const{

@@ -12,11 +12,11 @@
 
 
 #pragma omp declare reduction (+ : arma::mat : omp_out += omp_in)\
-  initializer( omp_priv = omp_orig )
+initializer( omp_priv = omp_orig )
 #pragma omp declare reduction (+ : arma::vec : omp_out += omp_in)\
-  initializer( omp_priv = omp_orig )
+initializer( omp_priv = omp_orig )
 #pragma omp declare reduction (+ : arma::sp_mat : omp_out += omp_in)\
-  initializer( omp_priv = omp_orig )
+initializer( omp_priv = omp_orig )
 
 class ShapeFitterBezier : public ShapeFitter {
 	
@@ -30,6 +30,13 @@ public:
 		const arma::mat & DS, 
 		const arma::vec & X_DS );
 
+	bool fit_shape_KF(
+		unsigned int N_iter, 
+		double J,
+		const arma::mat & DS, 
+		const arma::vec & X_DS); 
+
+
 	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS);
 
 
@@ -41,6 +48,8 @@ protected:
 
 	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints,
 		bool & has_converged);
+	bool update_element(Element * element, 
+		std::vector<Footpoint> & footpoints);
 	
 
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
@@ -53,6 +62,8 @@ protected:
 
 	virtual void save(std::string path, arma::mat & Pbar_mat) const ;
 
+
+	std::vector<Footpoint> recompute_footpoints(const std::vector<Footpoint> & footpoints) const;
 };
 
 

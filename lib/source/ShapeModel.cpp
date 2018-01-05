@@ -96,6 +96,19 @@ void ShapeModel::transform(arma::vec & translation,arma::mat & rotation, arma::v
 
 	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
 
+		auto owning_elements = (*point) -> get_owning_elements();
+		bool ignore = false;
+		
+		for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
+			if ((*el) -> get_info_mat_ptr() != nullptr){
+				ignore = true;
+				break;
+			}
+		}
+		if (ignore){
+			continue;
+		}
+
 		arma::vec new_coords = rotation * (stretch_mat * ((*point) -> get_coordinates() - center) ) + center + translation;
 
 
