@@ -82,8 +82,7 @@ arma::vec Dynamics::point_mass_attitude_dxdt_body_frame(double t,const arma::vec
 	arma::vec omega_TN = X . subvec(9, 11);
 
 	arma::vec X_small_body = X . subvec(6, 11);
-
-
+		
 	arma::vec acc_body_grav = args. get_dyn_analyses() -> point_mass_acceleration(pos_body , args. get_mass());
 	arma::vec acc_body_frame = acc_body_grav - (2 * arma::cross(omega_TN, vel_body) + omega_TN * omega_TN.t() * pos_body - pos_body * omega_TN.t() * omega_TN);
 

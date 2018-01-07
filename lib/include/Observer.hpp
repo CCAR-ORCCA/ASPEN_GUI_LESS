@@ -58,10 +58,11 @@ push_back_augmented_state( std::vector< arma::vec > & states ) : m_states( state
 }
 
 void operator()( arma::vec & x,  double t){
-	
+
 	if (arma::norm(x.subvec(6,8)) > 1){
 		x.subvec(6,8) = - x.subvec(6,8) / arma::dot(x.subvec(6,8),x.subvec(6,8));
 	}
+	
 	m_states.push_back( x );
 }
 };

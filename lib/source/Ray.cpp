@@ -99,6 +99,13 @@ arma::vec * Ray::get_origin_target_frame() {
 	return this -> origin_target_frame.get();
 }
 
+Element * Ray::get_guess() const{
+	return this -> guess;
+}
+void Ray::set_guess (Element * guess){
+	this -> guess = guess;
+}
+
 void Ray::reset(ShapeModel * shape_model) {
 
 	this -> true_range = std::numeric_limits<double>::infinity();

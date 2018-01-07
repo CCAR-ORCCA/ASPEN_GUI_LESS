@@ -102,6 +102,10 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
 		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
 
+		if (pixel < y_res * z_res - 1){
+			this -> focal_plane[pixel + 1] -> set_guess(this -> focal_plane[pixel] -> get_hit_element());
+		}
+
 		// If there's a hit, noise is added along the line of sight on the true measurement
 		if (hit) {
 
@@ -123,6 +127,8 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 		}
 
 	}
+
+	this -> save("../output/lidar/lidar.txt",true);
 
 }
 

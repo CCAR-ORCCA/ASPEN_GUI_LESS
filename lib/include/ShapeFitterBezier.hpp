@@ -25,12 +25,14 @@ public:
 	ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc);
 
 	virtual bool fit_shape_batch(
+
 		unsigned int N_iter,
 		double J,
 		const arma::mat & DS, 
 		const arma::vec & X_DS );
 
 	bool fit_shape_KF(
+		unsigned int index,
 		unsigned int N_iter, 
 		double J,
 		const arma::mat & DS, 
@@ -38,7 +40,6 @@ public:
 
 
 	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS);
-
 
 
 protected:
@@ -49,9 +50,9 @@ protected:
 	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints,
 		bool & has_converged);
 	bool update_element(Element * element, 
-		std::vector<Footpoint> & footpoints);
+		std::vector<Footpoint> & footpoints,
+		bool store_info_mat = false);
 	
-
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
 
 	virtual void get_barycentric_coordinates(const arma::vec & Pbar,double & u, double & v, Facet * facet) const;

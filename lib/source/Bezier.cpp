@@ -47,6 +47,8 @@ void Bezier::construct_index_tables(){
 
 void Bezier::elevate_degree(){
 
+
+
 	// A vector storing the new coordinates is created
 	std::vector<std::shared_ptr<ControlPoint > > new_control_points;
 
@@ -263,6 +265,10 @@ void Bezier::elevate_degree(){
 	this -> construct_index_tables();
 
 	this -> new_points.clear();
+
+	this -> info_mat_ptr = nullptr;
+	this -> dX_bar_ptr = nullptr;
+
 
 }
 

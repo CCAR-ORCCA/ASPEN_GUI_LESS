@@ -9,7 +9,7 @@ def plot_all_results(path = "",save = False):
 
     # plot_residuals(path,save)
     plot_orbit(path,save)
-    plot_state_error(path,save)
+    # plot_state_error(path,save)
 
 def plot_residuals(path = "",save = False):
 

@@ -36,7 +36,4 @@ def plot_fft(path,savepath = None):
 
 
 
-plot_fft("../Apps/Navigation/build/focal_plane_true_0.txt")
-
-
-plot_lidar("../Apps/Navigation/build/focal_plane_true_862068.txt")
+plot_lidar("../Apps/ShapeReconstruction/output/lidar/lidar.txt")

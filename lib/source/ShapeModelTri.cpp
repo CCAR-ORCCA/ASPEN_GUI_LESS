@@ -26,10 +26,12 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 }
 
 
-
-
 bool ShapeModelTri::ray_trace(Ray * ray){
-	bool hit = this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
+	bool hit = false;
+	
+	hit = this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
+	
+
 	return hit;
 }
 
@@ -37,7 +39,6 @@ bool ShapeModelTri::ray_trace(Ray * ray){
 std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
 	return this -> kdt_facet;
 }
-
 
 
 void ShapeModelTri::construct_kd_tree_shape(bool verbose) {

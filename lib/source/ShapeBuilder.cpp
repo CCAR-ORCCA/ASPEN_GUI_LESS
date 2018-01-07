@@ -110,119 +110,107 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
-			// // The shape model is prefit
-			// EllipsoidFitter fitter(this -> source_pc.get());
+			if (time_index <= 100){
+				this -> concatenate_point_clouds(time_index);
+			}
 
-			// arma::vec center_guess = this -> source_pc -> get_bbox_center();
-			// arma::vec dim_guess = this -> source_pc -> get_bbox_dim();
-			// arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
-			// arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
+			if (time_index == 100){
+				std::cout << "- Initializing shape model" << std::endl;
+				this -> initialize_shape(time_index);
+			}
 
+			if (time_index == 121){
+				std::cout << "- Elevating shape model degree" << std::endl;
+				this -> estimated_shape_model -> elevate_degree();
+			}
 
-			// arma::vec X = fitter.run(X_bar,P_bar,10,true);
+			if (this -> estimated_shape_model != nullptr  && this -> destination_pc_concatenated != nullptr){
 
-			// arma::vec stretch = X.subvec(0,2);
-			// stretch(0) = stretch(0) / dim_guess(0);
-			// stretch(1) = stretch(1) / dim_guess(1);
-			// stretch(2) = stretch(2) / dim_guess(2);
-
-			// arma::vec translation = X.subvec(3,5);
-			
-			// translation(0) = translation(0) / center_guess(0);
-			// translation(1) = translation(1) / center_guess(1);
-			// translation(2) = translation(2) / center_guess(2);
-			
-
-			// arma::mat rotation = arma::eye<arma::mat>(3,3);
-
-			// this -> estimated_shape_model -> transform(translation, rotation, stretch);
-
-			ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
+				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
 			// shape_fitter.fit_shape_batch(15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
-			shape_fitter.fit_shape_KF(6,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+				shape_fitter.fit_shape_KF(time_index,15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 
-			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
-			ShapeModelImporter shape_io_fit("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b", 1, true);
-			ShapeModelBezier fit_source("", this -> frame_graph);
-			shape_io_fit.load_bezier_shape_model(&fit_source);
-			fit_source.elevate_degree();
-			fit_source.elevate_degree();
-			fit_source.elevate_degree();
-			fit_source.elevate_degree();
-			fit_source.elevate_degree();
-			fit_source.save_to_obj("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".obj");
-			
-			// this -> concatenate_point_clouds(time_index,M_pc,X_pc,dcm_LB,lidar_pos);
+				ShapeModelImporter shape_io_fit("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b", 1, true);
+				ShapeModelBezier fit_source("", this -> frame_graph);
+				shape_io_fit.load_bezier_shape_model(&fit_source);
+				fit_source.elevate_degree();
+				fit_source.elevate_degree();
+				fit_source.elevate_degree();
+				fit_source.elevate_degree();
+				fit_source.elevate_degree();
+				fit_source.save_to_obj("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".obj");
+
+			}
 
 		}
 
 
-
-
-		
 	}
 
 }
 
 
-void ShapeBuilder::concatenate_point_clouds(unsigned int index,
-	const arma::mat & M_pc,
-	const arma::mat & X_pc,
-	const arma::mat & dcm_LB,
-	const arma::vec & lidar_pos
-	){
+void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 
-	int N_max = 200000;
+	int N_max = 500;
 
 
 	// The destination point cloud is augmented with the source point cloud
+	std::vector< std::shared_ptr<PointNormal> > source_points;
+	std::vector< std::shared_ptr<PointNormal> > source_points_downsampled;
+
 	std::vector< std::shared_ptr<PointNormal> > destination_points;
-	
-	if (this -> destination_pc_concatenated == nullptr){
-		destination_points = this -> destination_pc -> get_points();
+
+	unsigned int N_destination_pc_points;
+	unsigned int N_source_pc_points;
+
+	source_points = this -> source_pc -> get_points();
+
+	if (source_points.size() < N_max){
+		source_points_downsampled = source_points;
 	}
 	else{
+		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  source_points.size() - 1);
+		random_order = arma::shuffle(random_order);
+
+		for (unsigned int i = 0; i < std::min(N_max,int(source_points.size())); ++i){
+			source_points_downsampled.push_back(source_points[random_order(i)]);
+		}
+
+
+	}
+
+
+
+	if(this -> destination_pc_concatenated != nullptr){
 		destination_points = this -> destination_pc_concatenated -> get_points();
 	}
 
-	std::vector< std::shared_ptr<PointNormal> > source_points = this -> source_pc -> get_points();
+	N_destination_pc_points = destination_points.size();
+	N_source_pc_points = source_points_downsampled.size();
 
-	arma::mat point_coords_all(3,destination_points.size() + source_points.size());
+	arma::mat point_coords_all(3,N_destination_pc_points + N_source_pc_points);
 
-	for (unsigned int i = 0; i < destination_points.size(); ++ i){
-		point_coords_all.col(i) = M_pc.t() * ( destination_points[i] -> get_point() - X_pc);
+	for (unsigned int i = 0; i < N_destination_pc_points; ++ i){
+		point_coords_all.col(i) = destination_points[i] -> get_point() ;
 	}
 
-	for (unsigned int i = 0; i < source_points.size(); ++ i){
-		point_coords_all.col(i + destination_points.size()) = source_points[i] -> get_point();
+	for (unsigned int i = 0; i < N_source_pc_points; ++ i){
+		point_coords_all.col(i + destination_points.size()) = source_points_downsampled[i] -> get_point();
 	}
 
 	arma::vec u = {1,0,0};
 
-	if (N_max > point_coords_all.n_cols){
 
-		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
-			u,
-			point_coords_all));
-		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj",
-			dcm_LB.t(), lidar_pos);
+	this -> destination_pc_concatenated = std::make_shared<PC>(PC(
+		u,
+		point_coords_all));
+	this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
 
 
-	}
-	else{
-		point_coords_all.save("points.txt",arma::raw_ascii);
-		point_coords_all = arma::shuffle(point_coords_all,1);
-
-		arma::mat point_coords = point_coords_all.cols(0,std::min(N_max,int(point_coords_all.n_cols)));
-
-		this -> destination_pc_concatenated = std::make_shared<PC>(PC(
-			u,
-			point_coords));
-		this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj",
-			dcm_LB.t(), lidar_pos);
-	}
 
 }
 
@@ -258,52 +246,8 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 			"../output/pc/destination_pc_" + std::to_string(index) + ".obj");
 
 
-		std::cout << "Fitting first point cloud with ellipsoid" << std::endl;
 		
-		EllipsoidFitter fitter(this -> destination_pc.get());
-		
-		arma::vec center_guess = this -> destination_pc -> get_bbox_center();
-		arma::vec dim_guess = this -> destination_pc -> get_bbox_dim();
-		arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
-		arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
 
-		arma::vec X = fitter.run(X_bar,P_bar,10,false);
-
-		arma::vec stretch = X.subvec(0,2);
-		arma::vec translation = X.subvec(3,5);
-		arma::mat rotation = arma::eye<arma::mat>(3,3);
-
-		ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere_320.obj", 1, true);
-		ShapeModelTri sphere_obj("", nullptr);
-
-		shape_io_guess.load_obj_shape_model(&sphere_obj);
-		sphere_obj.transform(translation, rotation, stretch);
-
-		std::shared_ptr<ShapeModelBezier> sphere_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&sphere_obj,"E", this -> frame_graph));
-		sphere_bezier -> elevate_degree();
-		sphere_bezier -> save_to_obj("../output/shape_model/a_priori.obj");
-
-		std::cout << "Fitting bezier ellipsoid" << std::endl;
-
-		ShapeFitterBezier shape_fitter(sphere_bezier.get(),this -> destination_pc.get());
-
-		// shape_fitter.fit_shape_batch(10,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
-		shape_fitter.fit_shape_KF(6,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
-
-		sphere_bezier -> save("../output/shape_model/fit_a_priori.b");
-
-		ShapeModelImporter shape_io_fit("../output/shape_model/fit_a_priori.b", 1, true);
-		ShapeModelBezier fit_a_priori("", this -> frame_graph);
-		shape_io_fit.load_bezier_shape_model(&fit_a_priori);
-		fit_a_priori.elevate_degree();
-		fit_a_priori.elevate_degree();
-		fit_a_priori.elevate_degree();
-		fit_a_priori.elevate_degree();
-		fit_a_priori.elevate_degree();
-		fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
-
-		this -> estimated_shape_model = sphere_bezier;
-		throw;
 	}
 
 	else {
@@ -461,4 +405,67 @@ void ShapeBuilder::get_new_relative_states(
 	LN_t_S = dcm_LB * RBK::mrp_to_dcm(mrp_BN);
 	LN_t_D = dcm_LB_t_D * RBK::mrp_to_dcm(mrp_BN_t_D);
 }
+
+
+
+void ShapeBuilder::initialize_shape(unsigned int time_index){
+
+	std::cout << "Fitting first point cloud with ellipsoid" << std::endl;
+
+	EllipsoidFitter fitter(this -> destination_pc_concatenated.get());
+
+	arma::vec center_guess = this -> destination_pc_concatenated -> get_bbox_center();
+	arma::vec dim_guess = this -> destination_pc_concatenated -> get_bbox_dim();
+	arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
+	arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
+
+	arma::vec X = fitter.run(X_bar,P_bar,10,false);
+
+	arma::vec stretch = X.subvec(0,2);
+	arma::vec translation = X.subvec(3,5);
+	arma::mat rotation = arma::eye<arma::mat>(3,3);
+
+	ShapeModelImporter shape_io_guess("../../../resources/shape_models/faceted_sphere.obj", 1, true);
+
+
+	ShapeModelTri sphere_obj("", nullptr);
+
+	shape_io_guess.load_obj_shape_model(&sphere_obj);
+	sphere_obj.transform(translation, rotation, stretch);
+
+	std::shared_ptr<ShapeModelBezier> sphere_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&sphere_obj,"E", this -> frame_graph));
+
+	// sphere_bezier -> elevate_degree();
+
+	sphere_bezier -> save_to_obj("../output/shape_model/a_priori.obj");
+
+	std::cout << "Fitting bezier ellipsoid" << std::endl;
+
+	ShapeFitterBezier shape_fitter(sphere_bezier.get(),this -> destination_pc_concatenated.get());
+
+	shape_fitter.fit_shape_KF(time_index,15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+
+	sphere_bezier -> save("../output/shape_model/fit_a_priori.b");
+
+	ShapeModelImporter shape_io_fit("../output/shape_model/fit_a_priori.b", 1, true);
+	ShapeModelBezier fit_a_priori("", this -> frame_graph);
+	shape_io_fit.load_bezier_shape_model(&fit_a_priori);
+	fit_a_priori.elevate_degree();
+	fit_a_priori.elevate_degree();
+	fit_a_priori.elevate_degree();
+	fit_a_priori.elevate_degree();
+	fit_a_priori.elevate_degree();
+	fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
+
+	this -> estimated_shape_model = sphere_bezier;
+
+
+
+
+
+}
+
+
+
+
 
