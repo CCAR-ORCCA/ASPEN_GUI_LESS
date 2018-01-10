@@ -22,22 +22,22 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 128
-#define COL_RESOLUTION 128
-#define ROW_FOV 20
-#define COL_FOV 20
+#define ROW_RESOLUTION 128 // Goldeneye
+#define COL_RESOLUTION 128 // Goldeneye
+#define ROW_FOV 20 // ?
+#define COL_FOV 20 // ?
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.0016
+#define INSTRUMENT_FREQUENCY 0.001
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_3SD_BASELINE 1e0
+#define LOS_NOISE_3SD_BASELINE 15e-2 // Goldeneye 3sigma
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times (s)
 #define T0 0
-#define TF 30000// 7 days
+#define TF 300000 // 10 days
 
 
 int main() {
@@ -62,7 +62,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/bennu_scaled.obj", 1, true);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, true);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
@@ -75,7 +75,6 @@ int main() {
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 
-	
 	true_shape_model.construct_kd_tree_shape(false);
 
 	// ShapeModelBezier true_bezier(&true_shape_model,"",&frame_graph);
@@ -97,7 +96,9 @@ int main() {
 	// args.set_Snm(&Snm);
 	// args.set_degree(5);
 	// args.set_ref_radius(175);
-	// args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
+	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
+	args.set_mass(true_shape_model . get_volume() * 1900);
+
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
@@ -111,26 +112,24 @@ int main() {
 	X0_augmented.rows(0,2) = pos_0; // r_LN(0) in body frame
 
 	// Velocity determined from sma
-	double a = 1000;
-
+	double a = arma::norm(pos_0);
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0.1 * v,0,0.9 * v};
+
+	arma::vec vel_0_inertial = {0,0.7 * v,0.7 * v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
 
-
 	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
 	std::vector<double> T_obs;
-	for (unsigned int i =0; i < times.n_rows; ++i){
+	for (unsigned int i = 0; i < times.n_rows; ++i){
 		T_obs.push_back(times(i));
 	}
 
 	// Containers
 	std::vector<arma::vec> X_augmented;
 	auto N_true = X0_augmented.n_rows;
-
 
 	// Set active inertia here
 	args.set_active_inertia(true_shape_model.get_inertia());
@@ -161,8 +160,6 @@ int main() {
 		INSTRUMENT_FREQUENCY,
 		LOS_NOISE_3SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
-
-
 
 
 // ShapeBuilder filter_arguments

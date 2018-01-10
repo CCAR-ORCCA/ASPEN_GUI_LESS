@@ -495,14 +495,12 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
-	
-
 	arma::vec eigval;
 	arma::mat eigvec;
 	arma::eig_sym( eigval, eigvec, info_mat ) ;
 
 	for (unsigned int val = 0; val < eigval.n_rows; ++ val){
-		if (eigval(val) < 0 && std::abs(eigval(val)) >1e-8){
+		if (eigval(val) < 0 && std::abs(eigval(val)) > 1e-8){
 
 			throw(std::runtime_error("the information matrix has one strictly negative eigenvalue: " + std::to_string(eigval(val))));
 		}

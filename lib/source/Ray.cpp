@@ -172,14 +172,28 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 
 		if (this -> intersection_inside(H, facet)) {
 
-			if (this -> true_range > t) {
+			// Corresponds to range attenuation in 
+				// Amzajerdian, F., Hines, G. D., Roback, V. E., Petway, L. B., Barnes, B. W., Paul, F., … Bulyshev, A. (2015). Advancing Lidar Sensors Technologies for Next Generation Landing Missions (pp. 1–11). https://doi.org/10.2514/6.2015-0329
+
+			double b = 1800.; // max range
+			double a = (900. - b) / (60.);
+
+			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,n)));
+			double max_range = a * incidence_angle  + b;
+
+			if (this -> true_range > t ) {
 				this -> true_range = t;
 				this -> hit_element = facet;
-				this -> incidence_angle = std::abs(std::acos(arma::dot(*this -> direction_target_frame,n)));
-
+				this -> incidence_angle = incidence_angle;
 			}
 
-			
+			// if (this -> true_range > t && t < max_range) {
+			// 	this -> true_range = t;
+			// 	this -> hit_element = facet;
+			// 	this -> incidence_angle = incidence_angle;
+			// }
+
+
 			return true;
 		}
 

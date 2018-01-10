@@ -46,7 +46,7 @@ std::shared_ptr<arma::vec> ShapeModelBezier::get_dX_bar_ptr() const{
 void ShapeModelBezier::initialize_info_mat(){
 	unsigned int N = this -> control_points.size();
 	this -> info_mat_ptr = std::make_shared<arma::sp_mat>(arma::sp_mat(3 * N,3 * N ));
-	*this -> info_mat_ptr += 1e-6 * arma::eye<arma::mat>(3 * N,3 * N);
+	*this -> info_mat_ptr += 1 * arma::eye<arma::mat>(3 * N,3 * N);
 }
 
 void ShapeModelBezier::initialize_dX_bar(){

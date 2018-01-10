@@ -37,6 +37,13 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 }
 
+PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
+	
+	this -> construct_kd_tree(points_normals);
+
+}
+
+
 
 void PC::transform(const arma::mat & dcm, const arma::vec & x){
 
@@ -51,8 +58,9 @@ void PC::transform(const arma::mat & dcm, const arma::vec & x){
 		points_normals.push_back(pn);
 	}
 
+	// Actually this should work
 	arma::vec los = {1,0,0};
-	
+		
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(dcm * los);
 

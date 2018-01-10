@@ -17,6 +17,13 @@
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
+// Simplification function
+#include <CGAL/Surface_mesh_simplification/edge_collapse.h>
+// Stop-condition policy
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
+
 
 #include <vector>
 #include <fstream>
@@ -33,6 +40,9 @@ typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_fun
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
 typedef CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface_3;
+typedef CGAL::Simple_cartesian<double> KernelSimpleKartesian;
+typedef CGAL::Polyhedron_3<KernelSimpleKartesian> Surface_mesh; 
+namespace SMS = CGAL::Surface_mesh_simplification ;
 
 
 namespace CGALINTERFACE {

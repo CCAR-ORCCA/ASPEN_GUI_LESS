@@ -33,6 +33,8 @@ public:
 	*/
 	PC(arma::vec los_dir, arma::mat & points);
 
+	PC(std::vector<std::shared_ptr<PointNormal> > point_normals);
+
 
 	/*
 	Constructor
@@ -50,10 +52,10 @@ public:
 	@param frame_graph Pointer to frame graph
 	*/
 	PC(arma::mat & dcm,
-	   arma::vec & x,
-	   std::shared_ptr<PC> destination_pc,
-	   std::shared_ptr<PC> source_pc,
-	   FrameGraph * frame_graph);
+		arma::vec & x,
+		std::shared_ptr<PC> destination_pc,
+		std::shared_ptr<PC> source_pc,
+		FrameGraph * frame_graph);
 
 	/**
 	Returns a pointer to the PointNormal whose point is closest to the provided test_point
@@ -173,10 +175,10 @@ public:
 	vertex coordinates. cannot be true at the same time as save_normals!
 	*/
 	void save(std::string path,
-	          arma::mat dcm = arma::eye<arma::mat>(3, 3),
-	          arma::vec x = arma::zeros<arma::vec>(3),
-	          bool save_normals = false,
-	          bool format_like_obj = true) const;
+		arma::mat dcm = arma::eye<arma::mat>(3, 3),
+		arma::vec x = arma::zeros<arma::vec>(3),
+		bool save_normals = false,
+		bool format_like_obj = true) const;
 
 	/**
 	Saves pc to file after applying a rigid transform
