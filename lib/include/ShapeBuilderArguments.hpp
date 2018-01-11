@@ -214,14 +214,24 @@ public:
 	}
 
 	arma::vec get_latest_mrp_mes() const {
-			return this -> mrp_mes_history.back();
+		return this -> mrp_mes_history.back();
 
 	}
 
 	arma::vec get_latest_mrp_true() const {
-			return this ->mrp_true_history.back();
+		return this ->mrp_true_history.back();
 
 	}
+
+
+	void set_los_noise_sd_baseline(double los_noise_sd_baseline){
+		this -> los_noise_sd_baseline = los_noise_sd_baseline;
+	}
+	double get_los_noise_sd_baseline(){
+		return this -> los_noise_sd_baseline;
+	}
+
+
 
 	/**
 	Spin axis
@@ -345,6 +355,7 @@ protected:
 	double min_edge_angle;
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
+	double los_noise_sd_baseline;
 
 	unsigned int minimum_ray_per_facet = 1;
 	unsigned int max_split_count = 1000;

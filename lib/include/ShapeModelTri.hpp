@@ -73,13 +73,6 @@ public:
 
 
 
-
-	/**
-	Returns the dimensions of the bounding box
-	@param Bounding box dimension to be computed (xmin,ymin,zmin,xmax,ymax,zmax)
-	*/
-	void get_bounding_box(double * bounding_box) const;
-
 	/**
 	Saves the shape model in the form of an .obj file
 	@param path Location of the saved file
@@ -107,7 +100,7 @@ public:
 	Returns the location of the center of mass
 	@return pointer to center of mass
 	*/
-	arma::vec * get_center_of_mass();
+	arma::vec get_center_of_mass() const;
 
 	
 	/**

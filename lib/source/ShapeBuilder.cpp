@@ -126,7 +126,9 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
 			// shape_fitter.fit_shape_batch(15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
-				shape_fitter.fit_shape_KF(time_index,15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+				shape_fitter.fit_shape_KF(time_index,
+					15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
+					this -> filter_arguments -> get_los_noise_sd_baseline());
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
@@ -147,6 +149,11 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 	}
 
+}
+
+
+std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() const{
+	return this -> estimated_shape_model;
 }
 
 
@@ -427,7 +434,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string pc_path_obj = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/shape_model/apriori.obj";
 
-
 	this -> destination_pc_concatenated -> save(
 		pc_path, 
 		arma::eye<arma::mat>(3,3), 
@@ -446,39 +452,12 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		pc_path,
 		a_priori_path);
 
-
-
-
-
-
-
-
-
-
-	// std::cout << "Fitting first point cloud with ellipsoid" << std::endl;
-
-	// EllipsoidFitter fitter(this -> destination_pc_concatenated.get());
-
-	// arma::vec center_guess = this -> destination_pc_concatenated -> get_bbox_center();
-	// arma::vec dim_guess = this -> destination_pc_concatenated -> get_bbox_dim();
-	// arma::vec X_bar = {dim_guess(0),dim_guess(1),dim_guess(2), center_guess(0), center_guess(1),center_guess(2)};
-	// arma::mat P_bar = 100 * arma::eye<arma::mat>(6,6);
-
-	// arma::vec X = fitter.run(X_bar,P_bar,10,false);
-
-	// arma::vec stretch = X.subvec(0,2);
-	// arma::vec translation = X.subvec(3,5);
-	// arma::mat rotation = arma::eye<arma::mat>(3,3);
-
 	ShapeModelImporter shape_io_guess(a_priori_path, 1, true);
-
 
 	ShapeModelTri a_priori_obj("", nullptr);
 
 	shape_io_guess.load_obj_shape_model(&a_priori_obj);
 	
-	// a_priori_obj.transform(translation, rotation, stretch);
-
 	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
 
 	a_priori_bezier -> elevate_degree();
@@ -487,7 +466,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),this -> destination_pc_concatenated.get());
 
-	shape_fitter.fit_shape_KF(time_index,15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
+	shape_fitter.fit_shape_KF(time_index,
+		15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
+		this -> filter_arguments -> get_los_noise_sd_baseline());
 
 	a_priori_bezier -> save("../output/shape_model/fit_a_priori.b");
 
@@ -502,9 +483,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
 
 	this -> estimated_shape_model = a_priori_bezier;
-
-
-
 
 
 }

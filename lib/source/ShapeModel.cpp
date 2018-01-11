@@ -87,39 +87,94 @@ arma::vec ShapeModel::get_center() const{
 	return center;
 }
 
-
-void ShapeModel::transform(arma::vec & translation,arma::mat & rotation, arma::vec & stretch){
-
-	arma::vec center = this -> get_center();
-	arma::mat stretch_mat = arma::diagmat(stretch);
-
+void ShapeModel::translate(arma::vec x){
 
 	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
+		arma::vec coords = (*point) -> get_coordinates();
+		(*point) -> set_coordinates(coords + x) ;
+	}
+}
 
-		auto owning_elements = (*point) -> get_owning_elements();
-		bool ignore = false;
-		
-		for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
-			if ((*el) -> get_info_mat_ptr() != nullptr){
-				ignore = true;
-				break;
-			}
-		}
-		if (ignore){
-			continue;
-		}
+void ShapeModel::rotate(arma::mat M){
 
-		arma::vec new_coords = rotation * (stretch_mat * ((*point) -> get_coordinates() - center) ) + center + translation;
+	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
+		arma::vec coords = (*point) -> get_coordinates();
+		(*point) -> set_coordinates(M*coords) ;
+	}
+}
 
 
-		(*point) -> set_coordinates(new_coords);
 
+
+void ShapeModel::get_bounding_box(double * bounding_box) const {
+
+	arma::vec P0 = this -> control_points. at(0) -> get_coordinates();
+
+	arma::vec bbox_min = arma::zeros<arma::vec>(3);
+	arma::vec bbox_max = arma::zeros<arma::vec>(3);
+
+	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
+		bbox_min = arma::min(bbox_min,this -> control_points[vertex_index] -> get_coordinates());
+		bbox_max = arma::max(bbox_max,this -> control_points[vertex_index] -> get_coordinates());
 
 	}
 
+	bounding_box[0] = bbox_min(0);
+	bounding_box[1] = bbox_min(1);
+	bounding_box[2] = bbox_min(2);
+	bounding_box[3] = bbox_max(0);
+	bounding_box[4] = bbox_max(1);
+	bounding_box[5] = bbox_max(2);
+
+
+	std::cout << "xmin : " << bbox_min(0) << std::endl;
+	std::cout << "xmax : " << bbox_max(0) << std::endl;
+
+	std::cout << "ymin : " << bbox_min(1) << std::endl;
+	std::cout << "ymax : " << bbox_max(1) << std::endl;
+
+
+	std::cout << "zmin : " << bbox_min(2) << std::endl;
+	std::cout << "zmax : " << bbox_max(2) << std::endl;
 
 
 }
+
+
+void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) const{
+
+
+	arma::eig_sym(moments,axes,this -> inertia);
+	
+
+	// Check if two axes are flipped here
+
+	// The longest distance measured from the center of mass along the first principal
+	// axis to the surface should be measured along +x
+
+	double bbox[6];
+	this -> get_bounding_box(bbox);
+	arma::vec x_max = {bbox[3],bbox[4],bbox[5]}; 
+	arma::vec x_min = {bbox[0],bbox[1],bbox[2]}; 
+
+	arma::vec e0 = axes.col(0);
+
+	if (std::abs(arma::dot(x_max,e0)) < std::abs(arma::dot(x_min,e0))){
+		arma::vec e1 = axes.col(1);
+		arma::vec e2 = axes.col(2);
+		axes = arma::join_rows(-e0, arma::join_rows(e1, -e2));
+	}
+
+
+	std::cout << "Principal axes: " << std::endl;
+	std::cout << axes << std::endl;
+
+	std::cout << "Non-dimensional principal moments: " << std::endl;
+	std::cout << moments << std::endl;
+
+
+}
+
 
 
 

@@ -93,14 +93,18 @@ ShapeModelBezier::ShapeModelBezier(Bezier patch){
 }
 
 void ShapeModelBezier::compute_surface_area(){
+	std::cout << "Warning: should only be used for post-processing\n";
 
 }
 
 void ShapeModelBezier::compute_volume(){
+	std::cout << "Warning: should only be used for post-processing\n";
 
 }
 
 void ShapeModelBezier::compute_center_of_mass(){
+
+	std::cout << "Warning: should only be used for post-processing\n";
 
 }
 
@@ -129,7 +133,7 @@ void ShapeModelBezier::elevate_degree(){
 	// All patches are elevated
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 		dynamic_cast<Bezier *>(this -> get_elements() -> at(i).get()) -> elevate_degree();
-	
+
 	}
 
 	std::vector<std::shared_ptr<ControlPoint> > new_control_points;

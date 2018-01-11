@@ -10,7 +10,7 @@ Lidar::Lidar(
 	unsigned int z_res,
 	double f,
 	double freq,
-	double los_noise_3sd_baseline,
+	double los_noise_1sd_baseline,
 	double los_noise_fraction_mes_truth) {
 
 	this -> frame_graph = frame_graph;
@@ -21,7 +21,7 @@ Lidar::Lidar(
 	this -> z_res = z_res;
 	this -> y_res = y_res;
 	this -> freq = freq;
-	this -> los_noise_sd_baseline = los_noise_3sd_baseline / 3;
+	this -> los_noise_sd_baseline = los_noise_1sd_baseline;
 	this -> los_noise_fraction_mes_truth = los_noise_fraction_mes_truth;
 
 	// The focal plane of the lidar is populated

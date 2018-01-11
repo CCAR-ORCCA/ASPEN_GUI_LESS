@@ -76,8 +76,11 @@ bool ShapeFitterBezier::fit_shape_KF(
 	unsigned int N_iter, 
 	double J,
 	const arma::mat & DS, 
-	const arma::vec & X_DS){
+	const arma::vec & X_DS,
+	double los_noise_sd_base){
 
+
+	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
 	// The footpoints are first found
@@ -145,7 +148,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 				element_pair -> second = this -> recompute_footpoints(element_pair -> second);
 
 				element_has_converged = this -> update_element(element_pair -> first,
-					element_pair -> second);
+					element_pair -> second,false,W);
 				
 				if (element_has_converged){
 					std::cout << "--- Element has converged\n";
@@ -168,7 +171,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 	for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 		
 		element_has_converged = this -> update_element(element_pair -> first,
-			element_pair -> second,true);
+			element_pair -> second,true,W);
 		
 	}
 
@@ -435,7 +438,8 @@ void ShapeFitterBezier::save(std::string path, arma::mat & Pbar_mat) const {
 
 bool ShapeFitterBezier::update_element(Element * element, 
 	std::vector<Footpoint> & footpoints,
-	bool store_info_mat){
+	bool store_info_mat,
+	double W){
 
 	if (footpoints.size() == 0){
 		return false;
@@ -490,28 +494,30 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 		residuals(k) = y;
 
-		normal_mat += Hi.t() * y;
-		info_mat +=  Hi.t() * Hi;
+		normal_mat += Hi.t() * W * y;
+		info_mat +=  Hi.t() * W * Hi;
 
 	}
 
-	arma::vec eigval;
-	arma::mat eigvec;
-	arma::eig_sym( eigval, eigvec, info_mat ) ;
+	// arma::vec eigval;
+	// arma::mat eigvec;
+	// arma::eig_sym( eigval, eigvec, info_mat ) ;
 
-	for (unsigned int val = 0; val < eigval.n_rows; ++ val){
-		if (eigval(val) < 0 && std::abs(eigval(val)) > 1e-8){
+	// for (unsigned int val = 0; val < eigval.n_rows; ++ val){
+	// 	if (eigval(val) < 0 && std::abs(eigval(val)) > 1e-8){
 
-			throw(std::runtime_error("the information matrix has one strictly negative eigenvalue: " + std::to_string(eigval(val))));
-		}
-		if (eigval(val) < 5e-1){
-			eigval(val) = 5e-1;
-		}
-	}
+	// 		throw(std::runtime_error("the information matrix has one strictly negative eigenvalue: " + std::to_string(eigval(val))));
+	// 	}
+	// 	if (eigval(val) < 5e-1){
+	// 		eigval(val) = 5e-1;
+	// 	}
+	// }
 	
-	// The information matrix is regularized
-	arma::mat regularized_info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
-	
+	// The information matrix is regularizeds
+	// arma::mat regularized_info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
+
+	arma::mat regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+
 	// The deviation is computed
 	arma::vec dC = 0.5 * arma::solve(regularized_info_mat,normal_mat);
 
@@ -538,7 +544,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The information matrix is stored
 	if (store_info_mat){
 
-		// This prevents the information matrix from increasing 
+		// This prevents the information matrix from increasing too much
 		if (arma::cond(info_mat) < 1e6){
 			arma::mat Q = std::pow(arma::stddev(residuals),2) * arma::eye<arma::mat>(info_mat.n_rows,
 				info_mat.n_rows);
@@ -570,8 +576,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 		point -> set_coordinates(point -> get_coordinates()
 			+ arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n);
 	}
-
-
 
 
 	if (std::abs(arma::mean(residuals)) < 1e-2){

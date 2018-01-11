@@ -32,7 +32,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_3SD_BASELINE 15e-2 // Goldeneye 3sigma
+#define LOS_NOISE_SD_BASELINE 1e-2 // Goldeneye 1sigma
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times (s)
@@ -65,7 +65,6 @@ int main() {
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, true);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
-
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
 		"/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , false);
@@ -76,14 +75,6 @@ int main() {
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 
 	true_shape_model.construct_kd_tree_shape(false);
-
-	// ShapeModelBezier true_bezier(&true_shape_model,"",&frame_graph);
-	
-	// arma::mat R = arma::eye<arma::mat>(3,3);
-	
-	// arma::mat points = true_bezier.random_sampling(30000,R);
-	// points.save("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/sampled_pc_itokawa_scaled_aligned.txt",arma::raw_ascii);
-	// PC::save(points,"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/sampled_pc_itokawa_scaled_aligned.obj");
 
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
@@ -158,24 +149,97 @@ int main() {
 		COL_RESOLUTION,
 		FOCAL_LENGTH,
 		INSTRUMENT_FREQUENCY,
-		LOS_NOISE_3SD_BASELINE,
+		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
 
-// ShapeBuilder filter_arguments
 	ShapeBuilderArguments shape_filter_args;
-
-	shape_filter_args.set_estimate_shape(false);
+	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
 
 	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,
 		&true_shape_model,
 		&shape_filter_args);
 
-
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 
-	shape_filter_args.save_results();
+
+	// The estimated shape model has its barycenter and principal axes lined up with the
+	// true shape model
+	ShapeModelImporter shape_io_fit_obj(
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/shape_model/fit_source_300.obj", 1, true);
+
+	
+	ShapeModelTri fit_shape("EF", &frame_graph);
+	
+	shape_io_fit_obj.load_obj_shape_model(&fit_shape);
+	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
+
+
+	// At this stage, the bezier shape model is NOT aligned with the true shape model
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	
+	// This shape model should undergo the same transform as the one imparted to 
+	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
+
+	estimated_shape_model -> translate(-fit_shape.get_center_of_mass());
+	arma::mat axes;
+	arma::vec moments ;
+	fit_shape.get_principal_inertias(axes,moments);
+	estimated_shape_model -> rotate(axes.t());
+
+
+	auto fit_elements = estimated_shape_model -> get_elements();
+	
+	arma::mat distance_error = arma::mat(fit_elements -> size(),2);
+
+
+	for (unsigned int i = 0; i < fit_elements -> size(); ++i){
+		// For each Bezier element, the distance to the true shape is
+		// found by ray tracing along the element normal evaluated at its center
+
+		Bezier * patch = dynamic_cast<Bezier *>(fit_elements -> at(i).get());
+		auto n = patch -> get_normal(1./3,1./3);
+		arma::vec P = patch -> evaluate(1./3,1./3);
+
+		Ray ray(P,n);
+		bool hit = true_shape_model.ray_trace(&ray);
+		double distance;
+
+
+		if (hit){
+			distance = ray.get_true_range();
+		}
+		else{ 
+			
+			Ray ray_rev(P,-n);
+			hit = true_shape_model.ray_trace(&ray_rev);
+			if (hit){
+				distance = - ray_rev.get_true_range();
+			}
+			else {
+				throw(std::runtime_error("This ray should have hit something"));
+			}
+			
+		}
+		
+
+
+		arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
+		arma::mat Pp = patch -> covariance_surface_point(
+			1./3,
+			1./3,
+			n,
+			P_CC);
+		arma::rowvec result = {distance,std::sqrt(arma::dot(n,Pp * n))};
+		distance_error.row(i) = result;
+
+
+	}
+
+	distance_error.save("../output/results.txt",arma::raw_ascii);
+	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
+
 
 	return 0;
 }

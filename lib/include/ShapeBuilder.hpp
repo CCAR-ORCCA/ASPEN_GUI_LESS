@@ -83,6 +83,11 @@ public:
 
 
 
+	std::shared_ptr<ShapeModelBezier> get_estimated_shape_model() const;
+
+
+
+
 	/**
 	Solves the square linear system info_mat * x = normal_mat
 	by means of a cholesky decomposition

@@ -27,7 +27,6 @@ set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 #
 ################################################################################
 
-
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(LIB_NAME ASPEN CACHE STRING "Name of library to be created.")
@@ -41,7 +40,6 @@ elseif(NOT APPLE)
 	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
     set (CMAKE_CXX_STANDARD 17)
 	message("This is a Linux machine. CMAKE_CXX_STANDARD 17 used")
-
 
 endif()
 
@@ -69,8 +67,6 @@ endif()
 
 project(${LIB_NAME})
 
-
-
 # Specify the version used
 if (${CMAKE_MAJOR_VERSION} LESS 3)
 	message(FATAL_ERROR " You are running an outdated version of CMake")
@@ -97,7 +93,6 @@ include_directories(${EXTERNAL_PATH}/CGAL_interface/include)
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
 include_directories(${Boost_INCLUDE_DIRS}) 
 
-
 # Find Armadillo 
 find_package(Armadillo REQUIRED )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
@@ -111,11 +106,9 @@ find_package(CGAL REQUIRED)
 include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
-
 # Find SBGAT 
 find_package(SbgatCore REQUIRED)
 include_directories(${SBGATCORE_INCLUDE_HEADER})
-
 
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
@@ -193,6 +186,8 @@ target_link_libraries(${LIB_NAME} ${library_dependencies})
 file(GLOB includes "${INCLUDES_PATH}/*.hpp")
 file(GLOB includes_gnuplot "${EXTERNAL_PATH}/Gnuplot/include/*.hpp")
 file(GLOB includes_cgal "${EXTERNAL_PATH}/CGAL_interface/include/*.hpp")
+
+
 
 install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
 install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)

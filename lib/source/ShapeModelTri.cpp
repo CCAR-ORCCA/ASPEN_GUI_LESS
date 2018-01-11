@@ -178,7 +178,7 @@ shape_file.close();
 
 void ShapeModelTri::shift_to_barycenter() {
 
-	arma::vec x = - (*this -> get_center_of_mass());
+	arma::vec x = - this -> get_center_of_mass();
 
 
 	// The vertices are shifted
@@ -195,110 +195,30 @@ this -> cm = 0 * this -> cm;
 
 }
 
-void ShapeModelTri::align_with_principal_axes() {
+void ShapeModelTri:: align_with_principal_axes() {
 
-	arma::vec moments;
-	arma::mat axes ;
 
 	this -> compute_inertia();
-
-	double T = arma::trace(this -> inertia) ;
-	double Pi = 0.5 * (T * T - arma::trace(this -> inertia * this -> inertia));
-	double U = std::sqrt(T * T - 3 * Pi) / 3;
-	double Det = arma::det(this -> inertia);
 
 	std::cout << "Non-dimensional inertia: " << std::endl;
 	std::cout << this -> inertia << std::endl;
 
+	arma::vec moments;
+	arma::mat axes;
 
-	if (U > 1e-6) {
+	this -> get_principal_inertias(axes,moments);
 
-		double cos_Theta = (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U );
-		double Theta;
+	this -> rotate(axes.t());
 
-		if (cos_Theta > 0) {
-
-		}
-
-		if (std::abs(std::abs(cos_Theta) - 1) < 1e-6) {
-			if (cos_Theta > 0) {
-				Theta = 0;
-			}
-			else {
-				Theta = arma::datum::pi;
-			}
-		}
-		else {
-			Theta = std::acos( (- 2 * T * T * T +  9 * T * Pi - 27 * Det) / (54 * U * U * U ));
-		}
-
-
-
-		double A = T / 3 - 2 * U * std::cos(Theta / 3);
-		double B = T / 3 - 2 * U * std::cos(Theta / 3 - 2 * arma::datum::pi / 3);
-		double C = T / 3 - 2 * U * std::cos(Theta / 3 + 2 * arma::datum::pi / 3);
-
-		moments = {A, B, C};
-
-
-		arma::mat L0 = this -> inertia - moments(0) * arma::eye<arma::mat>(3, 3);
-		arma::mat L1 = this -> inertia - moments(1) * arma::eye<arma::mat>(3, 3);
-
-		L0.row(0) = arma::normalise(L0.row(0));
-		L0.row(1) = arma::normalise(L0.row(1));
-		L0.row(2) = arma::normalise(L0.row(2));
-
-		L1.row(0) = arma::normalise(L1.row(0));
-		L1.row(1) = arma::normalise(L1.row(1));
-		L1.row(2) = arma::normalise(L1.row(2));
-
-		arma::mat e0_mat(3, 3);
-
-		e0_mat.row(0) = arma::cross(L0.row(0), L0.row(1));
-		e0_mat.row(1) = arma::cross(L0.row(0), L0.row(2));
-		e0_mat.row(2) = arma::cross(L0.row(1), L0.row(2));
-
-		arma::vec norms_e0 = {arma::norm(e0_mat.row(0)), arma::norm(e0_mat.row(1)), arma::norm(e0_mat.row(2))};
-		double best_e0 = norms_e0.index_max();
-		arma::vec e0 = arma::normalise(e0_mat.row(best_e0).t());
-
-		arma::mat e1_mat(3, 3);
-		e1_mat.row(0) = arma::cross(L1.row(0), L1.row(1));
-		e1_mat.row(1) = arma::cross(L1.row(0), L1.row(2));
-		e1_mat.row(2) = arma::cross(L1.row(1), L1.row(2));
-
-		arma::vec norms_e1 = {arma::norm(e1_mat.row(0)), arma::norm(e1_mat.row(1)), arma::norm(e1_mat.row(2))};
-		double best_e1 = norms_e1.index_max();
-		arma::vec e1 = arma::normalise(e1_mat.row(best_e1).t());
-
-		arma::vec e2 = arma::cross(e0, e1);
-
-		axes = arma::join_rows(e0, arma::join_rows(e1, e2));
-	}
-
-	else {
-		moments = std::pow(Det, 1. / 3.) * arma::ones<arma::vec>(3);
-		axes = arma::eye<arma::mat>(3, 3);
-	}
-
-	std::cout << "Principal axes: " << std::endl;
-	std::cout << axes << std::endl;
-
-	std::cout << "Non-dimensional principal moments: " << std::endl;
-	std::cout << moments << std::endl;
-
-	// The vertices are shifted
-	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
-	for (unsigned int vertex_index = 0;
-		vertex_index < this -> get_NControlPoints();
-		++vertex_index) {
-
-		this -> control_points[vertex_index] -> set_coordinates(axes.t() * this -> control_points[vertex_index] -> get_coordinates());
-}
-
-this -> inertia = arma::diagmat(moments);
+	this -> inertia = arma::diagmat(moments);
 
 }
+
+
+
+
+
+
 
 
 
@@ -515,8 +435,8 @@ double ShapeModelTri::get_surface_area() const {
 }
 
 
-arma::vec * ShapeModelTri::get_center_of_mass() {
-	return &(this -> cm);
+arma::vec ShapeModelTri::get_center_of_mass() const{
+	return this -> cm;
 }
 
 
@@ -1048,49 +968,4 @@ void ShapeModelTri::compute_surface_area() {
 
 
 
-
-
-void ShapeModelTri::get_bounding_box(double * bounding_box) const {
-
-	double xmin = std::numeric_limits<double>::infinity();
-	double ymin = std::numeric_limits<double>::infinity();
-	double zmin = std::numeric_limits<double>::infinity();
-
-	double xmax =  - std::numeric_limits<double>::infinity();
-	double ymax =  - std::numeric_limits<double>::infinity();
-	double zmax =  - std::numeric_limits<double>::infinity();
-
-
-	arma::vec bbox_min = arma::zeros<arma::vec>(3);
-	arma::vec bbox_max = arma::zeros<arma::vec>(3);
-
-	#// pragma omp parallel for reduction(max : xmax,ymax,zmax),reduction(min : xmin,ymin,zmin)
-	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
-
-		bbox_min = arma::min(bbox_min,this -> control_points[vertex_index] -> get_coordinates());
-		bbox_max = arma::min(bbox_max,this -> control_points[vertex_index] -> get_coordinates());
-
-	}
-
-	bounding_box[0] = bbox_min(0);
-	bounding_box[1] = bbox_min(1);
-	bounding_box[2] = bbox_min(2);
-	bounding_box[3] = bbox_max(0);
-	bounding_box[4] = bbox_max(1);
-	bounding_box[5] = bbox_max(2);
-
-
-	std::cout << "xmin : " << xmin << std::endl;
-	std::cout << "xmax : " << xmax << std::endl;
-
-
-	std::cout << "ymin : " << ymin << std::endl;
-	std::cout << "ymax : " << ymax << std::endl;
-
-
-	std::cout << "zmin : " << zmin << std::endl;
-	std::cout << "zmax : " << zmax << std::endl;
-
-
-}
 
