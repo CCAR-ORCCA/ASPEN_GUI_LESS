@@ -43,7 +43,6 @@ endif()
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(LIB_NAME ASPEN CACHE STRING "Name of library to be created.")
 
-
 if (${IS_FORTUNA})
 	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
 	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
@@ -138,11 +137,9 @@ if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA}
 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
 endif()
 
-message(${SOURCE_PATH})
-
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
-${SOURCE_PATH}/BatchFilter.cpp
+/home/bebe0705/libs/ASPEN_gui_less/lib/source/BatchFilter.cpp
 ${SOURCE_PATH}/BBox.cpp
 ${SOURCE_PATH}/Bezier.cpp
 ${SOURCE_PATH}/ControlPoint.cpp
