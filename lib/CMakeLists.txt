@@ -93,9 +93,9 @@ else()
 endif()
 
 # Include directories
-include_directories(${INCLUDES_PATH})
-include_directories(${EXTERNAL_PATH}/Gnuplot/include)
-include_directories(${EXTERNAL_PATH}/CGAL_interface/include)
+include_directories(include)
+include_directories(external/Gnuplot/include)
+include_directories(external/CGAL_interface/include)
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
