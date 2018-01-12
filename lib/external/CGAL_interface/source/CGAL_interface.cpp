@@ -1,7 +1,6 @@
 #include "CGAL_interface.hpp"
 
 
-
 void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath) {
 
     // Poisson options
@@ -40,18 +39,31 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath)
         throw (std::runtime_error("Error in computation of implicit function"));
 
     // Computes average spacing
+
+
+
+
+    #if CGAL_VERSION_NR == 1041001000
+
     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(),
-                         6 /* knn = 1 ring */);
+       6 );
+    #else
+
+    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(),
+        6 );
+
+    #endif
+
 
     // Gets one point inside the implicit surface
     // and computes implicit function bounding sphere radius.
-        Point inner_point = function.get_inner_point();
-        Sphere bsphere = function.bounding_sphere();
-        FT radius = std::sqrt(bsphere.squared_radius());
+    Point inner_point = function.get_inner_point();
+    Sphere bsphere = function.bounding_sphere();
+    FT radius = std::sqrt(bsphere.squared_radius());
 
     // Defines the implicit surface: requires defining a
     // conservative bounding sphere centered at inner point.
-        FT sm_sphere_radius = 5.0 * radius;
+    FT sm_sphere_radius = 5.0 * radius;
     FT sm_dichotomy_error = sm_distance * average_spacing / 1000.0; // Dichotomy error must be << sm_distance
     Surface_3 surface(function,
       Sphere(inner_point, sm_sphere_radius * sm_sphere_radius),
