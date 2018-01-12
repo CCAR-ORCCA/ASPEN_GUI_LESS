@@ -13,7 +13,7 @@ if(${IS_FORTUNA})
 	set(ASPEN_INCLUDE_HEADER /home/bebe0705/libs/local/include/ASPEN)
 	set(ASPEN_INCLUDE_GNUPLOT /home/bebe0705/libs/local/include/ASPEN/external/Gnuplot)
 	set(ASPEN_INCLUDE_CGAL /home/bebe0705/libs/local/include/ASPEN/external/CGAL_interface)
-	set(ASPEN_LIBRARY /home/bebe0705/libs/local/lib/libASPEN.dylib)
+	set(ASPEN_LIBRARY /home/bebe0705/libs/local/lib/libASPEN.so)
 
 else()
 	
