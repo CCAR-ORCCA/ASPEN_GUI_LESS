@@ -430,9 +430,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	
 	// This is where CGAL should be called
-	std::string pc_path = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.cgal";
-	std::string pc_path_obj = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/pc/source_transformed_poisson.obj";
-	std::string a_priori_path = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/output/shape_model/apriori.obj";
+	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
+	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
+	std::string a_priori_path = "../output/shape_model/apriori.obj";
 
 	this -> destination_pc_concatenated -> save(
 		pc_path, 
