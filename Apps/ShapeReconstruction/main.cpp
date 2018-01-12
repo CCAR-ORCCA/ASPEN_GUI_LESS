@@ -67,7 +67,7 @@ int main() {
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
-		"/home/ben/Documents/ASPEN_GUI_LESS/resources/shape_models/itokawa_150_scaled.obj", 1 , false);
+		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1 , false);
 #else
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
