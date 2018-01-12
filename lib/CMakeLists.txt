@@ -139,7 +139,7 @@ endif()
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
-/home/bebe0705/libs/ASPEN_gui_less/lib/source/BatchFilter.cpp
+source/BatchFilter.cpp
 ${SOURCE_PATH}/BBox.cpp
 ${SOURCE_PATH}/Bezier.cpp
 ${SOURCE_PATH}/ControlPoint.cpp
