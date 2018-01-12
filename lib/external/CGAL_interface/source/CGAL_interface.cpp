@@ -49,7 +49,7 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath)
        6 );
     #else
 
-    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(),
+    FT average_spacing = CGAL::compute_average_spacing(points.begin(), points.end(),
         6 );
 
     #endif
