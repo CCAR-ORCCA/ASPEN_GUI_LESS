@@ -2,7 +2,6 @@
 #include <ShapeModelTri.hpp>
 #include <ShapeModelImporter.hpp>
 #include <ShapeBuilder.hpp>
-#include <Wrappers.hpp>
 #include <DynamicAnalyses.hpp>
 #include <Dynamics.hpp>
 #include <Observer.hpp>
@@ -17,7 +16,6 @@
 #include <limits>
 #include <chrono>
 #include <boost/progress.hpp>
-
 
 // Various constants that set up the visibility emulator scenario
 
