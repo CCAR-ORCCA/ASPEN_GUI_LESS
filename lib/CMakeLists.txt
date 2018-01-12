@@ -27,61 +27,42 @@ set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 #
 ################################################################################
 
+if (EXISTS /home/bebe0705/.am_fortuna)
+	set(IS_FORTUNA ON)
+	message("-- This is Fortuna")
+	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
+	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+
+else()
+	set(IS_FORTUNA OFF)
+	message("-- This is not Fortuna")
+
+endif()
+
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(LIB_NAME ASPEN CACHE STRING "Name of library to be created.")
 
-# if (${CMAKE_MINOR_VERSION} EQUAL 0 AND NOT APPLE) # if true, running on a CCAR computer (old CMAKE and RedHat)
-# 	set(CMAKE_C_COMPILER /usr/local/gcc/bin/gcc CACHE STRING "C Compiler" FORCE)
-# 	set(CMAKE_CXX_COMPILER /usr/local/gcc/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-# elseif(NOT APPLE)
-# 	# Not sure about this. Should work on a modern Ubuntu system
-# 	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
-# 	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-#     set (CMAKE_CXX_STANDARD 17)
-# 	message("This is a Linux machine. CMAKE_CXX_STANDARD 17 used")
 
-# endif()
+if (${IS_FORTUNA})
+	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
+	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
+else()
+	if(APPLE)
+		if(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
+			message("Switching to OMP-friendly GCC ")
+	    	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
+			set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
 
-# # Check what version of the compiler is installed
-# execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
-#                 OUTPUT_VARIABLE GCC_VERSION)
-# message("Default compiler is " ${CMAKE_C_COMPILER})
-# message("Default ${CMAKE_C_COMPILER} version is " ${GCC_VERSION})
-
-# if (GCC_VERSION VERSION_LESS 4.7 OR APPLE) # if true, either running on a CCAR computer or a Mac (Clang has messed-up version IDs)
-# 		if (NOT APPLE) # If NOT APPLE, then running on a CCAR computer. The proper compiler should have already been set
-#         	set(CMAKE_CXX_FLAGS "-std=c++0x")
-#         elseif(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-        		
-#         		message("Switching to OMP-friendly GCC ")
-# 	        	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
-# 				set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
-# 				set(CMAKE_CXX_FLAGS "-std=c++17")
-			
-# 			else()
-# 				message(FATAL_ERROR "No OMP-compliant compiler was found on this mac. ")
-# 		endif()
-# endif()
-
-
-# Checking which version of GCC is running
-if(APPLE)
-	if(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-		message("Switching to OMP-friendly GCC ")
-    	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
-		set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
-
-	else()# no OMP-compliant compiler was found on this mac. 
-		message(FATAL_ERROR "No OMP-compliant compiler was found on this Mac.")
+		else()# no OMP-compliant compiler was found on this mac. 
+			message(FATAL_ERROR "No OMP-compliant compiler was found on this Mac.")
+		endif()
+	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
+				message("Switching to /usr/local/gcc ")
+		    	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
+				set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
 	endif()
-else() # Running on Linux. Will switch back to compiler in /usr/local/bin
-		message("Switching to /usr/local/gcc ")
-    	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-		set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
 endif()
-
-set (CMAKE_CXX_STANDARD 17)
 
 project(${LIB_NAME})
 
@@ -97,13 +78,20 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 # Compiler flags
 add_definitions(-Wall -O2)
 
-# Set up the C++17 and OMP compile flags 
+# Enable C++17 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
+
 # Set path to include and source folders
-set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/include)
-set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/external)
-set(SOURCE_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/source)
+if (${IS_FORTUNA})
+	set(INCLUDES_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/include)
+	set(EXTERNAL_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/external)
+	set(SOURCE_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/source)
+else()
+	set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/include)
+	set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/external)
+	set(SOURCE_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/source)
+endif()
 
 # Include directories
 include_directories(${INCLUDES_PATH})
@@ -119,8 +107,8 @@ find_package(Armadillo REQUIRED )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 # Find RBK 
-find_package(RigidBodyKinematics REQUIRED)
-include_directories(${RBK_INCLUDE_DIR})
+find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
+include_directories(${RBK_INCLUDE_DIR} )
 
 # Find CGAL
 find_package(CGAL REQUIRED)
@@ -128,7 +116,7 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 # Find SBGAT 
-find_package(SbgatCore REQUIRED)
+find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
 include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 # Find Eigen3
@@ -144,7 +132,7 @@ endif()
 
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
-if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0)
+if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
 	find_library(GFORTRAN_LIBRARY gfortran
 	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
@@ -209,12 +197,25 @@ file(GLOB includes_gnuplot "${EXTERNAL_PATH}/Gnuplot/include/*.hpp")
 file(GLOB includes_cgal "${EXTERNAL_PATH}/CGAL_interface/include/*.hpp")
 
 
+# Installing
+if (NOT ${IS_FORTUNA})
+	
+	install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
+	install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
+	install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
+	install(FILES ${includes_cgal} DESTINATION /usr/local/include/ASPEN/external/CGAL_interface/)
+	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /usr/local/lib/cmake/ASPEN/)
 
-install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
-install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
-install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
-install(FILES ${includes_cgal} DESTINATION /usr/local/include/ASPEN/external/CGAL_interface/)
 
-install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /usr/local/lib/cmake/ASPEN/)
+else()
+
+	install (TARGETS ${LIB_NAME} DESTINATION /home/bebe0705/libs/local/lib)
+	install(FILES ${includes} DESTINATION /home/bebe0705/libs/local/include/ASPEN/)
+	install(FILES ${includes_gnuplot} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/Gnuplot/)
+	install(FILES ${includes_cgal} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/CGAL_interface/)
+	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
+endif()
+
+
 
 
