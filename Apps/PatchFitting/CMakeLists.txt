@@ -98,7 +98,7 @@ include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 # Find RBK 
 find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
-include_directories(${RBK_INCLUDE_DIRS})
+include_directories(${RBK_INCLUDE_DIR})
 
 # Find CGAL
 find_package(CGAL REQUIRED)
