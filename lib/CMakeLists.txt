@@ -191,9 +191,9 @@ ${SBGATCORE_LIBRARY}
 
 target_link_libraries(${LIB_NAME} ${library_dependencies})
 
-file(GLOB includes "${INCLUDES_PATH}/*.hpp")
-file(GLOB includes_gnuplot "${EXTERNAL_PATH}/Gnuplot/include/*.hpp")
-file(GLOB includes_cgal "${EXTERNAL_PATH}/CGAL_interface/include/*.hpp")
+file(GLOB includes "$include/*.hpp")
+file(GLOB includes_gnuplot "$external/include/Gnuplot/include/*.hpp")
+file(GLOB includes_cgal "$external/include/CGAL_interface/include/*.hpp")
 
 
 # Installing
