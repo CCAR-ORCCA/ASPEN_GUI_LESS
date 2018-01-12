@@ -47,7 +47,7 @@ public:
 	Returns the dimensions of the bounding box
 	@param Bounding box dimension to be computed (xmin,ymin,zmin,xmax,ymax,zmax)
 	*/
-	void get_bounding_box(double * bounding_box) const;
+	void get_bounding_box(double * bounding_box,arma::mat M = arma::eye<arma::mat>(3,3)) const;
 
 
 	/**

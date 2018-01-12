@@ -62,7 +62,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, true);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 #elif __linux__
@@ -73,9 +73,8 @@ int main() {
 #endif
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
-
+	
 	true_shape_model.construct_kd_tree_shape(false);
-
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
 	// Integrator extra arguments
@@ -173,7 +172,6 @@ int main() {
 	ShapeModelTri fit_shape("EF", &frame_graph);
 	
 	shape_io_fit_obj.load_obj_shape_model(&fit_shape);
-	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
 
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
@@ -183,11 +181,16 @@ int main() {
 	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
 
 	estimated_shape_model -> translate(-fit_shape.get_center_of_mass());
+	fit_shape.translate(-fit_shape.get_center_of_mass());
+	fit_shape.update_mass_properties();
 	arma::mat axes;
 	arma::vec moments ;
 	fit_shape.get_principal_inertias(axes,moments);
 	estimated_shape_model -> rotate(axes.t());
+	fit_shape.rotate(axes.t());;
 
+	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
+	
 
 	auto fit_elements = estimated_shape_model -> get_elements();
 	
@@ -211,7 +214,7 @@ int main() {
 			distance = ray.get_true_range();
 		}
 		else{ 
-			
+
 			Ray ray_rev(P,-n);
 			hit = true_shape_model.ray_trace(&ray_rev);
 			if (hit){
@@ -220,9 +223,9 @@ int main() {
 			else {
 				throw(std::runtime_error("This ray should have hit something"));
 			}
-			
+
 		}
-		
+
 
 
 		arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());

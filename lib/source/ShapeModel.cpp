@@ -106,7 +106,7 @@ void ShapeModel::rotate(arma::mat M){
 
 
 
-void ShapeModel::get_bounding_box(double * bounding_box) const {
+void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 
 	arma::vec P0 = this -> control_points. at(0) -> get_coordinates();
 
@@ -114,8 +114,8 @@ void ShapeModel::get_bounding_box(double * bounding_box) const {
 	arma::vec bbox_max = arma::zeros<arma::vec>(3);
 
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
-		bbox_min = arma::min(bbox_min,this -> control_points[vertex_index] -> get_coordinates());
-		bbox_max = arma::max(bbox_max,this -> control_points[vertex_index] -> get_coordinates());
+		bbox_min = arma::min(bbox_min,M * this -> control_points[vertex_index] -> get_coordinates());
+		bbox_max = arma::max(bbox_max,M * this -> control_points[vertex_index] -> get_coordinates());
 
 	}
 
@@ -153,17 +153,52 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 	// axis to the surface should be measured along +x
 
 	double bbox[6];
-	this -> get_bounding_box(bbox);
+	
+
+	arma::vec e0 = axes.col(0);
+	arma::vec e1 = axes.col(1);
+	arma::vec e2 = axes.col(2);
+
+
+	if (arma::det(axes) < 0){
+		e0 = -e0;
+	}
+
+
+	this -> get_bounding_box(bbox,axes.t());
 	arma::vec x_max = {bbox[3],bbox[4],bbox[5]}; 
 	arma::vec x_min = {bbox[0],bbox[1],bbox[2]}; 
 
-	arma::vec e0 = axes.col(0);
+	arma::mat M0 = arma::eye<arma::mat>(3,3);
+	arma::mat M1 = {{1,0,0},{0,-1,0},{0,0,-1}};
+	arma::mat M2 = {{-1,0,0},{0,1,0},{0,0,-1}};
+	arma::mat M3 = {{-1,0,0},{0,-1,0},{0,0,1}};
 
-	if (std::abs(arma::dot(x_max,e0)) < std::abs(arma::dot(x_min,e0))){
-		arma::vec e1 = axes.col(1);
-		arma::vec e2 = axes.col(2);
-		axes = arma::join_rows(-e0, arma::join_rows(e1, -e2));
+	if (std::abs(arma::dot(x_max,e0)) > std::abs(arma::dot(x_min,e0))){
+
+		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
+			axes = axes * M0;
+		}
+
+		else{
+
+			axes = axes * M1;
+		}
+
+
 	}
+	else{
+		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
+
+			axes = axes * M2;
+		}
+
+		else{
+
+			axes = axes * M3;
+		}
+	}
+
 
 
 	std::cout << "Principal axes: " << std::endl;
@@ -174,10 +209,6 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 
 
 }
-
-
-
-
 
 
 
