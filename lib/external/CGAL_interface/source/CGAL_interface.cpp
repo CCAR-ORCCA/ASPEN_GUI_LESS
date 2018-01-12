@@ -131,11 +131,11 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath)
 
     /// [PMP_distance_snippet]
     // computes the approximation error of the reconstruction
- double max_dist =
- CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(output_mesh,
-    points,
-    4000);
- std::cout << "Max distance to point_set: " << max_dist << std::endl;
+ // double max_dist =
+ // CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(output_mesh,
+ //    points,
+ //    4000);
+ // std::cout << "Max distance to point_set: " << max_dist << std::endl;
     /// [PMP_distance_snippet]
 
 }
