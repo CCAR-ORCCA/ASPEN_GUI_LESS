@@ -138,6 +138,8 @@ if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA}
 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
 endif()
 
+message(${SOURCE_PATH})
+
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
 ${SOURCE_PATH}/BatchFilter.cpp
