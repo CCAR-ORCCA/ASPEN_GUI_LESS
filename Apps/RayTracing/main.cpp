@@ -9,8 +9,8 @@
 
 
 // Lidar settings
-#define ROW_RESOLUTION 20
-#define COL_RESOLUTION 20
+#define ROW_RESOLUTION 256
+#define COL_RESOLUTION 256
 #define ROW_FOV 20
 #define COL_FOV 20
 
@@ -142,11 +142,14 @@ int main(){
 	frame_graph. get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(*args.get_mrp_BN_true());
 	frame_graph. get_frame("E") -> set_mrp_from_parent(*args.get_mrp_BN_estimated());
 
-	lidar.send_flash(&estimated_shape_model,false);
+	// lidar.send_flash(&estimated_shape_model,false);
 
-	lidar.save("pc.obj");
-
+	// lidar.save("pc.obj");
+	  auto start = std::chrono::system_clock::now();
 	lidar.send_flash(&true_shape_model,false);
+	  auto end = std::chrono::system_clock::now();
+	    std::chrono::duration<double> elapsed_seconds = end-start;
+	  std::cout << "time elapsed: " << elapsed_seconds.count()<< " s"<< std::endl;
 	lidar.save("pc_true.obj");
 
 
