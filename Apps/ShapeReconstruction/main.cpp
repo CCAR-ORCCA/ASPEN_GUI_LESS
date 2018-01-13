@@ -69,7 +69,7 @@ int main() {
 #else
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
-
+	throw;
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
 	true_shape_model.construct_kd_tree_shape(false);

@@ -141,7 +141,9 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 }
 
 
-void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) const{
+void 
+
+(arma::mat & axes,arma::vec & moments) const{
 
 
 	arma::eig_sym(moments,axes,this -> inertia);
@@ -178,11 +180,13 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 
 		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
 			axes = axes * M0;
+			std::cout << "M0\n"
 		}
 
 		else{
 
 			axes = axes * M1;
+			std::cout << "M1\n"
 		}
 
 
@@ -191,11 +195,13 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
 
 			axes = axes * M2;
+			std::cout << "M2\n"
 		}
 
 		else{
 
 			axes = axes * M3;
+			std::cout << "M3\n"
 		}
 	}
 

@@ -106,9 +106,9 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			M_pc = icp_pc.get_M();
 			X_pc = icp_pc.get_X();
 
-			this -> source_pc -> save("../output/pc/source_pc_" + std::to_string(time_index)+ ".obj");
+			// this -> source_pc -> save("../output/pc/source_pc_" + std::to_string(time_index)+ ".obj");
 			this -> source_pc -> transform(M_pc,X_pc);
-			this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
+			// this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
 			if (time_index <= 100){
 				this -> concatenate_point_clouds(time_index);
