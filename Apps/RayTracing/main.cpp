@@ -43,7 +43,7 @@ int main(){
 	ShapeModelTri true_shape_model("B", &frame_graph);
 
 	ShapeModelImporter shape_io(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64.obj", 1, true);
+		"../itokawa_64.obj", 1, true);
 
 	shape_io.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape(false);
