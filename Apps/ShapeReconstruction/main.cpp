@@ -167,7 +167,7 @@ int main() {
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
 	ShapeModelImporter shape_io_fit_obj(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/shape_model/fit_source_300.obj", 1, true);
+		"../output/shape_model/fit_source_300.obj", 1, true);
 
 	
 	ShapeModelTri fit_shape("EF", &frame_graph);
