@@ -128,8 +128,6 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
 	}
 
-	this -> save("../output/lidar/lidar.txt",true);
-
 }
 
 

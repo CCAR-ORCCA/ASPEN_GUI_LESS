@@ -2,8 +2,6 @@
 
 
 
-
-
 ShapeFitterTri::ShapeFitterTri(ShapeModelTri * shape_model,PC * pc) : ShapeFitter(pc){
 	
 	this -> shape_model = shape_model;
