@@ -11,8 +11,8 @@
 // Lidar settings
 #define ROW_RESOLUTION 256
 #define COL_RESOLUTION 256
-#define ROW_FOV 20
-#define COL_FOV 20
+#define ROW_FOV 0.2
+#define COL_FOV 0.2
 
 // Instrument operating frequency
 #define INSTRUMENT_FREQUENCY 0.000145 // one flash every 2 hours
