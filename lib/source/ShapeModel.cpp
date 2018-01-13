@@ -141,9 +141,7 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 }
 
 
-void 
-
-(arma::mat & axes,arma::vec & moments) const{
+void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) const{
 
 
 	arma::eig_sym(moments,axes,this -> inertia);
@@ -156,7 +154,6 @@ void
 
 	double bbox[6];
 	
-
 	arma::vec e0 = axes.col(0);
 	arma::vec e1 = axes.col(1);
 	arma::vec e2 = axes.col(2);
@@ -165,6 +162,8 @@ void
 	if (arma::det(axes) < 0){
 		e0 = -e0;
 	}
+
+	axes = arma::join_rows(e0,arma::join_rows(axes.col(1),axes.col(2)));
 
 
 	this -> get_bounding_box(bbox,axes.t());
@@ -180,13 +179,11 @@ void
 
 		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
 			axes = axes * M0;
-			std::cout << "M0\n"
 		}
 
 		else{
 
 			axes = axes * M1;
-			std::cout << "M1\n"
 		}
 
 
@@ -195,20 +192,19 @@ void
 		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
 
 			axes = axes * M2;
-			std::cout << "M2\n"
 		}
 
 		else{
 
 			axes = axes * M3;
-			std::cout << "M3\n"
 		}
 	}
-
-
+	
 
 	std::cout << "Principal axes: " << std::endl;
 	std::cout << axes << std::endl;
+
+
 
 	std::cout << "Non-dimensional principal moments: " << std::endl;
 	std::cout << moments << std::endl;

@@ -67,11 +67,14 @@ int main() {
 	ShapeModelImporter shape_io_truth(
 		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1 , false);
 #else
+
+
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
-	throw;
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
+	true_shape_model.save("test.obj");
+
 	true_shape_model.construct_kd_tree_shape(false);
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
