@@ -24,13 +24,6 @@ public:
 		this -> pc = pc;
 	}
 
-	virtual bool fit_shape_batch(unsigned int N_iter,
-		double J,
-		const arma::mat & DS, 
-		const arma::vec & X_DS ) = 0;
-
-	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS) = 0;
-
 
 protected:
 

@@ -88,6 +88,11 @@ double Lidar::get_size_y() const {
 
 void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
+	auto start = std::chrono::system_clock::now();
+
+
+
+
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
 
@@ -127,6 +132,14 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 		}
 
 	}
+
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "- Time elapsed in ray-tracer: " << elapsed_seconds.count()<< " s"<< std::endl;
+	
+
 
 }
 

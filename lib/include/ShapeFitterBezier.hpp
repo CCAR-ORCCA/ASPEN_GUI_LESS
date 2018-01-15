@@ -24,13 +24,6 @@ public:
 
 	ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc);
 
-	virtual bool fit_shape_batch(
-
-		unsigned int N_iter,
-		double J,
-		const arma::mat & DS, 
-		const arma::vec & X_DS );
-
 	bool fit_shape_KF(
 		unsigned int index,
 		unsigned int N_iter, 
@@ -48,7 +41,7 @@ protected:
 	ShapeModelBezier * shape_model;
 	std::vector<Footpoint> find_footpoints() const;
 
-	arma::sp_mat update_shape(std::vector<Footpoint> & footpoints,
+	arma::mat update_shape(std::vector<Footpoint> & footpoints,
 		bool & has_converged);
 	bool update_element(Element * element, 
 		std::vector<Footpoint> & footpoints,

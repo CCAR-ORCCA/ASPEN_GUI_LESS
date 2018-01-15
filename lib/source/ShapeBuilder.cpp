@@ -83,6 +83,8 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 		// Getting the true observations (noise is added)
 
+
+
 		this -> lidar -> send_flash(this -> true_shape_model,true);
 
 		// The rigid transform best aligning the two point clouds is found
@@ -214,11 +216,7 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 		// point_coords_all.col(i + destination_points.size()) = source_points_downsampled[i] -> get_point();
 	}
 
-
-
-
 	// arma::vec u = {1,0,0};
-
 
 	this -> destination_pc_concatenated = std::make_shared<PC>(PC(point_normals_all));
 
@@ -231,7 +229,7 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 
 
 
-	this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
+	// this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
 
 
 }
