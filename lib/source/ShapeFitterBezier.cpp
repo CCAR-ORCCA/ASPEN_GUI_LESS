@@ -483,11 +483,10 @@ bool ShapeFitterBezier::update_element(Element * element,
 	if (store_info_mat){
 
 		// This prevents the information matrix from increasing too much
-		// if (arma::cond(info_mat) < 1e6){
-		// 	arma::mat Q = std::pow(arma::stddev(residuals),2) * arma::eye<arma::mat>(info_mat.n_rows,
-		// 		info_mat.n_rows);
-		// 	info_mat =  arma::inv(arma::inv(info_mat) + Q);
-		// }
+		arma::mat Q = std::pow(arma::stddev(residuals),2) * arma::eye<arma::mat>(info_mat.n_rows,
+			info_mat.n_rows);
+		info_mat =  arma::inv(arma::inv(info_mat) + Q);
+		
 
 
 		(*element -> get_info_mat_ptr()) = info_mat;
