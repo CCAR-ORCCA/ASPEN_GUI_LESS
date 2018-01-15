@@ -485,11 +485,14 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::mat eigvec;
 		arma::vec eigval;
 		arma::eig_sym(eigval,eigvec,info_mat);
-		
+		double sigma_mes = arma::stddev(eigval);
+		std::cout << "-- Sigma measurements: " << sigma_mes << std::endl;
+		double W_mes = 1./(sigma_mes * sigma_mes);
 
 		for (unsigned int i = 0; i < eigval.n_rows; ++i){
-			if (std::abs(eigval(i)) > W){
-				eigval(i) = W;
+			if (std::abs(eigval(i)) > W_mes){
+
+				eigval(i) = eigval(i) / std::abs(eigval(i)) * W_mes;
 			}
 		}
 
