@@ -485,7 +485,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::mat eigvec;
 		arma::vec eigval;
 		arma::eig_sym(eigval,eigvec,info_mat);
-		double sigma_mes = arma::stddev(eigval);
+		double sigma_mes = arma::stddev(residuals);
 		std::cout << "-- Sigma measurements: " << sigma_mes << std::endl;
 		double W_mes = 1./(sigma_mes * sigma_mes);
 
