@@ -482,11 +482,18 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The information matrix is stored
 	if (store_info_mat){
 
-		// This prevents the information matrix from increasing too much
-		arma::mat Q = std::pow(arma::stddev(residuals),2) * arma::eye<arma::mat>(info_mat.n_rows,
-			info_mat.n_rows);
-		info_mat =  arma::inv(arma::inv(info_mat) + Q);
+		arma::mat eigvec;
+		arma::vec eigval;
+		arma::eig_sym(eigval,eigvec,info_mat);
 		
+
+		for (unsigned int i = 0; i < eigval.n_rows; ++i){
+			if (std::abs(eigval(i)) > W){
+				eigval(i) = W;
+			}
+		}
+
+		info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
 
 
 		(*element -> get_info_mat_ptr()) = info_mat;
