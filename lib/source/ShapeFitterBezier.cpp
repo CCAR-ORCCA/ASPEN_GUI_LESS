@@ -436,23 +436,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
-	// arma::vec eigval;
-	// arma::mat eigvec;
-	// arma::eig_sym( eigval, eigvec, info_mat ) ;
-
-	// for (unsigned int val = 0; val < eigval.n_rows; ++ val){
-	// 	if (eigval(val) < 0 && std::abs(eigval(val)) > 1e-8){
-
-	// 		throw(std::runtime_error("the information matrix has one strictly negative eigenvalue: " + std::to_string(eigval(val))));
-	// 	}
-	// 	if (eigval(val) < 5e-1){
-	// 		eigval(val) = 5e-1;
-	// 	}
-	// }
-	
-	// The information matrix is regularizeds
-	// arma::mat regularized_info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
-
 	arma::mat regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
 
 	// The deviation is computed
@@ -482,23 +465,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The information matrix is stored
 	if (store_info_mat){
 
-		arma::mat eigvec;
-		arma::vec eigval;
-		arma::eig_sym(eigval,eigvec,info_mat);
-		double sigma_mes = arma::stddev(residuals);
-		std::cout << "-- Sigma measurements: " << sigma_mes << std::endl;
-		double W_mes = 1./(sigma_mes * sigma_mes);
-
-		for (unsigned int i = 0; i < eigval.n_rows; ++i){
-			if (std::abs(eigval(i)) > W_mes){
-
-				eigval(i) = eigval(i) / std::abs(eigval(i)) * W_mes;
-			}
-		}
-
-		info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
-
-
 		(*element -> get_info_mat_ptr()) = info_mat;
 		element -> get_dX_bar_ptr() -> fill(0);
 		std::cout << "--- Done with this patch\n" << std::endl;
@@ -521,8 +487,11 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 		arma::vec n = patch -> get_normal(double(i) / degree,double(j) / degree);
 
+		// point -> set_coordinates(point -> get_coordinates()
+		// 	+ arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n);
+
 		point -> set_coordinates(point -> get_coordinates()
-			+ arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n);
+			+ dC.rows(3 * k, 3 * k+ 2));
 	}
 
 
