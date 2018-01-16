@@ -42,7 +42,9 @@ int main() {
 			destination_pc, 
 			source_pc, 
 			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3));
+			arma::zeros<arma::vec>(3),
+			false,
+			true);
 		
 
 	}
