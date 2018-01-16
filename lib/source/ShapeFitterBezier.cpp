@@ -444,13 +444,30 @@ bool ShapeFitterBezier::update_element(Element * element,
 	}
 
 
+
+
 	// The deviation is computed
 	arma::vec dC = 0.5 * arma::solve(regularized_info_mat,normal_mat);
+
+	// Only the normal component is kept
+	for (unsigned int k = 0; k < control_points -> size(); ++k){
+
+		std::shared_ptr<ControlPoint> point = control_points -> at(k);
+
+		auto local_indices = patch -> get_local_indices(point);
+
+		unsigned int i = std::get<0>(local_indices);
+		unsigned int j = std::get<1>(local_indices);
+		unsigned int degree = patch -> get_degree();
+
+		arma::vec n = patch -> get_normal(double(i) / degree,double(j) / degree);
+
+		dC.rows(3 * k, 3 * k+ 2) = arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n;
+	}
 
 	// The a-priori deviation is adjusted
 	*element -> get_dX_bar_ptr() = *element -> get_dX_bar_ptr() - dC;
 	
-
 	double update_norm = 0;
 	unsigned int size = int(N / 3.);
 
