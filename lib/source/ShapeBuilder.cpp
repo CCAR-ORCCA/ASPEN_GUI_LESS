@@ -82,9 +82,6 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN);
 
 		// Getting the true observations (noise is added)
-
-
-
 		this -> lidar -> send_flash(this -> true_shape_model,true);
 
 		// The rigid transform best aligning the two point clouds is found

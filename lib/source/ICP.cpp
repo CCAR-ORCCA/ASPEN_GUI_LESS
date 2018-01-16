@@ -9,7 +9,7 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
 	
-	// auto start = std::chrono::system_clock::now();
+	auto start = std::chrono::system_clock::now();
 
 	
 	this -> register_pc_mrp_multiplicative_partials(100,
@@ -19,11 +19,11 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 		dcm_0,
 		X_0 ,
 		use_omp);
-	// auto end = std::chrono::system_clock::now();
+	auto end = std::chrono::system_clock::now();
 
-	// std::chrono::duration<double> elapsed_seconds = end-start;
+	std::chrono::duration<double> elapsed_seconds = end-start;
 
-	// std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
+	std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
 	
 
 
@@ -147,7 +147,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			#pragma omp parallel for reduction(+:Normal_mat,Info_mat) if (USE_OMP_ICP)
 
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
-
 				arma::mat::fixed<6,6> Info_mat_temp;
 				arma::vec::fixed<6> Normal_mat_temp;
 				arma::vec::fixed<3> P_i,Q_i,n_i;
@@ -178,6 +177,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				Normal_mat += Normal_mat_temp;
 				
 			}
+
 
 
 			// The state deviation [dmrp,dx] is solved for
@@ -372,10 +372,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 		all_pairs[dist] = pair;
 
 	}
-
-
-
-
 
 	arma::vec dist_vec(all_pairs.size());
 
