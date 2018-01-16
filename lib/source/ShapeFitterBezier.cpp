@@ -66,8 +66,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 			}		
 
 			arma::vec u = {1,0,0};		
-			PC pc(u,Pbar_mat);	
-			PC pc_tilde(u,Ptilde_mat);		
+			// PC pc(u,Pbar_mat);	
+			// PC pc_tilde(u,Ptilde_mat);		
 
 			// pc.save("../output/pc/Pbar_" +std::to_string(index) + ".obj");
 			// pc_tilde.save("../output/pc/Ptilde_" +std::to_string(index) + ".obj");
@@ -393,9 +393,9 @@ bool ShapeFitterBezier::update_element(Element * element,
 	unsigned int N = 3 * element -> get_control_points() -> size();
 
 	// The normal and information matrices are created
-	// arma::mat info_mat(*element -> get_info_mat_ptr());
+	arma::mat info_mat(*element -> get_info_mat_ptr());
 
-	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
+	// arma::mat info_mat = arma::zeros<arma::mat>(N,N);
 
 
 
@@ -469,22 +469,22 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The information matrix is stored
 	if (store_info_mat){
 
-		// arma::mat eigvec;
-		// arma::vec eigval;
-		// double M = std::abs(arma::mean(residuals));
+		arma::mat eigvec;
+		arma::vec eigval;
+		double M = std::abs(arma::mean(residuals));
 
-		// arma::eig_sym(eigval,eigvec,info_mat);
-		// std::cout << "-- Information matrix eigenvalues: \n";
+		arma::eig_sym(eigval,eigvec,info_mat);
+		std::cout << "-- Information matrix eigenvalues: \n";
 		
-		// std::cout << eigval.t() << std::endl;
+		std::cout << eigval.t() << std::endl;
 
-		// for (unsigned int i = 0; i < eigval.n_rows; ++i){
-		// 	if (eigval(i) > 1./(M * M + 1./W)){
-		// 		eigval(i) = 1./(M * M + 1./W);
-		// 	}
-		// }
+		for (unsigned int i = 0; i < eigval.n_rows; ++i){
+			if (eigval(i) > 1./(M * M + 1./W)){
+				eigval(i) = 1./(M * M + 1./W);
+			}
+		}
 
-		// info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
+		info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
 
 		(*element -> get_info_mat_ptr()) = info_mat;
 		element -> get_dX_bar_ptr() -> fill(0);
