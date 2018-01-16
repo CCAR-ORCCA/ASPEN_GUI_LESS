@@ -262,9 +262,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
-			// this -> source_pc -> save(
-			// 	"../output/pc/source_pc_" + std::to_string(index) + ".obj");
-
+			
 		}
 
 		// Two point clouds have been collected : "nominal case")
@@ -280,6 +278,9 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
+
+			this -> source_pc -> save(
+				"../output/pc/source_pc_" + std::to_string(index) + ".txt",arma::eye<arma::mat>(3,3),arma::zeros<arma::vec>(3),false,false);
 
 		}
 	}
