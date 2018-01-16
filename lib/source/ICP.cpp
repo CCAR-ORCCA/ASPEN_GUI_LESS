@@ -445,6 +445,7 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
 
 		arma::vec test_destination_point = dcm.t() *( closest_destination_point -> get_point() - x);
 		std::shared_ptr<PointNormal> closest_source_point = this -> pc_source -> get_closest_point(test_destination_point);
+		source_to_destination_pre_pairs_vec[i].first = closest_source_point;
 		test_source_point = closest_source_point -> get_point();
 
 
