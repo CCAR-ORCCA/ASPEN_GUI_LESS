@@ -93,6 +93,10 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
+
+			// The LOS is (1,0,0)^T in the instrument frame
+			arma::vec u_dir = {1,0,0};
+
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			ICP icp_pc(
 				this -> destination_pc, 
@@ -106,6 +110,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			X_pc = icp_pc.get_X();
 
 			this -> source_pc -> transform(M_pc,X_pc);
+			u_dir = M_pc * u_dir; // the LOS is also transformed
 
 			if (time_index <= 100){
 				this -> concatenate_point_clouds(time_index);
@@ -124,7 +129,8 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			// shape_fitter.fit_shape_batch(15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3));
 				shape_fitter.fit_shape_KF(time_index,
 					15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
-					this -> filter_arguments -> get_los_noise_sd_baseline());
+					this -> filter_arguments -> get_los_noise_sd_baseline(),
+					u_dir);
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
@@ -441,6 +447,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		pc_path,
 		a_priori_path);
 
+	arma::vec u_dir = {1,0,0};
+
 	ShapeModelImporter shape_io_guess(a_priori_path, 1, true);
 
 	ShapeModelTri a_priori_obj("", nullptr);
@@ -450,14 +458,14 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
 
 	a_priori_bezier -> elevate_degree();
-
 	a_priori_bezier -> save_to_obj("../output/shape_model/a_priori_bezier.obj");
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
 
 	shape_fitter.fit_shape_KF(time_index,
 		15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
-		this -> filter_arguments -> get_los_noise_sd_baseline());
+		this -> filter_arguments -> get_los_noise_sd_baseline(),
+		u_dir);
 
 	a_priori_bezier -> save("../output/shape_model/fit_a_priori.b");
 

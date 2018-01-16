@@ -30,7 +30,8 @@ public:
 		double J,
 		const arma::mat & DS, 
 		const arma::vec & X_DS,
-		double los_noise_sd_base); 
+		double los_noise_sd_base,
+		const arma::vec & u_dir); 
 
 
 	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS);
@@ -45,7 +46,9 @@ protected:
 		bool & has_converged);
 	bool update_element(Element * element, 
 		std::vector<Footpoint> & footpoints,
-		bool store_info_mat,double W);
+		bool store_info_mat,double W,
+		const arma::vec & u_dir
+		);
 	
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
 

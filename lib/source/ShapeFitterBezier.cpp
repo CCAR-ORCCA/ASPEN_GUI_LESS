@@ -14,7 +14,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 	double J,
 	const arma::mat & DS, 
 	const arma::vec & X_DS,
-	double los_noise_sd_base){
+	double los_noise_sd_base,
+	const arma::vec & u_dir){
 
 
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
@@ -25,8 +26,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 	bool element_has_converged  = false;
 
 	std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
-	std::map<Element *,bool  > fit_elements_to_stalling_status;
-
 
 	for (unsigned int i = 0; i < footpoints.size(); ++i){
 		Footpoint footpoint = footpoints[i];
@@ -35,7 +34,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 			std::vector<Footpoint> element_footpoints;
 			element_footpoints.push_back(footpoint);
 			fit_elements_to_footpoints.insert(std::make_pair(footpoint.element,element_footpoints));
-			fit_elements_to_stalling_status.insert(std::make_pair(footpoint.element,false));
 		}
 		else{
 			fit_elements_to_footpoints[footpoint.element].push_back(footpoint);
@@ -83,7 +81,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 				element_pair -> second = this -> recompute_footpoints(element_pair -> second);
 
 				element_has_converged = this -> update_element(element_pair -> first,
-					element_pair -> second,false,W);
+					element_pair -> second,false,W,u_dir);
 				
 				if (element_has_converged){
 					std::cout << "--- Element has converged\n";
@@ -106,7 +104,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 	for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 		
 		element_has_converged = this -> update_element(element_pair -> first,
-			element_pair -> second,true,W);
+			element_pair -> second,true,W,u_dir);
 		
 	}
 
@@ -374,7 +372,13 @@ void ShapeFitterBezier::save(std::string path, arma::mat & Pbar_mat) const {
 bool ShapeFitterBezier::update_element(Element * element, 
 	std::vector<Footpoint> & footpoints,
 	bool store_info_mat,
-	double W){
+	double W,
+	const arma::vec & u_dir){
+
+
+	double R = 1./W;
+
+
 
 	if (footpoints.size() == 0){
 		return false;
@@ -429,8 +433,25 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 		residuals(k) = y;
 
-		normal_mat += Hi.t() * W * y;
-		info_mat +=  Hi.t() * W * Hi;
+
+		// The orthogonal of the ray direction is constructed
+		// its exact orientation does not matter if one assumes that
+		// the transverse noises have equal standard deviations
+		// and are uncorrelated
+
+		arma::vec rand = arma::randu<arma::vec>(3);
+		arma::vec v_dir = arma::normalise(arma::cross(u_dir,rand));
+		arma::vec w_dir = arma::cross(u_dir,v_dir);
+
+		double R_augmented = (R * std::pow(arma::dot(footpoint . n,u_dir),2) 
+			+ 1e-6 * R * (
+			std::pow(arma::dot(footpoint . n,v_dir),2) 
+				+ std::pow(arma::dot(footpoint . n,w_dir),2)));
+
+		double W_augmented = 1./R_augmented;
+
+		normal_mat += Hi.t() * W_augmented * y;
+		info_mat +=  Hi.t() * W_augmented * Hi;
 
 	}
 
@@ -442,8 +463,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	else{
 		regularized_info_mat = info_mat;
 	}
-
-
 
 
 	// The deviation is computed
@@ -489,8 +508,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	if (store_info_mat){
 
 		
-
-
 
 		if (arma::det(info_mat) > 1){
 			arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
