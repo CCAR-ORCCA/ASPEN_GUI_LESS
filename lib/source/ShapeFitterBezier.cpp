@@ -443,10 +443,8 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::vec v_dir = arma::normalise(arma::cross(u_dir,rand));
 		arma::vec w_dir = arma::cross(u_dir,v_dir);
 
-		double R_augmented = (R * std::pow(arma::dot(footpoint . n,u_dir),2) 
-			+ 1e-6 * R * (
-			std::pow(arma::dot(footpoint . n,v_dir),2) 
-				+ std::pow(arma::dot(footpoint . n,w_dir),2)));
+		double R_augmented = R * ( std::pow(arma::dot(footpoint . n,u_dir),2) 
+			+ 1e-3 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
 
 		double W_augmented = 1./R_augmented;
 
