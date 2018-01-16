@@ -436,14 +436,14 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	arma::mat regularized_info_mat;
 
-	if (arma::det(info_mat) < 1){
+	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
 		regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
 	}
 	else{
 		regularized_info_mat = info_mat;
 	}
 
-	
+
 	// The deviation is computed
 	arma::vec dC = 0.5 * arma::solve(regularized_info_mat,normal_mat);
 

@@ -182,10 +182,10 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 		source_points_downsampled = source_points;
 	}
 	else{
-		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  source_points.size() - 1);
-		random_order = arma::shuffle(random_order);
 
-		for (unsigned int i = 0; i < std::min(N_max,int(source_points.size())); ++i){
+		arma::uvec random_order = arma::randi( std::min(N_max,int(source_points.size())),arma::distr_param(0,  source_points.size() - 1));
+
+		for (unsigned int i = 0; i < random_order.n_rows; ++i){
 			source_points_downsampled.push_back(source_points[random_order(i)]);
 		}
 
@@ -204,32 +204,17 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 
 	std::vector<std::shared_ptr<PointNormal> > point_normals_all;
 
-
 	for (unsigned int i = 0; i < N_destination_pc_points; ++ i){
-		// point_coords_all.col(i) = destination_points[i] -> get_point() ;
 		point_normals_all.push_back(destination_points[i]);
 	}
 
 	for (unsigned int i = 0; i < N_source_pc_points; ++ i){
 		point_normals_all.push_back(source_points_downsampled[i]);
 
-		// point_coords_all.col(i + destination_points.size()) = source_points_downsampled[i] -> get_point();
 	}
-
-	// arma::vec u = {1,0,0};
 
 	this -> destination_pc_concatenated = std::make_shared<PC>(PC(point_normals_all));
 
-
-
-	// this -> destination_pc_concatenated = std::make_shared<PC>(PC(
-	// 	u,
-	// 	point_coords_all));
-
-
-
-
-	// this -> destination_pc_concatenated -> save("../output/pc/concatenated_pc_"+ std::to_string(index) + ".obj");
 
 
 }
