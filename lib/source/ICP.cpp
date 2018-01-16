@@ -7,13 +7,21 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
+	auto start = std::chrono::system_clock::now();
 
-
+	
 	this -> register_pc_mrp_multiplicative_partials(100,
 		1e-8,
 		1e-8,
-		pedantic, dcm_0,
+		pedantic, 
+		dcm_0,
 		X_0 );
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
+	
 
 
 }
@@ -124,17 +132,14 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			Normal_mat.fill(0);
 
 
-			// #pragma omp parallel for reduction(+:Normal_mat,Info_mat) if (USE_OMP_ICP)
-			
-
-			arma::mat::fixed<6,6> Info_mat_temp;
-			arma::vec::fixed<6> Normal_mat_temp;
-			arma::vec::fixed<3> P_i,Q_i,n_i;
-			arma::rowvec::fixed<3> H;
-
+			#pragma omp parallel for reduction(+:Normal_mat,Info_mat) if (USE_OMP_ICP)
 
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 
+				arma::mat::fixed<6,6> Info_mat_temp;
+				arma::vec::fixed<6> Normal_mat_temp;
+				arma::vec::fixed<3> P_i,Q_i,n_i;
+				arma::rowvec::fixed<3> H;
 
 				P_i = this -> point_pairs[pair_index].first -> get_point();
 				Q_i = this -> point_pairs[pair_index].second -> get_point();

@@ -242,6 +242,8 @@ int main() {
 			continue;
 		}
 
+		std::cout << "Distance: " << distance << std::endl;
+
 		arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
 
 		std::cout << "Patch covariance: " << P_CC << std::endl;
