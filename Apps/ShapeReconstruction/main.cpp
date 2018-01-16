@@ -35,7 +35,7 @@
 
 // Times (s)
 #define T0 0
-#define TF 300000 // 10 days
+#define TF 200000 // 10 days
 
 
 int main() {
@@ -167,7 +167,7 @@ int main() {
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
 	ShapeModelImporter shape_io_fit_obj(
-		"../output/shape_model/fit_source_300.obj", 1, true);
+		"../output/shape_model/fit_source_200.obj", 1, true);
 
 	
 	ShapeModelTri fit_shape("EF", &frame_graph);
@@ -199,22 +199,31 @@ int main() {
 
 
 	for (unsigned int i = 0; i < fit_elements -> size(); ++i){
+		
+		std::cout << i << std::endl;
 		// For each Bezier element, the distance to the true shape is
 		// found by ray tracing along the element normal evaluated at its center
-
 		Bezier * patch = dynamic_cast<Bezier *>(fit_elements -> at(i).get());
+
 		auto n = patch -> get_normal(1./3,1./3);
+		std::cout << "Normal : " << n.t() << std::endl;
+
 		arma::vec P = patch -> evaluate(1./3,1./3);
+		std::cout << "Center : " << P.t() << std::endl;
 
 		Ray ray(P,n);
+
 		bool hit = true_shape_model.ray_trace(&ray);
 		double distance;
 
 
 		if (hit){
 			distance = ray.get_true_range();
+			std::cout << "success\n";
+
 		}
 		else{ 
+			std::cout << "casting backwards ray\n";
 
 			Ray ray_rev(P,-n);
 			hit = true_shape_model.ray_trace(&ray_rev);
@@ -222,27 +231,36 @@ int main() {
 				distance = - ray_rev.get_true_range();
 			}
 			else {
-				throw(std::runtime_error("This ray should have hit something"));
+				distance = std::numeric_limits<double>::infinity();
+				std::cout << "This ray should have hit something" << std::endl;
 			}
 
 		}
 
-
+		if (patch -> get_info_mat_ptr() == nullptr){
+			std::cout << "- This patch was not seen\n";
+			continue;
+		}
 
 		arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
+
+		std::cout << "Patch covariance: " << P_CC << std::endl;
+
 		arma::mat Pp = patch -> covariance_surface_point(
 			1./3,
 			1./3,
 			n,
 			P_CC);
-		arma::rowvec result = {distance,std::sqrt(arma::dot(n,Pp * n))};
-		distance_error.row(i) = result;
 
+		std::cout << "Patch/range covariance: " << Pp << std::endl;
+
+		arma::rowvec result = {distance,std::sqrt(arma::dot(n,Pp * n))};
+
+		distance_error.row(i) = result;
 
 	}
 
 	distance_error.save("../output/results.txt",arma::raw_ascii);
-	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
 
 
 	return 0;

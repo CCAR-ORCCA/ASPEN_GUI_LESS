@@ -390,10 +390,14 @@ bool ShapeFitterBezier::update_element(Element * element,
 		element -> initialize_dX_bar();
 	}
 
-	// The normal and information matrices are created
-	arma::mat info_mat(*element -> get_info_mat_ptr());
+	unsigned int N = 3 * element -> get_control_points() -> size();
 
-	unsigned int N = info_mat.n_cols;
+	// The normal and information matrices are created
+	// arma::mat info_mat(*element -> get_info_mat_ptr());
+
+	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
+
+
 
 	arma::vec normal_mat = info_mat * (*element -> get_dX_bar_ptr());
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
@@ -465,21 +469,22 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The information matrix is stored
 	if (store_info_mat){
 
-		arma::mat eigvec;
-		arma::vec eigval;
-		double M = 1e4;
+		// arma::mat eigvec;
+		// arma::vec eigval;
+		// double M = std::abs(arma::mean(residuals));
 
-		arma::eig_sym(eigval,eigvec,info_mat);
-		std::cout << "-- Information matrix eigenvalues: \n";
-		std::cout << eigval.t() << std::endl;
+		// arma::eig_sym(eigval,eigvec,info_mat);
+		// std::cout << "-- Information matrix eigenvalues: \n";
+		
+		// std::cout << eigval.t() << std::endl;
 
-		for (unsigned int i = 0; i < eigval.n_rows; ++i){
-			if (eigval(i) > M){
-				eigval(i) = M;
-			}
-		}
+		// for (unsigned int i = 0; i < eigval.n_rows; ++i){
+		// 	if (eigval(i) > 1./(M * M + 1./W)){
+		// 		eigval(i) = 1./(M * M + 1./W);
+		// 	}
+		// }
 
-		info_mat = eigvec * arma::diag(eigval) * eigvec.t();
+		// info_mat = eigvec * arma::diagmat(eigval) * eigvec.t();
 
 		(*element -> get_info_mat_ptr()) = info_mat;
 		element -> get_dX_bar_ptr() -> fill(0);
