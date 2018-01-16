@@ -423,7 +423,6 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
 	std::vector<double> dists;
 
 
-
 	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
 
 		source_to_destination_pre_pairs_vec.push_back(std::make_pair(this -> pc_source -> get_point(random_indices(i)),nullptr));
@@ -442,6 +441,11 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
 
 		std::shared_ptr<PointNormal> closest_destination_point = this -> pc_destination -> get_closest_point(test_source_point);
 
+
+		
+		arma::vec test_destination_point = dcm.t() *( closest_destination_point -> get_point() - x);
+		std::shared_ptr<PointNormal> closest_source_point = this -> pc_source -> get_closest_point(test_destination_point);
+		test_source_point = closest_source_point.get_point();
 
 
 		arma::vec n_dest = closest_destination_point -> get_normal();
