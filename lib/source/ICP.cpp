@@ -416,13 +416,12 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 		source_to_destination_pre_pairs_vec.push_back(std::make_pair(this -> pc_source -> get_point(i),nullptr));
 		dists.push_back(std::numeric_limits<double>::infinity());
-	}
+	// }
 
 
 
-	#pragma omp parallel for 
-	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
-
+	// #pragma omp parallel for 
+	// for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
 
 		arma::vec test_source_point = dcm * source_to_destination_pre_pairs_vec[i].first -> get_point() + x;
 
