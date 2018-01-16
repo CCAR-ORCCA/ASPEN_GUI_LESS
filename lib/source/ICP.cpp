@@ -471,5 +471,5 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 // 	}
 
 
-}
+// }
 
