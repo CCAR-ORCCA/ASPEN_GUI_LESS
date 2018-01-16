@@ -389,87 +389,103 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 }
 
-// void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
-// 	const arma::mat & dcm,
-// 	const arma::mat & x,
-// 	int h) {
+void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
+	const arma::mat & dcm,
+	const arma::mat & x,
+	int h) {
 
 
-// 	this -> point_pairs.clear();
+	this -> point_pairs.clear();
 
-// 	std::map<double, std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > all_pairs;
+	std::map<double, std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > > all_pairs;
 
-// 	int N_points = (int)(this -> pc_source -> get_size() / std::pow(2, h));
+	int N_points = (int)(this -> pc_source -> get_size() / std::pow(2, h));
 
-// 	arma::ivec random_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, this -> pc_source -> get_size() - 1)));
-
-// 	std::map < std::shared_ptr<PointNormal> , std::map<double, std::shared_ptr<PointNormal> > > destination_to_source_pre_pairs;
+	// arma::ivec random_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, this -> pc_source -> get_size() - 1)));
 
 
+	arma::ivec random_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, this -> pc_destination -> get_size() - 1)));
 
-// 	std::vector<std::pair<std::shared_ptr<PointNormal>,std::shared_ptr<PointNormal> > > source_to_destination_pre_pairs_vec;
-// 	std::vector<double> dists;
-
-
-
-// 	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
-
-// 		source_to_destination_pre_pairs_vec.push_back(std::make_pair(this -> pc_source -> get_point(i),nullptr));
-// 		dists.push_back(std::numeric_limits<double>::infinity());
-// 	// }
+	std::map < std::shared_ptr<PointNormal> , std::map<double, std::shared_ptr<PointNormal> > > destination_to_source_pre_pairs;
 
 
 
-// 	// #pragma omp parallel for 
-// 	// for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
-
-// 		arma::vec test_source_point = dcm * source_to_destination_pre_pairs_vec[i].first -> get_point() + x;
-
-// 		std::shared_ptr<PointNormal> closest_destination_point = this -> pc_destination -> get_closest_point(test_source_point);
-
-// 		arma::vec n_dest = closest_destination_point -> get_normal();
-// 		arma::vec n_source_transformed = dcm * source_to_destination_pre_pairs_vec[i].first -> get_normal();
-
-// 		// If the two normals are compatible, the points are matched
-// 		if (arma::dot(n_dest,n_source_transformed) > std::sqrt(2) / 2 ) {
-
-// 			double dist = std::sqrt(std::pow(arma::dot(n_dest, test_source_point - closest_destination_point -> get_point()), 2));
-
-// 			source_to_destination_pre_pairs_vec[i].second = closest_destination_point;
-// 			dists[i] = dist;
-// 		}
-
-// 	}
-
-// 	// Each destination point can only be paired once
-// 	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
-
-// 		if (dists[i] < std::numeric_limits<double>::infinity()){
-// 			// This is a valid source/destination pair
-
-// 			all_pairs[dists[i]] = source_to_destination_pre_pairs_vec[i];
-// 		}
-
-// 	}
-
-// 	arma::vec dist_vec(all_pairs.size());
-
-// 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
-// 		dist_vec(i) = std::next(all_pairs.begin(), i) -> first;
-// 	}
-
-// 	double mean = arma::mean(dist_vec);
-
-// // Erase 
-// 	double sd = arma::stddev(dist_vec);
-// 	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
-
-// 		if (std::abs(it -> first - mean) < sd){
-// 			this -> point_pairs.push_back(it -> second);
-// 		}
-
-// 	}
+	std::vector<std::pair<std::shared_ptr<PointNormal>,std::shared_ptr<PointNormal> > > source_to_destination_pre_pairs_vec;
+	std::vector<double> dists;
 
 
-// }
+
+	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
+
+		// source_to_destination_pre_pairs_vec.push_back(std::make_pair(this -> pc_source -> get_point(i),nullptr));
+		source_to_destination_pre_pairs_vec.push_back(std::make_pair(nullptr,this -> pc_source -> get_point(i)));
+		
+
+		dists.push_back(std::numeric_limits<double>::infinity());
+	}
+
+
+
+	#pragma omp parallel for 
+	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
+
+		// arma::vec test_source_point = dcm * source_to_destination_pre_pairs_vec[i].first -> get_point() + x;
+		arma::vec test_destination_point = dcm.t() *( source_to_destination_pre_pairs_vec[i].second -> get_point() - x);
+
+		// std::shared_ptr<PointNormal> closest_destination_point = this -> pc_destination -> get_closest_point(test_source_point);
+		std::shared_ptr<PointNormal> closest_source_point = this -> pc_source -> get_closest_point(test_destination_point);
+
+
+
+		arma::vec n_dest = closest_destination_point -> get_normal();
+		arma::vec n_source_transformed = dcm * source_to_destination_pre_pairs_vec[i].first -> get_normal();
+		arma::vec source_transformed = dcm * closest_source_point -> get_point() + x;
+
+		// If the two normals are compatible, the points are matched
+		if (arma::dot(n_dest,n_source_transformed) > std::sqrt(2) / 2 ) {
+
+			// double dist = std::sqrt(std::pow(arma::dot(n_dest, test_source_point - closest_destination_point -> get_point()), 2));
+			// source_to_destination_pre_pairs_vec[i].second = closest_destination_point;
+
+			double dist = std::sqrt(std::pow(arma::dot(n_dest, source_to_destination_pre_pairs_vec[i].second -> get_point()
+				- source_transformed), 2));
+			source_to_destination_pre_pairs_vec[i].first = closest_source_point;
+
+
+			dists[i] = dist;
+		}
+
+	}
+
+	// Each destination point can only be paired once
+	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
+
+		if (dists[i] < std::numeric_limits<double>::infinity()){
+			// This is a valid source/destination pair
+
+			all_pairs[dists[i]] = source_to_destination_pre_pairs_vec[i];
+		}
+
+	}
+
+	arma::vec dist_vec(all_pairs.size());
+
+	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
+		dist_vec(i) = std::next(all_pairs.begin(), i) -> first;
+	}
+
+	double mean = arma::mean(dist_vec);
+
+// Erase 
+	double sd = arma::stddev(dist_vec);
+	for (auto it = all_pairs.begin(); it != all_pairs.end(); ++it) {
+
+		if (std::abs(it -> first - mean) < sd){
+			this -> point_pairs.push_back(it -> second);
+		}
+
+	}
+
+
+}
 
