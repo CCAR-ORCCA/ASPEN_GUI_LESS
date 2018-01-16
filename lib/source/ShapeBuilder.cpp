@@ -108,9 +108,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			M_pc = icp_pc.get_M();
 			X_pc = icp_pc.get_X();
 
-			// this -> source_pc -> save("../output/pc/source_pc_" + std::to_string(time_index)+ ".obj");
 			this -> source_pc -> transform(M_pc,X_pc);
-			// this -> source_pc -> save("../output/pc/source_pc_registered_" + std::to_string(time_index)+ ".obj");
 
 			if (time_index <= 100){
 				this -> concatenate_point_clouds(time_index);
@@ -122,8 +120,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			}
 
 			
-
-			if (this -> estimated_shape_model != nullptr  && this -> destination_pc_concatenated != nullptr){
+			if (this -> estimated_shape_model != nullptr){
 
 				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
@@ -168,9 +165,9 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 	std::vector< std::shared_ptr<PointNormal> > source_points;
 	std::vector< std::shared_ptr<PointNormal> > source_points_downsampled;
 
-	std::vector< std::shared_ptr<PointNormal> > destination_points;
+	// std::vector< std::shared_ptr<PointNormal> > destination_points;
 
-	unsigned int N_destination_pc_points;
+	// unsigned int N_destination_pc_points;
 	unsigned int N_source_pc_points;
 
 
@@ -194,27 +191,32 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 	}
 
 
-	if(this -> destination_pc_concatenated != nullptr){
-		destination_points = this -> destination_pc_concatenated -> get_points();
-	}
+	// if(this -> destination_pc_concatenated != nullptr){
+	// 	destination_points = this -> destination_pc_concatenated -> get_points();
+	// }
 
-	N_destination_pc_points = destination_points.size();
+	// N_destination_pc_points = destination_points.size();
 	N_source_pc_points = source_points_downsampled.size();
 
-	arma::mat point_coords_all(3,N_destination_pc_points + N_source_pc_points);
+	// arma::mat point_coords_all(3,N_destination_pc_points + N_source_pc_points);
 
-	std::vector<std::shared_ptr<PointNormal> > point_normals_all;
+	// std::vector<std::shared_ptr<PointNormal> > point_normals_all;
 
-	for (unsigned int i = 0; i < N_destination_pc_points; ++ i){
-		point_normals_all.push_back(destination_points[i]);
-	}
+	// for (unsigned int i = 0; i < N_destination_pc_points; ++ i){
+		// point_normals_all.push_back(destination_points[i]);
+	// }
 
 	for (unsigned int i = 0; i < N_source_pc_points; ++ i){
-		point_normals_all.push_back(source_points_downsampled[i]);
+		// point_normals_all.push_back(source_points_downsampled[i]);
+
+
+		this -> concatenated_pc_vector.push_back(source_points_downsampled[i]);
+
 
 	}
 
-	this -> destination_pc_concatenated = std::make_shared<PC>(PC(point_normals_all));
+	// this -> destination_pc_concatenated = std::make_shared<PC>(PC(point_normals_all));
+
 
 
 
@@ -418,19 +420,24 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 
-	this -> destination_pc_concatenated -> save(
+	PC destination_pc_concatenated(this -> concatenated_pc_vector);
+
+
+	destination_pc_concatenated . save(
 		pc_path, 
 		arma::eye<arma::mat>(3,3), 
 		arma::zeros<arma::vec>(3), 
 		true,
 		false);
 
-	this -> destination_pc_concatenated -> save(
+
+
+	destination_pc_concatenated . save(
 		pc_path_obj, 
 		arma::eye<arma::mat>(3,3), 
 		arma::zeros<arma::vec>(3), 
-		true,
-		false);
+		false,
+		true);
 
 	CGALINTERFACE::CGAL_interface(
 		pc_path,
@@ -448,7 +455,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	a_priori_bezier -> save_to_obj("../output/shape_model/a_priori_bezier.obj");
 
-	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),this -> destination_pc_concatenated.get());
+	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
 
 	shape_fitter.fit_shape_KF(time_index,
 		15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
@@ -466,6 +473,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	fit_a_priori.elevate_degree();
 	fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
 
+	// The estimated shape model is finally initialized
 	this -> estimated_shape_model = a_priori_bezier;
 
 
