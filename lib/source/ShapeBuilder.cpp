@@ -183,7 +183,7 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 	}
 	else{
 
-		arma::uvec random_order = arma::randi( std::min(N_max,int(source_points.size())),arma::distr_param(0,  source_points.size() - 1));
+		auto random_order = arma::randi( std::min(N_max,int(source_points.size())),arma::distr_param(0,  source_points.size() - 1));
 
 		for (unsigned int i = 0; i < random_order.n_rows; ++i){
 			source_points_downsampled.push_back(source_points[random_order(i)]);
