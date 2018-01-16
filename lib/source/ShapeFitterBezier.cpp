@@ -48,8 +48,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 		std::cout << "- Outer iteration : " << j + 1<< "/" << N_iter - 1 <<std::endl;
 
-		
-		
 	// Only footpoints over "good" elements are kept
 		if (footpoints.size() == 0){
 			return false;
@@ -97,7 +95,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 		}
 
 		if (element_has_converged){
-			std::cout << "- Fit elements have all converged\n";
+			std::cout << "- All elements have converged\n";
 			break;
 		}
 
@@ -395,10 +393,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	// The normal and information matrices are created
 	arma::mat info_mat(*element -> get_info_mat_ptr());
 
-	// arma::mat info_mat = arma::zeros<arma::mat>(N,N);
-
-
-
 	arma::vec normal_mat = info_mat * (*element -> get_dX_bar_ptr());
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 
@@ -440,8 +434,16 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
-	arma::mat regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+	arma::mat regularized_info_mat;
 
+	if (arma::det(info_mat) < 1){
+		regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+	}
+	else{
+		regularized_info_mat = info_mat;
+	}
+
+	
 	// The deviation is computed
 	arma::vec dC = 0.5 * arma::solve(regularized_info_mat,normal_mat);
 
