@@ -64,11 +64,11 @@ bool ShapeFitterBezier::fit_shape_KF(
 			}		
 
 			arma::vec u = {1,0,0};		
-			// PC pc(u,Pbar_mat);	
-			// PC pc_tilde(u,Ptilde_mat);		
+			PC pc(u,Pbar_mat);	
+			PC pc_tilde(u,Ptilde_mat);		
 
-			// pc.save("../output/pc/Pbar_" +std::to_string(index) + ".obj");
-			// pc_tilde.save("../output/pc/Ptilde_" +std::to_string(index) + ".obj");
+			pc.save("../output/pc/Pbar_" +std::to_string(index) + ".obj");
+			pc_tilde.save("../output/pc/Ptilde_" +std::to_string(index) + ".obj");
 
 		}
 
