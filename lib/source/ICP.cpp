@@ -320,6 +320,18 @@ void ICP::compute_pairs_closest_compatible_minimum_point_to_plane_dist(
 
 	std::map < std::shared_ptr<PointNormal> , std::map<double, std::shared_ptr<PointNormal> > > destination_to_source_pre_pairs;
 
+
+
+
+
+
+
+
+
+
+
+
+
 	for (unsigned int i = 0; i < random_indices.n_rows; ++i) {
 
 		arma::vec test_source_point = dcm * this -> pc_source -> get_point_coordinates(random_indices(i)) + x;

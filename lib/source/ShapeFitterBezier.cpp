@@ -472,18 +472,22 @@ bool ShapeFitterBezier::update_element(Element * element,
 	if (store_info_mat){
 
 		
-		arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
-		double M = std::abs(arma::mean(residuals));
-
-		arma::mat Q = M * M * arma::eye<arma::mat>(N,N);
-
-		info_mat = arma::inv( arma::inv(info_mat + M_reg) + Q) - M_reg;
-
-		arma::vec eigval = arma::eig_sym( info_mat ) ;
-		std::cout << "- Information matrix eigenvalues: \n";
-		std::cout << eigval.t() << std::endl;
 
 
+
+		if (arma::det(info_mat) > 1){
+			arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
+			double M = std::abs(arma::mean(residuals));
+
+			arma::mat Q = M * M * arma::eye<arma::mat>(N,N);
+			std::cout << "- Information matrix eigenvalues before regularization: \n";
+			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
+
+			info_mat = arma::inv( arma::inv(info_mat + M_reg) + Q) - M_reg;
+
+			std::cout << "- Information matrix eigenvalues after regularization: \n";
+			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
+		}
 
 		(*element -> get_info_mat_ptr()) = info_mat;
 		element -> get_dX_bar_ptr() -> fill(0);
