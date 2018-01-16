@@ -159,8 +159,8 @@ protected:
 	unsigned int row_index;
 	unsigned int col_index;
 
-	double true_range;
-	Element * hit_element;
+	double true_range =  std::numeric_limits<double>::infinity();
+	Element * hit_element = nullptr;
 	Element * guess;
 
 	double incidence_angle;
