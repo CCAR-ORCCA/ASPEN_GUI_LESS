@@ -35,7 +35,7 @@ int main() {
 
 	auto start = std::chrono::system_clock::now();
 	
-	// #pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned i = 0; i < N_iter ; ++i){
 		++progress;
 
