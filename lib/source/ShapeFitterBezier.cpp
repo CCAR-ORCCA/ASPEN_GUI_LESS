@@ -475,7 +475,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
 		double M = std::abs(arma::mean(residuals));
 
-		arma::mat Q = (M * M + 1./(W * W)) * arma::eye<arma::mat>(N,N);
+		arma::mat Q = M * M * arma::eye<arma::mat>(N,N);
 
 		info_mat = arma::inv( arma::inv(info_mat + M_reg) + Q) - M_reg;
 
