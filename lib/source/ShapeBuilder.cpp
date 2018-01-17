@@ -463,7 +463,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
 
 	shape_fitter.fit_shape_KF(0,
-		15,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
+		2,1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
 		this -> filter_arguments -> get_los_noise_sd_baseline(),
 		u_dir);
 
