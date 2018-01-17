@@ -463,7 +463,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::vec w_dir = arma::cross(u_dir,v_dir);
 
 		double R_augmented = R * ( std::pow(arma::dot(footpoint . n,u_dir),2) 
-			+ 1e-1 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
+			+ 1e-3 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
 
 		double W_augmented = 1./R_augmented;
 
@@ -475,7 +475,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 	arma::mat regularized_info_mat;
 
 	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
-		regularized_info_mat = info_mat + 1e-3 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+		regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
 	}
 	else{
 		regularized_info_mat = info_mat;
