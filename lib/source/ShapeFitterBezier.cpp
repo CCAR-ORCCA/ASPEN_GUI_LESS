@@ -513,19 +513,11 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
-	std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
-	std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
-	std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
-	std::cout << "- Average update norm: " << update_norm << std::endl;
-	std::cout << "- Residuals: \n";
-	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
-	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
 
 	// The information matrix is stored
 	if (store_info_mat){
 
 		
-
 		if (arma::det(info_mat) > 1){
 			arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
 			double M = std::abs(arma::mean(residuals));
@@ -544,6 +536,17 @@ bool ShapeFitterBezier::update_element(Element * element,
 		element -> get_dX_bar_ptr() -> fill(0);
 		std::cout << "--- Done with this patch\n" << std::endl;
 		return true;
+	}
+	else{
+
+		std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
+		std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
+		std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
+		std::cout << "- Average update norm: " << update_norm << std::endl;
+		std::cout << "- Residuals: \n";
+		std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
+		std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
+
 	}
 
 
