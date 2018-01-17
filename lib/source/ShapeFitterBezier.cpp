@@ -92,7 +92,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 			// The information matrix of each patch is updated
 			for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
-				element_has_converged = this -> update_element(element_pair -> first,
+				this -> update_element(element_pair -> first,
 					element_pair -> second,true,W,u_dir);
 
 			}
