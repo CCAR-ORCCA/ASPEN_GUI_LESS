@@ -166,7 +166,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	std::vector<Footpoint> footpoints;
 
-	std::cout << "Finding footpoints...\n";
+	std::cout << "Finding footpoints...";
 	Element * element_guess = nullptr;
 	std::map<Element *,arma::vec> element_quality;
 
@@ -473,15 +473,10 @@ bool ShapeFitterBezier::update_element(Element * element,
 	}
 
 
-
-
-
-	
-
 	arma::mat regularized_info_mat;
 
 	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
-		regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+		regularized_info_mat = info_mat + 1e-2 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
 	}
 	else{
 		regularized_info_mat = info_mat;
@@ -518,7 +513,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
-	std::cout << "\nSignificant figures: " << std::endl;
 	std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
 	std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
 	std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
