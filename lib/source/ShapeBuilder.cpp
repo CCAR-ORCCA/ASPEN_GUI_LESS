@@ -128,7 +128,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
 				shape_fitter.fit_shape_KF(time_index,
-					this -> filter_arguments -> get_iter(),1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
+					this -> filter_arguments -> get_iter_filter(),1e-5,arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3),
 					this -> filter_arguments -> get_los_noise_sd_baseline(),
 					u_dir);
 
