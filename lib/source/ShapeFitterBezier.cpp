@@ -53,24 +53,23 @@ bool ShapeFitterBezier::fit_shape_KF(
 			return false;
 		}
 
-		if (j == 0){
-			arma::mat Pbar_mat = arma::mat(3,footpoints.size());
-			arma::mat Ptilde_mat = arma::mat(3,footpoints.size());		 		
+		arma::mat Pbar_mat = arma::mat(3,footpoints.size());
+		arma::mat Ptilde_mat = arma::mat(3,footpoints.size());		 		
 
-			for (unsigned int k = 0; k < footpoints.size(); ++k){		
-				Pbar_mat.col(k) = footpoints[k].Pbar;
-				Ptilde_mat.col(k) = footpoints[k].Ptilde;		
+		for (unsigned int k = 0; k < footpoints.size(); ++k){		
+			Pbar_mat.col(k) = footpoints[k].Pbar;
+			Ptilde_mat.col(k) = footpoints[k].Ptilde;		
 
-			}		
+		}		
 
-			arma::vec u = {1,0,0};		
-			PC pc(u,Pbar_mat);	
-			PC pc_tilde(u,Ptilde_mat);		
+		arma::vec u = {1,0,0};		
+		PC pc(u,Pbar_mat);	
+		PC pc_tilde(u,Ptilde_mat);		
 
-			pc.save("../output/pc/Pbar_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
-			pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+		pc.save("../output/pc/Pbar_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+		pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
 
-		}
+		
 
 
 		for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
