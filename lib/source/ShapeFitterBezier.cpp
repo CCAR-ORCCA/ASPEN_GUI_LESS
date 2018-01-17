@@ -116,7 +116,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector<Footpoint> & footpoints)const {
 
-	std::vector<Footpoint> new_footpoints;
+	std::vector<Footpoint> new_footpoints_temp;
 
 	for (unsigned int i = 0; i < footpoints.size(); ++i){
 
@@ -130,13 +130,32 @@ std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector
 			this -> find_footpoint(footpoint,element);
 
 			if (footpoint.element == footpoints[i].element){
-				new_footpoints.push_back(footpoint);
+				new_footpoints_temp.push_back(footpoint);
 			}
 		}
 		catch(const MissingFootpointException & e){
 		}
 
 	}
+
+	arma::vec distances(new_footpoints_temp.size());
+
+	for (unsigned int i = 0; i < new_footpoints_temp.size(); ++i){
+		distances(i) = arma::norm(footpoints[i].Ptilde - footpoints[i].Pbar );
+	}
+
+	arma::vec<Footpoint> new_footpoints;
+	double std = arma::stddev(distances);
+
+
+	for (unsigned int i = 0; i < new_footpoints_temp.size(); ++i){
+		if (distance(i) < std){
+			new_footpoints.push_back(new_footpoints_temp[i]);
+		}
+	}
+
+
+
 	return new_footpoints;
 
 
