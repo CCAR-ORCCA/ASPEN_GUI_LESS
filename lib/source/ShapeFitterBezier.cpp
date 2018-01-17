@@ -18,6 +18,9 @@ bool ShapeFitterBezier::fit_shape_KF(
 	const arma::vec & u_dir){
 
 
+	unsigned int N_iter_outer = N_iter_outer;
+	unsigned int N_iter_inner = 1;
+	
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
@@ -42,9 +45,9 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 
 	// fit_elements has the pointers to the elements to be fit
-	for (unsigned int j = 0; j < N_iter; ++j){
+	for (unsigned int j = 0; j < N_iter_outer; ++j){
 
-		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter - 1 <<std::endl;
+		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter_outer - 1 <<std::endl;
 
 	// Only footpoints over "good" elements are kept
 		if (footpoints.size() == 0){
@@ -74,8 +77,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 		for (auto element_pair = fit_elements_to_footpoints.begin(); 
 			element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
-			for (unsigned int i = 0; i < 1; ++i){
-				std::cout << "\n-- Inner iteration : " << i + 1 << "/" << N_iter - 1 <<std::endl;
+			for (unsigned int i = 0; i < N_iter_inner; ++i){
+				std::cout << "\n-- Inner iteration : " << i + 1 << "/" << N_iter_inner - 1 <<std::endl;
 				std::cout << "--- Recomputing footpoints" << std::endl;
 				
 				element_pair -> second = this -> recompute_footpoints(element_pair -> second);

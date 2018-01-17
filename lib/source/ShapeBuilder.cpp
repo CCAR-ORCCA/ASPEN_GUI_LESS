@@ -443,7 +443,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		false,
 		true);
 
-	unsigned int N_edges = 700;
+	unsigned int N_edges = 1000;
 
 	CGALINTERFACE::CGAL_interface(
 		pc_path,
