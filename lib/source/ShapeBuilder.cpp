@@ -117,13 +117,13 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				this -> concatenate_point_clouds(time_index);
 			}
 
-			if (time_index == 100){
+			if (time_index == this -> filter_arguments -> get_index_init()){
 				std::cout << "- Initializing shape model" << std::endl;
 				this -> initialize_shape(time_index);
 			}
 
 			
-			if (this -> estimated_shape_model != nullptr){
+			if (this -> estimated_shape_model != nullptr && time_index != this -> filter_arguments -> get_index_init()){
 
 				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
@@ -161,66 +161,24 @@ std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() cons
 
 void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 
-	int N_max = 500;
-
-
 	// The destination point cloud is augmented with the source point cloud
-	std::vector< std::shared_ptr<PointNormal> > source_points;
-	std::vector< std::shared_ptr<PointNormal> > source_points_downsampled;
+	std::vector< std::shared_ptr<PointNormal> > source_points =this -> source_pc -> get_points();
 
-	// std::vector< std::shared_ptr<PointNormal> > destination_points;
-
-	// unsigned int N_destination_pc_points;
-	unsigned int N_source_pc_points;
-
+	int N_source_pc_points = int(this -> filter_arguments -> get_downsampling_factor() * source_points.size());
 
 	// These points have their coordinate in the stitching frame
 	// Their normals have been computed and also transformed
-	source_points = this -> source_pc -> get_points();
 
-	if (source_points.size() < N_max){
-		source_points_downsampled = source_points;
-	}
-	else{
+	arma::uvec random_order =  arma::regspace< arma::uvec>(0,  source_points.size() - 1);		
+	random_order = arma::shuffle(random_order);		
 
-		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  source_points.size() - 1);		
-		random_order = arma::shuffle(random_order);		
+	for (int i = 0; i < N_source_pc_points; ++i){
 
-		for (unsigned int i = 0; i < std::min(N_max,int(source_points.size())); ++i){
-			source_points_downsampled.push_back(source_points[random_order(i)]);
-		}
-
+		this -> concatenated_pc_vector.push_back(source_points[random_order(i)]);
 
 	}
 
-
-	// if(this -> destination_pc_concatenated != nullptr){
-	// 	destination_points = this -> destination_pc_concatenated -> get_points();
-	// }
-
-	// N_destination_pc_points = destination_points.size();
-	N_source_pc_points = source_points_downsampled.size();
-
-	// arma::mat point_coords_all(3,N_destination_pc_points + N_source_pc_points);
-
-	// std::vector<std::shared_ptr<PointNormal> > point_normals_all;
-
-	// for (unsigned int i = 0; i < N_destination_pc_points; ++ i){
-		// point_normals_all.push_back(destination_points[i]);
-	// }
-
-	for (unsigned int i = 0; i < N_source_pc_points; ++ i){
-		// point_normals_all.push_back(source_points_downsampled[i]);
-
-
-		this -> concatenated_pc_vector.push_back(source_points_downsampled[i]);
-
-
-	}
-
-	// this -> destination_pc_concatenated = std::make_shared<PC>(PC(point_normals_all));
-
-
+	
 
 
 }

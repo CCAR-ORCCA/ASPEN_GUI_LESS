@@ -18,8 +18,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 	const arma::vec & u_dir){
 
 
-	unsigned int N_iter_inner = 1;
-
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
@@ -27,6 +25,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
+
+		std::cout << "\n\n- Outer iteration : " << j + 1 << "/" << N_iter_outer <<std::endl;
 
 		// The footpoints are first found
 		std::vector<Footpoint> footpoints = this -> find_footpoints();
@@ -47,7 +47,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 		}
 
 
-		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter_outer - 1 <<std::endl;
 
 		if (footpoints.size() == 0){
 			return false;
@@ -70,7 +69,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 		pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
 
 		
-
 
 		for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
@@ -572,9 +570,11 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 	if (std::abs(arma::mean(residuals)) < 1e-2){
+		std::cout << "-- Element has converged (residuals)\n";
 		return true;
 	}
 	else if (update_norm < 5e-2){
+		std::cout << "-- Element has converged (update norm)\n";
 		return true;
 	}
 

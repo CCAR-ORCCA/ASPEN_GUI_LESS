@@ -37,6 +37,14 @@
 #define T0 0
 #define TF 200000 // 10 days
 
+// Indices
+#define INDEX_INIT = 100
+#define INDEX_END = 100
+
+// Downsampling factor (between 0 and 1)
+#define DOWNSAMPLING_FACTOR 0.1
+
+
 
 int main() {
 
@@ -155,6 +163,10 @@ int main() {
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
+	shape_filter_args.set_index_init(INDEX_INIT);
+	shape_filter_args.set_index_end(INDEX_END);
+	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
+
 
 	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,
@@ -167,7 +179,7 @@ int main() {
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
 	ShapeModelImporter shape_io_fit_obj(
-		"../output/shape_model/fit_source_200.obj", 1, true);
+		"../output/shape_model/fit_source_" +std::to_string(INDEX_END) + ".obj", 1, true);
 
 	
 	ShapeModelTri fit_shape("EF", &frame_graph);

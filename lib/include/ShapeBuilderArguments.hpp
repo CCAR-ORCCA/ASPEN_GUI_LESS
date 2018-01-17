@@ -182,6 +182,32 @@ public:
 	}
 
 
+	void set_downsampling_factor(double df){
+		this -> downsampling_factor = df;
+	}
+
+	double get_downsampling_factor() const{
+		return this -> downsampling_factor;
+	}
+
+
+	void set_index_init(unsigned int init){
+		this -> index_init = init;
+	}
+
+	unsigned int get_index_init() const{
+		return this -> index_init;
+	}
+
+	void set_index_end(unsigned int end){
+		this -> index_end = end;
+	}
+
+	unsigned int get_index_end() const{
+		return this -> index_end;
+	}
+	
+	
 
 	void set_estimate_shape(bool estim_shape) {
 		this -> estimate_shape = estim_shape;
@@ -356,6 +382,12 @@ protected:
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
+	double downsampling_factor;
+
+	unsigned int index_init;
+	unsigned int index_end;
+	
+
 
 	unsigned int minimum_ray_per_facet = 1;
 	unsigned int max_split_count = 1000;
