@@ -110,6 +110,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			X_pc = icp_pc.get_X();
 
 			this -> source_pc -> transform(M_pc,X_pc);
+			this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj");
 			u_dir = M_pc * u_dir; // the LOS is also transformed
 
 			if (time_index <= 100){
