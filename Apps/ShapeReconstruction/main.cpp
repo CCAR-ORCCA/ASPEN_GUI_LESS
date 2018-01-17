@@ -45,7 +45,7 @@
 #define DOWNSAMPLING_FACTOR 0.1
 
 // Filter iterations
-#define ITER_FILTER 5
+#define ITER_FILTER 10
 
 
 int main() {
