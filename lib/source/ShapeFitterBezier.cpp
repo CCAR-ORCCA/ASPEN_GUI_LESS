@@ -18,7 +18,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 	const arma::vec & u_dir){
 
 
-	unsigned int N_iter_outer = N_iter_outer;
+	unsigned int N_iter_outer = N_iter;
 	unsigned int N_iter_inner = 1;
 	
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
