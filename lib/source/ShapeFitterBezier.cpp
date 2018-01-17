@@ -68,7 +68,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 		pc.save("../output/pc/Pbar_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
 		pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
 
-		
 
 		for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
@@ -82,22 +81,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 			if (!element_has_converged){
 				all_elements_converged = false;
 			}
-		}
-
-
-		if (j == N_iter_outer + 1 || all_elements_converged){
-			
-			if (all_elements_converged){
-				std::cout << "- All elements have converged\n";
-			}
-			// The information matrix of each patch is updated
-			for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
-
-				this -> update_element(element_pair -> first,
-					element_pair -> second,true,W,u_dir);
-
-			}
-			break;
 		}
 
 
@@ -451,23 +434,13 @@ bool ShapeFitterBezier::update_element(Element * element,
 			Hi.cols(3 * point_index, 3 * point_index + 2) = B * footpoint . n.t();
 
 			// partials accounting for the change in n
-			// Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
-			// 	footpoint . v,
-			// 	i, j,
-			// 	degree);
+			Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
+				footpoint . v,
+				i, j,
+				degree);
 
 
 		}
-
-
-
-
-
-
-
-
-
-
 
 
 		double y = arma::dot(footpoint . n,footpoint . Ptilde
@@ -507,7 +480,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 	// The deviation is computed
-	arma::vec dC = 0.5 *  arma::solve(regularized_info_mat,normal_mat);
+	arma::vec dC = arma::solve(regularized_info_mat,normal_mat);
 
 	// Only the normal component is kept
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
@@ -534,31 +507,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	for (unsigned int k = 0; k < size; ++k){
 		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/size;
 
-	}
-
-
-	// The information matrix is stored
-	if (store_info_mat){
-
-		
-		if (arma::det(info_mat) > 1){
-			arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
-			double M = std::abs(arma::mean(residuals));
-
-			arma::mat Q = M * M * arma::eye<arma::mat>(N,N);
-			std::cout << "- Information matrix eigenvalues before regularization: \n";
-			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
-
-			info_mat = arma::inv( arma::inv(info_mat + M_reg) + Q) - M_reg;
-
-			std::cout << "- Information matrix eigenvalues after regularization: \n";
-			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
-		}
-
-		(*element -> get_info_mat_ptr()) = info_mat;
-		element -> get_dX_bar_ptr() -> fill(0);
-		std::cout << "--- Done with this patch\n" << std::endl;
-		return true;
 	}
 
 	std::cout << "Updating element from the " << footpoints.size()<<  " footpoints...\n";
@@ -594,19 +542,43 @@ bool ShapeFitterBezier::update_element(Element * element,
 			+ dC.rows(3 * k, 3 * k+ 2));
 	}
 
-
+	
+	bool has_converged;
 	if (std::abs(arma::mean(residuals)) < 1e-2){
 		std::cout << "-- Element has converged (residuals)\n";
-		return true;
+		has_converged = true;
 	}
 	else if (update_norm < 5e-2){
 		std::cout << "-- Element has converged (update norm)\n";
-		return true;
+		has_converged = true;
 	}
 
 	else{
-		return false;
+		has_converged = false;
 	}
+
+	if (store_info_mat){
+		// The information matrix is stored
+
+		if (arma::det(info_mat) > 1){
+			arma::mat M_reg = 1e-7 * arma::trace(info_mat) * arma::eye<arma::mat>(N,N);
+			double M = std::abs(arma::mean(residuals));
+
+			arma::mat Q = M * M * arma::eye<arma::mat>(N,N);
+			std::cout << "- Information matrix eigenvalues before regularization: \n";
+			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
+
+			info_mat = arma::inv( arma::inv(info_mat + M_reg) + Q) - M_reg;
+
+			std::cout << "- Information matrix eigenvalues after regularization: \n";
+			std::cout << arma::eig_sym( info_mat ).t() << std::endl;
+		}
+
+		(*element -> get_info_mat_ptr()) = info_mat;
+		element -> get_dX_bar_ptr() -> fill(0);
+		std::cout << "--- Done with this patch\n" << std::endl;		
+	}
+	return has_converged;
 
 }
 

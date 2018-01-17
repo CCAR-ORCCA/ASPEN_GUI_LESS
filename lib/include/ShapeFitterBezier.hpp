@@ -46,7 +46,8 @@ protected:
 		bool & has_converged);
 	bool update_element(Element * element, 
 		std::vector<Footpoint> & footpoints,
-		bool store_info_mat,double W,
+		bool store_info_mat,
+		double W,
 		const arma::vec & u_dir
 		);
 	
