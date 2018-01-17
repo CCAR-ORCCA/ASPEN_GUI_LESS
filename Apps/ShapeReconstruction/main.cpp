@@ -38,8 +38,8 @@
 #define TF 200000 // 10 days
 
 // Indices
-#define INDEX_INIT = 100
-#define INDEX_END = 100
+#define INDEX_INIT 100
+#define INDEX_END 100
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
