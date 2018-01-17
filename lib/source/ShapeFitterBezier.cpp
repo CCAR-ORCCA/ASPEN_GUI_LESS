@@ -21,8 +21,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
-	bool all_elements_converged = true;
-
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
 
@@ -75,12 +73,16 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 			element_pair -> second = this -> recompute_footpoints(element_pair -> second);
 
-			bool element_has_converged = this -> update_element(element_pair -> first,
-				element_pair -> second,false,W,u_dir);
-
-			if (!element_has_converged){
-				all_elements_converged = false;
+			if (j == N_iter_outer - 1){
+				this -> update_element(element_pair -> first,
+					element_pair -> second,true,W,u_dir);
 			}
+			else{
+				this -> update_element(element_pair -> first,
+					element_pair -> second,false,W,u_dir);
+			}
+			
+
 		}
 
 
