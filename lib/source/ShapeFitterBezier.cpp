@@ -10,7 +10,7 @@ ShapeFitterBezier::ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc) : S
 
 bool ShapeFitterBezier::fit_shape_KF(
 	unsigned int index,
-	unsigned int N_iter, 
+	unsigned int N_iter_outer, 
 	double J,
 	const arma::mat & DS, 
 	const arma::vec & X_DS,
@@ -18,9 +18,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 	const arma::vec & u_dir){
 
 
-	unsigned int N_iter_outer = N_iter;
 	unsigned int N_iter_inner = 1;
-	
+
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
@@ -487,7 +486,8 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 	// The deviation is computed
-	arma::vec dC = 1./(1 + std::log(1 + std::abs(arma::mean(residuals)))) *  arma::solve(regularized_info_mat,normal_mat);
+	// arma::vec dC = 1./(1 + std::log(1 + std::abs(arma::mean(residuals)))) *  arma::solve(regularized_info_mat,normal_mat);
+	arma::vec dC = 0.3 *  arma::solve(regularized_info_mat,normal_mat);
 
 	// Only the normal component is kept
 	for (unsigned int k = 0; k < control_points -> size(); ++k){

@@ -26,7 +26,7 @@ public:
 
 	bool fit_shape_KF(
 		unsigned int index,
-		unsigned int N_iter, 
+		unsigned int N_iter_outer, 
 		double J,
 		const arma::mat & DS, 
 		const arma::vec & X_DS,
