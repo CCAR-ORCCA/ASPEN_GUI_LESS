@@ -38,7 +38,7 @@ public:
 	*/
 	ShapeModelBezier(Bezier patch);
 
-	std::shared_ptr<arma::sp_mat> get_info_mat_ptr() const;
+	std::shared_ptr<arma::mat> get_info_mat_ptr() const;
 	std::shared_ptr<arma::vec> get_dX_bar_ptr() const;
 
 

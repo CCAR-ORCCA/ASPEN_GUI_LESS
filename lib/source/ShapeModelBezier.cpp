@@ -34,7 +34,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 }
 
-std::shared_ptr<arma::sp_mat> ShapeModelBezier::get_info_mat_ptr() const{
+std::shared_ptr<arma::mat> ShapeModelBezier::get_info_mat_ptr() const{
 	return this -> info_mat_ptr;
 }
 

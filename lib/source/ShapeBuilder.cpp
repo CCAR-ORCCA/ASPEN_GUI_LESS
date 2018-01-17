@@ -67,7 +67,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " / " <<  this -> filter_arguments -> get_index_end() - 1  << ", Time : " << times(time_index) << " / " <<  times( this -> get_filter_arguments() -> get_index_end() - 1) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " / " <<  this -> filter_arguments -> get_index_end() - 1  << ", Time : " << times(time_index) << " / " <<  times( this -> filter_arguments -> get_index_end() - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
 
