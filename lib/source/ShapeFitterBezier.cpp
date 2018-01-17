@@ -451,10 +451,10 @@ bool ShapeFitterBezier::update_element(Element * element,
 			Hi.cols(3 * point_index, 3 * point_index + 2) = B * footpoint . n.t();
 
 			// partials accounting for the change in n
-			Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
-				footpoint . v,
-				i, j,
-				degree);
+			// Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
+			// 	footpoint . v,
+			// 	i, j,
+			// 	degree);
 
 
 		}
