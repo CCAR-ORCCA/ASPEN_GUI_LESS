@@ -308,12 +308,12 @@ public:
 	}
 
 
-	unsigned int get_number_of_shape_passes() const {
-		return this -> number_of_shape_passes;
+	unsigned int get_iter_filter() const {
+		return this -> iter_filter;
 	}
 
-	void set_number_of_shape_passe(unsigned int shape_passes)  {
-		this -> number_of_shape_passes = shape_passes;
+	void set_iter_filter(unsigned int iter)  {
+		this -> iter_filter = iter;
 	}
 
 
@@ -393,7 +393,8 @@ protected:
 	unsigned int max_split_count = 1000;
 	unsigned int N_iterations;
 	unsigned int max_recycled_facets;
-	unsigned int number_of_shape_passes = 5;
+	unsigned int iter_filter ;
+
 
 	bool split_status;
 	bool use_cholesky;

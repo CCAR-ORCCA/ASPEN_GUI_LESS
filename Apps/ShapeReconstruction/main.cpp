@@ -44,6 +44,8 @@
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
 
+// Filter iterations
+#define ITER_FILTER 5
 
 
 int main() {
@@ -166,6 +168,7 @@ int main() {
 	shape_filter_args.set_index_init(INDEX_INIT);
 	shape_filter_args.set_index_end(INDEX_END);
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
+	shape_filter_args.set_iter_filter(ITER_FILTER);
 
 
 	ShapeBuilder shape_filter(&frame_graph,
