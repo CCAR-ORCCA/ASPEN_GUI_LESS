@@ -480,8 +480,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 	// The deviation is computed
-	// arma::vec dC = 1./(1 + std::log(1 + std::abs(arma::mean(residuals)))) *  arma::solve(regularized_info_mat,normal_mat);
-	arma::vec dC = 0.3 *  arma::solve(regularized_info_mat,normal_mat);
+	arma::vec dC = 0.5 *  arma::solve(regularized_info_mat,normal_mat);
 
 	// Only the normal component is kept
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
