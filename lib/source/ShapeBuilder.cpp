@@ -61,13 +61,13 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
-	for (unsigned int time_index = 0; time_index < this -> filter_arguments -> get_index_end(); ++time_index) {
+	for (unsigned int time_index = 0; time_index <= this -> filter_arguments -> get_index_end(); ++time_index) {
 
 		std::stringstream ss;
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " / " <<  this -> filter_arguments -> get_index_end() - 1  << ", Time : " << times(time_index) << " / " <<  times( this -> filter_arguments -> get_index_end() - 1) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " / " <<  this -> filter_arguments -> get_index_end()  << ", Time : " << times(time_index) << " / " <<  times( this -> filter_arguments -> get_index_end()) << " ########################" << std::endl;
 
 		X_S = X[time_index];
 
@@ -113,7 +113,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj");
 			u_dir = M_pc * u_dir; // the LOS is also transformed
 
-			if (time_index <= 100){
+			if (time_index <= this -> filter_arguments -> get_index_init()){
 				this -> concatenate_point_clouds(time_index);
 			}
 
