@@ -23,28 +23,30 @@ bool ShapeFitterBezier::fit_shape_KF(
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
-	// The footpoints are first found
-	std::vector<Footpoint> 	footpoints = this -> find_footpoints();
-	bool element_has_converged  = false;
-
-	std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
-
-	for (unsigned int i = 0; i < footpoints.size(); ++i){
-		Footpoint footpoint = footpoints[i];
-
-		if (fit_elements_to_footpoints.find(footpoint.element) == fit_elements_to_footpoints.end()){
-			std::vector<Footpoint> element_footpoints;
-			element_footpoints.push_back(footpoint);
-			fit_elements_to_footpoints.insert(std::make_pair(footpoint.element,element_footpoints));
-		}
-		else{
-			fit_elements_to_footpoints[footpoint.element].push_back(footpoint);
-		}
-	}
-
-
+	
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
+
+		// The footpoints are first found
+		std::vector<Footpoint> 	footpoints = this -> find_footpoints();
+		bool element_has_converged  = false;
+
+		std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
+
+		for (unsigned int i = 0; i < footpoints.size(); ++i){
+			Footpoint footpoint = footpoints[i];
+
+			if (fit_elements_to_footpoints.find(footpoint.element) == fit_elements_to_footpoints.end()){
+				std::vector<Footpoint> element_footpoints;
+				element_footpoints.push_back(footpoint);
+				fit_elements_to_footpoints.insert(std::make_pair(footpoint.element,element_footpoints));
+			}
+			else{
+				fit_elements_to_footpoints[footpoint.element].push_back(footpoint);
+			}
+		}
+
+
 
 		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter_outer - 1 <<std::endl;
 
@@ -73,24 +75,20 @@ bool ShapeFitterBezier::fit_shape_KF(
 		}
 
 
-		for (auto element_pair = fit_elements_to_footpoints.begin(); 
-			element_pair != fit_elements_to_footpoints.end(); ++element_pair){
+		for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
-			for (unsigned int i = 0; i < N_iter_inner; ++i){
-				std::cout << "\n-- Inner iteration : " << i + 1 << "/" << N_iter_inner - 1 <<std::endl;
-				std::cout << "--- Recomputing footpoints" << std::endl;
-				
-				element_pair -> second = this -> recompute_footpoints(element_pair -> second);
+			std::cout << "--- Recomputing footpoints" << std::endl;
 
-				element_has_converged = this -> update_element(element_pair -> first,
-					element_pair -> second,false,W,u_dir);
-				
-				if (element_has_converged){
-					std::cout << "--- Element has converged\n";
-					break;
-				}
+			element_pair -> second = this -> recompute_footpoints(element_pair -> second);
 
+			element_has_converged = this -> update_element(element_pair -> first,
+				element_pair -> second,false,W,u_dir);
+
+			if (element_has_converged){
+				std::cout << "--- Element has converged\n";
+				break;
 			}
+
 
 		}
 
@@ -104,10 +102,10 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 	// The information matrix of each patch is updated
 	for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
-		
+
 		element_has_converged = this -> update_element(element_pair -> first,
 			element_pair -> second,true,W,u_dir);
-		
+
 	}
 
 
