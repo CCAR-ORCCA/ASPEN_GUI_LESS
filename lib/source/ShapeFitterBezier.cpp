@@ -144,7 +144,7 @@ std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector
 		distances(i) = arma::norm(new_footpoints_temp[i].Ptilde - new_footpoints_temp[i].Pbar );
 	}
 
-	std::vec<Footpoint> new_footpoints;
+	std::vector<Footpoint> new_footpoints;
 	double std = arma::stddev(distances);
 
 
