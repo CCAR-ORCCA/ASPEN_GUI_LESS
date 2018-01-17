@@ -61,7 +61,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
-	for (unsigned int time_index = 0; time_index < times.size(); ++time_index) {
+	for (unsigned int time_index = 0; time_index < this -> get_filter_arguments() -> get_index_end(); ++time_index) {
 
 		std::stringstream ss;
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
