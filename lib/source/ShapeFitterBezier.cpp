@@ -23,13 +23,13 @@ bool ShapeFitterBezier::fit_shape_KF(
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
 
 	
-	
+	bool all_elements_converged = true;
+
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
 
 		// The footpoints are first found
 		std::vector<Footpoint> 	footpoints = this -> find_footpoints();
-		bool element_has_converged  = false;
 
 		std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
 
@@ -79,18 +79,15 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 			element_pair -> second = this -> recompute_footpoints(element_pair -> second);
 
-			element_has_converged = this -> update_element(element_pair -> first,
+			bool element_has_converged = this -> update_element(element_pair -> first,
 				element_pair -> second,false,W,u_dir);
 
-			if (element_has_converged){
-				std::cout << "--- Element has converged\n";
-				break;
+			if (!element_has_converged){
+				all_elements_converged = false;
 			}
-
-
 		}
 
-		if (element_has_converged){
+		if (all_elements_converged){
 			std::cout << "- All elements have converged\n";
 			// The information matrix of each patch is updated
 			for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
@@ -402,7 +399,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 		return false;
 	}
 
-	std::cout << "Updating element from the " << footpoints.size()<<  " footpoints...\n";
 
 	// Check if the info matrix has been initialized
 	if (element -> get_info_mat_ptr() == nullptr){
@@ -537,17 +533,17 @@ bool ShapeFitterBezier::update_element(Element * element,
 		std::cout << "--- Done with this patch\n" << std::endl;
 		return true;
 	}
-	else{
 
-		std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
-		std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
-		std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
-		std::cout << "- Average update norm: " << update_norm << std::endl;
-		std::cout << "- Residuals: \n";
-		std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
-		std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
+	std::cout << "Updating element from the " << footpoints.size()<<  " footpoints...\n";
 
-	}
+	std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
+	std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
+	std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
+	std::cout << "- Average update norm: " << update_norm << std::endl;
+	std::cout << "- Residuals: \n";
+	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
+	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
+	
 
 
 	// The deviations are added to the coordinates
