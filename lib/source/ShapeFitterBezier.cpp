@@ -427,6 +427,11 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 		arma::mat Hi(1,N);
 
+
+
+
+
+
 		// The different control points for this patch have their contribution added
 		for (unsigned int point_index = 0; point_index < control_points -> size(); ++point_index){
 
@@ -440,8 +445,30 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
 
+
+
+			// partials assuming that n is constant
 			Hi.cols(3 * point_index, 3 * point_index + 2) = B * footpoint . n.t();
+
+			// partials accounting for the change in n
+			Hi.cols(3 * point_index, 3 * point_index + 2) += (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
+				footpoint . v,
+				i, j,
+				degree);
+
+
 		}
+
+
+
+
+
+
+
+
+
+
+
 
 		double y = arma::dot(footpoint . n,footpoint . Ptilde
 			- patch -> evaluate(footpoint . u,footpoint . v));

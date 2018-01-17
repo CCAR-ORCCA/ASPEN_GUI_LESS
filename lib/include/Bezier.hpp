@@ -187,6 +187,13 @@ public:
 		const int j,
 		const int n) ;
 
+	arma::mat partial_n_partial_C(const double u, 
+		const double v,
+		const unsigned int i,
+		const unsigned int j,
+		const unsigned n) ;
+
+
 
 protected:
 

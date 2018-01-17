@@ -51,5 +51,5 @@ void Element::update() {
 void Element::initialize_info_mat(){
 	unsigned int N = this -> control_points.size();
 	this -> info_mat_ptr = std::make_shared<arma::mat>(arma::zeros<arma::mat>(3 * N,3 * N ));
-	// *this -> info_mat_ptr += 1e-3 * arma::eye<arma::mat>(3 * N,3 * N);
+	*this -> info_mat_ptr += arma::eye<arma::mat>(3 * N,3 * N);
 }

@@ -304,6 +304,26 @@ arma::vec Bezier::get_normal(const double u, const double v) {
 }
 
 
+arma::mat Bezier::partial_n_partial_C(const double u, const double v,const unsigned int i,const unsigned int j,const unsigned n) {
+	
+	arma::mat ab = this -> partial_bezier(u,v);
+	arma::vec nn = arma::cross(ab.col(0),ab.col(1));
+
+	arma::vec a = ab.col(0);
+	arma::vec b = ab.col(1);
+	double nn_norm = arma::norm(nn);
+
+	arma::rowvec dbernstein_dchi = Bezier::partial_bernstein( u, v,i , j, n);
+
+	arma::mat partial_a_partial_C = dbernstein_dchi(0) * arma::eye<arma::mat>(3,3);
+	arma::mat partial_b_partial_C = dbernstein_dchi(1) * arma::eye<arma::mat>(3,3);
+
+	arma::mat partial_nn_partial_C = RBK::tilde(a) * partial_b_partial_C - RBK::tilde(b) * partial_a_partial_C ;
+
+	return 1./nn_norm * (arma::eye<arma::mat>(3,3) - RBK::tilde(a) * b * nn.t() / std::pow(nn_norm,2)) * partial_nn_partial_C;
+}
+
+
 
 
 double Bezier::bernstein(
@@ -319,7 +339,6 @@ double Bezier::bernstein(
 
 	if (n == 0){
 		return 1;
-
 	}
 
 	double coef =  boost::math::factorial<double>(n) / (
