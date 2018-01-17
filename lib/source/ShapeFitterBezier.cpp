@@ -29,7 +29,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
 
 		// The footpoints are first found
-		std::vector<Footpoint> 	footpoints = this -> find_footpoints();
+		std::vector<Footpoint> footpoints = this -> find_footpoints();
 
 		std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
 
@@ -67,8 +67,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 			PC pc(u,Pbar_mat);	
 			PC pc_tilde(u,Ptilde_mat);		
 
-			pc.save("../output/pc/Pbar_" +std::to_string(index) + ".obj");
-			pc_tilde.save("../output/pc/Ptilde_" +std::to_string(index) + ".obj");
+			pc.save("../output/pc/Pbar_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+			pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
 
 		}
 
@@ -87,8 +87,12 @@ bool ShapeFitterBezier::fit_shape_KF(
 			}
 		}
 
-		if (all_elements_converged){
-			std::cout << "- All elements have converged\n";
+
+		if (j == N_iter_outer + 1 || all_elements_converged){
+			
+			if (all_elements_converged){
+				std::cout << "- All elements have converged\n";
+			}
 			// The information matrix of each patch is updated
 			for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
@@ -102,7 +106,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 	}
 
-	
+
 
 
 	return false;
