@@ -1,7 +1,8 @@
 #include "CGAL_interface.hpp"
 
 
-void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath) {
+void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
+    unsigned int N_edges) {
 
     // Poisson options
     FT sm_angle = 30.0; // Min triangle angle in degrees.
@@ -106,7 +107,7 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath)
   // This is a stop predicate (defines when the algorithm terminates).
   // In this example, the simplification stops when the number of undirected edges
   // left in the surface mesh drops below the specified number (1000)
- SMS::Count_stop_predicate<Polyhedron> stop(600);
+ SMS::Count_stop_predicate<Polyhedron> stop(N_edges);
 
   // This the actual call to the simplification algorithm.
   // The surface mesh and stop conditions are mandatory arguments.

@@ -443,9 +443,11 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		false,
 		true);
 
+	unsigned int N_edges = 700;
+
 	CGALINTERFACE::CGAL_interface(
 		pc_path,
-		a_priori_path);
+		a_priori_path,N_edges);
 
 	arma::vec u_dir = {1,0,0};
 

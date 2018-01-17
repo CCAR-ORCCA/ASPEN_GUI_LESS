@@ -55,6 +55,7 @@ to the specified file
 @param savepath path to where the input pointcloud should come from
 @param savepath path to where the file should be saved
 */
-void CGAL_interface(std::string input_path, std::string savepath);
+void CGAL_interface(std::string input_path, std::string savepath,
+	unsigned int N_edges);
 
 }
