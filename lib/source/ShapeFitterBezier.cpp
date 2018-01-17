@@ -472,6 +472,12 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	}
 
+
+
+
+
+	
+
 	arma::mat regularized_info_mat;
 
 	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
