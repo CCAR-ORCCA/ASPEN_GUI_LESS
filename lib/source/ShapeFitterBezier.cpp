@@ -74,7 +74,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 		for (auto element_pair = fit_elements_to_footpoints.begin(); 
 			element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
-			for (unsigned int i = 0; i < N_iter; ++i){
+			for (unsigned int i = 0; i < 1; ++i){
 				std::cout << "\n-- Inner iteration : " << i + 1 << "/" << N_iter - 1 <<std::endl;
 				std::cout << "--- Recomputing footpoints" << std::endl;
 				
