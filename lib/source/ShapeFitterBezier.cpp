@@ -44,7 +44,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter; ++j){
 
-		std::cout << "- Outer iteration : " << j + 1<< "/" << N_iter - 1 <<std::endl;
+		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter - 1 <<std::endl;
 
 	// Only footpoints over "good" elements are kept
 		if (footpoints.size() == 0){
@@ -75,7 +75,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 			element_pair != fit_elements_to_footpoints.end(); ++element_pair){
 
 			for (unsigned int i = 0; i < N_iter; ++i){
-				std::cout << "-- Inner iteration : " << i + 1 << "/" << N_iter - 1 <<std::endl;
+				std::cout << "\n-- Inner iteration : " << i + 1 << "/" << N_iter - 1 <<std::endl;
 				std::cout << "--- Recomputing footpoints" << std::endl;
 				
 				element_pair -> second = this -> recompute_footpoints(element_pair -> second);
@@ -463,7 +463,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 		arma::vec w_dir = arma::cross(u_dir,v_dir);
 
 		double R_augmented = R * ( std::pow(arma::dot(footpoint . n,u_dir),2) 
-			+ 1e-3 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
+			+ 1e-1 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
 
 		double W_augmented = 1./R_augmented;
 
@@ -513,11 +513,11 @@ bool ShapeFitterBezier::update_element(Element * element,
 	}
 
 	std::cout << "\nSignificant figures: " << std::endl;
-	std::cout << "\n- Maximum information: " << arma::abs(info_mat).max() << std::endl;
-	std::cout << "\n- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
-	std::cout << "\n- Information matrix determinant: " << arma::det(info_mat) << std::endl;
-	std::cout << "\n- Average update norm: " << update_norm << std::endl;
-	std::cout << "\n- Residuals: \n";
+	std::cout << "- Maximum information: " << arma::abs(info_mat).max() << std::endl;
+	std::cout << "- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
+	std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
+	std::cout << "- Average update norm: " << update_norm << std::endl;
+	std::cout << "- Residuals: \n";
 	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
 	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
 
