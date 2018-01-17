@@ -483,7 +483,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 	// The deviation is computed
-	arma::vec dC = arma::solve(regularized_info_mat,normal_mat);
+	arma::vec dC = 1./(1 + std::log(1 + std::abs(arma::mean(residuals)))) *  arma::solve(regularized_info_mat,normal_mat);
 
 	// Only the normal component is kept
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
@@ -549,7 +549,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 	// The deviations are added to the coordinates
 
-
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
 
 		std::shared_ptr<ControlPoint> point = control_points -> at(k);
@@ -585,111 +584,4 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 
 
-// arma::mat ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,
-// 	bool & has_converged){
-
-// 	std::cout << "Updating shape from the " << footpoints.size()<<  " footpoints...\n";
-
-// 	// Check if the info matrix has been initialized
-// 	if (this -> shape_model -> get_info_mat_ptr() == nullptr){
-// 		this -> shape_model -> initialize_info_mat();
-// 		this -> shape_model -> initialize_dX_bar();
-// 		this -> shape_model -> initialize_index_table();
-// 	}
-
-// 	// The normal and information matrices are created
-// 	arma::mat info_mat(*this -> shape_model -> get_info_mat_ptr());
-
-// 	arma::vec normal_mat = info_mat * (*this -> shape_model -> get_dX_bar_ptr());
-// 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
-// 	unsigned int N = info_mat.n_cols;
-
-// 	boost::progress_display progress(footpoints.size());
-
-// 	// All the measurements are processed	
-// 	#pragma omp parallel for reduction (+:info_mat,normal_mat)
-// 	for (unsigned int k = 0; k < footpoints.size(); ++k){
-// 		++ progress;
-
-// 		Footpoint footpoint = footpoints[k];
-
-// 		arma::mat Hi(1,N);
-// 		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
-
-// 		auto control_points = patch -> get_control_points();
-
-// 		// The different control points for this patch have their contribution added
-// 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
-
-// 			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
-
-// 			auto local_indices = patch -> get_local_indices(*iter_points);
-
-// 			unsigned int i = std::get<0>(local_indices);
-// 			unsigned int j = std::get<1>(local_indices);
-// 			unsigned int degree = patch -> get_degree();
-
-// 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
-
-// 			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
-// 		}
-
-// 		double y = arma::dot(footpoint . n,footpoint . Ptilde
-// 			- patch -> evaluate(footpoint . u,footpoint . v));
-
-// 		residuals(k) = y;
-
-// 		normal_mat += Hi.t() * y;
-// 		info_mat +=  Hi.t() * Hi;
-
-// 	}
-
-// 	// The information matrix is regularized
-// 	arma::mat regularized_info_mat = info_mat;
-// 	regularized_info_mat +=  1e-3 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
-
-// 	// The deviation is computed
-// 	arma::vec dC = arma::solve(regularized_info_mat,normal_mat);
-
-// 	// The a-priori deviation is adjusted
-// 	*this -> shape_model -> get_dX_bar_ptr() = *this -> shape_model -> get_dX_bar_ptr() - dC;
-
-// 	double update_norm = 0;
-// 	unsigned int size = int(N / 3.);
-
-// 	for (unsigned int k = 0; k < size; ++k){
-// 		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/size;
-
-// 	}
-
-
-
-// 	std::cout << "\nSignificant figures: " << std::endl;
-// 	std::cout << "\n- Maximum information: " << arma::abs(info_mat).max() << std::endl;
-// 	std::cout << "\n- Information matrix conditioning: " << arma::cond(info_mat) << std::endl;
-// 	std::cout << "\n- Information matrix determinant: " << arma::det(info_mat) << std::endl;
-// 	std::cout << "\n- Average update norm: " << update_norm << std::endl;
-// 	std::cout << "\n- Residuals: \n";
-// 	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
-// 	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
-
-
-// 	if (update_norm < 1e-2){
-// 		has_converged = true;
-// 	}
-
-// 	// The deviations are added to the coordinates
-// 	auto control_points = this -> shape_model -> get_control_points();
-
-// 	for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
-// 		unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
-// 		(*iter_points) -> set_coordinates((*iter_points) -> get_coordinates()
-// 			+ dC.rows(3 * global_point_index, 3 * global_point_index + 2));
-// 	}
-
-
-
-// 	return info_mat;
-
-// }
 
