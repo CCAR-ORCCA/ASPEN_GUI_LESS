@@ -149,7 +149,7 @@ std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector
 
 
 	for (unsigned int i = 0; i < new_footpoints_temp.size(); ++i){
-		if (distance(i) < std){
+		if (distances(i) < std){
 			new_footpoints.push_back(new_footpoints_temp[i]);
 		}
 	}
