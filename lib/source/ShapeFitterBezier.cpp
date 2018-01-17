@@ -47,10 +47,8 @@ bool ShapeFitterBezier::fit_shape_KF(
 		}
 
 
-
 		std::cout << "\n\n- Outer iteration : " << j + 1<< "/" << N_iter_outer - 1 <<std::endl;
 
-	// Only footpoints over "good" elements are kept
 		if (footpoints.size() == 0){
 			return false;
 		}
@@ -94,19 +92,20 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 		if (element_has_converged){
 			std::cout << "- All elements have converged\n";
+			// The information matrix of each patch is updated
+			for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
+
+				element_has_converged = this -> update_element(element_pair -> first,
+					element_pair -> second,true,W,u_dir);
+
+			}
 			break;
 		}
 
 
 	}
 
-	// The information matrix of each patch is updated
-	for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
-
-		element_has_converged = this -> update_element(element_pair -> first,
-			element_pair -> second,true,W,u_dir);
-
-	}
+	
 
 
 	return false;
