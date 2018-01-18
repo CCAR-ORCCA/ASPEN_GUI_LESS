@@ -47,6 +47,9 @@
 // Filter iterations
 #define ITER_FILTER 10
 
+// Number of edges in a-priori
+#define N_EDGES 1000
+
 
 int main() {
 
@@ -190,7 +193,7 @@ int main() {
 	shape_filter_args.set_index_end(INDEX_END);
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
 	shape_filter_args.set_iter_filter(ITER_FILTER);
-
+	shape_filter_args.set_N_edges(N_EDGES);
 
 	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,

@@ -317,7 +317,13 @@ public:
 	}
 
 
+	void set_N_edges(unsigned int N_edges){
+		this -> N_edges = N_edges;
+	}
 
+	unsigned int get_N_edges() const{
+		return this -> N_edges;
+	}
 	void save_results() const {
 
 		arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
@@ -394,6 +400,7 @@ protected:
 	unsigned int N_iterations;
 	unsigned int max_recycled_facets;
 	unsigned int iter_filter ;
+	unsigned int N_edges;
 
 
 	bool split_status;
