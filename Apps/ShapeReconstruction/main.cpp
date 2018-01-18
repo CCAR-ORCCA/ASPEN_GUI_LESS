@@ -117,7 +117,7 @@ int main() {
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
 
-	arma::vec vel_0_inertial = {0,0.7 * v,0.7 * v};
+	arma::vec vel_0_inertial = {0,0,v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
@@ -282,13 +282,17 @@ int main() {
 
 			}
 
+			arma::mat P_CC;
 			if (patch -> get_info_mat_ptr() == nullptr){
-				throw(std::runtime_error("This patch was not seen"));
+				P_CC = 1e10 * arma::eye<arma::mat>(patch -> get_control_points() -> size(),
+					patch -> get_control_points() -> size());
+			}
+			else{
+				P_CC = arma::inv(*patch -> get_info_mat_ptr());
 			}
 
 			// std::cout << "Distance: " << distance << std::endl;
 
-			arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
 
 			// std::cout << "Patch covariance eigenvalue: " << arma::eig_sym(P_CC) << std::endl;
 
