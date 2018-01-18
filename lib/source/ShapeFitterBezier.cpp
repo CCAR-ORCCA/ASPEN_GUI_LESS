@@ -463,7 +463,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 		// double R_augmented = R * ( std::pow(arma::dot(footpoint . n,u_dir),2) 
 		// 	+ 1e-3 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
 
-		double R_augmented = R 
+		double R_augmented = R ;
 		double W_augmented = 1./R_augmented;
 
 		normal_mat += Hi.t() * W_augmented * y;
