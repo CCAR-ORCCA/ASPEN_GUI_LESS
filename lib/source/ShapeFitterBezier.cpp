@@ -150,7 +150,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	std::cout << "Finding footpoints...";
 	Element * element_guess = nullptr;
-	// std::map<Element *,arma::vec> element_quality;
+	std::map<Element *,arma::vec> element_quality;
 
 
 	boost::progress_display progress(this -> pc -> get_size());
