@@ -48,7 +48,7 @@
 #define ITER_FILTER 10
 
 // Number of edges in a-priori
-#define N_EDGES 1000
+#define N_EDGES 2000
 
 
 int main() {
