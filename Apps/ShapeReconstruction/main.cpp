@@ -308,7 +308,7 @@ int main() {
 
 			// std::cout << "Patch/range covariance eigenvalue: " << arma::eig_sym(Pp) << std::endl;
 
-			arma::rowvec result = {distance,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(Pp)(0)};
+			arma::rowvec result = {distance,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(P_CC)(0),arma::eig_sym(Pp)(0)};
 
 			distance_error_vec.push_back(result);
 
@@ -317,7 +317,7 @@ int main() {
 	}
 
 
-	arma::mat distance_error = arma::mat(distance_error_vec.size(),3);
+	arma::mat distance_error = arma::mat(distance_error_vec.size(),4);
 	for (unsigned int i =0; i < distance_error_vec.size(); ++i){
 		distance_error.row(i) = distance_error_vec[i];
 	}
