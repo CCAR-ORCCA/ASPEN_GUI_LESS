@@ -240,8 +240,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 			// The registered source should be concatenated to the previous destination point
 			// cloud here
 
-
-
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
 			this -> source_pc -> save(

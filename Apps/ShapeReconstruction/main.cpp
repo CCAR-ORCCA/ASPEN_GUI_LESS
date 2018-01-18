@@ -26,7 +26,7 @@
 #define COL_FOV 20 // ?
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY 0.001
+#define INSTRUMENT_FREQUENCY 0.0016
 
 // Noise
 #define FOCAL_LENGTH 1e1
@@ -38,8 +38,8 @@
 #define TF 200000 // 10 days
 
 // Indices
-#define INDEX_INIT 100
-#define INDEX_END 150
+#define INDEX_INIT 200
+#define INDEX_END 200
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
@@ -70,7 +70,7 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, true);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 #elif __linux__
@@ -123,13 +123,22 @@ int main() {
 	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
 
 	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
+	arma::vec times_dense = arma::regspace<arma::vec>(T0,  10,  TF); 
+
 	std::vector<double> T_obs;
+	std::vector<double> T_obs_dense;
+
 	for (unsigned int i = 0; i < times.n_rows; ++i){
 		T_obs.push_back(times(i));
+	}
+	for (unsigned int i = 0; i < times_dense.n_rows; ++i){
+		T_obs_dense.push_back(times_dense(i));
 	}
 
 	// Containers
 	std::vector<arma::vec> X_augmented;
+	std::vector<arma::vec> X_augmented_dense;
+
 	auto N_true = X0_augmented.n_rows;
 
 	// Set active inertia here
@@ -148,6 +157,18 @@ int main() {
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, tbegin, tend,1e-3,
 		Observer::push_back_augmented_state(X_augmented));
 
+
+	// The orbit is propagated with a finer timestep for visualization purposes
+
+	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs_dense.begin(), 
+		T_obs_dense.end(),1e-3,
+		Observer::push_back_augmented_state(X_augmented_dense));
+
+	arma::mat X_dense(12,X_augmented_dense.size());
+	for (unsigned int i = 0; i < X_augmented_dense.size(); ++i){
+		X_dense.col(i) = X_augmented_dense[i];
+	}
+	X_dense.save("../output/trajectory.txt",arma::raw_ascii);
 	
 
 // Lidar
@@ -209,72 +230,88 @@ int main() {
 	
 
 	auto fit_elements = estimated_shape_model -> get_elements();
-	
-	arma::mat distance_error = arma::mat(fit_elements -> size(),2);
 
+	std::vector<arma::rowvec> distance_error_vec;
+
+	unsigned int N_samples_per_el = 30;
 
 	for (unsigned int i = 0; i < fit_elements -> size(); ++i){
-		
-		std::cout << i << std::endl;
-		// For each Bezier element, the distance to the true shape is
-		// found by ray tracing along the element normal evaluated at its center
 		Bezier * patch = dynamic_cast<Bezier *>(fit_elements -> at(i).get());
 
-		auto n = patch -> get_normal(1./3,1./3);
-		std::cout << "Normal : " << n.t() << std::endl;
-
-		arma::vec P = patch -> evaluate(1./3,1./3);
-		std::cout << "Center : " << P.t() << std::endl;
-
-		Ray ray(P,n);
-
-		bool hit = true_shape_model.ray_trace(&ray);
-		double distance;
+		for (unsigned int k = 0; k < N_samples_per_el; ++k){
 
 
-		if (hit){
-			distance = ray.get_true_range();
-			std::cout << "success\n";
+			arma::vec random = arma::randu(2);
 
-		}
-		else{ 
-			std::cout << "casting backwards ray\n";
+			double u = random(0);
+			double v = 1 - random(1) * u;
 
-			Ray ray_rev(P,-n);
-			hit = true_shape_model.ray_trace(&ray_rev);
+
+		// For each Bezier element, the distance to the true shape is
+		// found by ray tracing along the element normal evaluated at its center
+
+			auto n = patch -> get_normal(u,v);
+			// std::cout << "Normal : " << n.t() << std::endl;
+
+			arma::vec P = patch -> evaluate(u,v);
+			// std::cout << "Center : " << P.t() << std::endl;
+
+			Ray ray(P,n);
+
+			bool hit = true_shape_model.ray_trace(&ray);
+			double distance;
+
+
 			if (hit){
-				distance = - ray_rev.get_true_range();
+				distance = ray.get_true_range();
+				// std::cout << "success\n";
+
 			}
-			else {
-				distance = std::numeric_limits<double>::infinity();
-				std::cout << "This ray should have hit something" << std::endl;
+			else{ 
+				// std::cout << "casting backwards ray\n";
+
+				Ray ray_rev(P,-n);
+				hit = true_shape_model.ray_trace(&ray_rev);
+				if (hit){
+					distance = - ray_rev.get_true_range();
+				}
+				else {
+					distance = std::numeric_limits<double>::infinity();
+					// std::cout << "This ray should have hit something" << std::endl;
+				}
+
 			}
+
+			if (patch -> get_info_mat_ptr() == nullptr){
+				throw(std::runtime_error("This patch was not seen"));
+			}
+
+			// std::cout << "Distance: " << distance << std::endl;
+
+			arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
+
+			// std::cout << "Patch covariance eigenvalue: " << arma::eig_sym(P_CC) << std::endl;
+
+			arma::mat Pp = patch -> covariance_surface_point(
+				u,
+				v,
+				n,
+				P_CC);
+
+			// std::cout << "Patch/range covariance eigenvalue: " << arma::eig_sym(Pp) << std::endl;
+
+			arma::rowvec result = {distance,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(Pp)(0)};
+
+			distance_error_vec.push_back(result);
 
 		}
 
-		if (patch -> get_info_mat_ptr() == nullptr){
-			std::cout << "- This patch was not seen\n";
-			continue;
-		}
+	}
 
-		std::cout << "Distance: " << distance << std::endl;
 
-		arma::mat P_CC = arma::inv(*patch -> get_info_mat_ptr());
-
-		std::cout << "Patch covariance: " << P_CC << std::endl;
-
-		arma::mat Pp = patch -> covariance_surface_point(
-			1./3,
-			1./3,
-			n,
-			P_CC);
-
-		std::cout << "Patch/range covariance: " << Pp << std::endl;
-
-		arma::rowvec result = {distance,std::sqrt(arma::dot(n,Pp * n))};
-
-		distance_error.row(i) = result;
-
+	arma::mat distance_error = arma::mat(distance_error_vec.size(),3);
+	for (unsigned int i =0; i < distance_error_vec.size(); ++i){
+		distance_error.row(i) = distance_error_vec[i];
 	}
 
 	distance_error.save("../output/results.txt",arma::raw_ascii);

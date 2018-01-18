@@ -150,7 +150,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	std::cout << "Finding footpoints...";
 	Element * element_guess = nullptr;
-	std::map<Element *,arma::vec> element_quality;
+	// std::map<Element *,arma::vec> element_quality;
 
 
 	boost::progress_display progress(this -> pc -> get_size());
@@ -319,7 +319,7 @@ void ShapeFitterBezier::find_footpoint_in_patch(Bezier * patch,Footpoint & footp
 		Pbar = patch -> evaluate(chi(0),chi(1));
 
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
-		if (error < 1e-4){
+		if (error < 1e-3){
 
 
 			if (footpoint.element != NULL){
@@ -474,7 +474,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 	arma::mat regularized_info_mat;
 
 	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
-		regularized_info_mat = info_mat + 1e-1 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
+		regularized_info_mat = info_mat + 1e-2 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
 	}
 	else{
 		regularized_info_mat = info_mat;
