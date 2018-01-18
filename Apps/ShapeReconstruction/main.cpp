@@ -236,6 +236,7 @@ int main() {
 	unsigned int N_samples_per_el = 30;
 
 	for (unsigned int i = 0; i < fit_elements -> size(); ++i){
+		
 		Bezier * patch = dynamic_cast<Bezier *>(fit_elements -> at(i).get());
 
 		for (unsigned int k = 0; k < N_samples_per_el; ++k){
@@ -284,8 +285,8 @@ int main() {
 
 			arma::mat P_CC;
 			if (patch -> get_info_mat_ptr() == nullptr){
-				P_CC = 1e10 * arma::eye<arma::mat>(patch -> get_control_points() -> size(),
-					patch -> get_control_points() -> size());
+				P_CC = 1e10 * arma::eye<arma::mat>(3 * patch -> get_control_points() -> size(),
+					3 * patch -> get_control_points() -> size());
 			}
 			else{
 				P_CC = arma::inv(*patch -> get_info_mat_ptr());
