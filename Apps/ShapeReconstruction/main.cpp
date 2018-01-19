@@ -54,6 +54,10 @@
 #define SHAPE_DEGREE 3
 
 
+// Target shape
+#define TARGET_SHAPE "bennu_scaled_aligned"
+
+
 int main() {
 
 // Ref frame graph
@@ -76,21 +80,19 @@ int main() {
 
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, true);
+		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/"+ std::string(TARGET_SHAPE) + ".obj", 1, true);
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
-		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1 , false);
+		"../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj", 1 , false);
 #else
-
 
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
+
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
-	true_shape_model.save("test.obj");
-
 	true_shape_model.construct_kd_tree_shape(false);
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
