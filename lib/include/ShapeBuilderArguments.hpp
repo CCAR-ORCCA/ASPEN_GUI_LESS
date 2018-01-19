@@ -258,6 +258,13 @@ public:
 	}
 
 
+	void set_shape_degree(unsigned int shape_degree){
+		this -> shape_degree = shape_degree;
+	}
+	unsigned int get_shape_degree() const{
+		return this -> shape_degree;
+	}
+
 
 	/**
 	Spin axis
@@ -401,6 +408,8 @@ protected:
 	unsigned int max_recycled_facets;
 	unsigned int iter_filter ;
 	unsigned int N_edges;
+	unsigned int shape_degree;
+
 
 
 	bool split_status;

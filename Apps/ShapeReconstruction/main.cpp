@@ -50,6 +50,9 @@
 // Number of edges in a-priori
 #define N_EDGES 2000
 
+// Shape order
+#define SHAPE_DEGREE 3
+
 
 int main() {
 
@@ -194,6 +197,8 @@ int main() {
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
 	shape_filter_args.set_iter_filter(ITER_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
+	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
+
 
 	ShapeBuilder shape_filter(&frame_graph,
 		&lidar,

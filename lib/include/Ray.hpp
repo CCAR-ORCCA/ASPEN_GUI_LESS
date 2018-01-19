@@ -124,7 +124,7 @@ public:
 	@param v second barycentric coordinate
 	*/
 	
-	bool single_patch_ray_casting(Bezier * patch,double & u, double & v) ;
+	bool single_patch_ray_casting(Bezier * patch,double & u, double & v,bool verbose = false) ;
 
 	Element * get_guess() const;
 	void set_guess (Element * guess);

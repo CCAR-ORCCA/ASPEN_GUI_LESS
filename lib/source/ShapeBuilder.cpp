@@ -421,7 +421,12 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	
 	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
 
-	a_priori_bezier -> elevate_degree();
+	// the shape is elevated to the prescribed degree
+	unsigned int starting_degree = a_priori_bezier -> get_degree();
+	for (unsigned int i = starting_degree; i < this -> filter_arguments -> get_shape_degree(); ++i){
+		a_priori_bezier -> elevate_degree();
+	}
+
 	a_priori_bezier -> save_to_obj("../output/shape_model/a_priori_bezier.obj");
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
