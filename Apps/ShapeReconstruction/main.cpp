@@ -48,7 +48,7 @@
 #define ITER_FILTER 10
 
 // Number of edges in a-priori
-#define N_EDGES 4000
+#define N_EDGES 2000
 
 // Shape order
 #define SHAPE_DEGREE 2
@@ -279,7 +279,14 @@ int main() {
 
 			if (hit || hit_rev){
 				if (hit && hit_rev){
-					distance_final = std::min(distance,distance_rev);
+
+
+					if (std::abs(distance) > std::abs(distance_rev)){
+						distance_final = distance_rev;
+					}
+					else{
+						distance_final = distance;
+					}
 				}
 				else if (hit){
 					distance_final = distance;
