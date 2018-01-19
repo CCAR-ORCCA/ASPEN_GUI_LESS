@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 1e-2 // Goldeneye 1sigma
+#define LOS_NOISE_SD_BASELINE 5e-2 // Goldeneye 1sigma
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times (s)
