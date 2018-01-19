@@ -261,31 +261,35 @@ int main() {
 			// std::cout << "Center : " << P.t() << std::endl;
 
 			Ray ray(P,n);
+			Ray ray_rev(P,-n);
+
 
 			bool hit = true_shape_model.ray_trace(&ray);
-			double distance;
+			bool hit_rev = true_shape_model.ray_trace(&ray_rev);
 
+			double distance = ray.get_true_range();
+			double distance_rev = -ray_rev.get_true_range();
 
-			if (hit){
-				distance = ray.get_true_range();
-				// std::cout << "success\n";
+			double distance_final;
 
-			}
-			else{ 
-				// std::cout << "casting backwards ray\n";
-
-				Ray ray_rev(P,-n);
-				hit = true_shape_model.ray_trace(&ray_rev);
-				if (hit){
-					distance = - ray_rev.get_true_range();
+			if (hit || hit_rev){
+				if (hit && hit_rev){
+					distance_final = std::min(distance,distance_rev);
 				}
-				else {
-					distance = std::numeric_limits<double>::infinity();
-					// std::cout << "This ray should have hit something" << std::endl;
+				else if (hit){
+					distance_final = distance;
 				}
-
+				else{
+					distance_final = distance_rev;
+				}
 			}
 
+			else {
+				distance_final = std::numeric_limits<double>::infinity();
+				std::cout << "Spurious normal cast at:" << P.t();
+			}
+
+			
 			arma::mat P_CC;
 			if (patch -> get_info_mat_ptr() == nullptr){
 				P_CC = 1e10 * arma::eye<arma::mat>(3 * patch -> get_control_points() -> size(),
@@ -295,10 +299,7 @@ int main() {
 				P_CC = arma::inv(*patch -> get_info_mat_ptr());
 			}
 
-			// std::cout << "Distance: " << distance << std::endl;
 
-
-			// std::cout << "Patch covariance eigenvalue: " << arma::eig_sym(P_CC) << std::endl;
 
 			arma::mat Pp = patch -> covariance_surface_point(
 				u,
@@ -308,7 +309,7 @@ int main() {
 
 			// std::cout << "Patch/range covariance eigenvalue: " << arma::eig_sym(Pp) << std::endl;
 
-			arma::rowvec result = {distance,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(P_CC)(0),arma::eig_sym(Pp)(0)};
+			arma::rowvec result = {distance_final,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(P_CC)(0),arma::eig_sym(Pp)(0)};
 
 			distance_error_vec.push_back(result);
 
