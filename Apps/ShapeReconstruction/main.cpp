@@ -48,7 +48,7 @@
 #define ITER_FILTER 10
 
 // Number of edges in a-priori
-#define N_EDGES 2000
+#define N_EDGES 6000
 
 // Shape order
 #define SHAPE_DEGREE 2
