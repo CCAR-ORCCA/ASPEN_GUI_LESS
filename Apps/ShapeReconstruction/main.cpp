@@ -48,10 +48,10 @@
 #define ITER_FILTER 10
 
 // Number of edges in a-priori
-#define N_EDGES 2000
+#define N_EDGES 4000
 
 // Shape order
-#define SHAPE_DEGREE 3
+#define SHAPE_DEGREE 2
 
 
 int main() {
