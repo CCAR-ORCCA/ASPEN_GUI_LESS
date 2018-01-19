@@ -42,7 +42,7 @@
 #define INDEX_END 200
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.1
+#define DOWNSAMPLING_FACTOR 0.2
 
 // Filter iterations
 #define ITER_FILTER 10
