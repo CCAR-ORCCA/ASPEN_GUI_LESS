@@ -88,7 +88,6 @@ double Lidar::get_size_y() const {
 
 void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
-	auto start = std::chrono::system_clock::now();
 
 
 
@@ -101,7 +100,8 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 		this -> focal_plane[pixel] -> reset( shape_model);
 	}
 	
-
+	auto start = std::chrono::system_clock::now();
+	
 	#pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
 
