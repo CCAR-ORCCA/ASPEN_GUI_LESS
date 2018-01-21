@@ -34,7 +34,8 @@ int main() {
 		source_pc, 
 		arma::eye<arma::mat>(3,3), 
 		arma::zeros<arma::vec>(3),
-		false);
+		false,
+		true);
 
 	arma::mat M = icp_pc.get_M();
 	arma::vec X = icp_pc.get_X();
