@@ -18,7 +18,7 @@ public:
 	    arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
 	    arma::vec X_0 = arma::zeros<arma::vec>(3),
 	    bool pedantic = false,
-	    bool use_omp );
+	    bool use_omp = false);
 
 	arma::vec get_X() const;
 	arma::mat get_M() const;
