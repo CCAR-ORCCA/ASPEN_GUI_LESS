@@ -17,8 +17,7 @@ public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	    arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
 	    arma::vec X_0 = arma::zeros<arma::vec>(3),
-	    bool pedantic = false,
-	    bool use_omp = false);
+	    bool pedantic = false);
 
 	arma::vec get_X() const;
 	arma::mat get_M() const;
@@ -39,8 +38,7 @@ protected:
 	    const double stol,
 	    const bool pedantic,
 	    arma::mat dcm_0 ,
-	    arma::vec X_0,
-	    bool use_omp);
+	    arma::vec X_0);
 
 	arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
 
@@ -52,10 +50,7 @@ protected:
 	    const arma::mat & dcm,
 	    const arma::mat & x,
 	    int h);
-	void compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
-	    const arma::mat & dcm,
-	    const arma::mat & x,
-	    int h);
+	
 
 	void compute_pairs_closest_minimum_distance(
 	    const arma::mat & dcm,

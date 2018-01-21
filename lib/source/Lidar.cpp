@@ -101,15 +101,11 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 	}
 	
 	auto start = std::chrono::system_clock::now();
-
+	unsigned int resolution = y_res * z_res;
 	#pragma omp parallel for if (USE_OMP_LIDAR)
-	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
+	for (unsigned int pixel = 0; pixel < resolution; ++pixel){
 
 		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
-
-		// if (pixel < y_res * z_res - 1){
-		// 	this -> focal_plane[pixel + 1] -> set_guess(this -> focal_plane[pixel] -> get_hit_element());
-		// }
 
 		// If there's a hit, noise is added along the line of sight on the true measurement
 		if (hit && add_noise) {

@@ -26,46 +26,27 @@ int main() {
 	destination_pc -> save("../destination.obj");
 
 
-
-
-
 	unsigned int N_iter = 100;
 
-	boost::progress_display progress(N_iter);
-
-	auto start = std::chrono::system_clock::now();
 	
-	for (unsigned i = 0; i < N_iter ; ++i){
-		++progress;
+	ICP icp_pc(
+		destination_pc, 
+		source_pc, 
+		arma::eye<arma::mat>(3,3), 
+		arma::zeros<arma::vec>(3),
+		false);
 
-		ICP icp_pc(
-			destination_pc, 
-			source_pc, 
-			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3),
-			false,
-			true);
-		
-
-	}
-
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end-start;
+	arma::mat M = icp_pc.get_M();
+	arma::vec X = icp_pc.get_X();
 
 
-	std::cout << "\nTime elapsed: " << elapsed_seconds.count() << std::endl;
+	source_pc -> save("../registered_source.obj",M,X);
 
-	// arma::mat M = icp_pc.get_M();
-	// arma::vec X = icp_pc.get_X();
+	std::cout << "DCM: \n";
+	std::cout << M << std::endl;
+	std::cout << "X: \n";
 
-
-	// source_pc -> save("../registered_source.obj",M,X);
-
-	// std::cout << "DCM: \n";
-	// std::cout << M << std::endl;
-	// std::cout << "X: \n";
-
-	// std::cout << X << std::endl;
+	std::cout << X << std::endl;
 
 
 
