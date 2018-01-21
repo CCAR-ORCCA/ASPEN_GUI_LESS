@@ -19,8 +19,7 @@ public:
 		const arma::vec & X0_estimated_augmented,
 		const std::vector<double> & T_obs,
 		const arma::mat & R,
-		const arma::mat & Q,
-		bool verbose) ;
+		const arma::mat & Q) ;
 
 protected:
 

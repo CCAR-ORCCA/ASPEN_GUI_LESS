@@ -1,5 +1,5 @@
 #include "NavigationFilter.hpp"
-
+#include "DebugFlags.hpp"
 
 
 NavigationFilter::NavigationFilter(const Args & args) : ExtendedKalmanFilter(args){
@@ -64,23 +64,22 @@ int NavigationFilter::run(
 	const arma::vec & X0_estimated_augmented,
 	const std::vector<double> & T_obs,
 	const arma::mat & R,
-	const arma::mat & Q,
-	bool verbose) {
+	const arma::mat & Q) {
 
 	if (T_obs.size() == 0){
 		return -1;
 	}
 
-	if (verbose){
+	#if NAVIGATION_DEBUG
 		std::cout << "- Running filter" << std::endl;
 		std::cout << "-- Computing true state history" << std::endl;
-	}
+	#endif
 
 	this -> compute_true_state(T_obs,X0_true_augmented,true);
 
-	if (verbose){
+	#if NAVIGATION_DEBUG
 		std::cout << "-- Computing estimated small body state history" << std::endl;
-	}
+	#endif
 
 	// The filter is initialized
 	if (this -> info_mat_bar_0.n_rows == 0){
@@ -92,15 +91,15 @@ int NavigationFilter::run(
 	arma::mat P_hat = arma::inv(this -> info_mat_bar_0);
 	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
-	if (verbose){
+	#if NAVIGATION_DEBUG
 		std::cout << "-- Running the Navigation Filter" << std::endl;
 
-	}
+	#endif
 	for (unsigned int t = 0; t < T_obs.size() - 1; ++t){
 
-		if (verbose){
+		#if NAVIGATION_DEBUG
 			std::cout << "--- Time : " << T_obs[t] << " Index: " << t << "/" << T_obs.size() - 2 <<std::endl;
-		}
+		#endif
 
 
 
@@ -192,9 +191,9 @@ int NavigationFilter::run(
 
 	}
 
-	if (verbose){
+	#if NAVIGATION_DEBUG
 		std::cout << "-- Leaving" << std::endl;
-	}
+	#endif
 
 	return 0;
 

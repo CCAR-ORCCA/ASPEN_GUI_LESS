@@ -1,5 +1,5 @@
 #include "KDTree_control_points.hpp"
-
+#include "DebugFlags.hpp"
 
 
 KDTree_control_points::KDTree_control_points() {
@@ -180,7 +180,7 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 }
 
-std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth, bool verbose) {
+std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth) {
 
 	// Creating the node
 	std::shared_ptr<KDTree_control_points> node = std::make_shared<KDTree_control_points>(KDTree_control_points());
@@ -189,15 +189,15 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	node -> right = nullptr;
 	node -> set_depth(depth);
 
-	if (verbose) {
+	#if KDTTREE_CONTROLPOINTS_DEBUG
 		std::cout << "Points in node: " << control_points.size() <<  std::endl;
-	}
+	#endif
 
 	if (control_points.size() == 0) {
-		if (verbose) {
+		#if KDTTREE_CONTROLPOINTS_DEBUG
 			std::cout << "Empty node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
-		}
+		#endif
 		return node;
 	}
 
@@ -212,10 +212,10 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 		node -> left -> control_points = std::vector<std::shared_ptr<ControlPoint> >();
 		node -> right -> control_points = std::vector<std::shared_ptr<ControlPoint> >();
 
-		if (verbose) {
+		#if KDTTREE_CONTROLPOINTS_DEBUG
 			std::cout << "Trivial node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
-		}
+		#endif
 
 		return node;
 
@@ -240,16 +240,16 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	}
 	arma::vec bounding_box_lengths = max_bounds - min_bounds;
 
-	if (verbose){
+	#if KDTTREE_CONTROLPOINTS_DEBUG
 		std::cout << "Midpoint: " << midpoint.t() << std::endl;
 		std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
-	}
+	#endif
 
 
 	if (arma::norm(bounding_box_lengths) == 0) {
-		if (verbose) {
+		#if KDTTREE_CONTROLPOINTS_DEBUG
 			std::cout << "Cluttered node" << std::endl;
-		}
+		#endif
 		return node;
 	}
 
@@ -284,8 +284,8 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	}
 
 	// Recursion continues
-	node -> left = build(left_points, depth + 1, verbose);
-	node -> right = build(right_points, depth + 1, verbose);
+	node -> left = build(left_points, depth + 1);
+	node -> right = build(right_points, depth + 1);
 
 	return node;
 

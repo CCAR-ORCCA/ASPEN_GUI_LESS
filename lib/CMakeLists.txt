@@ -173,7 +173,6 @@ source/ShapeModel.cpp
 source/ShapeModelBezier.cpp
 source/ShapeModelImporter.cpp
 source/ShapeModelTri.cpp
-source/RK.cpp
 external/Gnuplot/source/GNUPlot.cpp
 external/CGAL_interface/source/CGAL_interface.cpp
 )

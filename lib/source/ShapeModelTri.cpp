@@ -41,13 +41,13 @@ std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
 }
 
 
-void ShapeModelTri::construct_kd_tree_shape(bool verbose) {
+void ShapeModelTri::construct_kd_tree_shape() {
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
 	this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
-	this -> kdt_facet = this -> kdt_facet -> build(this -> elements, 0, verbose);
+	this -> kdt_facet = this -> kdt_facet -> build(this -> elements, 0);
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;

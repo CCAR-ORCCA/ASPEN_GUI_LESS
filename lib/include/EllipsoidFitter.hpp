@@ -4,7 +4,6 @@
 #include "PC.hpp"
 #include <armadillo>
 
-
 class EllipsoidFitter{
 
 public:
@@ -13,7 +12,7 @@ public:
 		this -> pc = pc;
 	};
 	arma::vec run(const arma::vec & X_bar,const arma::mat Pbar = arma::zeros<arma::mat>(6,6),
-		unsigned int N_iter = 1,bool verbose = false) const;
+		unsigned int N_iter = 1) const;
 	
 
 

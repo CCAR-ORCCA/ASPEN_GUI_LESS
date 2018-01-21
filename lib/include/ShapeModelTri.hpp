@@ -45,7 +45,7 @@ public:
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
-	void construct_kd_tree_shape(bool verbose = false);
+	void construct_kd_tree_shape();
 
 	/**
 	Determines whether the provided point lies inside or outside the shape model.

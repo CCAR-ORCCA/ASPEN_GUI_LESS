@@ -204,7 +204,7 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 
 }
 
-bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool verbose) {
+bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 
 	arma::vec S = *this -> origin_target_frame;
 	arma::vec dir = *this -> direction_target_frame;
@@ -227,17 +227,24 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool ver
 
 		impact = patch -> evaluate(u_t,v_t);
 		double distance = arma::norm(u_tilde*(S - impact));
-		if (verbose){
-			std::cout << "Iter: " << i << " Distance: " << distance << " (u,v): " << u_t << " " << v_t << std::endl;
-		}
+
+		#if RAY_DEBUG
+		std::cout << "Iter: " << i << " Distance: " << distance << " (u,v): " << u_t << " " << v_t << std::endl;
+		#endif
+
+
 		if (distance < 1e-8){
-			if (verbose){
-				std::cout << "Converged. Checking" << std::endl;
-			}
+
+			#if RAY_DEBUG
+			std::cout << "Converged. Checking" << std::endl;
+			#endif
+
 			if (u_t + v_t > 1. || u_t < 0. || v_t < 0. || u_t > 1. || v_t > 1.){
-				if (verbose){
-					std::cout << "Invalid edge hit" << std::endl;
-				}
+
+				#if RAY_DEBUG
+				std::cout << "Invalid edge hit" << std::endl;
+				#endif 
+
 				return false;
 			}
 
@@ -251,10 +258,12 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool ver
 			}
 
 			else{
-				if (verbose){
-					std::cout << "Current true range: " << this -> true_range << std::endl;
-					std::cout << "Range: " << arma::norm(S - impact) << std::endl;
-				}
+
+				#if RAY_DEBUG
+				std::cout << "Current true range: " << this -> true_range << std::endl;
+				std::cout << "Range: " << arma::norm(S - impact) << std::endl;
+				#endif 
+
 				return false;
 			}
 		}

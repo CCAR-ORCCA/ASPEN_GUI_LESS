@@ -20,7 +20,7 @@ public:
 
 	KDTree_pc();
 
-	std::shared_ptr<KDTree_pc> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth, bool verbose = false);
+	std::shared_ptr<KDTree_pc> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth);
 
 
 	void closest_point_search(

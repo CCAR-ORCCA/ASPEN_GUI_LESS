@@ -153,7 +153,7 @@ public:
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
-	void construct_kd_tree_control_points(bool verbose = false);
+	void construct_kd_tree_control_points();
 
 	/**
 	Returns pointer to KDTree_control_points member.

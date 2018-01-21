@@ -1,5 +1,5 @@
 #include "KDTree_pc.hpp"
-
+#include "DebugFlags.hpp"
 
 
 KDTree_pc::KDTree_pc() {
@@ -181,7 +181,7 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 
 
-std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth, bool verbose) {
+std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth) {
 
 
 	// Creating the node
@@ -192,15 +192,15 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	node -> set_depth(depth);
 
 
-	if (verbose) {
+	#if KDTTREE_PC_DEBUG
 		std::cout << "Points in node: " << points_normals.size() <<  std::endl;
-	}
+	#endif
 
 	if (points_normals.size() == 0) {
-		if (verbose) {
+		#if KDTTREE_PC_DEBUG
 			std::cout << "Empty node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
-		}
+		#endif
 		return node;
 	}
 
@@ -215,10 +215,10 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 		node -> left -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 		node -> right -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 
-		if (verbose) {
+		#if KDTTREE_PC_DEBUG
 			std::cout << "Trivial node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
-		}
+		#endif
 
 		return node;
 
@@ -251,16 +251,16 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	std::vector < std::shared_ptr<PointNormal> > left_points;
 	std::vector < std::shared_ptr<PointNormal> > right_points;
 
-	if (verbose){
+	#if KDTTREE_PC_DEBUG
 		std::cout << "Midpoint: " << midpoint.t() << std::endl;
 		std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
-	}
+	#endif
 
 
 	if (arma::norm(bounding_box_lengths) == 0) {
-		if (verbose) {
+		#if KDTTREE_PC_DEBUG
 			std::cout << "Cluttered node" << std::endl;
-		}
+		#endif
 		// return node;
 	}
 
@@ -297,8 +297,8 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	
 
 	// Recursion continues
-	node -> left = build(left_points, depth + 1, verbose);
-	node -> right = build(right_points, depth + 1, verbose);
+	node -> left = build(left_points, depth + 1);
+	node -> right = build(right_points, depth + 1);
 
 	return node;
 

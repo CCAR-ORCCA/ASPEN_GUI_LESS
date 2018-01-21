@@ -20,7 +20,7 @@ public:
 
 	KDTree_control_points();
 
-	std::shared_ptr<KDTree_control_points> build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth, bool verbose = false);
+	std::shared_ptr<KDTree_control_points> build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth);
 
 
 	void closest_point_search(

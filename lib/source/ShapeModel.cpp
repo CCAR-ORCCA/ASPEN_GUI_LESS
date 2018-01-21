@@ -24,13 +24,13 @@ arma::mat ShapeModel::get_inertia() const {
 }
 
 
-void ShapeModel::construct_kd_tree_control_points(bool verbose) {
+void ShapeModel::construct_kd_tree_control_points() {
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
 	this -> kdt_control_points = std::make_shared<KDTree_control_points>(KDTree_control_points());
-	this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0, verbose);
+	this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0);
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;

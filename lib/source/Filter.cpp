@@ -1,4 +1,5 @@
 #include "Filter.hpp"
+#include "DebugFlags.hpp"
 
 Filter ::Filter(const Args & args){
 	this -> args = args;

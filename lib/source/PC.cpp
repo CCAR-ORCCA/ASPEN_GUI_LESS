@@ -201,7 +201,7 @@ void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_
 	// The KD Tree is now constructed
 
 	this -> kdt_points  = std::make_shared<KDTree_pc>(KDTree_pc());
-	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0, false);
+	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0);
 }
 
 std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const {

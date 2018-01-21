@@ -1,10 +1,9 @@
 #include "EllipsoidFitter.hpp"
-
+#include "DebugFlags.hpp"
 
 
 arma::vec EllipsoidFitter::run(const arma::vec & X_bar,const arma::mat Pbar,
-	unsigned int N_iter,
-	bool verbose) const{
+	unsigned int N_iter) const{
 
 
 	unsigned int p = this -> pc -> get_size();
@@ -60,32 +59,36 @@ arma::vec EllipsoidFitter::run(const arma::vec & X_bar,const arma::mat Pbar,
 
 
 		X += dX;
-		if (verbose){
-			std::cout << X << std::endl;
 
-		}
+		#if ELLISPOID_DEBUG
+			std::cout << X << std::endl;
+		#endif
+
 
 		if (norm_res < 0){
 			norm_res = arma::norm(y);
-			if (verbose){
+			#if ELLISPOID_DEBUG
 				std::cout << "- Residuals: " << norm_res  << std::endl;
-			}
+			#endif
 		}
 		else{
 			double variation = std::abs(arma::norm(y) - norm_res) / norm_res;
 			if ( variation < 1e-10 || norm_res < 1e-10){
-				if (verbose){
+				
+				#if ELLISPOID_DEBUG
 					std::cout << "- Converged in " << i + 1 << " iterations" << std::endl;
 					std::cout << "- Residuals at convergence: " << arma::norm(y)  << std::endl;
-				}
+				#endif
+
 				break;
 			}
 			else{
 				norm_res = arma::norm(y);
-				if (verbose){
+
+				#if ELLISPOID_DEBUG
 					std::cout << "- Residuals: " << norm_res  << std::endl;
 					std::cout << "- Variation: " << variation << std::endl;
-				}
+				#endif
 			}
 		}
 	}

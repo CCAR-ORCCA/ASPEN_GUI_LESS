@@ -1,4 +1,5 @@
 #include "BatchFilter.hpp"
+#include "DebugFlags.hpp"
 
 BatchFilter::BatchFilter(const Args & args) : Filter(args){
 }
@@ -9,30 +10,32 @@ int  BatchFilter::run(
 	const arma::vec & X_bar_0,
 	const std::vector<double> & T_obs,
 	const arma::mat & R,
-	const arma::mat & Q,
-	bool verbose) {
+	const arma::mat & Q) {
 
 	if (T_obs.size() == 0){
 		return -1;
 	}
 
-	if (verbose){
+
+	#if DEBUG_BATCH || DEBUG_FILTER
 		std::cout << "- Running filter" << std::endl;
 		std::cout << "-- Computing true state history" << std::endl;
-	}
+	#endif
 
 	// The true state history is computed
 	this -> compute_true_state_history(X0_true,T_obs);
-	if (verbose){
+	
+	#if DEBUG_BATCH || DEBUG_FILTER
+	
 		std::cout << "-- Computing true observations" << std::endl;
-	}
+	#endif
 
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
-	if (verbose){
+	#if DEBUG_BATCH || DEBUG_FILTER
 		std::cout << "-- Done computing true observations" << std::endl;
-	}
+	#endif
 
 
 	// Containers
@@ -60,29 +63,29 @@ int  BatchFilter::run(
 
 	int iterations = N_iter;
 
-	if (verbose){
+	#if DEBUG_BATCH || DEBUG_FILTER
 		std::cout << "-- Iterating the filter" << std::endl;
-	}
+	#endif
 
 
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
 
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
-		}
+		#endif
 
 		
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "----  Computing reference trajectory" << std::endl;
-		}
+		#endif
 
 		// The reference trajectory is computed along with the STM
 		this -> compute_reference_state_history(T_obs,X_bar,stm);
 
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "----  Computing prefit residuals" << std::endl;
-		}
+		#endif
 
 		// The prefit residuals are computed
 		this -> compute_prefit_residuals(T_obs,
@@ -91,10 +94,10 @@ int  BatchFilter::run(
 			has_converged
 			,R);
 
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "----  Done computing prefit residuals" << std::endl;
 			std::cout << "----  Has converged? " << has_converged << std::endl;
-		}
+		#endif
 
 		// If the batch was only run for the pass-trough
 		if (N_iter == 0){
@@ -117,7 +120,7 @@ int  BatchFilter::run(
 			break;
 		}
 		else{
-			if (verbose){
+			#if DEBUG_BATCH || DEBUG_FILTER
 
 				arma::vec y_non_zero = y_bar.back().elem(arma::find(y_bar.back()));
 
@@ -127,7 +130,7 @@ int  BatchFilter::run(
 
 				std::cout << "-----  Has not converged" << std::endl;
 				std::cout << "-----  Residuals: " << rms_res << std::endl;
-			}
+			#endif
 		}
 
 		// The normal and information matrices are assembled
@@ -135,9 +138,9 @@ int  BatchFilter::run(
 		normal_mat = this ->  info_mat_bar_0 * dx_bar_0;
 
 
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "----  Assembling normal equations" << std::endl;
-		}
+		#endif
 
 		for (unsigned int p = 0; p < T_obs.size(); ++ p){
 
@@ -164,10 +167,10 @@ int  BatchFilter::run(
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
 
-		if (verbose){
+		#if DEBUG_BATCH || DEBUG_FILTER
 			std::cout << "---  Deviation: "<< std::endl;
 			std::cout << dx_hat << std::endl;
-		}
+		#endif
 
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat);
@@ -193,9 +196,9 @@ int  BatchFilter::run(
 	
 	this -> residuals = y_bar;
 
-	if (verbose){
+	#if DEBUG_BATCH || DEBUG_FILTER
 		std::cout << "-- Exiting batch "<< std::endl;
-	}
+	#endif
 
 	return iterations;
 

@@ -1,5 +1,5 @@
 #include "ExtendedKalmanFilter.hpp"
-
+#include "DebugFlags.hpp"
 
 
 ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter(args){
@@ -12,24 +12,26 @@ int ExtendedKalmanFilter::run(
 	const arma::vec & X_bar_0,
 	const std::vector<double> & T_obs,
 	const arma::mat & R,
-	const arma::mat & Q,
-	bool verbose) {
+	const arma::mat & Q) {
 
 	if (T_obs.size() == 0){
 		return -1;
 	}
 
-	if (verbose){
+
+
+
+	#if EKF_DEBUG
 		std::cout << "- Running filter" << std::endl;
 		std::cout << "-- Computing true state history" << std::endl;
-	}
+	#endif
 
 	// The true state history is computed
 	this -> compute_true_state_history(X0_true,T_obs);
 	
-	if (verbose){
+	#if EKF_DEBUG
 		std::cout << "-- Computing true observations" << std::endl;
-	}
+	#endif
 
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
@@ -47,9 +49,9 @@ int ExtendedKalmanFilter::run(
 
 	int iterations = N_iter;
 
-	if (verbose){
+	#if EKF_DEBUG
 		std::cout << "-- Iterating the filter" << std::endl;
-	}
+	#endif
 
 	// The EKF is iterated
 	for (unsigned int iter = 0; iter < N_iter; ++iter){
@@ -116,17 +118,18 @@ int ExtendedKalmanFilter::run(
 		
 		if (has_converged){
 			
-			if (verbose){
+			#if EKF_DEBUG
 				std::cout << "Converged in " << iter + 1 << " iterations\n";
 			}
+			#endif
 			break;
 
 		}
 
 		else if(iter == N_iter - 1){
-			if (verbose){
+			#if EKF_DEBUG
 				std::cout << "Stalled at " << iter + 1 << " iterations\n";
-			}
+			#endif
 			break;
 
 		}

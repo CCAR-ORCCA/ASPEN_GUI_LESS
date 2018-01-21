@@ -28,7 +28,7 @@ public:
 
 
 
-	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Element >> & elements, int depth, bool verbose = false);
+	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Element >> & elements, int depth);
 	bool hit(KDTree_shape * node, Ray * ray) const;
 	bool hit_bbox(Ray * ray) const;
 

@@ -1,11 +1,12 @@
 #include "KDTree_shape.hpp"
+#include "DebugFlags.hpp"
 
 KDTree_shape::KDTree_shape() {
 
 }
 
 
-std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Element > > & elements,  int depth, bool verbose) {
+std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Element > > & elements,  int depth) {
 
 	// Creating the node
 	std::shared_ptr<KDTree_shape> node = std::make_shared<KDTree_shape>( KDTree_shape() );
@@ -17,10 +18,10 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 	node -> bbox = BBox();
 
 	if (elements.size() == 0) {
-		if (verbose) {
+		#if KDTTREE_SHAPE_DEBUG
 			std::cout << "Empty node" << std::endl;
 			std::cout << "Leaf depth: " << depth << std::endl;
-		}
+		#endif
 		return node;
 	}
 
@@ -115,8 +116,8 @@ if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets
 
 
 		// Recursion continues
-	node -> left = build(left_facets, depth + 1, verbose);
-	node -> right = build(right_facets, depth + 1, verbose);
+	node -> left = build(left_facets, depth + 1);
+	node -> right = build(right_facets, depth + 1);
 
 }
 
@@ -128,7 +129,7 @@ else {
 	node -> left -> elements = std::vector<std::shared_ptr<Element> >();
 	node -> right -> elements = std::vector<std::shared_ptr<Element> >();
 
-	if (verbose) {
+	#if KDTTREE_SHAPE_DEBUG
 
 		std::cout << "Leaf depth: " << depth << std::endl;
 		std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
@@ -139,7 +140,7 @@ else {
 		std::string path = std::to_string(rand() ) + ".obj";
 		node -> bbox.save_to_file(path);
 
-	}
+	#endif
 
 }
 
