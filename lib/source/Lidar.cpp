@@ -101,33 +101,27 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 	}
 	
 	auto start = std::chrono::system_clock::now();
-	
+
 	#pragma omp parallel for if (USE_OMP_LIDAR)
 	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
 
 		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
 
-		if (pixel < y_res * z_res - 1){
-			this -> focal_plane[pixel + 1] -> set_guess(this -> focal_plane[pixel] -> get_hit_element());
-		}
+		// if (pixel < y_res * z_res - 1){
+		// 	this -> focal_plane[pixel + 1] -> set_guess(this -> focal_plane[pixel] -> get_hit_element());
+		// }
 
 		// If there's a hit, noise is added along the line of sight on the true measurement
-		if (hit) {
+		if (hit && add_noise) {
 
+			arma::vec random_vec = arma::randn(1);
 			double true_range = this -> focal_plane[pixel] -> get_true_range();
 
-			if (add_noise){
-				arma::vec random_vec = arma::randn(1);
+			double noise_sd = this -> los_noise_sd_baseline + this -> los_noise_fraction_mes_truth * true_range;			
+			double noise = noise_sd * random_vec(0);
 
-				double noise_sd = this -> los_noise_sd_baseline + this -> los_noise_fraction_mes_truth * true_range;			
-				double noise = noise_sd * random_vec(0);
-
-				this -> focal_plane[pixel] -> set_true_range(true_range + noise);
-			}
-			else{
-				this -> focal_plane[pixel] -> set_true_range(true_range);
-
-			}
+			this -> focal_plane[pixel] -> set_true_range(true_range + noise);
+			
 			
 		}
 
