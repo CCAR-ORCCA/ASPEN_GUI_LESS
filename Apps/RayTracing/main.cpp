@@ -46,7 +46,7 @@ int main(){
 		"../itokawa_64.obj", 1, true);
 
 	shape_io.load_obj_shape_model(&true_shape_model);
-	true_shape_model.construct_kd_tree_shape(false);
+	true_shape_model.construct_kd_tree_shape();
 
 	ShapeModelBezier estimated_shape_model(&true_shape_model,"E", &frame_graph);
 	
@@ -145,11 +145,7 @@ int main(){
 	// lidar.send_flash(&estimated_shape_model,false);
 
 	// lidar.save("pc.obj");
-	  auto start = std::chrono::system_clock::now();
 	lidar.send_flash(&true_shape_model,false);
-	  auto end = std::chrono::system_clock::now();
-	    std::chrono::duration<double> elapsed_seconds = end-start;
-	  std::cout << "time elapsed: " << elapsed_seconds.count()<< " s"<< std::endl;
 	lidar.save("pc_true.obj");
 
 
