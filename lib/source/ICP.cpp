@@ -116,8 +116,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				// The pairs are formed only after a change in the hierchical search
 				
 
-				auto start = std::chrono::system_clock::now();
-
 				if (use_omp){
 					this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
 						RBK::mrp_to_dcm(mrp),
@@ -129,10 +127,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 						x, h);
 				}
 
-				auto end = std::chrono::system_clock::now();
-				std::chrono::duration<double> elapsed_seconds = end-start;
-				std::cout << "time elapsed forming pairs: " << elapsed_seconds.count() << std::endl;
-				
+			
 				
 				next_h = false;
 			}
