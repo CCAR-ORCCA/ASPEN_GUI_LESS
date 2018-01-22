@@ -93,7 +93,7 @@ int main() {
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
-	true_shape_model.construct_kd_tree_shape(false);
+	true_shape_model.construct_kd_tree_shape();
 	DynamicAnalyses dyn_analyses(&true_shape_model);
 
 	// Integrator extra arguments
