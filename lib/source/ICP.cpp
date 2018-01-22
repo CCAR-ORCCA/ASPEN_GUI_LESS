@@ -116,18 +116,21 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				// The pairs are formed only after a change in the hierchical search
 				
 
-				if (use_omp){
-					this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
-						RBK::mrp_to_dcm(mrp),
-						x, h);
-				}
-				else{
-					this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist(
-						RBK::mrp_to_dcm(mrp),
-						x, h);
-				}
+				#if USE_OMP_ICP
+				
+				this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist_omp(
+					RBK::mrp_to_dcm(mrp),
+					x, h);
+				
+				#else
+				
+				this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist(
+					RBK::mrp_to_dcm(mrp),
+					x, h);
+				
+				#endif
 
-			
+				
 				
 				next_h = false;
 			}
