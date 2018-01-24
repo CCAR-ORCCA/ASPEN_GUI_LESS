@@ -55,7 +55,19 @@
 
 
 // Target shape
-#define TARGET_SHAPE "bennu_scaled_aligned"
+#define TARGET_SHAPE "itokawa_64_scaled_aligned"
+
+
+
+
+
+
+
+///////////////////////////////////////////
+
+
+
+
 
 
 int main() {
