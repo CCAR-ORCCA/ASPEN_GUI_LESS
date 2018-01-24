@@ -617,26 +617,17 @@ bool ShapeFitterBezier::update_element(Element * element,
 		double R_augmented = R ;
 		double W_augmented = 1./R_augmented;
 
+
+
 		normal_mat += Hi.t() * W_augmented * y;
 		info_mat +=  Hi.t() * W_augmented * Hi;
 
 	}
 
 
-	arma::mat regularized_info_mat;
 
-	if (arma::det(info_mat) < std::numeric_limits<double>::infinity()){
-		regularized_info_mat = info_mat + 1e-2 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_cols,info_mat.n_cols);
-	}
-	else{
-		regularized_info_mat = info_mat;
-	}
-
-
-	// The deviation is computed
-	arma::vec dC = arma::solve(regularized_info_mat,normal_mat);
-
-	// Only the normal component is kept
+	// The tangential component of the deviation is minimized
+	// For now, this is NOT treated as a-priori information
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
 
 		std::shared_ptr<ControlPoint> point = control_points -> at(k);
@@ -649,8 +640,13 @@ bool ShapeFitterBezier::update_element(Element * element,
 
 		arma::vec n = patch -> get_normal(double(i) / degree,double(j) / degree);
 
-		dC.rows(3 * k, 3 * k+ 2) = arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n;
+		info_mat.submat(3 * k,3 *k,3 * k + 2,3 * k + 2) += arma::eye<arma::mat>(3,3) - n * n.t();
+		
 	}
+
+	// The deviation is computed
+
+	arma::vec dC = arma::solve(info_mat,normal_mat);
 
 	// The a-priori deviation is adjusted
 	*element -> get_dX_bar_ptr() = *element -> get_dX_bar_ptr() - dC;
@@ -677,9 +673,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 	
 
 
-	
-
-
 	// The deviations are added to the coordinates
 
 	for (unsigned int k = 0; k < control_points -> size(); ++k){
@@ -693,9 +686,6 @@ bool ShapeFitterBezier::update_element(Element * element,
 		unsigned int degree = patch -> get_degree();
 
 		arma::vec n = patch -> get_normal(double(i) / degree,double(j) / degree);
-
-		// point -> set_coordinates(point -> get_coordinates()
-		// 	+ arma::dot(n,dC.rows(3 * k, 3 * k+ 2)) * n);
 
 		point -> set_coordinates(point -> get_coordinates()
 			+ dC.rows(3 * k, 3 * k+ 2));
