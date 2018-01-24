@@ -22,3 +22,6 @@ Enable/Disable the corresponding functionality by setting the flag
 
 // Use OMP in ICP methods
 #define USE_OMP_ICP 1
+
+// Use OMP in ShapeFitter methods
+#define USE_OMP_SHAPE_FITTER 1

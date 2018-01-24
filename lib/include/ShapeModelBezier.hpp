@@ -4,6 +4,8 @@
 #include "ShapeModel.hpp"
 #include "ShapeModelTri.hpp"
 #include "Bezier.hpp"
+#include "ShapeModelImporter.hpp"
+
 
 class ShapeModelBezier : public ShapeModel{
 
@@ -91,6 +93,9 @@ public:
 	@param ray pointer to ray. If a hit is found, the ray's internal is changed to store the range to the hit point
 	*/
 	virtual bool ray_trace(Ray * ray);
+
+	void save_both(std::string partial_path);
+
 
 
 protected:

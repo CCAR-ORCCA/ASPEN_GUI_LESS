@@ -5,6 +5,7 @@
 #include "PC.hpp"
 #include "CustomException.hpp"
 #include "OMP_flags.hpp"
+#include "DebugFlags.hpp"
 
 #pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\
   initializer( omp_priv = omp_orig )
@@ -17,7 +18,6 @@ public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	    arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
 	    arma::vec X_0 = arma::zeros<arma::vec>(3),
-	    bool pedantic = false,
 	    bool use_omp = false);
 
 	arma::vec get_X() const;
@@ -37,7 +37,6 @@ protected:
 	    const unsigned int iterations_max,
 	    const double rel_tol,
 	    const double stol,
-	    const bool pedantic,
 	    arma::mat dcm_0 ,
 	    arma::vec X_0,
 	    bool use_omp );

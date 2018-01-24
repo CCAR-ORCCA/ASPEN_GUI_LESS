@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import rc
+from polyhedron import plot_shape
+
 rc('text', usetex=True)
 
 
@@ -25,9 +27,9 @@ def plot_residuals(path = "",save = False):
     plt.clf()
 
 
-def plot_orbit(path = "",save = False):
+def plot_orbit(path,save = False):
 
-    X_true = np.loadtxt(path + "X_true.txt")
+    X_true = np.loadtxt(path)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -35,7 +37,16 @@ def plot_orbit(path = "",save = False):
     ax.set_xlabel("X (km)")
     ax.set_ylabel("Y (km)")
     ax.set_zlabel("Y (km)")
-    plt.show()
+
+
+    plot_shape("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj",
+        already_in_body_frame = True,ax = ax,scale_factor = 1)
+
+
+    if save is False :
+        plt.show()
+    else:
+        plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2018/paper/Figures/traj_body_frame.pdf")
 
 
 
@@ -109,4 +120,4 @@ def plot_state_error(path = "",save = False):
     else:
         plt.savefig("velocity_error.pdf")
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)
+# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)

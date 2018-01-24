@@ -28,19 +28,18 @@ public:
 		unsigned int index,
 		unsigned int N_iter_outer, 
 		double J,
-		const arma::mat & DS, 
-		const arma::vec & X_DS,
 		double los_noise_sd_base,
 		const arma::vec & u_dir); 
 
-
-	// virtual bool fit_shape_KF(double J,const arma::mat & DS, const arma::vec & X_DS);
 
 
 protected:
 
 	ShapeModelBezier * shape_model;
 	std::vector<Footpoint> find_footpoints() const;
+
+	std::vector<Footpoint> find_footpoints_omp() const;
+
 
 	arma::mat update_shape(std::vector<Footpoint> & footpoints,
 		bool & has_converged);
@@ -52,12 +51,17 @@ protected:
 		);
 	
 	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
+	static void find_footpoint_in_patch_omp(arma::vec P_tilde,Bezier * patch,std::shared_ptr<Footpoint> & footpoint);
+
 
 	virtual void get_barycentric_coordinates(const arma::vec & Pbar,double & u, double & v, Facet * facet) const;
 
 	virtual double compute_residuals(std::vector<std::pair<arma::vec,Footpoint > > & measurement_pairs) const;
 
 	virtual void find_footpoint(Footpoint & footpoint,Element * & element_guess) const ;
+
+	std::shared_ptr<Footpoint> find_footpoint_omp(arma::vec P_tilde) const ;
+
 
 	virtual void save(std::string path, arma::mat & Pbar_mat) const ;
 

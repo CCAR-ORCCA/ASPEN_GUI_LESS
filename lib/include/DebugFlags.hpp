@@ -20,4 +20,7 @@
 #define KDTTREE_PC_DEBUG 0
 
 
+// ICP DEBUG FLAGS
+#define ICP_DEBUG 0
+
 

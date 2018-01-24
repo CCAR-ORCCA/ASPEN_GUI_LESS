@@ -4,7 +4,6 @@
 ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	arma::mat dcm_0,
 	arma::vec X_0,
-	bool pedantic,
 	bool use_omp) {
 
 	this -> pc_destination = pc_destination;
@@ -16,7 +15,6 @@ ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 	this -> register_pc_mrp_multiplicative_partials(100,
 		1e-8,
 		1e-8,
-		pedantic, 
 		dcm_0,
 		X_0,
 		use_omp);
@@ -78,7 +76,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	const unsigned int iterations_max,
 	const double rel_tol,
 	const double stol,
-	const bool pedantic,
 	arma::mat dcm_0,
 	arma::vec X_0,
 	bool use_omp) {
@@ -103,9 +100,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	while (h >= 0 && exit == false) {
 
-		if (pedantic) {
+		#if ICP_DEBUG
 			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
-		}
+		#endif
 
 
 
@@ -130,7 +127,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				
 				#endif
 
-				
+
 				
 				next_h = false;
 			}
@@ -207,12 +204,12 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			J = this -> compute_rms_residuals(RBK::mrp_to_dcm(mrp),
 				x);
 
-			if (pedantic == true) {
+			#if ICP_DEBUG
 				std::cout << "Pairs : " << this -> point_pairs.size() << std::endl;
 				std::cout << "Residuals: " << J << std::endl;
 				std::cout << "MRP: " << mrp.t() << std::endl;
 				std::cout << "x: " << x.t() << std::endl;
-			}
+			#endif
 
 
 			if ( J / J_0 < rel_tol ) {

@@ -14,7 +14,6 @@ int main(){
 
 	std::vector<std::shared_ptr<ControlPoint> > vertices;
 
-
 	std::shared_ptr<ControlPoint> v0 = std::make_shared<ControlPoint>(ControlPoint());
 	arma::vec nominal_coords0 = {0,0,0};
 	v0 -> set_coordinates(nominal_coords0);
@@ -52,13 +51,12 @@ int main(){
 	dummy.save("patch.b");
 
 
-
 	// A 18 by 18 covariance is created
-	arma::mat P_CC = 1e-1 * arma::randu<arma::mat>(18,18);
-	P_CC = (P_CC + P_CC.t() + 1 * arma::eye<arma::mat>(18,18));
-	P_CC = P_CC / arma::trace(P_CC);
+	arma::mat P_CC = 1 * arma::randu<arma::mat>(18,18);
+	P_CC = (P_CC + P_CC.t() + 4 * arma::eye<arma::mat>(18,18));
+	P_CC = 1e-2 * P_CC / arma::abs(P_CC).max();
 
-	
+
 	P_CC.save("P_CC.txt",arma::raw_ascii);
 
 
@@ -71,15 +69,14 @@ int main(){
 	arma::vec pos = {2,0,5};
 	arma::vec dir = nominal_patch.get_center() - pos;
 	dir = arma::normalise(dir);
-	Ray ray(pos,dir);
+	Ray original_ray(pos,dir);
 
 	// The a-priori surface is ray traced
 	double u,v;
-	ray.single_patch_ray_casting(&nominal_patch,u,v);
-	double apriori_range = ray.get_true_range();
+	original_ray.single_patch_ray_casting(&nominal_patch,u,v);
+	double apriori_range = original_ray.get_true_range();
 
 	arma::mat P = nominal_patch.covariance_surface_point(u,v,dir,P_CC);
-	std::cout << "P eigenvalues: " << arma::eig_sym(P).t() << std::endl;
 	auto start = std::chrono::system_clock::now();
 
 	// #pragma omp parallel for
@@ -88,9 +85,11 @@ int main(){
 
 	for (unsigned int i = 0; i < N_rays; ++ i){
 
+
+		Ray ray(pos,dir);
+
 		// A random displacement is applied to the control points
-		E.randn();
-		E = Z * E;
+		E = Z * arma::randn(18);
 
 		// The random displacement is applied to vertices
 		v0 -> set_coordinates(nominal_coords0 + E.rows(0,2));
@@ -99,12 +98,18 @@ int main(){
 		v3 -> set_coordinates(nominal_coords3 + E.rows(9,11));
 		v4 -> set_coordinates(nominal_coords4 + E.rows(12,14));
 		v5 -> set_coordinates(nominal_coords5 + E.rows(15,17));
+		dummy.save_to_obj("patch.obj");
 
 		// The patch is ray traced
-		ray.single_patch_ray_casting(&nominal_patch,u,v);
+		bool hit = ray.single_patch_ray_casting(&nominal_patch,u,v,true);
+		if (!hit){
+			throw(std::runtime_error("Missed the target"));
+		}
 		data(i) = ray.get_true_range();
+
 		arma::vec r = arma::randn(1);
 		simulated(i) = apriori_range +  r(0) * std::sqrt(arma::dot(dir,P * dir )) ;
+
 
 	}
 

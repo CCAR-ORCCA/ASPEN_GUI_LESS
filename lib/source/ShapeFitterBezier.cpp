@@ -12,8 +12,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 	unsigned int index,
 	unsigned int N_iter_outer, 
 	double J,
-	const arma::mat & DS, 
-	const arma::vec & X_DS,
 	double los_noise_sd_base,
 	const arma::vec & u_dir){
 
@@ -27,7 +25,18 @@ bool ShapeFitterBezier::fit_shape_KF(
 		std::cout << "\n\n- Outer iteration : " << j + 1 << "/" << N_iter_outer <<std::endl;
 
 		// The footpoints are first found
+		auto start = std::chrono::system_clock::now();
+		
+		#if USE_OMP_SHAPE_FITTER
+		std::vector<Footpoint> footpoints = this -> find_footpoints_omp();
+		#else
 		std::vector<Footpoint> footpoints = this -> find_footpoints();
+		#endif
+		auto end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end-start;
+
+		std::cout << "- Time elapsed finding footpoints: " << elapsed_seconds.count()<< " s"<< std::endl;
+		
 
 		std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
 
@@ -51,20 +60,24 @@ bool ShapeFitterBezier::fit_shape_KF(
 		}
 
 		arma::mat Pbar_mat = arma::mat(3,footpoints.size());
-		arma::mat Ptilde_mat = arma::mat(3,footpoints.size());		 		
 
 		for (unsigned int k = 0; k < footpoints.size(); ++k){		
 			Pbar_mat.col(k) = footpoints[k].Pbar;
-			Ptilde_mat.col(k) = footpoints[k].Ptilde;		
-
 		}		
 
 		arma::vec u = {1,0,0};		
 		PC pc(u,Pbar_mat);	
-		PC pc_tilde(u,Ptilde_mat);		
-
 		pc.save("../output/pc/Pbar_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
-		pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+
+		if (j == 0){
+			arma::mat Ptilde_mat = arma::mat(3,footpoints.size());		 		
+			for (unsigned int k = 0; k < footpoints.size(); ++k){		
+				Ptilde_mat.col(k) = footpoints[k].Ptilde;		
+			}	
+			PC pc_tilde(u,Ptilde_mat);		
+			pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+		}
+
 
 
 		for (auto element_pair = fit_elements_to_footpoints.begin(); element_pair != fit_elements_to_footpoints.end(); ++element_pair){
@@ -136,12 +149,48 @@ std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector
 		}
 	}
 
-
-
 	return new_footpoints;
 
 
 }
+
+
+
+std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
+
+	std::vector<Footpoint> footpoints;
+
+	std::cout << "Finding footpoints...";
+	// Element * element_guess = nullptr;
+	// std::map<Element *,arma::vec> element_quality;
+
+
+	boost::progress_display progress(this -> pc -> get_size());
+
+	std::vector<std::shared_ptr<Footpoint> > pc_to_footpoint;
+
+	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+		pc_to_footpoint.push_back(nullptr);
+	}
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+
+		pc_to_footpoint[i] = this -> find_footpoint_omp(this -> pc -> get_point_coordinates(i));
+
+	}
+
+	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+		if (pc_to_footpoint[i] != nullptr){
+			footpoints.push_back(*pc_to_footpoint[i]);
+		}
+	}
+
+
+	return footpoints;
+
+}
+
 
 
 std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
@@ -208,7 +257,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 		double area = (quality(1) - quality(0)) * (quality(3) - quality(2));
 
 		// If at least two thirds of the unit triangle has been seen
-		if (std::abs(area - 1) < 0.7){
+		if (std::abs(area - 1) < 1){
 			footpoints_clean.push_back(footpoints[i]);
 		}
 
@@ -291,6 +340,122 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element
 
 
 }
+
+
+
+
+std::shared_ptr<Footpoint> ShapeFitterBezier::find_footpoint_omp(arma::vec P_tilde) const {
+	std::shared_ptr<Footpoint> footpoint_temp = nullptr;
+
+	if (this -> shape_model -> get_NElements() > 1){
+
+
+
+		// The closest control point to this measurement is looked for across the 
+		// shape model using the KD tree
+
+		double distance = std::numeric_limits<double>::infinity();
+		std::shared_ptr<ControlPoint> closest_control_point;
+
+		this -> shape_model -> get_KDTree_control_points() -> closest_point_search(
+			P_tilde,
+			this -> shape_model -> get_KDTree_control_points(),
+			closest_control_point,
+			distance);
+
+		auto owning_elements = closest_control_point -> get_owning_elements();
+
+		// The patches that this control point belongs to are searched
+		for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
+			Bezier * patch = dynamic_cast<Bezier *> (*el);
+
+			try{
+				ShapeFitterBezier::find_footpoint_in_patch_omp(P_tilde,patch,footpoint_temp);
+
+			}
+			catch(const MissingFootpointException & e){
+
+			}
+		}
+
+		
+	}
+
+	// If the shape model only has one patch, this is trivial
+	else {
+		Bezier * patch = dynamic_cast<Bezier *> (this -> shape_model -> get_elements() -> front().get());
+		ShapeFitterBezier::find_footpoint_in_patch_omp(P_tilde,patch,footpoint_temp);
+	}
+
+	return footpoint_temp;
+
+
+}
+
+void ShapeFitterBezier::find_footpoint_in_patch_omp(arma::vec P_tilde,Bezier * patch,std::shared_ptr<Footpoint> & footpoint){
+
+	arma::mat H = arma::zeros<arma::mat>(2,2);
+	arma::vec Y = arma::zeros<arma::vec>(2);
+	arma::vec dchi;
+	arma::mat dbezier_dchi;
+	arma::vec chi = {1./3,1./3};
+
+	arma::vec Pbar = patch -> evaluate(chi(0),chi(1));
+	unsigned int N_iter = 30;
+
+	for (unsigned int i = 0; i < N_iter; ++i){
+
+		dbezier_dchi = patch -> partial_bezier(chi(0),chi(1));
+
+		H.row(0) = dbezier_dchi.col(0).t() * dbezier_dchi - (P_tilde - Pbar).t() * patch -> partial_bezier_du(chi(0),chi(1));
+		H.row(1) = dbezier_dchi.col(1).t() * dbezier_dchi - (P_tilde - Pbar).t() * patch -> partial_bezier_dv(chi(0),chi(1));
+
+		Y(0) =  arma::dot(dbezier_dchi.col(0),P_tilde - Pbar);
+		Y(1) =  arma::dot(dbezier_dchi.col(1),P_tilde - Pbar);
+
+		dchi = arma::solve(H,Y);
+
+		chi += dchi;
+		Pbar = patch -> evaluate(chi(0),chi(1));
+
+		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - P_tilde)));
+		if (error < 1e-3){
+
+
+			if (footpoint != nullptr){
+				Bezier * patch = dynamic_cast<Bezier *>(footpoint -> element);
+				arma::vec P = patch -> evaluate(footpoint -> u,footpoint -> v);
+
+				// If true, then the previous footpoint was better
+				if (arma::norm(footpoint -> Ptilde - P) > arma::norm(footpoint -> Ptilde - footpoint -> Pbar)){
+					return ;
+				}
+
+			}
+
+			if (arma::max(chi) > 0.99 || arma::min(chi) < 0.01 || arma::sum(chi) > 0.99 || arma::sum(chi) < 0.01 ){
+				return ;
+			}	
+
+			if (footpoint == nullptr){
+				footpoint = std::make_shared<Footpoint>(Footpoint());
+				footpoint -> Ptilde = P_tilde;
+			}
+			
+			footpoint -> Pbar = Pbar;
+			footpoint -> u = chi(0);
+			footpoint -> v = chi(1);
+			footpoint -> n = patch -> get_normal(chi(0),chi(1));
+			footpoint -> element = patch;
+			return;
+		}
+
+	}
+
+	return;
+
+}
+
 
 void ShapeFitterBezier::find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint){
 
@@ -445,23 +610,9 @@ bool ShapeFitterBezier::update_element(Element * element,
 		}
 
 
-		double y = arma::dot(footpoint . n,footpoint . Ptilde
-			- patch -> evaluate(footpoint . u,footpoint . v));
+		double y = arma::dot(footpoint . n,footpoint . Ptilde - footpoint.Pbar);
 
 		residuals(k) = y;
-
-
-		// The orthogonal of the ray direction is constructed
-		// its exact orientation does not matter if one assumes that
-		// the transverse noises have equal standard deviations
-		// and are uncorrelated
-
-		arma::vec rand = arma::randu<arma::vec>(3);
-		arma::vec v_dir = arma::normalise(arma::cross(u_dir,rand));
-		arma::vec w_dir = arma::cross(u_dir,v_dir);
-
-		// double R_augmented = R * ( std::pow(arma::dot(footpoint . n,u_dir),2) 
-		// 	+ 1e-3 *  (std::pow(arma::dot(footpoint . n,v_dir),2) + std::pow(arma::dot(footpoint . n,w_dir),2)));
 
 		double R_augmented = R ;
 		double W_augmented = 1./R_augmented;
@@ -519,8 +670,13 @@ bool ShapeFitterBezier::update_element(Element * element,
 	std::cout << "- Information matrix determinant: " << arma::det(info_mat) << std::endl;
 	std::cout << "- Average update norm: " << update_norm << std::endl;
 	std::cout << "- Residuals: \n";
+	std::cout << "--  Min: " << arma::min(arma::abs(residuals)) << std::endl;
+	std::cout << "--  Max: " << arma::max(arma::abs(residuals)) << std::endl;
 	std::cout << "--  Mean: " << arma::mean(residuals) << std::endl;
 	std::cout << "--  Standard deviation: " << arma::stddev(residuals) << std::endl;
+	
+
+
 	
 
 

@@ -182,6 +182,29 @@ void ShapeModelBezier::elevate_degree(){
 	
 }
 
+
+void ShapeModelBezier::save_both(std::string partial_path){
+
+
+	this -> save(partial_path + ".b");
+
+	ShapeModelImporter shape_bezier(partial_path + ".b", 1, true);
+	ShapeModelBezier self("",nullptr);
+
+	shape_bezier.load_bezier_shape_model(&self);
+	self.elevate_degree();
+	self.elevate_degree();
+	self.elevate_degree();
+	self.elevate_degree();
+	self.elevate_degree();
+	self.elevate_degree();
+	self.elevate_degree();
+
+	self.save_to_obj(partial_path + ".obj");
+
+
+}
+
 void ShapeModelBezier::save(std::string path) {
 	// An inverse map going from vertex pointer to global indices is created
 

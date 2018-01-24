@@ -11,8 +11,8 @@
 // Lidar settings
 #define ROW_RESOLUTION 256
 #define COL_RESOLUTION 256
-#define ROW_FOV 0.2
-#define COL_FOV 0.2
+#define ROW_FOV 10
+#define COL_FOV 10
 
 // Instrument operating frequency
 #define INSTRUMENT_FREQUENCY 0.000145 // one flash every 2 hours
@@ -115,9 +115,6 @@ int main(){
 	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
 
-	
-
-
 	dcm_LB.col(0) = - arma::normalise(X0_true_augmented.rows(0,2));
 	dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
 		X0_true_augmented.rows(3,5)));
@@ -135,18 +132,8 @@ int main(){
 
 	frame_graph. get_frame(lidar. get_ref_frame_name()) -> set_origin_from_parent(pos);
 	frame_graph. get_frame(lidar. get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
-
-
-	// Setting the small body to its inertial attitude. This should not affect the 
-	// measurements at all
 	frame_graph. get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(*args.get_mrp_BN_true());
 	frame_graph. get_frame("E") -> set_mrp_from_parent(*args.get_mrp_BN_estimated());
-
-	// lidar.send_flash(&estimated_shape_model,false);
-
-	// lidar.save("pc.obj");
-	lidar.send_flash(&true_shape_model,false);
-	lidar.save("pc_true.obj");
 
 
 

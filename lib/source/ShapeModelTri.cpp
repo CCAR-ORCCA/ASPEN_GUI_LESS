@@ -242,7 +242,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 
 	facet_area_average = facet_area_average / this -> elements.size();
 	if (arma::norm(surface_sum) / facet_area_average > tol) {
-		throw (std::runtime_error("Normals were incorrectly oriented. norm(sum(n * s))/sum(s)= " + std::to_string(arma::norm(surface_sum) / facet_area_average)));
+		std::cout <<  "Warning : normals were incorrectly oriented. norm(sum(n * s))/sum(s)= " + std::to_string(arma::norm(surface_sum) / facet_area_average) << std::endl;
 	}
 
 }
@@ -252,7 +252,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 void ShapeModelTri::compute_volume() {
 	double volume = 0;
 
-	#// pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	// pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {
