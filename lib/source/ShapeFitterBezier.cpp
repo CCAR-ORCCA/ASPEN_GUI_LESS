@@ -37,7 +37,6 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 		std::cout << "- Time elapsed finding footpoints: " << elapsed_seconds.count()<< " s"<< std::endl;
 		
-
 		std::map<Element *,std::vector<Footpoint> > fit_elements_to_footpoints;
 
 		for (unsigned int i = 0; i < footpoints.size(); ++i){
@@ -94,6 +93,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 				this -> update_element(element_pair -> first,
 					element_pair -> second,false,W,u_dir);
 			}
+			this -> shape_model -> construct_kd_tree_control_points();
 			
 
 		}

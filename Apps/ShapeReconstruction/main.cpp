@@ -35,11 +35,11 @@
 
 // Times (s)
 #define T0 0
-#define TF 400000 // 10 days
+#define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 400
-#define INDEX_END 400
+#define INDEX_INIT 600
+#define INDEX_END 600
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1

@@ -135,8 +135,6 @@ else {
 		std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
 
 		node -> bbox.print();
-			// Uncomment if willing to save the leaf bounding boxes to a
-			// readable obj file
 		std::string path = std::to_string(rand() ) + ".obj";
 		node -> bbox.save_to_file(path);
 
