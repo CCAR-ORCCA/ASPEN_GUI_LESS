@@ -625,25 +625,8 @@ bool ShapeFitterBezier::update_element(Element * element,
 	}
 
 
-
-	// The tangential component of the deviation is minimized
-	// For now, this is NOT treated as a-priori information
-	for (unsigned int k = 0; k < control_points -> size(); ++k){
-
-		std::shared_ptr<ControlPoint> point = control_points -> at(k);
-
-		auto local_indices = patch -> get_local_indices(point);
-
-		unsigned int i = std::get<0>(local_indices);
-		unsigned int j = std::get<1>(local_indices);
-		unsigned int degree = patch -> get_degree();
-
-		arma::vec n = patch -> get_normal(double(i) / degree,double(j) / degree);
-
-		info_mat.submat(3 * k,3 *k,3 * k + 2,3 * k + 2) += arma::eye<arma::mat>(3,3) - n * n.t();
-		
-	}
-
+	info_mat += 1e-2 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_rows);
+	
 	// The deviation is computed
 
 	arma::vec dC = arma::solve(info_mat,normal_mat);
