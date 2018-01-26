@@ -137,7 +137,7 @@ int main() {
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
 
-	arma::vec vel_0_inertial = {0,0.7*v,0.7*v};
+	arma::vec vel_0_inertial = {0,std::cos(arma::datum::pi/6)*v,std::sin(arma::datum::pi/6)*v};
 	arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
 
 	X0_augmented.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
