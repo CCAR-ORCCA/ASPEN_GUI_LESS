@@ -148,9 +148,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				
 			}
 
-
 		}
-
 
 	}
 
@@ -429,10 +427,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
 
-	shape_fitter.fit_shape_KF(0,
-		this -> filter_arguments -> get_iter_filter(),1e-5,
-		this -> filter_arguments -> get_los_noise_sd_baseline(),
-		u_dir);
+	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),0);
 
 	a_priori_bezier -> save("../output/shape_model/fit_a_priori.b");
 

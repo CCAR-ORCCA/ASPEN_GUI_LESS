@@ -290,9 +290,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
-
 		pc_to_footpoint[i] = this -> find_footpoint_omp(this -> pc -> get_point_coordinates(i));
-
 	}
 
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
@@ -331,27 +329,6 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 			this -> find_footpoint(footpoint,element_guess);
 			footpoints.push_back(footpoint);
 
-			if (element_quality.find(footpoint.element) == element_quality.end()){
-
-				arma::vec quality = {
-					footpoint.u,
-					footpoint.u,
-					footpoint.v,
-					footpoint.v
-				};
-
-				element_quality.insert(std::make_pair(footpoint.element,quality));
-
-			}
-			else{
-				arma::vec quality = element_quality[footpoint.element];
-				quality(0) = std::min(footpoint.u,quality(0));
-				quality(1) = std::max(footpoint.u,quality(1));
-				quality(2) = std::min(footpoint.v,quality(2));
-				quality(3) = std::max(footpoint.v,quality(3));
-				element_quality[footpoint.element] = quality;
-			}
-
 		}
 
 		catch(const MissingFootpointException & e){
@@ -361,36 +338,14 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints() const{
 
 	}
 
-
-	// Only the footpoints whose footpoints 
-    // have been sufficiently covered are kept
-	std::vector<Footpoint> footpoints_clean;
-
-	for (unsigned int i =0; i < footpoints.size(); ++i){
-		arma::vec quality = element_quality[footpoints[i].element];
-
-		double area = (quality(1) - quality(0)) * (quality(3) - quality(2));
-
-		// If at least two thirds of the unit triangle has been seen
-		if (std::abs(area - 1) < 1){
-			footpoints_clean.push_back(footpoints[i]);
-		}
-
-	}
-
 	std::cout << "- Total footpoints: " << footpoints.size() << std::endl;
-	std::cout << "- Kept footpoints: " << footpoints_clean.size() << std::endl;
 
-
-
-
-	return footpoints_clean;
+	return footpoints;
 }
 
 void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element_guess) const {
 
 	if (this -> shape_model -> get_NElements() > 1){
-
 
 		// if a guess is available, this footpoint is looked for in this element
 		if (element_guess != nullptr){
@@ -463,8 +418,6 @@ std::shared_ptr<Footpoint> ShapeFitterBezier::find_footpoint_omp(arma::vec P_til
 	std::shared_ptr<Footpoint> footpoint_temp = nullptr;
 
 	if (this -> shape_model -> get_NElements() > 1){
-
-
 
 		// The closest control point to this measurement is looked for across the 
 		// shape model using the KD tree

@@ -38,8 +38,8 @@
 #define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 600
-#define INDEX_END 600
+#define INDEX_INIT 300 // index where shape reconstruction takes place
+#define INDEX_END 300 // end of shape fitting (must be less equal to the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
@@ -58,14 +58,7 @@
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
 
-
-
-
-
-
 ///////////////////////////////////////////
-
-
 
 
 
@@ -171,15 +164,11 @@ int main() {
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
-	auto tbegin = T_obs.begin();
-	auto tend = T_obs.end();
-
-	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, tbegin, tend,1e-3,
+	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs.begin(), T_obs.end(),1e-3,
 		Observer::push_back_augmented_state(X_augmented));
 
 
 	// The orbit is propagated with a finer timestep for visualization purposes
-
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs_dense.begin(), 
 		T_obs_dense.end(),1e-3,
 		Observer::push_back_augmented_state(X_augmented_dense));
@@ -203,11 +192,10 @@ int main() {
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
-
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_index_init(INDEX_INIT);
-	shape_filter_args.set_index_end(INDEX_END);
+	shape_filter_args.set_index_init(std::min(INDEX_INIT,int(times.size())));
+	shape_filter_args.set_index_end(std::min(INDEX_END,int(times.size())));
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
 	shape_filter_args.set_iter_filter(ITER_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
@@ -221,9 +209,13 @@ int main() {
 
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 
+	// The estimated shape model has its barycenter and principal axes lined up with the
+	// true shape model
+
 
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
+	// Must use ShapeModelTri to get the center of mass
 	ShapeModelImporter shape_io_fit_obj(
 		"../output/shape_model/fit_source_" +std::to_string(INDEX_END) + ".obj", 1, true);
 
@@ -249,107 +241,6 @@ int main() {
 	fit_shape.rotate(axes.t());;
 
 	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
-	
-
-	auto fit_elements = estimated_shape_model -> get_elements();
-
-	std::vector<arma::rowvec> distance_error_vec;
-
-	unsigned int N_samples_per_el = 30;
-
-	for (unsigned int i = 0; i < fit_elements -> size(); ++i){
-		
-		Bezier * patch = dynamic_cast<Bezier *>(fit_elements -> at(i).get());
-
-		for (unsigned int k = 0; k < N_samples_per_el; ++k){
-
-
-			arma::vec random = arma::randu(2);
-
-			double u = random(0);
-			double v = 1 - random(1) * u;
-
-
-		// For each Bezier element, the distance to the true shape is
-		// found by ray tracing along the element normal evaluated at its center
-
-			auto n = patch -> get_normal(u,v);
-			// std::cout << "Normal : " << n.t() << std::endl;
-
-			arma::vec P = patch -> evaluate(u,v);
-			// std::cout << "Center : " << P.t() << std::endl;
-
-			Ray ray(P,n);
-			Ray ray_rev(P,-n);
-
-
-			bool hit = true_shape_model.ray_trace(&ray);
-			bool hit_rev = true_shape_model.ray_trace(&ray_rev);
-
-			double distance = ray.get_true_range();
-			double distance_rev = -ray_rev.get_true_range();
-
-			double distance_final;
-
-			if (hit || hit_rev){
-				if (hit && hit_rev){
-
-
-					if (std::abs(distance) > std::abs(distance_rev)){
-						distance_final = distance_rev;
-					}
-					else{
-						distance_final = distance;
-					}
-				}
-				else if (hit){
-					distance_final = distance;
-				}
-				else{
-					distance_final = distance_rev;
-				}
-			}
-
-			else {
-				distance_final = std::numeric_limits<double>::infinity();
-				std::cout << "Spurious normal cast at:" << P.t();
-			}
-
-			
-			arma::mat P_X;
-			if (patch -> get_info_mat_ptr() == nullptr){
-				P_X = 1e10 * arma::eye<arma::mat>(3 * patch -> get_control_points() -> size(),
-					3 * patch -> get_control_points() -> size());
-			}
-			else{
-				P_X = arma::inv(*patch -> get_info_mat_ptr());
-			}
-
-
-
-			arma::mat Pp = patch -> covariance_surface_point(
-				u,
-				v,
-				n,
-				P_X);
-
-			// std::cout << "Patch/range covariance eigenvalue: " << arma::eig_sym(Pp) << std::endl;
-
-			arma::rowvec result = {distance_final,3 * std::sqrt(arma::dot(n,Pp * n)),arma::eig_sym(P_X)(0),arma::eig_sym(Pp)(0)};
-
-			distance_error_vec.push_back(result);
-
-		}
-
-	}
-
-
-	arma::mat distance_error = arma::mat(distance_error_vec.size(),4);
-	for (unsigned int i =0; i < distance_error_vec.size(); ++i){
-		distance_error.row(i) = distance_error_vec[i];
-	}
-
-	distance_error.save("../output/results.txt",arma::raw_ascii);
 
 
 	return 0;
