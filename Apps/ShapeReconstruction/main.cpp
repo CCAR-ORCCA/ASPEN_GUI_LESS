@@ -38,8 +38,8 @@
 #define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 300 // index where shape reconstruction takes place
-#define INDEX_END 300 // end of shape fitting (must be less equal to the number of simulation time. this is checked)
+#define INDEX_INIT 30 // index where shape reconstruction takes place
+#define INDEX_END 30 // end of shape fitting (must be less equal to the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
@@ -207,8 +207,13 @@ int main() {
 		&true_shape_model,
 		&shape_filter_args);
 
-	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 
+	auto start = std::chrono::system_clock::now();
+	shape_filter.run_shape_reconstruction(times,X_augmented,true);
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "Simulation completed in " << elapsed_seconds.count() << std::endl;
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
 

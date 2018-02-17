@@ -120,6 +120,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 			if (time_index == this -> filter_arguments -> get_index_init()){
 				std::cout << "- Initializing shape model" << std::endl;
 				this -> initialize_shape(time_index);
+
 			}
 
 			
@@ -423,6 +424,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		a_priori_bezier -> elevate_degree();
 	}
 
+	a_priori_bezier -> initialize_index_table();
 	a_priori_bezier -> save_to_obj("../output/shape_model/a_priori_bezier.obj");
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
