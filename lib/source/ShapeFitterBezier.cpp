@@ -109,7 +109,6 @@ std::vector<Footpoint> ShapeFitterBezier::fit_shape_KF(
 
 bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 
-
 	std::vector<Footpoint> footpoints;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
@@ -139,8 +138,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 
 	// The normal and information matrices are created
 	unsigned int N = this -> shape_model -> get_NControlPoints();
-	arma::sp_mat info_mat(3 * N,
-		3 * N);
+	arma::sp_mat info_mat(3 * N,3 * N);
 	arma::vec normal_mat = arma::zeros<arma::vec>(3 * N);
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 
@@ -152,8 +150,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 		++ progress;
 		
 		Footpoint footpoint = footpoints[k];
-
-		arma::sp_mat Hi(1,N);
+		arma::sp_mat Hi(1,3 * N);
 		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
 
 		auto control_points = patch -> get_control_points();
