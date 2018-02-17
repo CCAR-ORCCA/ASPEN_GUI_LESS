@@ -8,7 +8,7 @@ ShapeFitterBezier::ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc) : S
 }
 
 
-bool ShapeFitterBezier::fit_shape_KF(
+std::vector<Footpoint> ShapeFitterBezier::fit_shape_KF(
 	unsigned int index,
 	unsigned int N_iter_outer, 
 	double J,
@@ -17,7 +17,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 
 	double W = 1./(los_noise_sd_base * los_noise_sd_base);
-
+	std::vector<Footpoint> footpoints;
 	
 	// fit_elements has the pointers to the elements to be fit
 	for (unsigned int j = 0; j < N_iter_outer; ++j){
@@ -28,9 +28,9 @@ bool ShapeFitterBezier::fit_shape_KF(
 		auto start = std::chrono::system_clock::now();
 		
 		#if USE_OMP_SHAPE_FITTER
-		std::vector<Footpoint> footpoints = this -> find_footpoints_omp();
+		footpoints = this -> find_footpoints_omp();
 		#else
-		std::vector<Footpoint> footpoints = this -> find_footpoints();
+		footpoints = this -> find_footpoints();
 		#endif
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end-start;
@@ -55,7 +55,7 @@ bool ShapeFitterBezier::fit_shape_KF(
 
 
 		if (footpoints.size() == 0){
-			return false;
+			return footpoints;
 		}
 
 		arma::mat Pbar_mat = arma::mat(3,footpoints.size());
@@ -102,11 +102,126 @@ bool ShapeFitterBezier::fit_shape_KF(
 	}
 
 
+	return footpoints;
 
+}
+
+
+bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
+
+
+	std::vector<Footpoint> footpoints;
+
+	for (unsigned int i = 0; i < N_iter; ++i){
+		this -> shape_model -> construct_kd_tree_control_points();
+		
+		// The footpoints are found
+		footpoints = this -> find_footpoints();
+		
+		// The shape is updated
+		if (this -> update_shape(footpoints)){
+			break;
+		}
+
+
+	}
 
 	return false;
 
 }
+
+
+
+
+bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
+
+	std::cout << "Updating shape from the " << footpoints.size()<<  " footpoints...\n";
+
+	// The normal and information matrices are created
+	unsigned int N = this -> shape_model -> get_NControlPoints();
+	arma::sp_mat info_mat(3 * N,
+		3 * N);
+	arma::vec normal_mat = arma::zeros<arma::vec>(3 * N);
+	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
+
+	boost::progress_display progress(footpoints.size());
+
+	// All the measurements are processed	
+	#pragma omp parallel for reduction (+:info_mat,normal_mat)
+	for (unsigned int k = 0; k < footpoints.size(); ++k){
+		++ progress;
+		
+		Footpoint footpoint = footpoints[k];
+
+		arma::sp_mat Hi(1,N);
+		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
+
+		auto control_points = patch -> get_control_points();
+
+		// The different control points for this patch have their contribution added
+		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
+
+			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
+
+			auto local_indices = patch -> get_local_indices(*iter_points);
+			unsigned int i = std::get<0>(local_indices);
+			unsigned int j = std::get<1>(local_indices);
+			unsigned int degree = patch -> get_degree();
+			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,degree);
+			
+			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
+		}
+		
+		double y = arma::dot(footpoint . n,footpoint . Ptilde
+			- patch -> evaluate(footpoint . u,footpoint . v));
+		
+		residuals(k) = y;
+		
+		normal_mat += Hi.t() * y;
+		info_mat +=  Hi.t() * Hi;
+
+	}
+
+	// The information matrix is regularized
+	arma::sp_mat regularized_info_mat = info_mat;
+	regularized_info_mat +=  0.01 * arma::trace(info_mat) * arma::eye<arma::mat>(info_mat.n_rows,info_mat.n_cols);
+	
+	// The deviation is computed
+	arma::vec dC = arma::spsolve(regularized_info_mat,normal_mat);
+
+	double update_norm = 0;
+
+	for (unsigned int k = 0; k < N; ++k){
+		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/N;
+
+	}
+
+	std::cout << "\nAverage update norm: " << update_norm << std::endl;
+	std::cout << "Residuals: \n";
+	std::cout << "- Mean: " << arma::mean(residuals) << std::endl;
+	std::cout << "- Standard deviation: " << arma::stddev(residuals) << std::endl;
+
+	
+
+	// The deviations are added to the coordinates
+	auto control_points = this -> shape_model -> get_control_points();
+	
+	for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
+		unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
+		(*iter_points) -> set_coordinates((*iter_points) -> get_coordinates()
+			+ dC.rows(3 * global_point_index, 3 * global_point_index + 2));
+	}
+
+
+	return  (update_norm < 1e-2);
+	
+
+	
+
+}
+
+
+
 
 
 std::vector<Footpoint> ShapeFitterBezier::recompute_footpoints(const std::vector<Footpoint> & footpoints)const {

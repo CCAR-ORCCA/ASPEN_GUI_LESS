@@ -3,18 +3,12 @@
 
 #include "ShapeModelTri.hpp"
 #include "PC.hpp"
+#include "Footpoint.hpp"
 #include <assert.h>
 #include <map>
 
 
-struct Footpoint{
-	arma::vec Pbar;
-	arma::vec Ptilde;
-	double u;
-	double v;
-	arma::vec n;
-	Element * element;
-};
+
 
 class ShapeFitter{
 	

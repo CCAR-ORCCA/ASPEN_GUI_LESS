@@ -1,4 +1,5 @@
 #include "Bezier.hpp"
+#include "Psopt.hpp"
 #include <cassert>
 Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
 
@@ -449,11 +450,11 @@ arma::mat Bezier::partial_bezier(
 
 }
 
-arma::mat Bezier::covariance_surface_point(
+arma::mat Bezier::covariance_surface_point_deprecated(
 	const double u,
 	const double v,
 	const arma::vec & dir,
-	const arma::mat & P_CC){
+	const arma::mat & P_X){
 
 
 	arma::mat P = arma::zeros<arma::mat>(3,3);
@@ -468,7 +469,7 @@ arma::mat Bezier::covariance_surface_point(
 			P += (
 				bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
 				* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
-				* P_CC.submat( 3 * i, 3 * k, 3 * i + 2, 3 * k + 2 )
+				* P_X.submat( 3 * i, 3 * k, 3 * i + 2, 3 * k + 2 )
 				);
 		}
 	}
@@ -480,7 +481,7 @@ arma::mat Bezier::covariance_surface_point(
 				P += (
 					bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
 					* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
-					* P_CC.submat( 3 * i, 3 * l, 3 * i + 2, 3 * l + 2 )
+					* P_X.submat( 3 * i, 3 * l, 3 * i + 2, 3 * l + 2 )
 					* RBK::tilde(dir)
 					* AAA
 					* partial_bernstein(
@@ -511,7 +512,7 @@ arma::mat Bezier::covariance_surface_point(
 
 					* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
 					* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
-					* P_CC.submat( 3 * j, 3 * k, 3 * j + 2, 3 * k + 2 ) );
+					* P_X.submat( 3 * j, 3 * k, 3 * j + 2, 3 * k + 2 ) );
 			}
 		}
 	}
@@ -533,7 +534,7 @@ arma::mat Bezier::covariance_surface_point(
 						* RBK::tilde(dir)
 						* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
 						* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
-						* P_CC.submat( 3 * l, 3 * j, 3 * l + 2, 3 * j + 2 ) 
+						* P_X.submat( 3 * l, 3 * j, 3 * l + 2, 3 * j + 2 ) 
 						* RBK::tilde(dir)
 						* AAA
 						* partial_bernstein(
@@ -550,6 +551,227 @@ arma::mat Bezier::covariance_surface_point(
 	return P;
 
 
+
+
+}
+
+
+
+void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints){
+
+
+	// The constant matrices are computed
+	std::vector<arma::vec> v;
+	std::vector<arma::vec> W;
+	std::vector<arma::vec> v_i_norm;
+
+	std::vector<double> epsilon;
+
+	unsigned int N_C = this -> control_points.size();
+	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
+	unsigned int N_iter = 10 ;
+
+
+	arma::mat H_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
+	arma::mat N_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
+
+
+	for (unsigned int i = 0; i < footpoints.size(); ++i){
+
+		Footpoint footpoint = footpoints[i];
+		arma::vec dir = footpoint.n;
+
+		arma::mat A = RBK::tilde(dir) * partial_bezier(footpoint.u,footpoint.v);
+		arma::mat AAA = A * arma::inv(A .t() * A);
+		arma::mat M = arma::zeros<arma::mat>(3 * N_C,3);
+		arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
+		arma::vec v_i_norm_vec = arma::zeros<arma::vec>(N_C);
+
+		for (unsigned int k = 0; k < N_C; ++k){
+			auto indices = this -> forw_table[k];
+			Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(footpoint.u, footpoint.v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+			M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(footpoint.u, footpoint.v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
+		}
+
+		arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
+		arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
+		arma::vec v_i = J * dir;
+		arma::vec W_i = arma::zeros<arma::vec>(P);
+		arma::mat v_i_v_i = v_i * v_i.t();
+
+		for (unsigned int k = 0; k < N_C; ++k){
+			v_i_norm_vec(k) = arma::dot(v_i.rows(3 * k,3 * k + 2),v_i.rows(3 * k,3 * k + 2));
+		}
+
+		for (unsigned int p = 0; p < W_i.n_rows; ++p){
+			int k = int ( (6 * N_C + 1 - std::sqrt(std::pow(6 * N_C + 1,2) - 8 * p))/2);
+			int l = p - k * 3 * N_C + k * (k + 1) / 2;
+			W_i(p) = v_i_v_i(k,l);
+		}
+
+		double epsilon_i = arma::dot(dir,footpoint.Ptilde - footpoint.Pbar);
+
+		v.push_back(v_i);
+		W.push_back(W_i);
+		epsilon.push_back(epsilon_i);
+		v_i_norm.push_back(v_i_norm_vec);
+
+		N_mat += epsilon_i * epsilon_i * v_i * v_i.t() / std::pow(arma::dot(v_i,v_i),2);
+		H_mat += v_i * v_i.t() / arma::dot(v_i,v_i);
+
+
+
+	}
+
+
+	// A-priori covariance
+	arma::vec N_mat_vec = arma::vectorise(N_mat);
+	arma::vec H_mat_vec = arma::vectorise(H_mat);
+
+	double alpha = arma::dot(H_mat_vec,N_mat_vec) /  arma::dot(H_mat_vec,H_mat_vec);
+	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
+	// arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(1e-4);	
+	arma::vec lower_bounds =  L - 3;
+	arma::vec upper_bounds = L + 3;	
+	
+	// std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&footpoints,
+	// 	&v_i_norm);
+
+	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,
+		this);
+
+	// The covariance is refined by a particle-in-swarm optimizer
+	// Psopt<std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > > psopt(Bezier::compute_log_likelihood, 
+	// 	lower_bounds,
+	// 	upper_bounds, 
+	// 	1000,
+	// 	10,
+	// 	args);
+
+	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood, 
+		lower_bounds,
+		upper_bounds, 
+		100,
+		20,
+		args);
+
+	psopt.run( true,true);
+
+	P_X = arma::diagmat(arma::exp(L));
+
+	// P_X = arma::eye<arma::mat>(P_X.n_rows,P_X.n_rows);
+	// arma::vec result = psopt . get_result();
+	// for (unsigned int i = 0; i < result.n_rows; ++ i){
+	// 	P_X.submat(3 * i,3 * i,3 * i + 2,3 * i + 2) *= std::exp(result(i));
+	// }
+
+
+
+
+	// // The covariance matrix is iterated on
+	// for (unsigned int n = 0; n < N_iter; ++n){
+
+	// 	arma::mat H = arma::zeros<arma::mat>(P,N_C);
+	// 	arma::vec y = arma::zeros<arma::vec>(P);
+	// 	arma::vec dlikelihood_dL = arma::zeros<arma::vec>(N_C);
+
+	// 	double log_likelihood = 0;
+
+
+	// 	// All the footpoints are processed
+	// 	for (unsigned int i = 0; i < footpoints.size(); ++i){
+	// 		arma::vec v_i = v[i];
+	// 		arma::vec W_i = W[i];
+	// 		arma::vec Z_i =  v_i_norm[i] % arma::exp(L);
+
+	// 		double sigma_i_2 =  arma::sum(Z_i);
+	// 		double epsilon_i = epsilon[i];
+	// 		double gamma_i = 2 * std::pow(epsilon_i,2) / std::pow(sigma_i_2,3) - 1./std::pow(sigma_i_2,2);
+	// 		double zeta_i = std::pow(epsilon_i,2) / std::pow(sigma_i_2,2) - 1./sigma_i_2;
+
+	// 		H += gamma_i * W_i * Z_i.t();
+	// 		y += zeta_i * W_i;
+
+	// 		log_likelihood += - std::log(sigma_i_2) - std::pow(epsilon_i,2) / sigma_i_2;
+	// 		dlikelihood_dL += zeta_i * Z_i;
+	// 	}
+
+	// 	// The deviation in the unique components of the information matrix is computed
+	// 	arma::vec dL = arma::solve(  H.t() * H,H.t() * y);
+
+	// 	std::cout << "predicted likelihood variation: "  << arma::dot(dlikelihood_dL,dL) << std::endl;
+	// 	std::cout << "log likelihood: "  << log_likelihood << std::endl;
+	// 	std::cout << "dL: " << dL.t();
+	// 	std::cout << "Covariance: " << arma::exp(L).t() << std::endl << std::endl;
+	// 	L += dL;
+
+
+	// }
+
+}
+
+
+
+double Bezier::compute_log_likelihood(arma::vec L,
+	std::pair<const std::vector<Footpoint> * ,Bezier * > args){
+
+	// All the footpoints are processed
+	double log_likelihood = 0;
+
+	for (unsigned int i = 0; i <  args.first -> size(); ++i){
+		auto footpoint = args.first -> at(i);
+		
+		// auto v_i_norm = args.second -> at(i);
+		// arma::vec Z_i =  v_i_norm % arma::exp(L);
+		// double sigma_i_2 =  arma::sum(Z_i);
+
+		arma::mat P = args.second -> covariance_surface_point(footpoint . u,
+			footpoint . v,
+			footpoint . n,
+			arma::diagmat(arma::exp(L)));
+
+
+		double sigma_i_2 = arma::dot(footpoint . n,P * footpoint . n);
+		double epsilon_i = arma::dot(footpoint . n,
+			footpoint . Ptilde - footpoint . Pbar);
+
+
+		log_likelihood += - std::log(sigma_i_2) - std::pow(epsilon_i,2) / sigma_i_2;
+	}
+
+
+	return log_likelihood;
+
+}
+
+
+
+
+
+
+
+arma::mat Bezier::covariance_surface_point(
+	const double u,
+	const double v,
+	const arma::vec & dir,
+	const arma::mat & P_X){
+
+	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
+	arma::mat AAA = A * arma::inv(A .t() * A);
+	arma::mat M = arma::zeros<arma::mat>(3 * this -> control_points.size(),3);
+	arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
+	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+
+		auto indices = this -> forw_table[k];
+
+		Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
+	}
+
+	arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
+	arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
+
+	return J.t() * P_X * J;
 
 
 }

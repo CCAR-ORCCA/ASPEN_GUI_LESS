@@ -1,27 +1,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 
 
 
 
 # Loading files
-P_CC = np.loadtxt("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Uncertainty/build/P_CC.txt")
+# P_X = np.loadtxt("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Uncertainty/build/P_X.txt")
 data = np.loadtxt("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Uncertainty/build/data.txt")
 simulated = np.loadtxt("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Uncertainty/build/simulated.txt")
 
 
 # 
-imgplot = plt.imshow(P_CC)
-plt.colorbar()
-plt.show()
+# imgplot = plt.imshow(P_X)
+# plt.colorbar()
+# plt.show()
 
 # The histograms are plotted
-(n,bins,patches) = plt.hist(data, 50, facecolor='green', alpha=0.5,label = "Ray-tracing")
-(n,bins,patches) = plt.hist(simulated, 50, facecolor='red', alpha=0.5,label = "Predicted")
-plt.ylabel("Occurences")
-plt.xlabel("Range distribution")
+# (n,bins,patches) = plt.hist(data, 50, facecolor='green', alpha=0.5,label = "Ray-tracing")
+# (n,bins,patches) = plt.hist(simulated, 50, facecolor='red', alpha=0.5,label = "Predicted")
+
+sns.kdeplot(data,label = "Ray-tracing",shade = True)
+sns.kdeplot(simulated,label = "Predicted",shade = True)
+
+plt.ylabel("Normalized occurences")
+plt.xlabel("Range distribution (m)")
 plt.legend(loc = "best")
+plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2018/presentation/Figures/mc_results.pdf")
 plt.show()
-# plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/reports/status_report/Figures/mc_results.pdf")

@@ -128,10 +128,8 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				if (time_index != this -> filter_arguments -> get_index_init()){
 					ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
-					shape_fitter.fit_shape_KF(time_index,
-						this -> filter_arguments -> get_iter_filter(),1e-5,
-						this -> filter_arguments -> get_los_noise_sd_baseline(),
-						u_dir);
+					shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),
+						1e-5);
 				}
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");

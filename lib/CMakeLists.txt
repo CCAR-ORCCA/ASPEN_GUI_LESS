@@ -31,7 +31,7 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	message("-- This is Fortuna")
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
-	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 
 else()
 	set(IS_FORTUNA OFF)
@@ -115,8 +115,8 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 # Find SBGAT 
-find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-include_directories(${SBGATCORE_INCLUDE_HEADER})
+# find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
+# include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
@@ -162,6 +162,7 @@ source/NavigationFilter.cpp
 source/Observations.cpp
 source/PC.cpp
 source/PointNormal.cpp
+source/Psopt.cpp
 source/Ray.cpp
 source/RefFrame.cpp
 source/SequentialFilter.cpp
@@ -184,7 +185,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
-${SBGATCORE_LIBRARY}
+# ${SBGATCORE_LIBRARY}
 )
 
 

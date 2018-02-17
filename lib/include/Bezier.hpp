@@ -4,6 +4,8 @@
 #include <armadillo>
 #include "ControlPoint.hpp"
 #include "Element.hpp"
+#include "Footpoint.hpp"
+
 #include <boost/math/special_functions/factorials.hpp>
 #include <memory>
 #include <iostream>
@@ -149,7 +151,25 @@ public:
 	@param u mean of first coordinate
 	@param v mean of second coordinate
 	@param dir direction of ray
-	@param P_CC covariance on the position 
+	@param P_X covariance on the position 
+	of the control points
+	@return 3x3 covariance
+	*/
+	arma::mat covariance_surface_point_deprecated(
+		const double u,
+		const double v,
+		const arma::vec & dir,
+		const arma::mat & P_X);
+
+	/**
+	Returns the 3x3 covariance matrix
+	tracking the uncertainty in the location of
+	a surface point given uncertainty in the patch's control
+	points using an alternative formulation
+	@param u mean of first coordinate
+	@param v mean of second coordinate
+	@param dir direction of ray
+	@param P_X covariance on the position 
 	of the control points
 	@return 3x3 covariance
 	*/
@@ -157,7 +177,18 @@ public:
 		const double u,
 		const double v,
 		const arma::vec & dir,
-		const arma::mat & P_CC);
+		const arma::mat & P_X);
+
+
+
+	/**
+	Computes the patch covariance P_X maximizing the likelihood function 
+	associated with the provided footpoint pairs
+	@param footpoints vector of footpoints to be used in the training process
+	@param P_X trained covariance matrix maximizing p(e0,e1,e2,...,eN; P_X)= Prod(p(e_i;P_X))
+	*/
+	void train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints);
+
 
 
 	// Returns the partial derivative d^2P/(dchi dv)
@@ -194,12 +225,15 @@ public:
 		const unsigned n) ;
 
 
+	static double compute_log_likelihood(arma::vec L, 
+		std::pair<const std::vector<Footpoint> * , Bezier * > args);
 
 protected:
 
 	virtual void compute_normal();
 	virtual void compute_area();
 	virtual void compute_center();
+
 
 	void construct_index_tables();
 
@@ -286,6 +320,7 @@ protected:
 
 
 	std::map< Element * , std::vector<NewPoint> > new_points;
+
 
 
 

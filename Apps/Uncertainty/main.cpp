@@ -47,20 +47,23 @@ int main(){
 	
 	Bezier nominal_patch(vertices);
 	ShapeModelBezier dummy(nominal_patch);
-	dummy.save_to_obj("patch.obj");
-	dummy.save("patch.b");
-
+	
+	dummy.save_both("nominal");
 
 	// A 18 by 18 covariance is created
-	arma::mat P_CC = 1 * arma::randu<arma::mat>(18,18);
-	P_CC = (P_CC + P_CC.t() + 4 * arma::eye<arma::mat>(18,18));
-	P_CC = 1e-2 * P_CC / arma::abs(P_CC).max();
+	arma::mat P_X = 1 * arma::randu<arma::mat>(18,18);
+	P_X = (P_X + P_X.t() + 4 * arma::eye<arma::mat>(18,18));
+	P_X = 1e-2 * P_X / arma::abs(P_X).max();
+	
+
+	// Removing correlations
+	// arma::mat P_X_no_correl = arma::diagmat(P_X.diag());
+	arma::mat P_X_no_correl = P_X;
 
 
-	P_CC.save("P_CC.txt",arma::raw_ascii);
+	P_X.save("P_X.txt",arma::raw_ascii);
 
-
-	arma::mat Z =  arma::chol( P_CC, "lower" ) ;
+	arma::mat Z =  arma::chol( P_X, "lower" ) ;
 	arma::vec E(18);
 
 	// The measurement direction is created
@@ -68,6 +71,7 @@ int main(){
 	arma::vec ranges(N_rays);
 	arma::vec pos = {2,0,5};
 	arma::vec dir = nominal_patch.get_center() - pos;
+	
 	dir = arma::normalise(dir);
 	Ray original_ray(pos,dir);
 
@@ -76,15 +80,19 @@ int main(){
 	original_ray.single_patch_ray_casting(&nominal_patch,u,v);
 	double apriori_range = original_ray.get_true_range();
 
-	arma::mat P = nominal_patch.covariance_surface_point(u,v,dir,P_CC);
+	// arma::mat P = nominal_patch.covariance_surface_point(u,v,dir,P_X_no_correl);
+	arma::mat P = nominal_patch.covariance_surface_point_efficient(u,v,dir,P_X_no_correl);
+
+
 	auto start = std::chrono::system_clock::now();
 
 	// #pragma omp parallel for
 	arma::vec data(N_rays);
 	arma::vec simulated(N_rays);
 
-	for (unsigned int i = 0; i < N_rays; ++ i){
 
+
+	for (unsigned int i = 0; i < N_rays; ++ i){
 
 		Ray ray(pos,dir);
 
@@ -98,21 +106,18 @@ int main(){
 		v3 -> set_coordinates(nominal_coords3 + E.rows(9,11));
 		v4 -> set_coordinates(nominal_coords4 + E.rows(12,14));
 		v5 -> set_coordinates(nominal_coords5 + E.rows(15,17));
-		dummy.save_to_obj("patch.obj");
 
 		// The patch is ray traced
-		bool hit = ray.single_patch_ray_casting(&nominal_patch,u,v,true);
+		bool hit = ray.single_patch_ray_casting(&nominal_patch,u,v);
 		if (!hit){
 			throw(std::runtime_error("Missed the target"));
 		}
-		data(i) = ray.get_true_range();
+		data(i) = ray.get_true_range() - apriori_range;
 
 		arma::vec r = arma::randn(1);
-		simulated(i) = apriori_range +  r(0) * std::sqrt(arma::dot(dir,P * dir )) ;
-
+		simulated(i) =  r(0) * std::sqrt(arma::dot(dir,P * dir )) ;
 
 	}
-
 
 	auto end = std::chrono::system_clock::now();
 
@@ -128,21 +133,9 @@ int main(){
 	simulated.save("simulated.txt",arma::raw_ascii);
 	data.save("data.txt",arma::raw_ascii);
 
-	// The patch is also saved
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-	nominal_patch.elevate_degree();
-
-	ShapeModelBezier dummy_elevated(nominal_patch);
-	dummy_elevated.save_to_obj("patch_elevated.obj") ;
-	dummy_elevated.save("patch_elevated.b") ;
-
-
+	
+	// The nominal patch is saved
+	dummy.save_both("perturbed") ;
 
 
 
