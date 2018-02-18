@@ -9,6 +9,13 @@
 #include <map>
 #include "CustomException.hpp"
 
+#include <Eigen/Sparse>
+
+typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
+typedef Eigen::Triplet<double> T;
+typedef Eigen::VectorXd EigVec;
+
+
 
 
 #pragma omp declare reduction (+ : arma::mat : omp_out += omp_in)\
@@ -42,6 +49,14 @@ protected:
 	std::vector<Footpoint> find_footpoints() const;
 
 	std::vector<Footpoint> find_footpoints_omp() const;
+
+void add_to_problem(std::vector<T>& coeffs,
+	EigVec & N,
+	const double y,
+	const arma::sp_mat & H_i,
+	const std::vector<int> & global_indices);
+
+
 
 
 	bool update_shape(std::vector<Footpoint> & footpoints);
