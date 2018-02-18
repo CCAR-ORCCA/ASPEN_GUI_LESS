@@ -213,7 +213,7 @@ int main() {
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
-	std::cout << "Simulation completed in " << elapsed_seconds.count() << std::endl;
+	std::cout << "Point cloud acquisition and shape fitting completed in " << elapsed_seconds.count() << " s"<< std::endl;
 	// The estimated shape model has its barycenter and principal axes lined up with the
 	// true shape model
 

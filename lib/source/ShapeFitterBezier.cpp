@@ -136,43 +136,40 @@ void ShapeFitterBezier::add_to_problem(
 	const arma::sp_mat & H_i,
 	const std::vector<int> & global_indices){
 
-	for (auto row = global_indices.begin(); row != global_indices.end(); ++row){
+	for (auto row_index = global_indices.begin(); row_index != global_indices.end(); ++row_index){
 
-		for (auto col = global_indices.begin(); col != global_indices.end(); ++col){
+		int row = 3 * (*row_index);
 
-			coeffs.push_back(T(*row,*col,
-				H_i(*row) * H_i(*col)));
+		double H_i_row = H_i(row);
+		double H_i_row_1 = H_i(row + 1);
+		double H_i_row_2 = H_i(row + 2);
 
-			coeffs.push_back(T(*row,*col + 1,
-				H_i(*row) * H_i(*col + 1)));  
 
-			coeffs.push_back(T(*row,*col + 2,
-				H_i(*row) * H_i(*col + 2)));          
-// 
-			coeffs.push_back(T(*row + 1,*col,
-				H_i(*row + 1) * H_i(*col)));   
+		for (auto col_index = global_indices.begin(); col_index != global_indices.end(); ++col_index){
 
-			coeffs.push_back(T(*row + 1,*col + 1,
-				H_i(*row + 1) * H_i(*col + 1)));          
+			int col = 3 * (*col_index);
 
-			coeffs.push_back(T(*row + 1,*col + 2,
-				H_i(*row + 1) * H_i(*col + 2)));  
-// 
-			coeffs.push_back(T(*row + 2,*col,
-				H_i(*row + 2) * H_i(*col)));          
+			
+			double H_i_col = H_i(col);
+			double H_i_col_1 = H_i(col + 1);
+			double H_i_col_2 = H_i(col + 2);
 
-			coeffs.push_back(T(*row + 2,*col + 1,
-				H_i(*row + 2) * H_i(*col + 1)));          			   
-
-			coeffs.push_back(T(*row + 2,*col + 2,
-				H_i(*row + 2) * H_i(*col + 2)));          
+			coeffs.push_back(T(row,col,H_i_row * H_i_col));
+			coeffs.push_back(T(row,col + 1,H_i_row * H_i_col_1));  
+			coeffs.push_back(T(row,col + 2,H_i_row * H_i_col_2));          
+			coeffs.push_back(T(row + 1,col,H_i_row_1 * H_i_col));   
+			coeffs.push_back(T(row + 1,col + 1,H_i_row_1 * H_i_col_1));          
+			coeffs.push_back(T(row + 1,col + 2,H_i_row_1 * H_i_col_2));  
+			coeffs.push_back(T(row + 2,col,H_i_row_2 * H_i_col));          
+			coeffs.push_back(T(row + 2,col + 1,H_i_row_2 * H_i_col_1));          			   
+			coeffs.push_back(T(row + 2,col + 2,H_i_row_2 * H_i_col_2));          
 
 		}	
 
 
-		N(*row) += y * H_i(*row);
-		N(*row + 1) += y * H_i(*row + 1);
-		N(*row + 2) += y * H_i(*row + 2);
+		N(row) += y * H_i_row;
+		N(row + 1) += y * H_i_row_1;
+		N(row + 2) += y * H_i_row_2;
 
 
 	}
@@ -213,7 +210,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 		// The different control points for this patch have their contribution added
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 
-
 			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
 
 			auto local_indices = patch -> get_local_indices(*iter_points);
@@ -222,31 +218,20 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,patch -> get_degree());
 			
 			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
+			global_indices.push_back(global_point_index);
 		}
 		
 		double y = arma::dot(footpoint . n,footpoint . Ptilde
 			- patch -> evaluate(footpoint . u,footpoint . v));
 
-
-
 		this -> add_to_problem(coefficients,Nmat,y,Hi,global_indices);
 
 		residuals(k) = y;
-		
-		// normal_mat += Hi.t() * y;
-		// info_mat +=  Hi.t() * Hi;
 
 	}
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
-
-
-
-
-
-
-
 
 	// The information matrix is regularized
 	double trace = 0;
@@ -263,7 +248,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			if (it.row() == it.col()){
 
 				double & value = it.valueRef();
-				value += 0.01 * trace;
+				value += 1e-5 * trace;
 			}
 		}
 	}
@@ -276,9 +261,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 
 	// The deviation is computed
 	EigVec deviation = chol.solve(Nmat);    
-
-
-
 
 	arma::vec dC(3*N);
 	#pragma omp parallel for

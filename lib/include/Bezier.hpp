@@ -190,6 +190,15 @@ public:
 	void train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints);
 
 
+	/**
+	Computes the patch covariance P_X maximizing the likelihood function 
+	associated with the provided footpoint pairs
+	@param footpoints vector of footpoints to be used in the training process
+	*/
+	void train_patch_covariance(const std::vector<Footpoint> & footpoints);
+
+
+
 
 	// Returns the partial derivative d^2P/(dchi dv)
 	arma::mat partial_bezier_dv(
@@ -225,8 +234,13 @@ public:
 		const unsigned n) ;
 
 
-	static double compute_log_likelihood(arma::vec L, 
+	static double compute_log_likelihood_full_diagonal(arma::vec L, 
 		std::pair<const std::vector<Footpoint> * , Bezier * > args);
+
+	static double compute_log_likelihood_block_diagonal(arma::vec L,
+	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args);
+
+
 
 protected:
 
@@ -263,8 +277,6 @@ protected:
 		const int i,
 		const int j,
 		const int n) ;
-
-
 
 
 
@@ -322,7 +334,7 @@ protected:
 	std::map< Element * , std::vector<NewPoint> > new_points;
 
 
-
+	arma::mat P_X;
 
 
 
