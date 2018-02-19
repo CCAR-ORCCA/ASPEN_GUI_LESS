@@ -127,21 +127,22 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 
 	// The footpoints are assigned to the patches
 	// First, patches that were seen are cleared
+	// Then, the footpoints are added to the patches
+
 	std::set<Bezier *> trained_patches;
 	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
 		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
-		if (patch -> has_footpoints()){
+		
+		
+		if (trained_patches.find(patch) == trained_patches.end()){
 			patch -> reset_footpoints();
 			trained_patches.insert(patch);
 		}
+		patch -> add_footpoint(*footpoint);
+
 	}
 
-	// Then, the footpoints are added to the patches
-	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
-		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
-		patch -> add_footpoint(*footpoint);
-		
-	}
+
 
 	// Once this is done, each patch is trained
 	boost::progress_display progress(trained_patches.size());
@@ -279,7 +280,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			if (it.row() == it.col()){
 
 				double & value = it.valueRef();
-				value += 1e-4 * trace;
+				value += 1e-5 * trace;
 			}
 		}
 	}
