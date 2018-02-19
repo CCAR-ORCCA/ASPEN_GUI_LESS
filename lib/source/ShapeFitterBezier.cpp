@@ -123,7 +123,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 
 
 	}
-
+	return false;
 
 	// The footpoints are assigned to the patches
 	// First, patches that were seen are cleared
@@ -132,7 +132,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 	std::set<Bezier *> trained_patches;
 	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
 		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
-		
 		
 		if (trained_patches.find(patch) == trained_patches.end()){
 			patch -> reset_footpoints();
