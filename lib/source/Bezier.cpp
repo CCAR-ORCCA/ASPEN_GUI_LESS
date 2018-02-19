@@ -438,10 +438,8 @@ arma::mat Bezier::partial_bezier(
 	const double v) {
 
 	arma::mat partials = arma::zeros<arma::mat>(3,2);
-	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		
+	for (unsigned int l = 0; l < this -> control_points.size(); ++l){	
 		int i = std::get<0>(this -> forw_table[l]);
-		
 		int j = std::get<1>(this -> forw_table[l]);
 
 		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
@@ -555,26 +553,17 @@ arma::mat Bezier::covariance_surface_point_deprecated(
 
 }
 
-
-void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
-
-
-	// The constant matrices are computed
-	std::vector<arma::vec> v;
-	std::vector<arma::vec> W;
-	std::vector<arma::vec> v_i_norm;
-
-	std::vector<double> epsilon;
+double Bezier::initialize_covariance(const std::vector<Footpoint> & footpoints,
+	std::vector<arma::vec> & v,
+	std::vector<arma::vec> & W,
+	std::vector<arma::vec> & v_i_norm,
+	std::vector<double> & epsilon){
 
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-	unsigned int N_iter = 10 ;
-	this -> P_X = arma::mat(3 * N_C,3 * N_C);
-
 
 	arma::mat H_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
 	arma::mat N_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
-
 
 	for (unsigned int i = 0; i < footpoints.size(); ++i){
 
@@ -621,26 +610,46 @@ void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 
 	}
 
-
 	// A-priori covariance
 	arma::vec N_mat_vec = arma::vectorise(N_mat);
 	arma::vec H_mat_vec = arma::vectorise(H_mat);
 
 	double alpha = arma::dot(H_mat_vec,N_mat_vec) /  arma::dot(H_mat_vec,H_mat_vec);
+
+	return alpha;
+
+}
+
+
+
+void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
+
+	std::vector<arma::vec> v;
+	std::vector<arma::vec> W;
+	std::vector<arma::vec> v_i_norm;
+	std::vector<double> epsilon;
+
+	unsigned int N_C = this -> control_points.size();
+	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
+	unsigned int N_iter = 10 ;
+	this -> P_X = arma::mat(3 * N_C,3 * N_C);
+
+
+	// The initial guess for the covariance is computed.
+	double alpha = initialize_covariance(footpoints,v,W,v_i_norm,epsilon);
+
 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
 	arma::vec lower_bounds =  L - 3;
 	arma::vec upper_bounds = L + 3;	
-	
 
 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,this);
 
 	// The covariance is refined by a particle-in-swarm optimizer
-
 	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
 		lower_bounds,
 		upper_bounds, 
 		100,
-		20,
+		N_iter,
 		args);
 
 	psopt.run( true,true);
@@ -653,73 +662,20 @@ void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints){
 
 
-	// The constant matrices are computed
 	std::vector<arma::vec> v;
 	std::vector<arma::vec> W;
 	std::vector<arma::vec> v_i_norm;
-
 	std::vector<double> epsilon;
 
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 	unsigned int N_iter = 10 ;
+	this -> P_X = arma::mat(3 * N_C,3 * N_C);
 
 
-	arma::mat H_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
-	arma::mat N_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
+	// The initial guess for the covariance is computed.
+	double alpha = initialize_covariance(footpoints,v,W,v_i_norm,epsilon);
 
-
-	for (unsigned int i = 0; i < footpoints.size(); ++i){
-
-		Footpoint footpoint = footpoints[i];
-		arma::vec dir = footpoint.n;
-
-		arma::mat A = RBK::tilde(dir) * partial_bezier(footpoint.u,footpoint.v);
-		arma::mat AAA = A * arma::inv(A .t() * A);
-		arma::mat M = arma::zeros<arma::mat>(3 * N_C,3);
-		arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
-		arma::vec v_i_norm_vec = arma::zeros<arma::vec>(N_C);
-
-		for (unsigned int k = 0; k < N_C; ++k){
-			auto indices = this -> forw_table[k];
-			Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(footpoint.u, footpoint.v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
-			M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(footpoint.u, footpoint.v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
-		}
-
-		arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
-		arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
-		arma::vec v_i = J * dir;
-		arma::vec W_i = arma::zeros<arma::vec>(P);
-		arma::mat v_i_v_i = v_i * v_i.t();
-
-		for (unsigned int k = 0; k < N_C; ++k){
-			v_i_norm_vec(k) = arma::dot(v_i.rows(3 * k,3 * k + 2),v_i.rows(3 * k,3 * k + 2));
-		}
-
-		for (unsigned int p = 0; p < W_i.n_rows; ++p){
-			int k = int ( (6 * N_C + 1 - std::sqrt(std::pow(6 * N_C + 1,2) - 8 * p))/2);
-			int l = p - k * 3 * N_C + k * (k + 1) / 2;
-			W_i(p) = v_i_v_i(k,l);
-		}
-
-		double epsilon_i = arma::dot(dir,footpoint.Ptilde - footpoint.Pbar);
-
-		v.push_back(v_i);
-		W.push_back(W_i);
-		epsilon.push_back(epsilon_i);
-		v_i_norm.push_back(v_i_norm_vec);
-
-		N_mat += epsilon_i * epsilon_i * v_i * v_i.t() / std::pow(arma::dot(v_i,v_i),2);
-		H_mat += v_i * v_i.t() / arma::dot(v_i,v_i);
-
-	}
-
-
-	// A-priori covariance
-	arma::vec N_mat_vec = arma::vectorise(N_mat);
-	arma::vec H_mat_vec = arma::vectorise(H_mat);
-
-	double alpha = arma::dot(H_mat_vec,N_mat_vec) /  arma::dot(H_mat_vec,H_mat_vec);
 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
 	// arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(1e-4);	
 	arma::vec lower_bounds =  L - 3;
@@ -743,7 +699,7 @@ void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint>
 		lower_bounds,
 		upper_bounds, 
 		100,
-		20,
+		N_iter,
 		args);
 
 	psopt.run( true,true);
@@ -840,10 +796,6 @@ arma::mat Bezier::covariance_surface_point(
 
 
 }
-
-
-
-
 
 
 

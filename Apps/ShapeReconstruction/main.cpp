@@ -214,8 +214,11 @@ int main() {
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
 	std::cout << "Point cloud acquisition and shape fitting completed in " << elapsed_seconds.count() << " s"<< std::endl;
-	// The estimated shape model has its barycenter and principal axes lined up with the
-	// true shape model
+	
+
+	// This is where the training of each patch's covariance should take place.
+	// First, the training data is sorted by assigning each footpoint to 
+
 
 
 	// The estimated shape model has its barycenter and principal axes lined up with the
@@ -223,10 +226,7 @@ int main() {
 	// Must use ShapeModelTri to get the center of mass
 	ShapeModelImporter shape_io_fit_obj(
 		"../output/shape_model/fit_source_" +std::to_string(INDEX_END) + ".obj", 1, true);
-
-	
 	ShapeModelTri fit_shape("EF", &frame_graph);
-	
 	shape_io_fit_obj.load_obj_shape_model(&fit_shape);
 
 
@@ -235,7 +235,6 @@ int main() {
 	
 	// This shape model should undergo the same transform as the one imparted to 
 	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
-
 	estimated_shape_model -> translate(-fit_shape.get_center_of_mass());
 	fit_shape.translate(-fit_shape.get_center_of_mass());
 	fit_shape.update_mass_properties();

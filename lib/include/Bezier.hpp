@@ -238,7 +238,7 @@ public:
 		std::pair<const std::vector<Footpoint> * , Bezier * > args);
 
 	static double compute_log_likelihood_block_diagonal(arma::vec L,
-	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args);
+		std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args);
 
 
 
@@ -250,6 +250,13 @@ protected:
 
 
 	void construct_index_tables();
+
+	double initialize_covariance(const std::vector<Footpoint> & footpoints,
+		std::vector<arma::vec> & v,
+		std::vector<arma::vec> & W,
+		std::vector<arma::vec> & v_i_norm,
+		std::vector<double> & epsilon);
+
 
 	/**
 	Evaluates the quadrature function for surface area computation
