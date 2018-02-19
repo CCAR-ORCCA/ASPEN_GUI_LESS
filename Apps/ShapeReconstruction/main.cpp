@@ -67,8 +67,7 @@
 int main() {
 
 
-	std::cout << EIGEN_WORLD_VERSION << "."  << EIGEN_MAJOR_VERSION <<"." <<  EIGEN_MINOR_VERSION << std::endl;
-	throw;
+	std::cout << "Running Eigen " << EIGEN_WORLD_VERSION << "."  << EIGEN_MAJOR_VERSION <<"." <<  EIGEN_MINOR_VERSION << std::endl;
 
 
 

@@ -621,6 +621,41 @@ double Bezier::initialize_covariance(const std::vector<Footpoint> & footpoints,
 }
 
 
+void Bezier::train_patch_covariance(){
+
+	std::vector<arma::vec> v;
+	std::vector<arma::vec> W;
+	std::vector<arma::vec> v_i_norm;
+	std::vector<double> epsilon;
+
+	unsigned int N_C = this -> control_points.size();
+	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
+	unsigned int N_iter = 10 ;
+	this -> P_X = arma::mat(3 * N_C,3 * N_C);
+
+
+	// The initial guess for the covariance is computed.
+	double alpha = initialize_covariance(this -> footpoints,v,W,v_i_norm,epsilon);
+
+	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
+	arma::vec lower_bounds =  L - 3;
+	arma::vec upper_bounds = L + 3;	
+
+	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&this -> footpoints,this);
+
+	// The covariance is refined by a particle-in-swarm optimizer
+	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
+		lower_bounds,
+		upper_bounds, 
+		100,
+		N_iter,
+		args);
+
+	psopt.run( true,true);
+
+	this -> P_X = arma::diagmat(arma::exp(L));
+
+}
 
 void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 
@@ -709,6 +744,17 @@ void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint>
 }
 
 
+void Bezier::add_footpoint(Footpoint footpoint){
+	this -> footpoints.push_back(footpoint);
+}
+
+bool Bezier::has_footpoints() const{
+	return (this -> footpoints.size()!= 0);
+}
+
+void Bezier::reset_footpoints(){
+	this -> footpoints.clear();
+}
 
 double Bezier::compute_log_likelihood_full_diagonal(arma::vec L,
 	std::pair<const std::vector<Footpoint> * ,Bezier * > args){

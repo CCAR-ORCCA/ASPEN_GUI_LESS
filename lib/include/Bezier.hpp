@@ -79,8 +79,6 @@ public:
 
 
 	
-
-
 	/**
 	Evaluates the bezier patch at the barycentric 
 	coordinates (u,v). Note that 0<= u + v <= 1
@@ -197,6 +195,12 @@ public:
 	*/
 	void train_patch_covariance(const std::vector<Footpoint> & footpoints);
 
+	/**
+	Computes the patch covariance P_X maximizing the likelihood function 
+	associated from the stored footpoint 
+	*/
+	void train_patch_covariance();
+
 
 
 
@@ -240,6 +244,23 @@ public:
 	static double compute_log_likelihood_block_diagonal(arma::vec L,
 		std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args);
 
+	/**
+	Add footpoint to Bezier patch for the covariance training phase
+	@param footpoint structure holding Ptilde/Pbar/n/u/v
+	*/
+	void add_footpoint(Footpoint footpoint);
+
+	/**
+	Returns true if the patch has training points already assigned, false otherwise
+	@return true if the patch has training points already assigned, false otherwise
+	*/
+	bool has_footpoints() const;
+
+
+	/**
+	Erases the training data
+	*/
+	void reset_footpoints();
 
 
 protected:
@@ -339,9 +360,8 @@ protected:
 
 
 	std::map< Element * , std::vector<NewPoint> > new_points;
-
-
 	arma::mat P_X;
+	std::vector<Footpoint> footpoints;
 
 
 

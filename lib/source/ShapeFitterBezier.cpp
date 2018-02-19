@@ -124,6 +124,37 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 
 	}
 
+
+	// The footpoints are assigned to the patches
+	// First, patches that were seen are cleared
+	std::set<Bezier *> trained_patches;
+	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
+		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
+		if (patch -> has_footpoints()){
+			patch -> reset_footpoints();
+			trained_patches.insert(patch);
+		}
+	}
+
+	// Then, the footpoints are added to the patches
+	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
+		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
+		patch -> add_footpoint(*footpoint);
+		
+	}
+
+	// Once this is done, each patch is trained
+	boost::progress_display progress(trained_patches.size());
+	std::cout << "- Training patches... " << std::endl;
+	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
+		(*patch) -> train_patch_covariance();
+		++progress;
+
+	}
+	std::cout << "- Done training patches " << std::endl;
+
+
+
 	return false;
 
 }
@@ -248,7 +279,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			if (it.row() == it.col()){
 
 				double & value = it.valueRef();
-				value += 1e-3 * trace;
+				value += 1e-4 * trace;
 			}
 		}
 	}
@@ -263,6 +294,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 	EigVec deviation = chol.solve(Nmat);    
 
 	arma::vec dC(3*N);
+
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < 3 * N; ++i){
 		dC(i) = deviation(i);
