@@ -9,6 +9,7 @@
 #include "System.hpp"
 #include "Observer.hpp"
 #include "PC.hpp"
+#include <Eigen/Core>
 
 #include <ShapeFitterTri.hpp>
 #include <ShapeFitterBezier.hpp>
@@ -64,6 +65,15 @@
 
 
 int main() {
+
+
+	std::cout << EIGEN_WORLD_VERSION << "."  << EIGEN_MAJOR_VERSION <<"." <<  EIGEN_MINOR_VERSION << std::endl;
+	throw;
+
+
+
+
+
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -217,8 +227,7 @@ int main() {
 	
 
 	// This is where the training of each patch's covariance should take place.
-	// First, the training data is sorted by assigning each footpoint to 
-
+	// First, the training data is sorted by assigning each footpoint 
 
 
 	// The estimated shape model has its barycenter and principal axes lined up with the
