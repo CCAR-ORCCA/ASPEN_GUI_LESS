@@ -39,7 +39,7 @@ public:
 		const arma::vec & u_dir); 
 
 
-	bool fit_shape_batch(unsigned int N_iter, double J);
+	bool fit_shape_batch(unsigned int N_iter, double ridge_coef);
 
 
 
@@ -59,7 +59,7 @@ void add_to_problem(std::vector<T>& coeffs,
 
 
 
-	bool update_shape(std::vector<Footpoint> & footpoints);
+	bool update_shape(std::vector<Footpoint> & footpoints,double ridge_coef);
 
 	bool update_element(Element * element, 
 		std::vector<Footpoint> & footpoints,

@@ -39,11 +39,14 @@
 #define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 400 // index where shape reconstruction takes place
-#define INDEX_END 400 // end of shape fitting (must be less equal to the number of simulation time. this is checked)
+#define INDEX_INIT 200 // index where shape reconstruction takes place
+#define INDEX_END 200 // end of shape fitting (must be less equal to the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
+
+// Ridge coef (regularization of normal equations)
+#define RIDGE_COEF 1e-4
 
 // Filter iterations
 #define ITER_FILTER 1
@@ -68,10 +71,6 @@ int main() {
 
 
 	std::cout << "Running Eigen " << EIGEN_WORLD_VERSION << "."  << EIGEN_MAJOR_VERSION <<"." <<  EIGEN_MINOR_VERSION << std::endl;
-
-
-
-
 
 
 // Ref frame graph
@@ -209,6 +208,8 @@ int main() {
 	shape_filter_args.set_iter_filter(ITER_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
+	shape_filter_args.set_ridge_coef(RIDGE_COEF);
+
 
 
 	ShapeBuilder shape_filter(&frame_graph,

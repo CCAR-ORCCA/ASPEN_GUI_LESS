@@ -170,8 +170,15 @@ double tolerance) {
 
 	}
 
-	std::cout << std::endl << "Global Minimum at: " << global_best;
-	std::cout << "Global Minimum: " << global_best_score << std::endl;
+	if (maximize && pedantic){
+		std::cout << std::endl << "Global Maximum at: " << global_best;
+		std::cout << "Global Maximum: " << global_best_score << std::endl;
+	}	
+	else if (pedantic){
+		std::cout << std::endl << "Global Minimum at: " << global_best;
+		std::cout << "Global Minimum: " << global_best_score << std::endl;
+	}
+	
 	this -> result = global_best;
 	this -> result_score = global_best_score;
 

@@ -106,7 +106,7 @@ std::vector<Footpoint> ShapeFitterBezier::fit_shape_KF(
 }
 
 
-bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
+bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	std::vector<Footpoint> footpoints;
 
@@ -117,18 +117,20 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 		footpoints = this -> find_footpoints_omp();
 		
 		// The shape is updated
-		if (this -> update_shape(footpoints)){
+		if (this -> update_shape(footpoints,ridge_coef)){
+
 			break;
 		}
 
-
 	}
-	return false;
+
+	std::cout << " - Done fitting. Recalculating footpoints\n";
+	footpoints = this -> find_footpoints_omp();
+
 
 	// The footpoints are assigned to the patches
 	// First, patches that were seen are cleared
 	// Then, the footpoints are added to the patches
-
 	std::set<Bezier *> trained_patches;
 	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
 		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
@@ -142,10 +144,10 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double J){
 	}
 
 
-
 	// Once this is done, each patch is trained
 	boost::progress_display progress(trained_patches.size());
 	std::cout << "- Training patches... " << std::endl;
+
 	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
 		(*patch) -> train_patch_covariance();
 		++progress;
@@ -208,8 +210,7 @@ void ShapeFitterBezier::add_to_problem(
 }
 
 
-
-bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
+bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double ridge_coef){
 
 	std::cout << "\nUpdating shape from the " << footpoints.size()<<  " footpoints...\n";
 
@@ -238,6 +239,8 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 		auto control_points = patch -> get_control_points();
 		std::vector<int> global_indices;
 
+
+
 		// The different control points for this patch have their contribution added
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 
@@ -246,9 +249,13 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			auto local_indices = patch -> get_local_indices(*iter_points);
 			unsigned int i = std::get<0>(local_indices);
 			unsigned int j = std::get<1>(local_indices);
+
+			arma::mat dndCk = patch -> partial_n_partial_Ck(footpoint . u,footpoint . v,i, j,patch -> get_degree());
+
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,patch -> get_degree());
 			
-			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = B * footpoint . n.t();
+			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = (B * footpoint . n.t() 
+				- (footpoint . Ptilde - footpoint . Pbar).t() * dndCk );
 			global_indices.push_back(global_point_index);
 		}
 		
@@ -279,7 +286,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			if (it.row() == it.col()){
 
 				double & value = it.valueRef();
-				value += 1e-5 * trace;
+				value += ridge_coef * trace;
 			}
 		}
 	}
@@ -779,7 +786,7 @@ bool ShapeFitterBezier::update_element(Element * element,
 			Hi.cols(3 * point_index, 3 * point_index + 2) = B * footpoint . n.t();
 
 			// partials accounting for the change in n
-			Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_C(footpoint . u,
+			Hi.cols(3 * point_index, 3 * point_index + 2) -= (footpoint.Ptilde - footpoint.Pbar).t() * patch -> partial_n_partial_Ck(footpoint . u,
 				footpoint . v,
 				i, j,
 				degree);

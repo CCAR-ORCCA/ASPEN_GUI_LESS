@@ -54,7 +54,7 @@ int main(){
 	arma::vec n_old = nominal_patch.get_normal(u,v);
 
 	auto indices = nominal_patch.get_local_indices(v5);
-	arma::mat dndc = nominal_patch.partial_n_partial_C(u, v,std::get<0>(indices),std::get<1>(indices),2);
+	arma::mat dndc = nominal_patch.partial_n_partial_Ck(u, v,std::get<0>(indices),std::get<1>(indices),2);
 
 	arma::vec dC = {0.1, 0.01, -1};
 

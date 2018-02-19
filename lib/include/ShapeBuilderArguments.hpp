@@ -34,7 +34,6 @@ public:
 
 	}
 
-
 	double get_max_ray_incidence() const {
 		return this -> max_ray_incidence;
 

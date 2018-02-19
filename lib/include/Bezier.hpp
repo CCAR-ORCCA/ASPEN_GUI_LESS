@@ -159,6 +159,10 @@ public:
 		const arma::vec & dir,
 		const arma::mat & P_X);
 
+
+
+
+
 	/**
 	Returns the 3x3 covariance matrix
 	tracking the uncertainty in the location of
@@ -184,8 +188,9 @@ public:
 	associated with the provided footpoint pairs
 	@param footpoints vector of footpoints to be used in the training process
 	@param P_X trained covariance matrix maximizing p(e0,e1,e2,...,eN; P_X)= Prod(p(e_i;P_X))
+	@param diag if true, assumes P_X is diagonal
 	*/
-	void train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints);
+	void train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints,bool diag = false);
 
 
 	/**
@@ -220,7 +225,7 @@ public:
 	@param u first barycentric coordinate
 	@param v first barycentric coordinate
 	@param i first index
-	@param v second index
+	@param j second index
 	@param n polynomial order
 	@return evaluated bernstein polynomial
 	*/
@@ -231,12 +236,23 @@ public:
 		const int j,
 		const int n) ;
 
-	arma::mat partial_n_partial_C(const double u, 
-		const double v,
-		const unsigned int i,
-		const unsigned int j,
-		const unsigned n) ;
 
+
+	/**
+	Computes the partial derivative of the unit normal vector at the queried point
+	with respect to a given control point
+	@param u first barycentric coordinate
+	@param v first barycentric coordinate
+	@param i first index
+	@param j second index
+	@param n polynomial order
+	*/
+	arma::mat partial_n_partial_Ck(
+		const double u, 
+		const double v,
+		const int i ,  
+		const int j, 
+		const int n);
 
 	static double compute_log_likelihood_full_diagonal(arma::vec L, 
 		std::pair<const std::vector<Footpoint> * , Bezier * > args);

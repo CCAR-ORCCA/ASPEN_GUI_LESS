@@ -117,7 +117,6 @@ int main(){
 	Bezier * patch = dynamic_cast<Bezier *>(perturbed_patch. get_elements() -> at(0).get());
 	patch -> train_patch_covariance(P_X,footpoints);
 
-
 	std::cout << "Trained covariance: " << std::endl;
 	std::cout << P_X  << std::endl;
 
