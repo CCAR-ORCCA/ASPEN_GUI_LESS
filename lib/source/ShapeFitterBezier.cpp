@@ -279,12 +279,10 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints){
 			if (it.row() == it.col()){
 
 				double & value = it.valueRef();
-				value += 1e-4 * trace;
+				value += 1e-5 * trace;
 			}
 		}
 	}
-
-
 
 
 	// The cholesky decomposition of Lambda is computed
