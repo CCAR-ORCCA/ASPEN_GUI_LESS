@@ -49,13 +49,13 @@
 #define RIDGE_COEF 0e-4
 
 // Filter iterations
-#define ITER_FILTER 2
+#define ITER_FILTER 4
 
 // Number of edges in a-priori
 #define N_EDGES 1000
 
 // Shape order
-#define SHAPE_DEGREE 2
+#define SHAPE_DEGREE 3
 
 // Target shape
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
