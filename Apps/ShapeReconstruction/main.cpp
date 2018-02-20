@@ -46,7 +46,7 @@
 #define DOWNSAMPLING_FACTOR 0.1
 
 // Ridge coef (regularization of normal equations)
-#define RIDGE_COEF 1e-4
+#define RIDGE_COEF 1e0
 
 // Filter iterations
 #define ITER_FILTER 1

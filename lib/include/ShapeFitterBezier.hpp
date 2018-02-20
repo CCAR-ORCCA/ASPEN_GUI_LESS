@@ -57,7 +57,7 @@ void add_to_problem(std::vector<T>& coeffs,
 	const std::vector<int> & global_indices);
 
 
-
+	void penalize_tangential_motion(std::vector<T>& coeffs);
 
 	bool update_shape(std::vector<Footpoint> & footpoints,double ridge_coef);
 

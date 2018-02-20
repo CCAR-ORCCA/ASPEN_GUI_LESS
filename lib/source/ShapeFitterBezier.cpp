@@ -73,7 +73,7 @@ std::vector<Footpoint> ShapeFitterBezier::fit_shape_KF(
 				Ptilde_mat.col(k) = footpoints[k].Ptilde;		
 			}	
 			PC pc_tilde(u,Ptilde_mat);		
-			pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_"+std::to_string(index) + ".obj");
+			pc_tilde.save("../output/pc/Ptilde_" + std::to_string(j) + "_" + std::to_string(index) + ".obj");
 		}
 
 
@@ -160,6 +160,54 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	return false;
 
 }
+
+
+void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs){
+
+
+	auto control_points = this -> shape_model -> get_control_points();
+
+
+	for (auto point =  control_points -> begin(); point !=  control_points -> end(); ++point){
+
+		Bezier * patch = dynamic_cast<Bezier *>(    *((*point) -> get_owning_elements().begin()));
+		auto indices = patch ->  get_local_indices(*point);
+		unsigned int i = std::get<0>(indices);
+		unsigned int j = std::get<1>(indices);
+		double u = double(i) / double(patch -> get_degree());
+		double v = double(j) / double(patch -> get_degree());
+
+		arma::vec n = patch -> get_normal(u, v);
+		arma::mat proj = arma::eye<arma::mat>(3,3) - n * n.t();
+
+		unsigned int index = this -> shape_model -> get_control_point_index(*point);
+
+		unsigned int row = 3 * index;
+
+
+		coeffs.push_back(T(row + 0,row + 0,proj(0,0)));
+		coeffs.push_back(T(row + 1,row + 0,proj(1,0)));
+		coeffs.push_back(T(row + 2,row + 0,proj(2,0)));
+		coeffs.push_back(T(row + 0,row + 1,proj(0,1)));
+		coeffs.push_back(T(row + 1,row + 1,proj(1,1)));
+		coeffs.push_back(T(row + 2,row + 1,proj(2,1)));
+		coeffs.push_back(T(row + 0,row + 2,proj(0,2)));
+		coeffs.push_back(T(row + 1,row + 2,proj(1,2)));
+		coeffs.push_back(T(row + 2,row + 2,proj(2,2)));
+
+
+
+	}
+
+
+
+
+
+}
+
+
+
+
 
 
 void ShapeFitterBezier::add_to_problem(
@@ -267,6 +315,9 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		residuals(k) = y;
 
 	}
+
+
+	this -> penalize_tangential_motion(coefficients);
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
