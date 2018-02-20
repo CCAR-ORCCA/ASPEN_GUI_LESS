@@ -162,7 +162,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 }
 
 
-void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs){
+void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsigned int N_measurements){
 
 
 	auto control_points = this -> shape_model -> get_control_points();
@@ -178,7 +178,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs){
 		double v = double(j) / double(patch -> get_degree());
 
 		arma::vec n = patch -> get_normal(u, v);
-		arma::mat proj = arma::eye<arma::mat>(3,3) - n * n.t();
+		arma::mat proj = N_measurements * (arma::eye<arma::mat>(3,3) - n * n.t());
 
 		unsigned int index = this -> shape_model -> get_control_point_index(*point);
 
@@ -322,11 +322,13 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			- patch -> evaluate(footpoint . u,footpoint . v));
 
 		this -> add_to_problem(coefficients,Nmat,y,elements_to_add,global_indices);
-		this -> penalize_tangential_motion(coefficients);
 
 		residuals(k) = y;
 
 	}
+
+
+	this -> penalize_tangential_motion(coefficients,footpoints.size());
 
 
 
