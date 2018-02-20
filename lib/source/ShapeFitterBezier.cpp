@@ -312,7 +312,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,patch -> get_degree());
 			
 			elements_to_add.push_back((B * footpoint . n.t() 
-				- 0 * (footpoint . Ptilde - footpoint . Pbar).t() * dndCk ));
+				- (footpoint . Ptilde - footpoint . Pbar).t() * dndCk ));
 
 
 			global_indices.push_back(global_point_index);
