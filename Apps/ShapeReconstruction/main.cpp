@@ -46,7 +46,7 @@
 #define DOWNSAMPLING_FACTOR 0.1
 
 // Ridge coef (regularization of normal equations)
-#define RIDGE_COEF 1e-3
+#define RIDGE_COEF 0e-4
 
 // Filter iterations
 #define ITER_FILTER 1
@@ -55,16 +55,13 @@
 #define N_EDGES 1000
 
 // Shape order
-#define SHAPE_DEGREE 3
-
+#define SHAPE_DEGREE 2
 
 // Target shape
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
 
 ///////////////////////////////////////////
-
-
 
 
 int main() {
