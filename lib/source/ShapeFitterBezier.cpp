@@ -214,26 +214,33 @@ void ShapeFitterBezier::add_to_problem(
 	std::vector<T>& coeffs,
 	EigVec & N,
 	const double y,
-	const arma::sp_mat & H_i,
+	const std::vector<arma::rowvec> & elements_to_add,
 	const std::vector<int> & global_indices){
 
-	for (auto row_index = global_indices.begin(); row_index != global_indices.end(); ++row_index){
-
-		int row = 3 * (*row_index);
-
-		double H_i_row = H_i(row);
-		double H_i_row_1 = H_i(row + 1);
-		double H_i_row_2 = H_i(row + 2);
 
 
-		for (auto col_index = global_indices.begin(); col_index != global_indices.end(); ++col_index){
+	for (auto outer_index = 0; outer_index != global_indices.size(); ++outer_index){
 
-			int col = 3 * (*col_index);
+		int row = 3 * (global_indices[outer_index]);
 
-			
-			double H_i_col = H_i(col);
-			double H_i_col_1 = H_i(col + 1);
-			double H_i_col_2 = H_i(col + 2);
+		auto iter_row = std::next(elements_to_add.begin(),outer_index);
+
+		double H_i_row = iter_row -> at(0);
+		double H_i_row_1 = iter_row -> at(1);
+		double H_i_row_2 = iter_row -> at(2);
+
+
+		for (auto inner_index = 0; inner_index != global_indices.size(); ++inner_index){
+
+
+			int col = 3 * (global_indices[inner_index]);
+
+			auto iter_col = std::next(elements_to_add.begin(),inner_index);
+
+			double H_i_col = iter_col -> at(0);
+			double H_i_col_1 = iter_col -> at(1);
+			double H_i_col_2 = iter_col -> at(2);
+
 
 			coeffs.push_back(T(row,col,H_i_row * H_i_col));
 			coeffs.push_back(T(row,col + 1,H_i_row * H_i_col_1));  
@@ -246,6 +253,7 @@ void ShapeFitterBezier::add_to_problem(
 			coeffs.push_back(T(row + 2,col + 2,H_i_row_2 * H_i_col_2));          
 
 		}	
+
 
 
 		N(row) += y * H_i_row;
@@ -269,25 +277,26 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 
 	std::vector<T> coefficients;            // list of non-zeros coefficients
-	EigVec Nmat(3 * N);  
+	EigVec Nmat(3 * N); 
+	Nmat.setZero();
 	SpMat Lambda(3 * N, 3 * N);
-
 
 	boost::progress_display progress(footpoints.size());
 
 	// All the measurements are processed	
-
 	for (unsigned int k = 0; k < footpoints.size(); ++k){
 		++ progress;
 		
 		Footpoint footpoint = footpoints[k];
-		arma::sp_mat Hi(1,3 * N);
 		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
 
 		auto control_points = patch -> get_control_points();
+		
+
+
 		std::vector<int> global_indices;
 
-
+		std::vector<arma::rowvec> elements_to_add;
 
 		// The different control points for this patch have their contribution added
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
@@ -302,25 +311,36 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,patch -> get_degree());
 			
-			Hi.cols(3 * global_point_index, 3 * global_point_index + 2) = (B * footpoint . n.t() 
-				- (footpoint . Ptilde - footpoint . Pbar).t() * dndCk );
+			elements_to_add.push_back((B * footpoint . n.t() 
+				- 0 * (footpoint . Ptilde - footpoint . Pbar).t() * dndCk ));
+
+
 			global_indices.push_back(global_point_index);
 		}
 		
 		double y = arma::dot(footpoint . n,footpoint . Ptilde
 			- patch -> evaluate(footpoint . u,footpoint . v));
 
-		this -> add_to_problem(coefficients,Nmat,y,Hi,global_indices);
+		this -> add_to_problem(coefficients,Nmat,y,elements_to_add,global_indices);
+		this -> penalize_tangential_motion(coefficients);
 
 		residuals(k) = y;
 
 	}
 
 
-	this -> penalize_tangential_motion(coefficients);
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
+
+	// MatrixXd dMat;
+
+	// dMat = MatrixXd(Lambda);
+	// Eigen::JacobiSVD<MatrixXd> svd(Lambda);
+	// double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+	
+	// std::cout << "conditioning: " << cond << std::endl;
+
 
 	// The information matrix is regularized
 	double trace = 0;
@@ -331,7 +351,9 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			}
 		}
 	}
-	std::cout << "Trace : " << trace << std::endl;
+
+	// std::cout << "Trace : " << trace << std::endl;
+
 	for (int k=0; k<Lambda.outerSize(); ++k){
 		for (SpMat::InnerIterator it(Lambda,k); it; ++it){
 			if (it.row() == it.col()){
@@ -341,6 +363,10 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			}
 		}
 	}
+
+	// std::cout << Lambda << std::endl;
+
+	// std::cout << "RHS: " << Nmat << std::endl;
 
 
 	// The cholesky decomposition of Lambda is computed
@@ -379,7 +405,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	}
 
 
-	return  (update_norm < 1e-2);
+	return  (update_norm < 1e-5);
 
 
 
@@ -655,7 +681,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(arma::vec P_tilde,Bezier * p
 		Pbar = patch -> evaluate(chi(0),chi(1));
 
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - P_tilde)));
-		if (error < 1e-3){
+		if (error < 1e-5){
 
 
 			if (footpoint != nullptr){

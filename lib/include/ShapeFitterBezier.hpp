@@ -10,8 +10,11 @@
 #include "CustomException.hpp"
 
 #include <Eigen/Sparse>
+#include <Eigen/Jacobi>
+ #include <Eigen/Dense>
 
 typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 typedef Eigen::Triplet<double> T;
 typedef Eigen::VectorXd EigVec;
 
@@ -53,7 +56,9 @@ protected:
 void add_to_problem(std::vector<T>& coeffs,
 	EigVec & N,
 	const double y,
-	const arma::sp_mat & H_i,
+	// const arma::sp_mat & H_i,
+	const std::vector<arma::rowvec> & elements_to_add,
+
 	const std::vector<int> & global_indices);
 
 
