@@ -178,7 +178,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 		double v = double(j) / double(patch -> get_degree());
 
 		arma::vec n = patch -> get_normal(u, v);
-		arma::mat proj = double(N_measurements) / double((*point) -> get_owning_elements().size()) * (arma::eye<arma::mat>(3,3) - n * n.t());
+		arma::mat proj = double(N_measurements) / double( this -> shape_model -> get_NElements()) * (arma::eye<arma::mat>(3,3) - n * n.t());
 
 		unsigned int index = this -> shape_model -> get_control_point_index(*point);
 
