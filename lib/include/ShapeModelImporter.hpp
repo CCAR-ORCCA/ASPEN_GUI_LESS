@@ -2,13 +2,14 @@
 #ifndef HEADER_SHAPEMODELIMPORTER
 #define HEADER_SHAPEMODELIMPORTER
 
-#include "ShapeModel.hpp"
-#include "ShapeModelTri.hpp"
-#include "ShapeModelBezier.hpp"
 
 #include <armadillo>
 #include "omp.h"
 #include <boost/progress.hpp>
+
+class ShapeModelTri;
+class ShapeModelBezier;
+
 
 
 class ShapeModelImporter {

@@ -1,5 +1,13 @@
 #include "Lidar.hpp"
-#include "ShapeModelBezier.hpp"
+#include "GNUPlot.hpp"
+#include "Ray.hpp"
+#include "PC.hpp"
+#include "FrameGraph.hpp"
+#include "ShapeModel.hpp"
+#include "Facet.hpp"
+
+
+
 
 Lidar::Lidar(
 	FrameGraph * frame_graph,

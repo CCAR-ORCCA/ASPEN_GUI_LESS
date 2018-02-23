@@ -11,13 +11,11 @@
 #include "FrameGraph.hpp"
 #include "ControlPoint.hpp"
 #include "KDTree_control_points.hpp"
-
+#include "KDTree_shape.hpp"
 
 class Ray ;
-
-
-
 class Element;
+class KDTree_shape;
 
 /**
 Declaration of the ShapeModel class. Base class for 
@@ -42,6 +40,8 @@ public:
 	ShapeModel(std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
+	virtual void construct_kd_tree_shape() = 0;
+
 
 	/**
 	Returns the dimensions of the bounding box
@@ -61,6 +61,13 @@ public:
 	@param M rotation matrix
 	*/
 	void rotate(arma::mat M);
+
+	
+	/**
+	Returns pointer to KDTree_shape member.
+	@return pointer to KDtree_shape
+	*/
+	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
 
 
 	/**
@@ -206,6 +213,7 @@ protected:
 	std::vector<std::shared_ptr<Element  > > elements;
 	std::vector<std::shared_ptr< ControlPoint> >  control_points;
 	std::shared_ptr<KDTree_control_points> kdt_control_points = nullptr;
+	std::shared_ptr<KDTree_shape> kdt_facet = nullptr;
 
 	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
 

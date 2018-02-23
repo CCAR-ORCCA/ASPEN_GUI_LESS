@@ -1,20 +1,15 @@
 #ifndef HEADER_RAY
 #define HEADER_RAY
 
-#include "Facet.hpp"
-#include "Element.hpp"
-
-#include "Lidar.hpp"
-#include "FrameGraph.hpp"
-#include "ShapeModelTri.hpp"
-#include "Bezier.hpp"
-#include "DebugFlags.hpp"
-
 #include <memory>
 #include <armadillo>
 
 class Lidar;
 class Facet;
+class Element;
+class ShapeModel;
+class Bezier;
+class Lidar;
 
 class Ray {
 
@@ -62,8 +57,6 @@ public:
 	@param shape_model pointer to shape model about to be flashed by this ray
 	*/
 	void reset(ShapeModel * shape_model) ;
-
-
 
 
 	/**

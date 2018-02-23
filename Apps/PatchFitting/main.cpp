@@ -17,8 +17,8 @@ int main(){
 
 	arma::arma_rng::set_seed(0);
 	// True shape model
-	ShapeModelImporter shape_io_bezier("../input/true_patch.b", 1, true);
-	ShapeModelImporter shape_perturbed_bezier("../input/true_patch.b", 1, true);
+	ShapeModelImporter shape_io_bezier("../input/true_patch_1.b", 1, true);
+	ShapeModelImporter shape_perturbed_bezier("../input/true_patch_1.b", 1, true);
 
 	FrameGraph frame_graph;
 	frame_graph.add_frame("N");
@@ -43,14 +43,16 @@ int main(){
 
 	for (unsigned int i = 0; i < perturbed_patch . get_control_points() -> size(); ++i){
 		auto p = perturbed_patch . get_control_points() -> at(i);
-		arma::vec dp = 0.3 * arma::randn<arma::vec>(3);
+		arma::vec dp = 0.15 * arma::randn<arma::vec>(3);
 		p -> set_coordinates(p -> get_coordinates() + dp);
 	}
-	perturbed_patch.elevate_degree();
+	// perturbed_patch.elevate_degree();
+
+
+	perturbed_patch.initialize_index_table();
 
 	
-
-	nominal_patch.save_both("../input/true_patch");
+	nominal_patch.save_both("../output/true_patch");
 
 	perturbed_patch.save_both("../output/perturbed");
 
@@ -59,11 +61,11 @@ int main(){
 		"L",
 		20,
 		20 ,
-		128,
-		128,
+		256,
+		256,
 		1e-1,
 		1,
-		1e-2,
+		0 * 1e-2,
 		0);
 
 
@@ -105,44 +107,45 @@ int main(){
 	ShapeFitterBezier shape_fitter(&perturbed_patch,
 		&pc_true);
 
-	auto footpoints = shape_fitter.fit_shape_KF(0,
-		20,
-		1e-5,
-		1,
-		l1);
+	shape_fitter.fit_shape_batch(5,0);
 	perturbed_patch.save_both("../output/fit");
 
-    // The patch covariance is learned
-	arma::mat P_X(18,18);
-	Bezier * patch = dynamic_cast<Bezier *>(perturbed_patch. get_elements() -> at(0).get());
-	patch -> train_patch_covariance(P_X,footpoints);
 
-	std::cout << "Trained covariance: " << std::endl;
-	std::cout << P_X  << std::endl;
+	// auto footpoints = shape_fitter.fit_shape_batch(20,1e-3);
 
-	// The error is measured between each point in the true noisy pc
-	// and the pc obtained over the fit patch
+	// perturbed_patch.save_both("../output/fit");
 
-	arma::mat results(4,footpoints.size());
+ //    // The patch covariance is learned
+	// arma::mat P_X(18,18);
+	// Bezier * patch = dynamic_cast<Bezier *>(perturbed_patch. get_elements() -> at(0).get());
+	// patch -> train_patch_covariance(P_X,footpoints);
 
+	// std::cout << "Trained covariance: " << std::endl;
+	// std::cout << P_X  << std::endl;
 
-	for (unsigned int i = 0; i < footpoints.size(); ++i){
-		Footpoint footpoint = footpoints[i];
-		arma::vec dir = footpoint.n;
-		arma::mat P = patch -> covariance_surface_point(footpoint.u,footpoint.v,dir,P_X);
+	// // The error is measured between each point in the true noisy pc
+	// // and the pc obtained over the fit patch
 
-		double sd = std::sqrt(arma::dot(dir,P * dir));
-		double residual = arma::dot(dir,footpoint.Ptilde - footpoint.Pbar );
-
-		results(0,i) = sd;
-		results(1,i) = residual;
-		results(2,i) = footpoint.u;
-		results(3,i) = footpoint.v;
-
-	}
+	// arma::mat results(4,footpoints.size());
 
 
-	results.save("../output/results.txt",arma::raw_ascii);
+	// for (unsigned int i = 0; i < footpoints.size(); ++i){
+	// 	Footpoint footpoint = footpoints[i];
+	// 	arma::vec dir = footpoint.n;
+	// 	arma::mat P = patch -> covariance_surface_point(footpoint.u,footpoint.v,dir,P_X);
+
+	// 	double sd = std::sqrt(arma::dot(dir,P * dir));
+	// 	double residual = arma::dot(dir,footpoint.Ptilde - footpoint.Pbar );
+
+	// 	results(0,i) = sd;
+	// 	results(1,i) = residual;
+	// 	results(2,i) = footpoint.u;
+	// 	results(3,i) = footpoint.v;
+
+	// }
+
+
+	// results.save("../output/results.txt",arma::raw_ascii);
 
 	
 

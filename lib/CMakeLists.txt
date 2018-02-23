@@ -167,9 +167,7 @@ source/Ray.cpp
 source/RefFrame.cpp
 source/SequentialFilter.cpp
 source/ShapeBuilder.cpp
-source/ShapeFitter.cpp
 source/ShapeFitterBezier.cpp
-source/ShapeFitterTri.cpp
 source/ShapeModel.cpp
 source/ShapeModelBezier.cpp
 source/ShapeModelImporter.cpp

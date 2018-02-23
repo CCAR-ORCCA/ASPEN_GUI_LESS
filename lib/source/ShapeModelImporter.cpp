@@ -1,5 +1,9 @@
 #include "ShapeModelImporter.hpp"
 
+#include "ShapeModelTri.hpp"
+#include "ShapeModelBezier.hpp"
+
+
 ShapeModelImporter::ShapeModelImporter(std::string filename, double scaling_factor, bool as_is) {
 	this -> filename = filename;
 	this -> scaling_factor = scaling_factor;

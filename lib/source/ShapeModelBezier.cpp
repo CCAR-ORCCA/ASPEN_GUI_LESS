@@ -1,4 +1,7 @@
 #include "ShapeModelBezier.hpp"
+#include "ShapeModelTri.hpp"
+#include "ShapeModelImporter.hpp"
+
 
 ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	std::string ref_frame_name,
@@ -267,6 +270,102 @@ void ShapeModelBezier::save(std::string path) {
 
 }
 
+
+
+
+void ShapeModelBezier::construct_kd_tree_shape(){
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
+	
+	// The KD tree is constructed by building an "enclosing" (not strictly-speaking) KD tree from the bezier shape
+
+
+	// An inverse map going from vertex pointer to global indices is created
+	// Note that the actual vertices on the shape model will not be be 
+	// the control points, but the points lying on the bezier patch
+ 	// they support
+
+	std::vector<std::shared_ptr<Element > > facets;
+
+
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+
+		Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+
+
+	// The facets are created
+
+		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
+
+			for (unsigned int t = 0; t < l + 1; ++t){
+
+				if (t <= l){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
+
+
+					std::vector<std::shared_ptr<ControlPoint>> vertices;
+					vertices.push_back(v0);
+					vertices.push_back(v1);
+					vertices.push_back(v2);
+
+					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+					facets.push_back(facet);
+				}
+
+				if (t > 0 ){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
+
+
+					std::vector<std::shared_ptr<ControlPoint>> vertices;
+
+					vertices.push_back(v0);
+					vertices.push_back(v1);
+					vertices.push_back(v2);
+
+
+					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+					facets.push_back(facet);
+
+				}
+
+			}
+
+		}
+	}
+
+
+
+
+	this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
+	this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
+
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+
+	std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	
+
+
+
+
+
+
+
+
+
+}
+
+
 unsigned int ShapeModelBezier::get_degree(){
 	if (this -> get_elements() -> size() == 0){
 		throw(std::runtime_error("This bezier shape model has no elements"));
@@ -286,12 +385,6 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
 	std::vector<arma::vec> vertices;
 	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
-
-
-	
-
-
-
 
 
 	// The global indices of the control points are found. 
@@ -358,7 +451,6 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 		indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
 		indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
 		indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
-
 
 
 		shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";

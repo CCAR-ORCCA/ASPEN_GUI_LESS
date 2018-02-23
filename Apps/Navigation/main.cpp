@@ -64,7 +64,7 @@ int main() {
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
-	true_shape_model.construct_kd_tree_shape(false);
+	true_shape_model.construct_kd_tree_shape();
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
 
@@ -72,7 +72,7 @@ int main() {
 	// shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
 
-	estimated_shape_model.construct_kd_tree_shape(false);
+	estimated_shape_model.construct_kd_tree_shape();
 
 	// Itokawa angular velocity
 	double omega = 2 * arma::datum::pi / (12 * 3600);
@@ -145,53 +145,51 @@ int main() {
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
-	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,
-		1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
+	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
 
-		P0_diag.subvec(0,5) = P0_spacecraft_vec;
+	P0_diag.subvec(0,5) = P0_spacecraft_vec;
 
-		arma::mat P0 = arma::diagmat(P0_diag);
+	arma::mat P0 = arma::diagmat(P0_diag);
 
-		NavigationFilter filter(args);
-		filter.set_observations_fun(
-			Observations::obs_pos_ekf_computed,
-			Observations::obs_pos_ekf_computed_jac,
-			Observations::obs_pos_ekf_lidar);	
+	NavigationFilter filter(args);
+	filter.set_observations_fun(
+		Observations::obs_pos_ekf_computed,
+		Observations::obs_pos_ekf_computed_jac,
+		Observations::obs_pos_ekf_lidar);	
 
-		filter.set_estimate_dynamics_fun(
-			Dynamics::point_mass_attitude_dxdt_body_frame,
-			Dynamics::point_mass_jac_attitude_dxdt_body_frame,
-			Dynamics::point_mass_attitude_dxdt_body_frame);
-
-
-		filter.set_initial_information_matrix(arma::inv(P0));
-		filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
-
-		arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
+	filter.set_estimate_dynamics_fun(
+		Dynamics::point_mass_attitude_dxdt_body_frame,
+		Dynamics::point_mass_jac_attitude_dxdt_body_frame,
+		Dynamics::point_mass_attitude_dxdt_body_frame);
 
 
-		arma::mat R = arma::zeros<arma::mat>(1,1);
+	filter.set_initial_information_matrix(arma::inv(P0));
+	filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
 
-		auto start = std::chrono::system_clock::now();
-
-
-		int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,T_obs,
-			R,Q,true);
-		auto end = std::chrono::system_clock::now();
-
-		std::chrono::duration<double> elapsed_seconds = end-start;
-
-		std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
+	arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
 
 
-		filter.write_estimated_state("./X_hat.txt");
+	arma::mat R = arma::zeros<arma::mat>(1,1);
 
-		filter.write_true_state("./X_true.txt");
-
-		filter.write_T_obs(T_obs,"./T_obs.txt");
+	auto start = std::chrono::system_clock::now();
 
 
-		filter.write_estimated_covariance("./covariances.txt");
+	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,T_obs,R,Q);
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
+
+
+	filter.write_estimated_state("./X_hat.txt");
+
+	filter.write_true_state("./X_true.txt");
+
+	filter.write_T_obs(T_obs,"./T_obs.txt");
+
+
+	filter.write_estimated_covariance("./covariances.txt");
 
 
 
@@ -214,6 +212,6 @@ int main() {
 
 
 
-		return 0;
-	}
+	return 0;
+}
 

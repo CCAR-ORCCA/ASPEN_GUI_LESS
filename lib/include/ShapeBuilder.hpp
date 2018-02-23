@@ -16,7 +16,6 @@
 #include "Dynamics.hpp"
 
 #include "ShapeModelImporter.hpp"
-#include "ShapeFitterTri.hpp"
 #include "ShapeFitterBezier.hpp"
 #include "EllipsoidFitter.hpp"
 

@@ -1,4 +1,6 @@
 #include "ShapeModelTri.hpp"
+#include "Facet.hpp"
+#include "Ray.hpp"
 
 void ShapeModelTri::update_mass_properties() {
 
@@ -36,10 +38,6 @@ bool ShapeModelTri::ray_trace(Ray * ray){
 }
 
 
-std::shared_ptr<KDTree_shape> ShapeModelTri::get_KDTree_shape() const {
-	return this -> kdt_facet;
-}
-
 
 void ShapeModelTri::construct_kd_tree_shape() {
 
@@ -53,7 +51,7 @@ void ShapeModelTri::construct_kd_tree_shape() {
 	std::chrono::duration<double> elapsed_seconds = end - start;
 
 
-	std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }
 

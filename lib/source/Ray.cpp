@@ -1,6 +1,11 @@
 #include "Ray.hpp"
-
-
+#include "DebugFlags.hpp"
+#include "ShapeModel.hpp"
+#include "FrameGraph.hpp"
+#include "Bezier.hpp"
+#include "Lidar.hpp"
+#include "Facet.hpp"
+#include "Element.hpp"
 
 
 Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {

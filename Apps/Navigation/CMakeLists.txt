@@ -32,7 +32,7 @@ set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
-	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
 
 else()
@@ -116,10 +116,6 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 
-# Find SBGAT 
-find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-include_directories(${SBGATCORE_INCLUDE_HEADER})
-
 
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
@@ -151,7 +147,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
-${SBGATCORE_LIBRARY}
+# ${SBGATCORE_LIBRARY}
 ${ASPEN_LIBRARY}
 )
 

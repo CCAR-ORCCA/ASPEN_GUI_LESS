@@ -18,8 +18,7 @@ public:
 		const arma::vec & X_bar_0,
 		const std::vector<double> & T_obs,
 		const arma::mat & R,
-		const arma::mat & Q = arma::zeros<arma::mat>(1,1),
-		bool verbose = false) = 0 ;
+		const arma::mat & Q = arma::zeros<arma::mat>(1,1)) = 0 ;
 
 	virtual void set_gamma_fun(arma::mat (*gamma_fun)(double dt));
 

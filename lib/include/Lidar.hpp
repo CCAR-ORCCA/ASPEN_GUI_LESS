@@ -1,24 +1,25 @@
 #ifndef HEADER_LIDAR
 #define HEADER_LIDAR
 
-#include "ShapeModel.hpp"
-#include "ShapeModelTri.hpp"
-// #include "ShapeModelBezier.hpp"
-
-#include "Ray.hpp"
-#include "FrameGraph.hpp"
-#include "GNUPlot.hpp"
-#include "PC.hpp"
 #include "OMP_flags.hpp"
-
 #include <assert.h>
+#include <string>
+#include <utility>
+#include <map>
+#include <vector>
+#include <memory>
+#include <armadillo>
+
+
+
 
 
 class Ray;
 class ShapeModel;
-class ShapeModelBezier;
-
+class FrameGraph;
 class PC;
+class Facet;
+
 
 class Lidar {
 

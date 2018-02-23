@@ -10,8 +10,8 @@ rc('text', usetex=True)
 def plot_all_results(path = "",save = False):
 
     # plot_residuals(path,save)
-    plot_orbit(path,save)
-    # plot_state_error(path,save)
+    # plot_orbit(path,save)
+    plot_state_error(path,save)
 
 def plot_residuals(path = "",save = False):
 
@@ -120,4 +120,4 @@ def plot_state_error(path = "",save = False):
     else:
         plt.savefig("velocity_error.pdf")
 
-# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)
+plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)

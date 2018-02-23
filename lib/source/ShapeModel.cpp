@@ -77,6 +77,12 @@ void ShapeModel::initialize_index_table(){
 	}
 }
 
+
+std::shared_ptr<KDTree_shape> ShapeModel::get_KDTree_shape() const {
+	return this -> kdt_facet;
+}
+
+
 arma::vec ShapeModel::get_center() const{
 	arma::vec center = {0,0,0};
 	unsigned int N = this -> get_NControlPoints();

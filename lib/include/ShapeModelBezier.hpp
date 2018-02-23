@@ -2,9 +2,9 @@
 #define HEADER_SHAPEMODELBEZIER
 
 #include "ShapeModel.hpp"
-#include "ShapeModelTri.hpp"
 #include "Bezier.hpp"
-#include "ShapeModelImporter.hpp"
+
+class ShapeModelTri;
 
 
 class ShapeModelBezier : public ShapeModel{
@@ -43,6 +43,10 @@ public:
 	std::shared_ptr<arma::mat> get_info_mat_ptr() const;
 	std::shared_ptr<arma::vec> get_dX_bar_ptr() const;
 
+	/**
+	Constructs a kd tree for ray-tracing purposes
+	*/
+	virtual void construct_kd_tree_shape();
 
 	void initialize_info_mat();
 	void initialize_dX_bar();

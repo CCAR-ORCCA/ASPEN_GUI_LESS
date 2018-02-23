@@ -21,6 +21,8 @@ public:
 		const arma::mat & R,
 		const arma::mat & Q) ;
 
+	
+
 protected:
 
 	// virtual void time_update(double t_now, double t_next,

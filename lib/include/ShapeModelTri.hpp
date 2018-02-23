@@ -11,18 +11,14 @@
 #include <limits>
 #include <cassert>
 
-
 #include "ShapeModel.hpp"
-#include "Facet.hpp"
-#include "ControlPoint.hpp"
-#include "KDTree_shape.hpp"
 
-
-class KDTree_shape;
+class Facet;
+class Ray;
 
 
 /**
-Declaration of the ShapeModel class. Specialized
+Declaration of the ShapeModelTri class. Specialized
 implementation storing an explicit facet/vertex shape model
 */
 class ShapeModelTri : public ShapeModel {
@@ -45,7 +41,7 @@ public:
 	@param verbose true will save the bounding boxes to a file and display
 	kd tree construction details
 	*/
-	void construct_kd_tree_shape();
+	virtual void construct_kd_tree_shape();
 
 	/**
 	Determines whether the provided point lies inside or outside the shape model.
@@ -57,12 +53,6 @@ public:
 	*/
 	bool contains(double * point, double tol = 1e-6) ;
 
-
-	/**
-	Returns pointer to KDTree_shape member.
-	@return pointer to KDtree_shape
-	*/
-	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
 
 	/**
 	Checks that the normals were consistently oriented. If not,
@@ -233,7 +223,6 @@ protected:
 	arma::vec cm;
 
 
-	std::shared_ptr<KDTree_shape> kdt_facet = nullptr;
 
 
 };

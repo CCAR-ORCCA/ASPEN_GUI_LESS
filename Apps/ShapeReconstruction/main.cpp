@@ -238,6 +238,9 @@ int main() {
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+
+	estimated_shape_model -> construct_kd_tree_shape();
+
 	
 	// This shape model should undergo the same transform as the one imparted to 
 	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
