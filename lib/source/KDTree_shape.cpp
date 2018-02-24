@@ -1,4 +1,5 @@
 #include "KDTree_shape.hpp"
+#include "ShapeModelBezier.hpp"
 #include "DebugFlags.hpp"
 
 KDTree_shape::KDTree_shape() {
@@ -19,8 +20,8 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 
 	if (elements.size() == 0) {
 		#if KDTTREE_SHAPE_DEBUG
-			std::cout << "Empty node" << std::endl;
-			std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Empty node" << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 		return node;
 	}
@@ -131,12 +132,12 @@ else {
 
 	#if KDTTREE_SHAPE_DEBUG
 
-		std::cout << "Leaf depth: " << depth << std::endl;
-		std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
+	std::cout << "Leaf depth: " << depth << std::endl;
+	std::cout << "Leaf contains: " << node -> elements.size() << " elements " << std::endl;
 
-		node -> bbox.print();
-		std::string path = std::to_string(rand() ) + ".obj";
-		node -> bbox.save_to_file(path);
+	node -> bbox.print();
+	std::string path = std::to_string(rand() ) + ".obj";
+	node -> bbox.save_to_file(path);
 
 	#endif
 
@@ -147,7 +148,7 @@ return node;
 }
 
 
-bool KDTree_shape::hit(KDTree_shape * node, Ray * ray) const {
+bool KDTree_shape::hit(KDTree_shape * node, Ray * ray,ShapeModelBezier * shape_model_bezier) const {
 
 	// Check if the ray intersects the bounding box of the given node
 
@@ -159,8 +160,8 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray) const {
 		// for intersect. First, the method checks whether it is still on a branch
 		if (node -> left -> elements.size() > 0 || node -> right -> elements.size() > 0) {
 
-			bool hitleft = this -> hit(node -> left.get(), ray);
-			bool hitright = this -> hit(node -> right.get(), ray);
+			bool hitleft = this -> hit(node -> left.get(), ray,shape_model_bezier);
+			bool hitright = this -> hit(node -> right.get(), ray,shape_model_bezier);
 
 			return (hitleft || hitright);
 
@@ -169,20 +170,48 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray) const {
 		else {
 
 			// If not, the current node is a leaf
+			// Note that all elements in the nodes must be searched
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 				// If there is a hit
+
 				if (ray -> single_facet_ray_casting( dynamic_cast<Facet * >(node -> elements[i].get()))) {
-					hit_facet = true;
+					if (shape_model_bezier == nullptr){
+						hit_facet = true;
+					}
+					else{
+
+						// The hit point is refined
+						// The impact point must be expressed in the target's reference frame since this is where
+						// the control mesh KD tree is defined
+						arma::vec impact_point_target_frame = ray -> get_impact_point_target_frame();
+
+						// The closest control point to the impact point is found
+						double distance = std::numeric_limits<double>::infinity();
+						std::shared_ptr<ControlPoint> closest_control_point;
+
+						shape_model_bezier -> get_KDTree_control_points() -> closest_point_search(impact_point_target_frame,
+							shape_model_bezier -> get_KDTree_control_points(),
+							closest_control_point,
+							distance);
+
+						auto owning_elements = closest_control_point -> get_owning_elements();
+
+						// The patches that this control point belongs to are searched for the real intersect
+						double u,v;
+						for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
+							Bezier * patch = dynamic_cast<Bezier *> (*el);
+
+							hit_facet = ray -> single_patch_ray_casting(patch,u,v);
+
+						}
+
+					}
 				}
 
 			}
 
-			if (hit_facet) {
-				return true;
-			}
-
-			return false;
+			return hit_facet;
 
 		}
 	}

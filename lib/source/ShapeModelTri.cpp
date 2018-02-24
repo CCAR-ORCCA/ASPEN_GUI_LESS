@@ -250,7 +250,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 void ShapeModelTri::compute_volume() {
 	double volume = 0;
 
-	// pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {
@@ -273,9 +273,7 @@ this -> volume = volume;
 
 
 void ShapeModelTri::compute_center_of_mass() {
-	double c_x = 0;
-	double c_y = 0;
-	double c_z = 0;
+	
 	double volume = this -> get_volume();
 	arma::vec C = arma::zeros<arma::vec>(3);
 
@@ -298,18 +296,13 @@ void ShapeModelTri::compute_center_of_mass() {
 		double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
 		double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
 
-		c_x = c_x + dv * dr_x / volume;
-		c_y = c_y + dv * dr_y / volume;
-		c_z = c_z + dv * dr_z / volume;
 
 		C += (r0 + r1 + r2) / 4 * dv / volume;
 
 	}
 
-	arma::vec cm = {c_x, c_y, c_z};
-	assert(arma::norm(cm -C) == 0);
 
-	this -> cm =  cm ;
+	this -> cm =  C ;
 
 
 }
@@ -423,25 +416,12 @@ this -> inertia = I;
 }
 
 
-double ShapeModelTri::get_volume() const {
-	return this -> volume;
-}
-
-
-double ShapeModelTri::get_surface_area() const {
-	return this -> surface_area;
-}
-
-
-arma::vec ShapeModelTri::get_center_of_mass() const{
-	return this -> cm;
-}
 
 
 void ShapeModelTri::compute_surface_area() {
 	double surface_area = 0;
 
-	#// pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
+	# pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
 		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());

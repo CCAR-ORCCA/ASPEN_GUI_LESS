@@ -9,7 +9,7 @@
 #define BATCH_DEBUG 0
 #define SEQUENTIAL_DEBUG 0
 #define EKF_DEBUG 0
-#define NAVIGATION_DEBUG 0
+#define NAVIGATION_DEBUG 1
 
 // Ellispoid Fitter debug flags
 #define ELLIPSOID_DEBUG 0

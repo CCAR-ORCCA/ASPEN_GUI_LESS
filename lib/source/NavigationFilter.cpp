@@ -23,9 +23,7 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	// Set active inertia here
 	this -> args.set_active_inertia(this -> args.get_true_shape_model() -> get_inertia());
 
-	System dynamics(this -> args,
-		N_true,
-		Dynamics::point_mass_attitude_dxdt_body_frame );
+	System dynamics(this -> args,N_true,Dynamics::point_mass_attitude_dxdt_body_frame );
 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
@@ -71,14 +69,14 @@ int NavigationFilter::run(
 	}
 
 	#if NAVIGATION_DEBUG
-		std::cout << "- Running filter" << std::endl;
-		std::cout << "-- Computing true state history" << std::endl;
+	std::cout << "- Running filter" << std::endl;
+	std::cout << "-- Computing true state history" << std::endl;
 	#endif
 
 	this -> compute_true_state(T_obs,X0_true_augmented,true);
 
 	#if NAVIGATION_DEBUG
-		std::cout << "-- Computing estimated small body state history" << std::endl;
+	std::cout << "-- Computing estimated small body state history" << std::endl;
 	#endif
 
 	// The filter is initialized
@@ -92,13 +90,13 @@ int NavigationFilter::run(
 	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
 	#if NAVIGATION_DEBUG
-		std::cout << "-- Running the Navigation Filter" << std::endl;
+	std::cout << "-- Running the Navigation Filter" << std::endl;
 
 	#endif
 	for (unsigned int t = 0; t < T_obs.size() - 1; ++t){
 
 		#if NAVIGATION_DEBUG
-			std::cout << "--- Time : " << T_obs[t] << " Index: " << t << "/" << T_obs.size() - 2 <<std::endl;
+		std::cout << "--- Time : " << T_obs[t] << " Index: " << t << "/" << T_obs.size() - 2 <<std::endl;
 		#endif
 
 
@@ -117,6 +115,7 @@ int NavigationFilter::run(
 			(*args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
 			(*args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
 			(*args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
+
 
 
 			arma::vec Y_true_from_lidar = this -> true_observation_fun(
@@ -167,6 +166,7 @@ int NavigationFilter::run(
 		(*args.get_true_pos()) = this -> true_state_history[t + 1].subvec(0,2);
 
 
+
 		arma::vec Y_true_from_lidar = this -> true_observation_fun(
 			T_obs[t + 1],this -> true_state_history[t + 1],
 			this -> args);
@@ -192,7 +192,7 @@ int NavigationFilter::run(
 	}
 
 	#if NAVIGATION_DEBUG
-		std::cout << "-- Leaving" << std::endl;
+	std::cout << "-- Leaving" << std::endl;
 	#endif
 
 	return 0;

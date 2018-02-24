@@ -74,23 +74,6 @@ public:
 		const arma::mat & M = arma::eye<arma::mat>(3,3)) const;
 
 
-	/**
-	Returns the surface area of the shape model
-	@return surface area (U^2 where U is the unit of the shape coordinates)
-	*/
-	double get_surface_area() const;
-
-	/**
-	Returns the volume of the provided shape model
-	@return volume (U^2 where U is the unit of the shape coordinates)
-	*/
-	double get_volume() const;
-
-	/**
-	Returns the location of the center of mass
-	@return pointer to center of mass
-	*/
-	arma::vec get_center_of_mass() const;
 
 	
 	/**
@@ -151,7 +134,7 @@ public:
 	/**
 	Updates the values of the center of mass, volume, surface area
 	*/
-	void update_mass_properties();
+	virtual void update_mass_properties();
 
 	/**
 	Update all the facets of the shape model
@@ -217,11 +200,6 @@ public:
 
 protected:
 	
-	double volume;
-	double surface_area;
-
-	arma::vec cm;
-
 
 
 

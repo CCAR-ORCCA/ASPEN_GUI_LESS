@@ -1,5 +1,6 @@
 #include "Bezier.hpp"
 #include "Psopt.hpp"
+
 #include <cassert>
 Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
 
@@ -866,10 +867,9 @@ void Bezier::compute_area(){
 	arma::vec v = {1./3.,1./5.,3./5,1./5};
 
 	this -> area = 0;
-	for (
-		int i = 0; i < weights.n_rows; ++i){
+	for (int i = 0; i < weights.n_rows; ++i){
 		this -> area += weights(i) * g(u(i),v(i));
-}
+	}
 
 
 

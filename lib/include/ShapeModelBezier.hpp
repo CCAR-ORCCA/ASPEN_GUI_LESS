@@ -48,6 +48,13 @@ public:
 	*/
 	virtual void construct_kd_tree_shape();
 
+
+	/**
+	Updates the values of the center of mass, volume
+	*/
+	virtual void update_mass_properties();
+
+
 	void initialize_info_mat();
 	void initialize_dX_bar();
 

@@ -1,6 +1,9 @@
 #include "ShapeModelBezier.hpp"
 #include "ShapeModelTri.hpp"
 #include "ShapeModelImporter.hpp"
+#include "BezierVolumeIntegral.hpp"
+#include "BezierCMIntegral.hpp"
+
 
 
 ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
@@ -100,13 +103,110 @@ void ShapeModelBezier::compute_surface_area(){
 }
 
 void ShapeModelBezier::compute_volume(){
-	std::cout << "Warning: should only be used for post-processing\n";
+	double volume = 0;
+	unsigned int degree = this -> get_degree();
+	int N_terms;
+	
+	const double * coefficients;
+	switch (degree){
+		case 1:
+		coefficients = &ORDER_1_VOL_INT[0];
+
+		N_terms = int(double(sizeof(ORDER_1_VOL_INT))/( 7 * sizeof(ORDER_1_VOL_INT[0])));
+		break;
+		case 2:
+		coefficients = &ORDER_2_VOL_INT[0];
+		N_terms = int(double(sizeof(ORDER_2_VOL_INT))/( 7 * sizeof(ORDER_2_VOL_INT[0])));
+		break;
+		case 3:
+		coefficients = &ORDER_3_VOL_INT[0];
+		N_terms = int(double(sizeof(ORDER_3_VOL_INT))/( 7 * sizeof(ORDER_3_VOL_INT[0])));
+
+		break;
+		case 4:
+		coefficients = &ORDER_4_VOL_INT[0];
+		N_terms = int(double(sizeof(ORDER_4_VOL_INT))/( 7 * sizeof(ORDER_4_VOL_INT[0])));
+
+		break;
+		default:
+		return;
+		break;
+	}
+	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+
+		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
+		for (int p_index = 0; p_index < N_terms; ++p_index){
+
+			auto Ci = patch -> get_control_point(coefficients[7 * p_index],
+				coefficients[7 * p_index + 1]);
+			auto Cj = patch -> get_control_point(coefficients[7 * p_index + 2],
+				coefficients[7 * p_index + 3]);
+			auto Ck = patch -> get_control_point(coefficients[7 * p_index + 4],
+				coefficients[7 * p_index + 5]);
+
+			volume += coefficients[7 * p_index + 6] * arma::dot(Ci -> get_coordinates(),
+				arma::cross(Cj -> get_coordinates(),Ck -> get_coordinates()) );
+			
+
+		}
+
+		
+	}
+
+
+	this -> volume = volume;
+
 
 }
 
+void ShapeModelBezier::update_mass_properties() {
+	this -> compute_volume();
+
+}
+
+
+
 void ShapeModelBezier::compute_center_of_mass(){
 
+
 	std::cout << "Warning: should only be used for post-processing\n";
+
+	double volume = this -> get_volume();
+	arma::vec C = arma::zeros<arma::vec>(3);
+
+	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
+
+
+		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
+
+		arma::vec r0 =  vertices -> at(0) -> get_coordinates();
+		arma::vec r1 =  vertices -> at(1) -> get_coordinates();
+		arma::vec r2 =  vertices -> at(2) -> get_coordinates();
+
+		double * r0d =  vertices -> at(0) -> get_coordinates() . colptr(0);
+		double * r1d =  vertices -> at(1) -> get_coordinates() . colptr(0);
+		double * r2d =  vertices -> at(2) -> get_coordinates() . colptr(0);
+
+		double dv = 1. / 6. * arma::dot(r1, arma::cross(r1 - r0, r2 - r0));
+
+		double dr_x = (r0d[0] + r1d[0] + r2d[0]) / 4.;
+		double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
+		double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
+
+
+		C += (r0 + r1 + r2) / 4 * dv / volume;
+
+	}
+
+
+	this -> cm =  C ;
+
+
+
+
+
+
 
 }
 
@@ -116,17 +216,8 @@ void ShapeModelBezier::compute_inertia(){
 
 bool ShapeModelBezier::ray_trace(Ray * ray){
 
-	double u,v;
-	bool hit = false;
-	// Not really elegant and not parallelizable
-	
-	for (unsigned int i = 0; i < this -> elements.size(); ++i){
-		Bezier * patch = dynamic_cast<Bezier *>(this -> elements[i].get());
-		hit = ray -> single_patch_ray_casting(patch,u,v);
-	}
 
-
-	return hit;
+	return this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray,this);
 
 }
 
@@ -146,7 +237,7 @@ void ShapeModelBezier::elevate_degree(){
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
 		auto points = this -> get_elements() -> at(i) -> get_control_points();
-		
+
 		for (auto point = points -> begin(); point != points -> end(); ++point){
 			if (new_control_points_set.find(*point) == new_control_points_set.end()){
 				new_control_points_set.insert(*point) ;
@@ -182,7 +273,7 @@ void ShapeModelBezier::elevate_degree(){
 
 
 	this -> construct_kd_tree_control_points();
-	
+
 }
 
 
@@ -252,9 +343,9 @@ void ShapeModelBezier::save(std::string path) {
 
 	for (auto iter = shape_patch_indices.begin(); iter != shape_patch_indices.end(); ++iter){
 		shape_file << "f ";
-		
+
 		for (unsigned int index = 0; index < iter -> size(); ++index){
-			
+
 			if (index != iter -> size() - 1){
 				shape_file << iter -> at(index) << " ";
 			}
@@ -278,7 +369,7 @@ void ShapeModelBezier::construct_kd_tree_shape(){
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	
+
 	// The KD tree is constructed by building an "enclosing" (not strictly-speaking) KD tree from the bezier shape
 
 
@@ -353,7 +444,7 @@ void ShapeModelBezier::construct_kd_tree_shape(){
 
 
 	std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
-	
+
 
 
 
@@ -396,7 +487,7 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 
 			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
 				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
-				
+
 				auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
 				double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
 				double v =  double(std::get<1>(local_indices)) / patch -> get_degree();

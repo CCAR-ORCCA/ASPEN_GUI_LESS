@@ -96,6 +96,16 @@ public:
 	arma::vec get_impact_point() const;
 
 	/**
+	Returns the coordinates of the impacted point
+	expressed in the target frame.
+	Throws an exception if this ray has not impacted the target
+	@return Coordinates of the impacted point expressed in the instrument framme
+	*/
+	arma::vec get_impact_point_target_frame() const ;
+
+
+
+	/**
 	Cast a ray to a single facet of the target
 	Sets the $hit_facet and $range members depending on whether an intersect was found:
 	- no intersect found: range == oo and hit_facet == nullptr

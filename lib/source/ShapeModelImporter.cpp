@@ -117,6 +117,24 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 		++progress_facets;
 	}
 
+	shape_model -> update_mass_properties();
+	
+	if (this -> as_is == false) {
+
+		// shape_model -> compute_center_of_mass();
+		// shape_model -> compute_inertia_tensor();
+
+		// The shape model is shifted so as to have its coordinates
+		// expressed in its barycentric frame
+		// shape_model -> shift_to_barycenter();
+
+		// The shape model is then rotated so as to be oriented
+		// with respect to its principal axes
+		// The inertia tensor is computed on this occasion
+		// shape_model -> align_with_principal_axes();
+
+	}
+
 
 	shape_model -> construct_kd_tree_control_points();
 	

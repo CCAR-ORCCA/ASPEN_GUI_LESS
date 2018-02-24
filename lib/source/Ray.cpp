@@ -160,6 +160,19 @@ arma::vec Ray::get_impact_point() const {
 
 }
 
+
+arma::vec Ray::get_impact_point_target_frame() const {
+
+	if (this -> true_range < std::numeric_limits<double>::infinity()) {
+		
+		return (*this -> direction_target_frame) * this -> true_range + (*this -> origin_target_frame);
+	}
+	else {
+		throw std::runtime_error("Invalid ray");
+	}
+
+}
+
 bool Ray::single_facet_ray_casting(Facet * facet) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively

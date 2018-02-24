@@ -69,6 +69,12 @@ public:
 	*/
 	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
 
+	/**
+	Returns the volume of the provided shape model
+	@return volume (U^2 where U is the unit of the shape coordinates)
+	*/
+	double get_volume() const;
+
 
 	/**
 	Returns the principal axes and principal moments of the shape model
@@ -207,6 +213,24 @@ public:
 	*/
 	arma::mat get_inertia() const;
 
+	/**
+	Updates shape geometric and mass properties
+	*/
+	virtual void update_mass_properties() = 0;
+
+	/**
+	Returns the surface area of the shape model
+	@return surface area (U^2 where U is the unit of the shape coordinates)
+	*/
+	double get_surface_area() const;
+
+	
+	/**
+	Returns the location of the center of mass
+	@return pointer to center of mass
+	*/
+	arma::vec get_center_of_mass() const;
+
 
 protected:
 
@@ -221,6 +245,12 @@ protected:
 	std::string ref_frame_name;
 
 	arma::mat inertia;
+
+	double volume;
+	double surface_area;
+
+	arma::vec cm;
+
 
 
 };

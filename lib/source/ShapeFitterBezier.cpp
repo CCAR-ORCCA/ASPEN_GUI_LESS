@@ -49,14 +49,15 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	// Once this is done, each patch is trained
 	boost::progress_display progress(trained_patches.size());
-	std::cout << "- Training patches... " << std::endl;
+	std::cout << "- Training "<< trained_patches.size() <<  " patches ..." << std::endl;
+	
 
 	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
 		(*patch) -> train_patch_covariance();
 		++progress;
 
 	}
-	std::cout << "- Done training patches " << std::endl;
+	std::cout << "- Done training "<< trained_patches.size() <<  " patches " << std::endl;
 
 
 

@@ -23,6 +23,21 @@ arma::mat ShapeModel::get_inertia() const {
 
 }
 
+double ShapeModel::get_volume() const{
+	return this -> volume;
+}
+
+
+
+double ShapeModel::get_surface_area() const {
+	return this -> surface_area;
+}
+
+
+arma::vec ShapeModel::get_center_of_mass() const{
+	return this -> cm;
+}
+
 
 void ShapeModel::construct_kd_tree_control_points() {
 
