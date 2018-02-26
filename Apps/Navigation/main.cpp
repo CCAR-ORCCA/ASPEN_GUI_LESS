@@ -2,6 +2,8 @@
 #include "Observations.hpp"
 #include "Dynamics.hpp"
 #include "ShapeModelImporter.hpp"
+#include "ShapeModelBezier.hpp"
+
 
 
 
@@ -48,8 +50,8 @@ int main() {
 
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
-	ShapeModelTri estimated_shape_model("E", &frame_graph);
-	// ShapeModelBezier estimated_shape_model("E", &frame_graph);
+	// ShapeModelTri estimated_shape_model("E", &frame_graph);
+	ShapeModelBezier estimated_shape_model("E", &frame_graph);
 
 	// Spherical harmonics coefficients
 	arma::mat Cnm;
@@ -58,7 +60,7 @@ int main() {
 	ShapeModelImporter shape_io_truth(
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
-	ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/paperGNSki/data/itokawa_hr_fit_degree_3_iter_10.b", 1, true);
+	ShapeModelImporter shape_io_guess("../input/fit_source_400.b", 1, false);
 
 	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
 	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
@@ -68,11 +70,14 @@ int main() {
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
 
-	shape_io_truth.load_obj_shape_model(&estimated_shape_model);
-	// shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
+	// shape_io_truth.load_obj_shape_model(&estimated_shape_model);
+	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
 
 	estimated_shape_model.construct_kd_tree_shape();
+	true_shape_model.save("../output/shape_model/B.obj");
+	estimated_shape_model.save_to_obj("../output/shape_model/E.obj");
+
 
 	// Itokawa angular velocity
 	double omega = 2 * arma::datum::pi / (12 * 3600);

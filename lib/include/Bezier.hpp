@@ -78,6 +78,30 @@ public:
 	void elevate_degree();
 
 
+
+	/**
+	Computes the I1 contribution to the polyhedron center of mass
+	@returm I1 com integral 
+	*/
+	arma::vec I1_cm_int() const;
+
+
+	/**
+	Computes the I2 contribution to the polyhedron center of mass
+	@returm I2 com integral 
+	*/
+	arma::vec I2_cm_int() const;
+
+
+	/**
+	Computes the I3 contribution to the polyhedron center of mass
+	@returm I3 com integral 
+	*/
+	arma::vec I3_cm_int() const;
+
+	static double beta_ijkl( int i,  int j,  int k,  int l,  int n);
+	static double Sba_b(double a, double b);
+
 	
 	/**
 	Evaluates the bezier patch at the barycentric 
@@ -126,6 +150,13 @@ public:
 	*/
 	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(std::shared_ptr<ControlPoint> point);
 
+	/**
+	Returns the coordinates of a control point given its i and j indices (k = n - i - j)
+	@param i first index
+	@param j second index
+	@return coordinats of contorl point
+	*/	
+	arma::vec get_control_point_coordinates(unsigned int i, unsigned int j) const;
 
 
 	/**

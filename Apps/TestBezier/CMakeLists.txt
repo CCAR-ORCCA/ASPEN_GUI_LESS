@@ -116,11 +116,6 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 
-# Find SBGAT 
-find_package(SbgatCore REQUIRED)
-include_directories(${SBGATCORE_INCLUDE_HEADER})
-
-
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
@@ -151,7 +146,6 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
-${SBGATCORE_LIBRARY}
 ${ASPEN_LIBRARY}
 )
 

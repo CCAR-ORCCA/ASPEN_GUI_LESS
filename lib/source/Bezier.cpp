@@ -23,9 +23,19 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j){
 
-	return this -> control_points[this -> rev_table[std::make_tuple(i,j,this -> n - i - j)]];
+	const unsigned int degree = this -> n;
+	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,degree - i - j);
+	return this -> control_points[this -> rev_table.at(indices)];
 }
 
+
+
+arma::vec Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) const{
+	const unsigned int degree = this -> n;
+	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,degree - i - j);
+
+	return this -> control_points[this -> rev_table.at(indices)] -> get_coordinates();
+}
 
 
 std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point){
@@ -46,6 +56,130 @@ void Bezier::construct_index_tables(){
 	this -> forw_table =  forward_table(this -> n);
 
 }
+
+
+
+
+double Bezier::Sba_b(double a, double b){
+	if (a < 0 || b - a < 0){
+		return 0;
+	}
+	double sum = 0;
+
+	for (int k = 0; k <= b -a ; ++k){
+		sum += Bezier::combinations(k, b - a) * std::pow(-1., k ) / (b - k + 1);
+	}
+	return sum;
+
+}
+
+
+
+
+
+double Bezier::beta_ijkl(int i, int j, int k, int l, int n){
+
+
+	double beta = (
+		Bezier::combinations(i, n) 
+		* Bezier::combinations(j, n) 
+		* Bezier::combinations(k, n) * n* 
+		(
+			Bezier::combinations( l -1 , n - 1) 
+			* Sba_b(i + j + k + l - 1,4 * n - i - j - k - l - 1)
+			- Bezier::combinations( l , n - 1) 
+			* Sba_b(i + j + k + l, 4 * n - i - j - k - l - 1)));
+
+	return beta;
+}
+
+
+arma::vec Bezier::I1_cm_int() const{
+
+	arma::vec I1 = {0,0,0};
+	for (int i = 0; i <= this -> n; ++i){
+		for (int j = 0; j <= this -> n; ++j){
+			for (int k = 0; k <= this -> n; ++k){
+				for (int l = 0; l <= this -> n; ++l){
+					I1 += (Bezier::beta_ijkl(i,j,k,l,this -> n) 
+						* arma::dot(this -> get_control_point_coordinates(i,this -> n - i),this -> get_control_point_coordinates(j,this -> n- j)) 
+						* arma::cross(this -> get_control_point_coordinates(k,this -> n-k),this -> get_control_point_coordinates(l,this -> n-l)));
+
+				}
+
+			}
+
+
+		}
+
+	}
+	return 1./4 * I1;
+
+}
+
+
+	
+arma::vec Bezier::I2_cm_int() const{
+
+
+
+	arma::vec I2 = {0,0,0};
+
+	for (int i = 0; i <= this -> n; ++i){
+		for (int j = 0; j <= this -> n; ++j){
+			for (int k = 0; k <= this -> n; ++k){
+				for (int l = 0; l <= this -> n; ++l){
+					I2 += (beta_ijkl(i,j,k,l,this -> n) 
+						* arma::dot(this -> get_control_point_coordinates(0,i),this -> get_control_point_coordinates(0,j)) 
+						* arma::cross(this -> get_control_point_coordinates(0,k),this -> get_control_point_coordinates(0,l)));
+
+				}
+
+			}
+
+
+		}
+
+	}
+	return 1./4 * I2;
+
+
+
+
+
+}
+
+arma::vec Bezier::I3_cm_int() const{
+
+
+	arma::vec I3 = {0,0,0};
+
+	for (int i = 0; i <= this -> n; ++i){
+		for (int j = 0; j <= this -> n; ++j){
+			for (int k = 0; k <= this -> n; ++k){
+				for (int l = 0; l <= this -> n; ++l){
+					I3 += (beta_ijkl(i,j,k,l,this -> n) 
+						* arma::dot(this -> get_control_point_coordinates(this -> n - i,0),this -> get_control_point_coordinates(this -> n - j,0)) 
+						* arma::cross(this -> get_control_point_coordinates(this -> n - k,0),this -> get_control_point_coordinates(this -> n - l,0)));
+
+				}
+
+			}
+
+
+		}
+
+	}
+	return 1./4 * I3;
+
+
+}
+
+
+
+
+
+
 
 void Bezier::elevate_degree(){
 
@@ -908,18 +1042,10 @@ double Bezier::g(double u, double v) const{
 
 unsigned int Bezier::combinations(unsigned int k, unsigned int n){
 
-	if (k < 0 || k > n){
+	if (k < 0 || k > n || n < 0){
 		return 0;
 	}
 
-	// unsigned int v = n--;
-
-	// for (
-	// int i = 2; i < k + 1; ++i, --n){
-	// 	v = v * n / i;
-	// }
-
-	
 
 	return boost::math::factorial<double>(n) / (boost::math::factorial<double>(k)  * boost::math::factorial<double>(n - k));
 
