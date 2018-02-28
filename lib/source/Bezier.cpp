@@ -60,24 +60,55 @@ void Bezier::construct_index_tables(){
 
 
 
-double Bezier::Sba_b(double a, double b){
-	if (a < 0 || b - a < 0){
+double Bezier::Sa_b(const int a, const int b){
+	if (a < 0 || b < 0){
 		return 0;
 	}
 	double sum = 0;
 
-	for (int k = 0; k <= b -a ; ++k){
-		sum += Bezier::combinations(k, b - a) * std::pow(-1., k ) / (b - k + 1);
+	for (int k = 0; k <= b ; ++k){
+		sum += Bezier::combinations(k, b ) * std::pow(-1., k ) / (a + k + 1);
 	}
 	return sum;
 
 }
 
 
+double Bezier::bernstein_coef(const int i , const int j , const int n){
+
+	if (i < 0  || j < 0 || n < 0 || i > n || j > n || i + j > n){
+		return 0;
+	}
+
+
+	return boost::math::factorial<double>(n) / (boost::math::factorial<double>(i) * boost::math::factorial<double>(j) * boost::math::factorial<double>(n - i - j));
+ 
+
+}
+
+double Bezier::alpha_ijklmp(const int i, const int j, const int k, const int l, const int m, const int p,const int n){
+
+
+	int sum_indices = i + k + j + l + m + p;
+
+	double alpha = double( n * n ) / 3 * Bezier::bernstein_coef(i ,j,n) * (
+
+		Bezier::bernstein_coef(k - 1 ,l,n - 1) * Bezier::bernstein_coef(m ,p -1,n - 1) * Sa_b(l + j + p - 1,3 * n - sum_indices ) * Sa_b(k + m + i - 1,3 * n - i - k - m )
+		- Bezier::bernstein_coef(k - 1 ,l,n - 1) * Bezier::bernstein_coef(m ,p,n - 1) * Sa_b(l + j + p,3 * n - sum_indices - 1 ) * Sa_b(k + m + i - 1,3 * n - i - k - m )
+		- Bezier::bernstein_coef(k ,l,n - 1) * Bezier::bernstein_coef(m ,p - 1,n - 1) * Sa_b(l + j + p - 1,3 * n - sum_indices - 1 ) * Sa_b(k + m + i,3 * n - i - k - m - 1)
+		+ Bezier::bernstein_coef(k ,l,n - 1) * Bezier::bernstein_coef(m ,p,n - 1) * Sa_b(l + j + p,3 * n - sum_indices - 2 ) * Sa_b(k + m + i,3 * n - i - k - m - 1)
+
+		);
+
+	return alpha;
+}
 
 
 
-double Bezier::beta_ijkl(int i, int j, int k, int l, int n){
+
+
+
+double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, const int n){
 
 
 	double beta = (
@@ -85,10 +116,8 @@ double Bezier::beta_ijkl(int i, int j, int k, int l, int n){
 		* Bezier::combinations(j, n) 
 		* Bezier::combinations(k, n) * n* 
 		(
-			Bezier::combinations( l -1 , n - 1) 
-			* Sba_b(i + j + k + l - 1,4 * n - i - j - k - l - 1)
-			- Bezier::combinations( l , n - 1) 
-			* Sba_b(i + j + k + l, 4 * n - i - j - k - l - 1)));
+			Bezier::combinations( l -1 , n - 1) * Sa_b(i + j + k + l - 1,4 * n - i - j - k - l)
+			- Bezier::combinations( l , n - 1) * Sa_b(i + j + k + l, 4 * n - i - j - k - l - 1)));
 
 	return beta;
 }
@@ -105,6 +134,7 @@ arma::vec Bezier::I1_cm_int() const{
 						* arma::dot(this -> get_control_point_coordinates(i,this -> n - i),this -> get_control_point_coordinates(j,this -> n- j)) 
 						* arma::cross(this -> get_control_point_coordinates(k,this -> n-k),this -> get_control_point_coordinates(l,this -> n-l)));
 
+
 				}
 
 			}
@@ -113,25 +143,30 @@ arma::vec Bezier::I1_cm_int() const{
 		}
 
 	}
-	return 1./4 * I1;
+
+	
+	return 1./8 * I1;
 
 }
 
 
-	
+
 arma::vec Bezier::I2_cm_int() const{
-
-
 
 	arma::vec I2 = {0,0,0};
 
 	for (int i = 0; i <= this -> n; ++i){
 		for (int j = 0; j <= this -> n; ++j){
+
 			for (int k = 0; k <= this -> n; ++k){
 				for (int l = 0; l <= this -> n; ++l){
+
+
 					I2 += (beta_ijkl(i,j,k,l,this -> n) 
 						* arma::dot(this -> get_control_point_coordinates(0,i),this -> get_control_point_coordinates(0,j)) 
 						* arma::cross(this -> get_control_point_coordinates(0,k),this -> get_control_point_coordinates(0,l)));
+
+
 
 				}
 
@@ -141,7 +176,7 @@ arma::vec Bezier::I2_cm_int() const{
 		}
 
 	}
-	return 1./4 * I2;
+	return 1./8 * I2;
 
 
 
@@ -155,12 +190,16 @@ arma::vec Bezier::I3_cm_int() const{
 	arma::vec I3 = {0,0,0};
 
 	for (int i = 0; i <= this -> n; ++i){
+
 		for (int j = 0; j <= this -> n; ++j){
 			for (int k = 0; k <= this -> n; ++k){
 				for (int l = 0; l <= this -> n; ++l){
 					I3 += (beta_ijkl(i,j,k,l,this -> n) 
 						* arma::dot(this -> get_control_point_coordinates(this -> n - i,0),this -> get_control_point_coordinates(this -> n - j,0)) 
 						* arma::cross(this -> get_control_point_coordinates(this -> n - k,0),this -> get_control_point_coordinates(this -> n - l,0)));
+
+
+
 
 				}
 
@@ -170,7 +209,7 @@ arma::vec Bezier::I3_cm_int() const{
 		}
 
 	}
-	return 1./4 * I3;
+	return 1./8 * I3;
 
 
 }
@@ -455,12 +494,7 @@ double Bezier::bernstein(
 		return 1;
 	}
 
-	double coef =  boost::math::factorial<double>(n) / (
-		boost::math::factorial<double>(i)
-		* boost::math::factorial<double>(j) 
-		* boost::math::factorial<double>(n - i - j));
-
-	return coef * (std::pow(u,i) *  std::pow(v,j)
+	return Bezier::bernstein_coef(i,j,n) * (std::pow(u,i) *  std::pow(v,j)
 		* std::pow(1 - u - v, n - i - j ));
 
 }

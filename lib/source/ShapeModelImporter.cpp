@@ -54,8 +54,9 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 
 		else if (type == 'f') {
 			std::vector<unsigned int> patch_indices;
-			
-			for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+			unsigned int N_c = (degree + 1)* (degree + 2) / 2;
+						
+			for (unsigned int i = 0; i < N_c; ++ i){
 				unsigned int v;
 				linestream >> v;
 				patch_indices.push_back(v);
@@ -116,7 +117,6 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 		shape_model -> add_element(patch);
 		++progress_facets;
 	}
-
 	shape_model -> update_mass_properties();
 	
 	if (this -> as_is == false) {
@@ -252,6 +252,7 @@ void ShapeModelImporter::load_obj_shape_model(ShapeModelTri * shape_model) const
 
 	// The surface area, volume, center of mass of the shape model
 	// are computed
+
 	shape_model -> update_mass_properties();
 
 	if (this -> as_is == false) {

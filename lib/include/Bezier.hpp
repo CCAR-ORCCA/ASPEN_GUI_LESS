@@ -99,9 +99,6 @@ public:
 	*/
 	arma::vec I3_cm_int() const;
 
-	static double beta_ijkl( int i,  int j,  int k,  int l,  int n);
-	static double Sba_b(double a, double b);
-
 	
 	/**
 	Evaluates the bezier patch at the barycentric 
@@ -309,12 +306,21 @@ public:
 	*/
 	void reset_footpoints();
 
+	static double alpha_ijklmp(const int i, const int j, const int k, const int l, const int m, const int p,const int n);
+	
+
 
 protected:
 
 	virtual void compute_normal();
 	virtual void compute_area();
 	virtual void compute_center();
+
+
+
+	static double beta_ijkl( const int i,  const int j,  const int k, const  int l,  const int n);
+	static double Sa_b(const int a, const int b);
+	static double bernstein_coef(const int i , const int j , const int n);
 
 
 	void construct_index_tables();
