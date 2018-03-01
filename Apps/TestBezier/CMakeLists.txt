@@ -19,6 +19,10 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 
+# Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
+set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
+
+
 ################################################################################
 #
 #
@@ -33,6 +37,7 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
+
 
 else()
 	set(IS_FORTUNA OFF)
@@ -109,6 +114,12 @@ include( CGAL_CreateSingleSourceCGALProgram )
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
 
+
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
+
+
 # Find OpenMP
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -134,6 +145,7 @@ ${ARMADILLO_LIBRARIES}
 ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${ASPEN_LIBRARY}
+${VTK_LIBRARIES}
 )
 
 

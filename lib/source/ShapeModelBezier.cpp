@@ -1,7 +1,6 @@
 #include "ShapeModelBezier.hpp"
 #include "ShapeModelTri.hpp"
 #include "ShapeModelImporter.hpp"
-#include "BezierCMIntegral.hpp"
 
 
 
@@ -35,6 +34,8 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	}
 
 	this -> construct_kd_tree_control_points();
+	this -> populate_mass_properties_coefs();
+	this -> update_mass_properties();
 	this -> inertia = shape_model -> get_inertia();
 
 }
@@ -107,11 +108,10 @@ void ShapeModelBezier::update_mass_properties() {
 
 
 	this -> compute_volume();
+
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
-
 	this -> compute_center_of_mass();
-
 
 
 	std::cout << "elapsed time in ShapeModelBezier::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
@@ -123,38 +123,21 @@ void ShapeModelBezier::update_mass_properties() {
 void ShapeModelBezier::compute_volume(){
 	
 	double volume = 0;
-	
+
 	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
-		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
-
-		for (int i = 0; i <= patch -> get_degree(); ++i){
-			for (int j = 0; j <= patch -> get_degree() - i; ++j){
-
-				auto Ci = patch -> get_control_point(i,j);
-
-				for (int k = 0; k <= patch -> get_degree() ; ++k){
-					for (int l = 0; l <= patch -> get_degree() - k; ++l){
-						
-						auto Cj = patch -> get_control_point(k,l);
-
-						for (int m = 0; m <= patch -> get_degree() ; ++m){
-							for (int p = 0; p <= patch -> get_degree() - m; ++p){
-
-								auto Ck = patch -> get_control_point(m,p);
-
-								volume += Bezier::alpha_ijklmp(i,j,k,l,m,p,patch -> get_degree()) * arma::dot(Ci -> get_coordinates(),
-									arma::cross(Cj -> get_coordinates(),Ck -> get_coordinates()) );
-
-
-							}
-						}
-					}
-				}
-			}
-		}
-
 		
+		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
+
+		for (auto index = 0 ; index <  this -> volume_indices_coefs_table.size(); ++index) {
+		
+			volume += this -> volume_indices_coefs_table[index][6] * patch -> triple_product(int(this -> volume_indices_coefs_table[index][0]) ,
+				int(this -> volume_indices_coefs_table[index][1]) ,int(this -> volume_indices_coefs_table[index][2]) ,
+				int(this -> volume_indices_coefs_table[index][3]) ,int(this -> volume_indices_coefs_table[index][4]) ,
+				int(this -> volume_indices_coefs_table[index][5]) );
+
+		}
 
 	}
 	this -> volume = volume;
@@ -163,82 +146,39 @@ void ShapeModelBezier::compute_volume(){
 
 void ShapeModelBezier::compute_center_of_mass(){
 
-
-
-	unsigned int degree = this -> get_degree();
-	int N_cm_terms;
-
 	this -> cm = arma::zeros<arma::vec>(3);
-
-	const double * cm_coefficients;
-
-	switch (degree){
-		case 1:
-		cm_coefficients = &ORDER_1_CM_INT[0];
-
-		N_cm_terms = int(double(sizeof(ORDER_1_CM_INT))/( 9 * sizeof(ORDER_1_CM_INT[0])));
-
-		break;
-		case 2:
-		cm_coefficients = &ORDER_2_CM_INT[0];
-
-		N_cm_terms = int(double(sizeof(ORDER_2_CM_INT))/( 9 * sizeof(ORDER_2_CM_INT[0])));
-
-		break;
-		case 3:
-		cm_coefficients = &ORDER_3_CM_INT[0];
-
-		N_cm_terms = int(double(sizeof(ORDER_3_CM_INT))/( 9 * sizeof(ORDER_3_CM_INT[0])));
-
-		break;
-		case 4:
-		cm_coefficients = &ORDER_4_CM_INT[0];
-
-		N_cm_terms = int(double(sizeof(ORDER_4_CM_INT))/( 9 * sizeof(ORDER_4_CM_INT[0])));
-
-		break;
-		default:
-		return;
-		break;
-	}
 
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
 		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
 
-		arma::vec element_com = {0,0,0};
+		for (auto index = 0 ; index <  this -> cm_indices_coefs_table.size(); ++index) {
 
+			int i =  int(this -> cm_indices_coefs_table[index][0]);
+			int j =  int(this -> cm_indices_coefs_table[index][1]);
+			int k =  int(this -> cm_indices_coefs_table[index][2]);
+			int l =  int(this -> cm_indices_coefs_table[index][3]);
+			int m =  int(this -> cm_indices_coefs_table[index][4]);
+			int p =  int(this -> cm_indices_coefs_table[index][5]);
+			int q =  int(this -> cm_indices_coefs_table[index][6]);
+			int r =  int(this -> cm_indices_coefs_table[index][7]);
 
-		for (int p_index = 0; p_index < N_cm_terms; ++p_index){
+			double gamma = this -> cm_indices_coefs_table[index][8];
 
-			auto Ci = patch -> get_control_point(cm_coefficients[9 * p_index],
-				cm_coefficients[9 * p_index + 1]);
-			auto Cj = patch -> get_control_point(cm_coefficients[9 * p_index + 2],
-				cm_coefficients[9 * p_index + 3]);
-			auto Ck = patch -> get_control_point(cm_coefficients[9 * p_index + 4],
-				cm_coefficients[9 * p_index + 5]);
-			auto Cl = patch -> get_control_point(cm_coefficients[9 * p_index + 6],
-				cm_coefficients[9 * p_index + 7]);
+			auto Ci = patch -> get_control_point_coordinates(i,j);
+			auto Cj = patch -> get_control_point_coordinates(k,l);
+			auto Ck = patch -> get_control_point_coordinates(m,p);
+			auto Cl = patch -> get_control_point_coordinates(q,r);
 
-			element_com += cm_coefficients[9 * p_index + 8] * arma::dot(Ci -> get_coordinates(),Cj -> get_coordinates()) * 
-			arma::cross(Ck -> get_coordinates(),Cl -> get_coordinates()) ;
+			this -> cm += gamma * arma::dot(Ci,Cj) * arma::cross(Ck,Cl) ;
 
 		}
 
 
+		this -> cm += patch -> I1_cm_int();
+		this -> cm += patch -> I2_cm_int();
+		this -> cm += patch -> I3_cm_int();
 
-		auto I1 = patch -> I1_cm_int();
-		auto I2 = patch -> I2_cm_int();
-		auto I3 = patch -> I3_cm_int();
-
-		element_com += I1;
-		element_com += I2;
-		element_com += I3;
-
-
-
-
-		this -> cm += element_com;
 
 	}
 
@@ -311,7 +251,107 @@ void ShapeModelBezier::elevate_degree(){
 
 
 	this -> construct_kd_tree_control_points();
+	this -> populate_mass_properties_coefs();
 	this -> update_mass_properties();
+
+
+}
+
+void ShapeModelBezier::populate_mass_properties_coefs(){
+
+	this -> cm_indices_coefs_table.clear();
+	this -> volume_indices_coefs_table.clear();
+
+	double n = this -> get_degree();
+
+
+	std::vector<std::vector<double > > volume_indices_coefs_table_temp;
+	std::vector<std::vector<double > > cm_indices_coefs_table_temp;
+
+	
+	// Volume
+	for (int i = 0; i < 1 + this -> get_degree(); ++i){
+		for (int j = 0; j < 1 + this -> get_degree() - i; ++j){
+
+			for (int k = 0; k < 1 + this -> get_degree() ; ++k){
+				for (int l = 0; l < 1 + this -> get_degree() - k; ++l){
+
+					for (int m = 0; m < 1 + this -> get_degree() ; ++m){
+						for (int p = 0; p < 1 + this -> get_degree() - m; ++p){
+
+
+							double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
+							
+							std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
+							volume_indices_coefs_table_temp.push_back(index_vector);
+
+							
+
+
+						}
+					}
+				}
+			}
+		}
+	}
+	
+
+	// CM
+	for (int i = 0; i < 1 + this -> get_degree(); ++i){
+		for (int j = 0; j < 1 + this -> get_degree() - i; ++j){
+
+
+			for (int k = 0; k < 1 + this -> get_degree() ; ++k){
+				for (int l = 0; l < 1 + this -> get_degree() - k; ++l){
+
+					for (int m = 0; m < 1 + this -> get_degree() ; ++m){
+						for (int p = 0; p < 1 + this -> get_degree() - m; ++p){
+
+
+							for (int q = 0; q < 1 + this -> get_degree() ; ++q){
+								for (int r = 0; r < 1 + this -> get_degree() - q; ++r){
+									
+									double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
+									
+									std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),gamma};
+									cm_indices_coefs_table_temp.push_back(index_vector);
+
+
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	arma::vec alphas(volume_indices_coefs_table_temp.size());
+
+	for (int i = 0; i < alphas.n_rows; ++i){
+		alphas(i) = volume_indices_coefs_table_temp[i][6];
+	}
+
+	for (int i = 0; i < alphas.n_rows; ++i){
+		// if (std::abs(volume_indices_coefs_table_temp[i][6])/arma::mean(arma::abs(alphas)) > 0.1){
+			this -> volume_indices_coefs_table.push_back(volume_indices_coefs_table_temp[i]);
+		// };
+	}
+	std::cout << this -> volume_indices_coefs_table.size() << std::endl;
+
+	// alphas.save("alphas.txt",arma::raw_ascii);
+
+
+
+	arma::vec gammas(cm_indices_coefs_table_temp.size());
+
+	for (int i = 0; i < gammas.n_rows; ++i){
+		gammas(i) = cm_indices_coefs_table_temp[i][8];
+		this -> cm_indices_coefs_table.push_back(cm_indices_coefs_table_temp[i]);
+	}
+
+	// gammas.save("gammas.txt",arma::raw_ascii);
+
 
 }
 

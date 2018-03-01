@@ -12,7 +12,6 @@ void ControlPoint::add_ownership(Element *  el) {
 
 }
 
-
 void ControlPoint::remove_ownership(Element *  el) {
 
 	this -> owning_elements.erase(el);
@@ -28,14 +27,16 @@ std::set< Element *  > ControlPoint::get_owning_elements() const {
 	return this -> owning_elements;
 }
 
-
+double * ControlPoint::get_coordinates_pointer(){
+	return this -> coordinates.colptr(0);
+}
 
 std::set< Element * >  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
 
 	std::set< Element *> common_facets;
 
 	for (auto it = this -> owning_elements.begin();
-	        it != this -> owning_elements.end(); ++it) {
+		it != this -> owning_elements.end(); ++it) {
 
 		if (vertex -> is_owned_by(*it)) {
 			common_facets.insert(*it);

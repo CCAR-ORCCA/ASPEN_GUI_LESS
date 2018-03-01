@@ -235,7 +235,16 @@ public:
 	void train_patch_covariance();
 
 
-
+	/**
+	Returns the triple product of points i_ = (i,j), j_ = = (k,l) and k_ = = (m,p), e.g Ci_^T(Cj_ x Ck_)
+	@param i first index of first point
+	@param j second index of first point
+	@param k first index of second point
+	@param l second index of second point
+	@param m first index of third point
+	@param p second index of third point
+	*/
+	double triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ) const;
 
 	// Returns the partial derivative d^2P/(dchi dv)
 	arma::mat partial_bezier_dv(
@@ -306,8 +315,36 @@ public:
 	*/
 	void reset_footpoints();
 
-	static double alpha_ijklmp(const int i, const int j, const int k, const int l, const int m, const int p,const int n);
+
+	/**
+	Returns the coefficient alpha_ijk for volume computation
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param m first index of third triplet
+	@param p second index of third triplet
+	@param n patch degree
+	@returm computed coefficient
+	*/
+	static double alpha_ijk(const int i, const int j, const int k, const int l, const int m, const int p,const int n);
 	
+	/**
+	Returns the coefficient gamma_ijkl for center of mass computation
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param m first index of third triplet
+	@param p second index of third triplet
+	@param q first index of fourth triplet
+	@param r second index of fourth triplet
+	@param n patch degree
+	@returm computed coefficient
+	*/
+	static double gamma_ijkl(const int i, const int j, const int k, const int l, const int m, const int p,const int q, const int r, const int n);
+
+
 
 
 protected:

@@ -108,11 +108,22 @@ public:
 	void save_both(std::string partial_path);
 
 
+	/**
+	Assembles the tables used to compute the mass properties of the shape
+	*/
+	void populate_mass_properties_coefs();
+
+
+
 
 protected:
 
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
+	std::vector<std::vector<double> > cm_indices_coefs_table;
+	std::vector<std::vector<double> > volume_indices_coefs_table;
+
+
 	
 	
 };

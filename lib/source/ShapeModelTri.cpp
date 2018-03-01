@@ -4,10 +4,24 @@
 
 void ShapeModelTri::update_mass_properties() {
 
+
+
+
 	this -> compute_surface_area();
+	
+
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 	this -> compute_volume();
+
+	
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "elapsed time in ShapeModelTri::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
 	this -> compute_center_of_mass();
+	
 	this -> compute_inertia();
+	
 
 }
 

@@ -18,6 +18,10 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 
+
+# Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
+set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
+
 ################################################################################
 #
 #
@@ -114,9 +118,10 @@ find_package(CGAL REQUIRED)
 include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
-# Find SBGAT 
-# find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-# include_directories(${SBGATCORE_INCLUDE_HEADER})
+
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
 
 # Find Eigen3
 find_package(Eigen3 3.1.0 REQUIRED)
@@ -183,7 +188,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
-# ${SBGATCORE_LIBRARY}
+${VTK_LIBRARIES}
 )
 
 

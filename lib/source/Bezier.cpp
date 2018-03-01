@@ -1,5 +1,6 @@
 #include "Bezier.hpp"
 #include "Psopt.hpp"
+#include <vtkMath.h>
 
 #include <cassert>
 Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
@@ -74,6 +75,25 @@ double Bezier::Sa_b(const int a, const int b){
 }
 
 
+double Bezier::triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ) const{
+
+		std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+		std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+		std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+		double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
+		double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
+		double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
+
+		return vtkMath::Determinant3x3(Ci,Cj,Ck);
+
+}
+	
+
+
+
+
+
+
 double Bezier::bernstein_coef(const int i , const int j , const int n){
 
 	if (i < 0  || j < 0 || n < 0 || i > n || j > n || i + j > n){
@@ -82,11 +102,11 @@ double Bezier::bernstein_coef(const int i , const int j , const int n){
 
 
 	return boost::math::factorial<double>(n) / (boost::math::factorial<double>(i) * boost::math::factorial<double>(j) * boost::math::factorial<double>(n - i - j));
- 
+
 
 }
 
-double Bezier::alpha_ijklmp(const int i, const int j, const int k, const int l, const int m, const int p,const int n){
+double Bezier::alpha_ijk(const int i, const int j, const int k, const int l, const int m, const int p,const int n){
 
 
 	int sum_indices = i + k + j + l + m + p;
@@ -104,8 +124,24 @@ double Bezier::alpha_ijklmp(const int i, const int j, const int k, const int l, 
 }
 
 
+double Bezier::gamma_ijkl(const int i, const int j, const int k, const int l, const int m, const int p,const int q, const int r, const int n){
 
 
+	int sum_indices = i + j + k + l + m + p + q + r;
+
+	double gamma = double( n * n ) / 2 * Bezier::bernstein_coef(i ,j,n) * Bezier::bernstein_coef(k ,l,n) * (
+
+		Bezier::bernstein_coef(m - 1 ,p,n - 1) * ( Bezier::bernstein_coef(q ,r -1,n - 1) * Sa_b(l + j + p  + r- 1,4 * n - sum_indices ) 
+			-  Bezier::bernstein_coef(q ,r,n - 1) * Sa_b(l + j + p  + r,4 * n - sum_indices -1)) * Sa_b(k + m + i + q - 1,4 * n - i - k - m - q)
+		- Bezier::bernstein_coef(m  ,p,n - 1) *( Bezier::bernstein_coef(q ,r - 1,n - 1) * Sa_b(l + j + p  + r - 1,4 * n - sum_indices -1) 
+			-  Bezier::bernstein_coef(q ,r,n - 1) * Sa_b(l + j + p  + r,4 * n - sum_indices -2)) * Sa_b(k + m + i + q,4 * n - i - k - m - q - 1)
+
+		);
+
+	return gamma;
+
+
+}
 
 
 double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, const int n){

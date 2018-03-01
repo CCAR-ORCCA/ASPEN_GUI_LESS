@@ -45,6 +45,12 @@ public:
 	*/
 	bool is_owned_by( Element *  el) const;
 
+	/**
+	Returns pointer to coordinates
+	@return pointer to coordinates
+	*/
+	double * get_coordinates_pointer();
+
 
 	/**
 	Delete $facet from the list of Element * owning $this
