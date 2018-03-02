@@ -66,8 +66,8 @@ int main() {
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
 
-	shape_io_truth_bezier.load_bezier_shape_model(&estimated_shape_model);
-	// shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
+	// shape_io_truth_bezier.load_bezier_shape_model(&estimated_shape_model);
+	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
 
 	estimated_shape_model.construct_kd_tree_shape();

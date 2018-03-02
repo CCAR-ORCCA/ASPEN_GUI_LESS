@@ -6,7 +6,7 @@
 
 // Various filter debug flags
 #define FILTER_DEBUG 0
-#define BATCH_DEBUG 0
+#define BATCH_DEBUG 1
 #define SEQUENTIAL_DEBUG 0
 #define EKF_DEBUG 0
 #define NAVIGATION_DEBUG 1
