@@ -57,7 +57,7 @@ int main() {
 		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
 	ShapeModelImporter shape_io_truth_bezier(
-		"../input/itokawa_64_scaled_aligned_bezier_1.b", 1, false);
+		"../input/itokawa_64_scaled_aligned_bezier_2.b", 1, false);
 	
 	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, false);
 
