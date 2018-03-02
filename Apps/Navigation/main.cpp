@@ -6,7 +6,6 @@
 
 
 
-
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
@@ -53,17 +52,11 @@ int main() {
 	// ShapeModelTri estimated_shape_model("E", &frame_graph);
 	ShapeModelBezier estimated_shape_model("E", &frame_graph);
 
-	// Spherical harmonics coefficients
-	arma::mat Cnm;
-	arma::mat Snm;
-
+	
 	ShapeModelImporter shape_io_truth(
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
-	ShapeModelImporter shape_io_guess("../input/fit_source_400.b", 1, false);
-
-	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
-	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
+	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, false);
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape();
@@ -84,16 +77,12 @@ int main() {
 
 	// Integrator extra arguments
 	Args args;
-	DynamicAnalyses dyn_analyses(&true_shape_model);
+	// DynamicAnalyses dyn_analyses(&true_shape_model);
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
 	args.set_estimated_shape_model(&estimated_shape_model);
 
-	args.set_dyn_analyses(&dyn_analyses);
-	// args.set_Cnm(&Cnm);
-	// args.set_Snm(&Snm);
-	// args.set_degree(5);
-	// args.set_ref_radius(175);
+	// args.set_dyn_analyses(&dyn_analyses);
 	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
 	args.set_mass(true_shape_model . get_volume() * 1900);
 	args.set_sd_noise(LOS_NOISE_3SD_BASELINE / 3);
@@ -117,8 +106,6 @@ int main() {
 	// DEBUG: Asteroid estimated state == spacecraft initial state
 	arma::vec X0_true_small_body = {0,0,0,0,0,omega};
 	arma::vec X0_estimated_small_body = {0,0,0,0,0,omega};
-
-
 
 	// Initial spacecraft position estimate
 	arma::vec P0_spacecraft_vec = {100,100,100,1e-6,1e-6,1e-6};
@@ -187,14 +174,10 @@ int main() {
 	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
 
-	filter.write_estimated_state("./X_hat.txt");
-
-	filter.write_true_state("./X_true.txt");
-
-	filter.write_T_obs(T_obs,"./T_obs.txt");
-
-
-	filter.write_estimated_covariance("./covariances.txt");
+	filter.write_estimated_state("../output/filter/X_hat.txt");
+	filter.write_true_state("../output/filter/X_true.txt");
+	filter.write_T_obs(T_obs,"../output/filter/T_obs.txt");
+	filter.write_estimated_covariance("../output/filter/covariances.txt");
 
 
 

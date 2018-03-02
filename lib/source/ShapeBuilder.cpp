@@ -134,18 +134,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
-				ShapeModelImporter shape_io_fit("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b", 1, true);
-				ShapeModelBezier fit_source("", this -> frame_graph);
-				shape_io_fit.load_bezier_shape_model(&fit_source);
-				fit_source.save_to_obj("../output/shape_model/fit_source_degree_2_" + std::to_string(time_index)+ ".obj");
-				fit_source.elevate_degree(false);
-				fit_source.elevate_degree(false);
-				fit_source.elevate_degree(false);
-				fit_source.elevate_degree(false);
-				fit_source.elevate_degree(false);
-				fit_source.save_to_obj("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".obj");
-
-				
+		
 			}
 
 		}
