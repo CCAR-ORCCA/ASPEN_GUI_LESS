@@ -54,7 +54,7 @@ int main() {
 
 	
 	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
+		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
 	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, false);
 
