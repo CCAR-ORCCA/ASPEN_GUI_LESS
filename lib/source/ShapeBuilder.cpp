@@ -138,11 +138,11 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				ShapeModelBezier fit_source("", this -> frame_graph);
 				shape_io_fit.load_bezier_shape_model(&fit_source);
 				fit_source.save_to_obj("../output/shape_model/fit_source_degree_2_" + std::to_string(time_index)+ ".obj");
-				fit_source.elevate_degree();
-				fit_source.elevate_degree();
-				fit_source.elevate_degree();
-				fit_source.elevate_degree();
-				fit_source.elevate_degree();
+				fit_source.elevate_degree(false);
+				fit_source.elevate_degree(false);
+				fit_source.elevate_degree(false);
+				fit_source.elevate_degree(false);
+				fit_source.elevate_degree(false);
 				fit_source.save_to_obj("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".obj");
 
 				
@@ -443,11 +443,11 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	ShapeModelImporter shape_io_fit("../output/shape_model/fit_a_priori.b", 1, true);
 	ShapeModelBezier fit_a_priori("", this -> frame_graph);
 	shape_io_fit.load_bezier_shape_model(&fit_a_priori);
-	fit_a_priori.elevate_degree();
-	fit_a_priori.elevate_degree();
-	fit_a_priori.elevate_degree();
-	fit_a_priori.elevate_degree();
-	fit_a_priori.elevate_degree();
+	fit_a_priori.elevate_degree(false);
+	fit_a_priori.elevate_degree(false);
+	fit_a_priori.elevate_degree(false);
+	fit_a_priori.elevate_degree(false);
+	fit_a_priori.elevate_degree(false);
 	fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
 
 	// The estimated shape model is finally initialized
