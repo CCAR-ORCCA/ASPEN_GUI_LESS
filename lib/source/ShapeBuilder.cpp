@@ -432,23 +432,13 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	}
 
 	a_priori_bezier -> initialize_index_table();
-	a_priori_bezier -> save_to_obj("../output/shape_model/a_priori_bezier.obj");
+	a_priori_bezier -> save_both("../output/shape_model/a_priori_bezier");
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
 
 	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),this -> filter_arguments -> get_ridge_coef());
 
-	a_priori_bezier -> save("../output/shape_model/fit_a_priori.b");
-
-	ShapeModelImporter shape_io_fit("../output/shape_model/fit_a_priori.b", 1, true);
-	ShapeModelBezier fit_a_priori("", this -> frame_graph);
-	shape_io_fit.load_bezier_shape_model(&fit_a_priori);
-	fit_a_priori.elevate_degree(false);
-	fit_a_priori.elevate_degree(false);
-	fit_a_priori.elevate_degree(false);
-	fit_a_priori.elevate_degree(false);
-	fit_a_priori.elevate_degree(false);
-	fit_a_priori.save_to_obj("../output/shape_model/fit_a_priori.obj");
+	a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
 
 	// The estimated shape model is finally initialized
 	this -> estimated_shape_model = a_priori_bezier;

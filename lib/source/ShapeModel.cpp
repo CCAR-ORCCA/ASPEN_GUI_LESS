@@ -131,8 +131,8 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 
 	arma::vec P0 = this -> control_points. at(0) -> get_coordinates();
 
-	arma::vec bbox_min = arma::zeros<arma::vec>(3);
-	arma::vec bbox_max = arma::zeros<arma::vec>(3);
+	arma::vec bbox_min = M * this -> control_points[0] -> get_coordinates();
+	arma::vec bbox_max = M * this -> control_points[0] -> get_coordinates();
 
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
 		bbox_min = arma::min(bbox_min,M * this -> control_points[vertex_index] -> get_coordinates());
@@ -147,16 +147,16 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 	bounding_box[4] = bbox_max(1);
 	bounding_box[5] = bbox_max(2);
 
+	std::cout << "- Bounding box : "
+	std::cout << "-- xmin : " << bbox_min(0) << std::endl;
+	std::cout << "-- xmax : " << bbox_max(0) << std::endl;
 
-	std::cout << "xmin : " << bbox_min(0) << std::endl;
-	std::cout << "xmax : " << bbox_max(0) << std::endl;
-
-	std::cout << "ymin : " << bbox_min(1) << std::endl;
-	std::cout << "ymax : " << bbox_max(1) << std::endl;
+	std::cout << "-- ymin : " << bbox_min(1) << std::endl;
+	std::cout << "-- ymax : " << bbox_max(1) << std::endl;
 
 
-	std::cout << "zmin : " << bbox_min(2) << std::endl;
-	std::cout << "zmax : " << bbox_max(2) << std::endl;
+	std::cout << "-- zmin : " << bbox_min(2) << std::endl;
+	std::cout << "-- zmax : " << bbox_max(2) << std::endl;
 
 
 }

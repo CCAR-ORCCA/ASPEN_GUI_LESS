@@ -227,11 +227,11 @@ int main() {
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
-	// estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
+	estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
 	arma::mat axes;
 	arma::vec moments ;
 	estimated_shape_model -> get_principal_inertias(axes,moments);
-	// estimated_shape_model -> rotate(axes.t());
+	estimated_shape_model -> rotate(axes.t());
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 
