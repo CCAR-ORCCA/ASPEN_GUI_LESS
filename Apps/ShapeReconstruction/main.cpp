@@ -233,7 +233,7 @@ int main() {
 	estimated_shape_model -> get_principal_inertias(axes,moments);
 	// estimated_shape_model -> rotate(axes.t());
 
-	estimated_shape_model -> save("../output/shape_model/fit_shape_aligned.obj");
+	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 
 
 	return 0;
