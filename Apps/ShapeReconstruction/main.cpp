@@ -39,8 +39,8 @@
 #define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 400 // index where shape reconstruction takes place
-#define INDEX_END 400 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
+#define INDEX_INIT 200 // index where shape reconstruction takes place
+#define INDEX_END 200 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
@@ -55,7 +55,7 @@
 #define N_EDGES 1000
 
 // Shape order
-#define SHAPE_DEGREE 3
+#define SHAPE_DEGREE 2
 
 // Target shape
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
@@ -226,8 +226,6 @@ int main() {
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
-
-	estimated_shape_model -> construct_kd_tree_shape();
 
 	// estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
 	arma::mat axes;
