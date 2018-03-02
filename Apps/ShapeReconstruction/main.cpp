@@ -229,7 +229,7 @@ int main() {
 
 	estimated_shape_model -> construct_kd_tree_shape();
 
-	estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
+	// estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
 	arma::mat axes;
 	arma::vec moments ;
 	estimated_shape_model -> get_principal_inertias(axes,moments);
