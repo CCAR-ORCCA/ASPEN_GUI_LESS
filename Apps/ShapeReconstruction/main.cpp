@@ -39,8 +39,8 @@
 #define TF 600000 // 10 days
 
 // Indices
-#define INDEX_INIT 200 // index where shape reconstruction takes place
-#define INDEX_END 200 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
+#define INDEX_INIT 400 // index where shape reconstruction takes place
+#define INDEX_END 400 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.1
@@ -52,7 +52,7 @@
 #define ITER_FILTER 4
 
 // Number of edges in a-priori
-#define N_EDGES 1000
+#define N_EDGES 3000
 
 // Shape order
 #define SHAPE_DEGREE 2
