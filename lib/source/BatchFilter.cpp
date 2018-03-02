@@ -17,7 +17,7 @@ int  BatchFilter::run(
 	}
 
 
-	#if DEBUG_BATCH || DEBUG_FILTER
+	#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "- Running filter" << std::endl;
 		std::cout << "-- Computing true state history" << std::endl;
 	#endif
@@ -25,7 +25,7 @@ int  BatchFilter::run(
 	// The true state history is computed
 	this -> compute_true_state_history(X0_true,T_obs);
 	
-	#if DEBUG_BATCH || DEBUG_FILTER
+	#if BATCH_DEBUG || FILTER_DEBUG
 	
 		std::cout << "-- Computing true observations" << std::endl;
 	#endif
@@ -33,7 +33,7 @@ int  BatchFilter::run(
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
-	#if DEBUG_BATCH || DEBUG_FILTER
+	#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "-- Done computing true observations" << std::endl;
 	#endif
 
@@ -63,7 +63,7 @@ int  BatchFilter::run(
 
 	int iterations = N_iter;
 
-	#if DEBUG_BATCH || DEBUG_FILTER
+	#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "-- Iterating the filter" << std::endl;
 	#endif
 
@@ -71,19 +71,19 @@ int  BatchFilter::run(
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
 
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
 		#endif
 
 		
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "----  Computing reference trajectory" << std::endl;
 		#endif
 
 		// The reference trajectory is computed along with the STM
 		this -> compute_reference_state_history(T_obs,X_bar,stm);
 
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "----  Computing prefit residuals" << std::endl;
 		#endif
 
@@ -94,7 +94,7 @@ int  BatchFilter::run(
 			has_converged
 			,R);
 
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "----  Done computing prefit residuals" << std::endl;
 			std::cout << "----  Has converged? " << has_converged << std::endl;
 		#endif
@@ -120,7 +120,7 @@ int  BatchFilter::run(
 			break;
 		}
 		else{
-			#if DEBUG_BATCH || DEBUG_FILTER
+			#if BATCH_DEBUG || FILTER_DEBUG
 
 				arma::vec y_non_zero = y_bar.back().elem(arma::find(y_bar.back()));
 
@@ -138,7 +138,7 @@ int  BatchFilter::run(
 		normal_mat = this ->  info_mat_bar_0 * dx_bar_0;
 
 
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "----  Assembling normal equations" << std::endl;
 		#endif
 
@@ -167,7 +167,7 @@ int  BatchFilter::run(
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
 
-		#if DEBUG_BATCH || DEBUG_FILTER
+		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "---  Deviation: "<< std::endl;
 			std::cout << dx_hat << std::endl;
 		#endif
@@ -196,7 +196,7 @@ int  BatchFilter::run(
 	
 	this -> residuals = y_bar;
 
-	#if DEBUG_BATCH || DEBUG_FILTER
+	#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "-- Exiting batch "<< std::endl;
 	#endif
 
