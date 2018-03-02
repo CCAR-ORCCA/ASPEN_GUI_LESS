@@ -229,13 +229,11 @@ int main() {
 
 	estimated_shape_model -> construct_kd_tree_shape();
 
-	// This shape model should undergo the same transform as the one imparted to 
-	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
 	estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
 	arma::mat axes;
 	arma::vec moments ;
 	estimated_shape_model -> get_principal_inertias(axes,moments);
-	estimated_shape_model -> rotate(axes.t());
+	// estimated_shape_model -> rotate(axes.t());
 
 	estimated_shape_model -> save("../output/shape_model/fit_shape_aligned.obj");
 
