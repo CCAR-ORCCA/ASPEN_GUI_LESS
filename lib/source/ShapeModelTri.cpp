@@ -2,6 +2,10 @@
 #include "Facet.hpp"
 #include "Ray.hpp"
 
+
+#pragma omp declare reduction (+ : arma::vec : omp_out += omp_in)\
+  initializer( omp_priv = omp_orig )
+
 void ShapeModelTri::update_mass_properties() {
 
 
@@ -292,6 +296,7 @@ void ShapeModelTri::compute_center_of_mass() {
 	double volume = this -> get_volume();
 	arma::vec C = arma::zeros<arma::vec>(3);
 
+	#pragma omp parallel for reduction(+:C) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
 
 

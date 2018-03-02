@@ -159,7 +159,7 @@ void ShapeModelBezier::compute_center_of_mass(){
 
 	int n = this -> get_degree();
 
-	#pragma omp parallel for reduction(+:cx,cy,cz)
+	// #pragma omp parallel for reduction(+:cx,cy,cz)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
 		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
@@ -193,8 +193,8 @@ void ShapeModelBezier::compute_center_of_mass(){
 			int k =  int(this -> cm_beta_indices_coefs_table[index][2]);
 			int l =  int(this -> cm_beta_indices_coefs_table[index][3]);
 
-			double beta = this -> cm_beta_indices_coefs_table[index][3];
-			
+			double beta = this -> cm_beta_indices_coefs_table[index][4];
+
 			// I1
 			patch -> quadruple_product(result,i ,n - i ,j ,n - j ,k ,n - k, l, n - l );
 
@@ -334,14 +334,14 @@ void ShapeModelBezier::elevate_degree(){
 void ShapeModelBezier::populate_mass_properties_coefs(){
 
 	this -> cm_gamma_indices_coefs_table.clear();
-	this -> volume_indices_coefs_table.clear();
 	this -> cm_beta_indices_coefs_table.clear();
+	this -> volume_indices_coefs_table.clear();
 	this -> inertia_indices_coefs_table.clear();
 
 	double n = this -> get_degree();
 
+	std::cout << "- Shape degree: " << n << std::endl;
 
-	
 	// Volume
 	for (int i = 0; i < 1 + n; ++i){
 		for (int j = 0; j < 1 + n - i; ++j){
@@ -354,10 +354,10 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 
 							double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
-							
-							std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
-							this -> volume_indices_coefs_table.push_back(index_vector);
-
+							if (std::abs(alpha) > 1e-13){
+								std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
+								this -> volume_indices_coefs_table.push_back(index_vector);
+							}
 							
 						}
 					}
@@ -365,6 +365,8 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 			}
 		}
 	}
+
+	std::cout << "- Volume coefficients: " << this -> volume_indices_coefs_table.size() << std::endl;
 
 
 
@@ -379,10 +381,10 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 								for (int r = 0; r < 1 + n - q; ++r){
 									
 									double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
-									
-									std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),gamma};
-									this -> cm_gamma_indices_coefs_table.push_back(index_vector);
-
+									if (std::abs(gamma) > 1e-13){
+										std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),gamma};
+										this -> cm_gamma_indices_coefs_table.push_back(index_vector);
+									} 
 
 								}
 							}
@@ -400,13 +402,19 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 				for (int l = 0; l < n + 1; ++l){
 
 					double beta = Bezier::beta_ijkl(i, j, k, l, n);
-					std::vector<double> index_vector = {double(i),double(j),double(k),double(l),beta};
-					this -> cm_beta_indices_coefs_table.push_back(index_vector);
 
+					if (std::abs(beta) > 1e-13){
+						std::vector<double> index_vector = {double(i),double(j),double(k),double(l),beta};
+						this -> cm_beta_indices_coefs_table.push_back(index_vector);
+					}
+					
 				}
 			}
 		}
 	}
+
+	std::cout << "- CM coefficients: " << this -> cm_beta_indices_coefs_table.size() + this -> cm_gamma_indices_coefs_table.size() << std::endl;
+
 
 
 	// Inertia
@@ -423,11 +431,11 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 										for (int t = 0; t < 1 + n - s; ++t){
 
 											double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
-
-											std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
-												double(s),double(t),kappa};
-												this -> inertia_indices_coefs_table.push_back(index_vector);
-
+											if (std::abs(kappa) > 1e-13){
+												std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+													double(s),double(t),kappa};
+													this -> inertia_indices_coefs_table.push_back(index_vector);
+												}
 											}
 										}
 									}
@@ -438,6 +446,9 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 				}
 			}
 		}
+
+		std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() + this -> cm_gamma_indices_coefs_table.size() << std::endl;
+
 
 	}
 

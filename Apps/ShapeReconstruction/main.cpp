@@ -223,37 +223,21 @@ int main() {
 	std::cout << "Point cloud acquisition and shape fitting completed in " << elapsed_seconds.count() << " s"<< std::endl;
 	
 
-	// This is where the training of each patch's covariance should take place.
-	// First, the training data is sorted by assigning each footpoint 
-
-
-	// The estimated shape model has its barycenter and principal axes lined up with the
-	// true shape model
-	// Must use ShapeModelTri to get the center of mass
-	ShapeModelImporter shape_io_fit_obj(
-		"../output/shape_model/fit_source_" +std::to_string(INDEX_END) + ".obj", 1, true);
-	ShapeModelTri fit_shape("EF", &frame_graph);
-	shape_io_fit_obj.load_obj_shape_model(&fit_shape);
-
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
 	estimated_shape_model -> construct_kd_tree_shape();
 
-	
 	// This shape model should undergo the same transform as the one imparted to 
 	// fit_source_300.obj when it is loaded and aligned with its barycenter/principal axes
-	estimated_shape_model -> translate(-fit_shape.get_center_of_mass());
-	fit_shape.translate(-fit_shape.get_center_of_mass());
-	fit_shape.update_mass_properties();
+	estimated_shape_model -> translate(-estimated_shape_model.get_center_of_mass());
 	arma::mat axes;
 	arma::vec moments ;
-	fit_shape.get_principal_inertias(axes,moments);
+	estimated_shape_model.get_principal_inertias(axes,moments);
 	estimated_shape_model -> rotate(axes.t());
-	fit_shape.rotate(axes.t());;
 
-	fit_shape.save("../output/shape_model/fit_shape_aligned.obj");
+	estimated_shape_model.save("../output/shape_model/fit_shape_aligned.obj");
 
 
 	return 0;

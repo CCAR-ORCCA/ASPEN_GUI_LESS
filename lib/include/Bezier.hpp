@@ -78,27 +78,6 @@ public:
 	void elevate_degree();
 
 
-
-	/**
-	Computes the I1 contribution to the polyhedron center of mass
-	@returm I1 com integral 
-	*/
-	arma::vec I1_cm_int() const;
-
-
-	/**
-	Computes the I2 contribution to the polyhedron center of mass
-	@returm I2 com integral 
-	*/
-	arma::vec I2_cm_int() const;
-
-
-	/**
-	Computes the I3 contribution to the polyhedron center of mass
-	@returm I3 com integral 
-	*/
-	arma::vec I3_cm_int() const;
-
 	
 	/**
 	Evaluates the bezier patch at the barycentric 
