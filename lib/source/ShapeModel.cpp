@@ -147,7 +147,7 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 	bounding_box[4] = bbox_max(1);
 	bounding_box[5] = bbox_max(2);
 
-	std::cout << "- Bounding box : "
+	std::cout << "- Bounding box : " << std::endl;
 	std::cout << "-- xmin : " << bbox_min(0) << std::endl;
 	std::cout << "-- xmax : " << bbox_max(0) << std::endl;
 
