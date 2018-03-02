@@ -31,7 +31,6 @@ int main(){
 	// test.elevate_degree();
 	// test.elevate_degree();
 	// test.elevate_degree();
-	// test.elevate_degree();
 
 
 	std::cout << "\nVolume: \n";

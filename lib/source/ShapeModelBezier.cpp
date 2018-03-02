@@ -273,7 +273,7 @@ bool ShapeModelBezier::ray_trace(Ray * ray){
 
 }
 
-void ShapeModelBezier::elevate_degree(){
+void ShapeModelBezier::elevate_degree(bool update){
 
 	// All patches are elevated
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
@@ -323,10 +323,11 @@ void ShapeModelBezier::elevate_degree(){
 
 	}
 
-
-	this -> construct_kd_tree_control_points();
-	this -> populate_mass_properties_coefs();
-	this -> update_mass_properties();
+	if (update){
+		this -> construct_kd_tree_control_points();
+		this -> populate_mass_properties_coefs();
+		this -> update_mass_properties();
+	}
 
 
 }
@@ -462,13 +463,13 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		ShapeModelBezier self("",nullptr);
 
 		shape_bezier.load_bezier_shape_model(&self);
-		self.elevate_degree();
-		self.elevate_degree();
-		self.elevate_degree();
-		self.elevate_degree();
-		self.elevate_degree();
-		self.elevate_degree();
-		self.elevate_degree();
+		self.elevate_degree(false);
+		self.elevate_degree(false);
+		self.elevate_degree(false);
+		self.elevate_degree(false);
+		self.elevate_degree(false);
+		self.elevate_degree(false);
+		self.elevate_degree(false);
 
 		self.save_to_obj(partial_path + ".obj");
 

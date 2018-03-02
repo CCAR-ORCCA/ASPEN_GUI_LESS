@@ -79,8 +79,9 @@ public:
 
 	/**
 	Elevates the degree of all Bezier patches in the shape model by one
+	@param update true if the mass properties/kd tree of the shape model should be updated , false otherwise
 	*/
-	void elevate_degree();
+	void elevate_degree(bool update = true);
 
 	/**
 	Gets the shape model degree
