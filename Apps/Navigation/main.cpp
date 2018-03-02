@@ -56,6 +56,9 @@ int main() {
 	ShapeModelImporter shape_io_truth(
 		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
 	
+	ShapeModelImporter shape_io_truth_bezier(
+		"../input/itokawa_64_scaled_aligned_bezier_1.b", 1, false);
+	
 	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, false);
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
@@ -63,8 +66,8 @@ int main() {
 
 	// DEBUG: TRUE SHAPE MODEL == ESTIMATED SHAPE MODEL
 
-	// shape_io_truth.load_obj_shape_model(&estimated_shape_model);
-	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
+	shape_io_truth_bezier.load_obj_shape_model(&estimated_shape_model);
+	// shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
 
 	estimated_shape_model.construct_kd_tree_shape();
