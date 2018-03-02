@@ -103,17 +103,19 @@ void ShapeModelBezier::compute_surface_area(){
 }
 
 void ShapeModelBezier::update_mass_properties() {
+	
+
+	this -> compute_volume();
+	
+	this -> compute_center_of_mass();
+
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-
-	this -> compute_volume();
+	this -> compute_inertia();
 
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
-	this -> compute_center_of_mass();
-
-
 	std::cout << "elapsed time in ShapeModelBezier::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
 
 
@@ -125,17 +127,20 @@ void ShapeModelBezier::compute_volume(){
 	double volume = 0;
 
 	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
-	
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
-
-		for (auto index = 0 ; index <  this -> volume_indices_coefs_table.size(); ++index) {
 		
-			volume += this -> volume_indices_coefs_table[index][6] * patch -> triple_product(int(this -> volume_indices_coefs_table[index][0]) ,
-				int(this -> volume_indices_coefs_table[index][1]) ,int(this -> volume_indices_coefs_table[index][2]) ,
-				int(this -> volume_indices_coefs_table[index][3]) ,int(this -> volume_indices_coefs_table[index][4]) ,
-				int(this -> volume_indices_coefs_table[index][5]) );
+		for (int index = 0 ; index <  this -> volume_indices_coefs_table.size(); ++index) {
+
+			int i =  int(this -> volume_indices_coefs_table[index][0]);
+			int j =  int(this -> volume_indices_coefs_table[index][1]);
+			int k =  int(this -> volume_indices_coefs_table[index][2]);
+			int l =  int(this -> volume_indices_coefs_table[index][3]);
+			int m =  int(this -> volume_indices_coefs_table[index][4]);
+			int p =  int(this -> volume_indices_coefs_table[index][5]);
+			
+			volume += this -> volume_indices_coefs_table[index][6] * patch -> triple_product(i,j,k,l,m,p);
 
 		}
 
@@ -148,47 +153,116 @@ void ShapeModelBezier::compute_center_of_mass(){
 
 	this -> cm = arma::zeros<arma::vec>(3);
 
+	double cx = 0;
+	double cy = 0;
+	double cz = 0;
+
+	int n = this -> get_degree();
+
+	#pragma omp parallel for reduction(+:cx,cy,cz)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
 		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
+		double result[3];
 
-		for (auto index = 0 ; index <  this -> cm_indices_coefs_table.size(); ++index) {
+		for (auto index = 0 ; index <  this -> cm_gamma_indices_coefs_table.size(); ++index) {
 
-			int i =  int(this -> cm_indices_coefs_table[index][0]);
-			int j =  int(this -> cm_indices_coefs_table[index][1]);
-			int k =  int(this -> cm_indices_coefs_table[index][2]);
-			int l =  int(this -> cm_indices_coefs_table[index][3]);
-			int m =  int(this -> cm_indices_coefs_table[index][4]);
-			int p =  int(this -> cm_indices_coefs_table[index][5]);
-			int q =  int(this -> cm_indices_coefs_table[index][6]);
-			int r =  int(this -> cm_indices_coefs_table[index][7]);
+			int i =  int(this -> cm_gamma_indices_coefs_table[index][0]);
+			int j =  int(this -> cm_gamma_indices_coefs_table[index][1]);
+			int k =  int(this -> cm_gamma_indices_coefs_table[index][2]);
+			int l =  int(this -> cm_gamma_indices_coefs_table[index][3]);
+			int m =  int(this -> cm_gamma_indices_coefs_table[index][4]);
+			int p =  int(this -> cm_gamma_indices_coefs_table[index][5]);
+			int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
+			int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
 
-			double gamma = this -> cm_indices_coefs_table[index][8];
+			patch -> quadruple_product(result,i ,j ,k ,l ,m ,p, q, r );
 
-			auto Ci = patch -> get_control_point_coordinates(i,j);
-			auto Cj = patch -> get_control_point_coordinates(k,l);
-			auto Ck = patch -> get_control_point_coordinates(m,p);
-			auto Cl = patch -> get_control_point_coordinates(q,r);
+			cx += this -> cm_gamma_indices_coefs_table[index][8] * result[0];
+			cy += this -> cm_gamma_indices_coefs_table[index][8] * result[1];
+			cz += this -> cm_gamma_indices_coefs_table[index][8] * result[2];
 
-			this -> cm += gamma * arma::dot(Ci,Cj) * arma::cross(Ck,Cl) ;
 
 		}
 
+		// Side integrals
+		for (auto index = 0 ; index <  this -> cm_beta_indices_coefs_table.size(); ++index) {
 
-		this -> cm += patch -> I1_cm_int();
-		this -> cm += patch -> I2_cm_int();
-		this -> cm += patch -> I3_cm_int();
+			int i =  int(this -> cm_beta_indices_coefs_table[index][0]);
+			int j =  int(this -> cm_beta_indices_coefs_table[index][1]);
+			int k =  int(this -> cm_beta_indices_coefs_table[index][2]);
+			int l =  int(this -> cm_beta_indices_coefs_table[index][3]);
 
+			double beta = this -> cm_beta_indices_coefs_table[index][3];
+			
+			// I1
+			patch -> quadruple_product(result,i ,n - i ,j ,n - j ,k ,n - k, l, n - l );
+
+			cx += beta * result[0];
+			cy += beta * result[1];
+			cz += beta * result[2];
+
+			// I2
+			patch -> quadruple_product(result,0 , i ,0 , j ,0 , k, 0, l );
+
+			cx += beta * result[0];
+			cy += beta * result[1];
+			cz += beta * result[2];
+
+			// I3
+			patch -> quadruple_product(result,n - i,0 ,n - j,0 ,n - k,0,  n - l ,0);
+
+			cx += beta * result[0];
+			cy += beta * result[1];
+			cz += beta * result[2];
+
+		}
 
 	}
 
-
+	this -> cm = {cx,cy,cz};
 	this -> cm = this -> cm / this -> volume;
 
 
 }
 
 void ShapeModelBezier::compute_inertia(){
+
+	arma::mat::fixed<3,3> inertia;
+	inertia.fill(0);
+	double norm_length = std::cbrt(this -> volume);
+	double factor = 1./std::pow(norm_length,5);
+
+	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
+	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+		
+		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
+		
+		for (int index = 0 ; index <  this -> inertia_indices_coefs_table.size(); ++index) {
+
+			int i =  int(this -> inertia_indices_coefs_table[index][0]);
+			int j =  int(this -> inertia_indices_coefs_table[index][1]);
+			int k =  int(this -> inertia_indices_coefs_table[index][2]);
+			int l =  int(this -> inertia_indices_coefs_table[index][3]);
+			int m =  int(this -> inertia_indices_coefs_table[index][4]);
+			int p =  int(this -> inertia_indices_coefs_table[index][5]);
+			int q =  int(this -> inertia_indices_coefs_table[index][6]);
+			int r =  int(this -> inertia_indices_coefs_table[index][7]);
+			int s =  int(this -> inertia_indices_coefs_table[index][8]);
+			int t =  int(this -> inertia_indices_coefs_table[index][9]);
+			
+			inertia += factor * (this -> inertia_indices_coefs_table[index][10]  
+				* RBK::tilde(patch -> get_control_point_coordinates(i,j)) 
+				* RBK::tilde(patch -> get_control_point_coordinates(k,l))
+				* patch -> triple_product(m,p,q,r,s,t));
+
+		}
+
+	}
+	this -> inertia = inertia;
+
+
+
 
 }
 
@@ -259,62 +333,55 @@ void ShapeModelBezier::elevate_degree(){
 
 void ShapeModelBezier::populate_mass_properties_coefs(){
 
-	this -> cm_indices_coefs_table.clear();
+	this -> cm_gamma_indices_coefs_table.clear();
 	this -> volume_indices_coefs_table.clear();
+	this -> cm_beta_indices_coefs_table.clear();
+	this -> inertia_indices_coefs_table.clear();
 
 	double n = this -> get_degree();
 
 
-	std::vector<std::vector<double > > volume_indices_coefs_table_temp;
-	std::vector<std::vector<double > > cm_indices_coefs_table_temp;
-
 	
 	// Volume
-	for (int i = 0; i < 1 + this -> get_degree(); ++i){
-		for (int j = 0; j < 1 + this -> get_degree() - i; ++j){
+	for (int i = 0; i < 1 + n; ++i){
+		for (int j = 0; j < 1 + n - i; ++j){
 
-			for (int k = 0; k < 1 + this -> get_degree() ; ++k){
-				for (int l = 0; l < 1 + this -> get_degree() - k; ++l){
+			for (int k = 0; k < 1 + n ; ++k){
+				for (int l = 0; l < 1 + n - k; ++l){
 
-					for (int m = 0; m < 1 + this -> get_degree() ; ++m){
-						for (int p = 0; p < 1 + this -> get_degree() - m; ++p){
+					for (int m = 0; m < 1 + n ; ++m){
+						for (int p = 0; p < 1 + n - m; ++p){
 
 
 							double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
 							
 							std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
-							volume_indices_coefs_table_temp.push_back(index_vector);
+							this -> volume_indices_coefs_table.push_back(index_vector);
 
 							
-
-
 						}
 					}
 				}
 			}
 		}
 	}
-	
+
+
 
 	// CM
-	for (int i = 0; i < 1 + this -> get_degree(); ++i){
-		for (int j = 0; j < 1 + this -> get_degree() - i; ++j){
-
-
-			for (int k = 0; k < 1 + this -> get_degree() ; ++k){
-				for (int l = 0; l < 1 + this -> get_degree() - k; ++l){
-
-					for (int m = 0; m < 1 + this -> get_degree() ; ++m){
-						for (int p = 0; p < 1 + this -> get_degree() - m; ++p){
-
-
-							for (int q = 0; q < 1 + this -> get_degree() ; ++q){
-								for (int r = 0; r < 1 + this -> get_degree() - q; ++r){
+	for (int i = 0; i < 1 + n; ++i){
+		for (int j = 0; j < 1 + n - i; ++j){
+			for (int k = 0; k < 1 + n ; ++k){
+				for (int l = 0; l < 1 + n - k; ++l){
+					for (int m = 0; m < 1 + n ; ++m){
+						for (int p = 0; p < 1 + n - m; ++p){
+							for (int q = 0; q < 1 + n ; ++q){
+								for (int r = 0; r < 1 + n - q; ++r){
 									
 									double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
 									
 									std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),gamma};
-									cm_indices_coefs_table_temp.push_back(index_vector);
+									this -> cm_gamma_indices_coefs_table.push_back(index_vector);
 
 
 								}
@@ -326,127 +393,146 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		}
 	}
 
-	arma::vec alphas(volume_indices_coefs_table_temp.size());
 
-	for (int i = 0; i < alphas.n_rows; ++i){
-		alphas(i) = volume_indices_coefs_table_temp[i][6];
+	for (int i = 0; i < n + 1; ++i){
+		for (int j = 0; j < n + 1; ++j){
+			for (int k = 0; k < n + 1; ++k){
+				for (int l = 0; l < n + 1; ++l){
+
+					double beta = Bezier::beta_ijkl(i, j, k, l, n);
+					std::vector<double> index_vector = {double(i),double(j),double(k),double(l),beta};
+					this -> cm_beta_indices_coefs_table.push_back(index_vector);
+
+				}
+			}
+		}
 	}
 
-	for (int i = 0; i < alphas.n_rows; ++i){
-		// if (std::abs(volume_indices_coefs_table_temp[i][6])/arma::mean(arma::abs(alphas)) > 0.1){
-			this -> volume_indices_coefs_table.push_back(volume_indices_coefs_table_temp[i]);
-		// };
+
+	// Inertia
+	for (int i = 0; i < 1 + n; ++i){
+		for (int j = 0; j < 1 + n - i; ++j){
+			for (int k = 0; k < 1 + n ; ++k){
+				for (int l = 0; l < 1 + n - k; ++l){
+					for (int m = 0; m < 1 + n ; ++m){
+						for (int p = 0; p < 1 + n - m; ++p){
+							for (int q = 0; q < 1 + n ; ++q){
+								for (int r = 0; r < 1 + n - q; ++r){
+
+									for (int s = 0; s < 1 + n ; ++s){
+										for (int t = 0; t < 1 + n - s; ++t){
+
+											double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
+
+											std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+												double(s),double(t),kappa};
+												this -> inertia_indices_coefs_table.push_back(index_vector);
+
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 	}
-	std::cout << this -> volume_indices_coefs_table.size() << std::endl;
-
-	// alphas.save("alphas.txt",arma::raw_ascii);
 
 
+	void ShapeModelBezier::save_both(std::string partial_path){
 
-	arma::vec gammas(cm_indices_coefs_table_temp.size());
 
-	for (int i = 0; i < gammas.n_rows; ++i){
-		gammas(i) = cm_indices_coefs_table_temp[i][8];
-		this -> cm_indices_coefs_table.push_back(cm_indices_coefs_table_temp[i]);
+		this -> save(partial_path + ".b");
+
+		ShapeModelImporter shape_bezier(partial_path + ".b", 1, true);
+		ShapeModelBezier self("",nullptr);
+
+		shape_bezier.load_bezier_shape_model(&self);
+		self.elevate_degree();
+		self.elevate_degree();
+		self.elevate_degree();
+		self.elevate_degree();
+		self.elevate_degree();
+		self.elevate_degree();
+		self.elevate_degree();
+
+		self.save_to_obj(partial_path + ".obj");
+
+
 	}
 
-	// gammas.save("gammas.txt",arma::raw_ascii);
-
-
-}
-
-
-void ShapeModelBezier::save_both(std::string partial_path){
-
-
-	this -> save(partial_path + ".b");
-
-	ShapeModelImporter shape_bezier(partial_path + ".b", 1, true);
-	ShapeModelBezier self("",nullptr);
-
-	shape_bezier.load_bezier_shape_model(&self);
-	self.elevate_degree();
-	self.elevate_degree();
-	self.elevate_degree();
-	self.elevate_degree();
-	self.elevate_degree();
-	self.elevate_degree();
-	self.elevate_degree();
-
-	self.save_to_obj(partial_path + ".obj");
-
-
-}
-
-void ShapeModelBezier::save(std::string path) {
+	void ShapeModelBezier::save(std::string path) {
 	// An inverse map going from vertex pointer to global indices is created
 
-	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
-	std::map<unsigned int,std::shared_ptr<ControlPoint> > global_index_to_pointer;
+		std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
+		std::map<unsigned int,std::shared_ptr<ControlPoint> > global_index_to_pointer;
 
-	std::vector<arma::vec> vertices;
-	std::vector< std::vector<unsigned int> > shape_patch_indices;
+		std::vector<arma::vec> vertices;
+		std::vector< std::vector<unsigned int> > shape_patch_indices;
 
 	// The global indices of the control points are found. 
-	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+		for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
-		auto patch = this -> get_elements() -> at(i);
+			auto patch = this -> get_elements() -> at(i);
 
-		std::vector<unsigned int> patch_indices;
+			std::vector<unsigned int> patch_indices;
 
-		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
+			for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
 
-			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index)) == pointer_to_global_indices.end()){
-				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
-				global_index_to_pointer[pointer_to_global_indices.size()] = patch -> get_control_points() -> at(index);
+				if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index)) == pointer_to_global_indices.end()){
+					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+					global_index_to_pointer[pointer_to_global_indices.size()] = patch -> get_control_points() -> at(index);
+				}
+
+				patch_indices.push_back(pointer_to_global_indices[patch -> get_control_points() -> at(index)]);
+
 			}
 
-			patch_indices.push_back(pointer_to_global_indices[patch -> get_control_points() -> at(index)]);
+
+
+			shape_patch_indices.push_back(patch_indices);
 
 		}
-
-
-
-		shape_patch_indices.push_back(patch_indices);
-
-	}
 
 	// The coordinates are written to a file
-	std::ofstream shape_file;
-	shape_file.open(path);
-	shape_file << this -> get_degree() << "\n";
+		std::ofstream shape_file;
+		shape_file.open(path);
+		shape_file << this -> get_degree() << "\n";
 
-	for (auto iter = global_index_to_pointer.begin(); iter != global_index_to_pointer.end(); ++iter){
-		shape_file << "v " << iter -> second -> get_coordinates()(0) << " " << iter -> second -> get_coordinates()(1) << " " << iter -> second -> get_coordinates()(2) << "\n";
-	}
+		for (auto iter = global_index_to_pointer.begin(); iter != global_index_to_pointer.end(); ++iter){
+			shape_file << "v " << iter -> second -> get_coordinates()(0) << " " << iter -> second -> get_coordinates()(1) << " " << iter -> second -> get_coordinates()(2) << "\n";
+		}
 
-	for (auto iter = shape_patch_indices.begin(); iter != shape_patch_indices.end(); ++iter){
-		shape_file << "f ";
+		for (auto iter = shape_patch_indices.begin(); iter != shape_patch_indices.end(); ++iter){
+			shape_file << "f ";
 
-		for (unsigned int index = 0; index < iter -> size(); ++index){
+			for (unsigned int index = 0; index < iter -> size(); ++index){
 
-			if (index != iter -> size() - 1){
-				shape_file << iter -> at(index) << " ";
+				if (index != iter -> size() - 1){
+					shape_file << iter -> at(index) << " ";
+				}
+				else if (index == iter -> size() - 1 && iter != shape_patch_indices.end() - 1 ){
+					shape_file << iter -> at(index) << "\n";
+				}
+				else{
+					shape_file << iter -> at(index);
+				}
 			}
-			else if (index == iter -> size() - 1 && iter != shape_patch_indices.end() - 1 ){
-				shape_file << iter -> at(index) << "\n";
-			}
-			else{
-				shape_file << iter -> at(index);
-			}
+
 		}
 
 	}
 
-}
 
 
 
+	void ShapeModelBezier::construct_kd_tree_shape(){
 
-void ShapeModelBezier::construct_kd_tree_shape(){
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
 
 
 	// The KD tree is constructed by building an "enclosing" (not strictly-speaking) KD tree from the bezier shape
@@ -457,94 +543,94 @@ void ShapeModelBezier::construct_kd_tree_shape(){
 	// the control points, but the points lying on the bezier patch
  	// they support
 
-	std::vector<std::shared_ptr<Element > > facets;
+		std::vector<std::shared_ptr<Element > > facets;
 
 
-	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+		for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
-		Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+			Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
 
 
 	// The facets are created
 
-		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
+			for (unsigned int l = 0; l < patch -> get_degree(); ++l){
 
-			for (unsigned int t = 0; t < l + 1; ++t){
+				for (unsigned int t = 0; t < l + 1; ++t){
 
-				if (t <= l){
+					if (t <= l){
 
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
-
-
-					std::vector<std::shared_ptr<ControlPoint>> vertices;
-					vertices.push_back(v0);
-					vertices.push_back(v1);
-					vertices.push_back(v2);
-
-					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
-					facets.push_back(facet);
-				}
-
-				if (t > 0 ){
-
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
+						std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
+						std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
+						std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
 
 
-					std::vector<std::shared_ptr<ControlPoint>> vertices;
+						std::vector<std::shared_ptr<ControlPoint>> vertices;
+						vertices.push_back(v0);
+						vertices.push_back(v1);
+						vertices.push_back(v2);
 
-					vertices.push_back(v0);
-					vertices.push_back(v1);
-					vertices.push_back(v2);
+						std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+						facets.push_back(facet);
+					}
+
+					if (t > 0 ){
+
+						std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
+						std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
+						std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
 
 
-					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
-					facets.push_back(facet);
+						std::vector<std::shared_ptr<ControlPoint>> vertices;
+
+						vertices.push_back(v0);
+						vertices.push_back(v1);
+						vertices.push_back(v2);
+
+
+						std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+						facets.push_back(facet);
+
+					}
 
 				}
 
 			}
-
 		}
+
+
+
+
+		this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
+		this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
+
+
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+
+
+		std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+
+
+
+
+
+
+
+
+
+
 	}
 
 
-
-
-	this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
-	this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
-
-
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-
-
-	std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
-
-
-
-
-
-
-
-
-
-
-}
-
-
-unsigned int ShapeModelBezier::get_degree(){
-	if (this -> get_elements() -> size() == 0){
-		throw(std::runtime_error("This bezier shape model has no elements"));
+	unsigned int ShapeModelBezier::get_degree(){
+		if (this -> get_elements() -> size() == 0){
+			throw(std::runtime_error("This bezier shape model has no elements"));
+		}
+		return dynamic_cast<Bezier * >(this -> elements. begin() -> get()) -> get_degree();
 	}
-	return dynamic_cast<Bezier * >(this -> elements. begin() -> get()) -> get_degree();
-}
 
 
-void ShapeModelBezier::save_to_obj(std::string path) {
+	void ShapeModelBezier::save_to_obj(std::string path) {
 
 	// An inverse map going from vertex pointer to global indices is created
 
@@ -552,83 +638,83 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 	// the control points, but the points lying on the bezier patch
  	// they support
 
-	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
-	std::vector<arma::vec> vertices;
-	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
+		std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
+		std::vector<arma::vec> vertices;
+		std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
 
 
 	// The global indices of the control points are found. 
-	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+		for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
-		Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+			Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
 
-		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
+			for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
 
-			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
-				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+				if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
+					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
 
-				auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
-				double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
-				double v =  double(std::get<1>(local_indices)) / patch -> get_degree();
+					auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
+					double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
+					double v =  double(std::get<1>(local_indices)) / patch -> get_degree();
 
-				arma::vec surface_point = patch -> evaluate(u,v);
-				vertices.push_back(surface_point);
+					arma::vec surface_point = patch -> evaluate(u,v);
+					vertices.push_back(surface_point);
+				}
+
 			}
-
-		}
 
 
 	// The facets are created
 
-		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
+			for (unsigned int l = 0; l < patch -> get_degree(); ++l){
 
-			for (unsigned int t = 0; t < l + 1; ++t){
+				for (unsigned int t = 0; t < l + 1; ++t){
 
-				if (t <= l){
+					if (t <= l){
 
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
+						std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
+						std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
+						std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
 
-					facets.push_back(std::make_tuple(v0,v1,v2));
-				}
+						facets.push_back(std::make_tuple(v0,v1,v2));
+					}
 
-				if (t > 0 ){
+					if (t > 0 ){
 
-					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
-					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
-					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
+						std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
+						std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
+						std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
 
-					facets.push_back(std::make_tuple(v0,v1,v2));
+						facets.push_back(std::make_tuple(v0,v1,v2));
+					}
+
 				}
 
 			}
-
 		}
-	}
 
 	// The coordinates are written to a file
 
-	std::ofstream shape_file;
-	shape_file.open(path);
+		std::ofstream shape_file;
+		shape_file.open(path);
 
-	for (unsigned int i = 0; i < vertices.size(); ++i){
-		shape_file << "v " << vertices[i](0) << " " << vertices[i](1) << " " << vertices[i](2) << "\n";
+		for (unsigned int i = 0; i < vertices.size(); ++i){
+			shape_file << "v " << vertices[i](0) << " " << vertices[i](1) << " " << vertices[i](2) << "\n";
+		}
+
+		for (unsigned int i = 0; i < facets.size(); ++i){
+			unsigned int indices[3];
+			indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
+			indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
+			indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
+
+
+			shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";
+
+		}
+
+
 	}
-
-	for (unsigned int i = 0; i < facets.size(); ++i){
-		unsigned int indices[3];
-		indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
-		indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
-		indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
-
-
-		shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";
-
-	}
-
-
-}
 
 
 

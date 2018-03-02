@@ -19,7 +19,6 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 	this -> update();
 
-
 }
 
 std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j){
@@ -77,17 +76,34 @@ double Bezier::Sa_b(const int a, const int b){
 
 double Bezier::triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ) const{
 
-		std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
-		std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
-		std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
-		double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
-		double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
-		double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
+	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+	double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
+	double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
+	double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
 
-		return vtkMath::Determinant3x3(Ci,Cj,Ck);
+	return vtkMath::Determinant3x3(Ci,Cj,Ck);
 
 }
-	
+
+void Bezier::quadruple_product(double * result,const int i ,const int j ,const int k ,const int l ,const int m ,const int p, const int q, const int r ) const{
+
+	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+	std::tuple<unsigned int, unsigned int,unsigned int> l_ = std::make_tuple(q,r,this -> n - q - r);
+
+	double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
+	double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
+	double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
+	double * Cl =  this -> control_points[this -> rev_table.at(l_)] -> get_coordinates_pointer();
+
+	vtkMath::Cross(Ck,Cl,result);
+	vtkMath::MultiplyScalar(result,vtkMath::Dot(Ci,Cj));
+
+
+}
 
 
 
@@ -144,10 +160,31 @@ double Bezier::gamma_ijkl(const int i, const int j, const int k, const int l, co
 }
 
 
+double Bezier::kappa_ijklm(const int i, const int j, const int k, const int l, 
+	const int m, const int p,const int q, const int r, 
+	const int s, const int t, const int n){
+
+
+	int sum_indices = i + j + k + l + m + p + q + r + s + t;
+
+	double kappa = - double( n * n ) / 5 * Bezier::bernstein_coef(i ,j,n) * Bezier::bernstein_coef(k ,l,n) * Bezier::bernstein_coef(m ,p,n) * (
+
+		Bezier::bernstein_coef(q - 1 ,r,n - 1) * ( Bezier::bernstein_coef(s ,t -1,n - 1) * Sa_b(l + j + r  + t + p- 1,5 * n - sum_indices ) 
+			-  Bezier::bernstein_coef(s ,t,n - 1) * Sa_b(l + j + p + r  + t,5 * n - sum_indices -1)) * Sa_b(k + q + i + s + m- 1,5 * n - i - k - q - s - m)
+		- Bezier::bernstein_coef(q  ,r,n - 1) *( Bezier::bernstein_coef(s ,t - 1,n - 1) * Sa_b(l + j + p + r  + t - 1,5 * n - sum_indices -1) 
+			-  Bezier::bernstein_coef(s ,t,n - 1) * Sa_b(l + j + p + r  + t,5 * n - sum_indices -2)) * Sa_b(k + q + i + s + m,5 * n - i - k - q - s - m - 1)
+
+		);
+
+	return kappa;
+
+}
+
+
 double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, const int n){
 
 
-	double beta = (
+	double beta = 1./ 8 * (
 		Bezier::combinations(i, n) 
 		* Bezier::combinations(j, n) 
 		* Bezier::combinations(k, n) * n* 
@@ -197,20 +234,14 @@ arma::vec Bezier::I2_cm_int() const{
 			for (int k = 0; k <= this -> n; ++k){
 				for (int l = 0; l <= this -> n; ++l){
 
-
 					I2 += (beta_ijkl(i,j,k,l,this -> n) 
 						* arma::dot(this -> get_control_point_coordinates(0,i),this -> get_control_point_coordinates(0,j)) 
 						* arma::cross(this -> get_control_point_coordinates(0,k),this -> get_control_point_coordinates(0,l)));
 
-
-
 				}
-
 			}
 
-
 		}
-
 	}
 	return 1./8 * I2;
 

@@ -246,6 +246,22 @@ public:
 	*/
 	double triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ) const;
 
+
+	/**
+	Computes the quadruple product of points i_ = (i,j), j_ = (k,l), k_ = (m,p), l_ = (q,r)  e.g (Ci_^T Cj_) * (Ck_ x Cl_)
+	@param result container storing result of computation
+	@param i first index of first point
+	@param j second index of first point
+	@param k first index of second point
+	@param l second index of second point
+	@param m first index of third point
+	@param p second index of third point
+	@param q first index of fourth point
+	@param r second index of fourth point
+	*/
+	void quadruple_product(double * result,const int i ,const int j ,const int k ,const int l ,const int m ,const int p, const int q, const int r ) const;
+
+
 	// Returns the partial derivative d^2P/(dchi dv)
 	arma::mat partial_bezier_dv(
 		const double u,
@@ -345,6 +361,38 @@ public:
 	static double gamma_ijkl(const int i, const int j, const int k, const int l, const int m, const int p,const int q, const int r, const int n);
 
 
+	/**
+	Returns the coefficient kappa_ijkl for inertia of mass computation
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param m first index of third triplet
+	@param p second index of third triplet
+	@param q first index of fourth triplet
+	@param r second index of fourth triplet
+	@param s first index of fifth triplet
+	@param t second index of fifth triplet
+	@param n patch degree
+	@returm computed coefficient
+	*/
+	static double kappa_ijklm(const int i, const int j, const int k, const int l, 
+		const int m, const int p,const int q, const int r, 
+		const int s, const int t, const int n);
+
+
+	/**
+	Returns the coefficient beta_ijkl for center of mass computation
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param n patch degree
+	@returm computed coefficient
+	*/
+	static double beta_ijkl( const int i,  const int j,  const int k, const  int l,  const int n);
+
+
 
 
 protected:
@@ -355,7 +403,6 @@ protected:
 
 
 
-	static double beta_ijkl( const int i,  const int j,  const int k, const  int l,  const int n);
 	static double Sa_b(const int a, const int b);
 	static double bernstein_coef(const int i , const int j , const int n);
 

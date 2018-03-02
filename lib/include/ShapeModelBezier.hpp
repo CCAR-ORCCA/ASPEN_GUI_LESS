@@ -4,6 +4,11 @@
 #include "ShapeModel.hpp"
 #include "Bezier.hpp"
 
+
+
+#pragma omp declare reduction (+ : arma::mat::fixed<3,3> : omp_out += omp_in)\
+  initializer( omp_priv = omp_orig )
+
 class ShapeModelTri;
 
 
@@ -120,8 +125,11 @@ protected:
 
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
-	std::vector<std::vector<double> > cm_indices_coefs_table;
+	std::vector<std::vector<double> > cm_gamma_indices_coefs_table;
+	std::vector<std::vector<double> > cm_beta_indices_coefs_table;
 	std::vector<std::vector<double> > volume_indices_coefs_table;
+	std::vector<std::vector<double> > inertia_indices_coefs_table;
+
 
 
 	

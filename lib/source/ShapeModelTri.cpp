@@ -8,19 +8,20 @@ void ShapeModelTri::update_mass_properties() {
 
 
 	this -> compute_surface_area();
-	
 
+	this -> compute_volume();
+	
+	
+	this -> compute_center_of_mass();
+	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
-	this -> compute_volume();
-
 	
+
+	this -> compute_inertia();
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	std::cout << "elapsed time in ShapeModelTri::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
-	this -> compute_center_of_mass();
-	
-	this -> compute_inertia();
 	
 
 }
@@ -334,7 +335,7 @@ void ShapeModelTri::compute_inertia() {
 
 	double l = std::pow(this -> volume, 1. / 3.);
 
-	#// pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
+	# pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;
 		facet_index < this -> elements.size();
 		++facet_index) {

@@ -15,8 +15,8 @@ int main(){
 	ShapeModelBezier test("", &frame_graph);
 
 
-	ShapeModelImporter shape_io("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/shape_model/fit_source_400.b", 1, true);
-	ShapeModelImporter shape_io_tri("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/shape_model/fit_source_400.obj", 1, true);
+	ShapeModelImporter shape_io("../../ShapeReconstruction/output/shape_model/fit_source_400.b", 1, true);
+	ShapeModelImporter shape_io_tri("../../ShapeReconstruction/output/shape_model/fit_source_400.obj", 1, true);
 	
 
 	// ShapeModelImporter shape_io("../input/cube.b", 1, true);
@@ -32,7 +32,7 @@ int main(){
 	// test.elevate_degree();
 	// test.elevate_degree();
 	// test.elevate_degree();
-	
+
 
 	std::cout << "\nVolume: \n";
 
@@ -41,9 +41,13 @@ int main(){
 
 	std::cout << "\nCenter of mass: \n";
 	
-
 	std::cout << test.get_center_of_mass() << std::endl;
 	std::cout << test_tri.get_center_of_mass() << std::endl;
+
+	std::cout << "\nInertia: \n";
+	
+	std::cout << test.get_inertia() << std::endl;
+	std::cout << test_tri.get_inertia() << std::endl;
 
 
 
