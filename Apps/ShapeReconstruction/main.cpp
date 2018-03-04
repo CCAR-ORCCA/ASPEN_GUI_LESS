@@ -60,6 +60,12 @@
 // Target shape
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
+// Spin rate (hours)
+#define SPIN_RATE 12 
+
+// Density (kg/m^3)
+#define DENSITY 1900
+
 
 ///////////////////////////////////////////
 
@@ -84,15 +90,9 @@ int main() {
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
 
-	// Spherical harmonics coefficients
-	arma::mat Cnm;
-	arma::mat Snm;
-
 #ifdef __APPLE__
 	ShapeModelImporter shape_io_truth(
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/"+ std::string(TARGET_SHAPE) + ".obj", 1, true);
-	Cnm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Cnm_n10_r175.txt", arma::raw_ascii);
-	Snm.load("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/gravity/itokawa_150_Snm_n10_r175.txt", arma::raw_ascii);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
 		"../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj", 1 , false);
@@ -110,19 +110,14 @@ int main() {
 	Args args;
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
-	// args.set_dyn_analyses(&dyn_analyses);
-	// args.set_Cnm(&Cnm);
-	// args.set_Snm(&Snm);
-	// args.set_degree(5);
-	// args.set_ref_radius(175);
-	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
-	args.set_mass(true_shape_model . get_volume() * 1900);
+	args.set_mu(arma::datum::G * true_shape_model . get_volume() * DENSITY);
+	args.set_mass(true_shape_model . get_volume() * DENSITY);
 
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
-	double omega = 2 * arma::datum::pi / (12 * 3600);
+	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 
 	arma::vec omega_0 = {0,0,omega};
 	X0_augmented.rows(9,11) = omega_0; // Omega_BN(0)
@@ -162,9 +157,7 @@ int main() {
 	// Set active inertia here
 	args.set_active_inertia(true_shape_model.get_inertia());
 
-	System dynamics(args,
-		N_true,
-		Dynamics::point_mass_attitude_dxdt_body_frame );
+	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_body_frame );
 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
@@ -205,7 +198,6 @@ int main() {
 	shape_filter_args.set_iter_filter(ITER_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
-	shape_filter_args.set_ridge_coef(RIDGE_COEF);
 
 
 
@@ -234,6 +226,137 @@ int main() {
 	estimated_shape_model -> rotate(axes.t());
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
+
+
+	/**
+	END OF SHAPE RECONSTRUCTION FILTER
+	*/
+
+	// /**
+	// BEGINNING OF NAVIGATION FILTER
+	// */
+
+
+
+	// // Spacecraft initial state
+	// // Initial spacecraft state
+	// arma::vec X0_true_spacecraft = arma::zeros<arma::vec>(6);
+
+	// arma::vec pos_0 = {1000,0,0};
+	// X0_true_spacecraft.rows(0,2) = pos_0; // r_LN(0) in body frame
+
+	// // Velocity determined from sma
+	// double a = arma::norm(pos_0);
+	// double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
+	// arma::vec omega_0 = {0,0,omega};
+	// arma::vec vel_0_inertial = {0,0,v};
+	// arma::vec vel_0_body = vel_0_inertial - arma::cross(omega_0,pos_0);
+	// X0_true_spacecraft.rows(3,5) = vel_0_body; // r'_LN(0) in body frame
+
+	// // DEBUG: Asteroid estimated state == spacecraft initial state
+	// arma::vec X0_true_small_body = {0,0,0,0,0,omega};
+	// arma::vec X0_estimated_small_body = {0,0,0,0,0,omega};
+
+	// // Initial spacecraft position estimate
+	// arma::vec P0_spacecraft_vec = {100,100,100,1e-6,1e-6,1e-6};
+	// arma::mat P0_spacecraft_mat = arma::diagmat(P0_spacecraft_vec);
+
+	// arma::vec X0_estimated_spacecraft = X0_true_spacecraft + arma::sqrt(P0_spacecraft_mat) * arma::randn<arma::vec>(6);
+
+	// arma::vec X0_true_augmented = arma::zeros<arma::vec>(12);
+	// X0_true_augmented.subvec(0,5) = X0_true_spacecraft;
+	// X0_true_augmented.subvec(6,11) = X0_true_small_body;
+
+	// arma::vec X0_estimated_augmented = arma::zeros<arma::vec>(12);
+	// X0_estimated_augmented.subvec(0,5) = X0_estimated_spacecraft;
+	// X0_estimated_augmented.subvec(6,11) = X0_estimated_small_body;
+
+
+	// arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY,  TF); 
+	
+	// // Times
+	// std::vector<double> T_obs;
+	// for (unsigned int i = 0; i < times.n_rows; ++i){
+	// 	T_obs.push_back( times(i));
+	// }
+
+	// // A-priori covariance on spacecraft state and asteroid state.
+	// // Since the asteroid state is not estimated, it is frozen
+	// arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
+
+	// P0_diag.subvec(0,5) = P0_spacecraft_vec;
+
+	// arma::mat P0 = arma::diagmat(P0_diag);
+
+	// NavigationFilter filter(args);
+	// filter.set_observations_fun(
+	// 	Observations::obs_pos_ekf_computed,
+	// 	Observations::obs_pos_ekf_computed_jac,
+	// 	Observations::obs_pos_ekf_lidar);	
+
+	// filter.set_estimate_dynamics_fun(
+	// 	Dynamics::point_mass_attitude_dxdt_body_frame,
+	// 	Dynamics::point_mass_jac_attitude_dxdt_body_frame,
+	// 	Dynamics::point_mass_attitude_dxdt_body_frame);
+
+
+	// filter.set_initial_information_matrix(arma::inv(P0));
+	// filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
+
+	// arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
+
+
+	// arma::mat R = arma::zeros<arma::mat>(1,1);
+
+	// auto start = std::chrono::system_clock::now();
+
+
+	// int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,T_obs,R,Q);
+	// auto end = std::chrono::system_clock::now();
+
+	// std::chrono::duration<double> elapsed_seconds = end-start;
+
+	// std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
+
+
+	// filter.write_estimated_state("../output/filter/X_hat.txt");
+	// filter.write_true_state("../output/filter/X_true.txt");
+	// filter.write_T_obs(T_obs,"../output/filter/T_obs.txt");
+	// filter.write_estimated_covariance("../output/filter/covariances.txt");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	return 0;

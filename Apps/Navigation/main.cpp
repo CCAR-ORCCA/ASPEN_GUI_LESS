@@ -11,10 +11,8 @@
 // Lidar settings
 #define ROW_RESOLUTION 64
 #define COL_RESOLUTION 64
-// #define ROW_FOV 20
-// #define COL_FOV 20
-#define ROW_FOV 20
 
+#define ROW_FOV 20
 #define COL_FOV 20
 
 

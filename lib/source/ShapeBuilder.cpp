@@ -94,24 +94,16 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 
-			// The LOS is (1,0,0)^T in the instrument frame
-			arma::vec u_dir = {1,0,0};
-
 			// The point-cloud to point-cloud ICP is used for point cloud registration
-			ICP icp_pc(
-				this -> destination_pc, 
-				this -> source_pc, 
-				M_pc, 
-				X_pc);
+			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
 			// These two align the consecutive point clouds 
-			// in the instrument frame at t_D
+			// in the instrument frame at t_D == t_0
 			M_pc = icp_pc.get_M();
 			X_pc = icp_pc.get_X();
 
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj");
-			u_dir = M_pc * u_dir; // the LOS is also transformed
 
 			if (time_index <= this -> filter_arguments -> get_index_init()){
 				this -> concatenate_point_clouds(time_index);
@@ -133,6 +125,11 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				}
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+
+
+				this -> estimated_shape_model -> translate( - X_pc);
+				this -> estimated_shape_model -> rotate(M_pc.t());
+				this -> estimated_shape_model -> save("../output/shape_model/fit_source_test_alignment_" + std::to_string(time_index)+ ".b");
 
 		
 			}
@@ -160,7 +157,7 @@ std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() cons
 void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 
 	// The destination point cloud is augmented with the source point cloud
-	std::vector< std::shared_ptr<PointNormal> > source_points =this -> source_pc -> get_points();
+	std::vector< std::shared_ptr<PointNormal> > source_points = this -> source_pc -> get_points();
 
 	int N_source_pc_points = int(this -> filter_arguments -> get_downsampling_factor() * source_points.size());
 
@@ -206,10 +203,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 	if (this -> destination_pc == nullptr) {
 
 		this -> destination_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
-		
-
-		
-		
 
 	}
 
@@ -217,7 +210,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 		// Only one source point cloud has been collected
 		if (this -> source_pc == nullptr) {
-
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
@@ -229,10 +221,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 			// The source and destination point clouds are combined into the new source point cloud
 			this -> destination_pc = this -> source_pc;
-
-
-			// The registered source should be concatenated to the previous destination point
-			// cloud here
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 

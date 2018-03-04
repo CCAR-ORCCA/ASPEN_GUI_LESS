@@ -388,7 +388,7 @@ protected:
 
 	double max_ray_incidence;
 	double min_normal_angle_difference;
-	double ridge_coef;
+	double ridge_coef = 0;
 	double min_facet_angle;
 	double min_edge_angle;
 	double convergence_facet_residuals;

@@ -238,7 +238,9 @@ void BatchFilter::compute_prefit_residuals(
 		y_bar.push_back(residual);
 
 		arma::vec y_non_zero = residual.elem(arma::find(residual));
-		
+		#if BATCH_DEBUG
+		std::cout << " - Usable residuals in batch: " << y_non_zero.n_rows << std::endl;
+		#endif
 		rms_res += std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
 
 	}
@@ -246,7 +248,6 @@ void BatchFilter::compute_prefit_residuals(
 	// The convergence is checked. 
 	if (rms_res < 1.1 * std::sqrt(R(0,0))){
 		has_converged = true;
-
 	}
 	else{
 		has_converged = false;
