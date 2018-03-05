@@ -215,6 +215,7 @@ int main() {
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
 	estimated_shape_model -> translate(-estimated_shape_model -> get_center_of_mass());
+	estimated_shape_model -> update_mass_properties();
 	arma::mat axes;
 	arma::vec moments ;
 	estimated_shape_model -> get_principal_inertias(axes,moments);

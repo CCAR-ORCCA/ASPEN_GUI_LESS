@@ -152,26 +152,7 @@ public:
 	void update_facets(std::set<Facet *> & facets);
 
 
-	/**
-	Shifts the coordinates of the shape model
-	so as to have (0,0,0) aligned with its barycenter
-	The resulting barycenter coordinates are (0,0,0)
-	*/
-	void shift_to_barycenter();
-
-	/**
-	Applies a rotation that aligns the body
-	with its principal axes.
-	This assumes that the body has been shifted so
-	that (0,0,0) lies at its barycenter
-	The resulting inertia tensor is diagonal
-	Undefined behavior if
-	the inertia tensor has not been computed beforehand
-	*/
-	void align_with_principal_axes();
-
 	
-
 
 	/**
 	Computes the surface area of the shape model

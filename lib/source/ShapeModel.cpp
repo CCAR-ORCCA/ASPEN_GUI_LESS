@@ -39,6 +39,48 @@ arma::vec ShapeModel::get_center_of_mass() const{
 }
 
 
+void ShapeModel::shift_to_barycenter() {
+
+	arma::vec x = - this -> get_center_of_mass();
+
+	// The vertices are shifted
+	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
+	for (unsigned int vertex_index = 0;
+		vertex_index < this -> get_NControlPoints();
+		++vertex_index) {
+
+		this -> control_points[vertex_index] -> set_coordinates(this -> control_points[vertex_index] -> get_coordinates() + x);
+
+}
+
+this -> cm = 0 * this -> cm;
+
+}
+
+void ShapeModel:: align_with_principal_axes() {
+
+
+	this -> compute_inertia();
+
+	std::cout << "Non-dimensional inertia: " << std::endl;
+	std::cout << this -> inertia << std::endl;
+
+	arma::vec moments;
+	arma::mat axes;
+
+	this -> get_principal_inertias(axes,moments);
+
+	this -> rotate(axes.t());
+
+	this -> inertia = arma::diagmat(moments);
+
+}
+
+
+
+
+
+
 void ShapeModel::construct_kd_tree_control_points() {
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;

@@ -8,8 +8,9 @@ ShapeModelImporter::ShapeModelImporter(std::string filename, double scaling_fact
 	this -> filename = filename;
 	this -> scaling_factor = scaling_factor;
 	this -> as_is = as_is;
-}
+	std::cout << this -> as_is << as_is << std::endl;
 
+}
 
 
 void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model) const {
@@ -120,23 +121,19 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 	
 	shape_model -> populate_mass_properties_coefs();
 	shape_model -> update_mass_properties();
-	
-	if (this -> as_is == false) {
-
-		// shape_model -> compute_center_of_mass();
-		// shape_model -> compute_inertia_tensor();
+	if (!this -> as_is) {
 
 		// The shape model is shifted so as to have its coordinates
 		// expressed in its barycentric frame
-		// shape_model -> shift_to_barycenter();
+		shape_model -> shift_to_barycenter();
+
+		shape_model -> update_mass_properties();
 
 		// The shape model is then rotated so as to be oriented
 		// with respect to its principal axes
-		// The inertia tensor is computed on this occasion
-		// shape_model -> align_with_principal_axes();
+		shape_model -> align_with_principal_axes();
 
 	}
-
 
 	shape_model -> construct_kd_tree_control_points();
 	

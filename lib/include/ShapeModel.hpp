@@ -69,6 +69,28 @@ public:
 	*/
 	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
 
+
+	/**
+	Shifts the coordinates of the shape model
+	so as to have (0,0,0) aligned with its barycenter
+	The resulting barycenter coordinates are (0,0,0)
+	*/
+	void shift_to_barycenter();
+
+	/**
+	Applies a rotation that aligns the body
+	with its principal axes.
+	This assumes that the body has been shifted so
+	that (0,0,0) lies at its barycenter
+	The resulting inertia tensor is diagonal
+	Undefined behavior if
+	the inertia tensor has not been computed beforehand
+	*/
+	void align_with_principal_axes();
+
+	
+
+
 	/**
 	Returns the volume of the provided shape model
 	@return volume (U^2 where U is the unit of the shape coordinates)
