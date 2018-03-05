@@ -234,7 +234,7 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 	arma::mat M2 = {{-1,0,0},{0,1,0},{0,0,-1}};
 	arma::mat M3 = {{-1,0,0},{0,-1,0},{0,0,1}};
 
-	std::cout << std::abs(arma::dot(x_max,e1)) << " " std::abs(arma::dot(x_min,e1)) << std::endl;
+	std::cout << std::abs(arma::dot(x_max,e1)) << " " << std::abs(arma::dot(x_min,e1)) << std::endl;
 
 	if (std::abs(arma::dot(x_max,e0)) > std::abs(arma::dot(x_min,e0))){
 
