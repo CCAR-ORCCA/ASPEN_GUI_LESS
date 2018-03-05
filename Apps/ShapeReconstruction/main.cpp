@@ -218,8 +218,11 @@ int main() {
 	estimated_shape_model -> update_mass_properties();
 	estimated_shape_model -> align_with_principal_axes();
 
+
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
+	double bbox[6];
+	estimated_shape_model -> get_bounding_box(bbox);
 
 
 	/**

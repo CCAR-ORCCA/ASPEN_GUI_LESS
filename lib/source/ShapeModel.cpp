@@ -167,11 +167,7 @@ void ShapeModel::rotate(arma::mat M){
 }
 
 
-
-
 void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
-
-	arma::vec P0 = this -> control_points. at(0) -> get_coordinates();
 
 	arma::vec bbox_min = M * this -> control_points[0] -> get_coordinates();
 	arma::vec bbox_max = M * this -> control_points[0] -> get_coordinates();
@@ -245,7 +241,6 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 		}
 
 		else{
-
 			axes = axes * M1;
 		}
 
@@ -253,7 +248,6 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 	}
 	else{
 		if(std::abs(arma::dot(x_max,e1)) > std::abs(arma::dot(x_min,e1))){
-
 			axes = axes * M2;
 		}
 
