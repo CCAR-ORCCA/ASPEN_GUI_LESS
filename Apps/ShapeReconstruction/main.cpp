@@ -221,9 +221,7 @@ int main() {
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
-	double bbox[6];
-	estimated_shape_model -> get_bounding_box(bbox);
-
+	args.set_estimated_shape_model(estimated_shape_model.get());
 
 	/**
 	END OF SHAPE RECONSTRUCTION FILTER
