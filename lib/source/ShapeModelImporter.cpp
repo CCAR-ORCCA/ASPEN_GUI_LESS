@@ -8,7 +8,6 @@ ShapeModelImporter::ShapeModelImporter(std::string filename, double scaling_fact
 	this -> filename = filename;
 	this -> scaling_factor = scaling_factor;
 	this -> as_is = as_is;
-	std::cout << this -> as_is << as_is << std::endl;
 
 }
 
