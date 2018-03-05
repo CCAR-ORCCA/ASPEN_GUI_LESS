@@ -22,8 +22,8 @@ int  BatchFilter::run(
 
 
 	#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "- Running filter" << std::endl;
-		std::cout << "-- Computing true state history" << std::endl;
+	std::cout << "- Running filter" << std::endl;
+	std::cout << "-- Computing true state history" << std::endl;
 	#endif
 
 	// The true state history is computed
@@ -31,14 +31,14 @@ int  BatchFilter::run(
 	
 	#if BATCH_DEBUG || FILTER_DEBUG
 	
-		std::cout << "-- Computing true observations" << std::endl;
+	std::cout << "-- Computing true observations" << std::endl;
 	#endif
 
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
 	#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "-- Done computing true observations" << std::endl;
+	std::cout << "-- Done computing true observations" << std::endl;
 	#endif
 
 
@@ -68,7 +68,7 @@ int  BatchFilter::run(
 	int iterations = N_iter;
 
 	#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "-- Iterating the filter" << std::endl;
+	std::cout << "-- Iterating the filter" << std::endl;
 	#endif
 
 
@@ -76,19 +76,19 @@ int  BatchFilter::run(
 	for (unsigned int i = 0; i <= N_iter; ++i){
 
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
+		std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
 		#endif
 
 		
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "----  Computing reference trajectory" << std::endl;
+		std::cout << "----  Computing reference trajectory" << std::endl;
 		#endif
 
 		// The reference trajectory is computed along with the STM
 		this -> compute_reference_state_history(T_obs,X_bar,stm);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "----  Computing prefit residuals" << std::endl;
+		std::cout << "----  Computing prefit residuals" << std::endl;
 		#endif
 
 		// The prefit residuals are computed
@@ -99,8 +99,8 @@ int  BatchFilter::run(
 			,R);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "----  Done computing prefit residuals" << std::endl;
-			std::cout << "----  Has converged? " << has_converged << std::endl;
+		std::cout << "----  Done computing prefit residuals" << std::endl;
+		std::cout << "----  Has converged? " << has_converged << std::endl;
 		#endif
 
 		// If the batch was only run for the pass-trough
@@ -126,14 +126,14 @@ int  BatchFilter::run(
 		else{
 			#if BATCH_DEBUG || FILTER_DEBUG
 
-				arma::vec y_non_zero = y_bar.back().elem(arma::find(y_bar.back()));
+			arma::vec y_non_zero = y_bar.back().elem(arma::find(y_bar.back()));
 
-				double rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+			double rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
 
 
 
-				std::cout << "-----  Has not converged" << std::endl;
-				std::cout << "-----  Residuals: " << rms_res << std::endl;
+			std::cout << "-----  Has not converged" << std::endl;
+			std::cout << "-----  Residuals: " << rms_res << std::endl;
 			#endif
 		}
 
@@ -143,7 +143,7 @@ int  BatchFilter::run(
 
 
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "----  Assembling normal equations" << std::endl;
+		std::cout << "----  Assembling normal equations" << std::endl;
 		#endif
 
 		for (unsigned int p = 0; p < T_obs.size(); ++ p){
@@ -172,8 +172,11 @@ int  BatchFilter::run(
 		auto dx_hat = arma::solve(info_mat,normal_mat);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
-			std::cout << "---  Deviation: "<< std::endl;
-			std::cout << dx_hat << std::endl;
+		std::cout << "--- Info mat: \n" << info_mat << std::endl;
+		std::cout << "--- Info mat rank: " << arma::rank(info_mat) << std::endl;
+		std::cout << "--- Normal mat:\n " << normal_mat << std::endl;
+		std::cout << "---  Deviation: "<< std::endl;
+		std::cout << dx_hat << std::endl;
 		#endif
 
 		// The covariance of the state at the initial time is computed
@@ -201,7 +204,7 @@ int  BatchFilter::run(
 	this -> residuals = y_bar;
 
 	#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "-- Exiting batch "<< std::endl;
+	std::cout << "-- Exiting batch "<< std::endl;
 	#endif
 
 	return iterations;
