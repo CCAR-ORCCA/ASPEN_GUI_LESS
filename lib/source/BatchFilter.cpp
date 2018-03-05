@@ -1,5 +1,9 @@
 #include "BatchFilter.hpp"
 #include "DebugFlags.hpp"
+#include "System.hpp"
+#include "Observer.hpp"
+#include <boost/numeric/odeint.hpp>
+#include "FixVectorSize.hpp"
 
 BatchFilter::BatchFilter(const Args & args) : Filter(args){
 }

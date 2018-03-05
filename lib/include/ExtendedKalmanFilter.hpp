@@ -1,7 +1,6 @@
 #ifndef HEADER_EKF
 #define HEADER_EKF
 
-#include <armadillo>
 #include "SequentialFilter.hpp"
 
 class ExtendedKalmanFilter : public SequentialFilter {

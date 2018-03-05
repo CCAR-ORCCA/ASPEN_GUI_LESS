@@ -1,33 +1,20 @@
-#ifndef HEADER_FILTER
-#define HEADER_FILTER
+#ifndef HEADER_SHAPEBUILDER
+#define HEADER_SHAPEBUILDER
 
-#include "ShapeModel.hpp"
-#include "ShapeModelTri.hpp"
-#include "ShapeModelBezier.hpp"
+#include <armadillo>
+#include <memory>
+#include <set>
 
 
-#include "Lidar.hpp"
-#include "FrameGraph.hpp"
-#include "ShapeBuilderArguments.hpp"
-#include "PC.hpp"
-#include "ICP.hpp"
-#include "CustomException.hpp"
-#include "Args.hpp"
-#include "Dynamics.hpp"
 
-#include "ShapeModelImporter.hpp"
-#include "ShapeFitterBezier.hpp"
-#include "EllipsoidFitter.hpp"
+class Lidar;
+class PC;
 
-#include "CGAL_interface.hpp"
-#include <RigidBodyKinematics.hpp>
-#include <boost/progress.hpp>
-
-#include <numeric>
-#include <sstream>
-#include <iomanip>
-#include <limits>
-
+class ShapeModelTri;
+class ShapeModelBezier;
+class ShapeBuilderArguments;
+class FrameGraph;
+class PointNormal;
 
 
 /**
@@ -120,30 +107,6 @@ public:
 
 protected:
 
-	void correct_shape(unsigned int time_index, bool first_iter, bool last_iter,
-		bool plot_measurement);
-
-	void correct_observed_features(std::vector<Ray * > & good_rays,
-		std::set<ControlPoint *> & seen_vertices,
-		std::set<Facet *> & seen_facets,
-
-		arma::mat & N_mat,
-		std::map<Facet *,
-		std::vector<unsigned int> > & facet_to_index_of_vertices) ;
-
-	void get_observed_features(std::vector<Ray * > & good_rays,
-		std::set<ControlPoint *> & seen_vertices,
-		std::set<Facet *> & seen_facets,
-		std::set<Facet *> & spurious_facets,
-		arma::mat & N_mat,
-		std::map<Facet *,
-		std::vector<unsigned int> > & facet_to_index_of_vertices
-		) ;
-
-
-
-	std::vector<arma::rowvec> partial_range_partial_coordinates(const arma::vec & P,
-		const arma::vec & u, Facet * facet) ;
 
 
 
@@ -163,19 +126,6 @@ protected:
 	void get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
 		arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
 		arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel );
-
-	/**
-	Computes a measurement of the angular velocity
-	@param dcm M in f(C) = MC + x
-	*/
-	void measure_omega(const arma::mat & dcm) ;
-
-
-	/**
-	Computes a measurement of the direction of the rigid's body spin axis
-	@param dcm DCM obtained from the ICP rigid transform
-	*/
-	void measure_spin_axis(const arma::mat & dcm);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states

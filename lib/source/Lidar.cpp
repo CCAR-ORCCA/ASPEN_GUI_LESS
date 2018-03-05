@@ -28,7 +28,7 @@ Lidar::Lidar(
 	this -> fov_z = fov_z;
 	this -> z_res = z_res;
 	this -> y_res = y_res;
-	this -> freq = freq;
+	// this -> freq = freq;
 	this -> los_noise_sd_baseline = los_noise_1sd_baseline;
 	this -> los_noise_fraction_mes_truth = los_noise_fraction_mes_truth;
 
@@ -59,9 +59,9 @@ FrameGraph * Lidar::get_frame_graph() {
 	return this -> frame_graph;
 }
 
-double Lidar::get_frequency() const {
-	return this -> freq;
-}
+// double Lidar::get_frequency() const {
+// 	return this -> freq;
+// }
 
 
 double Lidar::get_fov_z(bool use_rad ) const {

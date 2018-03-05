@@ -2,10 +2,6 @@
 #define HEADER_FILTER
 #include <armadillo>
 #include "Args.hpp"
-#include <boost/numeric/odeint.hpp>
-#include "System.hpp"
-#include "Observer.hpp"
-#include "FixVectorSize.hpp"
 
 class Filter {
 

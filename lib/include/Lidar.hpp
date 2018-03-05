@@ -194,7 +194,7 @@ public:
 
 protected:
 	double f;
-	double freq;
+	// double freq;
 
 	double fov_y ;
 	double fov_z ;

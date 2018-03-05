@@ -1,6 +1,9 @@
 #include "NavigationFilter.hpp"
 #include "DebugFlags.hpp"
-
+#include "System.hpp"
+#include "Observer.hpp"
+#include "Dynamics.hpp"
+#include <boost/numeric/odeint.hpp>
 
 NavigationFilter::NavigationFilter(const Args & args) : ExtendedKalmanFilter(args){
 // 
@@ -16,8 +19,6 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	arma::vec X0_true_augmented_cp(X0_true_augmented);
 
 	this -> true_state_history.clear();
-
-
 
 
 	// Set active inertia here

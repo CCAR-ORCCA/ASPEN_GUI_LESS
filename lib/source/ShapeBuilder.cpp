@@ -1,5 +1,31 @@
 #include "ShapeBuilder.hpp"
+
+#include "ShapeModelTri.hpp"
+#include "ShapeModelBezier.hpp"
+
+#include "Lidar.hpp"
+#include "FrameGraph.hpp"
+#include "ShapeBuilderArguments.hpp"
+#include "PC.hpp"
+#include "ICP.hpp"
+#include "Ray.hpp"
+#include "CustomException.hpp"
+#include "ControlPoint.hpp"
+#include "Facet.hpp"
+#include "Element.hpp"
+
+
+#include "ShapeModelImporter.hpp"
+#include "ShapeFitterBezier.hpp"
+
+#include "CGAL_interface.hpp"
+#include <RigidBodyKinematics.hpp>
+#include <boost/progress.hpp>
+
+
+
 #include <chrono>
+
 
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
@@ -179,22 +205,6 @@ void ShapeBuilder::concatenate_point_clouds(unsigned int index){
 }
 
 
-void ShapeBuilder::measure_spin_axis(const arma::mat & dcm) {
-
-	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
-	this -> filter_arguments -> append_spin_axis_mes(prv.second);
-
-}
-
-
-
-
-
-void ShapeBuilder::measure_omega(const arma::mat & dcm) {
-	std::pair<double, arma::vec > prv = RBK::dcm_to_prv(dcm);
-	this -> filter_arguments -> append_omega_mes(this -> lidar -> get_frequency() * prv.first * this -> filter_arguments -> get_latest_spin_axis_mes());
-}
-
 
 void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat & X_pc) {
 
@@ -248,41 +258,6 @@ void ShapeBuilder::perform_measurements_pc(
 	// Measurements are stored
 	arma::vec mrp_mes_pc;
 
-	if (this -> filter_arguments -> get_number_of_measurements() == 0){
-
-		this -> measure_spin_axis(arma::eye<arma::mat>(3,3));
-		this -> measure_omega(arma::eye<arma::mat>(3,3));
-
-		this -> filter_arguments -> append_time(time);
-		this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
-
-		this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
-		this -> filter_arguments -> append_relative_pos_true(arma::zeros<arma::vec>(3));
-
-		// No need to remove the initial offset. It is added to the mrp measurement 
-		this -> filter_arguments -> append_mrp_true(mrp_BN);
-		this -> filter_arguments -> append_mrp_mes(mrp_BN);
-
-	}
-
-	else {
-
-		mrp_mes_pc = RBK::dcm_to_mrp(RBK::mrp_to_dcm(this -> filter_arguments -> get_latest_mrp_mes())  * NE_tD_EN_tS_pc );
-
-		this -> filter_arguments -> append_mrp_mes(mrp_mes_pc);
-
-		this -> measure_spin_axis(NE_tD_EN_tS_pc);
-		this -> measure_omega(NE_tD_EN_tS_pc);
-
-		this -> filter_arguments -> append_time(time);
-		this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
-		this -> filter_arguments -> append_mrp_true(mrp_BN);
-
-		this -> filter_arguments -> append_relative_pos_mes(X_relative_from_pc);
-		this -> filter_arguments -> append_relative_pos_true(X_relative_true);
-
-	}
-
 
 }
 
@@ -303,8 +278,6 @@ void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S,
 
 	this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( M ));
 
-	this -> measure_spin_axis(NE_tD_EN_tS_pc);
-	this -> measure_omega(NE_tD_EN_tS_pc);
 
 	this -> filter_arguments -> append_time(time);
 	this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));

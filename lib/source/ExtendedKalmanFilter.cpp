@@ -1,6 +1,8 @@
 #include "ExtendedKalmanFilter.hpp"
 #include "DebugFlags.hpp"
-
+#include "System.hpp"
+#include "Observer.hpp"
+#include <boost/numeric/odeint.hpp>
 
 ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter(args){
 // 

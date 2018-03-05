@@ -1,7 +1,6 @@
 #ifndef HEADER_SEQUENTIALFILTER
 #define HEADER_SEQUENTIALFILTER
 
-#include <armadillo>
 #include "Filter.hpp"
 
 class SequentialFilter : public Filter {
@@ -24,10 +23,7 @@ public:
 
 
 protected:
-
-	// What about the true trajectory? should I compute it
-	// ahead of time or propagate it along with the estimated state?
-
+	
 	virtual void time_update(double t_now, double t_next,
 		arma::vec & X_hat, arma::mat & P_hat) const = 0;
 	virtual void measurement_update(double t, arma::vec & X_bar, arma::mat & P_bar,

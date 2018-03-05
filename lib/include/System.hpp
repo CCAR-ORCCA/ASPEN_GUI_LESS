@@ -3,7 +3,6 @@
 
 #include <armadillo>
 #include "FixVectorSize.hpp"
-#include <assert.h>
 
 class System {
 public:

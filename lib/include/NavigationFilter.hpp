@@ -1,11 +1,7 @@
 #ifndef HEADER_NAVFILTER
 #define HEADER_NAVFILTER
 
-#include <armadillo>
 #include "ExtendedKalmanFilter.hpp"
-#include "Observations.hpp"
-#include "Dynamics.hpp"
-
 
 class NavigationFilter : public ExtendedKalmanFilter {
 

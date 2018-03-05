@@ -1,5 +1,11 @@
 #include "Filter.hpp"
 #include "DebugFlags.hpp"
+#include "FixVectorSize.hpp"
+
+#include "System.hpp"
+#include "Observer.hpp"
+#include <boost/numeric/odeint.hpp>
+
 
 Filter ::Filter(const Args & args){
 	this -> args = args;
