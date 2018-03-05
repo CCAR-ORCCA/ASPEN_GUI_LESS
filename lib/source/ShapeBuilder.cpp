@@ -153,9 +153,9 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
 
-				this -> estimated_shape_model -> translate( - X_pc);
-				this -> estimated_shape_model -> rotate(M_pc.t());
-				this -> estimated_shape_model -> save_both("../output/shape_model/fit_source_test_alignment_" + std::to_string(time_index));
+				// this -> estimated_shape_model -> translate( - X_pc);
+				// this -> estimated_shape_model -> rotate(M_pc.t());
+				// this -> estimated_shape_model -> save_both("../output/shape_model/fit_source_test_alignment_" + std::to_string(time_index));
 
 		
 			}
