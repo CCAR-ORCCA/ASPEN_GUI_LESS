@@ -92,7 +92,7 @@ int main() {
 		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/"+ std::string(TARGET_SHAPE) + ".obj", 1, true);
 #elif __linux__
 	ShapeModelImporter shape_io_truth(
-		"../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj", 1 , false);
+		"../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj", 1 , true);
 #else
 
 	throw (std::runtime_error("Neither running on linux or mac os"));
