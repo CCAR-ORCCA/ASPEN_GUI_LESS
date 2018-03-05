@@ -198,7 +198,6 @@ int main() {
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 
 
-
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
 
@@ -209,7 +208,6 @@ int main() {
 
 	std::cout << "Point cloud acquisition and shape fitting completed in " << elapsed_seconds.count() << " s"<< std::endl;
 	
-
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
@@ -270,7 +268,7 @@ int main() {
 
 	arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
 
-	arma::mat R = arma::zeros<arma::mat>(1,1);
+	arma::mat R = arma::ones<arma::mat>(1,1);
 
 	start = std::chrono::system_clock::now();
 	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,R,Q);
