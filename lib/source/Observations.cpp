@@ -18,6 +18,7 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 	// Position of spacecraft relative to small body
 	arma::vec lidar_pos = x.rows(0,2);
+	std::cout << lidar_pos.t() << std::endl;
 
 
 	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
