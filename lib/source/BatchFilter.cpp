@@ -51,7 +51,7 @@ int  BatchFilter::run(
 	// The filter is initialized
 	X_bar = X_bar_0;
 
-	this -> info_mat_bar_0 = arma::inv((*this -> args.get_lidar_position_covariance_ptr()));
+	this -> info_mat_bar_0 = arma::zeros<arma::mat>(this -> true_state_history[0].n_rows,this -> true_state_history[0].n_rows);
 	
 	int iterations = N_iter;
 
@@ -130,8 +130,6 @@ int  BatchFilter::run(
 		info_mat += H.t() * H;
 		normal_mat += H.t() * y_bar;
 
-		
-
 
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
@@ -162,8 +160,11 @@ int  BatchFilter::run(
 	// The results are saved
 
 	this -> estimated_state_history.push_back(X_bar);
+	this -> estimated_covariance_history.push_back(P_hat_0);
 	
 	this -> residuals.push_back( y_bar);
+
+
 
 	#if BATCH_DEBUG || FILTER_DEBUG
 	std::cout << "-- Exiting batch "<< std::endl;

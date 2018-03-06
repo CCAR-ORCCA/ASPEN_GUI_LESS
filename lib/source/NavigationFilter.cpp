@@ -129,7 +129,6 @@ int NavigationFilter::run(
 			this -> estimated_covariance_history.push_back(P_hat);
 		}
 
-
 		// The a-priori is propagated until the next timestep
 		this -> time_update(T_obs[t],T_obs[t + 1],X_hat,P_hat);
 
@@ -144,7 +143,7 @@ int NavigationFilter::run(
 
 		// The measurement update is performed
 		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
-
+		
 		// The postfit residual is computed 
 		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
