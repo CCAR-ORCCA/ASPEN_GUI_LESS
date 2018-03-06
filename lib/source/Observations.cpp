@@ -13,11 +13,13 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 	arma::vec mrp_BN_true = *args.get_mrp_BN_true();
 	arma::vec mrp_LN_true = *args.get_mrp_LN_true();
+	std::cout << " got mrps" << std::endl;
+
 
 	// Position of spacecraft relative to small body
 	arma::vec lidar_pos = x.rows(0,2);
 
-	
+
 	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
 
 	// Setting the Lidar frame to its new state
