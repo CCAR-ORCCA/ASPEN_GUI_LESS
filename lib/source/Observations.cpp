@@ -17,12 +17,14 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	// Position of spacecraft relative to small body
 	arma::vec lidar_pos = x.rows(0,2);
 
-
+	
 	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
 
 	// Setting the Lidar frame to its new state
 	Lidar *  lidar = args.get_lidar();
 	FrameGraph *  frame_graph = args.get_frame_graph();
+
+	std::cout << "querying lidar" << std::endl;
 
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
@@ -35,6 +37,8 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
 	lidar -> send_flash(args.get_true_shape_model(),false);
+	std::cout << "sent flash" << std::endl;
+
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
 	auto focal_plane = lidar -> get_focal_plane();

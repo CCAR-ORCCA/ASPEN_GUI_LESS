@@ -143,7 +143,7 @@ int NavigationFilter::run(
 
 		// The measurement update is performed
 		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
-		
+
 		// The postfit residual is computed 
 		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
@@ -217,10 +217,10 @@ void NavigationFilter::set_states(const arma::vec & X_hat,unsigned int t){
 	dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
 	arma::inplace_trans(dcm_LB);
 
-	(*args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
-	(*args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
-	(*args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
-	(*args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
+	(*this -> args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
+	(*this -> args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
+	(*this -> args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
+	(*this -> args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
 
 }
 
