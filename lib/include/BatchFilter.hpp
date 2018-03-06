@@ -26,8 +26,7 @@ protected:
 		const std::vector<double> & T_obs,
 		const std::vector<arma::vec> & X_bar,
 		std::vector<arma::vec> & y_bar,
-		bool & has_converged,
-		const arma::mat & R);
+		bool & has_converged);
 
 
 	void compute_reference_state_history(

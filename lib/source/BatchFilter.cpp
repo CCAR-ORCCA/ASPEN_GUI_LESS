@@ -48,6 +48,7 @@ int  BatchFilter::run(
 	std::vector<arma::vec> Y_bar;
 	std::vector<arma::vec> y_bar;
 
+
 	arma::mat H;
 
 	arma::mat info_mat;
@@ -59,9 +60,6 @@ int  BatchFilter::run(
 
 	// The filter is initialized
 	X_bar.push_back(X_bar_0);
-	arma::mat W = arma::inv(R);
-
-	std::cout << " W: " << W << std::endl;
 
 	if (this -> info_mat_bar_0.n_cols == 0 && this -> info_mat_bar_0.n_rows == 0){
 		this -> info_mat_bar_0 = arma::zeros<arma::mat>(X_bar_0.n_rows,X_bar_0.n_rows);
@@ -94,11 +92,7 @@ int  BatchFilter::run(
 		#endif
 
 		// The prefit residuals are computed
-		this -> compute_prefit_residuals(T_obs,
-			X_bar,
-			y_bar,
-			has_converged
-			,R);
+		this -> compute_prefit_residuals(T_obs,X_bar,y_bar,has_converged);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Done computing prefit residuals" << std::endl;
@@ -155,18 +149,12 @@ int  BatchFilter::run(
 				continue;
 			}
 
+			// H has already been pre-multiplied by the corresponding gains
+			H = this -> estimate_jacobian_observations_fun(T_obs[p], X_bar[p] ,this -> args) * stm[p];
 
-			H = this -> estimate_jacobian_observations_fun(T_obs[p], X_bar[p] ,
-				this -> args) * stm[p];
-
-			if (W.n_rows > 1){
-				info_mat += H.t() * W * H;
-				normal_mat += H.t() * W * y_bar[p];
-			}
-			else{
-				info_mat += H.t() * W(0,0) * H;
-				normal_mat += H.t() * W(0,0) * y_bar[p];
-			}
+			info_mat += H.t() * H;
+			normal_mat += H.t() * y_bar[p];
+			
 		}
 
 
@@ -217,8 +205,7 @@ void BatchFilter::compute_prefit_residuals(
 	const std::vector<double> & T_obs,
 	const std::vector<arma::vec> & X_bar,
 	std::vector<arma::vec> & y_bar,
-	bool & has_converged,
-	const arma::mat & R){
+	bool & has_converged){
 
 	// The previous residuals are discarded
 	y_bar.clear();
@@ -229,8 +216,6 @@ void BatchFilter::compute_prefit_residuals(
 
 		arma::vec true_obs = this -> true_obs_history[p];
 		arma::vec computed_obs = this -> estimate_observation_fun(T_obs[p], X_bar[p] ,this -> args);
-
-		
 		
 		// Potentials nan are looked for and turned into zeros
 		// the corresponding row in H will be set to zero
@@ -254,13 +239,9 @@ void BatchFilter::compute_prefit_residuals(
 
 	}
 
-	// The convergence is checked. 
-	if (rms_res < 1.1 * std::sqrt(R(0,0))){
-		has_converged = true;
-	}
-	else{
-		has_converged = false;
-	}
+	
+	has_converged = false;
+	
 
 }
 

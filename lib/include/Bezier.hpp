@@ -78,6 +78,7 @@ public:
 	void elevate_degree();
 
 
+
 	
 	/**
 	Evaluates the bezier patch at the barycentric 
@@ -169,6 +170,22 @@ public:
 
 
 
+
+	/**
+	Returns the 3x3 covariance matrix
+	tracking the uncertainty in the location of
+	a surface point given uncertainty in the patch's control
+	points using an alternative formulation
+	@param u mean of first coordinate
+	@param v mean of second coordinate
+	@param dir direction of ray
+	of the control points
+	@return 3x3 covariance
+	*/
+	arma::mat covariance_surface_point(
+		const double u,
+		const double v,
+		const arma::vec & dir);
 
 	/**
 	Returns the 3x3 covariance matrix

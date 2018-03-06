@@ -26,7 +26,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
 
 
-
 	// Setting the small body to its inertial attitude. This should not affect the 
 	// measurements at all
 	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN_true);
@@ -41,11 +40,9 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	arma::vec ranges = arma::vec(focal_plane -> size());
 	// lidar -> save("pc_true.obj");
 
-	lidar -> save("focal_plane_true_" + std::to_string(int(t)) + ".txt",true);
+	// lidar -> save("focal_plane_true_" + std::to_string(int(t)) + ".txt",true);
 
-		
-
-
+	
 
 
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
@@ -89,7 +86,7 @@ arma::vec Observations::obs_lidar_range_computed(
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	lidar -> save("pc_bezier.obj");
+	// lidar -> save("pc_bezier.obj");
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}
@@ -105,7 +102,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
-	
+	double alpha = 1;
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
 		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
@@ -121,9 +118,14 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				double u_t, v_t;
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				n = bezier -> get_normal(u_t,v_t);
+
+				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
+
+
+				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
 			}
 
-			H.row(i) = - n.t() / arma::dot(n,u);
+			H.row(i) = - n.t() / arma::dot(n,u) * alpha;
 		}
 
 	}
@@ -134,71 +136,18 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 
 
-arma::vec Observations::obs_long_lat(double t,const arma::vec & x, const Args & args){
-
-	arma::vec X = {1,0,0};
-	arma::vec Y = {0,1,0};
-	arma::vec Z = {0,0,1};
-	arma::mat XY = {{1,0,0},
-	{0,1,0},
-	{0,0,0}};
-
-	arma::vec long_lat(2);
-
-	arma::vec coords_station = args.get_coords_station();
-	arma::vec omega = args.get_constant_omega();
-	arma::mat DCM = RBK::M1(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
-	arma::vec pos_station = {args.get_ref_radius(),0,0};
-	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
-
-	long_lat(0) = std::atan2(arma::dot(Y, rho),
-		arma::dot(X, rho));
-
-	long_lat(1) = std::atan2(arma::dot(Z, rho),
-		std::sqrt(arma::dot(rho, XY * rho)));
-
-	return long_lat;
-}
-
-arma::mat Observations::obs_jac_long_lat(double t,const arma::vec & x, const Args & args){
-
-	arma::vec X = {1,0,0};
-	arma::vec Y = {0,1,0};
-	arma::vec Z = {0,0,1};
-	arma::mat XY = {{1,0,0},
-	{0,1,0},
-	{0,0,0}};
-
-	arma::vec coords_station = args.get_coords_station();
-	arma::vec omega = args.get_constant_omega();
-	arma::mat DCM = RBK::M1(coords_station(1)) * RBK::M3(coords_station(0) + t * omega(2)) ;
-	arma::vec pos_station = {args.get_ref_radius(),0,0};
-	arma::vec rho = x.rows(0,2) - DCM.t() * pos_station;
-
-	arma::mat jacobian = arma::zeros<arma::mat>(2,x.n_rows);
-
-	jacobian.row(0).cols(0,2) = (rho.t() * (X * Y.t() - Y * X.t())
-		/arma::dot(rho, XY * rho));
-
-	jacobian.row(1).cols(0,2) = std::sqrt(arma::dot(rho, XY * rho)) / arma::dot(rho,rho) * Z.t() * (arma::eye<arma::mat>(3,3)
-		- rho * rho.t() * XY / arma::dot(rho, XY * rho));
-
-	return jacobian;
-
-}
 
 arma::vec Observations::obs_pos_ekf_computed(double t,const arma::vec & x,const Args & args){
 	return x.rows(0,2);
+
 }
 
 
 arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Args & args){
 
-
 	auto lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	unsigned int N_mes = focal_plane -> size();
-
 	
 	// args should hold
 	// mrp_BN_estimated : estimated small body attitude;

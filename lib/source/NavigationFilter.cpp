@@ -119,16 +119,13 @@ int NavigationFilter::run(
 
 
 
-			arma::vec Y_true_from_lidar = this -> true_observation_fun(
-				T_obs[0],this -> true_state_history[0],this -> args);
+			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],this -> true_state_history[0],this -> args);
 
 				// The prefit residual are computed
-			auto y_bar = this -> compute_residual(0,X_hat,
-				Y_true_from_lidar);
+			auto y_bar = this -> compute_residual(0,X_hat,Y_true_from_lidar);
 
 				// The measurement update is performed
-			this -> measurement_update(0,X_hat, P_hat,
-				y_bar,*this -> args.get_lidar_position_covariance_ptr());
+			this -> measurement_update(0,X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
 
 				// The postfit residual are computed 
 			auto y_hat = this -> compute_residual(0,X_hat,

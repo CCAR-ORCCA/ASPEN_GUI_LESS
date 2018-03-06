@@ -979,7 +979,7 @@ arma::mat Bezier::covariance_surface_point(
 	const double u,
 	const double v,
 	const arma::vec & dir,
-	const arma::mat & P_X){
+	const arma::mat & P_X ){
 
 	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
 	arma::mat AAA = A * arma::inv(A .t() * A);
@@ -993,10 +993,41 @@ arma::mat Bezier::covariance_surface_point(
 		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
 	}
 
+
 	arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
 	arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
-
+	
+	
 	return J.t() * P_X * J;
+	
+
+
+}
+
+
+arma::mat Bezier::covariance_surface_point(
+	const double u,
+	const double v,
+	const arma::vec & dir){
+
+	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
+	arma::mat AAA = A * arma::inv(A .t() * A);
+	arma::mat M = arma::zeros<arma::mat>(3 * this -> control_points.size(),3);
+	arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
+	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+
+		auto indices = this -> forw_table[k];
+
+		Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
+	}
+
+
+	arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
+	arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
+	
+	return J.t() * this -> P_X * J;
+	
 
 
 }

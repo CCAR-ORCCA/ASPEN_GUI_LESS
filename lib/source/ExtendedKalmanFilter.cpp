@@ -216,9 +216,9 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;
 	
-
 	// The covariance is updated
 	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
 	P_bar = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
 
 }
+
