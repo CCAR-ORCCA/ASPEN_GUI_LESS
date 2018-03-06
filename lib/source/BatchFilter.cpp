@@ -26,6 +26,9 @@ int  BatchFilter::run(
 	std::cout << "-- Computing true observations" << std::endl;
 	#endif
 
+	
+	this -> true_state_history.push_back(X0_true);
+
 	// The true, noisy observations are computed
 	this -> compute_true_observations(T_obs,R);
 
