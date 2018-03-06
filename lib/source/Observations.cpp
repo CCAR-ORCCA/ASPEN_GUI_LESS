@@ -218,7 +218,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	times.push_back(t);
 
 
-	arma::mat R = std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1);
+	arma::mat R = arma::ones<arma::mat>(1,1);
 
 	arma::vec x_bar_bar = x.rows(0,2);
 	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,R,arma::zeros<arma::mat>(1,1));
