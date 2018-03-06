@@ -268,10 +268,8 @@ int main() {
 
 	arma::mat Q = std::pow(1e-12,2) * arma::eye<arma::mat>(3,3);
 
-	arma::mat R = arma::ones<arma::mat>(1,1);
-
 	start = std::chrono::system_clock::now();
-	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,R,Q);
+	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
 	end = std::chrono::system_clock::now();
 
 	elapsed_seconds = end-start;

@@ -17,7 +17,6 @@ public:
 		const arma::mat & R,
 		const arma::mat & Q) ;
 
-	
 
 protected:
 
@@ -25,7 +24,6 @@ protected:
 	// 	arma::vec & X_hat, arma::mat & P_hat) const;
 	// virtual void measurement_update(double t, arma::vec & X_bar, arma::mat & P_bar,
 	// 	const arma::vec & res,const arma::mat & R) const;
-
 
 	void compute_true_state(
 		std::vector<double> T_obs,
@@ -42,6 +40,11 @@ protected:
 		const arma::vec & X0_estimated_small_body,
 		const std::vector<double> & T_obs,
 		bool save = false);
+
+
+
+	void set_states(const arma::vec & X_hat,unsigned int t);
+
 	
 };
 #endif

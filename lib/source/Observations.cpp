@@ -121,9 +121,9 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 
-				std::cout << "alpha : " << alpha << std::endl;
 				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
 			}
+			std::cout << "alpha : " << alpha << std::endl;
 
 			H.row(i) = - n.t() / arma::dot(n,u) * alpha;
 		}
@@ -167,10 +167,8 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	times.push_back(t);
 
 
-	arma::mat R = arma::ones<arma::mat>(1,1);
-
 	arma::vec x_bar_bar = x.rows(0,2);
-	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,R,arma::zeros<arma::mat>(1,1));
+	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
 
 
 	// The covariance in the position is extracted here

@@ -101,24 +101,12 @@ int NavigationFilter::run(
 		#endif
 
 
-
 		// If true, there is an observation at the initial time
 		if (t == 0 && T_obs[0] == 0){
 
+			this -> set_states(X_hat,t);
 
-			dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
-			dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
-				this -> true_state_history[t].rows(3,5)));
-			dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
-			arma::inplace_trans(dcm_LB);
-
-			(*args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
-			(*args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
-			(*args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
-			(*args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
-
-
-
+			// 
 			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],this -> true_state_history[0],this -> args);
 
 				// The prefit residual are computed
@@ -128,8 +116,7 @@ int NavigationFilter::run(
 			this -> measurement_update(0,X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
 
 				// The postfit residual are computed 
-			auto y_hat = this -> compute_residual(0,X_hat,
-				Y_true_from_lidar);
+			auto y_hat = this -> compute_residual(0,X_hat,Y_true_from_lidar);
 
 				// STORE RESULTS 
 			this -> estimated_state_history.push_back(X_hat);
@@ -146,41 +133,20 @@ int NavigationFilter::run(
 		// The a-priori is propagated until the next timestep
 		this -> time_update(T_obs[t],T_obs[t + 1],X_hat,P_hat);
 
-
 		// SNC is applied 
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
+		this -> set_states(X_hat,t + 1);
 
+		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],this -> true_state_history[t + 1],this -> args);
 
-		dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t + 1].subvec(0,2));
-		dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
-			this -> true_state_history[t + 1].subvec(3,5)));
-		dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
-		arma::inplace_trans(dcm_LB);
+		// The prefit residual is computed
+		auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
+		// The measurement update is performed
+		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
 
-		(*args.get_mrp_BN_true()) = this -> true_state_history[t + 1].subvec(6,8);
-		(*args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
-		(*args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
-		(*args.get_true_pos()) = this -> true_state_history[t + 1].subvec(0,2);
-
-
-
-		arma::vec Y_true_from_lidar = this -> true_observation_fun(
-			T_obs[t + 1],this -> true_state_history[t + 1],
-			this -> args);
-
-				// The prefit residual is computed
-		auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,
-			Y_true_from_lidar);
-
-				// The measurement update is performed
-		this -> measurement_update(T_obs[t+1],X_hat, P_hat,
-			y_bar,*this -> args.get_lidar_position_covariance_ptr());
-
-				// The postfit residual is computed 
-		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,
-			Y_true_from_lidar);
-
+		// The postfit residual is computed 
+		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
 			// 
 		this -> estimated_state_history.push_back(X_hat);
@@ -242,4 +208,24 @@ void NavigationFilter::compute_estimated_small_body_attitude(std::vector<arma::v
 	}
 
 }
+
+void NavigationFilter::set_states(const arma::vec & X_hat,unsigned int t){
+	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
+
+	dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
+	dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
+		this -> true_state_history[t].rows(3,5)));
+	dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
+	arma::inplace_trans(dcm_LB);
+
+	(*args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
+	(*args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
+	(*args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
+	(*args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
+
+}
+
+
+
+
 
