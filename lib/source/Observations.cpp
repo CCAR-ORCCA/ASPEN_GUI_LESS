@@ -9,6 +9,8 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	const arma::vec & x, 
 	const Args & args){
 
+	std::cout << " collecting true lidar obs" << std::endl;
+
 	arma::vec mrp_BN_true = *args.get_mrp_BN_true();
 	arma::vec mrp_LN_true = *args.get_mrp_LN_true();
 

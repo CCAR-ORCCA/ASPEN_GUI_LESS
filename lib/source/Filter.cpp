@@ -198,37 +198,33 @@ void Filter::compute_true_observations(const std::vector<double> & T_obs,
 	const arma::mat & R_prop ){
 
 	this -> true_obs_history.clear();
-
-	for (unsigned int i = 0; i < T_obs.size(); ++i){
-
-		arma::vec Y = this -> true_observation_fun(T_obs[i],this -> true_state_history[i],this -> args);
-
-		if (R_prop.max() != 0){
-			arma::mat S_prop =  arma::chol( R_prop, "lower" ) ;
-
-			arma::mat prop_noise_mat = arma::diagmat(S_prop * arma::randn<arma::vec>( Y.n_rows ));
-
-			Y += prop_noise_mat * Y;
-		}
+	assert(T_obs.size() == 1);
 
 
-		if (R.n_rows == 1){
-			Y += std::sqrt(R(0,0)) * arma::randn<arma::vec>( Y.n_rows ) ;
-		}
-		else{
+	arma::vec Y = this -> true_observation_fun(T_obs[0],this -> true_state_history[0],this -> args);
 
-			arma::mat S =  arma::chol( R, "lower" ) ;
+	if (R_prop.max() != 0){
+		arma::mat S_prop =  arma::chol( R_prop, "lower" ) ;
 
-			Y += S * arma::randn<arma::vec>( Y.n_rows ) ;
+		arma::mat prop_noise_mat = arma::diagmat(S_prop * arma::randn<arma::vec>( Y.n_rows ));
 
-		}
-		this -> true_obs_history.push_back(Y);
-
-
-
+		Y += prop_noise_mat * Y;
 	}
 
 
+	if (R.n_rows == 1){
+		Y += std::sqrt(R(0,0)) * arma::randn<arma::vec>( Y.n_rows ) ;
+	}
+
+	else{
+
+		arma::mat S =  arma::chol( R, "lower" ) ;
+
+		Y += S * arma::randn<arma::vec>( Y.n_rows ) ;
+
+	}
+
+	this -> true_obs_history.push_back(Y);
 
 }
 
