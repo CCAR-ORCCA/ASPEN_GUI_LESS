@@ -203,18 +203,17 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray,ShapeModelBezier * shape_m
 							Bezier * patch = dynamic_cast<Bezier *> (*el);
 
 							if(ray -> single_patch_ray_casting(patch,u,v)){
-								hit_facet = true;
+								return true;
 							};
 
 
 						}
 
-						if (!hit_facet){
+						// If reaching this point, the ray did not hit anything
+						ray -> set_true_range(std::numeric_limits<double>::infinity());
+						ray -> set_hit_element(nullptr);
 
-							ray -> set_true_range(std::numeric_limits<double>::infinity());
-							ray -> set_hit_element(nullptr);
-
-						}
+						
 
 					}
 				}
