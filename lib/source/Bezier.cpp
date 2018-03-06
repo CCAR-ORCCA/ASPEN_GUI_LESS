@@ -7,6 +7,8 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 	double n = (-3 + std::sqrt(9 - 8 * (1 - control_points.size() )))/2;
 	double intpart;
+	this -> P_X = 1e10 * arma::eye<arma::mat>(3 * this -> control_points.size(),3 * this -> control_points.size());
+
 
 	if (modf(n,&intpart) == 0){
 		this -> n = (unsigned int)(n);
@@ -18,6 +20,7 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 	this -> construct_index_tables();
 
 	this -> update();
+
 
 }
 
@@ -422,8 +425,9 @@ void Bezier::elevate_degree(){
 
 	this -> new_points.clear();
 
-	this -> info_mat_ptr = nullptr;
-	this -> dX_bar_ptr = nullptr;
+
+	this -> P_X = 1e10 * arma::eye<arma::mat>(3 * this -> control_points.size(),
+		3 * this -> control_points.size());
 
 
 }
@@ -786,7 +790,6 @@ void Bezier::train_patch_covariance(){
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 	unsigned int N_iter = 10 ;
-	this -> P_X = arma::mat(3 * N_C,3 * N_C);
 
 
 	// The initial guess for the covariance is computed.
@@ -829,7 +832,6 @@ void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 	unsigned int N_iter = 10 ;
-	this -> P_X = arma::mat(3 * N_C,3 * N_C);
 
 
 	// The initial guess for the covariance is computed.
@@ -982,7 +984,15 @@ arma::mat Bezier::covariance_surface_point(
 	const arma::mat & P_X ){
 
 	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
-	arma::mat AAA = A * arma::inv(A .t() * A);
+	arma::mat AAA;
+
+	try{
+		AAA = A * arma::inv(A .t() * A);
+	}
+	catch (std::runtime_error & e){
+		AAA = 1e10 * arma::ones<arma::mat>(3,2);
+	}
+
 	arma::mat M = arma::zeros<arma::mat>(3 * this -> control_points.size(),3);
 	arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
 	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
@@ -1011,21 +1021,30 @@ arma::mat Bezier::covariance_surface_point(
 	const arma::vec & dir){
 
 	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
-	arma::mat AAA = A * arma::inv(A .t() * A);
-	arma::mat M = arma::zeros<arma::mat>(3 * this -> control_points.size(),3);
-	arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
-	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
+	arma::mat AAA;
 
+	try{
+		AAA = A * arma::inv(A .t() * A);
+	}
+	catch (std::runtime_error & e){
+		AAA = 1e10 * arma::ones<arma::mat>(3,2);
+	}
+
+	arma::mat M = arma::zeros<arma::mat>(3 * this -> control_points.size(),3);
+
+	arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
+	
+	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
 		auto indices = this -> forw_table[k];
 
 		Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
 		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
 	}
 
-
 	arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
 	arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
 	
+
 	return J.t() * this -> P_X * J;
 	
 

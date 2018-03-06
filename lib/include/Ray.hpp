@@ -42,7 +42,12 @@ public:
 	*/
 	double get_true_range() const ;
 
-	
+	/**
+	Set hit element
+	@param hit_element hit element
+	*/
+	void set_hit_element(Element * element) ;
+
 
 	/**
 	Sets the true range to the prescribed value

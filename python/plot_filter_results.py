@@ -55,7 +55,7 @@ def plot_state_error(path = "",save = False):
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
     P = np.loadtxt(path + "covariances.txt")
-    T_obs = np.loadtxt(path + "T_obs.txt") / 60
+    T_obs = np.loadtxt(path + "nav_times.txt") / 60
 
 
     sd = []
@@ -120,4 +120,4 @@ def plot_state_error(path = "",save = False):
     else:
         plt.savefig("velocity_error.pdf")
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/build/",save = False)
+plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",save = False)

@@ -56,11 +56,6 @@ public:
 	*/	
 	std::vector<std::shared_ptr<ControlPoint > >  * get_control_points();
 
-
-	void initialize_info_mat();
-	void initialize_dX_bar();
-
-	std::shared_ptr<arma::vec> get_dX_bar_ptr() const;
 	
 
 	/**
@@ -69,7 +64,6 @@ public:
 	*/
 	double get_area() const;
 
-	std::shared_ptr<arma::mat> get_info_mat_ptr() const;
 
 protected:
 
@@ -80,8 +74,6 @@ protected:
 
 	std::vector<std::shared_ptr<ControlPoint > >  control_points ;
 	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
-	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
-	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
 
 	
 	arma::vec normal;

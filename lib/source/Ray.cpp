@@ -71,6 +71,12 @@ Element * Ray::get_hit_element() {
 	return this -> hit_element;
 }
 
+
+void Ray::set_hit_element(Element * element) {
+	this -> hit_element = element;
+}
+
+
 double Ray::get_true_range() const {
 	return this -> true_range;
 }

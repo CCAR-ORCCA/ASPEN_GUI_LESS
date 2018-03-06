@@ -106,33 +106,28 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 	double alpha = 1;
-	
-	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
+	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
 
 			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
 			arma::vec n;
 
 			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
-			
+
 			if (bezier == nullptr){
 				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
 			}	
 			else{
+
 				double u_t, v_t;
+
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
-				std::cout << u_t << " " << v_t << std::endl;
-				std::cout << u.t() << std::endl;
-
+				
 				n = bezier -> get_normal(u_t,v_t);
-				std::cout << n.t() << std::endl;
-
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
-				std::cout << P << std::endl;
+				
 				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
-				std::cout << "alpha : " << alpha << std::endl;
-
 
 			}
 
