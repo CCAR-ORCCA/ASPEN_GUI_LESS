@@ -9,16 +9,12 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	const arma::vec & x, 
 	const Args & args){
 
-	std::cout << " collecting true lidar obs" << std::endl;
-
 	arma::vec mrp_BN_true = *args.get_mrp_BN_true();
 	arma::vec mrp_LN_true = *args.get_mrp_LN_true();
-	std::cout << " got mrps" << std::endl;
 
 
 	// Position of spacecraft relative to small body
 	arma::vec lidar_pos = x.rows(0,2);
-	std::cout << lidar_pos.t() << std::endl;
 
 
 	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
@@ -27,7 +23,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	Lidar *  lidar = args.get_lidar();
 	FrameGraph *  frame_graph = args.get_frame_graph();
 
-	std::cout << "querying lidar" << std::endl;
 
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
@@ -40,7 +35,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
 	lidar -> send_flash(args.get_true_shape_model(),false);
-	std::cout << "sent flash" << std::endl;
 
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
@@ -119,7 +113,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
 			arma::vec n;
 
-			Bezier * bezier = dynamic_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
+			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
 			if (bezier == nullptr){
 				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
 			}	
@@ -131,8 +125,12 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 
 				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
+				std::cout << "alpha : " << alpha << std::endl;
+				std::cout << u_t << " " << v_t << std::endl;
+				std::cout << u.t() << std::endl;
+
+
 			}
-			std::cout << "alpha : " << alpha << std::endl;
 
 			H.row(i) = - n.t() / arma::dot(n,u) * alpha;
 		}
