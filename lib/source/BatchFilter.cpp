@@ -61,6 +61,8 @@ int  BatchFilter::run(
 	X_bar.push_back(X_bar_0);
 	arma::mat W = arma::inv(R);
 
+	std::cout << " W: " << W << std::endl;
+
 	if (this -> info_mat_bar_0.n_cols == 0 && this -> info_mat_bar_0.n_rows == 0){
 		this -> info_mat_bar_0 = arma::zeros<arma::mat>(X_bar_0.n_rows,X_bar_0.n_rows);
 	}
