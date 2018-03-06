@@ -26,7 +26,7 @@ int  BatchFilter::run(
 	std::cout << "-- Computing true observations" << std::endl;
 	#endif
 
-	
+
 	this -> true_state_history.push_back(X0_true);
 
 	// The true, noisy observations are computed
@@ -124,8 +124,6 @@ int  BatchFilter::run(
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Assembling normal equations" << std::endl;
 		#endif
-
-
 
 		// H has already been pre-multiplied by the corresponding gains
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);

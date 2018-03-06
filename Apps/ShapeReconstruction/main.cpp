@@ -60,7 +60,7 @@
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
 // Spin rate (hours)
-#define SPIN_RATE 12 
+#define SPIN_RATE 12.
 
 // Density (kg/m^3)
 #define DENSITY 1900
