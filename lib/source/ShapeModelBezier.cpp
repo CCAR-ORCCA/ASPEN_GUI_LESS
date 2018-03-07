@@ -582,6 +582,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 						vertices.push_back(v2);
 
 						std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+						facet -> set_super_element(this -> get_elements() -> at(i).get());
 						facets.push_back(facet);
 					}
 
@@ -600,6 +601,8 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 
 						std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+						facet -> set_super_element(this -> get_elements() -> at(i).get());
+						
 						facets.push_back(facet);
 
 					}

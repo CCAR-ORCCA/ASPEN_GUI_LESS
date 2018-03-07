@@ -117,8 +117,9 @@ public:
 	- intersect found: hit_facet and range have valid values
 	Rewrites previously found range and intersect if new range is less
 	@param hit true if the facet was hit
+	@param store sets the internal state of the ray to reflect the impacted surface if true
 	*/
-	bool single_facet_ray_casting(Facet * facet) ;
+	bool single_facet_ray_casting(Facet * facet,bool store = true) ;
 
 
 	/*
@@ -135,8 +136,11 @@ public:
 	bool single_patch_ray_casting(Bezier * patch,double & u, double & v) ;
 
 	Element * get_guess() const;
+	Element * get_super_element() const;
+
 	void set_guess (Element * guess);
 
+	arma::vec get_KD_impact() const;
 
 	/**
 	Accessor to lidar
@@ -167,14 +171,16 @@ protected:
 	unsigned int row_index;
 	unsigned int col_index;
 
-	double true_range =  std::numeric_limits<double>::infinity();
 	Element * hit_element = nullptr;
+	Element * super_element = nullptr;
 	Element * guess;
 
 	double incidence_angle;
-
 	double u;
 	double v;
+	double true_range =  std::numeric_limits<double>::infinity();
+
+	arma::vec KD_impact;
 
 
 

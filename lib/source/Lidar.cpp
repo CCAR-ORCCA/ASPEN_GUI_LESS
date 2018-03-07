@@ -97,9 +97,6 @@ double Lidar::get_size_y() const {
 void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 
 
-
-
-
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
 
@@ -243,20 +240,21 @@ void Lidar::save(std::string path,bool conserve_format) {
 		unsigned int res = std::sqrt(this -> focal_plane.size());
 		
 		arma::mat formatted_focal_plane = arma::zeros<arma::mat>(res,res);
+		arma::mat formatted_focal_plane_incidence = arma::zeros<arma::mat>(res,res);
+
 
 		for (unsigned int z_index = 0; z_index < res; ++z_index){
 			for (unsigned int y_index = 0; y_index < res; ++y_index){
 
 
 				formatted_focal_plane(res - y_index - 1,z_index) = this -> focal_plane[y_index + z_index * res] -> get_true_range();
+				formatted_focal_plane_incidence(res - y_index - 1,z_index) = this -> focal_plane[y_index + z_index * res] -> get_incidence_angle();
 
 			}
 		}
 
-		formatted_focal_plane.save(path,arma::raw_ascii);
-
-
-
+		formatted_focal_plane.save(path + ".txt",arma::raw_ascii);
+		formatted_focal_plane_incidence.save(path + "_incidence.txt",arma::raw_ascii);
 
 	}
 	else{

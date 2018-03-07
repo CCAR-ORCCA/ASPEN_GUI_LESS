@@ -118,7 +118,7 @@ public:
 	@param j second index
 	@return pointer to control point
 	*/	
-	std::shared_ptr<ControlPoint> get_control_point(unsigned int i, unsigned int j);
+	std::shared_ptr<ControlPoint> get_control_point(unsigned int i, unsigned int j) const;
 
 	/**
 	Returns the tuple of local indices (i,j,k) of a control point within a bezier patch

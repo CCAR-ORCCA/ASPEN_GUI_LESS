@@ -34,3 +34,10 @@ void Element::update() {
 }
 
 
+Element * Element::get_super_element() const{
+	return this -> super_element;
+}
+
+void Element::set_super_element(Element * super_element){
+	this -> super_element = super_element;
+}

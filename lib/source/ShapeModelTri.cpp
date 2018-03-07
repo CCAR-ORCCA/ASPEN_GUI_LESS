@@ -48,12 +48,8 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
 
 bool ShapeModelTri::ray_trace(Ray * ray){
-	bool hit = false;
-	
-	hit = this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
-	
 
-	return hit;
+	return this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
 }
 
 

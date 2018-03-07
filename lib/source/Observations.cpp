@@ -34,6 +34,8 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
+	
+
 	lidar -> send_flash(args.get_true_shape_model(),false);
 
 
@@ -41,11 +43,10 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	lidar -> save("pc_true.txt",true);
+	lidar -> save("../output/lidar/pc_true",true);
 
 
 	
-
 
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
@@ -81,6 +82,7 @@ arma::vec Observations::obs_lidar_range_computed(
 	// measurements at all
 	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN_estimated);
 
+
 	// Getting the true observations (noise is added)
 	lidar -> send_flash(args.get_estimated_shape_model(),false);
 
@@ -88,7 +90,7 @@ arma::vec Observations::obs_lidar_range_computed(
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	lidar -> save("pc_bezier.txt",true);
+	lidar -> save("../output/lidar/pc_bezier",true);
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}

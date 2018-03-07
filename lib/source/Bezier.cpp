@@ -24,18 +24,16 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 }
 
-std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j){
+std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j) const{
 
-	const unsigned int degree = this -> n;
-	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,degree - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
 	return this -> control_points[this -> rev_table.at(indices)];
 }
 
 
 
 arma::vec Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) const{
-	const unsigned int degree = this -> n;
-	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,degree - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
 
 	return this -> control_points[this -> rev_table.at(indices)] -> get_coordinates();
 }
@@ -439,9 +437,56 @@ unsigned int Bezier::get_degree() const{
 
 
 std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
-	std::set < Element * > neighbors;
-	throw(std::runtime_error("Bezier::get_neighbors is not implemented"));
+
+	std::set< Element * > neighbors;
+
+	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
+	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
+	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
+		// Returns all facets sharing control_points with $this
+
+	if (all_neighbors == true) {
+
+		auto V0_owners  = V0 -> get_owning_elements();
+		auto V1_owners  = V1 -> get_owning_elements();
+		auto V2_owners  = V2 -> get_owning_elements();
+
+
+
+		for (auto facet_it = V0_owners.begin(); facet_it != V0_owners.end(); ++facet_it) {
+			neighbors.insert(*facet_it);
+		}
+
+		for (auto facet_it =V1_owners.begin();facet_it != V1_owners.end(); ++facet_it) {
+			neighbors.insert(*facet_it);
+		}
+
+		for (auto facet_it = V2_owners.begin();facet_it != V2_owners.end(); ++facet_it) {
+			neighbors.insert(*facet_it);
+		}
+
+	}
+
+	else {
+		// Returns facets sharing edges with $this
+		// std::set<Element * > neighboring_facets_e0 = V0 -> common_facets(V1);
+		// std::set<Element * > neighboring_facets_e1 = V1 -> common_facets(V2);
+		// std::set<Element * > neighboring_facets_e2 = V2 -> common_facets(V0);
+
+		// for (auto it = neighboring_facets_e0.begin(); it != neighboring_facets_e0.end(); ++it) {
+		// 	neighbors.insert(*it);
+		// }
+
+		// for (auto it = neighboring_facets_e1.begin(); it != neighboring_facets_e1.end(); ++it) {
+		// 	neighbors.insert(*it);
+		// }
+
+		// for (auto it = neighboring_facets_e2.begin(); it != neighboring_facets_e2.end(); ++it) {
+		// 	neighbors.insert(*it);
+		// }
+	}
 	return neighbors;
+
 }
 
 

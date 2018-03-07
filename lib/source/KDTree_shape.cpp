@@ -148,13 +148,14 @@ return node;
 }
 
 
-bool KDTree_shape::hit(KDTree_shape * node, Ray * ray,ShapeModelBezier * shape_model_bezier) const {
+bool KDTree_shape::hit(KDTree_shape * node,
+	Ray * ray,
+	ShapeModelBezier * shape_model_bezier) const {
+	
 
 	// Check if the ray intersects the bounding box of the given node
 
 	if (node -> hit_bbox(ray)) {
-
-		bool hit_facet = false;
 
 		// If there are triangles in the child leaves, those are checked
 		// for intersect. First, the method checks whether it is still on a branch
@@ -169,61 +170,53 @@ bool KDTree_shape::hit(KDTree_shape * node, Ray * ray,ShapeModelBezier * shape_m
 
 		else {
 
+			bool hit_element = false;
+
 			// If not, the current node is a leaf
 			// Note that all elements in the nodes must be searched
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 				// If there is a hit
+				if (shape_model_bezier == nullptr){
+					hit_element = ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()));
+				}
 
-				if (ray -> single_facet_ray_casting( dynamic_cast<Facet * >(node -> elements[i].get()))) {
-					if (shape_model_bezier == nullptr){
-						hit_facet = true;
-					}
-					else{
+				else{
 
-						// The hit point is refined
-						// The impact point must be expressed in the target's reference frame since this is where
-						// the control mesh KD tree is defined
-						arma::vec impact_point_target_frame = ray -> get_impact_point_target_frame();
-
-						// The closest control point to the impact point is found
-						double distance = std::numeric_limits<double>::infinity();
-						std::shared_ptr<ControlPoint> closest_control_point;
-
-						shape_model_bezier -> get_KDTree_control_points() -> closest_point_search(impact_point_target_frame,
-							shape_model_bezier -> get_KDTree_control_points(),
-							closest_control_point,
-							distance);
-
-						auto owning_elements = closest_control_point -> get_owning_elements();
-
-						// The patches that this control point belongs to are searched for the real intersect
+					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
+						
 						double u,v;
-						for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
-							Bezier * patch = dynamic_cast<Bezier *> (*el);
+						Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
 
-							if(ray -> single_patch_ray_casting(patch,u,v)){
-								return true;
-							};
+						hit_element = ray -> single_patch_ray_casting(patch,u,v);
+						
+						if (!hit_element){
+
+							auto neighbors = patch -> get_neighbors(true);
+
+							for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
+								Bezier * n_patch = static_cast<Bezier *>(*it);
+								if (ray -> single_patch_ray_casting(n_patch,u,v)){
+									hit_element = true;
+									break;
+								}
+
+
+							}
 
 
 						}
 
-						// If reaching this point, the ray did not hit anything
-						ray -> set_true_range(std::numeric_limits<double>::infinity());
-						ray -> set_hit_element(nullptr);
-
 						
-
 					}
 				}
 
 			}
-
-			return hit_facet;
+			return hit_element;
 
 		}
 	}
+
 	return false;
 
 }

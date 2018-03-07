@@ -9,8 +9,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64
-#define COL_RESOLUTION 64
+#define ROW_RESOLUTION 128
+#define COL_RESOLUTION 128
 
 #define ROW_FOV 20
 #define COL_FOV 20
@@ -51,13 +51,8 @@ int main() {
 	ShapeModelBezier estimated_shape_model("E", &frame_graph);
 
 	
-	ShapeModelImporter shape_io_truth(
-		"../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false);
-	
-	ShapeModelImporter shape_io_truth_bezier(
-		"../input/itokawa_64_scaled_aligned_bezier_2.b", 1, false);
-	
-	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, false);
+	ShapeModelImporter shape_io_truth("../input/itokawa_64_scaled_aligned.obj", 1, true);
+	ShapeModelImporter shape_io_guess("../input/fit_shape_aligned.b", 1, true);
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape();
@@ -67,11 +62,11 @@ int main() {
 	// shape_io_truth_bezier.load_bezier_shape_model(&estimated_shape_model);
 	shape_io_guess.load_bezier_shape_model(&estimated_shape_model);
 
-
 	estimated_shape_model.construct_kd_tree_shape();
-	true_shape_model.save("../output/shape_model/B.obj");
-	estimated_shape_model.save_to_obj("../output/shape_model/E.obj");
-
+	
+	// true_shape_model.save("../output/shape_model/B.obj");
+	// estimated_shape_model.save_to_obj("../output/shape_model/E.obj");
+ 
 
 	// Itokawa angular velocity
 	double omega = 2 * arma::datum::pi / (12 * 3600);

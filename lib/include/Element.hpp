@@ -57,6 +57,17 @@ public:
 	std::vector<std::shared_ptr<ControlPoint > >  * get_control_points();
 
 	
+	/**
+	Gets an eventual super element corresponding to the present element
+	@return super element
+	*/
+	Element * get_super_element() const;
+
+	/**
+	Sets an eventual super element corresponding to the present element
+	@param super_element super element to assign
+	*/
+	void set_super_element(Element * super_element);
 
 	/**
 	Return surface area of element
@@ -75,7 +86,7 @@ protected:
 	std::vector<std::shared_ptr<ControlPoint > >  control_points ;
 	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
 
-	
+	Element * super_element = nullptr;
 	arma::vec normal;
 	arma::vec center;
 

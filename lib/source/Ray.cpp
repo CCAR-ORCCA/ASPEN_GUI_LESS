@@ -145,11 +145,9 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 			+ arma::norm(arma::cross(H - P2, H - P0)) ));
 
 	// If true, the intersection point is inside the surface
-	if (std::abs(epsilon) < tol)
-		return true;
+	return (std::abs(epsilon) < tol);
 
-	else
-		return false;
+	
 
 }
 
@@ -179,7 +177,12 @@ arma::vec Ray::get_impact_point_target_frame() const {
 
 }
 
-bool Ray::single_facet_ray_casting(Facet * facet) {
+Element * Ray::get_super_element() const{
+	return this -> super_element;
+}
+
+
+bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
@@ -193,8 +196,8 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 	// potential intersection with this facet
 	if (t > 0) {
 		arma::vec H = *this -> direction_target_frame * t + *this -> origin_target_frame;
-
 		if (this -> intersection_inside(H, facet)) {
+
 
 			// Corresponds to range attenuation in 
 				// Amzajerdian, F., Hines, G. D., Roback, V. E., Petway, L. B., Barnes, B. W., Paul, F., … Bulyshev, A. (2015). Advancing Lidar Sensors Technologies for Next Generation Landing Missions (pp. 1–11). https://doi.org/10.2514/6.2015-0329
@@ -205,21 +208,25 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,n)));
 			double max_range = a * incidence_angle  + b;
 
-			if (this -> true_range > t ) {
-				this -> true_range = t;
-				this -> hit_element = facet;
-				this -> incidence_angle = incidence_angle;
+			if (store){
+				if (this -> true_range > t ) {
+					this -> true_range = t;
+					this -> hit_element = facet;
+					this -> incidence_angle = incidence_angle;
+				}
 			}
 
-			// if (this -> true_range > t && t < max_range) {
-			// 	this -> true_range = t;
-			// 	this -> hit_element = facet;
-			// 	this -> incidence_angle = incidence_angle;
-			// }
-
+			else{
+				if (this -> true_range < t){
+					return false;
+				}
+				this -> super_element = facet -> get_super_element();
+				this -> KD_impact = H;
+			}
 
 			return true;
 		}
+
 
 
 	}
@@ -228,6 +235,11 @@ bool Ray::single_facet_ray_casting(Facet * facet) {
 
 }
 
+arma::vec Ray::get_KD_impact() const{
+	return this -> KD_impact;
+}
+
+
 bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 
 	arma::vec S = *this -> origin_target_frame;
@@ -235,9 +247,16 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 	arma::mat u_tilde = RBK::tilde(dir);
 
 	// The ray caster iterates until a valid intersect is found
-	unsigned int N_iter_max = 10;
+	unsigned int N_iter_max = 20;
 
-	arma::vec chi = {1./3,1./3};
+	// The barycentric coordinates are initialized at a planar guess
+
+	arma::mat E(3,2);
+	E.col(0) = patch -> get_control_point_coordinates(patch -> get_degree(),0) - patch -> get_control_point_coordinates(0,0);
+	E.col(1) = patch -> get_control_point_coordinates(0,patch -> get_degree()) - patch -> get_control_point_coordinates(0,0);
+
+	arma::vec chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch -> get_control_point_coordinates(0,0)));
+
 	arma::vec dchi = arma::zeros<arma::vec>(2);
 
 	arma::mat H = arma::zeros<arma::mat>(3,2);
@@ -256,12 +275,20 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 		std::cout << "Iter: " << i << " Distance: " << distance << " (u,v): " << u_t << " " << v_t << std::endl;
 		#endif
 
+	
 
-		if (distance < 1e-8){
+
+
+		if (distance < 1e-5){
 
 			#if RAY_DEBUG
-			std::cout << "Converged. Checking" << std::endl;
+			std::cout << "Converged." << std::endl;
 			#endif
+
+			if (arma::dot(patch -> get_normal(u_t,v_t),dir) > 0){
+				return false;
+			}
+
 
 			if (u_t + v_t > 1. || u_t < 0. || v_t < 0. || u_t > 1. || v_t > 1.){
 
@@ -272,7 +299,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 				return false;
 			}
 
-			else if (this -> true_range > arma::norm(S - impact)){
+			if (this -> true_range > arma::norm(S - impact)){
 				this -> true_range = arma::norm(S - impact);
 				u = u_t;
 				v = v_t;
