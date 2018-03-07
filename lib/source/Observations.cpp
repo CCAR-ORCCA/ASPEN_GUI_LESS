@@ -41,9 +41,8 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	// lidar -> save("pc_true.obj");
+	lidar -> save("pc_true.txt",true);
 
-	// lidar -> save("focal_plane_true_" + std::to_string(int(t)) + ".txt",true);
 
 	
 
@@ -89,10 +88,11 @@ arma::vec Observations::obs_lidar_range_computed(
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	lidar -> save("pc_bezier.obj",true);
+	lidar -> save("pc_bezier.txt",true);
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}
+	throw;
 
 	
 
