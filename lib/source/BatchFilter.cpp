@@ -130,7 +130,7 @@ int  BatchFilter::run(
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
 		// H is divided by the number of effective measurements
-		H *= 1./ N_mes;
+		H *= 1./ std::sqrt(N_mes);
 
 
 
