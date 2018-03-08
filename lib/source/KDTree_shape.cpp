@@ -169,78 +169,7 @@ bool KDTree_shape::hit(KDTree_shape * node,
 		}
 
 		else {
-			// If not, the current node is a leaf
-			// Note that all elements in the nodes must be searched
-			// bool hit_element = false;
-
-			// If there is a hit
-			// if (shape_model_bezier == nullptr){
-
-			// 	for (unsigned int i = 0; i < node -> elements.size(); ++i) {
-
-			// 		if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()))){
-			// 			hit_element = true;
-			// 		}
-			// 	}
-			// }
-			// else{
-
-			// 	std::set<Element * > all_neighbors;
-			// 	std::set<Element * > missed_patches;
-
-
-			// 	for (unsigned int i = 0; i < node -> elements.size(); ++i) {
-
-			// 		// If there is a hit
-			// 		if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
-
-			// 			double u,v;
-			// 			Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
-
-			// 			if (ray -> single_patch_ray_casting(patch,u,v) ){
-			// 				hit_element = true;
-			// 			}
-						
-			// 			else if (!hit_element){
-			// 				auto neighbors = patch -> get_neighbors(true);
-							
-			// 				missed_patches.insert(patch);
-
-			// 				for (auto it = missed_patches.begin(); it != missed_patches.end(); ++it){
-			// 					neighbors.erase(*it);
-			// 				}
-
-			// 				all_neighbors.insert(neighbors.begin(),neighbors.end());
-
-			// 			}
-
-
-			// 		}
-
-			// 	}
-
-
-			// 	// The neighbors of the patches are checked if no impact has been found
-			// 	if (!hit_element){
-			// 		for (auto it = all_neighbors.begin(); it != all_neighbors.end(); ++it) {
-			// 			double u,v;
-			// 			Bezier * patch = static_cast<Bezier *>((*it));
-
-			// 			if (ray -> single_patch_ray_casting(patch,u,v)){
-			// 				hit_element = true;
-			// 				break;
-			// 			}
-			// 		}
-			// 	}
-
-			// }
-
-
-
-
-
-
-
+			
 			bool hit_element = false;
 
 			// If not, the current node is a leaf

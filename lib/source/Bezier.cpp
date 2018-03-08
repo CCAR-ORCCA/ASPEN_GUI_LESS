@@ -443,6 +443,7 @@ std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
 	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
 	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
 	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
+
 		// Returns all facets sharing control_points with $this
 
 	if (all_neighbors == true) {
