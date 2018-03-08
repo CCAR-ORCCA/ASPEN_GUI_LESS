@@ -94,7 +94,6 @@ arma::vec Observations::obs_lidar_range_computed(
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
 		ranges(i) = focal_plane -> at(i) -> get_true_range();
 	}
-	throw;
 
 	
 
