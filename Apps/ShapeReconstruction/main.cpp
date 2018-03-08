@@ -33,8 +33,8 @@
 #define LOS_NOISE_SD_BASELINE 5e-2 // Goldeneye 1sigma
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
-// Process noise
-#define PROCESS_NOISE 1e-9
+// Process noise (m/s^2)
+#define PROCESS_NOISE_SIGMA 1e-9
 
 // Times (s)
 #define T0 0
@@ -269,7 +269,7 @@ int main() {
 	filter.set_initial_information_matrix(arma::inv(P0));
 	filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
 
-	arma::mat Q = std::pow(SNC_SIGMA ,2) * arma::eye<arma::mat>(3,3);
+	arma::mat Q = std::pow(PROCESS_NOISE_SIGMA ,2) * arma::eye<arma::mat>(3,3);
 
 	start = std::chrono::system_clock::now();
 	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
