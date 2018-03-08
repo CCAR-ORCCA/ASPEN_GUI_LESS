@@ -181,9 +181,9 @@ bool KDTreeShape::hit(KDTreeShape * node,
 				if (shape_model_bezier == nullptr){
 					hit_element = ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()));
 				}
-
+				// If the shape is a collection of Bezier patches, things get a bit more protracted
 				else{
-
+					// If the KD tree enclosing the shape is hit, there may be an impact over the bezier shape
 					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
 
 						double u,v;
@@ -193,6 +193,8 @@ bool KDTreeShape::hit(KDTreeShape * node,
 
 						Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
 
+						// If the bezier patch subtending the kd tree triangle is hit, then our
+						// work here is done
 						if (ray -> single_patch_ray_casting(patch,u,v)){
 							hit_element = true;
 						}
@@ -200,7 +202,6 @@ bool KDTreeShape::hit(KDTreeShape * node,
 						// If no previous hit has been recorded for this ray, 
 						// or if a closer hit may be found
 						// the neighbors to the patch are searched
-
 
 						if (!hit_element && (ray -> get_hit_element() == nullptr 
 							|| arma::norm(ray -> get_KD_impact() - *ray -> get_origin_target_frame()) <  ray -> get_true_range())) {
@@ -213,6 +214,7 @@ bool KDTreeShape::hit(KDTreeShape * node,
 
 							// It would be nice to only search the neighbors that are susceptible to host 
 							// the impact point. 
+							
 
 							auto neighbors = patch -> get_neighbors( u,  v);
 							neighbors.erase(patch);

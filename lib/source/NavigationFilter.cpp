@@ -102,7 +102,10 @@ int NavigationFilter::run(
 
 
 		// If true, there is an observation at the initial time
-		if (t == 0 && T_obs[0] == 0){
+		if (t == 0){
+
+			assert(this -> estimated_state_history.is_empty());
+			assert(this -> estimated_covariance_history.is_empty());
 
 			this -> set_states(X_hat,t);
 
@@ -123,11 +126,7 @@ int NavigationFilter::run(
 			this -> residuals.push_back(y_hat);
 			this -> estimated_covariance_history.push_back(P_hat);
 		}
-		else if (t == 0){
-				// STORE RESULTS 
-			this -> estimated_state_history.push_back(X_hat);
-			this -> estimated_covariance_history.push_back(P_hat);
-		}
+		
 
 		// The a-priori is propagated until the next timestep
 		this -> time_update(T_obs[t],T_obs[t + 1],X_hat,P_hat);
