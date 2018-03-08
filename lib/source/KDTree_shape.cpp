@@ -169,49 +169,119 @@ bool KDTree_shape::hit(KDTree_shape * node,
 		}
 
 		else {
-
-			bool hit_element = false;
-
 			// If not, the current node is a leaf
 			// Note that all elements in the nodes must be searched
-			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
+			bool hit_element = false;
 
-				// If there is a hit
-				if (shape_model_bezier == nullptr){
-					hit_element = ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()));
+			// If there is a hit
+			if (shape_model_bezier == nullptr){
+
+				for (unsigned int i = 0; i < node -> elements.size(); ++i) {
+
+					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()))){
+						hit_element = true;
+					}
 				}
+			}
+			else{
 
-				else{
+				std::set<Element * > all_neighbors;
+				std::set<Element * > missed_patches;
 
+
+				for (unsigned int i = 0; i < node -> elements.size(); ++i) {
+
+					// If there is a hit
 					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
-						
+
 						double u,v;
 						Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
 
-						hit_element = ray -> single_patch_ray_casting(patch,u,v);
+						if (ray -> single_patch_ray_casting(patch,u,v) ){
+							hit_element = true;
+						}
 						
-						// if (!hit_element){
+						else if (!hit_element){
+							auto neighbors = patch -> get_neighbors(true);
+							
+							missed_patches.insert(patch);
 
-						// 	auto neighbors = patch -> get_neighbors(true);
+							for (auto it = missed_patches.begin(); it != missed_patches.end(); ++it){
+								neighbors.erase(*it);
+							}
 
-						// 	for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
-						// 		Bezier * n_patch = static_cast<Bezier *>(*it);
-						// 		if (ray -> single_patch_ray_casting(n_patch,u,v)){
-						// 			hit_element = true;
-						// 			break;
-						// 		}
+							all_neighbors.insert(neighbors.begin(),neighbors.end());
 
-
-						// 	}
+						}
 
 
-						// }
+					}
 
-						
+				}
+
+
+				// The neighbors of the patches are checked if no impact has been found
+				if (!hit_element){
+					for (auto it = all_neighbors.begin(); it != all_neighbors.end(); ++it) {
+						double u,v;
+						Bezier * patch = static_cast<Bezier *>((*it));
+
+						if (ray -> single_patch_ray_casting(patch,u,v)){
+							hit_element = true;
+							break;
+						}
 					}
 				}
 
 			}
+
+
+
+
+
+
+
+			// bool hit_element = false;
+
+			// // If not, the current node is a leaf
+			// // Note that all elements in the nodes must be searched
+			// for (unsigned int i = 0; i < node -> elements.size(); ++i) {
+
+			// 	// If there is a hit
+			// 	if (shape_model_bezier == nullptr){
+			// 		hit_element = ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()));
+			// 	}
+
+			// 	else{
+
+			// 		if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
+
+			// 			double u,v;
+			// 			Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
+
+			// 			hit_element = ray -> single_patch_ray_casting(patch,u,v);
+
+			// 			if (!hit_element){
+
+			// 				auto neighbors = patch -> get_neighbors(true);
+
+			// 				for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
+			// 					Bezier * n_patch = static_cast<Bezier *>(*it);
+			// 					if (ray -> single_patch_ray_casting(n_patch,u,v)){
+			// 						hit_element = true;
+			// 						break;
+			// 					}
+
+			// 				}
+
+
+			// 			}
+
+
+			// 		}
+			// 	}
+
+			// }
 			return hit_element;
 
 		}
@@ -252,11 +322,11 @@ bool KDTree_shape::hit_bbox(Ray * ray) const {
 
 	// If the current minimum range for this Ray is less than the distance to this bounding box,
 	// this bounding box is ignored
-	
+
 	if (ray -> get_true_range() < all_t_sorted(2)) {
 		return false;
 	}
-	
+
 
 	if (test_point(0) <= this -> bbox . get_xmax() && test_point(0) >= this -> bbox . get_xmin()) {
 
