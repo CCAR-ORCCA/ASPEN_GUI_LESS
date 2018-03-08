@@ -232,19 +232,6 @@ int main() {
 	BEGINNING OF NAVIGATION FILTER
 	*/
 
-	/*********************** THE ESTIMATED SPACECRAFT STATE IS SET TO ITS TRUE STATE *****************/
-	arma::vec X0_true_augmented = X_augmented[INDEX_END];
-	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
-	/*********************** THE ESTIMATED SPACECRAFT STATE IS SET TO ITS TRUE STATE *****************/
-
-	arma::vec nav_times = arma::regspace<arma::vec>(T0 + T_obs[INDEX_END],  1./INSTRUMENT_FREQUENCY_NAV,  TF + T_obs[INDEX_END]); 
-	
-	// Times
-	std::vector<double> nav_times_vec;
-	for (unsigned int i = 0; i < nav_times.n_rows; ++i){
-		nav_times_vec.push_back( nav_times(i));
-	}
-
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
 	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
@@ -254,6 +241,24 @@ int main() {
 
 	arma::mat P0 = arma::diagmat(P0_diag);
 
+
+	arma::vec X0_true_augmented = X_augmented[INDEX_END];
+
+	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
+	X0_estimated_augmented.subvec(0,5) += arma::sqrt(P0_diag) * arma::randn(6);
+
+
+
+
+	arma::vec nav_times = arma::regspace<arma::vec>(T0 + T_obs[INDEX_END],  1./INSTRUMENT_FREQUENCY_NAV,  TF + T_obs[INDEX_END]); 
+	
+	// Times
+	std::vector<double> nav_times_vec;
+	for (unsigned int i = 0; i < nav_times.n_rows; ++i){
+		nav_times_vec.push_back( nav_times(i));
+	}
+
+	
 	NavigationFilter filter(args);
 	filter.set_observations_fun(
 		Observations::obs_pos_ekf_computed,
