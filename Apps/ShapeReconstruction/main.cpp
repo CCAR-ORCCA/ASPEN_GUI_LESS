@@ -245,7 +245,7 @@ int main() {
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
-	X0_estimated_augmented.subvec(0,5) += arma::sqrt(P0_diag) * arma::randn(6);
+	X0_estimated_augmented.subvec(0,5) += arma::diag_mat(arma::sqrt(P0_spacecraft_vec)) * arma::randn(6);
 
 
 
