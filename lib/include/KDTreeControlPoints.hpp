@@ -1,5 +1,5 @@
-#ifndef HEADER_KDTree_control_points
-#define HEADER_KDTree_control_points
+#ifndef HEADER_KDTreeControlPoints
+#define HEADER_KDTreeControlPoints
 
 #include <memory>
 #include "ControlPoint.hpp"
@@ -11,26 +11,26 @@
 // very informative post found at
 // http://andrewd.ces.clemson.edu/courses/cpsc805/references/nearest_search.pdf
 
-class KDTree_control_points {
+class KDTreeControlPoints {
 
 public:
-	std::shared_ptr<KDTree_control_points> left;
-	std::shared_ptr<KDTree_control_points> right;
+	std::shared_ptr<KDTreeControlPoints> left;
+	std::shared_ptr<KDTreeControlPoints> right;
 	std::vector<std::shared_ptr<ControlPoint> > control_points;
 
-	KDTree_control_points();
+	KDTreeControlPoints();
 
-	std::shared_ptr<KDTree_control_points> build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth);
+	std::shared_ptr<KDTreeControlPoints> build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth);
 
 
 	void closest_point_search(
 	    const arma::vec & test_point,
-	    std::shared_ptr<KDTree_control_points> node,
+	    std::shared_ptr<KDTreeControlPoints> node,
 	    std::shared_ptr<ControlPoint> & best_guess,
 	    double & distance);
 
 	void closest_point_search(const arma::vec & test_point,
-	                          std::shared_ptr<KDTree_control_points> node,
+	                          std::shared_ptr<KDTreeControlPoints> node,
 	                          std::shared_ptr<ControlPoint> & best_guess,
 	                          double & distance,
 	                          std::vector< std::shared_ptr<ControlPoint> > & closest_points);

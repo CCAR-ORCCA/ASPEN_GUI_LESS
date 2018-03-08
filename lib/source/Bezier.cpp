@@ -436,6 +436,38 @@ unsigned int Bezier::get_degree() const{
 }
 
 
+
+
+std::set < Element * > Bezier::get_neighbors(double u, double v) const{
+
+
+	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
+	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
+	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
+ 	
+
+ 	if ( v < 0){
+ 		return V0 -> common_facets(V2);
+ 	}
+
+ 	if (1 - u - v < 0){
+ 		return V0 -> common_facets(V1);
+ 	}
+ 	
+
+ 	if (u < 0){
+ 		return V1 -> common_facets(V2);
+ 	}
+ 	
+ 	else{
+ 		return this -> get_neighbors(true);
+ 	}
+
+
+}
+
+
+
 std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
 
 	std::set< Element * > neighbors;
@@ -451,8 +483,6 @@ std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
 		auto V0_owners  = V0 -> get_owning_elements();
 		auto V1_owners  = V1 -> get_owning_elements();
 		auto V2_owners  = V2 -> get_owning_elements();
-
-
 
 		for (auto facet_it = V0_owners.begin(); facet_it != V0_owners.end(); ++facet_it) {
 			neighbors.insert(*facet_it);

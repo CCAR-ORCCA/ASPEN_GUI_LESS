@@ -5,7 +5,7 @@
 #include <memory>
 #include <cassert>
 
-#include "KDTree_pc.hpp"
+#include "KDTreePC.hpp"
 #include "Ray.hpp"
 #include "PointNormal.hpp"
 #include "ShapeModelTri.hpp"
@@ -195,7 +195,7 @@ protected:
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec los);
 
-	std::shared_ptr<KDTree_pc> kdt_points;
+	std::shared_ptr<KDTreePC> kdt_points;
 
 
 

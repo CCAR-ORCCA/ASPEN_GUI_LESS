@@ -86,7 +86,7 @@ void ShapeModel::construct_kd_tree_control_points() {
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	this -> kdt_control_points = std::make_shared<KDTree_control_points>(KDTree_control_points());
+	this -> kdt_control_points = std::make_shared<KDTreeControlPoints>(KDTreeControlPoints());
 	this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0);
 
 	end = std::chrono::system_clock::now();
@@ -113,7 +113,7 @@ std::shared_ptr< ControlPoint>  ShapeModel::get_control_point(unsigned int i) co
 }
 
 
-std::shared_ptr<KDTree_control_points> ShapeModel::get_KDTree_control_points() const {
+std::shared_ptr<KDTreeControlPoints> ShapeModel::get_KDTreeControlPoints() const {
 	return this -> kdt_control_points;
 }
 
@@ -135,7 +135,7 @@ void ShapeModel::initialize_index_table(){
 }
 
 
-std::shared_ptr<KDTree_shape> ShapeModel::get_KDTree_shape() const {
+std::shared_ptr<KDTreeShape> ShapeModel::get_KDTreeShape() const {
 	return this -> kdt_facet;
 }
 

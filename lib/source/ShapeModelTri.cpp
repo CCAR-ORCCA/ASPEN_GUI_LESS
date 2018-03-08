@@ -49,7 +49,7 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
 bool ShapeModelTri::ray_trace(Ray * ray){
 
-	return this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray);
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape().get(),ray);
 }
 
 
@@ -59,7 +59,7 @@ void ShapeModelTri::construct_kd_tree_shape() {
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
-	this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
+	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape());
 	this -> kdt_facet = this -> kdt_facet -> build(this -> elements, 0);
 
 	end = std::chrono::system_clock::now();

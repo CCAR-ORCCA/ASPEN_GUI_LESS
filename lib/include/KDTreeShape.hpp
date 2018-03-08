@@ -1,5 +1,5 @@
-#ifndef HEADER_KDTree_Shape
-#define HEADER_KDTree_Shape
+#ifndef HEADER_KDTreeShape
+#define HEADER_KDTreeShape
 
 #include "Element.hpp"
 #include "Facet.hpp"
@@ -17,21 +17,19 @@
 class Ray;
 class ShapeModelBezier;
 
-class KDTree_shape {
+class KDTreeShape {
 
 public:
 	BBox bbox;
-	std::shared_ptr<KDTree_shape> left;
-	std::shared_ptr<KDTree_shape> right;
+	std::shared_ptr<KDTreeShape> left;
+	std::shared_ptr<KDTreeShape> right;
 	std::vector<std::shared_ptr<Element> > elements;
 
-	KDTree_shape();
+	KDTreeShape();
 
-
-
-	std::shared_ptr<KDTree_shape> build(std::vector<std::shared_ptr<Element >> & elements, int depth);
+	std::shared_ptr<KDTreeShape> build(std::vector<std::shared_ptr<Element >> & elements, int depth);
 	bool hit_bbox(Ray * ray) const;	
-	bool hit(KDTree_shape * node, Ray * ray,ShapeModelBezier * shape_model_bezier = nullptr) const;
+	bool hit(KDTreeShape * node, Ray * ray, ShapeModelBezier * shape_model_bezier = nullptr) const;
 
 	int get_depth() const;
 	void set_depth(int depth);

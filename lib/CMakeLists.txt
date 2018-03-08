@@ -159,9 +159,9 @@ source/Filter.cpp
 source/FrameGraph.cpp
 source/ICP.cpp
 source/Interpolator.cpp
-source/KDTree_pc.cpp
-source/KDTree_shape.cpp
-source/KDTree_control_points.cpp
+source/KDTreePC.cpp
+source/KDTreeShape.cpp
+source/KDTreeControlPoints.cpp
 source/Lidar.cpp
 source/NavigationFilter.cpp
 source/Observations.cpp

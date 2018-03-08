@@ -424,9 +424,9 @@ void ShapeFitterBezier::find_footpoint(Footpoint & footpoint,Element * & element
 		double distance = std::numeric_limits<double>::infinity();
 		std::shared_ptr<ControlPoint> closest_control_point;
 
-		this -> shape_model -> get_KDTree_control_points() -> closest_point_search(
+		this -> shape_model -> get_KDTreeControlPoints() -> closest_point_search(
 			footpoint.Ptilde,
-			this -> shape_model -> get_KDTree_control_points(),
+			this -> shape_model -> get_KDTreeControlPoints(),
 			closest_control_point,
 			distance);
 
@@ -477,9 +477,9 @@ std::shared_ptr<Footpoint> ShapeFitterBezier::find_footpoint_omp(arma::vec P_til
 		double distance = std::numeric_limits<double>::infinity();
 		std::shared_ptr<ControlPoint> closest_control_point;
 
-		this -> shape_model -> get_KDTree_control_points() -> closest_point_search(
+		this -> shape_model -> get_KDTreeControlPoints() -> closest_point_search(
 			P_tilde,
-			this -> shape_model -> get_KDTree_control_points(),
+			this -> shape_model -> get_KDTreeControlPoints(),
 			closest_control_point,
 			distance);
 

@@ -269,7 +269,7 @@ void ShapeModelBezier::compute_inertia(){
 bool ShapeModelBezier::ray_trace(Ray * ray){
 
 
-	return this -> kdt_facet -> hit(this -> get_KDTree_shape().get(),ray,this);
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape().get(),ray,this);
 
 }
 
@@ -615,7 +615,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 
 
-		this -> kdt_facet = std::make_shared<KDTree_shape>(KDTree_shape());
+		this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape());
 		this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
 
 

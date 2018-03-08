@@ -200,7 +200,7 @@ void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_
 
 	// The KD Tree is now constructed
 
-	this -> kdt_points  = std::make_shared<KDTree_pc>(KDTree_pc());
+	this -> kdt_points  = std::make_shared<KDTreePC>(KDTreePC());
 	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0);
 }
 

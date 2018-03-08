@@ -1,5 +1,5 @@
-#ifndef HEADER_KDTree_pc
-#define HEADER_KDTree_pc
+#ifndef HEADER_KDTreePC
+#define HEADER_KDTreePC
 
 #include <memory>
 #include "PointNormal.hpp"
@@ -11,26 +11,26 @@
 // very informative post found at
 // http://andrewd.ces.clemson.edu/courses/cpsc805/references/nearest_search.pdf
 
-class KDTree_pc {
+class KDTreePC {
 
 public:
-	std::shared_ptr<KDTree_pc> left;
-	std::shared_ptr<KDTree_pc> right;
+	std::shared_ptr<KDTreePC> left;
+	std::shared_ptr<KDTreePC> right;
 	std::vector<std::shared_ptr<PointNormal> > points_normals;
 
-	KDTree_pc();
+	KDTreePC();
 
-	std::shared_ptr<KDTree_pc> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth);
+	std::shared_ptr<KDTreePC> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth);
 
 
 	void closest_point_search(
 	    const arma::vec & test_point,
-	    std::shared_ptr<KDTree_pc> node,
+	    std::shared_ptr<KDTreePC> node,
 	    std::shared_ptr<PointNormal> & best_guess,
 	    double & distance);
 
 	void closest_point_search(const arma::vec & test_point,
-	                          std::shared_ptr<KDTree_pc> node,
+	                          std::shared_ptr<KDTreePC> node,
 	                          std::shared_ptr<PointNormal> & best_guess,
 	                          double & distance,
 	                          std::vector< std::shared_ptr<PointNormal> > & closest_points);

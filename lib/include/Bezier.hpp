@@ -54,6 +54,10 @@ public:
 	virtual std::set < Element * > get_neighbors(bool all_neighbors) const;
 
 
+
+	std::set < Element * > get_neighbors(double u, double v) const;
+
+
 	/**
 	Returns pointer to the first vertex owned by $this that is
 	neither $v0 and $v1. When $v0 and $v1 are on the same edge,

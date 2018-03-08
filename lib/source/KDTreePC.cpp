@@ -1,34 +1,34 @@
-#include "KDTree_pc.hpp"
+#include "KDTreePC.hpp"
 #include "DebugFlags.hpp"
 
 
-KDTree_pc::KDTree_pc() {
+KDTreePC::KDTreePC() {
 
 }
 
-void KDTree_pc::set_depth(int depth) {
+void KDTreePC::set_depth(int depth) {
 	this -> depth = depth;
 }
 
 
 
-double KDTree_pc::get_value() const {
+double KDTreePC::get_value() const {
 	return this -> value;
 }
 
-unsigned int KDTree_pc::get_axis() const {
+unsigned int KDTreePC::get_axis() const {
 	return this -> axis;
 }
 
-void KDTree_pc::set_value(double value) {
+void KDTreePC::set_value(double value) {
 	this -> value = value;
 }
-void KDTree_pc::set_axis(unsigned int axis) {
+void KDTreePC::set_axis(unsigned int axis) {
 	this -> axis = axis;
 }
 
-void KDTree_pc::closest_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTree_pc> node,
+void KDTreePC::closest_point_search(const arma::vec & test_point,
+	std::shared_ptr<KDTreePC> node,
 	std::shared_ptr<PointNormal> & best_guess,
 	double & distance) {
 
@@ -102,8 +102,8 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 }
 
 
-void KDTree_pc::closest_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTree_pc> node,
+void KDTreePC::closest_point_search(const arma::vec & test_point,
+	std::shared_ptr<KDTreePC> node,
 	std::shared_ptr<PointNormal> & best_guess,
 	double & distance,
 	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
@@ -181,11 +181,11 @@ void KDTree_pc::closest_point_search(const arma::vec & test_point,
 
 
 
-std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth) {
+std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth) {
 
 
 	// Creating the node
-	std::shared_ptr<KDTree_pc> node = std::make_shared<KDTree_pc>(KDTree_pc());
+	std::shared_ptr<KDTreePC> node = std::make_shared<KDTreePC>(KDTreePC());
 	node -> points_normals = points_normals;
 	node -> left = nullptr;
 	node -> right = nullptr;
@@ -209,8 +209,8 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 	// there's no point in subdividing it more
 	if (points_normals.size() == 1) {
 
-		node -> left = std::make_shared<KDTree_pc>( KDTree_pc() );
-		node -> right = std::make_shared<KDTree_pc>( KDTree_pc() );
+		node -> left = std::make_shared<KDTreePC>( KDTreePC() );
+		node -> right = std::make_shared<KDTreePC>( KDTreePC() );
 
 		node -> left -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 		node -> right -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
@@ -304,11 +304,11 @@ std::shared_ptr<KDTree_pc> KDTree_pc::build(std::vector< std::shared_ptr<PointNo
 
 }
 
-std::vector<std::shared_ptr<PointNormal> > * KDTree_pc::get_points_normals() {
+std::vector<std::shared_ptr<PointNormal> > * KDTreePC::get_points_normals() {
 	return &this -> points_normals;
 }
 
-unsigned int KDTree_pc::get_size() const {
+unsigned int KDTreePC::get_size() const {
 	return this -> points_normals.size();
 }
 

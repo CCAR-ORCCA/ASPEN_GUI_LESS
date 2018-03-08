@@ -1,16 +1,16 @@
-#include "KDTree_shape.hpp"
+#include "KDTreeShape.hpp"
 #include "ShapeModelBezier.hpp"
 #include "DebugFlags.hpp"
 
-KDTree_shape::KDTree_shape() {
+KDTreeShape::KDTreeShape() {
 
 }
 
 
-std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<Element > > & elements,  int depth) {
+std::shared_ptr<KDTreeShape> KDTreeShape::build(std::vector<std::shared_ptr<Element > > & elements,  int depth) {
 
 	// Creating the node
-	std::shared_ptr<KDTree_shape> node = std::make_shared<KDTree_shape>( KDTree_shape() );
+	std::shared_ptr<KDTreeShape> node = std::make_shared<KDTreeShape>( KDTreeShape() );
 	node -> elements = elements;
 	node -> left = nullptr;
 	node -> right = nullptr;
@@ -32,8 +32,8 @@ std::shared_ptr<KDTree_shape> KDTree_shape::build(std::vector<std::shared_ptr<El
 
 		node -> bbox . update(elements[0]);
 
-		node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
-		node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
+		node -> left = std::make_shared<KDTreeShape>( KDTreeShape() );
+		node -> right = std::make_shared<KDTreeShape>( KDTreeShape() );
 
 		node -> left -> elements = std::vector<std::shared_ptr<Element> >();
 		node -> right -> elements = std::vector<std::shared_ptr<Element> >();
@@ -112,7 +112,7 @@ for (unsigned int i = 0; i < left_facets.size(); ++i) {
 
 	// Subdivision stops if at least 50% of triangles are shared amongst the two leaves
 	// or if this node has reached the maximum depth
-	// specified in KDTree_shape.hpp (1000 by default)
+	// specified in KDTreeShape.hpp (1000 by default)
 if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets.size() < 0.5 && depth < this -> max_depth) {
 
 
@@ -124,8 +124,8 @@ if ((double)matches / left_facets.size() < 0.5 && (double)matches / right_facets
 
 else {
 
-	node -> left = std::make_shared<KDTree_shape>( KDTree_shape() );
-	node -> right = std::make_shared<KDTree_shape>( KDTree_shape() );
+	node -> left = std::make_shared<KDTreeShape>( KDTreeShape() );
+	node -> right = std::make_shared<KDTreeShape>( KDTreeShape() );
 
 	node -> left -> elements = std::vector<std::shared_ptr<Element> >();
 	node -> right -> elements = std::vector<std::shared_ptr<Element> >();
@@ -148,7 +148,7 @@ return node;
 }
 
 
-bool KDTree_shape::hit(KDTree_shape * node,
+bool KDTreeShape::hit(KDTreeShape * node,
 	Ray * ray,
 	ShapeModelBezier * shape_model_bezier) const {
 	
@@ -174,6 +174,7 @@ bool KDTree_shape::hit(KDTree_shape * node,
 
 			// If not, the current node is a leaf
 			// Note that all elements in the nodes must be searched
+			// std::cout << "starting in node" << std::endl;
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 				// If there is a hit
@@ -186,15 +187,38 @@ bool KDTree_shape::hit(KDTree_shape * node,
 					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()),false)) {
 
 						double u,v;
+						u = 1e10;
+						v = 1e10;
+
+
 						Bezier * patch = static_cast<Bezier *>(ray -> get_super_element());
 
-						hit_element = ray -> single_patch_ray_casting(patch,u,v);
+						if (ray -> single_patch_ray_casting(patch,u,v)){
+							hit_element = true;
+						}
 
-						if (!hit_element){
+						// If no previous hit has been recorded for this ray, 
+						// or if a closer hit may be found
+						// the neighbors to the patch are searched
 
-							auto neighbors = patch -> get_neighbors(true);
+
+						if (!hit_element && (ray -> get_hit_element() == nullptr 
+							|| arma::norm(ray -> get_KD_impact() - *ray -> get_origin_target_frame()) <  ray -> get_true_range())) {
+
+							if (std::abs(u) == 1e10){
+								// If that is the case, there is no point in searching the neighbors.
+								// the search did not converge at all
+								continue;
+							}
+
+							// It would be nice to only search the neighbors that are susceptible to host 
+							// the impact point. 
+
+							auto neighbors = patch -> get_neighbors( u,  v);
+							neighbors.erase(patch);
 
 							for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
+								
 								Bezier * n_patch = static_cast<Bezier *>(*it);
 								if (ray -> single_patch_ray_casting(n_patch,u,v)){
 									hit_element = true;
@@ -220,13 +244,13 @@ bool KDTree_shape::hit(KDTree_shape * node,
 
 }
 
-void KDTree_shape::set_depth(int depth) {
+void KDTreeShape::set_depth(int depth) {
 	this -> depth = depth;
 }
 
 
 
-bool KDTree_shape::hit_bbox(Ray * ray) const {
+bool KDTreeShape::hit_bbox(Ray * ray) const {
 
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();

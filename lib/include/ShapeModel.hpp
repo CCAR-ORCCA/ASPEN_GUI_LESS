@@ -10,12 +10,12 @@
 #include "OMP_flags.hpp"
 #include "FrameGraph.hpp"
 #include "ControlPoint.hpp"
-#include "KDTree_control_points.hpp"
-#include "KDTree_shape.hpp"
+#include "KDTreeControlPoints.hpp"
+#include "KDTreeShape.hpp"
 
 class Ray ;
 class Element;
-class KDTree_shape;
+class KDTreeShape;
 
 /**
 Declaration of the ShapeModel class. Base class for 
@@ -64,10 +64,10 @@ public:
 
 	
 	/**
-	Returns pointer to KDTree_shape member.
-	@return pointer to KDtree_shape
+	Returns pointer to KDTreeShape member.
+	@return pointer to KDTreeShape
 	*/
-	std::shared_ptr<KDTree_shape> get_KDTree_shape() const ;
+	std::shared_ptr<KDTreeShape> get_KDTreeShape() const ;
 
 
 	/**
@@ -191,10 +191,10 @@ public:
 	void construct_kd_tree_control_points();
 
 	/**
-	Returns pointer to KDTree_control_points member.
-	@return pointer to KDTree_control_points
+	Returns pointer to KDTreeControlPoints member.
+	@return pointer to KDTreeControlPoints
 	*/
-	std::shared_ptr<KDTree_control_points> get_KDTree_control_points() const ;
+	std::shared_ptr<KDTreeControlPoints> get_KDTreeControlPoints() const ;
 
 
 	/**
@@ -258,8 +258,8 @@ protected:
 
 	std::vector<std::shared_ptr<Element  > > elements;
 	std::vector<std::shared_ptr< ControlPoint> >  control_points;
-	std::shared_ptr<KDTree_control_points> kdt_control_points = nullptr;
-	std::shared_ptr<KDTree_shape> kdt_facet = nullptr;
+	std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;
+	std::shared_ptr<KDTreeShape> kdt_facet = nullptr;
 
 	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
 

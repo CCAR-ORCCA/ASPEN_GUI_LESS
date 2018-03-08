@@ -192,11 +192,23 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 
 	double t = arma::dot(n, p - *this -> origin_target_frame) / arma::dot(n, *this -> direction_target_frame);
 
+	// The normal is facing the opposite way
+	if (arma::dot(n,*this -> direction_target_frame) > 0){
+			
+		return false;
+	}
+
 	// If the range is positive, this is further tested for
 	// potential intersection with this facet
 	if (t > 0) {
 		arma::vec H = *this -> direction_target_frame * t + *this -> origin_target_frame;
+
+
+
+
 		if (this -> intersection_inside(H, facet)) {
+
+
 
 
 			// Corresponds to range attenuation in 
@@ -250,7 +262,6 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 	unsigned int N_iter_max = 20;
 
 	// The barycentric coordinates are initialized at a planar guess
-
 	arma::mat E(3,2);
 	E.col(0) = patch -> get_control_point_coordinates(patch -> get_degree(),0) - patch -> get_control_point_coordinates(0,0);
 	E.col(1) = patch -> get_control_point_coordinates(0,patch -> get_degree()) - patch -> get_control_point_coordinates(0,0);
@@ -275,10 +286,6 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 		std::cout << "Iter: " << i << " Distance: " << distance << " (u,v): " << u_t << " " << v_t << std::endl;
 		#endif
 
-	
-
-
-
 		if (distance < 1e-5){
 
 			#if RAY_DEBUG
@@ -286,6 +293,11 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 			#endif
 
 			if (arma::dot(patch -> get_normal(u_t,v_t),dir) > 0){
+				#if RAY_DEBUG
+				std::cout << "Spurious normal. rejected" << std::endl;
+
+				#endif 
+
 				return false;
 			}
 
@@ -295,6 +307,9 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 				#if RAY_DEBUG
 				std::cout << "Invalid edge hit" << std::endl;
 				#endif 
+				
+				u = u_t;
+				v = v_t;
 
 				return false;
 			}

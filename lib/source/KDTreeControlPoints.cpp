@@ -1,34 +1,34 @@
-#include "KDTree_control_points.hpp"
+#include "KDTreeControlPoints.hpp"
 #include "DebugFlags.hpp"
 
 
-KDTree_control_points::KDTree_control_points() {
+KDTreeControlPoints::KDTreeControlPoints() {
 
 }
 
-void KDTree_control_points::set_depth(int depth) {
+void KDTreeControlPoints::set_depth(int depth) {
 	this -> depth = depth;
 }
 
 
 
-double KDTree_control_points::get_value() const {
+double KDTreeControlPoints::get_value() const {
 	return this -> value;
 }
 
-unsigned int KDTree_control_points::get_axis() const {
+unsigned int KDTreeControlPoints::get_axis() const {
 	return this -> axis;
 }
 
-void KDTree_control_points::set_value(double value) {
+void KDTreeControlPoints::set_value(double value) {
 	this -> value = value;
 }
-void KDTree_control_points::set_axis(unsigned int axis) {
+void KDTreeControlPoints::set_axis(unsigned int axis) {
 	this -> axis = axis;
 }
 
-void KDTree_control_points::closest_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTree_control_points> node,
+void KDTreeControlPoints::closest_point_search(const arma::vec & test_point,
+	std::shared_ptr<KDTreeControlPoints> node,
 	std::shared_ptr<ControlPoint> & best_guess,
 	double & distance) {
 
@@ -102,8 +102,8 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 }
 
 
-void KDTree_control_points::closest_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTree_control_points> node,
+void KDTreeControlPoints::closest_point_search(const arma::vec & test_point,
+	std::shared_ptr<KDTreeControlPoints> node,
 	std::shared_ptr<ControlPoint> & best_guess,
 	double & distance,
 	std::vector<std::shared_ptr<ControlPoint> > & closest_points) {
@@ -180,10 +180,10 @@ void KDTree_control_points::closest_point_search(const arma::vec & test_point,
 
 }
 
-std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth) {
+std::shared_ptr<KDTreeControlPoints> KDTreeControlPoints::build(std::vector< std::shared_ptr<ControlPoint> > & control_points, int depth) {
 
 	// Creating the node
-	std::shared_ptr<KDTree_control_points> node = std::make_shared<KDTree_control_points>(KDTree_control_points());
+	std::shared_ptr<KDTreeControlPoints> node = std::make_shared<KDTreeControlPoints>(KDTreeControlPoints());
 	node -> control_points = control_points;
 	node -> left = nullptr;
 	node -> right = nullptr;
@@ -206,8 +206,8 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 	// there's no point in subdividing it more
 	if (control_points.size() == 1) {
 
-		node -> left = std::make_shared<KDTree_control_points>( KDTree_control_points() );
-		node -> right = std::make_shared<KDTree_control_points>( KDTree_control_points() );
+		node -> left = std::make_shared<KDTreeControlPoints>( KDTreeControlPoints() );
+		node -> right = std::make_shared<KDTreeControlPoints>( KDTreeControlPoints() );
 
 		node -> left -> control_points = std::vector<std::shared_ptr<ControlPoint> >();
 		node -> right -> control_points = std::vector<std::shared_ptr<ControlPoint> >();
@@ -291,11 +291,11 @@ std::shared_ptr<KDTree_control_points> KDTree_control_points::build(std::vector<
 
 }
 
-std::vector<std::shared_ptr<ControlPoint> > * KDTree_control_points::get_control_points() {
+std::vector<std::shared_ptr<ControlPoint> > * KDTreeControlPoints::get_control_points() {
 	return &this -> control_points;
 }
 
-unsigned int KDTree_control_points::get_size() const {
+unsigned int KDTreeControlPoints::get_size() const {
 	return this -> control_points.size();
 }
 
