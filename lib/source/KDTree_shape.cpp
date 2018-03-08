@@ -261,21 +261,21 @@ bool KDTree_shape::hit(KDTree_shape * node,
 
 						hit_element = ray -> single_patch_ray_casting(patch,u,v);
 
-						if (!hit_element){
+						// if (!hit_element){
 
-							auto neighbors = patch -> get_neighbors(true);
+						// 	auto neighbors = patch -> get_neighbors(true);
 
-							for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
-								Bezier * n_patch = static_cast<Bezier *>(*it);
-								if (ray -> single_patch_ray_casting(n_patch,u,v)){
-									hit_element = true;
-									break;
-								}
+						// 	for (auto it = neighbors.begin(); it !=  neighbors.end(); ++it){
+						// 		Bezier * n_patch = static_cast<Bezier *>(*it);
+						// 		if (ray -> single_patch_ray_casting(n_patch,u,v)){
+						// 			hit_element = true;
+						// 			break;
+						// 		}
 
-							}
+						// 	}
 
 
-						}
+						// }
 
 
 					}
