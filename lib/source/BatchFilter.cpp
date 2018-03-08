@@ -97,6 +97,7 @@ int  BatchFilter::run(
 			break;
 		}
 
+		double N_mes;
 		// The state is checked for convergence based on the residuals
 		if (has_converged && i != 0){
 			iterations = i;
@@ -108,7 +109,7 @@ int  BatchFilter::run(
 			arma::vec y_non_zero = y_bar.elem(arma::find(y_bar));
 
 			double rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
-
+			N_mes = y_non_zero.n_rows;
 
 
 			std::cout << "-----  Has not converged" << std::endl;
@@ -129,7 +130,7 @@ int  BatchFilter::run(
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
 		// H is divided by the number of effective measurements
-		H *= 1./ y_non_zero.n_rows;
+		H *= 1./ N_mes;
 
 
 
