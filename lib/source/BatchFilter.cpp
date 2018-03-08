@@ -128,6 +128,13 @@ int  BatchFilter::run(
 		// H has already been pre-multiplied by the corresponding gains
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
+		// H is divided by the number of effective measurements
+		H *= 1./ y_non_zero.n_rows;
+
+
+
+
+
 		info_mat += H.t() * H;
 		normal_mat += H.t() * y_bar;
 
