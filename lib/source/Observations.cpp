@@ -129,6 +129,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 				
 				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
+				std::cout <<"alpha: " << alpha << std::endl;
 
 			}
 
