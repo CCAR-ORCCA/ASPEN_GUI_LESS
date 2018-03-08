@@ -142,7 +142,8 @@ int NavigationFilter::run(
 		auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
 		// The measurement update is performed
-		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,*this -> args.get_lidar_position_covariance_ptr());
+		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,
+			*this -> args.get_lidar_position_covariance_ptr());
 
 		// The postfit residual is computed 
 		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);

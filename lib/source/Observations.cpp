@@ -129,7 +129,6 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 				
 				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
-				std::cout <<"alpha: " << alpha << std::endl;
 
 			}
 
@@ -181,6 +180,9 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 
 	// The covariance in the position is extracted here
 	arma::mat P_hat = filter.get_estimated_covariance_history().front();
+
+	std::cout << "Position measurement covariance: " << std::endl;
+	std::cout  << P_hat << std::endl;
 
 	// Nasty hack to get around const Args & args
 	(*args.get_lidar_position_covariance_ptr()) = P_hat;
