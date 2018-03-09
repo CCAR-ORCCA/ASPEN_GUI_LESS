@@ -73,7 +73,7 @@
 
 
 int main() {
-	
+
 	arma::arma_rng::set_seed(0);
 
 
@@ -236,7 +236,7 @@ int main() {
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
 	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
-	arma::vec P0_spacecraft_vec = {100,100,100,1e-6,1e-6,1e-6};
+	arma::vec P0_spacecraft_vec = {300,100,100,1e-6,1e-6,1e-6};
 
 	P0_diag.subvec(0,5) = P0_spacecraft_vec;
 
@@ -255,6 +255,9 @@ int main() {
 
 	std::cout << "Initial Estimated state: " << std::endl;
 	std::cout << X0_estimated_augmented.t() << std::endl;
+
+	std::cout << "Initial Error: " << std::endl;
+	std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
 
 
 
