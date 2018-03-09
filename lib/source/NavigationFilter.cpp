@@ -127,6 +127,8 @@ int NavigationFilter::run(
 			this -> estimated_covariance_history.push_back(P_hat);
 		}
 		
+		std::cout << "State error: " << std::endl;
+		std::cout << (this -> true_state_history[t] - X_hat).t() << std::endl;
 
 		// The a-priori is propagated until the next timestep
 		this -> time_update(T_obs[t],T_obs[t + 1],X_hat,P_hat);
