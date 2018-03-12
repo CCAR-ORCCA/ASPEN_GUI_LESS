@@ -865,14 +865,14 @@ void Bezier::train_patch_covariance(){
 
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-	unsigned int N_iter = 10 ;
+	unsigned int N_iter = 30 ;
 
 
 	// The initial guess for the covariance is computed.
 	double alpha = initialize_covariance(this -> footpoints,v,W,v_i_norm,epsilon);
 
 	arma::vec L = arma::ones<arma::vec>(N_C) * std::log(alpha);	
-	arma::vec lower_bounds =  L - 3;
+	arma::vec lower_bounds =  L - 1;
 	arma::vec upper_bounds = L + 3;	
 	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
 
@@ -907,14 +907,14 @@ void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-	unsigned int N_iter = 10 ;
+	unsigned int N_iter = 30 ;
 
 
 	// The initial guess for the covariance is computed.
 	double alpha = initialize_covariance(footpoints,v,W,v_i_norm,epsilon);
 
 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
-	arma::vec lower_bounds =  L - 3;
+	arma::vec lower_bounds =  L - 1;
 	arma::vec upper_bounds = L + 3;	
 
 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,this);
@@ -945,7 +945,7 @@ void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint>
 
 	unsigned int N_C = this -> control_points.size();
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-	unsigned int N_iter = 10 ;
+	unsigned int N_iter = 30 ;
 	this -> P_X = arma::mat(3 * N_C,3 * N_C);
 
 
@@ -959,7 +959,7 @@ void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint>
 
 
 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
-	arma::vec lower_bounds =  L - 3;
+	arma::vec lower_bounds =  L - 1;
 	arma::vec upper_bounds = L + 3;	
 	
 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,
