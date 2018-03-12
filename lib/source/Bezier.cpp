@@ -897,6 +897,8 @@ void Bezier::train_patch_covariance(){
 	// this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
 	this -> P_X = arma::exp(L).max() * arma::eye<arma::mat>(3 * N_C,3 * N_C);
 
+	std::cout << "-- Final covariance: " << std::endl;
+	std::cout << this -> P_X << std::endl;
 
 }
 
