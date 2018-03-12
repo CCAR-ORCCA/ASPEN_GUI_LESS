@@ -923,7 +923,7 @@ void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
 		lower_bounds,
 		upper_bounds, 
-		100,
+		1000,
 		N_iter,
 		args);
 
@@ -968,7 +968,7 @@ void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint>
 	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
 		lower_bounds,
 		upper_bounds, 
-		100,
+		1000,
 		N_iter,
 		args);
 
