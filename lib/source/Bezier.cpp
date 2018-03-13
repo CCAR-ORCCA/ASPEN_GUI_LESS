@@ -951,6 +951,7 @@ void Bezier::compute_range_biases(){
 
 	}
 
+	std::cout << this -> get_range_bias(1,0) << std::endl;
 
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
