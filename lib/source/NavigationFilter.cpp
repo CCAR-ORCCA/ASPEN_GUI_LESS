@@ -110,7 +110,7 @@ int NavigationFilter::run(
 			this -> set_states(X_hat,t);
 
 			// 
-			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],this -> true_state_history[0],this -> args);
+			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],X_hat,this -> args);
 
 				// The prefit residual are computed
 			auto y_bar = this -> compute_residual(0,X_hat,Y_true_from_lidar);
@@ -137,7 +137,7 @@ int NavigationFilter::run(
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
 		this -> set_states(X_hat,t + 1);
 
-		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],this -> true_state_history[t + 1],this -> args);
+		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],X_hat,this -> args);
 
 		// The prefit residual is computed
 		auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
