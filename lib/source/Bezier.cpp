@@ -938,7 +938,7 @@ void Bezier::compute_range_biases(){
 
 	}
 	this -> biases = arma::solve(info_mat,normal_mat);
-	
+
 	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(res) << std::endl;
 	res = 0;
 
@@ -954,9 +954,9 @@ void Bezier::compute_range_biases(){
 
 
 	std::cout << "-- Patch biases: " << std::endl;
-	std::cout << this -> biases.t() << std::endl;
+	std::cout << this -> biases.t();
 
-	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(res) << std::endl;
+	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(res) << std::endl  << std::endl;
 
 
 
