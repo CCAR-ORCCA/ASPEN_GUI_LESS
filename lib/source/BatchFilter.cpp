@@ -199,9 +199,10 @@ int  BatchFilter::run(
 	
 	this -> residuals.push_back( y_bar);
 
-
+	y_bar.save("../output/range_residuals/residuals_" + std::to_string(T_obs[0])+ ".txt",arma::raw_ascii);
 
 	#if BATCH_DEBUG || FILTER_DEBUG
+
 	std::cout << "-- Exiting batch "<< std::endl;
 	#endif
 
@@ -238,6 +239,7 @@ void BatchFilter::compute_prefit_residuals(
 	arma::vec y_non_zero = residual.elem(arma::find(residual));
 		#if BATCH_DEBUG
 	std::cout << " - Usable residuals in batch: " << y_non_zero.n_rows << std::endl;
+	std::cout << " - Largest residual in batch: " << arma::abs(y_bar).max() << std::endl;
 		#endif
 	rms_res += std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows);
 
