@@ -106,6 +106,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
+
 		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
 
 			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
@@ -129,6 +130,9 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 			}
 
 			H.row(i) = - n.t() / arma::dot(n,u);
+		}
+		else{
+			args.get_sigma_consider_vector_ptr() -> push_back(0);
 		}
 
 	}
