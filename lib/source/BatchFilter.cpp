@@ -140,6 +140,13 @@ int  BatchFilter::run(
 		info_mat += H.t() * H ;
 		normal_mat += H.t() * y_bar ;
 
+		arma::eye<arma::mat> P_cc(H.n_rows,H.n_rows);
+
+		for (unsigned int p = 0; p < H.n_rows; ++p){
+			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
+		}
+
+
 		H_Pcc_H = H.t() * P_cc * H;
 
 		// The deviation is solved
