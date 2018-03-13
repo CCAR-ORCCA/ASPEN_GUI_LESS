@@ -148,7 +148,7 @@ public:
 	*/
 	arma::mat partial_bezier(
 		const double u,
-		const double v) ;
+		const double v) const;
 
 
 
