@@ -408,6 +408,17 @@ public:
 	double get_range_bias(const double & u, const double & v) const;
 
 
+	/**
+	Returns the range bias at the provided location, weighted by the ray incidence
+	@param u first barycentric coordinate
+	@param v second barycentric coordinate
+	@param dir direction of measurement
+	@return range bias at queried location
+	*/
+	double get_range_bias(const double & u, const double & v,const arma::vec & dir) const;
+
+
+
 protected:
 
 	virtual void compute_normal();
