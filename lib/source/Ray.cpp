@@ -194,7 +194,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 
 	// The normal is facing the opposite way
 	if (arma::dot(n,*this -> direction_target_frame) > 0){
-			
+
 		return false;
 	}
 
@@ -315,11 +315,16 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 			}
 
 			if (this -> true_range > arma::norm(S - impact)){
+
+				double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,patch -> get_normal(u_t,v_t))));
+
 				this -> true_range = arma::norm(S - impact);
 				u = u_t;
 				v = v_t;
 				this -> set_impact_coords(u,v);
 				this -> hit_element = patch;
+				this -> incidence_angle = incidence_angle;
+				
 				return true;
 			}
 

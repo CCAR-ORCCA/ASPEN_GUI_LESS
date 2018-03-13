@@ -3,7 +3,7 @@
 #include "ShapeModelImporter.hpp"
 #include "Lidar.hpp"
 #include "Args.hpp"
-#include "DynamicAnalyses.hpp"
+// #include "DynamicAnalyses.hpp"
 
 #include <chrono>
 
@@ -53,20 +53,20 @@ int main(){
 
 	// Integrator extra arguments
 	Args args;
-	DynamicAnalyses dyn_analyses(&true_shape_model);
+	// DynamicAnalyses dyn_analyses(&true_shape_model);
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
 
 
 	// args.set_estimated_shape_model(&estimated_shape_model);
 
-	args.set_dyn_analyses(&dyn_analyses);
+	// args.set_dyn_analyses(&dyn_analyses);
 	// args.set_Cnm(&Cnm);
 	// args.set_Snm(&Snm);
 	// args.set_degree(5);
 	// args.set_ref_radius(175);
-	args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
-	args.set_mass(true_shape_model . get_volume() * 1900);
+	// args.set_mu(arma::datum::G * true_shape_model . get_volume() * 1900);
+	// args.set_mass(true_shape_model . get_volume() * 1900);
 	args.set_sd_noise(LOS_NOISE_3SD_BASELINE / 3);
 
 	double omega = 2 * arma::datum::pi / (12 * 3600);
@@ -136,6 +136,7 @@ int main(){
 	frame_graph. get_frame("E") -> set_mrp_from_parent(*args.get_mrp_BN_estimated());
 
 
+	
 
 	return 0;
 }
