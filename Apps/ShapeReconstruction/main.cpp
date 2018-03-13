@@ -127,7 +127,7 @@ int main() {
 	args.set_mass(true_shape_model . get_volume() * DENSITY);
 	args.set_lidar(&lidar);
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
-	
+
 
 
 	// Initial state
@@ -215,7 +215,12 @@ int main() {
 	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+
+
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,
+		"E",&frame_graph));
+
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
