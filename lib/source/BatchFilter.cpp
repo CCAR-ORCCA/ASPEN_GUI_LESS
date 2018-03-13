@@ -175,12 +175,18 @@ int  BatchFilter::run(
 
 	}
 
+
+	std::cout << "-- State Covariance \n";
+	std::cout << P_hat_0 << std::endl;
+
 	// This is where the covariance should be augmented with its 
 	// consider component
 
 	P_hat_0 += 1./std::pow(args.get_sd_noise(),4) * P_hat_0 * H_Pcc_H * P_hat_0;
 
 
+	std::cout << "-- Consider State Covariance \n";
+	std::cout << P_hat_0 << std::endl;
 
 	// The results are saved
 
