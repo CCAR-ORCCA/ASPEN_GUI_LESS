@@ -123,7 +123,6 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				
 				n = bezier -> get_normal(u_t,v_t);
-				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 				
 			}
 
