@@ -639,6 +639,9 @@ arma::mat Bezier::partial_bezier_dv(
 }
 
 
+double Bezier::get_fitting_residuals() const{
+	return this -> fitting_residuals;
+}
 
 
 arma::mat Bezier::partial_bezier(
@@ -903,7 +906,7 @@ void Bezier::train_patch_covariance(){
 
 void Bezier::compute_range_biases(){
 
-	unsigned int N = 4;
+	unsigned int N = 3;
 
 	unsigned int P = (N + 1) * (N + 2) / 2;
 
@@ -939,6 +942,7 @@ void Bezier::compute_range_biases(){
 	}
 
 	this -> biases = arma::solve(info_mat,normal_mat);
+	this -> fitting_residuals = std::sqrt(old_res);
 
 	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(old_res) << std::endl;
 	double new_res = 0;

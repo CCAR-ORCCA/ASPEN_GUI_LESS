@@ -105,6 +105,11 @@ public:
 	arma::vec get_normal(const double u, const double v) const;
 
 
+	/**
+	Returns shape fitting residuals standard deviation
+	@return standard deviation of fitting residuals
+	*/
+	double get_fitting_residuals() const;
 
 
 	/**
@@ -514,6 +519,7 @@ protected:
 
 
 	unsigned int n;
+	double fitting_residuals = 0;
 
 	std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forw_table;
 	std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> rev_table;
