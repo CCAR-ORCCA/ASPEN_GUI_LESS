@@ -928,6 +928,9 @@ void Bezier::compute_range_biases(){
 
 
 	}
+	std::cout << "-- Info mat of biases: " << std::endl;
+
+	std::cout << info_mat << std::endl;
 
 
 	this -> biases = arma::solve(info_mat,normal_mat);

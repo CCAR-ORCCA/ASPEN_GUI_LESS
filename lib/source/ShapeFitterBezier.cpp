@@ -53,7 +53,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	
 
 	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
-		(*patch) -> train_patch_covariance();
+		// (*patch) -> train_patch_covariance();
 		(*patch) -> compute_range_biases();
 
 		++progress;
