@@ -104,7 +104,6 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
-	double alpha = 1;
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
@@ -126,11 +125,9 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				n = bezier -> get_normal(u_t,v_t);
 				arma::mat P = bezier -> covariance_surface_point(u_t,v_t,u);
 				
-				alpha = 1./ std::sqrt(arma::dot(u,P * u ));
-
 			}
 
-			H.row(i) = - n.t() / arma::dot(n,u) * alpha;
+			H.row(i) = - n.t() / arma::dot(n,u);
 		}
 
 	}
@@ -175,7 +172,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 
 	arma::vec x_bar_bar = x.rows(0,2);
 	std::cout << x_bar_bar.t() << std::endl;
-	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
+	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,args.get_sd_noise() * arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
 
 
 	// The covariance in the position is extracted here

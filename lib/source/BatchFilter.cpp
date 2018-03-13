@@ -43,6 +43,7 @@ int  BatchFilter::run(
 
 
 	arma::mat H;
+	arma::mat H_Pcc_H;
 
 	arma::mat info_mat;
 	arma::vec normal_mat;
@@ -129,9 +130,10 @@ int  BatchFilter::run(
 		// H has already been pre-multiplied by the corresponding gains
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
-		info_mat += H.t() * H;
+		info_mat += H.t() * H * 1./std::pow(args.get_sd_noise(),2);
 		normal_mat += H.t() * y_bar;
 
+		// H_Pcc_H = H.t() * P_cc * H;
 
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
@@ -158,6 +160,13 @@ int  BatchFilter::run(
 		dx_bar_0 = dx_bar_0 - dx_hat;
 
 	}
+
+	// This is where the covariance should be augmented with its 
+	// consider component
+
+	// P_hat_0 += 1./std::pow(args.get_sd_noise(),4) * P_hat_0 * H_Pcc_H * P_hat_0;
+
+
 
 	// The results are saved
 
