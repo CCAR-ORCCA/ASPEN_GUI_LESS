@@ -904,11 +904,10 @@ void Bezier::train_patch_covariance(){
 void Bezier::compute_range_biases(){
 
 	auto N = this -> control_points.size();
-	auto P = (N + 2) * (N + 1)/2;
 
 	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
 	arma::vec normal_mat = arma::zeros<arma::vec>(N);
-	arma::rowvec Hi(P);
+	arma::rowvec Hi(N);
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
@@ -918,14 +917,14 @@ void Bezier::compute_range_biases(){
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
 
-		for (unsigned int k = 0; k < N + 1; ++k){
-			for (unsigned int l = 0; l < N + 1 - k; ++l){
-				Hi(k * (N - k + 1) + l) = Bezier::bernstein(u, v,k,l, this -> n);
+		for (unsigned int k = 0; k < this -> n + 1; ++k){
+			for (unsigned int l = 0; l < this -> n + 1 - k; ++l){
+				Hi(k * (this -> n - k + 1) + l) = Bezier::bernstein(u, v,k,l, this -> n);
 			}	
 		}
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
-		info_mat += Hi.t() * Hi.t();
+		info_mat += Hi.t() * Hi;
 
 
 	}
