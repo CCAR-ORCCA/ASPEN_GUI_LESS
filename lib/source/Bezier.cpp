@@ -534,7 +534,7 @@ arma::vec Bezier::evaluate(const double u, const double v) const{
 	return P;
 }
 
-arma::vec Bezier::get_normal(const double u, const double v) {
+arma::vec Bezier::get_normal(const double u, const double v) const{
 	arma::mat partials = this -> partial_bezier(u,v);
 	return arma::normalise(arma::cross(partials.col(0),partials.col(1)));
 }
@@ -643,14 +643,14 @@ arma::mat Bezier::partial_bezier_dv(
 
 arma::mat Bezier::partial_bezier(
 	const double u,
-	const double v) {
+	const double v) const{
 
 	arma::mat partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){	
-		int i = std::get<0>(this -> forw_table[l]);
-		int j = std::get<1>(this -> forw_table[l]);
+		int i = std::get<0>(this -> forw_table.at(l));
+		int j = std::get<1>(this -> forw_table.at(l));
 
-		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
+		partials += this -> control_points.at(l) -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
 	}
 	return partials;
 
