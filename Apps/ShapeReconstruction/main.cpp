@@ -57,7 +57,7 @@
 #define N_EDGES 3000
 
 // Shape order
-#define SHAPE_DEGREE 2
+#define SHAPE_DEGREE 3
 
 // Target shape
 #define TARGET_SHAPE "itokawa_64_scaled_aligned"

@@ -946,12 +946,9 @@ void Bezier::compute_range_biases(){
 		arma::vec normal = this -> footpoints[i].n;
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
-		std::cout << u << " " << v << " " << this -> get_range_bias(u,v) << std::endl;
 		new_res += std::pow(arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v),2)/(this -> footpoints.size());
 
 	}
-
-	std::cout << this -> get_range_bias(1,0) << std::endl;
 
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
