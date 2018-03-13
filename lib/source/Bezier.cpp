@@ -917,10 +917,16 @@ void Bezier::compute_range_biases(){
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
 
+		std::vector<double> Hi_vec;
 		for (unsigned int k = 0; k < this -> n + 1; ++k){
 			for (unsigned int l = 0; l < this -> n + 1 - k; ++l){
-				Hi(k * (this -> n - k + 1) + l) = Bezier::bernstein(u, v,k,l, this -> n);
+				Hi_vec.push_back(Bezier::bernstein(u, v,k,l, this -> n));
 			}	
+		}
+
+		for (unsigned int k = 0; k < Hi_vec.size(); ++k){
+
+			Hi(k) = Hi_vec[k];
 		}
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
