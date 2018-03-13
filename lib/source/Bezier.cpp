@@ -909,7 +909,7 @@ void Bezier::compute_range_biases(){
 	arma::vec normal_mat = arma::zeros<arma::vec>(N);
 	arma::rowvec Hi(N);
 
-	double res = 0;
+	double old_res = 0;
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
@@ -931,14 +931,14 @@ void Bezier::compute_range_biases(){
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
 		info_mat += Hi.t() * Hi;
-		res += std::pow(arma::dot(normal,Ptilde - Pbar),2)/(this -> footpoints.size());
+		old_res += std::pow(arma::dot(normal,Ptilde - Pbar),2)/(this -> footpoints.size());
 
 
 	}
 	this -> biases = arma::solve(info_mat,normal_mat);
 
-	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(res) << std::endl;
-	res = 0;
+	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(old_res) << std::endl;
+	double new_res = 0;
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 		double u = this -> footpoints[i].u;
@@ -947,7 +947,7 @@ void Bezier::compute_range_biases(){
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
 		std::cout << u << " " << v << " " << this -> get_range_bias(u,v) << std::endl;
-		res += std::pow(arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v),2)/(this -> footpoints.size());
+		new_res += std::pow(arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v),2)/(this -> footpoints.size());
 
 	}
 
@@ -956,7 +956,8 @@ void Bezier::compute_range_biases(){
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
 
-	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(res) << std::endl  << std::endl;
+	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(new_res) << std::endl  << std::endl;
+	std::cout << "-- Reduction percentage: " << (std::sqrt(new_res) - std::sqrt(old_res)) /std::sqrt(old_res) * 100 << " %"   << std::endl  << std::endl;
 
 
 
