@@ -179,7 +179,9 @@ bool KDTreeShape::hit(KDTreeShape * node,
 
 				// If there is a hit
 				if (shape_model_bezier == nullptr){
-					hit_element = ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()));
+					if (ray -> single_facet_ray_casting( static_cast<Facet * >(node -> elements[i].get()))){
+						hit_element = true;
+					}
 				}
 				// If the shape is a collection of Bezier patches, things get a bit more protracted
 				else{
