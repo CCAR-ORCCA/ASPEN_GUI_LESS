@@ -979,7 +979,7 @@ double Bezier::get_range_bias(const double & u, const double & v) const{
 	for (unsigned int l = 0; l < this -> n + 1; ++l){
 		for (unsigned int k = 0; k < this -> n + 1 - l; ++k){
 
-			bias += this -> bernstein(u,v,l,k,this -> n) * this -> bias(i);
+			bias += this -> bernstein(u,v,l,k,this -> n) * this -> biases(i);
 
 			++i;
 		}
