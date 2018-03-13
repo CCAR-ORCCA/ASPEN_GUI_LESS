@@ -126,6 +126,8 @@ int main() {
 	args.set_mu(arma::datum::G * true_shape_model . get_volume() * DENSITY);
 	args.set_mass(true_shape_model . get_volume() * DENSITY);
 	args.set_lidar(&lidar);
+	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
+	
 
 
 	// Initial state
