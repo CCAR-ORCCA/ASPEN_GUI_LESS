@@ -393,6 +393,10 @@ public:
 	static double beta_ijkl( const int i,  const int j,  const int k, const  int l,  const int n);
 
 
+	/**
+	Compute normal range biases over the patch
+	*/
+	void compute_range_biases();
 
 
 protected:
@@ -500,7 +504,7 @@ protected:
 	arma::mat P_X;
 	std::vector<Footpoint> footpoints;
 
-
+	arma::vec biases;
 
 };
 #endif

@@ -444,24 +444,24 @@ std::set < Element * > Bezier::get_neighbors(double u, double v) const{
 	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
 	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
 	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
- 	
 
- 	if ( v < 0){
- 		return V0 -> common_facets(V2);
- 	}
 
- 	if (1 - u - v < 0){
- 		return V0 -> common_facets(V1);
- 	}
- 	
+	if ( v < 0){
+		return V0 -> common_facets(V2);
+	}
 
- 	if (u < 0){
- 		return V1 -> common_facets(V2);
- 	}
- 	
- 	else{
- 		return this -> get_neighbors(true);
- 	}
+	if (1 - u - v < 0){
+		return V0 -> common_facets(V1);
+	}
+
+
+	if (u < 0){
+		return V1 -> common_facets(V2);
+	}
+
+	else{
+		return this -> get_neighbors(true);
+	}
 
 
 }
@@ -867,7 +867,6 @@ void Bezier::train_patch_covariance(){
 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 	unsigned int N_iter = 30 ;
 
-
 	// The initial guess for the covariance is computed.
 	double alpha = initialize_covariance(this -> footpoints,v,W,v_i_norm,epsilon);
 
@@ -898,6 +897,45 @@ void Bezier::train_patch_covariance(){
 
 	std::cout << "-- Final covariance: " << std::endl;
 	std::cout << this -> P_X << std::endl;
+
+}
+
+
+void Bezier::compute_range_biases(){
+
+	auto N = this -> control_points.size();
+	auto P = (N + 2) * (N + 1)/2;
+
+	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
+	arma::vec normal_mat = arma::zeros<arma::vec>(N);
+	arma::rowvec Hi(P);
+
+	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
+
+		double u = this -> footpoints[i].u;
+		double v = this -> footpoints[i].v;
+		arma::vec normal = this -> footpoints[i].n;
+		arma::vec Ptilde = this -> footpoints[i].Ptilde;
+		arma::vec Pbar = this -> footpoints[i].Pbar;
+
+		for (unsigned int k = 0; k < N + 1; ++k){
+			for (unsigned int l = 0; l < N + 1 - k; ++l){
+				Hi(k * (N - k + 1) + l) = Bezier::bernstein(u, v,k,l, this -> n);
+			}	
+		}
+
+		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
+		info_mat += Hi.t() * Hi.t();
+
+
+	}
+
+
+	this -> biases = arma::solve(info_mat,normal_mat);
+	std::cout << "-- Patch biases: " << std::endl;
+	std::cout << this -> biases.t() << std::endl;
+
+
 
 }
 
