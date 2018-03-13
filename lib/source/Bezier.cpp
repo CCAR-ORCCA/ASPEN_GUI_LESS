@@ -903,11 +903,13 @@ void Bezier::train_patch_covariance(){
 
 void Bezier::compute_range_biases(){
 
-	auto N = 4;
+	unsigned int N = 3;
 
-	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
-	arma::vec normal_mat = arma::zeros<arma::vec>(N);
-	arma::rowvec Hi(N);
+	unsigned int P = (N + 1) * (N + 2) / 2;
+
+	arma::mat info_mat = arma::zeros<arma::mat>(P,P);
+	arma::vec normal_mat = arma::zeros<arma::vec>(P);
+	arma::rowvec Hi(P);
 
 	double old_res = 0;
 
@@ -921,9 +923,9 @@ void Bezier::compute_range_biases(){
 
 		unsigned int p = 0;
 		
-		for (unsigned int k = 0; k < this -> n + 1; ++k){
-			for (unsigned int l = 0; l < this -> n + 1 - k; ++l){
-				Hi(p) = Bezier::bernstein(u, v,k,l, this -> n);
+		for (unsigned int k = 0; k < N + 1; ++k){
+			for (unsigned int l = 0; l < N + 1 - k; ++l){
+				Hi(p) = Bezier::bernstein(u, v,k,l, N);
 				++p;
 			}	
 		}
@@ -971,12 +973,13 @@ double Bezier::get_range_bias(const double & u, const double & v) const{
 	double bias = 0;
 	unsigned int i = 0;
 
+	int P = this -> biases.n_rows;
+	int N = (unsigned int ) ((-3. + std::sqrt(9 - 8 * (1 - P )))/2);
 
+	for (int l = 0; l < N + 1; ++l){
+		for (int k = 0; k < N + 1 - l; ++k){
 
-	for (unsigned int l = 0; l < this -> n + 1; ++l){
-		for (unsigned int k = 0; k < this -> n + 1 - l; ++k){
-
-			bias += this -> bernstein(u,v,l,k,this -> n) * this -> biases(i);
+			bias += this -> bernstein(u,v,l,k,N) * this -> biases(i);
 
 			++i;
 		}
