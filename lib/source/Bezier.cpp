@@ -909,6 +909,8 @@ void Bezier::compute_range_biases(){
 	arma::vec normal_mat = arma::zeros<arma::vec>(N);
 	arma::rowvec Hi(N);
 
+	double res = 0;
+
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
 		double u = this -> footpoints[i].u;
@@ -931,9 +933,24 @@ void Bezier::compute_range_biases(){
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
 		info_mat += Hi.t() * Hi;
+		res += std::pow(arma::dot(normal,Ptilde - Pbar),2)/(this -> footpoints.size());
 
 
 	}
+
+	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(res) << std::endl;
+	res = 0;
+
+	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
+		double u = this -> footpoints[i].u;
+		double v = this -> footpoints[i].v;
+		res += std::pow(arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v),2)/(this -> footpoints.size());
+
+	}
+
+	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(res) << std::endl;
+
+
 	std::cout << "-- Info mat of biases: " << std::endl;
 
 	std::cout << info_mat << std::endl;
@@ -946,6 +963,33 @@ void Bezier::compute_range_biases(){
 
 
 }
+
+
+double Bezier::get_range_bias(const double & u, const double & v) const{
+
+
+	double bias = 0;
+	unsigned int i = 0;
+
+
+
+	for (unsigned int l = 0; l < this -> n + 1; ++l){
+		for (unsigned int k = 0; k < this -> n + 1 - l; ++k){
+
+			bias += this -> bernstein(u,v,l,k,this -> n) * this -> bias(i);
+
+			++i;
+		}
+
+
+	}
+
+	return bias;
+
+
+
+}
+
 
 void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
 

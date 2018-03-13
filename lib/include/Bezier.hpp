@@ -398,6 +398,15 @@ public:
 	*/
 	void compute_range_biases();
 
+	/**
+	Returns the range bias at the provided location, disregarding incidence
+	effect
+	@param u first barycentric coordinate
+	@param v second barycentric coordinate
+	@return range bias at queried location
+	*/
+	double get_range_bias(const double & u, const double & v) const;
+
 
 protected:
 
