@@ -903,7 +903,7 @@ void Bezier::train_patch_covariance(){
 
 void Bezier::compute_range_biases(){
 
-	auto N = this -> control_points.size();
+	auto N = 4;
 
 	arma::mat info_mat = arma::zeros<arma::mat>(N,N);
 	arma::vec normal_mat = arma::zeros<arma::vec>(N);
@@ -935,6 +935,7 @@ void Bezier::compute_range_biases(){
 
 
 	}
+
 	this -> biases = arma::solve(info_mat,normal_mat);
 
 	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(old_res) << std::endl;

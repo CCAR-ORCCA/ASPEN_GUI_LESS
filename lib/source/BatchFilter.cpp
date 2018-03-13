@@ -149,7 +149,6 @@ int  BatchFilter::run(
 
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
-			std::cout << P_cc(p,p) << std::endl;
 		}
 
 
@@ -170,7 +169,6 @@ int  BatchFilter::run(
 		P_hat_0 = arma::inv(info_mat) * std::pow(args.get_sd_noise(),2) ;
 
 		// The deviation is applied to the state
-
 		arma::vec X_hat_0 = X_bar + dx_hat;
 
 		X_bar = X_hat_0;
