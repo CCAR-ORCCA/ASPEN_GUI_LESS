@@ -142,6 +142,10 @@ int  BatchFilter::run(
 
 		arma::mat P_cc = arma::eye<arma::mat>(H.n_rows,H.n_rows);
 
+
+		#if BATCH_DEBUG || FILTER_DEBUG
+		std::cout << "----  Populating consider covariance" << std::endl;
+		#endif
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
 		}
