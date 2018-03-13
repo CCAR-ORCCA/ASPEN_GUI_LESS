@@ -45,6 +45,10 @@ int  BatchFilter::run(
 	arma::mat H;
 	arma::mat H_Pcc_H;
 
+
+	std::vector<double> sigma_consider_vector_ptr;
+	this -> args.set_sigma_consider_vector_ptr(&sigma_consider_vector_ptr);
+
 	arma::mat info_mat;
 	arma::vec normal_mat;
 	arma::vec dx_bar_0 = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
@@ -66,6 +70,9 @@ int  BatchFilter::run(
 
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
+
+
+		sigma_consider_vector_ptr.clear();
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;

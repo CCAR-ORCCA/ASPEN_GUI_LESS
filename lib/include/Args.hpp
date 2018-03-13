@@ -246,6 +246,16 @@ public:
 	}
 
 
+	std::vector<double> * get_sigma_consider_vector_ptr() const {
+		return this -> sigma_consider_vector_ptr;
+	}
+
+	void set_sigma_consider_vector_ptr(std::vector<double> * ptr)  {
+		this -> sigma_consider_vector_ptr = ptr;
+	}
+
+
+
 protected:
 
 	double density;
@@ -292,6 +302,8 @@ protected:
 	std::vector<arma::vec> * true_small_body_attitude;
 	std::vector<arma::vec> * estimated_small_body_attitude;
 
+
+	std::vector<double> * sigma_consider_vector_ptr;
 
 };
 

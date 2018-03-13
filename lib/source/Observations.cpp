@@ -123,7 +123,9 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				
 				n = bezier -> get_normal(u_t,v_t);
-				
+
+				double sigma_consider = std::abs(bezier -> get_range_bias(u_t,v_t));
+				args.get_sigma_consider_vector_ptr() -> push_back(sigma_consider);
 			}
 
 			H.row(i) = - n.t() / arma::dot(n,u);
