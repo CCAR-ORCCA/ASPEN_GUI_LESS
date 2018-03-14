@@ -30,8 +30,8 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 0.333333e-2 // Ann's 1sigma
-#define LOS_NOISE_FRACTION_MES_TRUTH 0.
+#define LOS_NOISE_SD_BASELINE 0.333333e-2 // Ann's 1sigma (m)
+#define LOS_NOISE_FRACTION_MES_TRUTH 0.333333e-2
 
 // Process noise (m/s^2)
 #define PROCESS_NOISE_SIGMA 1e-9

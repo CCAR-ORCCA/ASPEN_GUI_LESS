@@ -147,7 +147,6 @@ int  BatchFilter::run(
 		std::cout << "----  Populating consider covariance and removing outliers" << std::endl;
 		#endif
 
-		#pragma omp parallel for
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
 			P_cc(p,p) = std::pow(sigma_consider_vector_ptr[p],2);
