@@ -30,7 +30,7 @@ int  BatchFilter::run(
 	this -> true_state_history.push_back(X0_true);
 
 	// The true, noisy observations are computed
-	this -> compute_true_observations(T_obs,R);
+	this -> compute_true_observations(T_obs,1e-10 * R);
 
 	#if BATCH_DEBUG || FILTER_DEBUG
 	std::cout << "-- Done computing true observations" << std::endl;
