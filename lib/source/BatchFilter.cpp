@@ -155,7 +155,7 @@ int  BatchFilter::run(
 			double mes_range;
 			
 			if (true_ranges.subvec(p,p).has_nan()){
-				mes_range = 0
+				mes_range = 0;
 			}
 			else{
 				mes_range = true_ranges(p);
