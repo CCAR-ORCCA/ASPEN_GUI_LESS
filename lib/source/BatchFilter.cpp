@@ -159,7 +159,6 @@ int  BatchFilter::run(
 			else{
 				mes_range = true_ranges(p);
 				W(p,p) = 1./(std::pow(args.get_sd_noise() + args.get_sd_noise_prop() * mes_range,2));
-				std::cout << W(p,p) << " " << mes_range << std::endl;
 
 
 			}
