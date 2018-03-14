@@ -30,7 +30,11 @@ int  BatchFilter::run(
 	this -> true_state_history.push_back(X0_true);
 
 	// The true, noisy observations are computed
-	this -> compute_true_observations(T_obs,R);
+	this -> compute_true_observations(T_obs,R,
+		std::pow(args.get_sd_noise_prop(),2) * arma::ones<arma::mat>(1,1));
+
+	auto true_ranges = this -> true_obs_history[0];
+
 
 	#if BATCH_DEBUG || FILTER_DEBUG
 	std::cout << "-- Done computing true observations" << std::endl;
@@ -40,8 +44,6 @@ int  BatchFilter::run(
 	// Containers
 	arma::vec X_bar;
 	arma::vec y_bar;
-
-
 
 	arma::mat H;
 	arma::mat H_Pcc_H;
@@ -137,15 +139,22 @@ int  BatchFilter::run(
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
 		arma::sp_mat P_cc(H.n_rows,H.n_rows);
+		arma::sp_mat W(H.n_rows,H.n_rows);
+
 		arma::vec biases = arma::zeros<arma::vec>(H.n_rows);
 
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Populating consider covariance and removing outliers" << std::endl;
 		#endif
+
+
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
 			P_cc(p,p) = std::pow(sigma_consider_vector_ptr[p],2);
+
+			W(p,p) = 1./(std::pow(args.get_sd_noise() + args.get_sd_noise_prop() * true_ranges(p),2));
+
 			biases(p) = biases_consider_vector_ptr[p];
 
 			if (std::abs(y_bar(p)) > 10 * rms_res){
@@ -158,8 +167,11 @@ int  BatchFilter::run(
 		#endif
 
 
-		info_mat += H.t() * H ;
-		normal_mat += H.t() * y_bar ;
+		// The weighting matrix is computed
+
+
+		info_mat += H.t() * W * H ;
+		normal_mat += H.t() * W * y_bar ;
 
 
 
@@ -169,13 +181,12 @@ int  BatchFilter::run(
 		auto dx_hat = arma::solve(info_mat,normal_mat);
 
 		// The covariance of the state at the initial time is computed
-		P_hat_0 = arma::inv(info_mat) * std::pow(args.get_sd_noise(),2) ;
+		P_hat_0 = arma::inv(info_mat) ;
 
 		// dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Info mat: \n" << info_mat << std::endl;
-		std::cout << "--- Info mat rank: " << arma::rank(info_mat) << std::endl;
 		std::cout << "--- Normal mat:\n " << normal_mat << std::endl;
 		std::cout << "---  Deviation: "<< std::endl;
 		std::cout << dx_hat << std::endl;

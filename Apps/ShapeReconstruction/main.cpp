@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 5e-2 // Goldeneye 1sigma
+#define LOS_NOISE_SD_BASELINE 0.333333e-2 // Ann's 1sigma
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -126,8 +126,7 @@ int main() {
 	args.set_mass(true_shape_model . get_volume() * DENSITY);
 	args.set_lidar(&lidar);
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
-
-
+	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
@@ -226,7 +225,7 @@ int main() {
 	estimated_shape_model -> align_with_principal_axes();
 
 
-	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
+	// estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
 	args.set_estimated_shape_model(estimated_shape_model.get());
 
