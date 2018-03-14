@@ -206,7 +206,7 @@ int main() {
 
 
 	auto start = std::chrono::system_clock::now();
-	shape_filter.run_shape_reconstruction(times,X_augmented,true);
+	// shape_filter.run_shape_reconstruction(times,X_augmented,true);
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
