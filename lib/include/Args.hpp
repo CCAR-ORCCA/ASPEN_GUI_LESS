@@ -250,6 +250,11 @@ public:
 		return this -> sigma_consider_vector_ptr;
 	}
 
+
+	std::vector<double> * get_biases_consider_vector_ptr() const {
+		return this -> biases_consider_vector_ptr;
+	}
+
 	void set_sigma_consider_vector_ptr(std::vector<double> * ptr)  {
 		this -> sigma_consider_vector_ptr = ptr;
 	}
