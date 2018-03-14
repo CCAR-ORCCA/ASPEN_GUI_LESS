@@ -67,13 +67,11 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	const arma::vec & res,const arma::mat & R) const{
 
 	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
-	std::cout << "R matrix in measurement update: " << std::endl;
-	std::cout << R << std::endl;
-
+	
 
 
 	// The Kalman gain is computed
-	arma::mat K = 0 * P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
+	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;
