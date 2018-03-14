@@ -153,7 +153,7 @@ int  BatchFilter::run(
 
 			double mes_range;
 			
-			if (true_ranges.subvec(p,p).has_nan()){
+			if (true_ranges.subvec(p,p).has_nan() || true_ranges(0) > 1e10){
 				mes_range = 0;
 			}
 			else{
