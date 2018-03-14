@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64 // Goldeneye
-#define COL_RESOLUTION 64 // Goldeneye
+#define ROW_RESOLUTION 128 // Goldeneye
+#define COL_RESOLUTION 128 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -30,8 +30,8 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 0.333333e-2 // Ann's 1sigma (m)
-#define LOS_NOISE_FRACTION_MES_TRUTH 0.333333e-2
+#define LOS_NOISE_SD_BASELINE 5e-2 
+#define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
 #define PROCESS_NOISE_SIGMA 1e-9
