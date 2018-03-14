@@ -253,8 +253,8 @@ int main() {
 
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
 
-	
-	// X0_estimated_augmented.subvec(0,5) += arma::diagmat(arma::sqrt(P0_spacecraft_vec)) * arma::randn(6);
+
+	X0_estimated_augmented.subvec(0,5) += arma::diagmat(arma::sqrt(P0_spacecraft_vec)) * arma::randn(6);
 
 
 	std::cout << "True state: " << std::endl;
