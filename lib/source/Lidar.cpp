@@ -116,7 +116,6 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 		// If there's a hit, noise is added along the line of sight on the true measurement
 		if (hit && add_noise) {
 
-			std::cout << " Adding noise within the lidar " << std::endl;
 			arma::vec random_vec = arma::randn(1);
 			double true_range = this -> focal_plane[pixel] -> get_true_range();
 
