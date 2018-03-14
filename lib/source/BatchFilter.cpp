@@ -171,7 +171,7 @@ int  BatchFilter::run(
 			}
 		}
 		#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "---- Larger residuals after removing outliers: " << arma::abs(y_bar).max() << std::endl;
+		std::cout << "---- Largest residuals after removing outliers: " << arma::abs(y_bar).max() << std::endl;
 		#endif
 
 

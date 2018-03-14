@@ -914,7 +914,10 @@ void Bezier::compute_range_biases(){
 	arma::vec normal_mat = arma::zeros<arma::vec>(P);
 	arma::rowvec Hi(P);
 
-	double old_res = 0;
+
+	arma::vec old_res_vec(this -> footpoints.size());
+	arma::vec new_res_vec(this -> footpoints.size());
+
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
@@ -936,16 +939,18 @@ void Bezier::compute_range_biases(){
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
 		info_mat += Hi.t() * Hi;
-		old_res += std::pow(arma::dot(normal,Ptilde - Pbar),2)/(this -> footpoints.size());
-
+		old_res_vec(p) = arma::dot(normal,Ptilde - Pbar);
 
 	}
 
-	this -> biases = arma::solve(info_mat,normal_mat);
-	this -> fitting_residuals = std::sqrt(old_res);
+	double old_res_std = arma::stddev(old_res_vec);
 
-	std::cout << "-- Postfit range residuals without biases: " << std::sqrt(old_res) << std::endl;
-	double new_res = 0;
+	this -> biases = arma::solve(info_mat,normal_mat);
+	this -> fitting_residuals = old_res_std;
+
+	std::cout << "-- Postfit range residuals without biases: " << this -> fitting_residuals << std::endl;
+	
+	
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 		double u = this -> footpoints[i].u;
@@ -953,19 +958,21 @@ void Bezier::compute_range_biases(){
 		arma::vec normal = this -> footpoints[i].n;
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
-		new_res += std::pow(arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v),2)/(this -> footpoints.size());
 
+		new_res_vec(p) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
 	}
+
+	double new_res_std = arma::stddev(new_res_vec);
+
 
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
 
-	std::cout << "-- Postfit range residuals with biases: " << std::sqrt(new_res) << std::endl  << std::endl;
-	std::cout << "-- Reduction percentage: " << (std::sqrt(new_res) - std::sqrt(old_res)) /std::sqrt(old_res) * 100 << " %"   << std::endl  << std::endl;
+	std::cout << "-- Postfit range residuals with biases: " << new_res_std << std::endl  << std::endl;
+	std::cout << "-- Reduction percentage: " << (new_res_std - old_res_std) /old_res_std* 100 << " %"   << std::endl  << std::endl;
 
-
-
-
+	old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
+	new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
 
 
 }

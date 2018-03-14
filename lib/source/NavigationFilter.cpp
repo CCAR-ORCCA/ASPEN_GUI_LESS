@@ -97,7 +97,7 @@ int NavigationFilter::run(
 	for (unsigned int t = 0; t < T_obs.size() - 1; ++t){
 
 		#if NAVIGATION_DEBUG
-		std::cout << "--- Time : " << T_obs[t] << " Index: " << t << "/" << T_obs.size() - 2 <<std::endl;
+		std::cout << "##################### Time : " << T_obs[t] << " Index: " << t << "/" << T_obs.size() - 2 <<std::endl;
 		#endif
 
 
