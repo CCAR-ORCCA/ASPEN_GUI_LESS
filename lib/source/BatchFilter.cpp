@@ -162,7 +162,7 @@ int  BatchFilter::run(
 			
 
 			W(p,p) = 1./(std::pow(args.get_sd_noise() + args.get_sd_noise_prop() * mes_range,2));
-
+			std::cout << W(p,p) << std::endl;
 			biases(p) = biases_consider_vector_ptr[p];
 
 			if (std::abs(y_bar(p)) > 10 * rms_res){
