@@ -202,7 +202,7 @@ void Filter::compute_true_observations(const std::vector<double> & T_obs,
 
 	arma::vec Y = this -> true_observation_fun(T_obs[0],this -> true_state_history[0],this -> args);
 
-	Y += (mes_noise_sd + prop_noise_sd * Y) * arma::randn<arma::vec>( Y.n_rows ) ;
+	Y += (mes_noise_sd + prop_noise_sd * Y) % arma::randn<arma::vec>( Y.n_rows ) ;
 
 	this -> true_obs_history.push_back(Y);
 
