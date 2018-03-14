@@ -906,7 +906,7 @@ void Bezier::train_patch_covariance(){
 
 void Bezier::compute_range_biases(){
 
-	unsigned int N = 3;
+	unsigned int N = 2;
 
 	unsigned int P = (N + 1) * (N + 2) / 2;
 
@@ -967,13 +967,14 @@ void Bezier::compute_range_biases(){
 
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
-
+	double reduction = (new_res_std - old_res_std) /old_res_std* 100 ;
 	std::cout << "-- Postfit range residuals with biases: " << new_res_std << std::endl  << std::endl;
-	std::cout << "-- Reduction percentage: " << (new_res_std - old_res_std) /old_res_std* 100 << " %"   << std::endl  << std::endl;
+	std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
 
-	old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
-	new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
-
+	if (abs(reduction) > 40){
+		old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
+		new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
+	}
 
 }
 
