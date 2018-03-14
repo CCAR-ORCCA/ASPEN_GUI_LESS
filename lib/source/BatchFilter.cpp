@@ -105,7 +105,7 @@ int  BatchFilter::run(
 			break;
 		}
 
-		double N_mes;
+		double N_mes, rms_res;
 		// The state is checked for convergence based on the residuals
 		if (has_converged && i != 0){
 			iterations = i;
@@ -116,7 +116,7 @@ int  BatchFilter::run(
 
 			arma::vec y_non_zero = y_bar.elem(arma::find(y_bar));
 
-			double rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+			rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
 			N_mes = y_non_zero.n_rows;
 
 
@@ -137,6 +137,7 @@ int  BatchFilter::run(
 		// H has already been pre-multiplied by the corresponding gains
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
+		arma::sp_mat P_cc(H.n_rows,H.n_rows);
 
 
 		#if BATCH_DEBUG || FILTER_DEBUG
@@ -159,7 +160,6 @@ int  BatchFilter::run(
 		info_mat += H.t() * H ;
 		normal_mat += H.t() * y_bar ;
 
-		arma::sp_mat P_cc(H.n_rows,H.n_rows);
 
 
 		
