@@ -42,16 +42,22 @@ int  BatchFilter::run(
 	arma::vec y_bar;
 
 
+
 	arma::mat H;
 	arma::mat H_Pcc_H;
 
 
 	std::vector<double> sigma_consider_vector_ptr;
+	std::vector<double> biases_consider_vector_ptr;
+
 	this -> args.set_sigma_consider_vector_ptr(&sigma_consider_vector_ptr);
+	this -> args.set_biases_consider_vector_ptr(&biases_consider_vector_ptr);
+
 
 	arma::mat info_mat;
 	arma::vec normal_mat;
 	arma::vec dx_bar_0 = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
+	arma::vec dx_hat_consider = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
 	arma::mat P_hat_0;
 
 	bool has_converged;
@@ -73,6 +79,8 @@ int  BatchFilter::run(
 
 
 		sigma_consider_vector_ptr.clear();
+		biases_consider_vector_ptr.clear();
+
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
@@ -138,6 +146,7 @@ int  BatchFilter::run(
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
 		arma::sp_mat P_cc(H.n_rows,H.n_rows);
+		arma::vec biases = arma::zeros<arma::vec>(H.n_rows);
 
 
 		#if BATCH_DEBUG || FILTER_DEBUG
@@ -145,7 +154,8 @@ int  BatchFilter::run(
 		#endif
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
-			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
+			P_cc(p,p) = std::pow(sigma_consider_vector_ptr[p],2);
+			biases(p) = biases_consider_vector_ptr[p];
 
 			if (std::abs(y_bar(p)) > 10 * rms_res){
 				H.row(p).fill(0);
@@ -162,15 +172,15 @@ int  BatchFilter::run(
 
 
 
-		
-
-		
-
-
 		H_Pcc_H = H.t() * P_cc * H;
 
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
+
+		// The covariance of the state at the initial time is computed
+		P_hat_0 = arma::inv(info_mat) * std::pow(args.get_sd_noise(),2) ;
+
+		dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Info mat: \n" << info_mat << std::endl;
@@ -178,19 +188,19 @@ int  BatchFilter::run(
 		std::cout << "--- Normal mat:\n " << normal_mat << std::endl;
 		std::cout << "---  Deviation: "<< std::endl;
 		std::cout << dx_hat << std::endl;
+		std::cout << "---  Deviation with consider effect: "<< std::endl;
+		std::cout << dx_hat + dx_hat_consider<< std::endl;
 		#endif
 
-		// The covariance of the state at the initial time is computed
-		P_hat_0 = arma::inv(info_mat) * std::pow(args.get_sd_noise(),2) ;
-
+		
 		// The deviation is applied to the state
-		arma::vec X_hat_0 = X_bar + dx_hat;
+		arma::vec X_hat_0 = X_bar + dx_hat + dx_hat_consider;
 
 		X_bar = X_hat_0;
 
 
 		// The a-priori deviation is adjusted
-		dx_bar_0 = dx_bar_0 - dx_hat;
+		dx_bar_0 = dx_bar_0 - dx_hat - dx_hat_consider;
 
 	}
 

@@ -254,6 +254,9 @@ public:
 		this -> sigma_consider_vector_ptr = ptr;
 	}
 
+	void set_biases_consider_vector_ptr(std::vector<double> * ptr)  {
+		this -> biases_consider_vector_ptr = ptr;
+	}
 
 
 protected:
@@ -304,6 +307,8 @@ protected:
 
 
 	std::vector<double> * sigma_consider_vector_ptr;
+	std::vector<double> * biases_consider_vector_ptr;
+
 
 };
 
