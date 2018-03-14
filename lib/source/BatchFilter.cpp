@@ -137,19 +137,34 @@ int  BatchFilter::run(
 		// H has already been pre-multiplied by the corresponding gains
 		H = this -> estimate_jacobian_observations_fun(T_obs[0], X_bar ,this -> args);
 
+
+
+		#if BATCH_DEBUG || FILTER_DEBUG
+		std::cout << "----  Populating consider covariance and removing outliers" << std::endl;
+		#endif
+		for (unsigned int p = 0; p < H.n_rows; ++p){
+
+			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
+
+			if (std::abs(y_bar(p)) > 10 * rms_res){
+				H.row(p).fill(0);
+				y_bar(p) = 0;
+			}
+		}
+		#if BATCH_DEBUG || FILTER_DEBUG
+		std::cout << "---- Larger residuals after removing outliers: " << arma::abs(y_bar).max() << std::endl;
+		#endif
+
+
 		info_mat += H.t() * H ;
 		normal_mat += H.t() * y_bar ;
 
 		arma::sp_mat P_cc(H.n_rows,H.n_rows);
 
 
-		#if BATCH_DEBUG || FILTER_DEBUG
-		std::cout << "----  Populating consider covariance" << std::endl;
-		#endif
+		
 
-		for (unsigned int p = 0; p < H.n_rows; ++p){
-			P_cc(p,p) = std::pow(args.get_sigma_consider_vector_ptr() -> at(p),2);
-		}
+		
 
 
 		H_Pcc_H = H.t() * P_cc * H;
