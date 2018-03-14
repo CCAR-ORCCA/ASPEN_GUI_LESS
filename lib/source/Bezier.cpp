@@ -939,7 +939,7 @@ void Bezier::compute_range_biases(){
 
 		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
 		info_mat += Hi.t() * Hi;
-		old_res_vec(p) = arma::dot(normal,Ptilde - Pbar);
+		old_res_vec(i) = arma::dot(normal,Ptilde - Pbar);
 
 	}
 
@@ -959,7 +959,7 @@ void Bezier::compute_range_biases(){
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
 
-		new_res_vec(p) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
+		new_res_vec(i) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
 	}
 
 	double new_res_std = arma::stddev(new_res_vec);
