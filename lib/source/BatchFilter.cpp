@@ -60,8 +60,6 @@ int  BatchFilter::run(
 	arma::vec dx_hat_consider = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
 	arma::mat P_hat_0;
 
-	bool has_converged;
-
 	// The filter is initialized
 	X_bar = X_bar_0;
 
@@ -73,6 +71,7 @@ int  BatchFilter::run(
 	std::cout << "-- Iterating the filter" << std::endl;
 	#endif
 
+	double old_residuals = std::numeric_limits<double>::infinity();
 
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
@@ -91,11 +90,10 @@ int  BatchFilter::run(
 		#endif
 
 		// The prefit residuals are computed
-		this -> compute_prefit_residuals(T_obs[0],X_bar,y_bar,has_converged);
+		this -> compute_prefit_residuals(T_obs[0],X_bar,y_bar);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Done computing prefit residuals" << std::endl;
-		std::cout << "----  Has converged? " << has_converged << std::endl;
 		#endif
 
 		// If the batch was only run for the pass-trough
@@ -202,6 +200,28 @@ int  BatchFilter::run(
 		// The a-priori deviation is adjusted
 		dx_bar_0 = dx_bar_0 - dx_hat - dx_hat_consider;
 
+
+		// Checking for convergence
+		double variation = std::abs(rms_res - old_residuals)/rms_res * 100;
+		if (variation < 1e-3){
+		#if BATCH_DEBUG || FILTER_DEBUG
+
+			std::cout << "--- Batch Filter has converged" << std::endl;
+
+		#endif
+
+			break;
+		}
+		else{
+		#if BATCH_DEBUG || FILTER_DEBUG
+			
+			std::cout << "--- Variation in residuals: " << variation << " %" << std::endl;
+		#endif
+
+			old_residuals = rms_res;
+		}
+
+
 	}
 
 
@@ -238,8 +258,7 @@ int  BatchFilter::run(
 void BatchFilter::compute_prefit_residuals(
 	double t,
 	const arma::vec & X_bar,
-	arma::vec & y_bar,
-	bool & has_converged){
+	arma::vec & y_bar){
 
 	// The previous residuals are discarded
 	double rms_res = 0;
@@ -268,11 +287,6 @@ void BatchFilter::compute_prefit_residuals(
 	std::cout << " - Largest residual in batch: " << arma::abs(y_bar).max() << std::endl;
 		#endif
 	rms_res += std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows);
-
-	
-
-	
-	has_converged = false;
 	
 
 }

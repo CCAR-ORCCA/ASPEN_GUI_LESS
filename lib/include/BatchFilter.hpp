@@ -25,8 +25,7 @@ protected:
 	void compute_prefit_residuals(
 		double t,
 		const arma::vec & X_bar,
-		arma::vec & y_bar,
-		bool & has_converged);
+		arma::vec & y_bar);
 
 
 	void compute_covariances(const arma::mat & P_hat_0);
