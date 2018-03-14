@@ -176,7 +176,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 
 	arma::vec x_bar_bar = x.rows(0,2);
 	std::cout << x_bar_bar.t() << std::endl;
-	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,args.get_sd_noise() * arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
+	int iter = filter.run(10,*args. get_true_pos(),x_bar_bar,times,std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
 
 
 	// The covariance in the position is extracted here
