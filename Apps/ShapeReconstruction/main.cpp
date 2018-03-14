@@ -34,7 +34,7 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
-#define PROCESS_NOISE_SIGMA 1e-7
+#define PROCESS_NOISE_SIGMA 1e-9
 
 // Times (s)
 #define T0 0
@@ -74,7 +74,6 @@
 int main() {
 
 	arma::arma_rng::set_seed(0);
-
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -215,11 +214,11 @@ int main() {
 	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
 
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,
-	// 	"E",&frame_graph));
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,
+		"E",&frame_graph));
 
 
 	estimated_shape_model -> shift_to_barycenter();
@@ -242,7 +241,7 @@ int main() {
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
 	arma::vec P0_diag = {0.001,0.001,0.001,0.001,0.001,0.001,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
-	arma::vec P0_spacecraft_vec = {300,100,100,1e-6,1e-6,1e-6};
+	arma::vec P0_spacecraft_vec = {100,100,100,1e-6,1e-6,1e-6};
 
 	P0_diag.subvec(0,5) = P0_spacecraft_vec;
 

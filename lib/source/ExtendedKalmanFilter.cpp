@@ -56,10 +56,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 		augmented_state_history[1].rows(N_est,N_est + N_est * N_est - 1),
 		N_est,N_est);
 
-	
-
 	P_hat = stm * P_hat * stm.t();
-
 
 }
 
@@ -68,7 +65,6 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 
 	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
 	
-
 
 	// The Kalman gain is computed
 	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
