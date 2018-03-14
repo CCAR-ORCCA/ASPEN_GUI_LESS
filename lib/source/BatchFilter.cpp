@@ -112,24 +112,17 @@ int  BatchFilter::run(
 		}
 
 		double N_mes, rms_res;
-		// The state is checked for convergence based on the residuals
-		if (has_converged && i != 0){
-			iterations = i;
-			break;
-		}
-		else{
+		
 			#if BATCH_DEBUG || FILTER_DEBUG
 
-			arma::vec y_non_zero = y_bar.elem(arma::find(y_bar));
+		arma::vec y_non_zero = y_bar.elem(arma::find(y_bar));
 
-			rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
-			N_mes = y_non_zero.n_rows;
+		rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+		N_mes = y_non_zero.n_rows;
 
-
-			std::cout << "-----  Has not converged" << std::endl;
-			std::cout << "-----  Residuals: " << rms_res << std::endl;
+		std::cout << "-----  Residuals: " << rms_res << std::endl;
 			#endif
-		}
+		
 
 		// The normal and information matrices are assembled
 		info_mat = this -> info_mat_bar_0;
@@ -204,17 +197,18 @@ int  BatchFilter::run(
 		// Checking for convergence
 		double variation = std::abs(rms_res - old_residuals)/rms_res * 100;
 		if (variation < 1e-3){
+		
 		#if BATCH_DEBUG || FILTER_DEBUG
-
 			std::cout << "--- Batch Filter has converged" << std::endl;
-
 		#endif
 
+			iterations = i;
 			break;
 		}
+
 		else{
 		#if BATCH_DEBUG || FILTER_DEBUG
-			
+
 			std::cout << "--- Variation in residuals: " << variation << " %" << std::endl;
 		#endif
 
@@ -241,7 +235,7 @@ int  BatchFilter::run(
 
 	this -> estimated_state_history.push_back(X_bar);
 	this -> estimated_covariance_history.push_back(P_hat_0);
-	
+
 	this -> residuals.push_back( y_bar);
 
 	y_bar.save("../output/range_residuals/residuals_" + std::to_string(T_obs[0])+ ".txt",arma::raw_ascii);
@@ -263,7 +257,7 @@ void BatchFilter::compute_prefit_residuals(
 	// The previous residuals are discarded
 	double rms_res = 0;
 
-	
+
 	arma::vec true_obs = this -> true_obs_history[0];
 	arma::vec computed_obs = this -> estimate_observation_fun(t, X_bar ,this -> args);
 
@@ -287,7 +281,7 @@ void BatchFilter::compute_prefit_residuals(
 	std::cout << " - Largest residual in batch: " << arma::abs(y_bar).max() << std::endl;
 		#endif
 	rms_res += std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows);
-	
+
 
 }
 
