@@ -215,11 +215,11 @@ int main() {
 	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
 
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,
-		"E",&frame_graph));
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,
+	// 	"E",&frame_graph));
 
 
 	estimated_shape_model -> shift_to_barycenter();
