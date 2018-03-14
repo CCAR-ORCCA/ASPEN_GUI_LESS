@@ -53,8 +53,7 @@ public:
 protected:
 
 	void compute_true_state_history(const arma::vec & X0_true, const std::vector<double> & T_obs);
-	void compute_true_observations(const std::vector<double> & T_obs,const arma::mat & R,
-	const arma::mat & R_prop = arma::zeros<arma::mat>(1,1));
+	void compute_true_observations(const std::vector<double> & T_obs,double mes_noise, double prop_noise = 0);
 
 	// Dynamics
 	arma::vec (*estimate_dynamics_fun)(double, const arma::vec & , const Args & args) = nullptr;

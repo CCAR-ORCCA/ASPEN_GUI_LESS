@@ -30,8 +30,7 @@ int  BatchFilter::run(
 	this -> true_state_history.push_back(X0_true);
 
 	// The true, noisy observations are computed
-	this -> compute_true_observations(T_obs,R,
-		std::pow(args.get_sd_noise_prop(),2) * arma::ones<arma::mat>(1,1));
+	this -> compute_true_observations(T_obs,args.get_sd_noise(),args.get_sd_noise_prop());
 
 	auto true_ranges = this -> true_obs_history[0];
 
