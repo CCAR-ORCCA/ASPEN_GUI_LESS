@@ -73,7 +73,7 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 
 
 	// The Kalman gain is computed
-	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
+	arma::mat K = 0 * P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;

@@ -180,7 +180,7 @@ int  BatchFilter::run(
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat) * std::pow(args.get_sd_noise(),2) ;
 
-		dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
+		// dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Info mat: \n" << info_mat << std::endl;
@@ -211,7 +211,7 @@ int  BatchFilter::run(
 	// This is where the covariance should be augmented with its 
 	// consider component
 
-	P_hat_0 += 1./std::pow(args.get_sd_noise(),4) * P_hat_0 * H_Pcc_H * P_hat_0;
+	// P_hat_0 += 1./std::pow(args.get_sd_noise(),4) * P_hat_0 * H_Pcc_H * P_hat_0;
 
 
 	std::cout << "-- Consider State Covariance \n";
