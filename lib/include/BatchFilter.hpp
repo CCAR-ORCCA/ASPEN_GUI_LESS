@@ -23,6 +23,7 @@ public:
 protected:
 
 	void compute_prefit_residuals(
+		double t,
 		const arma::vec & X_bar,
 		arma::vec & y_bar,
 		bool & has_converged);

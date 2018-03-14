@@ -30,7 +30,7 @@ int  BatchFilter::run(
 	this -> true_state_history.push_back(X0_true);
 
 	// The true, noisy observations are computed
-	this -> compute_true_observations(T_obs,1e-10 * R);
+	this -> compute_true_observations(T_obs,R);
 
 	#if BATCH_DEBUG || FILTER_DEBUG
 	std::cout << "-- Done computing true observations" << std::endl;
@@ -83,7 +83,7 @@ int  BatchFilter::run(
 		#endif
 
 		// The prefit residuals are computed
-		this -> compute_prefit_residuals(X_bar,y_bar,has_converged);
+		this -> compute_prefit_residuals(T_obs[0],X_bar,y_bar,has_converged);
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Done computing prefit residuals" << std::endl;
@@ -211,6 +211,7 @@ int  BatchFilter::run(
 }
 
 void BatchFilter::compute_prefit_residuals(
+	double t,
 	const arma::vec & X_bar,
 	arma::vec & y_bar,
 	bool & has_converged){
@@ -220,7 +221,7 @@ void BatchFilter::compute_prefit_residuals(
 
 	
 	arma::vec true_obs = this -> true_obs_history[0];
-	arma::vec computed_obs = this -> estimate_observation_fun(0, X_bar ,this -> args);
+	arma::vec computed_obs = this -> estimate_observation_fun(t, X_bar ,this -> args);
 
 		// Potentials nan are looked for and turned into zeros
 		// the corresponding row in H will be set to zero
