@@ -216,12 +216,18 @@ int  BatchFilter::run(
 
 		// Checking for convergence
 		double variation = std::abs(rms_res - old_residuals)/rms_res * 100;
+		
 		if (variation < 1e-2){
-
 		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Batch Filter has converged" << std::endl;
 		#endif
-
+			iterations = i;
+			break;
+		}
+		else if (rms_res > old_residuals){
+		#if BATCH_DEBUG || FILTER_DEBUG
+			std::cout << "--- Residuals are bouncing around. Exiting" << std::endl;
+		#endif
 			iterations = i;
 			break;
 		}

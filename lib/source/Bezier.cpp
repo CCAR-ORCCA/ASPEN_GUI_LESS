@@ -948,10 +948,10 @@ void Bezier::compute_range_biases(){
 	this -> biases = arma::solve(info_mat,normal_mat);
 	this -> fitting_residuals = old_res_std;
 
-	std::cout << "-- Postfit range residuals without biases: " << this -> fitting_residuals << std::endl;
+	std::cout << "-- Postfit range residuals Mean without biases: " << arma::mean(old_res_vec) << std::endl;
+	std::cout << "-- Postfit range residuals RMS without biases: " << arma::stddev(old_res_vec) << std::endl;
 	
 	
-
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 		double u = this -> footpoints[i].u;
 		double v = this -> footpoints[i].v;
@@ -968,6 +968,10 @@ void Bezier::compute_range_biases(){
 	std::cout << "-- Patch biases: " << std::endl;
 	std::cout << this -> biases.t();
 	double reduction = (new_res_std - old_res_std) /old_res_std* 100 ;
+
+	std::cout << "-- Postfit range residuals Mean with biases: " << arma::mean(new_res_vec) << std::endl;
+	std::cout << "-- Postfit range residuals RMS with biases: " << arma::stddev(new_res_vec) << std::endl;
+	
 	std::cout << "-- Postfit range residuals with biases: " << new_res_std << std::endl  << std::endl;
 	std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
 
