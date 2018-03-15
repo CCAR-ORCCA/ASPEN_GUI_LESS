@@ -906,7 +906,7 @@ void Bezier::train_patch_covariance(){
 
 void Bezier::compute_range_biases(){
 
-	unsigned int N = 2;
+	unsigned int N = 1;
 
 	unsigned int P = (N + 1) * (N + 2) / 2;
 
@@ -972,7 +972,6 @@ void Bezier::compute_range_biases(){
 	std::cout << "-- Postfit range residuals Mean with biases: " << arma::mean(new_res_vec) << std::endl;
 	std::cout << "-- Postfit range residuals RMS with biases: " << arma::stddev(new_res_vec) << std::endl;
 	
-	std::cout << "-- Postfit range residuals with biases: " << new_res_std << std::endl  << std::endl;
 	std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
 
 	if (abs(reduction) > 40){
