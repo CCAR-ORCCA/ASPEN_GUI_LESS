@@ -149,8 +149,8 @@ int  BatchFilter::run(
 
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
-			// P_cc(p,p) = std::pow(sigma_consider_vector_ptr[p],2);
-			P_cc(p,p) = 3;
+			P_cc(p,p) = std::pow(3 * sigma_consider_vector_ptr[p],2);
+			// P_cc(p,p) = 3;
 
 			double mes_range;
 			

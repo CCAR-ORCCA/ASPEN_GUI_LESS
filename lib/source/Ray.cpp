@@ -220,9 +220,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,n)));
 			double max_range = a * incidence_angle  + b;
 
-			if (incidence_angle > 70){
-				return false;
-			}
+		
 
 			if (store){
 				if (this -> true_range > t ) {
