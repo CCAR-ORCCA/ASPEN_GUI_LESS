@@ -946,10 +946,11 @@ void Bezier::compute_range_biases(){
 	double old_res_std = arma::stddev(old_res_vec);
 
 	this -> biases = arma::solve(info_mat,normal_mat);
-	this -> fitting_residuals = old_res_std;
+	this -> fitting_residuals = arma::abs(old_res_vec);
 
 	std::cout << "-- Postfit range residuals Mean without biases: " << arma::mean(old_res_vec) << std::endl;
 	std::cout << "-- Postfit range residuals RMS without biases: " << arma::stddev(old_res_vec) << std::endl;
+	std::cout << "-- Max range residuals: " << this -> fitting_residuals << std::endl;
 	
 	
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
