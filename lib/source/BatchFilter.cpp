@@ -166,7 +166,7 @@ int  BatchFilter::run(
 			
 			biases(p) = biases_consider_vector_ptr[p];
 
-			if (std::abs(y_bar(p)) > 10 * rms_res){
+			if (std::abs(y_bar(p)) > 6 * rms_res){
 				H.row(p).fill(0);
 				y_bar(p) = 0;
 			}
