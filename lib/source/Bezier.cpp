@@ -910,13 +910,13 @@ void Bezier::compute_range_biases(){
 
 	unsigned int P = (N + 1) * (N + 2) / 2;
 
-	arma::mat info_mat = arma::zeros<arma::mat>(P,P);
-	arma::vec normal_mat = arma::zeros<arma::vec>(P);
-	arma::rowvec Hi(P);
+	// arma::mat info_mat = arma::zeros<arma::mat>(P,P);
+	// arma::vec normal_mat = arma::zeros<arma::vec>(P);
+	// arma::rowvec Hi(P);
 
 
 	arma::vec old_res_vec(this -> footpoints.size());
-	arma::vec new_res_vec(this -> footpoints.size());
+	// arma::vec new_res_vec(this -> footpoints.size());
 
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
@@ -927,58 +927,58 @@ void Bezier::compute_range_biases(){
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
 
-		unsigned int p = 0;
+		// unsigned int p = 0;
 		
-		for (unsigned int k = 0; k < N + 1; ++k){
-			for (unsigned int l = 0; l < N + 1 - k; ++l){
-				Hi(p) = Bezier::bernstein(u, v,k,l, N);
-				++p;
-			}	
-		}
+		// for (unsigned int k = 0; k < N + 1; ++k){
+		// 	for (unsigned int l = 0; l < N + 1 - k; ++l){
+		// 		Hi(p) = Bezier::bernstein(u, v,k,l, N);
+		// 		++p;
+		// 	}	
+		// }
 
 
-		normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
-		info_mat += Hi.t() * Hi;
+		// normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
+		// info_mat += Hi.t() * Hi;
 		old_res_vec(i) = arma::dot(normal,Ptilde - Pbar);
 
 	}
 
 	double old_res_std = arma::stddev(old_res_vec);
 
-	this -> biases = arma::solve(info_mat,normal_mat);
-	this -> fitting_residuals = arma::abs(old_res_vec).max();
+	// this -> biases = arma::solve(info_mat,normal_mat);
+	this -> fitting_residuals = arma::stddev(old_res_vec);
+	this -> fitting_residuals_mean = arma::mean(old_res_vec);
 
 	std::cout << "-- Postfit range residuals Mean without biases: " << arma::mean(old_res_vec) << std::endl;
 	std::cout << "-- Postfit range residuals RMS without biases: " << arma::stddev(old_res_vec) << std::endl;
-	std::cout << "-- Max range residuals: " << this -> fitting_residuals << std::endl;
 	
 	
-	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
-		double u = this -> footpoints[i].u;
-		double v = this -> footpoints[i].v;
-		arma::vec normal = this -> footpoints[i].n;
-		arma::vec Ptilde = this -> footpoints[i].Ptilde;
-		arma::vec Pbar = this -> footpoints[i].Pbar;
+	// for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
+	// 	double u = this -> footpoints[i].u;
+	// 	double v = this -> footpoints[i].v;
+	// 	arma::vec normal = this -> footpoints[i].n;
+	// 	arma::vec Ptilde = this -> footpoints[i].Ptilde;
+	// 	arma::vec Pbar = this -> footpoints[i].Pbar;
 
-		new_res_vec(i) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
-	}
+	// 	new_res_vec(i) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
+	// }
 
-	double new_res_std = arma::stddev(new_res_vec);
+	// double new_res_std = arma::stddev(new_res_vec);
 
 
-	std::cout << "-- Patch biases: " << std::endl;
-	std::cout << this -> biases.t();
-	double reduction = (new_res_std - old_res_std) /old_res_std* 100 ;
+	// std::cout << "-- Patch biases: " << std::endl;
+	// std::cout << this -> biases.t();
+	// double reduction = (new_res_std - old_res_std) /old_res_std* 100 ;
 
-	std::cout << "-- Postfit range residuals Mean with biases: " << arma::mean(new_res_vec) << std::endl;
-	std::cout << "-- Postfit range residuals RMS with biases: " << arma::stddev(new_res_vec) << std::endl;
+	// std::cout << "-- Postfit range residuals Mean with biases: " << arma::mean(new_res_vec) << std::endl;
+	// std::cout << "-- Postfit range residuals RMS with biases: " << arma::stddev(new_res_vec) << std::endl;
 	
-	std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
+	// std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
 
-	if (abs(reduction) > 40){
-		old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
-		new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
-	}
+	// if (abs(reduction) > 40){
+	// 	old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
+	// 	new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
+	// }
 
 }
 
@@ -986,27 +986,7 @@ void Bezier::compute_range_biases(){
 
 double Bezier::get_range_bias(const double & u, const double & v,const arma::vec & dir) const{
 
-
-	double bias = 0;
-	unsigned int i = 0;
-
-	int P = this -> biases.n_rows;
-	int N = (unsigned int ) ((-3. + std::sqrt(9 - 8 * (1 - P )))/2);
-
-	for (int l = 0; l < N + 1; ++l){
-		for (int k = 0; k < N + 1 - l; ++k){
-
-			bias += Bezier::bernstein(u,v,l,k,N) * this -> biases(i) * std::abs(arma::dot(this -> get_normal(u,v),dir));
-
-			++i;
-		}
-
-
-	}
-
-	return bias;
-
-
+	return  this -> fitting_residuals_mean * std::abs(arma::dot(this -> get_normal(u,v),dir));
 
 }
 

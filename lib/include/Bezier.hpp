@@ -520,6 +520,7 @@ protected:
 
 	unsigned int n;
 	double fitting_residuals = 0;
+	double fitting_residuals_mean = 0;
 
 	std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forw_table;
 	std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> rev_table;

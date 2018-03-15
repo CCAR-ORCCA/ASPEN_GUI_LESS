@@ -126,7 +126,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				n = bezier -> get_normal(u_t,v_t);
 
 				args.get_sigma_consider_vector_ptr() -> push_back(bezier -> get_fitting_residuals());
-				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t));
+				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
 
 			}
 
