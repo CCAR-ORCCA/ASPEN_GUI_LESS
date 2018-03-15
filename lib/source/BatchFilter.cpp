@@ -192,7 +192,7 @@ int  BatchFilter::run(
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat) ;
 
-		// dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
+		dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Info mat: \n" << info_mat << std::endl;
