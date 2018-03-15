@@ -218,17 +218,9 @@ int main() {
 	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph));
 
 	std::cout << "Estimated shape model barycenter: " << std::endl;
-	std::cout << estimated_shape_model -> get_center_of_mass().t() << std::endl;
-	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
 	std::cout << estimated_shape_model -> get_center_of_mass().t() << std::endl;
-	std::cout << estimated_shape_model -> get_volume() << std::endl;
-
 	estimated_shape_model -> shift_to_barycenter();
-	estimated_shape_model -> update_mass_properties();
-	std::cout << estimated_shape_model -> get_center_of_mass().t() << std::endl;
-	std::cout << estimated_shape_model -> get_volume() << std::endl;
-
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
 	std::cout << estimated_shape_model -> get_center_of_mass().t() << std::endl;
