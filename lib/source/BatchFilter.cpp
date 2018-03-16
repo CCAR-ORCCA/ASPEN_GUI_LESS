@@ -112,17 +112,22 @@ int  BatchFilter::run(
 			break;
 		}
 
-		double N_mes, rms_res;
-		
-			#if BATCH_DEBUG || FILTER_DEBUG
+		double N_mes, rms_res,rms_mean;
 
 		arma::vec y_non_zero = y_bar.elem(arma::find(y_bar));
 
-		rms_res = std::sqrt(std::pow(arma::norm(y_non_zero),2) / y_non_zero.n_rows) /T_obs.size();
+		rms_res = arma::stddev(y_non_zero);
+		rms_mean = arma::mean(y_non_zero);
+		
+		#if BATCH_DEBUG || FILTER_DEBUG
+
+
 		N_mes = y_non_zero.n_rows;
 
-		std::cout << "-----  Residuals: " << rms_res << std::endl;
-			#endif
+		std::cout << "-----  Residuals RMS: " << rms_res << std::endl;
+		std::cout << "-----  Residuals Mean: " << rms_mean << std::endl;
+
+		#endif
 		
 
 		// The normal and information matrices are assembled
