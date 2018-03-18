@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 5e-2 
+#define LOS_NOISE_SD_BASELINE 5e-4 
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -225,7 +225,7 @@ int main() {
 
 	// estimated_shape_model -> translate(bias);
 	// estimated_shape_model -> update_mass_properties();
-	
+
 
 
 
