@@ -17,8 +17,8 @@ int main(){
 	ShapeModelBezier itokawa_bezier_fit("", &frame_graph);
 
 
-	ShapeModelImporter shape_io_bezier("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube_2.b", 1, true);
-	ShapeModelImporter shape_io_true("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj", 1, true);
+	ShapeModelImporter shape_io_bezier("../../../resources/shape_models/cube_2.b", 1, true);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/cube.obj", 1, true);
 	
 
 	// ShapeModelImporter shape_io_bezier("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/shape_model/test/fit_shape_aligned.b", 1, true);
