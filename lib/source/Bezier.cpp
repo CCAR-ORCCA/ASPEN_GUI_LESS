@@ -146,7 +146,7 @@ double Bezier::gamma_ijkl(const int i, const int j, const int k, const int l, co
 
 	int sum_indices = i + j + k + l + m + p + q + r;
 
-	double gamma = double( n * n ) / 2 * Bezier::bernstein_coef(i ,j,n) * Bezier::bernstein_coef(k ,l,n) * (
+	double gamma = double( n * n ) / 4 * Bezier::bernstein_coef(i ,j,n) * Bezier::bernstein_coef(k ,l,n) * (
 
 		Bezier::bernstein_coef(m - 1 ,p,n - 1) * ( Bezier::bernstein_coef(q ,r -1,n - 1) * Sa_b(l + j + p  + r- 1,4 * n - sum_indices ) 
 			-  Bezier::bernstein_coef(q ,r,n - 1) * Sa_b(l + j + p  + r,4 * n - sum_indices -1)) * Sa_b(k + m + i + q - 1,4 * n - i - k - m - q)
@@ -195,6 +195,32 @@ double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, con
 
 	return beta;
 }
+
+
+
+
+arma::vec Bezier::get_cross_products(const int i, const int j, const int k, const int l, const int m,const int p) const{
+
+
+	arma::vec stacked_cp(9);
+
+	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+
+	arma::vec Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates();
+	arma::vec Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates();
+	arma::vec Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates();
+
+	stacked_cp.subvec(0,2) = arma::cross(Cj,Ck);
+	stacked_cp.subvec(3,5) = arma::cross(Ck,Ci);
+	stacked_cp.subvec(6,8) = arma::cross(Ci,Cj);
+	return stacked_cp;
+
+}
+
+
+
 
 
 

@@ -104,13 +104,14 @@ void ShapeModelBezier::compute_surface_area(){
 
 void ShapeModelBezier::update_mass_properties() {
 	
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+
+	start = std::chrono::system_clock::now();
 
 	this -> compute_volume();
-	
+	this -> compute_volume_sd();
 	this -> compute_center_of_mass();
 
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
 
 	this -> compute_inertia();
 
@@ -160,21 +161,23 @@ void ShapeModelBezier::compute_center_of_mass(){
 	int n = this -> get_degree();
 
 	// #pragma omp parallel for reduction(+:cx,cy,cz)
-	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+	for (auto index = 0 ; index <  this -> cm_gamma_indices_coefs_table.size(); ++index) {
 
-		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
-		double result[3];
 
-		for (auto index = 0 ; index <  this -> cm_gamma_indices_coefs_table.size(); ++index) {
+		int i =  int(this -> cm_gamma_indices_coefs_table[index][0]);
+		int j =  int(this -> cm_gamma_indices_coefs_table[index][1]);
+		int k =  int(this -> cm_gamma_indices_coefs_table[index][2]);
+		int l =  int(this -> cm_gamma_indices_coefs_table[index][3]);
+		int m =  int(this -> cm_gamma_indices_coefs_table[index][4]);
+		int p =  int(this -> cm_gamma_indices_coefs_table[index][5]);
+		int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
+		int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
 
-			int i =  int(this -> cm_gamma_indices_coefs_table[index][0]);
-			int j =  int(this -> cm_gamma_indices_coefs_table[index][1]);
-			int k =  int(this -> cm_gamma_indices_coefs_table[index][2]);
-			int l =  int(this -> cm_gamma_indices_coefs_table[index][3]);
-			int m =  int(this -> cm_gamma_indices_coefs_table[index][4]);
-			int p =  int(this -> cm_gamma_indices_coefs_table[index][5]);
-			int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
-			int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
+
+		for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+
+			Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
+			double result[3];
 
 			patch -> quadruple_product(result,i ,j ,k ,l ,m ,p, q, r );
 
@@ -182,39 +185,6 @@ void ShapeModelBezier::compute_center_of_mass(){
 			cy += this -> cm_gamma_indices_coefs_table[index][8] * result[1];
 			cz += this -> cm_gamma_indices_coefs_table[index][8] * result[2];
 
-
-		}
-
-		// Side integrals
-		for (auto index = 0 ; index <  this -> cm_beta_indices_coefs_table.size(); ++index) {
-
-			int i =  int(this -> cm_beta_indices_coefs_table[index][0]);
-			int j =  int(this -> cm_beta_indices_coefs_table[index][1]);
-			int k =  int(this -> cm_beta_indices_coefs_table[index][2]);
-			int l =  int(this -> cm_beta_indices_coefs_table[index][3]);
-
-			double beta = this -> cm_beta_indices_coefs_table[index][4];
-
-			// I1
-			patch -> quadruple_product(result,i ,n - i ,j ,n - j ,k ,n - k, l, n - l );
-
-			cx += beta * result[0];
-			cy += beta * result[1];
-			cz += beta * result[2];
-
-			// I2
-			patch -> quadruple_product(result,0 , i ,0 , j ,0 , k, 0, l );
-
-			cx += beta * result[0];
-			cy += beta * result[1];
-			cz += beta * result[2];
-
-			// I3
-			patch -> quadruple_product(result,n - i,0 ,n - j,0 ,n - k,0,  n - l ,0);
-
-			cx += beta * result[0];
-			cy += beta * result[1];
-			cz += beta * result[2];
 
 		}
 
@@ -265,6 +235,97 @@ void ShapeModelBezier::compute_inertia(){
 
 
 }
+
+
+
+double ShapeModelBezier::compute_volume_sd() const{
+
+
+
+	double volume_sd = 0;
+
+
+	boost::progress_display progress(this -> elements.size()) ;
+
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+		
+		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+		++progress;
+
+		#pragma omp parallel for reduction(+:volume_sd)
+		for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+
+			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
+
+			for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
+
+
+				// i
+				int i =  int(this -> volume_sd_indices_coefs_table[index][0]);
+				int j =  int(this -> volume_sd_indices_coefs_table[index][1]);
+
+				// j
+				int k =  int(this -> volume_sd_indices_coefs_table[index][2]);
+				int l =  int(this -> volume_sd_indices_coefs_table[index][3]);
+				
+				// k
+				int m =  int(this -> volume_sd_indices_coefs_table[index][4]);
+				int p =  int(this -> volume_sd_indices_coefs_table[index][5]);
+
+				// l
+				int q =  int(this -> volume_sd_indices_coefs_table[index][6]);
+				int r =  int(this -> volume_sd_indices_coefs_table[index][7]);
+
+				// m
+				int s =  int(this -> volume_sd_indices_coefs_table[index][8]);
+				int t =  int(this -> volume_sd_indices_coefs_table[index][9]);
+
+				// p
+				int u =  int(this -> volume_sd_indices_coefs_table[index][10]);
+				int v =  int(this -> volume_sd_indices_coefs_table[index][11]);
+
+
+
+				arma::vec left_vec = patch_e -> get_cross_products(i,j,k,l,m,p);
+				arma::vec right_vec = patch_f -> get_cross_products(q,r,s,t,u,v);
+				arma::mat P = arma::zeros<arma::mat>(9,9);
+
+
+				volume_sd += this -> volume_sd_indices_coefs_table[index][12] * arma::dot(left_vec,P * right_vec);
+
+
+			}
+
+
+		}
+
+	}
+
+
+
+
+	return volume_sd;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 bool ShapeModelBezier::ray_trace(Ray * ray){
 
@@ -335,9 +396,10 @@ void ShapeModelBezier::elevate_degree(bool update){
 void ShapeModelBezier::populate_mass_properties_coefs(){
 
 	this -> cm_gamma_indices_coefs_table.clear();
-	this -> cm_beta_indices_coefs_table.clear();
 	this -> volume_indices_coefs_table.clear();
 	this -> inertia_indices_coefs_table.clear();
+	this -> volume_sd_indices_coefs_table.clear();
+
 
 	double n = this -> get_degree();
 
@@ -353,6 +415,22 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 					for (int m = 0; m < 1 + n ; ++m){
 						for (int p = 0; p < 1 + n - m; ++p){
 
+							if ((i == k) && (j == l)){
+										// the dot product in the quadruple product
+										// will be 0
+								continue;
+							}
+							if ((i == m) && (j == p)){
+										// the dot product in the quadruple product
+										// will be 0
+								continue;
+							}
+
+							if ((k == m) && (l == p)){
+										// the cross product in the quadruple product
+										// will be 0
+								continue;
+							}
 
 							double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
 							if (std::abs(alpha) > 1e-13){
@@ -369,6 +447,78 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 	std::cout << "- Volume coefficients: " << this -> volume_indices_coefs_table.size() << std::endl;
 
+	// Inertia
+	for (int i = 0; i < 1 + n; ++i){
+		for (int j = 0; j < 1 + n - i; ++j){
+
+			for (int k = 0; k < 1 + n ; ++k){
+				for (int l = 0; l < 1 + n - k; ++l){
+
+					for (int m = 0; m < 1 + n ; ++m){
+						for (int p = 0; p < 1 + n - m; ++p){
+
+							for (int q = 0; q < 1 + n ; ++q){
+								for (int r = 0; r < 1 + n - q; ++r){
+
+									for (int s = 0; s < 1 + n ; ++s){
+										for (int t = 0; t < 1 + n - s; ++t){
+
+											for (int u = 0; u < 1 + n ; ++u){
+												for (int v = 0; v < 1 + n - i; ++v){
+
+
+
+													if ((i == k) && (k == m) && (j == l) && (l == p)){
+														// the left vector of cross products will be zero
+														continue;
+													}
+
+													if ((q == s) && (s == u) && (r== t) && (t == v)){
+														// the right vector of cross products will be zero
+														continue;
+													}
+
+
+
+													double alpha_1 = Bezier::alpha_ijk(i, j, k, l, m, p, n);
+													double alpha_2 = Bezier::alpha_ijk(q, r, s, t, u, v, n);
+													double aa = alpha_1 * alpha_2;
+													
+													if (std::abs(aa) > 1e-13){
+														std::vector<double> index_vector = {
+															double(i),double(j),
+															double(k),double(l),
+															double(m),double(p),
+															double(q),double(r),
+															double(s),double(t),
+															double(u),double(v),
+															aa
+														};
+														this -> volume_sd_indices_coefs_table.push_back(index_vector);
+													}		
+
+
+
+
+												}
+											}
+										}
+									}
+								}
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	std::cout << "- Volume SD coefficients: " << this -> volume_sd_indices_coefs_table.size() << std::endl;
+
+
+
 
 
 	// CM
@@ -380,7 +530,25 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 						for (int p = 0; p < 1 + n - m; ++p){
 							for (int q = 0; q < 1 + n ; ++q){
 								for (int r = 0; r < 1 + n - q; ++r){
-									
+
+									if ((m == q) && (p == r)){
+										// the cross product in the quadruple product
+										// will be 0
+										continue;
+									}
+									if ((k == m) && (l == p)){
+										// the dot product in the quadruple product
+										// will be 0
+										continue;
+									}
+
+									if ((k == q) && (l == r)){
+										// the dot product in the quadruple product
+										// will be 0
+										continue;
+									}
+
+
 									double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
 									if (std::abs(gamma) > 1e-13){
 										std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),gamma};
@@ -397,39 +565,48 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	}
 
 
-	for (int i = 0; i < n + 1; ++i){
-		for (int j = 0; j < n + 1; ++j){
-			for (int k = 0; k < n + 1; ++k){
-				for (int l = 0; l < n + 1; ++l){
-
-					double beta = Bezier::beta_ijkl(i, j, k, l, n);
-
-					if (std::abs(beta) > 1e-13){
-						std::vector<double> index_vector = {double(i),double(j),double(k),double(l),beta};
-						this -> cm_beta_indices_coefs_table.push_back(index_vector);
-					}
-					
-				}
-			}
-		}
-	}
-
-	std::cout << "- CM coefficients: " << this -> cm_beta_indices_coefs_table.size() + this -> cm_gamma_indices_coefs_table.size() << std::endl;
+	std::cout << "- CM coefficients: " << this -> cm_gamma_indices_coefs_table.size() << std::endl;
 
 
 
 	// Inertia
 	for (int i = 0; i < 1 + n; ++i){
 		for (int j = 0; j < 1 + n - i; ++j){
+
 			for (int k = 0; k < 1 + n ; ++k){
 				for (int l = 0; l < 1 + n - k; ++l){
+
 					for (int m = 0; m < 1 + n ; ++m){
 						for (int p = 0; p < 1 + n - m; ++p){
+
 							for (int q = 0; q < 1 + n ; ++q){
 								for (int r = 0; r < 1 + n - q; ++r){
 
 									for (int s = 0; s < 1 + n ; ++s){
 										for (int t = 0; t < 1 + n - s; ++t){
+
+
+											if ((m == q) && (p == r)){
+										// the dot product in the quadruple product
+										// will be 0
+												continue;
+											}
+											if ((m == s) && (p == t)){
+										// the dot product in the quadruple product
+										// will be 0
+												continue;
+											}
+
+											if ((q == s) && (r == t)){
+										// the cross product in the quadruple product
+										// will be 0
+												continue;
+											}
+
+
+
+
+
 
 											double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
 											if (std::abs(kappa) > 1e-13){
@@ -602,7 +779,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 						std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
 						facet -> set_super_element(this -> get_elements() -> at(i).get());
-						
+
 						facets.push_back(facet);
 
 					}

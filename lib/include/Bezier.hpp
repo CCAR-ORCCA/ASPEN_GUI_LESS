@@ -423,7 +423,17 @@ public:
 	double get_range_bias(const double & u, const double & v,const arma::vec & dir) const;
 
 
-
+	/**
+	Returns the stacked crossed products
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param m first index of third triplet
+	@param p second index of third triplet
+	@returm computed stacked cross-product
+	*/
+	arma::vec get_cross_products(const int i, const int j, const int k, const int l, const int m,const int p) const;
 protected:
 
 	virtual void compute_normal();

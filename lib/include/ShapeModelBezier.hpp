@@ -120,6 +120,12 @@ public:
 	void populate_mass_properties_coefs();
 
 
+	/**
+	Compute the standard deviation in the volume
+	@return standard deviation in shape volume
+	*/
+	double compute_volume_sd() const;
+
 
 
 protected:
@@ -127,9 +133,10 @@ protected:
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
 	std::vector<std::vector<double> > cm_gamma_indices_coefs_table;
-	std::vector<std::vector<double> > cm_beta_indices_coefs_table;
 	std::vector<std::vector<double> > volume_indices_coefs_table;
 	std::vector<std::vector<double> > inertia_indices_coefs_table;
+
+	std::vector<std::vector<double> > volume_sd_indices_coefs_table;
 
 
 
