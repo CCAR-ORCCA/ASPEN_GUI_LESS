@@ -64,6 +64,8 @@ int  BatchFilter::run(
 	arma::vec dx_bar_0 = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
 	arma::vec dx_hat_consider = arma::zeros<arma::vec>(this -> true_state_history[0].n_rows);
 	arma::mat P_hat_0;
+	arma::mat P_consider;
+
 
 	// The filter is initialized
 	X_bar = X_bar_0;
@@ -186,7 +188,7 @@ int  BatchFilter::run(
 
 		// The consider matrices are computed
 		arma::mat S_xc = - P_hat_0 * H.t() * R;
-
+		P_consider = S_xc * P_cc * S_xc.t();
 
 
 		// dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
@@ -248,7 +250,7 @@ int  BatchFilter::run(
 	// This is where the covariance should be augmented with its 
 	// consider component
 
-	P_hat_0 += S_xc * P_cc * S_xc.t();
+	P_hat_0 += P_consider;
 
 	std::cout << "-- Consider State Covariance \n";
 	std::cout << P_hat_0 << std::endl;
