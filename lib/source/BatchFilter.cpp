@@ -48,11 +48,15 @@ int  BatchFilter::run(
 	arma::mat H_Pcc_H;
 
 
-	std::vector<double> sigma_consider_vector_ptr;
-	std::vector<double> biases_consider_vector_ptr;
+	std::vector<double> sigma_consider_vector;
+	std::vector<double> biases_consider_vector;
+	std::vector<double> sigmas_range_vector;
 
-	this -> args.set_sigma_consider_vector_ptr(&sigma_consider_vector_ptr);
-	this -> args.set_biases_consider_vector_ptr(&biases_consider_vector_ptr);
+
+	this -> args.set_sigma_consider_vector_ptr(&sigma_consider_vector);
+	this -> args.set_biases_consider_vector_ptr(&biases_consider_vector);
+	this -> args.set_sigmas_range_vector_ptr(&sigmas_range_vector);
+
 
 
 	arma::mat info_mat;
@@ -76,11 +80,6 @@ int  BatchFilter::run(
 
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
-
-
-		sigma_consider_vector_ptr.clear();
-		biases_consider_vector_ptr.clear();
-
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "--- Iteration " << i + 1 << "/" << N_iter << std::endl;
@@ -144,6 +143,8 @@ int  BatchFilter::run(
 
 		arma::sp_mat P_cc(H.n_rows,H.n_rows);
 		arma::sp_mat W(H.n_rows,H.n_rows);
+		arma::sp_mat R(H.n_rows,H.n_rows);
+
 
 		arma::vec biases = arma::zeros<arma::vec>(H.n_rows);
 
@@ -155,21 +156,10 @@ int  BatchFilter::run(
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
 			P_cc(p,p) = std::pow(6 * sigma_consider_vector_ptr[p],2);
-			// P_cc(p,p) = 3;
 
-			double mes_range;
 			
-			if (true_ranges.subvec(p,p).has_nan() || true_ranges(p) > 1e10){
-				mes_range = 0;
-			}
-			else{
-				mes_range = true_ranges(p);
-				W(p,p) = 1./(std::pow(args.get_sd_noise() + args.get_sd_noise_prop() * mes_range,2));
-
-
-			}
-			
-			biases(p) = biases_consider_vector_ptr[p];
+			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
+			R(p,p) = std::pow(sigmas_range_vector[p],2);
 
 			if (std::abs(y_bar(p)) > 3 * rms_res){
 				H.row(p).fill(0);
@@ -187,15 +177,17 @@ int  BatchFilter::run(
 		info_mat += H.t() * W * H ;
 		normal_mat += H.t() * W * y_bar ;
 
-
-
-		H_Pcc_H = H.t() * P_cc * H;
-
 		// The deviation is solved
 		auto dx_hat = arma::solve(info_mat,normal_mat);
 
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat) ;
+
+
+		// The consider matrices are computed
+		arma::mat S_xc = - P_hat_0 * H.t() * R
+
+
 
 		// dx_hat_consider = - P_hat_0 * H.t() / std::pow(args.get_sd_noise(),2) * biases;
 
@@ -256,7 +248,7 @@ int  BatchFilter::run(
 	// This is where the covariance should be augmented with its 
 	// consider component
 
-	P_hat_0 += 1./std::pow(args.get_sd_noise(),4) * P_hat_0 * H_Pcc_H * P_hat_0;
+	P_hat_0 += S_xc * P_cc * S_xc.t();
 
 	std::cout << "-- Consider State Covariance \n";
 	std::cout << P_hat_0 << std::endl;

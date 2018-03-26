@@ -264,6 +264,15 @@ public:
 	}
 
 
+	std::vector<double> * get_sigmas_range_vector_ptr() const {
+		return this -> sigmas_range_vector_ptr;
+	}
+
+	void set_sigmas_range_vector_ptr(std::vector<double> * ptr)  {
+		this -> sigmas_range_vector_ptr = ptr;
+	}
+
+
 protected:
 
 	double density;
@@ -313,6 +322,8 @@ protected:
 
 	std::vector<double> * sigma_consider_vector_ptr;
 	std::vector<double> * biases_consider_vector_ptr;
+	std::vector<double> * sigmas_range_vector_ptr;
+
 
 
 };
