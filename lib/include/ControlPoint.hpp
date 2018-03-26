@@ -17,6 +17,13 @@ public:
 	*/
 	arma::vec get_coordinates() const;
 
+
+	/**
+	Getter to the vertex's mean coordinates
+	@return coordinates vertex mean coordinates
+	*/
+	arma::vec get_mean_coordinates() const;
+
 	/**
 	Setter to the vertex's coordinates
 	@param coordinates vertex coordinates
@@ -72,6 +79,17 @@ public:
 	std::set< Element *  > get_owning_elements() const;
 
 
+	/**
+	Copies the current coordinates into a vector of mean coordinates. To be called before running
+	Monte Carlo simulations
+	*/
+	void set_mean_coordinates();
+
+	/**
+	Returns point covariance
+	@return point covariance
+	*/
+	arma::mat get_covariance() const;
 
 	/**
 	@param element owning element
@@ -85,6 +103,12 @@ public:
 	*/
 	arma::uvec get_local_numbering(Element * element) const;
 
+	/**
+	Sets the control point covariance
+	@param P covariance
+	*/
+	void set_covariance(arma::mat P);
+
 
 	/**
 	Returns the number of facets owning this vertex
@@ -94,8 +118,11 @@ public:
 
 protected:
 	arma::vec coordinates;
+	arma::vec mean_coordinates;
+
 	std::set<Element * > owning_elements;
 	std::map<Element *,arma::uvec> local_numbering;
+	arma::mat covariance = arma::zeros<arma::mat>(3,3);
 
 
 };

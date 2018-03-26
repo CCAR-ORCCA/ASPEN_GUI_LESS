@@ -290,3 +290,222 @@ void ShapeModel::add_control_point(std::shared_ptr<ControlPoint> vertex) {
 	this -> control_points.push_back(vertex);
 }
 
+
+
+
+
+
+void ShapeModel::assemble_covariance(arma::mat & P,
+	std::shared_ptr<ControlPoint> Ci,
+	std::shared_ptr<ControlPoint> Cj,
+	std::shared_ptr<ControlPoint> Ck,
+	std::shared_ptr<ControlPoint> Cl,
+	std::shared_ptr<ControlPoint> Cm,
+	std::shared_ptr<ControlPoint> Cp){
+
+
+	P = arma::zeros<arma::mat>(9,9);
+
+	// First row
+	if (Ci == Cl){
+		P.submat(0,0,2,2) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cm){
+		P.submat(0,3,2,5) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cp){
+		P.submat(0,6,2,8) = Ci -> get_covariance();
+	}
+
+	// Second row
+	if (Cj == Cl){
+		P.submat(3,0,5,2) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cm){
+		P.submat(3,3,5,5) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cp){
+		P.submat(3,6,5,8) = Cj -> get_covariance();
+	}
+
+
+	// Third row
+	if (Ck == Cl){
+		P.submat(6,0,8,2) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cm){
+		P.submat(6,3,8,5) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cp){
+		P.submat(6,6,8,8) = Ck -> get_covariance();
+	}
+
+}
+
+
+
+void ShapeModel::assemble_covariance(arma::mat & P,
+	std::shared_ptr<ControlPoint> Ci,
+	std::shared_ptr<ControlPoint> Cj,
+	std::shared_ptr<ControlPoint> Ck,
+	std::shared_ptr<ControlPoint> Cl,
+	std::shared_ptr<ControlPoint> Cm,
+	std::shared_ptr<ControlPoint> Cp,
+	std::shared_ptr<ControlPoint> Cq){
+
+
+	P = arma::zeros<arma::mat>(12,9);
+
+	// First row
+	if (Ci == Cm){
+		P.submat(0,0,2,2) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cp){
+		P.submat(0,3,2,5) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cq){
+		P.submat(0,6,2,8) = Ci -> get_covariance();
+	}
+
+	// Second row
+	if (Cj == Cm){
+		P.submat(3,0,5,2) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cp){
+		P.submat(3,3,5,5) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cq){
+		P.submat(3,6,5,8) = Cj -> get_covariance();
+	}
+
+
+	// Third row
+	if (Ck == Cm){
+		P.submat(6,0,8,2) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cp){
+		P.submat(6,3,8,5) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cq){
+		P.submat(6,6,8,8) = Ck -> get_covariance();
+	}
+
+	// Fourth row
+	if (Cl == Cm){
+		P.submat(9,0,11,2) = Cl -> get_covariance();
+	}
+
+	if (Cl == Cp){
+		P.submat(9,3,11,5) = Cl -> get_covariance();
+	}
+
+	if (Cl == Cq){
+		P.submat(9,6,11,8) = Cl -> get_covariance();
+	}
+
+}
+
+
+void ShapeModel::assemble_covariance(arma::mat & P,
+	std::shared_ptr<ControlPoint> Ci,
+	std::shared_ptr<ControlPoint> Cj,
+	std::shared_ptr<ControlPoint> Ck,
+	std::shared_ptr<ControlPoint> Cl,
+	std::shared_ptr<ControlPoint> Cm,
+	std::shared_ptr<ControlPoint> Cp,
+	std::shared_ptr<ControlPoint> Cq,
+	std::shared_ptr<ControlPoint> Cr){
+
+
+	P = arma::zeros<arma::mat>(12,12);
+
+	// First row
+	if (Ci == Cm){
+		P.submat(0,0,2,2) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cp){
+		P.submat(0,3,2,5) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cq){
+		P.submat(0,6,2,8) = Ci -> get_covariance();
+	}
+
+	if (Ci == Cr){
+		P.submat(0,9,2,11) = Ci -> get_covariance();
+	}
+
+	// Second row
+	if (Cj == Cm){
+		P.submat(3,0,5,2) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cp){
+		P.submat(3,3,5,5) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cq){
+		P.submat(3,6,5,8) = Cj -> get_covariance();
+	}
+
+	if (Cj == Cr){
+		P.submat(3,9,5,11) = Cj -> get_covariance();
+	}
+
+
+	// Third row
+	if (Ck == Cm){
+		P.submat(6,0,8,2) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cp){
+		P.submat(6,3,8,5) = Ck -> get_covariance();
+	}
+
+	if (Ck == Cq){
+		P.submat(6,6,8,8) = Ck -> get_covariance();
+	}
+
+
+	if (Ck == Cr){
+		P.submat(6,9,8,11) = Ck -> get_covariance();
+	}
+
+	// Fourth row
+	if (Cl == Cm){
+		P.submat(9,0,11,2) = Cl -> get_covariance();
+	}
+
+	if (Cl == Cp){
+		P.submat(9,3,11,5) = Cl -> get_covariance();
+	}
+
+	if (Cl == Cq){
+		P.submat(9,6,11,8) = Cl -> get_covariance();
+	}
+
+
+	if (Cl == Cr){
+		P.submat(9,9,11,11) = Cl -> get_covariance();
+	}
+
+
+}
+
+
+
+
+

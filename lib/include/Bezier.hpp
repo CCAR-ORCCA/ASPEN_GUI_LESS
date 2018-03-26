@@ -145,6 +145,7 @@ public:
 	arma::vec get_control_point_coordinates(unsigned int i, unsigned int j) const;
 
 
+
 	/**
 	Evaluates the partial derivative of Sum( B^n_{i,j,k}C_{ijk}) with respect to (u,v) evaluated 
 	at (u,v)
@@ -434,6 +435,23 @@ public:
 	@returm computed stacked cross-product
 	*/
 	arma::vec get_cross_products(const int i, const int j, const int k, const int l, const int m,const int p) const;
+
+
+	/**
+	Returns the augmented stacked crossed products
+	@param i first index of first triplet
+	@param j second index of first triplet
+	@param k first index of second triplet
+	@param l second index of second triplet
+	@param m first index of third triplet
+	@param p second index of third triplet
+	@param q first index of fourth triplet
+	@param r second index of fourth triplet
+	@returm computed stacked cross-product
+	*/
+	arma::mat get_augmented_cross_products(const int i, const int j, const int k, const int l, const int m,const int p,
+		const int q, const int r) const;
+
 protected:
 
 	virtual void compute_normal();

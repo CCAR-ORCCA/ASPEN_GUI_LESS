@@ -100,8 +100,15 @@ void Bezier::quadruple_product(double * result,const int i ,const int j ,const i
 	double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
 	double * Cl =  this -> control_points[this -> rev_table.at(l_)] -> get_coordinates_pointer();
 
-	vtkMath::Cross(Ck,Cl,result);
-	vtkMath::MultiplyScalar(result,vtkMath::Dot(Ci,Cj));
+
+	double cp[3];
+	result[0] = Ci[0];
+	result[1] = Ci[1];
+	result[2] = Ci[2];
+
+
+	vtkMath::Cross(Ck,Cl,cp);
+	vtkMath::MultiplyScalar(result,vtkMath::Dot(Cj,cp));
 
 
 }
@@ -220,6 +227,37 @@ arma::vec Bezier::get_cross_products(const int i, const int j, const int k, cons
 }
 
 
+arma::mat Bezier::get_augmented_cross_products(const int i, const int j, const int k, const int l, const int m,const int p,
+	const int q, const int r) const{
+
+
+	arma::mat stacked_cp(12,3);
+
+
+
+	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+	std::tuple<unsigned int, unsigned int,unsigned int> l_ = std::make_tuple(q,r,this -> n - q - r);
+
+
+	arma::vec Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates();
+	arma::vec Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates();
+	arma::vec Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates();
+	arma::vec Cl =  this -> control_points[this -> rev_table.at(l_)] -> get_coordinates();
+
+	arma::vec v_kl = arma::cross(Ck,Cl);
+	arma::vec v_lj = arma::cross(Cl,Cj);
+	arma::vec v_jk = arma::cross(Cj,Ck);
+
+	stacked_cp.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(Cj,v_kl);
+	stacked_cp.submat(3,0,5,2) = v_kl * Ci.t();
+	stacked_cp.submat(6,0,8,2) = v_lj * Ci.t();
+	stacked_cp.submat(9,0,11,2) = v_jk * Ci.t();
+
+	return stacked_cp;
+
+}
 
 
 

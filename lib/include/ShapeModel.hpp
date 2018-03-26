@@ -253,6 +253,69 @@ public:
 	*/
 	arma::vec get_center_of_mass() const;
 
+	/**
+	Builds the covariance of the provided control points
+	@param P covariance to set
+	@param Ci pointer to first point
+	@param Cj pointer to second point
+	@param Ck pointer to third point
+	@param Cl pointer to fourth point
+	@param Cm pointer to fifth point
+	@param Cp pointer to sixth point
+	*/
+	static void assemble_covariance(arma::mat & P,
+		std::shared_ptr<ControlPoint> Ci,
+		std::shared_ptr<ControlPoint> Cj,
+		std::shared_ptr<ControlPoint> Ck,
+		std::shared_ptr<ControlPoint> Cl,
+		std::shared_ptr<ControlPoint> Cm,
+		std::shared_ptr<ControlPoint> Cp);
+
+
+
+	/**
+	Builds the covariance of the provided control points
+	@param P covariance to set
+	@param Ci pointer to first point
+	@param Cj pointer to second point
+	@param Ck pointer to third point
+	@param Cl pointer to fourth point
+	@param Cm pointer to fifth point
+	@param Cp pointer to sixth point
+	@param Cq pointer to seventh point
+	*/
+	static void assemble_covariance(arma::mat & P,
+		std::shared_ptr<ControlPoint> Ci,
+		std::shared_ptr<ControlPoint> Cj,
+		std::shared_ptr<ControlPoint> Ck,
+		std::shared_ptr<ControlPoint> Cl,
+		std::shared_ptr<ControlPoint> Cm,
+		std::shared_ptr<ControlPoint> Cp,
+		std::shared_ptr<ControlPoint> Cq);
+
+
+	/**
+	Builds the covariance of the provided control points
+	@param P covariance to set
+	@param Ci pointer to first point
+	@param Cj pointer to second point
+	@param Ck pointer to third point
+	@param Cl pointer to fourth point
+	@param Cm pointer to fifth point
+	@param Cp pointer to sixth point
+	@param Cq pointer to seventh point
+	@param Cq pointer to eigth point
+	*/
+	static void assemble_covariance(arma::mat & P,std::shared_ptr<ControlPoint> Ci,
+		std::shared_ptr<ControlPoint> Cj,
+		std::shared_ptr<ControlPoint> Ck,
+		std::shared_ptr<ControlPoint> Cl,
+		std::shared_ptr<ControlPoint> Cm,
+		std::shared_ptr<ControlPoint> Cp,
+		std::shared_ptr<ControlPoint> Cq,
+		std::shared_ptr<ControlPoint> Cr);
+
+
 
 protected:
 

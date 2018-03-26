@@ -122,9 +122,44 @@ public:
 
 	/**
 	Compute the standard deviation in the volume
+	*/
+	void compute_volume_sd();
+
+	/**
+	Compute the covariance in the center of mass
+	*/
+	void compute_cm_cov();
+
+	/**
+	Runs a Monte Carlo on volume
+	@param N number of runs
+	@return results
+	*/
+	arma::vec run_monte_carlo_volume(int N);
+
+
+	/**
+	Runs a Monte Carlo on volume
+	@param N number of runs
+	@return results
+	*/
+	arma::mat run_monte_carlo_cm(int N);
+
+
+	/**
+	Return the standard deviation in the volume
 	@return standard deviation in shape volume
 	*/
-	double compute_volume_sd() const;
+	double get_volume_sd() const;
+
+
+	/**
+	Return the center of mass covariance 
+	@return center of mass covariance 
+	*/
+	arma::mat get_cm_cov() const;
+
+
 
 
 
@@ -137,6 +172,13 @@ protected:
 	std::vector<std::vector<double> > inertia_indices_coefs_table;
 
 	std::vector<std::vector<double> > volume_sd_indices_coefs_table;
+	std::vector<std::vector<double> > cm_cov_1_indices_coefs_table;
+	std::vector<std::vector<double> > cm_cov_2_indices_coefs_table;
+
+
+
+	double volume_sd;
+	arma::mat cm_cov;
 
 
 

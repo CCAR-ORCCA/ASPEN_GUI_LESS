@@ -5,12 +5,18 @@ void ControlPoint::set_coordinates(arma::vec coordinates) {
 }
 
 
+
+
 void ControlPoint::add_ownership(Element *  el) {
 
 	this -> owning_elements.insert(el);
 
-
 }
+
+void ControlPoint::set_mean_coordinates() {
+	this -> mean_coordinates = this -> coordinates;
+}
+
 
 void ControlPoint::remove_ownership(Element *  el) {
 
@@ -30,6 +36,19 @@ std::set< Element *  > ControlPoint::get_owning_elements() const {
 double * ControlPoint::get_coordinates_pointer(){
 	return this -> coordinates.colptr(0);
 }
+
+void ControlPoint::set_covariance(arma::mat P){
+	this -> covariance = P;
+}
+
+
+
+
+arma::mat ControlPoint::get_covariance() const{
+	return this -> covariance;
+}
+
+
 
 std::set< Element * >  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
 
@@ -75,6 +94,11 @@ bool ControlPoint::is_owned_by(Element * facet) const {
 
 arma::vec ControlPoint::get_coordinates()  const {
 	return this -> coordinates;
+}
+
+
+arma::vec ControlPoint::get_mean_coordinates()  const {
+	return this -> mean_coordinates;
 }
 
 unsigned int ControlPoint::get_number_of_owning_elements() const {
