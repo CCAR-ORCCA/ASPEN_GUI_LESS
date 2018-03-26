@@ -157,7 +157,7 @@ int  BatchFilter::run(
 
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
-			P_cc(p,p) = std::pow(6 * sigma_consider_vector[p],2);
+			P_cc(p,p) = std::pow(3 * sigma_consider_vector[p],2);
 
 			
 			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
@@ -174,8 +174,6 @@ int  BatchFilter::run(
 
 
 		// The weighting matrix is computed
-
-
 		info_mat += H.t() * W * H ;
 		normal_mat += H.t() * W * y_bar ;
 
@@ -184,7 +182,6 @@ int  BatchFilter::run(
 
 		// The covariance of the state at the initial time is computed
 		P_hat_0 = arma::inv(info_mat) ;
-
 
 		// The consider matrices are computed
 		arma::mat S_xc = - P_hat_0 * H.t() * R;
