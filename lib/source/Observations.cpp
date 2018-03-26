@@ -135,7 +135,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 				args.get_sigma_consider_vector_ptr() -> push_back(bezier -> get_fitting_residuals());
 				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
-				args.get_sigmas_ranges_vector_ptr() -> push_back(sigma_range);
+				args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 
 
 			}
@@ -145,7 +145,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 		else{
 			args.get_sigma_consider_vector_ptr() -> push_back(0);
 			args.get_biases_consider_vector_ptr() -> push_back(0);
-			args.get_sigmas_ranges_vector_ptr() -> push_back(0);
+			args.get_sigmas_range_vector_ptr() -> push_back(0);
 		}
 
 	}
