@@ -385,6 +385,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
 
+
+
 	// The estimated shape model is finally initialized
 	this -> estimated_shape_model = a_priori_bezier;
 
