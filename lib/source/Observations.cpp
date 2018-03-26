@@ -143,9 +143,9 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 			H.row(i) = - n.t() / arma::dot(n,u);
 		}
 		else{
-			args.get_sigma_consider_vector_ptr() -> push_back(0);
-			args.get_biases_consider_vector_ptr() -> push_back(0);
-			args.get_sigmas_range_vector_ptr() -> push_back(0);
+			args.get_sigma_consider_vector_ptr() -> push_back(-1);
+			args.get_biases_consider_vector_ptr() -> push_back(-1);
+			args.get_sigmas_range_vector_ptr() -> push_back(-1);
 		}
 
 	}
