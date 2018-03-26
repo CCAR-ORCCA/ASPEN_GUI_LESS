@@ -105,6 +105,13 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 
+	// auto P_cm = args.get_estimated_shape_model() -> get_cm_cov();
+
+	auto P_cm = arma::eye<arma::mat>(3,3);
+
+
+
+
 	args.get_sigma_consider_vector_ptr() -> clear();
 	args.get_biases_consider_vector_ptr() -> clear();
 	args.get_sigmas_range_vector_ptr() -> clear();
@@ -131,9 +138,11 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 				n = bezier -> get_normal(u_t,v_t);
 
 				auto P = bezier -> covariance_surface_point(u_t,v_t,u);
-				double sigma_range = std::sqrt(arma::dot(u,P * u));
 
-				args.get_sigma_consider_vector_ptr() -> push_back(bezier -> get_fitting_residuals());
+				double sigma_range = std::sqrt(arma::dot(u,P * u));
+				double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
+
+				args.get_sigma_consider_vector_ptr() -> push_back(sigma_cm);
 				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
 				args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 

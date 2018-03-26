@@ -157,7 +157,7 @@ int  BatchFilter::run(
 
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
-			P_cc(p,p) = std::pow(3 * sigma_consider_vector[p],2);
+			P_cc(p,p) = std::pow(sigma_consider_vector[p],2);
 
 			
 			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
