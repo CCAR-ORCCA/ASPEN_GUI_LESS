@@ -109,10 +109,7 @@ void ShapeModelBezier::update_mass_properties() {
 	start = std::chrono::system_clock::now();
 
 	this -> compute_volume();
-	// this -> compute_volume_sd();
 	this -> compute_center_of_mass();
-	// this -> compute_cm_cov();
-
 	this -> compute_inertia();
 
 	end = std::chrono::system_clock::now();
@@ -353,7 +350,6 @@ void ShapeModelBezier::compute_cm_cov(){
 
 	arma::mat::fixed<3,3> cm_cov_temp;
 
-	std::cout << this -> cm.t() << std::endl;
 	
 	cm_cov_temp = this -> cm * this -> cm.t() * std::pow(this -> volume_sd,2);
 
@@ -445,59 +441,59 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 
-			// for (int index = 0 ; index <  this -> cm_cov_2_indices_coefs_table.size(); ++index) {
+			for (int index = 0 ; index <  this -> cm_cov_2_indices_coefs_table.size(); ++index) {
 
-			// 	// i
-			// 	int i =  int(this -> cm_cov_2_indices_coefs_table[index][0]);
-			// 	int j =  int(this -> cm_cov_2_indices_coefs_table[index][1]);
+				// i
+				int i =  int(this -> cm_cov_2_indices_coefs_table[index][0]);
+				int j =  int(this -> cm_cov_2_indices_coefs_table[index][1]);
 
-			// 	// j
-			// 	int k =  int(this -> cm_cov_2_indices_coefs_table[index][2]);
-			// 	int l =  int(this -> cm_cov_2_indices_coefs_table[index][3]);
+				// j
+				int k =  int(this -> cm_cov_2_indices_coefs_table[index][2]);
+				int l =  int(this -> cm_cov_2_indices_coefs_table[index][3]);
 				
-			// 	// k
-			// 	int m =  int(this -> cm_cov_2_indices_coefs_table[index][4]);
-			// 	int p =  int(this -> cm_cov_2_indices_coefs_table[index][5]);
+				// k
+				int m =  int(this -> cm_cov_2_indices_coefs_table[index][4]);
+				int p =  int(this -> cm_cov_2_indices_coefs_table[index][5]);
 
-			// 	// l
-			// 	int q =  int(this -> cm_cov_2_indices_coefs_table[index][6]);
-			// 	int r =  int(this -> cm_cov_2_indices_coefs_table[index][7]);
+				// l
+				int q =  int(this -> cm_cov_2_indices_coefs_table[index][6]);
+				int r =  int(this -> cm_cov_2_indices_coefs_table[index][7]);
 
-			// 	// m
-			// 	int s =  int(this -> cm_cov_2_indices_coefs_table[index][8]);
-			// 	int t =  int(this -> cm_cov_2_indices_coefs_table[index][9]);
+				// m
+				int s =  int(this -> cm_cov_2_indices_coefs_table[index][8]);
+				int t =  int(this -> cm_cov_2_indices_coefs_table[index][9]);
 
-			// 	// p
-			// 	int u =  int(this -> cm_cov_2_indices_coefs_table[index][10]);
-			// 	int v =  int(this -> cm_cov_2_indices_coefs_table[index][11]);
+				// p
+				int u =  int(this -> cm_cov_2_indices_coefs_table[index][10]);
+				int v =  int(this -> cm_cov_2_indices_coefs_table[index][11]);
 
-			// 	// q
-			// 	int w =  int(this -> cm_cov_2_indices_coefs_table[index][12]);
-			// 	int x =  int(this -> cm_cov_2_indices_coefs_table[index][13]);
-
-
-			// 	auto Ci = patch_e -> get_control_point(i,j);
-			// 	auto Cj = patch_e -> get_control_point(k,l);
-			// 	auto Ck = patch_e -> get_control_point(m,p);
-			// 	auto Cl = patch_e -> get_control_point(q,r);
-
-			// 	auto Cm = patch_f -> get_control_point(s,t);
-			// 	auto Cp = patch_f -> get_control_point(u,v);
-			// 	auto Cq = patch_f -> get_control_point(w,x);
+				// q
+				int w =  int(this -> cm_cov_2_indices_coefs_table[index][12]);
+				int x =  int(this -> cm_cov_2_indices_coefs_table[index][13]);
 
 
-			// 	arma::mat P;
+				auto Ci = patch_e -> get_control_point(i,j);
+				auto Cj = patch_e -> get_control_point(k,l);
+				auto Ck = patch_e -> get_control_point(m,p);
+				auto Cl = patch_e -> get_control_point(q,r);
 
-			// 	ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq);
+				auto Cm = patch_f -> get_control_point(s,t);
+				auto Cp = patch_f -> get_control_point(u,v);
+				auto Cq = patch_f -> get_control_point(w,x);
 
-			// 	arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
-			// 	arma::vec right_vec = patch_f -> get_cross_products(s,t,u,v,w,x);
 
-			// 	arma::mat P_inc = this -> cm_cov_2_indices_coefs_table[index][14] * left_mat.t() * P * right_vec * this -> cm.t();
+				arma::mat P;
 
-			// 	cm_cov_temp -= (P_inc + P_inc.t());
+				ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq);
 
-			// }
+				arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
+				arma::vec right_vec = patch_f -> get_cross_products(s,t,u,v,w,x);
+
+				arma::mat P_inc = this -> cm_cov_2_indices_coefs_table[index][14] * left_mat.t() * P * right_vec * this -> cm.t();
+
+				cm_cov_temp -= (P_inc + P_inc.t());
+
+			}
 
 
 		}
@@ -514,9 +510,6 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 }
-
-
-
 
 
 
