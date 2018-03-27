@@ -338,7 +338,7 @@ void ShapeModelBezier::compute_volume_sd(){
 
 		}
 		++progress;
-		
+
 
 	}
 
@@ -346,8 +346,6 @@ void ShapeModelBezier::compute_volume_sd(){
 
 
 }
-
-
 
 void ShapeModelBezier::compute_cm_cov(){
 
