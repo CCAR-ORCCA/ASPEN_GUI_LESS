@@ -218,8 +218,14 @@ int main() {
 	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph));
 
 	estimated_shape_model -> shift_to_barycenter();
+
+	std::cout << "\ncenter of mass after shifting: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
+
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
+	std::cout << "\ncenter of mass after rotating: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
+
+	std::cout << estimated_shape_model -> get_center_of_mass() << std::endl;
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
@@ -227,9 +233,9 @@ int main() {
 
 	estimated_shape_model -> compute_volume_sd();
 
-	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume() << std::endl;
-	std::cout << "\nTrue volume: " << true_shape_model.get_volume() << std::endl;
-	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl;
+	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
+	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
+	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
 	estimated_shape_model -> compute_cm_cov();
 
 	std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
