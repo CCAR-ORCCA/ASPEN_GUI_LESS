@@ -387,6 +387,8 @@ void ShapeModelBezier::compute_cm_cov(){
 			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
 
+				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+				
 				// i
 				int i =  int(coefs_row[0]);
 				int j =  int(coefs_row[1]);
