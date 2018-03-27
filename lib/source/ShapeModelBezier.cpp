@@ -371,8 +371,7 @@ void ShapeModelBezier::compute_cm_cov(){
 	arma::vec gammas(this -> cm_cov_1_indices_coefs_table.size());
 	arma::cube mats = arma::zeros<arma::cube>(3,3,this -> cm_cov_1_indices_coefs_table.size());
 
-	#pragma omp parallel for reduction (+:cm_cov_temp)
-
+	#pragma omp parallel for 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
@@ -388,7 +387,7 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
-				
+
 				// i
 				int i =  int(coefs_row[0]);
 				int j =  int(coefs_row[1]);
@@ -444,7 +443,7 @@ void ShapeModelBezier::compute_cm_cov(){
 				arma::mat right_mat = patch_f -> get_augmented_cross_products(s,t,u,v,w,x,y,z);
 
 
-				mats.slice(index) += left_mat.t() * P * right_mat
+				mats.slice(index) += left_mat.t() * P * right_mat;
 
 
 
