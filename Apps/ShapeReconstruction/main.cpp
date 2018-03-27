@@ -221,18 +221,13 @@ int main() {
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
 
-	// arma::vec bias = {0.2,0,0};
-
-	// estimated_shape_model -> translate(bias);
-	// estimated_shape_model -> update_mass_properties();
-
-
-
-
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
 	args.set_estimated_shape_model(estimated_shape_model.get());
 
+	estimated_shape_model -> compute_volume_sd();
+	estimated_shape_model -> compute_cm_cov();
+	
 	/**
 	END OF SHAPE RECONSTRUCTION FILTER
 	*/
