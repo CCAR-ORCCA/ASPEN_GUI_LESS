@@ -60,7 +60,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 
 	// The covariances are re-assigned to the control points
-	boost::progress_display progress(this -> shape_model -> get_NControlPoints());
+	boost::progress_display progress_points(this -> shape_model -> get_NControlPoints());
 	std::cout << "- Assigning covariances to the  "<< this -> shape_model -> get_NControlPoints() <<  " control points ..." << std::endl;
 	
 
@@ -81,7 +81,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 		(*point) -> set_covariance(P_C);
 
 
-		++progress;
+		++progress_points;
 	}
 	std::cout << "- Done with the control points " << std::endl;
 
