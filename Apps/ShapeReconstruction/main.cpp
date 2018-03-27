@@ -226,8 +226,13 @@ int main() {
 	args.set_estimated_shape_model(estimated_shape_model.get());
 
 	estimated_shape_model -> compute_volume_sd();
+
+	std::cout << "Volume sd: " << estimated_shape_model -> get_volume_sd() << std::endl;
 	estimated_shape_model -> compute_cm_cov();
-	
+
+	std::cout << "COM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
+
+
 	/**
 	END OF SHAPE RECONSTRUCTION FILTER
 	*/
