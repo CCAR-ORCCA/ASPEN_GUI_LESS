@@ -73,7 +73,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 		for (auto el = elements.begin(); el != elements.end(); ++el){
 			arma::mat P = static_cast<Bezier *>(*el) -> get_P_X();
-			if (P.max() > P_X.max()){
+			if (P.max() > P_C.max()){
 				P_C = P;
 			}
 
