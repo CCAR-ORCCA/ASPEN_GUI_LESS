@@ -277,7 +277,6 @@ void ShapeModelBezier::compute_volume_sd(){
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-		++progress;
 
 		auto neighbors = connected_elements[e];
 		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
@@ -338,6 +337,8 @@ void ShapeModelBezier::compute_volume_sd(){
 
 
 		}
+		++progress;
+		
 
 	}
 
@@ -371,7 +372,6 @@ void ShapeModelBezier::compute_cm_cov(){
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-		++progress;
 
 		auto neighbors = connected_elements[e];
 		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
@@ -499,6 +499,9 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 		}
+
+		++progress;
+
 
 	}
 
