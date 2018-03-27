@@ -39,17 +39,31 @@ arma::vec Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) 
 }
 
 
-std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point){
+std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point) const{
 	
 	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		if (this -> control_points[i] == point){
-			return this -> forw_table[i];
+		if (this -> control_points.at(i) == point){
+			return this -> forw_table.at(i);
 		}
 	}
 
 	throw(std::runtime_error("The provided point should belong to this patch"));
 	
 }
+
+
+unsigned int Bezier::get_local_index(std::shared_ptr<ControlPoint> point) const{
+	
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		if (this -> control_points.at(i) == point){
+			return i;
+		}
+	}
+
+	throw(std::runtime_error("The provided point should belong to this patch"));
+	
+}
+
 
 void Bezier::construct_index_tables(){
 	

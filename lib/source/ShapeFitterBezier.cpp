@@ -68,16 +68,33 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
 		
 		auto elements = (*point) -> get_owning_elements();
-		arma::mat P_C = static_cast<Bezier *>(*elements.begin()) -> get_P_X();
+
+		Bezier * first_element = static_cast<Bezier *>(*elements.begin());
+		unsigned int first_element_index = first_element -> get_local_index(*point);
+
+		arma::mat P_C = first_element -> get_P_X().submat(
+			first_element_index,first_element_index,
+			first_element_index + 2, first_element_index + 2);
 
 
 		for (auto el = elements.begin(); el != elements.end(); ++el){
-			arma::mat P = static_cast<Bezier *>(*el) -> get_P_X();
+
+			Bezier * element = static_cast<Bezier *>(*el);
+
+			unsigned int element_index = element -> get_local_index(*point);
+
+
+			arma::mat P = element -> get_P_X().submat(
+				element_index,element_index,
+				element_index + 2, element_index + 2);
+
+
 			if (P.max() > P_C.max()){
 				P_C = P;
 			}
 
 		}
+
 		(*point) -> set_covariance(P_C);
 
 

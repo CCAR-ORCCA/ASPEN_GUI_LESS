@@ -134,7 +134,18 @@ public:
 	@param point pointer to query point
 	@return local_indices (i,j,k) 
 	*/
-	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(std::shared_ptr<ControlPoint> point);
+	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(std::shared_ptr<ControlPoint> point) const;
+
+
+	/**
+	Returns the local index of a point within a Bezier patch
+	@param point pointer to query point
+	@return local index (between 0 and N_C - 1)
+	*/
+	unsigned int get_local_index(std::shared_ptr<ControlPoint> point) const;
+
+
+
 
 	/**
 	Returns the coordinates of a control point given its i and j indices (k = n - i - j)
