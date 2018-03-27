@@ -1,4 +1,5 @@
 #include "Observations.hpp"
+#include "ShapeModelBezier.hpp"
 
 // Observations: need range measurements between
 // spacecraft and bezier surface
@@ -105,7 +106,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 
-	auto P_cm = args.get_estimated_shape_model() -> get_cm_cov();
+	auto P_cm = static_cast<ShapeModelBezier * >(args.get_estimated_shape_model()) -> get_cm_cov();
 
 	// auto P_cm = arma::eye<arma::mat>(3,3);
 
