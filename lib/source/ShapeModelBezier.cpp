@@ -254,17 +254,35 @@ void ShapeModelBezier::compute_volume_sd(){
 	boost::progress_display progress(this -> elements.size()) ;
 
 
+
+	// The list of connected facets should be formed somewhere here
+
+	// a vector storing sets of vector pointers? where the index of the vector
+	// refers to the index of the surface element
+
+	std::vector<std::set < Element * > > connected_elements;
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+		auto elements = this -> elements[e] -> get_neighbors(true);
+		connected_elements.push_back(elements);
+	}
+
+
+
+
 	std::cout << "- Computing volume sd...\n";
+	#pragma omp parallel for reduction(+:vol_sd)
+
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 		++progress;
 
-		#pragma omp parallel for reduction(+:vol_sd)
-		for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+		auto neighbors = connected_elements[e];
+		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
-			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
+			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
 
 			for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
 
@@ -333,21 +351,32 @@ void ShapeModelBezier::compute_volume_sd(){
 void ShapeModelBezier::compute_cm_cov(){
 
 	std::cout << "- Computing cm covariance ...\n";
-	
-	this -> cm_cov = this -> cm * this -> cm.t() * std::pow(this -> volume_sd,2);
 
+
+	arma::mat::fixed<3,3> cm_cov_temp;
+	
+	cm_cov_temp = this -> cm * this -> cm.t() * std::pow(this -> volume_sd,2);
+
+	std::vector<std::set < Element * > > connected_elements;
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+		auto elements = this -> elements[e] -> get_neighbors(true);
+		connected_elements.push_back(elements);
+	}
 
 	boost::progress_display progress(this -> elements.size()) ;
 
+	#pragma omp parallel for reduction (+:cm_cov_temp)
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 		++progress;
 
-		// #pragma omp parallel for reduction(+:volume_sd)
-		for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+		auto neighbors = connected_elements[e];
+		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
-			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
+			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
 
 
 			for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
@@ -404,15 +433,13 @@ void ShapeModelBezier::compute_cm_cov(){
 
 				ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq,Cr);
 				
-				if (P.max() == 0){
-					continue;
-				}
+				
 				// std::cout << P << std::endl;
 
 				arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
 				arma::mat right_mat = patch_f -> get_augmented_cross_products(s,t,u,v,w,x,y,z);
 
-				this -> cm_cov += coefs_row[16] * left_mat.t() * P * right_mat;
+				cm_cov_temp += coefs_row[16] * left_mat.t() * P * right_mat;
 			}
 
 
@@ -466,7 +493,7 @@ void ShapeModelBezier::compute_cm_cov(){
 
 				arma::mat P_inc = this -> cm_cov_2_indices_coefs_table[index][14] * left_mat.t() * P * right_vec * this -> cm.t();
 
-				this -> cm_cov -= (P_inc + P_inc.t());
+				cm_cov_temp -= (P_inc + P_inc.t());
 
 			}
 
@@ -476,7 +503,7 @@ void ShapeModelBezier::compute_cm_cov(){
 	}
 
 
-	this -> cm_cov = this -> cm_cov / std::pow(this -> volume,2);
+	this -> cm_cov = cm_cov_temp / std::pow(this -> volume,2);
 
 
 
