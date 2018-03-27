@@ -145,6 +145,12 @@ public:
 	arma::vec get_control_point_coordinates(unsigned int i, unsigned int j) const;
 
 
+	/**
+	Returns P_X
+	@return P_X matrix
+	*/
+	arma::mat get_P_X() const;
+
 
 	/**
 	Evaluates the partial derivative of Sum( B^n_{i,j,k}C_{ijk}) with respect to (u,v) evaluated 

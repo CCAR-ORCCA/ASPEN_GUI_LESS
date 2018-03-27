@@ -922,6 +922,10 @@ double Bezier::initialize_covariance(const std::vector<Footpoint> & footpoints,
 
 }
 
+arma::mat Bezier::get_P_X() const{
+	return this -> P_X;
+}
+
 
 void Bezier::train_patch_covariance(){
 

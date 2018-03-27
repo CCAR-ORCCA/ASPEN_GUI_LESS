@@ -50,16 +50,41 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	// Once this is done, each patch is trained
 	boost::progress_display progress(trained_patches.size());
 	std::cout << "- Training "<< trained_patches.size() <<  " patches ..." << std::endl;
-	
-
 	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
 		(*patch) -> train_patch_covariance();
 		(*patch) -> compute_range_biases();
-
 		++progress;
-
 	}
 	std::cout << "- Done training "<< trained_patches.size() <<  " patches " << std::endl;
+
+
+
+	// The covariances are re-assigned to the control points
+	boost::progress_display progress(this -> shape_model -> get_NControlPoints());
+	std::cout << "- Assigning covariances to the  "<< this -> shape_model -> get_NControlPoints() <<  " control points ..." << std::endl;
+	
+
+	auto control_points = this -> shape_model -> get_control_points();
+	for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
+		
+		auto elements = (*point) -> get_owning_elements();
+		arma::mat P_C = static_cast<Bezier *>(*elements.begin()) -> get_P_X();
+
+
+		for (auto el = elements.begin(); el != elements.end(); ++el){
+			arma::mat P = static_cast<Bezier *>(*el) -> get_P_X();
+			if (P.max() > P_X.max()){
+				P_C = P;
+			}
+
+		}
+		(*point) -> set_covariance(P_C);
+
+
+		++progress;
+	}
+	std::cout << "- Done with the control points " << std::endl;
+
 
 
 

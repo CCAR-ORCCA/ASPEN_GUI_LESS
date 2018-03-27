@@ -109,9 +109,6 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 	auto P_cm = arma::eye<arma::mat>(3,3);
 
-
-
-
 	args.get_sigma_consider_vector_ptr() -> clear();
 	args.get_biases_consider_vector_ptr() -> clear();
 	args.get_sigmas_range_vector_ptr() -> clear();
