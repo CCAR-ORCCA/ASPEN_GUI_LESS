@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 5e-4 
+#define LOS_NOISE_SD_BASELINE 5e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -227,10 +227,12 @@ int main() {
 
 	estimated_shape_model -> compute_volume_sd();
 
-	std::cout << "Volume sd: " << estimated_shape_model -> get_volume_sd() << std::endl;
+	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume() << std::endl;
+	std::cout << "\nTrue volume: " << true_shape_model.get_volume() << std::endl;
+	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl;
 	estimated_shape_model -> compute_cm_cov();
 
-	std::cout << "COM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
+	std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
 
 
 	/**

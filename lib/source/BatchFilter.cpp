@@ -159,7 +159,6 @@ int  BatchFilter::run(
 
 			P_cc(p,p) = std::pow(sigma_consider_vector[p],2);
 
-			
 			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
 			R(p,p) = std::pow(sigmas_range_vector[p],2);
 
@@ -168,6 +167,7 @@ int  BatchFilter::run(
 				y_bar(p) = 0;
 			}
 		}
+
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "---- Largest residuals after removing outliers: " << arma::abs(y_bar).max() << std::endl;
 		#endif
