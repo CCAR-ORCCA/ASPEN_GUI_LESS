@@ -362,27 +362,24 @@ void ShapeModelBezier::compute_cm_cov(){
 		connected_elements.push_back(elements);
 	}
 
-	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
+	boost::progress_display progress(this -> elements.size()) ;
 
 
-	arma::vec gammas(this -> cm_cov_1_indices_coefs_table.size());
-	arma::cube mats = arma::zeros<arma::cube>(3,3,this -> cm_cov_1_indices_coefs_table.size());
 
-	#pragma omp parallel for 
-	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
-		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
-		gammas(index) = coefs_row[16];
+	// #pragma omp parallel for reduction (+:cm_cov_temp)
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 
-		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+		auto neighbors = connected_elements[e];
 
-			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
-			auto neighbors = connected_elements[e];
-
-			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
 
 
-				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+			for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
+
+				auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
 				// i
 				int i =  int(coefs_row[0]);
@@ -438,93 +435,12 @@ void ShapeModelBezier::compute_cm_cov(){
 				arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
 				arma::mat right_mat = patch_f -> get_augmented_cross_products(s,t,u,v,w,x,y,z);
 
-
-				mats.slice(index) += left_mat.t() * P * right_mat;
-
-
-
+				cm_cov_temp += coefs_row[16] * left_mat.t() * P * right_mat;
 			}
 		}
 
 		++progress;
-
-
 	}
-
-
-	// #pragma omp parallel for reduction (+:cm_cov_temp)
-	// for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-	// 	Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-
-	// 	auto neighbors = connected_elements[e];
-
-	// 	for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
-
-	// 		Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
-
-
-	// 		for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
-
-	// 			auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
-
-	// 			// i
-	// 			int i =  int(coefs_row[0]);
-	// 			int j =  int(coefs_row[1]);
-
-	// 			// j
-	// 			int k =  int(coefs_row[2]);
-	// 			int l =  int(coefs_row[3]);
-
-	// 			// k
-	// 			int m =  int(coefs_row[4]);
-	// 			int p =  int(coefs_row[5]);
-
-	// 			// l
-	// 			int q =  int(coefs_row[6]);
-	// 			int r =  int(coefs_row[7]);
-
-	// 			// m
-	// 			int s =  int(coefs_row[8]);
-	// 			int t =  int(coefs_row[9]);
-
-	// 			// p
-	// 			int u =  int(coefs_row[10]);
-	// 			int v =  int(coefs_row[11]);
-
-	// 			// q
-	// 			int w =  int(coefs_row[12]);
-	// 			int x =  int(coefs_row[13]);
-
-	// 			// r
-	// 			int y =  int(coefs_row[14]);
-	// 			int z =  int(coefs_row[15]);
-
-
-	// 			auto Ci = patch_e -> get_control_point(i,j);
-	// 			auto Cj = patch_e -> get_control_point(k,l);
-	// 			auto Ck = patch_e -> get_control_point(m,p);
-	// 			auto Cl = patch_e -> get_control_point(q,r);
-
-	// 			auto Cm = patch_f -> get_control_point(s,t);
-	// 			auto Cp = patch_f -> get_control_point(u,v);
-	// 			auto Cq = patch_f -> get_control_point(w,x);
-	// 			auto Cr = patch_f -> get_control_point(y,z);
-
-
-	// 			arma::mat P;
-
-	// 			ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq,Cr);
-
-
-	// 			// std::cout << P << std::endl;
-
-	// 			arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
-	// 			arma::mat right_mat = patch_f -> get_augmented_cross_products(s,t,u,v,w,x,y,z);
-
-	// 			cm_cov_temp += coefs_row[16] * left_mat.t() * P * right_mat;
-	// 		}
-
 
 
 
