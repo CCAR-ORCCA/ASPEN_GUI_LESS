@@ -241,11 +241,9 @@ arma::vec Bezier::get_cross_products(const int i, const int j, const int k, cons
 }
 
 
-arma::mat Bezier::get_augmented_cross_products(const int i, const int j, const int k, const int l, const int m,const int p,
+void Bezier::get_augmented_cross_products(arma::mat::fixed<12,3> & mat,const int i, const int j, const int k, const int l, const int m,const int p,
 	const int q, const int r) const{
 
-
-	arma::mat stacked_cp(12,3);
 
 
 
@@ -264,12 +262,11 @@ arma::mat Bezier::get_augmented_cross_products(const int i, const int j, const i
 	arma::vec v_lj = arma::cross(Cl,Cj);
 	arma::vec v_jk = arma::cross(Cj,Ck);
 
-	stacked_cp.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(Cj,v_kl);
-	stacked_cp.submat(3,0,5,2) = v_kl * Ci.t();
-	stacked_cp.submat(6,0,8,2) = v_lj * Ci.t();
-	stacked_cp.submat(9,0,11,2) = v_jk * Ci.t();
+	mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(Cj,v_kl);
+	mat.submat(3,0,5,2) = v_kl * Ci.t();
+	mat.submat(6,0,8,2) = v_lj * Ci.t();
+	mat.submat(9,0,11,2) = v_jk * Ci.t();
 
-	return stacked_cp;
 
 }
 

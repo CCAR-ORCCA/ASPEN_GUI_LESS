@@ -366,6 +366,7 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 
+	#pragma omp parallel for reduction (+:cm_cov_temp)
 	
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
@@ -376,8 +377,12 @@ void ShapeModelBezier::compute_cm_cov(){
 
 			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
 
-			#pragma omp parallel for reduction (+:cm_cov_temp)
-			
+			arma::mat::fixed<12,3> left_mat;
+			arma::mat::fixed<12,3> right_mat;
+			arma::mat P;
+
+
+
 			for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
 				auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
@@ -426,15 +431,14 @@ void ShapeModelBezier::compute_cm_cov(){
 				auto Cr = patch_f -> get_control_point(y,z);
 
 
-				arma::mat P;
 
 				ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq,Cr);
 
 
 				// std::cout << P << std::endl;
 
-				arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
-				arma::mat right_mat = patch_f -> get_augmented_cross_products(s,t,u,v,w,x,y,z);
+				patch_e -> get_augmented_cross_products(left_mat,i,j,k,l,m,p,q,r);
+				patch_f -> get_augmented_cross_products(right_mat,s,t,u,v,w,x,y,z);
 
 				cm_cov_temp += coefs_row[16] * left_mat.t() * P * right_mat;
 			}

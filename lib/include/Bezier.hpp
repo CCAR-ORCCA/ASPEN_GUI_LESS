@@ -456,6 +456,7 @@ public:
 
 	/**
 	Returns the augmented stacked crossed products
+	@paran mat reference to matrix holding the stacked crossed products
 	@param i first index of first triplet
 	@param j second index of first triplet
 	@param k first index of second triplet
@@ -466,7 +467,7 @@ public:
 	@param r second index of fourth triplet
 	@returm computed stacked cross-product
 	*/
-	arma::mat get_augmented_cross_products(const int i, const int j, const int k, const int l, const int m,const int p,
+	void get_augmented_cross_products(arma::mat::fixed<12,3> & mat,const int i, const int j, const int k, const int l, const int m,const int p,
 		const int q, const int r) const;
 
 protected:
