@@ -45,7 +45,7 @@
 #define INDEX_END 400 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.1
+#define DOWNSAMPLING_FACTOR 0.3
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-4
@@ -219,7 +219,7 @@ int main() {
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
-	
+
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
 
