@@ -368,11 +368,9 @@ void ShapeModelBezier::compute_cm_cov(){
 	arma::vec gammas(this -> cm_cov_1_indices_coefs_table.size());
 	arma::cube mats = arma::zeros<arma::cube>(3,3,this -> cm_cov_1_indices_coefs_table.size());
 
-	// #pragma omp parallel for 
+	#pragma omp parallel for 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
-
-		std::cout << index << std::endl;
 		gammas(index) = coefs_row[16];
 
 		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
