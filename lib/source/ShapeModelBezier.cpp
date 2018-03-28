@@ -366,7 +366,6 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 
-	#pragma omp parallel for reduction (+:cm_cov_temp)
 	
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
@@ -377,7 +376,8 @@ void ShapeModelBezier::compute_cm_cov(){
 
 			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
 
-
+			#pragma omp parallel for reduction (+:cm_cov_temp)
+			
 			for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
 				auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
