@@ -72,9 +72,9 @@ int main(){
 	itokawa_bezier_fit.get_control_point(0) -> set_covariance(P);
 	itokawa_bezier_fit.get_control_point(1) -> set_covariance(P);
 	itokawa_bezier_fit.get_control_point(2) -> set_covariance(P);
-	itokawa_bezier_fit.get_control_point(3) -> set_covariance(P);
+	// itokawa_bezier_fit.get_control_point(3) -> set_covariance(P);
 	itokawa_bezier_fit.get_control_point(4) -> set_covariance(P);
-	itokawa_bezier_fit.get_control_point(5) -> set_covariance(P);
+	// itokawa_bezier_fit.get_control_point(5) -> set_covariance(P);
 	itokawa_bezier_fit.get_control_point(6) -> set_covariance(P);
 	itokawa_bezier_fit.get_control_point(7) -> set_covariance(P);
 
@@ -108,7 +108,7 @@ int main(){
 
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
-	int N = 100000;
+	int N = 300000;
 
 
 	arma::vec results_volume  = itokawa_bezier_fit.run_monte_carlo_volume(N);
