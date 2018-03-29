@@ -755,6 +755,7 @@ void ShapeModelBezier::elevate_degree(bool update){
 	// The ownership relationships are reset
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 		this -> control_points[i] -> reset_ownership();
+		this -> control_points[i] -> set_global_index(i);
 	}
 
 	// The surface elements are almost the same, expect that they are 
