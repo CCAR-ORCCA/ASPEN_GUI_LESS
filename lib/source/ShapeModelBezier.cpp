@@ -362,75 +362,76 @@ void ShapeModelBezier::compute_cm_cov(){
 		connected_elements.push_back(elements);
 	}
 
-	boost::progress_display progress(this -> elements.size()) ;
+	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
 
 
 	#pragma omp parallel for reduction (+:cm_cov_temp)
-	
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 
-		auto neighbors = connected_elements[e];
+	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
-		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
-
-			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
-
-			arma::mat::fixed<12,3> left_mat;
-			arma::mat::fixed<12,3> right_mat;
-			arma::mat P;
-
-
-
-			for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
-
-				auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
+		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
 				// i
-				int i =  int(coefs_row[0]);
-				int j =  int(coefs_row[1]);
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
 
 				// j
-				int k =  int(coefs_row[2]);
-				int l =  int(coefs_row[3]);
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
 
 				// k
-				int m =  int(coefs_row[4]);
-				int p =  int(coefs_row[5]);
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
 
 				// l
-				int q =  int(coefs_row[6]);
-				int r =  int(coefs_row[7]);
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
 
 				// m
-				int s =  int(coefs_row[8]);
-				int t =  int(coefs_row[9]);
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
 
 				// p
-				int u =  int(coefs_row[10]);
-				int v =  int(coefs_row[11]);
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
 
 				// q
-				int w =  int(coefs_row[12]);
-				int x =  int(coefs_row[13]);
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
 
 				// r
-				int y =  int(coefs_row[14]);
-				int z =  int(coefs_row[15]);
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
 
-				int i_g,j_g,k_g,l_g;
+		arma::mat::fixed<12,3> left_mat;
+		arma::mat::fixed<12,3> right_mat;
+		
+		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+			
+			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+			int i_g,j_g,k_g,l_g;
+
+			i_g = patch_e -> get_control_point_global_index(i,j);
+			j_g = patch_e -> get_control_point_global_index(k,l);
+			k_g = patch_e -> get_control_point_global_index(m,p);
+			l_g = patch_e -> get_control_point_global_index(q,r);
+			
+			auto neighbors = connected_elements[e];
+
+			this -> construct_mat(left_mat,i_g,j_g,k_g,l_g);
+
+			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+
+				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+
 				int m_g,p_g,q_g,r_g;
-
-
-				i_g = patch_e -> get_control_point_global_index(i,j);
-				j_g = patch_e -> get_control_point_global_index(k,l);
-				k_g = patch_e -> get_control_point_global_index(m,p);
-				l_g = patch_e -> get_control_point_global_index(q,r);
 
 				m_g = patch_f -> get_control_point_global_index(s,t);
 				p_g = patch_f -> get_control_point_global_index(u,v);
 				q_g = patch_f -> get_control_point_global_index(w,x);
 				r_g = patch_f -> get_control_point_global_index(y,z);	
+
+				this -> construct_mat(right_mat,m_g,p_g,q_g,r_g);
 
 				cm_cov_temp += coefs_row[16] * this -> increment_cm_cov(left_mat,
 					right_mat, 
@@ -514,6 +515,22 @@ void ShapeModelBezier::compute_cm_cov(){
 
 }
 
+
+void ShapeModelBezier::construct_mat(arma::mat::fixed<12,3> & mat,
+	int i,int j,int k,int l) {
+
+	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
+	arma::vec * Cj = this -> control_points.at(j) -> get_coordinates_pointer_arma();
+	arma::vec * Ck = this -> control_points.at(k) -> get_coordinates_pointer_arma();
+	arma::vec * Cl = this -> control_points.at(l) -> get_coordinates_pointer_arma();
+
+	mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(*Cj,arma::cross(*Ck,*Cl));
+	mat.submat(3,0,5,2) = arma::cross(*Ck,*Cl) * Ci -> t();
+	mat.submat(6,0,8,2) = arma::cross(*Cl,*Cj) * Ci -> t();
+	mat.submat(9,0,11,2) = arma::cross(*Cj,*Ck) * Ci -> t();
+}
+
+
 arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
 	arma::mat::fixed<12,3>  & right_mat, 
 	int i,int j,int k,int l, 
@@ -521,28 +538,6 @@ arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,3> 
 
 	arma::mat::fixed<3,3> P_temp;
 	P_temp.fill(0);
-
-	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
-	arma::vec * Cj = this -> control_points.at(j) -> get_coordinates_pointer_arma();
-	arma::vec * Ck = this -> control_points.at(k) -> get_coordinates_pointer_arma();
-	arma::vec * Cl = this -> control_points.at(l) -> get_coordinates_pointer_arma();
-
-	arma::vec * Cm = this -> control_points.at(m) -> get_coordinates_pointer_arma();
-	arma::vec * Cp = this -> control_points.at(p) -> get_coordinates_pointer_arma();
-	arma::vec * Cq = this -> control_points.at(q) -> get_coordinates_pointer_arma();
-	arma::vec * Cr = this -> control_points.at(r) -> get_coordinates_pointer_arma();
-
-	left_mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(*Cj,arma::cross(*Ck,*Cl));
-	left_mat.submat(3,0,5,2) = arma::cross(*Ck,*Cl) * Ci -> t();
-	left_mat.submat(6,0,8,2) = arma::cross(*Cl,*Cj) * Ci -> t();
-	left_mat.submat(9,0,11,2) = arma::cross(*Cj,*Ck) * Ci -> t();
-
-	right_mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(*Cp,arma::cross(*Cq,*Cr));
-	right_mat.submat(3,0,5,2) = arma::cross(*Cq,*Cr) * Cm -> t();
-	right_mat.submat(6,0,8,2) = arma::cross(*Cr,*Cp) * Cm -> t();
-	right_mat.submat(9,0,11,2) = arma::cross(*Cp,*Cq) * Cm -> t();
-
-
 
 	// First row
 
