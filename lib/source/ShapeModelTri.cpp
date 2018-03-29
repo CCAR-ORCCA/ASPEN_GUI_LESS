@@ -4,7 +4,7 @@
 
 
 #pragma omp declare reduction (+ : arma::vec : omp_out += omp_in)\
-  initializer( omp_priv = omp_orig )
+initializer( omp_priv = omp_orig )
 
 void ShapeModelTri::update_mass_properties() {
 
@@ -148,6 +148,43 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 
 
 }
+
+
+
+
+arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
+
+	arma::mat points = arma::zeros<arma::mat>(3,this -> elements.size() * N);
+
+	// N points are randomly sampled from the surface of the shape model
+	// #pragma omp parallel for
+	for (unsigned int f = 0; f < this -> elements.size(); ++f){
+
+		auto vertices = this -> elements[f] -> get_control_points();
+
+		auto V0 = vertices -> at(0) -> get_coordinates();
+		auto V1 = vertices -> at(1) -> get_coordinates();
+		auto V2 = vertices -> at(2) -> get_coordinates();
+
+		for (unsigned int i = 0; i < N; ++i){
+
+			arma::vec random = arma::randu<arma::vec>(2);
+			double u = random(0);
+			double v = (1 - u) * random(1);
+
+			points.col(N * f + i) = V0 + u * (V2 - V0) + v * (V1 - V0) ;
+		}
+	}
+
+	return points;
+
+}
+
+
+
+
+
+
 
 
 void ShapeModelTri::save(std::string path,const arma::vec & X,const arma::mat & M) const {

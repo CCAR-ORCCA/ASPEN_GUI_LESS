@@ -24,7 +24,7 @@
 #define COL_FOV 20 // ?
 
 // Instrument operating frequency
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0016
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0025
 #define INSTRUMENT_FREQUENCY_NAV 0.000145
 
 
@@ -45,7 +45,7 @@
 #define INDEX_END 400 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.3
+#define DOWNSAMPLING_FACTOR 0.2
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-4

@@ -87,8 +87,6 @@ arma::mat ShapeModelBezier::random_sampling(unsigned int N,const arma::mat & R) 
 
 	return points;
 
-
-
 }
 
 

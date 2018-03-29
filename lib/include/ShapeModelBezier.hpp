@@ -63,7 +63,7 @@ public:
 	void initialize_info_mat();
 	void initialize_dX_bar();
 
-	arma::mat random_sampling(unsigned int N,const arma::mat & R) const;
+	arma::mat random_sampling(unsigned int N,const arma::mat & R = 1e-6 * arma::eye<arma::mat>(3,3)) const;
 
 
 	/**

@@ -35,7 +35,7 @@ public:
 
 	PC(std::vector<std::shared_ptr<PointNormal> > point_normals);
 
-
+	PC(std::string filename);
 	/*
 	Constructor
 	@param shape_model pointer to shape model

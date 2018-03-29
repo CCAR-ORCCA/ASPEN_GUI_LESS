@@ -73,7 +73,10 @@ public:
 		const arma::vec & X = arma::zeros<arma::vec>(3),
 		const arma::mat & M = arma::eye<arma::mat>(3,3)) const;
 
-
+	/**
+	Samples N points over each facet of the shape model
+	*/
+	arma::mat random_sampling(unsigned int N) const;
 
 	
 	/**

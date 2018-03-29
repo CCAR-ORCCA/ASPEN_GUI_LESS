@@ -45,6 +45,75 @@ PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 
 
 
+
+
+PC::PC(std::string filename) {
+
+	std::ifstream ifs(filename);
+
+	if (!ifs.is_open()) {
+		std::cout << "There was a problem opening the input file!\n";
+		throw;
+	}
+
+	std::string line;
+	std::vector<arma::vec> points;
+	std::vector<std::vector<unsigned int> > shape_patch_indices;
+
+	std::cout << " Reading " << filename << std::endl;
+	int degree = -1;
+
+	while (std::getline(ifs, line)) {
+
+		std::stringstream linestream(line);
+
+		if (degree < 0){
+			linestream >> degree;
+			continue;
+		}
+
+		char type;
+		linestream >> type;
+
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+			continue;
+		}
+
+		else if (type == 'v') {
+			double vx, vy, vz;
+			linestream >> vx >> vy >> vz;
+			arma::vec vertex = {vx, vy, vz};
+			points.push_back(vertex);
+
+		}
+
+		else {
+			throw(std::runtime_error(" unrecognized type: "  + std::to_string(type)));
+		}
+
+	}
+
+
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+	arma::vec los_dir = {1,0,0};
+
+	for (unsigned int index = 0; index < points.size(); ++index) {
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points[index])));
+	}
+	this -> construct_kd_tree(points_normals);
+
+	this -> construct_normals(los_dir);
+
+}
+
+
+
+
+
+
+
+
+
 void PC::transform(const arma::mat & dcm, const arma::vec & x){
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
@@ -60,7 +129,7 @@ void PC::transform(const arma::mat & dcm, const arma::vec & x){
 
 	// Actually this should work
 	arma::vec los = {1,0,0};
-		
+
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(dcm * los);
 
