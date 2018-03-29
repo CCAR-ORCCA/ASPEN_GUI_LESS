@@ -365,7 +365,6 @@ void ShapeModelBezier::compute_cm_cov(){
 	boost::progress_display progress(this -> elements.size()) ;
 
 
-
 	#pragma omp parallel for reduction (+:cm_cov_temp)
 	
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
@@ -419,28 +418,24 @@ void ShapeModelBezier::compute_cm_cov(){
 				int y =  int(coefs_row[14]);
 				int z =  int(coefs_row[15]);
 
-
-				auto Ci = patch_e -> get_control_point(i,j);
-				auto Cj = patch_e -> get_control_point(k,l);
-				auto Ck = patch_e -> get_control_point(m,p);
-				auto Cl = patch_e -> get_control_point(q,r);
-
-				auto Cm = patch_f -> get_control_point(s,t);
-				auto Cp = patch_f -> get_control_point(u,v);
-				auto Cq = patch_f -> get_control_point(w,x);
-				auto Cr = patch_f -> get_control_point(y,z);
+				int i_g,j_g,k_g,l_g;
+				int m_g,p_g,q_g,r_g;
 
 
+				i_g = patch_e -> get_control_point_global_index(i,j);
+				j_g = patch_e -> get_control_point_global_index(k,l);
+				k_g = patch_e -> get_control_point_global_index(m,p);
+				l_g = patch_e -> get_control_point_global_index(q,r);
 
-				ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq,Cr);
+				m_g = patch_f -> get_control_point_global_index(s,t);
+				p_g = patch_f -> get_control_point_global_index(u,v);
+				q_g = patch_f -> get_control_point_global_index(w,x);
+				r_g = patch_f -> get_control_point_global_index(y,z);	
 
-
-				// std::cout << P << std::endl;
-
-				patch_e -> get_augmented_cross_products(left_mat,i,j,k,l,m,p,q,r);
-				patch_f -> get_augmented_cross_products(right_mat,s,t,u,v,w,x,y,z);
-
-				cm_cov_temp += coefs_row[16] * left_mat.t() * P * right_mat;
+				cm_cov_temp += coefs_row[16] * this -> increment_cm_cov(left_mat,
+					right_mat, 
+					i_g,j_g,k_g,l_g, 
+					m_g,p_g,q_g,r_g);
 			}
 		}
 
@@ -518,6 +513,104 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 }
+
+arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
+	arma::mat::fixed<12,3>  & right_mat, 
+	int i,int j,int k,int l, 
+	int m, int p, int q, int r){
+
+	arma::mat::fixed<3,3> P_temp;
+	P_temp.fill(0);
+
+	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
+	arma::vec * Cj = this -> control_points.at(j) -> get_coordinates_pointer_arma();
+	arma::vec * Ck = this -> control_points.at(k) -> get_coordinates_pointer_arma();
+	arma::vec * Cl = this -> control_points.at(l) -> get_coordinates_pointer_arma();
+
+	arma::vec * Cm = this -> control_points.at(m) -> get_coordinates_pointer_arma();
+	arma::vec * Cp = this -> control_points.at(p) -> get_coordinates_pointer_arma();
+	arma::vec * Cq = this -> control_points.at(q) -> get_coordinates_pointer_arma();
+	arma::vec * Cr = this -> control_points.at(r) -> get_coordinates_pointer_arma();
+
+	left_mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(*Cj,arma::cross(*Ck,*Cl));
+	left_mat.submat(3,0,5,2) = arma::cross(*Ck,*Cl) * Ci -> t();
+	left_mat.submat(6,0,8,2) = arma::cross(*Cl,*Cj) * Ci -> t();
+	left_mat.submat(9,0,11,2) = arma::cross(*Cj,*Ck) * Ci -> t();
+
+	right_mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(*Cp,arma::cross(*Cq,*Cr));
+	right_mat.submat(3,0,5,2) = arma::cross(*Cq,*Cr) * Cm -> t();
+	right_mat.submat(6,0,8,2) = arma::cross(*Cr,*Cp) * Cm -> t();
+	right_mat.submat(9,0,11,2) = arma::cross(*Cp,*Cq) * Cm -> t();
+
+
+
+	// First row
+
+	if (i == m){
+		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(0,0,2,2);
+	}
+	if (i == p){
+		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(3,0,5,2);
+	}
+	if (i == q){
+		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(6,0,8,2);
+	}
+	if (i == r){
+		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(9,0,11,2);
+	}
+
+	// Second row
+
+	if (j == m){
+		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(0,0,2,2);
+	}
+	if (j == p){
+		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(3,0,5,2);
+	}
+	if (j == q){
+		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(6,0,8,2);
+	}
+	if (j == r){
+		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(9,0,11,2);
+	}
+
+	// Third row
+
+	if (k == m){
+		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(0,0,2,2);
+	}
+	if (k == p){
+		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(3,0,5,2);
+	}
+	if (k == q){
+		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(6,0,8,2);
+	}
+	if (k == r){
+		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(9,0,11,2);
+	}
+
+
+	// Fourth row
+
+
+	if (l == m){
+		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(0,0,2,2);
+	}
+	if (l == p){
+		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(3,0,5,2);
+	}
+	if (l == q){
+		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(6,0,8,2);
+	}
+	if (l == r){
+		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(9,0,11,2);
+	}
+
+
+
+	return P_temp;
+}
+
 
 
 

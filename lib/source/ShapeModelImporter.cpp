@@ -86,7 +86,7 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 
 		std::shared_ptr<ControlPoint> vertex = std::make_shared<ControlPoint>(ControlPoint());
 		vertex -> set_coordinates(control_point_coords[vertex_index]);
-
+		vertex -> set_global_index(vertex_index);
 		vertex_index_to_ptr.push_back(vertex);
 		shape_model -> add_control_point(vertex);
 		++progress_vertices;

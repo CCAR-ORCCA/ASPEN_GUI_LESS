@@ -7,7 +7,7 @@
 
 
 #pragma omp declare reduction (+ : arma::mat::fixed<3,3> : omp_out += omp_in)\
-  initializer( omp_priv = omp_orig )
+initializer( omp_priv = omp_orig )
 
 class ShapeModelTri;
 
@@ -146,6 +146,9 @@ public:
 	arma::mat run_monte_carlo_cm(int N);
 
 
+
+
+
 	/**
 	Return the standard deviation in the volume
 	@return standard deviation in shape volume
@@ -164,6 +167,13 @@ public:
 
 
 protected:
+
+
+	
+	arma::mat::fixed<3,3> increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
+		arma::mat::fixed<12,3>  & right_mat, 
+		int i,int j,int k,int l, 
+		int m, int p, int q, int r);
 
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;

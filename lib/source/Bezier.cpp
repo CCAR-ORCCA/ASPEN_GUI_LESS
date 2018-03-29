@@ -31,6 +31,11 @@ std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned
 }
 
 
+int Bezier::get_control_point_global_index(unsigned int i, unsigned int j) const{
+	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
+	return this -> control_points[this -> rev_table.at(indices)] -> get_global_index();
+}
+
 
 arma::vec Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) const{
 	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);

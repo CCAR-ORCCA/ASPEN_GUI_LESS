@@ -58,6 +58,12 @@ public:
 	*/
 	double * get_coordinates_pointer();
 
+	/**
+	Returns pointer to coordinates
+	@return pointer to coordinates
+	*/
+	arma::vec * get_coordinates_pointer_arma();
+
 
 	/**
 	Delete $facet from the list of Element * owning $this
@@ -116,6 +122,19 @@ public:
 	*/
 	unsigned int get_number_of_owning_elements() const ;
 
+	/**
+	Get global index (shape wise)
+	@return global index
+	*/
+	int get_global_index() const;
+
+
+	/**
+	Set global index (shape wise)
+	@param global index
+	*/
+	void set_global_index(int index);
+
 protected:
 	arma::vec coordinates;
 	arma::vec mean_coordinates;
@@ -124,6 +143,7 @@ protected:
 	std::map<Element *,arma::uvec> local_numbering;
 	arma::mat covariance = arma::zeros<arma::mat>(3,3);
 
+	int global_index;
 
 };
 

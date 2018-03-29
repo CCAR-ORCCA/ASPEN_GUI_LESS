@@ -37,6 +37,12 @@ double * ControlPoint::get_coordinates_pointer(){
 	return this -> coordinates.colptr(0);
 }
 
+arma::vec * ControlPoint::get_coordinates_pointer_arma(){
+	return &this -> coordinates;
+
+}
+
+
 void ControlPoint::set_covariance(arma::mat P){
 	this -> covariance = P;
 }
@@ -89,6 +95,16 @@ bool ControlPoint::is_owned_by(Element * facet) const {
 		return true;
 
 	}
+}
+
+
+int  ControlPoint::get_global_index() const{
+	return this -> global_index;
+}
+
+
+void ControlPoint::set_global_index(int index){
+	this -> global_index = index;
 }
 
 

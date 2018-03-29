@@ -122,6 +122,14 @@ public:
 
 
 	/**
+	Get global index of the queried point
+	@param i first index
+	@param j second index
+	@return global index to control point
+	*/
+	int get_control_point_global_index(unsigned int i, unsigned int j) const;
+
+	/**
 	Returns the control point given its i and j indices (k = n - i - j)
 	@param i first index
 	@param j second index
@@ -367,7 +375,7 @@ public:
 	@returm computed coefficient
 	*/
 	static double alpha_ijk(const int i, const int j, const int k, const int l, const int m, const int p,const int n);
-	
+
 	/**
 	Returns the coefficient gamma_ijkl for center of mass computation
 	@param i first index of first triplet
