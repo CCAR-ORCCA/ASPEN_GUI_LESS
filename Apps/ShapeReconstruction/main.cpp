@@ -60,7 +60,7 @@
 #define SHAPE_DEGREE 2
 
 // Target shape
-#define TARGET_SHAPE "itokawa_128_scaled_aligned"
+#define TARGET_SHAPE "bennu_scaled_aligned"
 
 // Spin rate (hours)
 #define SPIN_RATE 12.
