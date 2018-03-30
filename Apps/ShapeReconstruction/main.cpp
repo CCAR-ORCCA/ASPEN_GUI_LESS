@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 5e-2
+#define LOS_NOISE_SD_BASELINE 2e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -60,7 +60,7 @@
 #define SHAPE_DEGREE 2
 
 // Target shape
-#define TARGET_SHAPE "bennu_scaled_aligned"
+#define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
 // Spin rate (hours)
 #define SPIN_RATE 12.
