@@ -68,6 +68,9 @@
 // Density (kg/m^3)
 #define DENSITY 1900
 
+// Use ICP (false if point cloud is generated from true shape)
+#define USE_ICP false
+
 ///////////////////////////////////////////
 
 
@@ -199,7 +202,7 @@ int main() {
 	shape_filter_args.set_iter_filter(ITER_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
-
+	shape_filter_args.set_use_icp(USE_ICP);
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 

@@ -152,7 +152,7 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
-		
+
 			}
 
 		}
@@ -328,46 +328,69 @@ void ShapeBuilder::get_new_relative_states(
 
 void ShapeBuilder::initialize_shape(unsigned int time_index){
 
-	
-	// This is where CGAL should be called
+
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
+	std::shared_ptr<PC> destination_pc_concatenated;
 
-	PC destination_pc_concatenated(this -> concatenated_pc_vector);
-
-
-	destination_pc_concatenated . save(
-		pc_path, 
-		arma::eye<arma::mat>(3,3), 
-		arma::zeros<arma::vec>(3), 
-		true,
-		false);
+	if (this -> filter_arguments -> get_use_icp()){
+		
+		destination_pc_concatenated = std::make_shared<PC>(PC(this -> concatenated_pc_vector));
 
 
+		destination_pc_concatenated -> save(
+			pc_path, 
+			arma::eye<arma::mat>(3,3), 
+			arma::zeros<arma::vec>(3), 
+			true,
+			false);
 
-	destination_pc_concatenated . save(
-		pc_path_obj, 
-		arma::eye<arma::mat>(3,3), 
-		arma::zeros<arma::vec>(3), 
-		false,
-		true);
 
 
+		destination_pc_concatenated -> save(
+			pc_path_obj, 
+			arma::eye<arma::mat>(3,3), 
+			arma::zeros<arma::vec>(3), 
+			false,
+			true);
+	}
+
+	else{
+
+		arma::mat points = this -> true_shape_model -> random_sampling(30);
+		arma::vec u_dir = {1,0,0};
+
+		destination_pc_concatenated = std::make_shared<PC>(PC(u_dir,points));
+		destination_pc_concatenated -> save(
+			pc_path, 
+			arma::eye<arma::mat>(3,3), 
+			arma::zeros<arma::vec>(3), 
+			true,
+			false);
+
+		destination_pc_concatenated -> save(
+			pc_path_obj, 
+			arma::eye<arma::mat>(3,3), 
+			arma::zeros<arma::vec>(3), 
+			false,
+			true);
+
+
+	}
 
 	CGALINTERFACE::CGAL_interface(
 		pc_path,
 		a_priori_path,
 		this -> filter_arguments -> get_N_edges());
 
-	arma::vec u_dir = {1,0,0};
 
 	ShapeModelImporter shape_io_guess(a_priori_path, 1, true);
 
 	ShapeModelTri a_priori_obj("", nullptr);
 
 	shape_io_guess.load_obj_shape_model(&a_priori_obj);
-	
+
 	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
 
 	// the shape is elevated to the prescribed degree
@@ -379,7 +402,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	a_priori_bezier -> initialize_index_table();
 	a_priori_bezier -> save_both("../output/shape_model/a_priori_bezier");
 
-	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&destination_pc_concatenated);
+	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),destination_pc_concatenated.get());
 
 	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),this -> filter_arguments -> get_ridge_coef());
 

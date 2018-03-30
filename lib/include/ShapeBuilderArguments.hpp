@@ -76,6 +76,14 @@ public:
 		return this -> min_edge_angle;
 	}
 
+	void set_use_icp(bool use_icp){
+		this -> use_icp = use_icp;
+	}
+
+	bool get_use_icp() const{
+		return this -> use_icp;
+	}
+
 	//
 
 	void set_max_ray_incidence(double max_ray_incidence) {
@@ -416,6 +424,7 @@ protected:
 	bool merge_shrunk_facets;
 	bool estimate_shape;
 	bool has_transitioned_to_shape = false;
+	bool use_icp = true;
 
 
 	std::vector<arma::vec> spin_axis_mes_history;
