@@ -174,7 +174,7 @@ arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
 		auto V1 = vertices -> at(1) -> get_coordinates();
 		auto V2 = vertices -> at(2) -> get_coordinates();
 
-		auto noise_intensity = arma::randu<arma::vec>(1);
+		arma::vec noise_intensity = arma::randu<arma::vec>(1);
 
 		for (unsigned int i = 0; i < N; ++i){
 
