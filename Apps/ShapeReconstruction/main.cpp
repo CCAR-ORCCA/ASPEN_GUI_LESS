@@ -242,7 +242,7 @@ int main() {
 	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
 	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
 	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
-	estimated_shape_model -> compute_cm_cov();
+	// estimated_shape_model -> compute_cm_cov();
 
 	std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
 

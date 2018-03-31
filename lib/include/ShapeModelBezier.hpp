@@ -191,7 +191,7 @@ protected:
 
 
 	double volume_sd;
-	arma::mat cm_cov;
+	arma::mat cm_cov = arma::zeros<arma::mat>(3,3);
 
 
 
