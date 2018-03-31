@@ -109,6 +109,9 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
   // left in the surface mesh drops below the specified number (1000)
  SMS::Count_stop_predicate<Polyhedron> stop(N_edges);
 
+
+
+ std::cout << "Simplifying mesh..." << std::endl;
   // This the actual call to the simplification algorithm.
   // The surface mesh and stop conditions are mandatory arguments.
   // The index maps are needed because the vertices and edges
