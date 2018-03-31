@@ -161,9 +161,6 @@ arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
 
 	// arma::mat points = arma::zeros<arma::mat>(3,this -> elements.size());
 
-
-
-
 	// N points are randomly sampled from the surface of the shape model
 	// #pragma omp parallel for
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){

@@ -358,7 +358,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	else{
 
-		arma::mat points = this -> true_shape_model -> random_sampling(5);
+		arma::mat points = this -> true_shape_model -> random_sampling(30);
 		arma::vec u_dir = {1,0,0};
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(u_dir,points));
