@@ -23,7 +23,8 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
-
+#include <CGAL/mst_orient_normals.h>
+#include <CGAL/property_map.h>
 #include <CGAL/config.h>
 
 #include <vector>
@@ -34,6 +35,8 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::FT FT;
 typedef Kernel::Point_3 Point;
 typedef CGAL::Point_with_normal_3<Kernel> Point_with_normal;
+typedef Kernel::Vector_3 Vector;
+typedef std::pair<Point, Vector> PointVectorPair;
 typedef Kernel::Sphere_3 Sphere;
 typedef std::vector<Point_with_normal> PointList;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
@@ -54,6 +57,7 @@ Poisson Surface Reconstruction and saves the resulting mesh
 to the specified file
 @param savepath path to where the input pointcloud should come from
 @param savepath path to where the file should be saved
+@param N_edges number of edges to keep in the output mesh
 */
 void CGAL_interface(std::string input_path, std::string savepath,
 	unsigned int N_edges);

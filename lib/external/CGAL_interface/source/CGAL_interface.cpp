@@ -25,6 +25,37 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
 
     }
 
+    std::list<PointVectorPair> points_to_orient;
+
+    for (auto iter = points.begin(); iter != points.end(); ++iter){
+        points_to_orient.push_back(std::make_pair(iter -> position(),iter -> normal()));
+    }
+
+    // Orients normals.
+    // Note: mst_orient_normals() requires an iterator over points
+    // as well as property maps to access each point's position and normal.
+    const int nb_neighbors = 18;
+    std::list<PointVectorPair>::iterator unoriented_points_begin =
+    CGAL::mst_orient_normals(points_to_orient.begin(), points_to_orient.end(),
+       CGAL::First_of_pair_property_map<PointVectorPair>(),
+       CGAL::Second_of_pair_property_map<PointVectorPair>(),
+       nb_neighbors);
+
+    points.clear();
+    for (auto iter = points_to_orient.begin(); iter != points_to_orient.end(); ++ iter) {
+
+        double x = iter -> first.x();
+        double y = iter -> first.y();
+        double z = iter -> first.z();
+
+        auto normal = iter -> second;
+
+        points.push_back(Point_with_normal(x,y,z,normal));
+
+    }
+
+
+
 
     // Creates implicit function from the read points using the default solver.
 
@@ -47,7 +78,7 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
     #if CGAL_VERSION_NR == 1041001000
 
     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(),
-       6 );
+     6 );
     #else
 
     FT average_spacing = CGAL::compute_average_spacing(points.begin(), points.end(),
@@ -101,23 +132,23 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
     // The Polyhedron is decimated
 
     if (!CGAL::is_triangle_mesh(output_mesh)){
-     throw (std::runtime_error("Input geometry is not triangulated."));
- }
+       throw (std::runtime_error("Input geometry is not triangulated."));
+   }
 
   // This is a stop predicate (defines when the algorithm terminates).
   // In this example, the simplification stops when the number of undirected edges
   // left in the surface mesh drops below the specified number (1000)
- SMS::Count_stop_predicate<Polyhedron> stop(N_edges);
+   SMS::Count_stop_predicate<Polyhedron> stop(N_edges);
 
 
 
- std::cout << "Simplifying mesh..." << std::endl;
+   std::cout << "Simplifying mesh..." << std::endl;
   // This the actual call to the simplification algorithm.
   // The surface mesh and stop conditions are mandatory arguments.
   // The index maps are needed because the vertices and edges
   // of this surface mesh lack an "id()" field.
- int r = SMS::edge_collapse
- (output_mesh
+   int r = SMS::edge_collapse
+   (output_mesh
     ,stop
     ,CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index,output_mesh)) 
     .halfedge_index_map  (get(CGAL::halfedge_external_index  ,output_mesh)) 
@@ -125,8 +156,8 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
     .get_placement(SMS::Midpoint_placement<Polyhedron>())
     );
 
- std::cout << "\nFinished...\n" << r << " edges removed.\n" 
- << (output_mesh.size_of_halfedges()/2) << " final edges.\n" ;
+   std::cout << "\nFinished...\n" << r << " edges removed.\n" 
+   << (output_mesh.size_of_halfedges()/2) << " final edges.\n" ;
 
 
 
@@ -142,7 +173,7 @@ void CGALINTERFACE::CGAL_interface(std::string input_path, std::string savepath,
 
 
     // out << output_mesh;
- CGAL::print_polyhedron_wavefront(ofs, output_mesh);
+   CGAL::print_polyhedron_wavefront(ofs, output_mesh);
 
 
     /// [PMP_distance_snippet]
