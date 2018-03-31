@@ -174,13 +174,15 @@ arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
 		auto V1 = vertices -> at(1) -> get_coordinates();
 		auto V2 = vertices -> at(2) -> get_coordinates();
 
+		double noise_intensity = arma::randu<arma::vec>(1)(0);
+
 		for (unsigned int i = 0; i < N; ++i){
 
 			arma::vec random = arma::randu<arma::vec>(2);
 			double u = random(0);
 			double v = (1 - u) * random(1);
 
-			points.col(N * f + i) = V0 + u * (V2 - V0) + v * (V1 - V0) + 0.1 * arma::randn<arma::vec>(3);
+			points.col(N * f + i) = V0 + u * (V2 - V0) + v * (V1 - V0) + noise_intensity * arma::randn<arma::vec>(3);
 			// points.col(f) = V0 + 1./3 * (V2 - V0) + 1./3 * (V1 - V0) ;
 
 		}
