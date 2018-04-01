@@ -177,8 +177,8 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 			double u = random(0);
 			double v = random(1);
 
-			points.col(N * f + i) = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2 +  0.3 * arma::randn<arma::vec>(3);
-			normals.col(N * f + i) = arma::normalise(arma::cross(V1 - V0,V2 - V0));
+			points.col(N * f + i) = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2 +  noise_intensity(0) * arma::randn<arma::vec>(3);
+			normals.col(N * f + i) = arma::normalise(arma::normalise(arma::cross(V1 - V0,V2 - V0)) + 0.1 * arma::randn<arma::vec>(3));
 
 		}
 	}

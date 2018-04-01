@@ -360,7 +360,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 		arma::mat points,normals;
 
-		this -> true_shape_model -> random_sampling(10,points,normals);
+		this -> true_shape_model -> random_sampling(20,points,normals);
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
 		
