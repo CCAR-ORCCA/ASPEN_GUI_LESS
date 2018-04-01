@@ -283,7 +283,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
 
-	// MatrixXd dMat;
+	MatrixXd dMat;
 
 	dMat = MatrixXd(Lambda);
 	Eigen::JacobiSVD<MatrixXd> svd(Lambda);
