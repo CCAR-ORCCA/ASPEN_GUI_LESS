@@ -151,18 +151,16 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 
 
 
-
-arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
-
+void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const{
 
 
+	points = arma::zeros<arma::mat>(3,this -> elements.size() * N);
+	normals = arma::zeros<arma::mat>(3,this -> elements.size() * N);
 
-	arma::mat points = arma::zeros<arma::mat>(3,this -> elements.size() * N);
-
-	// arma::mat points = arma::zeros<arma::mat>(3,this -> elements.size());
 
 	// N points are randomly sampled from the surface of the shape model
-	// #pragma omp parallel for
+	
+	#pragma omp parallel for
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){
 
 		auto vertices = this -> elements[f] -> get_control_points();
@@ -180,12 +178,10 @@ arma::mat ShapeModelTri::random_sampling(unsigned int N) const{
 			double v = random(1);
 
 			points.col(N * f + i) = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2 +  0.3 * arma::randn<arma::vec>(3);
-			// points.col(f) = V0 + 1./3 * (V2 - V0) + 1./3 * (V1 - V0) ;
+			normals.col(N * f + i) = arma::normalise(arma::cross(V1 - V0,V2 - V0));
 
 		}
 	}
-
-	return points;
 
 }
 

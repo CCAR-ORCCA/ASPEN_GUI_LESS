@@ -24,7 +24,7 @@ public:
 	*/
 	PC(std::vector<std::shared_ptr<Ray> > * focal_plane);
 
-
+	PC(arma::mat & points,arma::mat & normals) ;
 
 	/**
 	Constructor

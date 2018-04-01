@@ -37,6 +37,21 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 }
 
+
+
+PC::PC(arma::mat & points,arma::mat & normals) {
+
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+
+	for (unsigned int index = 0; index < points . n_cols; ++index) {
+		points_normals.push_back(std::make_shared<PointNormal>(PointNormal(points . col(index),
+			normals.col(index))));
+	}
+
+	this -> construct_kd_tree(points_normals);
+
+}
+
 PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 	
 	this -> construct_kd_tree(points_normals);
@@ -332,7 +347,9 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 // }
 
 
-void  PC::save(std::string path, arma::mat dcm, arma::vec x, bool save_normals,
+void  PC::save(std::string path, 
+	arma::mat dcm, arma::vec x, 
+	bool save_normals,
 	bool format_like_obj) const {
 
 	std::ofstream shape_file;

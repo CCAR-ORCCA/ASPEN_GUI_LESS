@@ -75,8 +75,11 @@ public:
 
 	/**
 	Samples N points over each facet of the shape model
+	@param N number of samples per facet
+	@param points reference to matrix holding points coordinates
+	@param normals reference to matrix holding normals coordinates
 	*/
-	arma::mat random_sampling(unsigned int N) const;
+	void random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const;
 
 	
 	/**
