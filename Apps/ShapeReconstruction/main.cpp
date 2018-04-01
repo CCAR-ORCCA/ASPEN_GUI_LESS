@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 2e-1
+#define LOS_NOISE_SD_BASELINE 1e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 ///////////////////////////////////////////
 
