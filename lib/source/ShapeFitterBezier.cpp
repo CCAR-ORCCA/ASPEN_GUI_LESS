@@ -283,13 +283,13 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
 
-	MatrixXd dMat;
+	// MatrixXd dMat;
 
-	dMat = MatrixXd(Lambda);
-	Eigen::JacobiSVD<MatrixXd> svd(Lambda);
-	double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+	// dMat = MatrixXd(Lambda);
+	// Eigen::JacobiSVD<MatrixXd> svd(Lambda);
+	// double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
 	
-	std::cout << "conditioning: " << cond << std::endl;
+	// std::cout << "conditioning: " << cond << std::endl;
 
 
 	// The information matrix is regularized
