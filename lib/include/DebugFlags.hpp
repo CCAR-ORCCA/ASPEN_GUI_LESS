@@ -21,6 +21,6 @@
 
 
 // ICP DEBUG FLAGS
-#define ICP_DEBUG 0
+#define ICP_DEBUG 1
 
 
