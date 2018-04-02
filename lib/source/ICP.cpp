@@ -210,7 +210,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				std::cout << "MRP: " << mrp.t() << std::endl;
 				std::cout << "x: " << x.t() << std::endl;
 				std::cout << "Covariance :\n" << std::endl;
-				std::cout << arma::inv(Info_mat) << std::end;
+				std::cout << arma::inv(Info_mat) << std::endl;
 			#endif
 
 
