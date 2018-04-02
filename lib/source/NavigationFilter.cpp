@@ -24,7 +24,7 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	// Set active inertia here
 	this -> args.set_active_inertia(this -> args.get_true_shape_model() -> get_inertia());
 
-	System dynamics(this -> args,N_true,Dynamics::point_mass_attitude_dxdt_body_frame );
+	System dynamics(this -> args,N_true,Dynamics::harmonics_attitude_dxdt_body_frame);
 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
@@ -34,8 +34,6 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_augmented_cp, tbegin, tend,1e-3,
 		Observer::push_back_augmented_state(this -> true_state_history));
-
-	
 
 	if (save == true){
 

@@ -72,6 +72,32 @@ arma::vec Dynamics::point_mass_dxdt_body_frame(double t, arma::vec X, Args * arg
 
 arma::vec Dynamics::point_mass_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args) {
 
+	arma::vec pos_body = X . subvec(0, 2);
+	arma::vec vel_body = X . subvec(3, 5);
+
+	arma::vec X_spacecraft = X . subvec(0, 5);
+
+	arma::vec mrp_TN = X . subvec(6, 8);
+	arma::vec omega_TN = X . subvec(9, 11);
+
+	arma::vec X_small_body = X . subvec(6, 11);
+
+	arma::vec acc_body_grav = args. get_dyn_analyses() -> point_mass_acceleration(pos_body , args. get_mass());
+	arma::vec acc_body_frame = acc_body_grav - (2 * arma::cross(omega_TN, vel_body) + omega_TN * omega_TN.t() * pos_body - pos_body * omega_TN.t() * omega_TN);
+
+	arma::vec dxdt = arma::zeros<arma::vec>(12);
+	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_frame(0), acc_body_frame(1), acc_body_frame(2)};
+	
+	arma::vec dxdt_small_body = Dynamics::attitude_dxdt(t, X_small_body, args);
+	
+	dxdt.subvec(0,5) = dxdt_spacecraft;
+	dxdt.subvec(6,11) = dxdt_small_body;
+
+	return dxdt;
+
+}
+
+arma::vec Dynamics::harmonics_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args) {
 
 	arma::vec pos_body = X . subvec(0, 2);
 	arma::vec vel_body = X . subvec(3, 5);
@@ -82,9 +108,27 @@ arma::vec Dynamics::point_mass_attitude_dxdt_body_frame(double t,const arma::vec
 	arma::vec omega_TN = X . subvec(9, 11);
 
 	arma::vec X_small_body = X . subvec(6, 11);
-		
-	arma::vec acc_body_grav = args. get_dyn_analyses() -> point_mass_acceleration(pos_body , args. get_mass());
+
+	arma::vec acc_body_grav = args. get_dyn_analyses() -> spherical_harmo_acc(
+		args.get_harmonics_degree(),
+		args.get_ref_radius(),
+		args.get_mu(),
+		pos_body, 
+		args.get_Cnm(),
+		args.get_Snm());
+	
+
 	arma::vec acc_body_frame = acc_body_grav - (2 * arma::cross(omega_TN, vel_body) + omega_TN * omega_TN.t() * pos_body - pos_body * omega_TN.t() * omega_TN);
+
+
+
+
+
+
+
+
+
+
 
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
 	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_frame(0), acc_body_frame(1), acc_body_frame(2)};

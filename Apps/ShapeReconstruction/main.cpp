@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 ///////////////////////////////////////////
 
@@ -130,6 +130,7 @@ int main() {
 	args.set_lidar(&lidar);
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
+
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);

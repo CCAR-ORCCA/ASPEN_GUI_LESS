@@ -112,17 +112,29 @@ public:
 	void set_mass(double mass) {
 		this -> mass = mass;
 	}
+
 	double get_mass() const {
 		return this -> mass;
 	}
 
-	unsigned int get_degree() const{
-		return this -> degree;
+	int get_harmonics_degree() const{
+		return this -> harmonics_degree;
+	}
+	void set_harmonics_degree(int deg){
+		this -> harmonics_degree = deg;
 	}
 
-	void set_degree (unsigned int degree ){
-		this -> degree = degree;
-	}
+
+
+
+
+	// unsigned int get_degree() const{
+	// 	return this -> degree;
+	// }
+
+	// void set_degree (unsigned int degree ){
+	// 	this -> degree = degree;
+	// }
 
 	bool get_stopping_bool() const {
 		return this -> stopping_bool;
@@ -286,7 +298,9 @@ protected:
 	double sd_noise;
 	double sd_noise_prop = 0;
 
-	unsigned int degree;
+	// unsigned int degree;
+	int harmonics_degree;
+
 	double ref_radius ;
 
 	bool stopping_bool = false;
