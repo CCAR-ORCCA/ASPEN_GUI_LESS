@@ -240,6 +240,8 @@ int main() {
 
 	estimated_shape_model -> compute_volume_sd();
 
+	estimated_shape_model -> set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
+
 	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
 	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
 	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
@@ -255,6 +257,11 @@ int main() {
 	/**
 	BEGINNING OF NAVIGATION FILTER
 	*/
+
+
+	std::cout << "True bulk mass: " << true_shape_model.get_mass() << " kg\n";
+	std::cout << "Estimated bulk mass: " << estimated_shape_model.get_estimated_mass() << " kg\n\n";
+
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
@@ -283,6 +290,11 @@ int main() {
 
 	std::cout << "Initial Error: " << std::endl;
 	std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
+
+
+
+
+
 
 
 
