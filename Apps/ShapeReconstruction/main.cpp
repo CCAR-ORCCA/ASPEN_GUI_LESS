@@ -314,8 +314,8 @@ int main() {
 		Observations::obs_pos_ekf_lidar);	
 
 	filter.set_estimate_dynamics_fun(
-		Dynamics::point_mass_attitude_dxdt_body_frame,
-		Dynamics::point_mass_jac_attitude_dxdt_body_frame,
+		Dynamics::estimated_point_mass_attitude_dxdt_body_frame,
+		Dynamics::estimated_point_mass_jac_attitude_dxdt_body_frame,
 		Dynamics::point_mass_attitude_dxdt_body_frame);
 
 
