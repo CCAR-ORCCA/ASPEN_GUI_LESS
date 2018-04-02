@@ -26,6 +26,7 @@ namespace Dynamics{
 	arma::mat point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);
 	arma::vec harmonics_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args);
 
+	arma::vec estimated_point_mass_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args);
 
 	arma::mat gamma_OD(double dt);
 	arma::mat gamma_OD_augmented(double dt);

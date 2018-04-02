@@ -39,7 +39,6 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	auto tbegin = times.begin();
 	auto tend = times.end();
 
-
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state(augmented_state_history));
 

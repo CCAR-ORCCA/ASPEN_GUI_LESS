@@ -117,6 +117,14 @@ public:
 		return this -> mass;
 	}
 
+	void set_estimated_mass(double estimated_mass) {
+		this -> estimated_mass = estimated_mass;
+	}
+
+	double get_estimated_mass() const {
+		return this -> estimated_mass;
+	}
+
 	int get_harmonics_degree() const{
 		return this -> harmonics_degree;
 	}
@@ -294,6 +302,8 @@ protected:
 	double time;
 	double minimum_elevation;
 	double mass;
+	double estimated_mass;
+
 
 	double sd_noise;
 	double sd_noise_prop = 0;
