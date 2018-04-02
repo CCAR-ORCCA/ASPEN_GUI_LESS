@@ -240,7 +240,7 @@ int main() {
 
 	estimated_shape_model -> compute_volume_sd();
 
-	estimated_shape_model -> set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
+	args -> set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
 
 	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
 	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
@@ -259,8 +259,8 @@ int main() {
 	*/
 
 
-	std::cout << "True bulk mass: " << true_shape_model.get_mass() << " kg\n";
-	std::cout << "Estimated bulk mass: " << estimated_shape_model.get_estimated_mass() << " kg\n\n";
+	std::cout << "True bulk mass: " << args.get_mass() << " kg\n";
+	std::cout << "Estimated bulk mass: " << args -> get_estimated_mass() << " kg\n\n";
 
 
 	// A-priori covariance on spacecraft state and asteroid state.
