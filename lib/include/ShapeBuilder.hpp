@@ -62,7 +62,7 @@ public:
 	@param save_shape_model true if the true shape model must be saved prior 
 	to the run
 	*/
-	void run_shape_reconstruction(arma::vec &times ,
+	void run_shape_reconstruction(const arma::vec &times ,
 		const std::vector<arma::vec> & X,
 		bool save_shape_model);
 

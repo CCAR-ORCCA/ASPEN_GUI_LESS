@@ -52,7 +52,7 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 
 
 
-void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
+void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,
 	bool save_shape_model) {
 
@@ -135,9 +135,13 @@ void ShapeBuilder::run_shape_reconstruction(arma::vec &times ,
 				this -> concatenate_point_clouds(time_index);
 			}
 
-			if (time_index == this -> filter_arguments -> get_index_init()){
+			if (time_index == this -> filter_arguments -> get_index_init()|| this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
 				this -> initialize_shape(time_index);
+
+				if (this -> filter_arguments -> get_use_icp()){
+					return;
+				}
 
 			}
 
@@ -360,7 +364,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 		arma::mat points,normals;
 
-		this -> true_shape_model -> random_sampling(20,points,normals);
+		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_surface_samples(),points,normals);
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
 		

@@ -69,7 +69,10 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP true
+#define USE_ICP false
+
+// Number of surface samples per facet to use
+#define SURFACE_SAMPLES 30
 
 ///////////////////////////////////////////
 
@@ -204,6 +207,8 @@ int main() {
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
+	shape_filter_args.set_surface_samples(SURFACE_SAMPLES);
+
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 

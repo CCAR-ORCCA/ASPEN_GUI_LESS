@@ -181,16 +181,11 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_body_frame(double t, const arma
 	arma::vec mrp_TN = X . subvec(6, 8);
 	arma::vec omega_TN = X . subvec(9, 11);
 
-
 	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos_body , args . get_mass());
-
 	A.submat(3,0,5,2) += - omega_TN * omega_TN.t() + arma::eye<arma::mat>(3,3) * arma::dot(omega_TN,omega_TN);
-
 	A.submat(3,3,5,5) = - 2 * RBK::tilde(omega_TN);
 
-
 	return A;
-
 
 }
 
