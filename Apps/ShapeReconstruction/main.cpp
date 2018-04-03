@@ -34,7 +34,7 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
-#define PROCESS_NOISE_SIGMA 1e-9
+#define PROCESS_NOISE_SIGMA 0e-9
 
 // Times (s)
 #define T0 0
