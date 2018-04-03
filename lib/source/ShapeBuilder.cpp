@@ -135,11 +135,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> concatenate_point_clouds(time_index);
 			}
 
-			if (time_index == this -> filter_arguments -> get_index_init()|| this -> filter_arguments -> get_use_icp()){
+			if (time_index == this -> filter_arguments -> get_index_init()|| !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
 				this -> initialize_shape(time_index);
 
-				if (this -> filter_arguments -> get_use_icp()){
+				if (!this -> filter_arguments -> get_use_icp()){
 					return;
 				}
 
