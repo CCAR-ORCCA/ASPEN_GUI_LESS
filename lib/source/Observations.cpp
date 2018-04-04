@@ -10,15 +10,20 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	const arma::vec & x, 
 	const Args & args){
 
-	arma::vec mrp_BN_true = *args.get_mrp_BN_true();
-	arma::vec mrp_LN_true = *args.get_mrp_LN_true();
-
-
-	// Position of spacecraft relative to small body
+	// Position of spacecraft relative to small body in inertial frame
 	arma::vec lidar_pos = x.rows(0,2);
+	arma::vec lidar_vel = x.rows(3,5);
 
+	// Attitude of spacecraft relative to inertial
+	arma::vec e_r = - arma::normalise(lidar_pos);
+	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
+	arma::vec e_t = arma::cross(e_h,e_r);
 
-	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_true));
+	arma::mat dcm_LN(3,3);
+	dcm_LN.row(0) = e_r.t();
+	dcm_LN.row(1) = e_t.t();
+	dcm_LN.row(2) = e_h.t();
+	arma::vec mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	// Setting the Lidar frame to its new state
 	Lidar *  lidar = args.get_lidar();
@@ -26,12 +31,11 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
-	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
+	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
 
-	// Setting the small body to its inertial attitude. This should not affect the 
-	// measurements at all
-	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN_true);
+	// Setting the small body to its inertial attitude. 
+	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(x.rows(6,8));
 
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
@@ -63,25 +67,31 @@ arma::vec Observations::obs_lidar_range_computed(
 	const arma::vec & x, 
 	const Args & args){
 
-	arma::vec mrp_BN_estimated = *args.get_mrp_BN_estimated();
-	arma::vec mrp_LN_true = *args.get_mrp_LN_true();
-
-	// Position of spacecraft relative to small body (estimated)
-
+	// Position of spacecraft relative to small body in inertial frame
 	arma::vec lidar_pos = x.rows(0,2);
+	arma::vec lidar_vel = x.rows(3,5);
 
-	arma::vec mrp_LB = RBK::dcm_to_mrp(RBK::mrp_to_dcm(mrp_LN_true) *  RBK::mrp_to_dcm(-mrp_BN_estimated));
+	// Attitude of spacecraft relative to inertial
+	arma::vec e_r = - arma::normalise(lidar_pos);
+	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
+	arma::vec e_t = arma::cross(e_h,e_r);
+
+	arma::mat dcm_LN(3,3);
+	dcm_LN.row(0) = e_r.t();
+	dcm_LN.row(1) = e_t.t();
+	dcm_LN.row(2) = e_h.t();
+	arma::vec mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	// Setting the Lidar frame to its new state
 	auto lidar = args.get_lidar();
 	auto frame_graph = args.get_frame_graph();
 
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
-	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
+	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
 	// Setting the small body to its inertial attitude. This should not affect the 
 	// measurements at all
-	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN_estimated);
+	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(x.rows(6,8));
 
 
 	// Getting the true observations (noise is added)
@@ -108,11 +118,10 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 	auto P_cm = static_cast<ShapeModelBezier * >(args.get_estimated_shape_model()) -> get_cm_cov();
 
-	// auto P_cm = arma::eye<arma::mat>(3,3);
-
 	args.get_sigma_consider_vector_ptr() -> clear();
 	args.get_biases_consider_vector_ptr() -> clear();
 	args.get_sigmas_range_vector_ptr() -> clear();
+	FrameGraph *  frame_graph = args.get_frame_graph();
 
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
@@ -125,7 +134,8 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
 
 			if (bezier == nullptr){
-				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+				n = frame_graph -> convert(focal_plane -> at(i) -> get_hit_element() -> get_normal(),
+					args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
 			}	
 			else{
 
@@ -133,7 +143,8 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				
-				n = bezier -> get_normal(u_t,v_t);
+				n = frame_graph -> convert(bezier -> get_normal(u_t,v_t),
+					args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
 
 				auto P = bezier -> covariance_surface_point(u_t,v_t,u);
 
@@ -193,18 +204,13 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	std::vector<double> times;
 	times.push_back(t);
 
-	std::cout << "Estimated state entering the LS: \n";
-
 	arma::vec x_bar_bar = x.rows(0,2);
-	std::cout << x_bar_bar.t() << std::endl;
 	int iter = filter.run(40,*args. get_true_pos(),x_bar_bar,times,std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
 
 
 	// The covariance in the position is extracted here
 	arma::mat P_hat = filter.get_estimated_covariance_history().front();
 
-	std::cout << "Position measurement covariance: " << std::endl;
-	std::cout  << P_hat << std::endl;
 
 	// Nasty hack to get around const Args & args
 	(*args.get_lidar_position_covariance_ptr()) = P_hat;
