@@ -19,6 +19,10 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 
+
+# Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
+set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
+
 ################################################################################
 #
 #
@@ -97,6 +101,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(Armadillo REQUIRED )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
+
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
+
 # Find RBK 
 find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
 include_directories(${RBK_INCLUDE_DIR})
@@ -143,6 +152,7 @@ ${RBK_LIBRARY}
 # ${CGAL_LIBRARIES} 
 # ${CGAL_3RD_PARTY_LIBRARIES}
 # ${SBGATCORE_LIBRARY}
+${VTK_LIBRARIES}
 ${ASPEN_LIBRARY}
 )
 

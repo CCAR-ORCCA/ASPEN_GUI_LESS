@@ -135,8 +135,9 @@ int main(){
 	frame_graph. get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(*args.get_mrp_BN_true());
 	frame_graph. get_frame("E") -> set_mrp_from_parent(*args.get_mrp_BN_estimated());
 
+	lidar.send_flash(&true_shape_model,false);
+	lidar.save("lidar",true);
 
-	
 
 	return 0;
 }

@@ -32,7 +32,7 @@ set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
-	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
 
 else()
@@ -108,8 +108,8 @@ include( CGAL_CreateSingleSourceCGALProgram )
 
 
 # Find SBGAT 
-find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-include_directories(${SBGATCORE_INCLUDE_HEADER})
+# find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
+# include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 
 # Find Eigen3
@@ -123,6 +123,10 @@ if(OPENMP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
@@ -142,7 +146,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
-${SBGATCORE_LIBRARY}
+${VTK_LIBRARIES}
 ${ASPEN_LIBRARY}
 )
 
