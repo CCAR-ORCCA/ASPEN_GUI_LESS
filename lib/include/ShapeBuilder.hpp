@@ -114,18 +114,15 @@ protected:
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
 	@param X_S relative state at present time (12x1)
 	@param dcm_LB reference to [LB] dcm at present time (12x1)
-	@param dcm_LB_t_D reference to [LB] dcm at past measurement time (12x1)
-	@param LN_t_S reference to [LN] dcm at current time
-	@param LN_t_D reference to [LN] dcm at past measurement time
-	@param mrp_BN reference to the mrp instantiating [BN] at the current time
-	@param mrp_BN_t_D reference to the mrp instantiating [BN] at the past measurement time
-	@param mrp_LB reference to the mrp instantiating [LB] at the current time
+	@param mrp_LN reference to the mrp instantiating [LN] at the current time
 	@param lidar_pos reference to relative position of the spacecraft w/r to the barycentric B frame
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
-	void get_new_relative_states(const arma::vec & X_S, arma::mat & dcm_LB, arma::mat & dcm_LB_t_D, arma::mat & LN_t_S, 
-		arma::mat & LN_t_D, arma::vec & mrp_BN, arma::vec & mrp_BN_t_D,
-		arma::vec & mrp_LB, arma::vec & lidar_pos,arma::vec & lidar_vel );
+	void get_new_states(const arma::vec & X_S, 
+	arma::mat & dcm_LB, 
+	arma::vec & mrp_LN, 
+	arma::vec & lidar_pos,
+	arma::vec & lidar_vel);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states

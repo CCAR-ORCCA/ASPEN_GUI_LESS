@@ -60,12 +60,12 @@ arma::vec * RefFrame::get_origin_from_parent() {
 }
 
 
-void RefFrame::set_mrp_from_parent(arma::vec & mrp) {
+void RefFrame::set_mrp_from_parent(arma::vec mrp) {
 	*this -> mrp_from_parent = mrp;
 	*this -> dcm_from_parent = RBK::mrp_to_dcm(mrp);
 }
 
-void RefFrame::set_origin_from_parent(arma::vec & origin) {
+void RefFrame::set_origin_from_parent(arma::vec origin) {
 	*this -> origin_from_parent = origin;
 }
 

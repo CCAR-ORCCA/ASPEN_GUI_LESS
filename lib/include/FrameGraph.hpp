@@ -37,7 +37,7 @@ public:
 	of the transform
 	@return converted coordinates
 	*/
-	arma::vec convert(arma::vec & input, std::string from,
+	arma::vec convert(arma::vec input, std::string from,
 	                  std::string to, bool is_unit_vector = false);
 
 
@@ -50,7 +50,7 @@ public:
 	*/
 	void set_transform_mrp(std::string parent_name,
 	                       std::string child_name,
-	                       arma::vec & mrp);
+	                       arma::vec mrp);
 
 
 	/**
@@ -62,7 +62,7 @@ public:
 	*/
 	void set_transform_origin(std::string parent_name,
 	                          std::string child_name,
-	                          arma::vec & origin);
+	                          arma::vec origin);
 
 
 	/**

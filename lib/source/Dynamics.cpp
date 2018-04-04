@@ -149,16 +149,6 @@ arma::vec Dynamics::harmonics_attitude_dxdt_body_frame(double t,const arma::vec 
 
 	arma::vec acc_body_frame = acc_body_grav - (2 * arma::cross(omega_TN, vel_body) + omega_TN * omega_TN.t() * pos_body - pos_body * omega_TN.t() * omega_TN);
 
-
-
-
-
-
-
-
-
-
-
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
 	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_frame(0), acc_body_frame(1), acc_body_frame(2)};
 	
@@ -215,19 +205,134 @@ arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_body_frame(double t, 
 
 
 
+arma::vec Dynamics::point_mass_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args) {
 
+	arma::vec pos = X . subvec(0, 2);
 
+	arma::vec X_small_body = X . subvec(6, 11);
 
+	arma::vec acc_body_grav = args. get_dyn_analyses() -> point_mass_acceleration(pos , args. get_mass());
 
-arma::vec Dynamics::debug(double t,const arma::vec & X, const Args & args) {
-	std::cout << "in debug" << std::endl;
-
-	arma::vec dxdt(X);
-	std::cout <<  dxdt << std::endl;
+	arma::vec dxdt = arma::zeros<arma::vec>(12);
+	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
+	arma::vec dxdt_small_body = Dynamics::attitude_dxdt(t, X_small_body, args);
+	
+	dxdt.subvec(0,5) = dxdt_spacecraft;
+	dxdt.subvec(6,11) = dxdt_small_body;
 
 	return dxdt;
 
 }
+
+
+arma::vec Dynamics::estimated_point_mass_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args) {
+
+	arma::vec pos = X . subvec(0, 2);
+
+	arma::vec X_small_body = X . subvec(6, 11);
+
+	arma::vec acc_body_grav = args. get_dyn_analyses() -> point_mass_acceleration(pos , args. get_estimated_mass());
+
+	arma::vec dxdt = arma::zeros<arma::vec>(12);
+	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
+	
+	arma::vec dxdt_small_body = Dynamics::attitude_dxdt(t, X_small_body, args);
+	
+	dxdt.subvec(0,5) = dxdt_spacecraft;
+	dxdt.subvec(6,11) = dxdt_small_body;
+
+	return dxdt;
+
+}
+
+
+arma::vec Dynamics::harmonics_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args) {
+
+	arma::vec pos = X . subvec(0, 2);
+
+	arma::vec X_spacecraft = X . subvec(0, 5);
+
+	arma::vec X_small_body = X . subvec(6, 11);
+
+	arma::vec pos_body_frame = args.get_frame_graph() -> convert(pos,"N","B");
+
+	arma::vec acc_grav_inertial = args.get_frame_graph() -> convert(
+		args. get_dyn_analyses() -> spherical_harmo_acc(
+			args.get_harmonics_degree(),
+			args.get_ref_radius(),
+			args.get_mu(),
+			pos_body_frame, 
+			args.get_Cnm(),
+			args.get_Snm()),
+		"B","N");
+	
+
+	arma::vec dxdt = arma::zeros<arma::vec>(12);
+	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_grav_inertial(0), acc_grav_inertial(1), acc_grav_inertial(2)};
+	
+	arma::vec dxdt_small_body = Dynamics::attitude_dxdt(t, X_small_body, args);
+	
+	dxdt.subvec(0,5) = dxdt_spacecraft;
+	dxdt.subvec(6,11) = dxdt_small_body;
+
+	return dxdt;
+
+}
+
+arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args){
+
+	arma::mat A = arma::zeros<arma::mat>(12,12);
+
+	arma::vec pos = X . subvec(0, 2);
+
+	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos , args . get_mass());
+
+	return A;
+
+}
+
+
+arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args){
+
+	arma::mat A = arma::zeros<arma::mat>(12,12);
+
+	arma::vec pos = X . subvec(0, 2);
+
+	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos , args . get_estimated_mass());
+
+	return A;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

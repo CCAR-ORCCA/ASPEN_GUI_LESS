@@ -211,17 +211,26 @@ void NavigationFilter::compute_estimated_small_body_attitude(std::vector<arma::v
 }
 
 void NavigationFilter::set_states(const arma::vec & X_hat,unsigned int t){
-	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
+	// arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
-	dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
-	dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
-		this -> true_state_history[t].rows(3,5)));
-	dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
-	arma::inplace_trans(dcm_LB);
+	// dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
+	// dcm_LB.col(2) =  arma::normalise(arma::cross(dcm_LB.col(0),
+	// 	this -> true_state_history[t].rows(3,5)));
+	// dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
+	// arma::inplace_trans(dcm_LB);
+
+
+	// arma::mat dcm_LN = arma::zeros<arma::mat>(3,3);
+
+	// dcm_LN.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
+	// dcm_LN.col(2) =  arma::normalise(arma::cross(dcm_LN.col(0),
+	// 	this -> true_state_history[t].rows(3,5)));
+	// dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
+	// arma::inplace_trans(dcm_LB);
 
 	(*this -> args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
 	(*this -> args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
-	(*this -> args.get_mrp_LN_true()) = RBK::dcm_to_mrp(dcm_LB * RBK::mrp_to_dcm(*args.get_mrp_BN_true()));
+
 	(*this -> args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
 
 }

@@ -11,7 +11,6 @@ namespace Dynamics{
 	arma::vec point_mass_dxdt_body_frame(double t, arma::vec X, Args * args);
 	arma::vec point_mass_dxdt(double t, arma::vec X, Args * args) ;
 
-	// arma::vec attitude_dxdt(double t, arma::vec X, Args * args);
 	arma::vec attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
 
 	arma::vec sigma_dot(double t, arma::vec X, Args * args);
@@ -26,8 +25,16 @@ namespace Dynamics{
 	arma::mat point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);
 	arma::vec harmonics_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args);
 
+	arma::vec point_mass_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args);
+	arma::mat point_mass_jac_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args);
+	arma::vec harmonics_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args);
+
 	arma::vec estimated_point_mass_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args);
 	arma::mat estimated_point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);
+
+	arma::vec estimated_point_mass_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args);
+	arma::mat estimated_point_mass_jac_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args);
+
 
 	arma::mat gamma_OD(double dt);
 	arma::mat gamma_OD_augmented(double dt);

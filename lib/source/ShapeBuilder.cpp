@@ -64,25 +64,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
 
-	arma::vec e_r;
-	arma::vec e_t;
-	arma::vec e_h;
-
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
-	arma::mat dcm_LB_t_D = arma::eye<arma::mat>(3, 3);
+	arma::vec mrp_LN(3);
 
-	arma::vec mrp_LB = {0,0,0};
-	arma::vec mrp_BN = X_S.rows(0,2);
-	arma::vec mrp_BN_t_D = X_S.rows(0,2);
-
-	arma::mat LN_t_S = arma::eye<arma::mat>(3, 3);
-	arma::mat LN_t_D = arma::eye<arma::mat>(3, 3);
-
-	arma::vec volume_dif = arma::vec(times.size());
-	arma::vec surface_dif = arma::vec(times.size());
-	arma::mat offset_DCM;
-	arma::vec OL_t0;
-	arma::mat LN_t0;
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
@@ -97,15 +81,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		X_S = X[time_index];
 
-		this -> get_new_relative_states(X_S,dcm_LB,dcm_LB_t_D,LN_t_S, LN_t_D,mrp_BN,mrp_BN_t_D,mrp_LB,lidar_pos,lidar_vel );
+		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 
 		// Setting the Lidar frame to its new state
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LB);
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
-		// Setting the small body to its inertial attitude. This should not affect the 
-		// measurements at all
-		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_BN);
+		// Setting the small body to its new attitude
+		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(X_S.subvec(6,8));
 
 		// Getting the true observations (noise is added)
 		this -> lidar -> send_flash(this -> true_shape_model,true);
@@ -289,25 +272,15 @@ void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S,
 
 
 
-void ShapeBuilder::get_new_relative_states(
+void ShapeBuilder::get_new_states(
 	const arma::vec & X_S, 
 	arma::mat & dcm_LB, 
-	arma::mat & dcm_LB_t_D, 
-	arma::mat & LN_t_S, 
-	arma::mat & LN_t_D, 
-	arma::vec & mrp_BN, 
-	arma::vec & mrp_BN_t_D,
-	arma::vec & mrp_LB, 
+	arma::vec & mrp_LN, 
 	arma::vec & lidar_pos,
-	arma::vec & lidar_vel ){
-
-	// Swapping new and old attitude
-	dcm_LB_t_D = dcm_LB;
-	mrp_BN_t_D = mrp_BN;
+	arma::vec & lidar_vel){
 
 	// Getting the new small body inertial attitude
-	// and spacecraft relative position
-	mrp_BN = X_S.rows(6,8);
+	// and spacecraft relative position expressed in the small body centered inertia frame
 	lidar_pos = X_S.rows(0, 2);
 	lidar_vel = X_S.rows(3, 5);
 
@@ -317,15 +290,14 @@ void ShapeBuilder::get_new_relative_states(
 	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
 	arma::vec e_t = arma::cross(e_h,e_r);
 
-	dcm_LB.row(0) = e_r.t();
-	dcm_LB.row(1) = e_t.t();
-	dcm_LB.row(2) = e_h.t();
+	arma::mat dcm_LN(3,3);
+	dcm_LN.row(0) = e_r.t();
+	dcm_LN.row(1) = e_t.t();
+	dcm_LN.row(2) = e_h.t();
 
-	mrp_LB = RBK::dcm_to_mrp(dcm_LB);
+	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
+	dcm_LB = dcm_LN * RBK::mrp_to_dcm(X_S.rows(3, 8)).t();
 
-	// The [LN] DCM at the present time (t_S) and at the past observation time (t_D) is built
-	LN_t_S = dcm_LB * RBK::mrp_to_dcm(mrp_BN);
-	LN_t_D = dcm_LB_t_D * RBK::mrp_to_dcm(mrp_BN_t_D);
 }
 
 

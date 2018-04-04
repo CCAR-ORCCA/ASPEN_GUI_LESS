@@ -4,7 +4,7 @@ FrameGraph::FrameGraph() {
 
 }
 
-arma::vec FrameGraph::convert(arma::vec & input, std::string from, std::string to,
+arma::vec FrameGraph::convert(arma::vec input, std::string from, std::string to,
                               bool is_unit_vector) {
 
 	std::deque<std::shared_ptr<RefFrame > > path = this -> adjacency_list.dfs(
@@ -91,7 +91,7 @@ void FrameGraph::add_frame(std::string frame_name) {
 
 void FrameGraph::set_transform_mrp(std::string parent_name,
                                    std::string child_name,
-                                   arma::vec & mrp) {
+                                   arma::vec mrp) {
 
 
 	std::set<std::pair<std::string, std::string > > transforms = this -> adjacency_list.get_edges();
@@ -115,7 +115,7 @@ void FrameGraph::set_transform_mrp(std::string parent_name,
 
 void FrameGraph::set_transform_origin(std::string parent_name,
                                       std::string child_name,
-                                      arma::vec & origin) {
+                                      arma::vec origin) {
 
 	// Consistency check: if $child_name == "N", something is wrong
 	if (child_name == "N") {

@@ -46,7 +46,7 @@ public:
 	to the prescribed value
 	@param mrp MRP
 	*/
-	void set_mrp_from_parent(arma::vec & mrp) ;
+	void set_mrp_from_parent(arma::vec mrp) ;
 
 
 	/**
@@ -55,7 +55,7 @@ public:
 	@param origin Origin of $this with respect to its
 	parent expressed in the parent frame
 	*/
-	void set_origin_from_parent(arma::vec & origin) ;
+	void set_origin_from_parent(arma::vec origin) ;
 
 	/**
 	Returns the mrp of $this with respect to its parent
