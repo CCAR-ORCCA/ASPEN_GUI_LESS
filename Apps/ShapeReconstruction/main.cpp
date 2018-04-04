@@ -298,11 +298,11 @@ int main() {
 	filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
 
 
-	start = std::chrono::system_clock::now();
+	auto start = std::chrono::system_clock::now();
 	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
-	end = std::chrono::system_clock::now();
+	auto end = std::chrono::system_clock::now();
 
-	elapsed_seconds = end-start;
+	std::chrono::duration<double> elapsed_seconds = end-start;
 
 	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
