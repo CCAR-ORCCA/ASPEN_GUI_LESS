@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP true
+#define USE_ICP false
 
 // Number of surface samples per facet to use
 #define SURFACE_SAMPLES 30
