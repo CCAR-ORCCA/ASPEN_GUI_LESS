@@ -16,8 +16,8 @@ def plot_all_results(path = "",savepath = None):
 
     # plot_residuals(path,save)
     # plot_orbit(path,save)
-    plot_state_error_body_frame(path,savepath)
-    # plot_state_error_RIC(path,save)
+    plot_state_error_inertial(path,savepath)
+    plot_state_error_RIC(path)
 
 
 # def plot_residuals(path = "",save = False):
@@ -79,26 +79,18 @@ def plot_state_error_RIC(path = "",save = False):
         P_RIC[:,i * P.shape[0] : i * P.shape[0] + P.shape[0]] = P[:,i * P.shape[0] : i * P.shape[0] + P.shape[0]]
 
         # True state
-        r1_B_true = normalized(X_true[0:3,i])
-        r_dot_B_true = X_true[3:6,i] + np.cross(X_true[9:12,i],X_true[0:3,i])
-        r3_B_true = normalized(np.cross(X_true[0:3,i],r_dot_B_true))
-        r2_B_true = np.cross(r3_B_true,r1_B_true)
-
-        RB_true = np.zeros([3,3])
-        
-        RB_true[0,:] = r1_B_true
-        RB_true[1,:] = r2_B_true
-        RB_true[2,:] = r3_B_true
-
-        X_true_RIC[0:3,i] = RB_true.dot(X_true[0:3,i])
-        X_true_RIC[3:6,i] = RB_true.dot(r_dot_B_true) # inertial velocity expressed in RIC frame
+        r1_N_true = normalized(X_true[0:3,i])
+        r3_N_true = normalized(np.cross(X_true[0:3,i],X_true[3:6,i]))
+        r2_N_true = np.cross(r3_N_true,r1_N_true)
+        RN_true = np.zeros([3,3])
+        RN_true[0,:] = r1_N_true
+        RN_true[1,:] = r2_N_true
+        RN_true[2,:] = r3_N_true
+        X_true_RIC[0:3,i] = RN_true.dot(X_true[0:3,i])
 
         # Estimated state
-        r_dot_B_hat = X_hat[3:6,i] + np.cross(X_hat[9:12,i],X_hat[0:3,i])
-        
-        X_hat_RIC[0:3,i] = RB_true.dot(X_hat[0:3,i])
-        X_hat_RIC[3:6,i] = RB_true.dot(r_dot_B_hat) # inertial velocity expressed in RIC frame
-        P_RIC[0:3,i * P.shape[0] : i * P.shape[0] + 3] = RB_true.dot(P_RIC[0:3,i * P.shape[0] : i * P.shape[0] + 3]).dot(RB_true.T)
+        X_hat_RIC[0:3,i] = RN_true.dot(X_hat[0:3,i])
+        P_RIC[0:3,i * P.shape[0] : i * P.shape[0] + 3] = RN_true.dot(P_RIC[0:3,i * P.shape[0] : i * P.shape[0] + 3]).dot(RN_true.T)
 
     sd = []
 
@@ -160,7 +152,7 @@ def plot_state_error_RIC(path = "",save = False):
     # else:
     #     plt.savefig("velocity_error_RIC.pdf")
 
-def plot_state_error_body_frame(path = "",savepath = None):
+def plot_state_error_inertial(path = "",savepath = None):
 
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
@@ -277,6 +269,6 @@ def plot_state_error_body_frame(path = "",savepath = None):
 path_no_icp = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/snowbird_2018/paper/Figures/no_ICP"
 path_with_icp = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/snowbird_2018/paper/Figures/with_ICP"
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/with_ICP/",
-    savepath = path_with_icp )
+plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/test/",
+    savepath = None )
 
