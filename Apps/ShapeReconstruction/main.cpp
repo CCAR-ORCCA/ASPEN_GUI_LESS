@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 1e-1
+#define LOS_NOISE_SD_BASELINE 0e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
