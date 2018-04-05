@@ -37,8 +37,6 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 
 }
 
-
-
 PC::PC(arma::mat & points,arma::mat & normals) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;

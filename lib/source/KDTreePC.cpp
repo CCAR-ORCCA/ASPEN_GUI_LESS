@@ -261,7 +261,10 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 		#if KDTTREE_PC_DEBUG
 			std::cout << "Cluttered node" << std::endl;
 		#endif
-		// return node;
+
+		// Erases the last element
+		node -> points_normals . erase(--node -> points_normals.end());
+		return node;
 	}
 
 	unsigned int longest_axis = bounding_box_lengths.index_max();

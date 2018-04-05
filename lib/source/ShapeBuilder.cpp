@@ -339,7 +339,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_surface_samples(),points,normals);
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
-		
+
 		destination_pc_concatenated -> save(
 			pc_path, 
 			arma::eye<arma::mat>(3,3), 
@@ -357,6 +357,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	}
 
+
+	std::cout << "-- Running PSR...\n";
 	CGALINTERFACE::CGAL_interface(
 		pc_path,
 		a_priori_path,

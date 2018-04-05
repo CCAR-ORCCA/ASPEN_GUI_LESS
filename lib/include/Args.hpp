@@ -260,6 +260,10 @@ public:
 		this -> sigmas_range_vector_ptr = ptr;
 	}
 
+
+
+
+
 	arma::vec get_true_pos() const{
 		return this -> true_pos;
 	}
@@ -275,6 +279,9 @@ public:
 	arma::vec get_estimated_vel() const{
 		return this -> estimated_vel;
 	}
+
+
+
 
 	void set_true_pos(arma::vec x) {
 		this -> true_pos = x;

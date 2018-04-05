@@ -69,7 +69,6 @@ arma::vec Observations::obs_lidar_range_computed(
 
 	// Position of spacecraft relative to small body in inertial frame
 	arma::vec lidar_pos = x.rows(0,2);
-	arma::vec lidar_vel = args.get_estimated_vel();
 
 	// Attitude of spacecraft relative to inertial
 	arma::vec e_r = - arma::normalise(args.get_true_pos());
@@ -91,6 +90,7 @@ arma::vec Observations::obs_lidar_range_computed(
 
 	// Setting the small body to its inertial attitude. 
 	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_estimated_mrp_BN());
+	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_true_mrp_BN());
 
 
 	// Getting the true observations (noise is added)
@@ -108,6 +108,8 @@ arma::vec Observations::obs_lidar_range_computed(
 	return ranges;
 
 }
+
+
 
 arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const Args & args){
 
@@ -133,17 +135,16 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
 
 			if (bezier == nullptr){
-				n = frame_graph -> convert(focal_plane -> at(i) -> get_hit_element() -> get_normal(),
-					args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
-			}	
+				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+			}			
 			else{
 
 				double u_t, v_t;
 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				
-				n = frame_graph -> convert(bezier -> get_normal(u_t,v_t),
-					args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
+				n = bezier -> get_normal(u_t,v_t);
+
 
 				auto P = bezier -> covariance_surface_point(u_t,v_t,u);
 
@@ -157,7 +158,7 @@ arma::mat Observations::obs_lidar_range_jac(double t,const arma::vec & x, const 
 
 			}
 
-			H.row(i) = - n.t() / arma::dot(n,u);
+			H.row(i) = - frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N").t() / arma::dot(n,u);
 		}
 		else{
 			args.get_sigma_consider_vector_ptr() -> push_back(-1);
@@ -182,17 +183,8 @@ arma::vec Observations::obs_pos_ekf_computed(double t,const arma::vec & x,const 
 
 arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Args & args){
 
-	auto lidar = args.get_lidar();
-	auto focal_plane = lidar -> get_focal_plane();
-	unsigned int N_mes = focal_plane -> size();
 	
-	// args should hold
-	// mrp_BN_estimated : estimated small body attitude;
-	// mrp_LN_true : true spacecraft attitude;
-	// mrp_BN_true : estimated small body attitude;
-	// x_true: true spacecraft relative position
-
-
+	// Setting the Lidar frame to its new state	
 	BatchFilter filter(args);
 	
 	filter.set_observations_fun(
@@ -203,10 +195,11 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	std::vector<double> times;
 	times.push_back(t);
 
-	arma::vec x_bar_bar = x.rows(0,2);
+	arma::vec y_bar_bar = x.rows(0,2);
+
 	int iter = filter.run(40,
 		args. get_true_pos(),
-		x_bar_bar,times,
+		y_bar_bar,times,
 		std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),
 		arma::zeros<arma::mat>(1,1));
 

@@ -30,7 +30,7 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 0e-1
+#define LOS_NOISE_SD_BASELINE 1e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
@@ -72,7 +72,7 @@
 #define USE_ICP false
 
 // Number of surface samples per facet to use
-#define SURFACE_SAMPLES 10
+#define SURFACE_SAMPLES 30
 
 ///////////////////////////////////////////
 
@@ -262,7 +262,7 @@ int main() {
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
 
-	// X0_estimated_augmented.subvec(0,5) += arma::diagmat(arma::sqrt(P0_diag.subvec(0,5))) * arma::randn(6);
+	X0_estimated_augmented.subvec(0,5) += arma::diagmat(arma::sqrt(P0_diag.subvec(0,5))) * arma::randn(6);
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;

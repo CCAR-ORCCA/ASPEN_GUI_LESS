@@ -16,6 +16,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	unsigned int N_est = X_hat.n_rows;
 	unsigned int N_true = 0;
 
+
 	System dynamics(this -> args,
 		N_est,
 		this -> estimate_dynamics_fun ,
