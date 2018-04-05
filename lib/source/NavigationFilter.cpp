@@ -211,6 +211,7 @@ void NavigationFilter::compute_estimated_small_body_attitude(std::vector<arma::v
 }
 
 void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,unsigned int t){
+	
 	// arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
 	// dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
