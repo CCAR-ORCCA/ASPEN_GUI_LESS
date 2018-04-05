@@ -72,8 +72,8 @@ arma::vec Observations::obs_lidar_range_computed(
 	arma::vec lidar_vel = args.get_estimated_vel();
 
 	// Attitude of spacecraft relative to inertial
-	arma::vec e_r = - arma::normalise(lidar_pos);
-	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
+	arma::vec e_r = - arma::normalise(args.get_true_pos());
+	arma::vec e_h = arma::normalise(arma::cross(e_r,-args.get_true_vel()));
 	arma::vec e_t = arma::cross(e_h,e_r);
 
 	arma::mat dcm_LN(3,3);
