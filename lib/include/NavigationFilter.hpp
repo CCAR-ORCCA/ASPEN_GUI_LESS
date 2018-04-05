@@ -43,7 +43,7 @@ protected:
 
 
 
-	void set_states(const arma::vec & X_hat,unsigned int t);
+	void set_states(const arma::vec & X_hat,arma::vec X_true,unsigned int t);
 
 	
 };

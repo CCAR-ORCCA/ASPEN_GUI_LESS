@@ -107,7 +107,7 @@ int NavigationFilter::run(
 			assert(this -> estimated_state_history.is_empty());
 			assert(this -> estimated_covariance_history.is_empty());
 
-			this -> set_states(X_hat,t);
+			this -> set_states(X_hat,this -> true_state_history[t],t);
 
 			// 
 			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],X_hat,this -> args);
@@ -135,7 +135,7 @@ int NavigationFilter::run(
 
 		// SNC is applied 
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
-		this -> set_states(X_hat,t + 1);
+		this -> set_states(X_hat,this -> true_state_history[t+1],t + 1);
 
 		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],X_hat,this -> args);
 
@@ -210,7 +210,7 @@ void NavigationFilter::compute_estimated_small_body_attitude(std::vector<arma::v
 
 }
 
-void NavigationFilter::set_states(const arma::vec & X_hat,unsigned int t){
+void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,unsigned int t){
 	// arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
 
 	// dcm_LB.col(0) = - arma::normalise(this -> true_state_history[t].rows(0,2));
@@ -228,10 +228,19 @@ void NavigationFilter::set_states(const arma::vec & X_hat,unsigned int t){
 	// dcm_LB.col(1) = arma::normalise(arma::cross(dcm_LB.col(2),dcm_LB.col(0)));
 	// arma::inplace_trans(dcm_LB);
 
-	(*this -> args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
-	(*this -> args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
+	// (*this -> args.get_mrp_BN_true()) = this -> true_state_history[t].rows(6,8);
+	// (*this -> args.get_mrp_BN_estimated()) = X_hat.subvec(6,8);
 
-	(*this -> args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
+	// (*this -> args.get_true_pos()) = this -> true_state_history[t].rows(0,2);
+
+	this -> args.set_estimated_pos(X_hat.subvec(0,2));
+	this -> args.set_estimated_vel(X_hat.subvec(3,5));
+	this -> args.set_estimated_mrp_BN(X_hat.subvec(6,8));
+
+	this -> args.set_true_pos(X_true.subvec(0,2));
+	this -> args.set_true_vel(X_true.subvec(3,5));
+	this -> args.set_true_mrp_BN(X_true.subvec(6,8));
+
 
 }
 

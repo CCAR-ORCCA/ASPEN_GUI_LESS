@@ -232,39 +232,7 @@ public:
 		this -> active_inertia = inertia;
 	}
 
-	void set_true_small_body_attitude(std::vector<arma::vec> * true_small_body_attitude){
-		this -> true_small_body_attitude = true_small_body_attitude;
-	}
-
-	void set_estimated_small_body_attitude(std::vector<arma::vec> * estimated_small_body_attitude){
-		this -> estimated_small_body_attitude = estimated_small_body_attitude;
-	}
 	
-	std::vector<arma::vec> * get_true_small_body_attitude() const{
-		return this -> true_small_body_attitude;
-	}
-
-	std::vector<arma::vec> * get_estimated_small_body_attitude() const{
-		return this -> estimated_small_body_attitude;
-	}
-
-
-	std::shared_ptr<arma::vec> get_mrp_BN_true() const{
-		return this -> mrp_BN_true;
-	}
-
-	std::shared_ptr<arma::vec> get_mrp_BN_estimated() const{
-		return this -> mrp_BN_estimated;
-	}
-
-	std::shared_ptr<arma::vec> get_mrp_LN_true() const{
-		return this -> mrp_LN;
-	}
-
-	std::shared_ptr<arma::vec> get_true_pos() const{
-		return this -> true_pos;
-	}
-
 
 	std::vector<double> * get_sigma_consider_vector_ptr() const {
 		return this -> sigma_consider_vector_ptr;
@@ -290,6 +258,54 @@ public:
 
 	void set_sigmas_range_vector_ptr(std::vector<double> * ptr)  {
 		this -> sigmas_range_vector_ptr = ptr;
+	}
+
+	arma::vec get_true_pos() const{
+		return this -> true_pos;
+	}
+
+	arma::vec get_true_vel() const{
+		return this -> true_vel;
+	}
+
+	arma::vec get_estimated_pos() const{
+		return this -> estimated_pos;
+	}
+
+	arma::vec get_estimated_vel() const{
+		return this -> estimated_vel;
+	}
+
+	void set_true_pos(arma::vec x) {
+		this -> true_pos = x;
+	}
+
+	void set_true_vel(arma::vec x) {
+		this -> true_vel = x;
+	}
+
+	void set_estimated_pos (arma::vec x){
+		this -> estimated_pos = x;
+	}
+
+	void set_estimated_vel (arma::vec x){
+		this -> estimated_vel = x;
+	}
+
+
+	void set_true_mrp_BN(arma::vec x){
+		this -> true_mrp_BN = x;
+	}
+	void set_estimated_mrp_BN(arma::vec x){
+		this -> estimated_mrp_BN = x;
+	}
+
+	arma::vec get_true_mrp_BN() const{
+		return this -> true_mrp_BN;
+	}
+
+	arma::vec get_estimated_mrp_BN() const{
+		return this -> estimated_mrp_BN;
 	}
 
 
@@ -334,14 +350,21 @@ protected:
 
 	std::shared_ptr<arma::mat> lidar_position_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
 
-	std::shared_ptr<arma::vec> mrp_BN_true = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
-	std::shared_ptr<arma::vec> mrp_BN_estimated = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
-	std::shared_ptr<arma::vec> mrp_LN = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
-	std::shared_ptr<arma::vec> true_pos = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+
+	arma::vec true_pos;
+	arma::vec true_vel;
+	arma::vec estimated_pos;
+	arma::vec estimated_vel;
 
 
-	std::vector<arma::vec> * true_small_body_attitude;
-	std::vector<arma::vec> * estimated_small_body_attitude;
+	arma::vec true_mrp_BN;
+	arma::vec estimated_mrp_BN;
+
+
+
+	
+	// std::vector<arma::vec> * true_small_body_attitude;
+	// std::vector<arma::vec> * estimated_small_body_attitude;
 
 
 	std::vector<double> * sigma_consider_vector_ptr;

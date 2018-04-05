@@ -72,7 +72,7 @@
 #define USE_ICP false
 
 // Number of surface samples per facet to use
-#define SURFACE_SAMPLES 30
+#define SURFACE_SAMPLES 10
 
 ///////////////////////////////////////////
 

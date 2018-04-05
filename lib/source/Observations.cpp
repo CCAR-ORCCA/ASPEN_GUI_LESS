@@ -12,7 +12,7 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 	// Position of spacecraft relative to small body in inertial frame
 	arma::vec lidar_pos = x.rows(0,2);
-	arma::vec lidar_vel = x.rows(3,5);
+	arma::vec lidar_vel = args.get_true_vel();
 
 	// Attitude of spacecraft relative to inertial
 	arma::vec e_r = - arma::normalise(lidar_pos);
@@ -35,7 +35,7 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 
 	// Setting the small body to its inertial attitude. 
-	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(x.rows(6,8));
+	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_true_mrp_BN());
 
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
@@ -69,7 +69,7 @@ arma::vec Observations::obs_lidar_range_computed(
 
 	// Position of spacecraft relative to small body in inertial frame
 	arma::vec lidar_pos = x.rows(0,2);
-	arma::vec lidar_vel = x.rows(3,5);
+	arma::vec lidar_vel = args.get_estimated_vel();
 
 	// Attitude of spacecraft relative to inertial
 	arma::vec e_r = - arma::normalise(lidar_pos);
@@ -89,9 +89,8 @@ arma::vec Observations::obs_lidar_range_computed(
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
-	// Setting the small body to its inertial attitude. This should not affect the 
-	// measurements at all
-	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(x.rows(6,8));
+	// Setting the small body to its inertial attitude. 
+	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_estimated_mrp_BN());
 
 
 	// Getting the true observations (noise is added)
@@ -205,7 +204,11 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	times.push_back(t);
 
 	arma::vec x_bar_bar = x.rows(0,2);
-	int iter = filter.run(40,*args. get_true_pos(),x_bar_bar,times,std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),arma::zeros<arma::mat>(1,1));
+	int iter = filter.run(40,
+		args. get_true_pos(),
+		x_bar_bar,times,
+		std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),
+		arma::zeros<arma::mat>(1,1));
 
 
 	// The covariance in the position is extracted here
