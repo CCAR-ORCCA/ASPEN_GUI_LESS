@@ -308,9 +308,14 @@ arma::vec Observations::obs_pos_mrp_ekf_lidar(double t,const arma::vec & x,const
 	y_bar_bar.rows(0,2) = x.rows(0,2);
 	y_bar_bar.rows(3,5) = x.rows(6,8);
 
+	arma::vec X0_truth(6);
+	X0_truth.subvec(0,2) = args. get_true_pos();
+	X0_truth.subvec(3,5) = args. get_true_mrp_BN();
+
 	int iter = filter.run(40,
-		args. get_true_pos(),
-		y_bar_bar,times,
+		X0_truth,
+		y_bar_bar,
+		times,
 		std::pow(args.get_sd_noise(),2) * arma::ones<arma::mat>(1,1),
 		arma::zeros<arma::mat>(1,1));
 

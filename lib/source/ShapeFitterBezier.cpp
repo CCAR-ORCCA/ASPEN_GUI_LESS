@@ -558,11 +558,11 @@ std::shared_ptr<Footpoint> ShapeFitterBezier::find_footpoint_omp(arma::vec P_til
 
 void ShapeFitterBezier::find_footpoint_in_patch_omp(arma::vec P_tilde,Bezier * patch,std::shared_ptr<Footpoint> & footpoint){
 
-	arma::mat H = arma::zeros<arma::mat>(2,2);
-	arma::vec Y = arma::zeros<arma::vec>(2);
-	arma::vec dchi;
-	arma::mat dbezier_dchi;
-	arma::vec chi = {1./3,1./3};
+	arma::mat::fixed<2,2> H = arma::zeros<arma::mat>(2,2);
+	arma::vec::fixed<2> Y = arma::zeros<arma::vec>(2);
+	arma::vec::fixed<2> dchi;
+	arma::mat::fixed<3,2> dbezier_dchi;
+	arma::vec::fixed<2> chi = {1./3,1./3};
 
 	arma::vec Pbar = patch -> evaluate(chi(0),chi(1));
 	unsigned int N_iter = 30;
