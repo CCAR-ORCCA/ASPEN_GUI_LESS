@@ -337,9 +337,9 @@ arma::mat Observations::obs_pos_ekf_computed_jac(double t,const arma::vec & x,co
 
 arma::mat Observations::obs_pos_mrp_ekf_computed_jac(double t,const arma::vec & x,const Args & args){
 
-	arma::mat H = arma::zeros<arma::mat>(3,x.n_rows);
+	arma::mat H = arma::zeros<arma::mat>(6,x.n_rows);
 	H.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
-	H.submat(0,6,2,8) = arma::eye<arma::mat>(3,3);
+	H.submat(3,6,5,8) = arma::eye<arma::mat>(3,3);
 
 	return H;
 
