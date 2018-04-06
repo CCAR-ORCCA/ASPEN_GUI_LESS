@@ -224,12 +224,21 @@ public:
 		return this -> batch_output_covariance_ptr;
 	}
 
-	arma::mat get_active_inertia() const{
-		return this -> active_inertia;
+	arma::mat get_true_inertia() const{
+		return this -> true_inertia;
 	}
 
-	void set_active_inertia(arma::mat inertia){
-		this -> active_inertia = inertia;
+	void set_true_inertia(arma::mat inertia){
+		this -> true_inertia = inertia;
+	}
+
+
+	arma::mat get_estimated_inertia() const{
+		return this -> estimated_inertia;
+	}
+
+	void set_estimated_inertia(arma::mat inertia){
+		this -> estimated_inertia = inertia;
 	}
 
 	
@@ -353,7 +362,9 @@ protected:
 	arma::mat * Cnm;
 	arma::mat * Snm;
 
-	arma::mat active_inertia;
+	arma::mat true_inertia;
+	arma::mat estimated_inertia;
+
 
 	std::shared_ptr<arma::mat> batch_output_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
 

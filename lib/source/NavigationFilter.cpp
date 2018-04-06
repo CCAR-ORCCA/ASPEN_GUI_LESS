@@ -79,13 +79,14 @@ int NavigationFilter::run(
 			this -> estimated_covariance_history.push_back(P_hat);
 		}
 		
-		std::cout << "State error: " << std::endl;
+		std::cout << "State error before time update: " << std::endl;
 		std::cout << (this -> true_state_history[t] - X_hat).t() << std::endl;
 
 		// The a-priori is propagated until the next timestep
 		this -> time_update(T_obs[t],T_obs[t + 1],X_hat,P_hat);
 
-	
+		std::cout << "State error after time update: " << std::endl;
+		std::cout << (this -> true_state_history[t+1] - X_hat).t() << std::endl;
 
 		// SNC is applied 
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
@@ -159,7 +160,7 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 
 
 	// Set active inertia here
-	this -> args.set_active_inertia(this -> args.get_true_shape_model() -> get_inertia());
+	this -> args.set_true_inertia(this -> args.get_true_shape_model() -> get_inertia());
 
 	System dynamics(this -> args,N_true,this -> true_dynamics_fun );
 

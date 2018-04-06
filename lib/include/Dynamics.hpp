@@ -11,7 +11,6 @@ namespace Dynamics{
 	arma::vec point_mass_dxdt_body_frame(double t, arma::vec X, Args * args);
 	arma::vec point_mass_dxdt(double t, arma::vec X, Args * args) ;
 
-	arma::vec attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
 
 	arma::vec sigma_dot(double t, arma::vec X, Args * args);
 	arma::vec validation_dxdt(double t, arma::vec  X, Args * args);
@@ -41,8 +40,10 @@ namespace Dynamics{
 
 	arma::vec debug(double t,const arma::vec & X, const Args & args) ;
 
-
 	double energy_attitude(double t, arma::vec  X, Args * args);
+
+	arma::vec estimated_attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
+	arma::vec true_attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
 
 
 
