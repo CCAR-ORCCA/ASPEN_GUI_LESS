@@ -36,7 +36,6 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	this -> construct_kd_tree_control_points();
 	this -> populate_mass_properties_coefs();
 	this -> update_mass_properties();
-	this -> inertia = shape_model -> get_inertia();
 
 }
 

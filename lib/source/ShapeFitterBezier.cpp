@@ -228,7 +228,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	EigVec Nmat(3 * N); 
 	Nmat.setZero();
 	SpMat Lambda(3 * N, 3 * N);
-
+	arma::mat dndCk;
 	boost::progress_display progress(footpoints.size());
 
 	// All the measurements are processed	
@@ -255,7 +255,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			unsigned int i = std::get<0>(local_indices);
 			unsigned int j = std::get<1>(local_indices);
 
-			arma::mat dndCk = patch -> partial_n_partial_Ck(footpoint . u,footpoint . v,i, j,patch -> get_degree());
+			dndCk = patch -> partial_n_partial_Ck(footpoint . u,footpoint . v,i, j,patch -> get_degree());
 
 			double B = Bezier::bernstein(footpoint . u,footpoint . v,i,j,patch -> get_degree());
 			

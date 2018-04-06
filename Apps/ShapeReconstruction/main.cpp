@@ -261,7 +261,7 @@ int main() {
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
-	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-4,1e-4,1e-4,1e-6,1e-6,1e-6};
+	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-4,1e-4,1e-4,1e-9,1e-9,1e-9};
 	arma::mat P0 = arma::diagmat(P0_diag);
 	arma::mat Q = std::pow(PROCESS_NOISE_SIGMA ,2) * arma::eye<arma::mat>(3,3);
 

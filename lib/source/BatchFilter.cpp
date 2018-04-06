@@ -201,7 +201,15 @@ int  BatchFilter::run(
 
 		
 		// The deviation is applied to the state
-		arma::vec X_hat_0 = X_bar + dx_hat + dx_hat_consider;
+		arma::vec X_hat_0(X_bar.n_rows);
+		arma::vec X_hat_0_add = X_bar + dx_hat + dx_hat_consider;
+
+		X_hat_0.subvec(0,3) = X_hat_0_add.subvec(0,3);
+
+		if (X_hat_0.n_rows == 6){
+			arma::vec d_mrp = dx_hat + dx_hat_consider;
+			X_hat_0.subvec(3,5) = RBK::dcm_to_mrp( RBK::mrp_to_dcm(d_mrp.subvec(3,5)) * RBK::mrp_to_dcm(X_bar.subvec(3,5)));	
+		}
 
 		X_bar = X_hat_0;
 
