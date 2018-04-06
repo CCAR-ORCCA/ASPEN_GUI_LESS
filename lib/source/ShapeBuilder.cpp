@@ -310,6 +310,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
 
+
+	std::cout << "-- Constructing point cloud...\n";
+
 	if (this -> filter_arguments -> get_use_icp()){
 		
 		destination_pc_concatenated = std::make_shared<PC>(PC(this -> concatenated_pc_vector));

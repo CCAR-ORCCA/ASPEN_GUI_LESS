@@ -220,8 +220,8 @@ public:
 		return this -> lidar;
 	}
 
-	std::shared_ptr<arma::mat> get_lidar_position_covariance_ptr() const{
-		return this -> lidar_position_covariance_ptr;
+	std::shared_ptr<arma::mat> get_batch_output_covariance_ptr() const{
+		return this -> batch_output_covariance_ptr;
 	}
 
 	arma::mat get_active_inertia() const{
@@ -355,7 +355,7 @@ protected:
 
 	arma::mat active_inertia;
 
-	std::shared_ptr<arma::mat> lidar_position_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
+	std::shared_ptr<arma::mat> batch_output_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
 
 
 	arma::vec true_pos;
