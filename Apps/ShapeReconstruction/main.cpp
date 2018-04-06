@@ -172,7 +172,7 @@ int main() {
 	auto N_true = X0_augmented.n_rows;
 
 	// Set active inertia here
-	args.set_active_inertia(true_shape_model.get_inertia());
+	args.set_true_inertia(true_shape_model.get_inertia());
 
 	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_inertial );
 
@@ -236,6 +236,12 @@ int main() {
 	estimated_shape_model -> compute_volume_sd();
 
 	args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
+	args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
+
+	std::cout << "Estimated inertia:" << std::endl;
+	std::cout << estimated_shape_model -> get_inertia() << std::endl;
+	std::cout << "True inertia:" << std::endl;
+	std::cout << true_shape_model. get_inertia() << std::endl;
 
 	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
 	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
