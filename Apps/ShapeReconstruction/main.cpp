@@ -255,14 +255,14 @@ int main() {
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
-	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-20,1e-20,1e-20,1e-20,1e-20,1e-20};
+	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-4,1e-4,1e-4,1e-6,1e-6,1e-6};
 	arma::mat P0 = arma::diagmat(P0_diag);
 	arma::mat Q = std::pow(PROCESS_NOISE_SIGMA ,2) * arma::eye<arma::mat>(3,3);
 
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
 
-	X0_estimated_augmented.subvec(0,5) += arma::diagmat(arma::sqrt(P0_diag.subvec(0,5))) * arma::randn(6);
+	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn(X0_estimated_augmented.n_rows);
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;
