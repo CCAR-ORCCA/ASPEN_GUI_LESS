@@ -75,7 +75,7 @@
 #define SURFACE_SAMPLES 30
 
 // If true, the state covariance is used to provide an a-priori to the batch
-#define USE_PHAT_IN_BATCH true
+#define USE_PHAT_IN_BATCH false
 
 ///////////////////////////////////////////
 
