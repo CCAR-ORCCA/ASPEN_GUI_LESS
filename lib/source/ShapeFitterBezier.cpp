@@ -369,7 +369,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	std::vector<Footpoint> pc_to_footpoint,footpoints;
 
-	std::cout << "Finding footpoints...";
+	std::cout << "Finding footpoints ...";
 
 	boost::progress_display progress(this -> pc -> get_size());
 
@@ -381,8 +381,8 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
-		++progress;
 		this -> find_footpoint_omp(pc_to_footpoint[i]);
+		++progress;
 	}
 
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
@@ -417,12 +417,8 @@ void ShapeFitterBezier::find_footpoint_omp(Footpoint & footpoint) const {
 	for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){
 		Bezier * patch = dynamic_cast<Bezier *> (*el);
 
-		try{
-			ShapeFitterBezier::find_footpoint_in_patch_omp(patch,footpoint);
-		}
-		catch(const MissingFootpointException & e){
-
-		}
+		ShapeFitterBezier::find_footpoint_in_patch_omp(patch,footpoint);
+		
 	}
 
 
@@ -457,7 +453,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
 		
 		if (error < 1e-5){
-
+			std::cout << "found footpoint\n";
 			if (footpoint.element != nullptr){
 
 			// If true, then the previous footpoint was better
