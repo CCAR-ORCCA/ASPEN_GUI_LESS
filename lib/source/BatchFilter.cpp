@@ -86,6 +86,8 @@ int  BatchFilter::run(
 	#endif
 
 	double old_residuals = std::numeric_limits<double>::infinity();
+	double old_mean = std::numeric_limits<double>::infinity();
+
 
 	// The batch is iterated
 	for (unsigned int i = 0; i <= N_iter; ++i){
@@ -154,9 +156,7 @@ int  BatchFilter::run(
 		arma::sp_mat W(H.n_rows,H.n_rows);
 		arma::sp_mat R(H.n_rows,H.n_rows);
 
-
 		arma::vec biases = arma::zeros<arma::vec>(H.n_rows);
-
 
 		#if BATCH_DEBUG || FILTER_DEBUG
 		std::cout << "----  Populating consider covariance and removing outliers" << std::endl;
@@ -226,9 +226,11 @@ int  BatchFilter::run(
 
 
 		// Checking for convergence
-		double variation = std::abs(rms_res - old_residuals)/rms_res * 100;
+		double rms_variation = std::abs(rms_res - old_residuals)/rms_res * 100;
+		double mean_dif = std::abs(rms_mean) - std::abs(old_mean);
+
 		
-		if (variation < 1e-2){
+		if (rms_variation < 1e-4){
 		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Batch Filter has converged" << std::endl;
 
@@ -248,10 +250,11 @@ int  BatchFilter::run(
 		else{
 		#if BATCH_DEBUG || FILTER_DEBUG
 
-			std::cout << "--- Variation in residuals: " << variation << " %" << std::endl;
+			std::cout << "--- rms_variation in residuals: " << rms_variation << " %" << std::endl;
 		#endif
 
 			old_residuals = rms_res;
+			old_mean = rms_mean;
 		}
 
 
