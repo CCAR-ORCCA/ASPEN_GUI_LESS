@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 // Number of surface samples per facet to use
 #define SURFACE_SAMPLES 30
@@ -221,14 +221,14 @@ int main() {
 
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-	// shape_filter.run_shape_reconstruction(times,X_augmented,true);
+	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph,
-		1));
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph,
+		// 1));
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
