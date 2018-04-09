@@ -71,12 +71,16 @@ int  BatchFilter::run(
 	X_bar = X_bar_0;
 
 	this -> info_mat_bar_0 = arma::zeros<arma::mat>(this -> true_state_history[0].n_rows,this -> true_state_history[0].n_rows);
+	
 	if (this -> args.get_use_P_hat_in_batch()){
 		arma::mat info_hat = arma::inv(this -> args.get_state_covariance());
 		this -> info_mat_bar_0.submat(0,0,2,2) = info_hat.submat(0,0,2,2);
-		this -> info_mat_bar_0.submat(3,3,5,5) = info_hat.submat(6,6,8,8);
-		this -> info_mat_bar_0.submat(0,3,2,5) = info_hat.submat(0,6,2,8);
-		this -> info_mat_bar_0.submat(3,0,5,2) = info_hat.submat(0,6,2,8);
+
+		if (X_hat_0.n_rows == 6){
+			this -> info_mat_bar_0.submat(3,3,5,5) = info_hat.submat(6,6,8,8);
+			this -> info_mat_bar_0.submat(0,3,2,5) = info_hat.submat(0,6,2,8);
+			this -> info_mat_bar_0.submat(3,0,5,2) = info_hat.submat(0,6,2,8);
+		}
 	}
 
 	int iterations = N_iter;
@@ -211,7 +215,7 @@ int  BatchFilter::run(
 		arma::vec X_hat_0(X_bar.n_rows);
 		arma::vec X_hat_0_add = X_bar + dx_hat + dx_hat_consider;
 
-		X_hat_0.subvec(0,3) = X_hat_0_add.subvec(0,3);
+		X_hat_0.subvec(0,2) = X_hat_0_add.subvec(0,2);
 
 		if (X_hat_0.n_rows == 6){
 			arma::vec d_mrp = dx_hat + dx_hat_consider;
