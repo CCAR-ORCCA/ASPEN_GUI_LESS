@@ -25,8 +25,7 @@
 
 // Instrument operating frequency
 #define INSTRUMENT_FREQUENCY_SHAPE 0.0016
-// #define INSTRUMENT_FREQUENCY_NAV 0.000145
-#define INSTRUMENT_FREQUENCY_NAV 0.0005
+#define INSTRUMENT_FREQUENCY_NAV 0.000145
 
 
 // Noise
@@ -39,7 +38,7 @@
 
 // Times (s)
 #define T0 0
-#define TF 600000 // 10 days
+#define TF 420000 // 10 days
 
 // Indices
 #define INDEX_INIT 400 // index where shape reconstruction takes place
