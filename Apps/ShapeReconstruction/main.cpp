@@ -30,11 +30,11 @@
 
 // Noise
 #define FOCAL_LENGTH 1e1
-#define LOS_NOISE_SD_BASELINE 1e-1
+#define LOS_NOISE_SD_BASELINE 5e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise (m/s^2)
-#define PROCESS_NOISE_SIGMA 0e-9
+#define PROCESS_NOISE_SIGMA 1e-10
 
 // Times (s)
 #define T0 0
@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 // Number of surface samples per facet to use
 #define SURFACE_SAMPLES 30
@@ -138,13 +138,22 @@ int main() {
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
-	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 
+	// Position
+	arma::vec pos_0 = {1000,0,0};
+	X0_augmented.rows(0,2) = pos_0;
+
+
+	// MRP BN 
+	arma::vec mrp_0 = {0.,0.,0.};
+	X0_augmented.rows(6,8) = mrp_0;
+
+
+	// Angular velocity in body frame
+	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 	arma::vec omega_0 = {0,0,omega};
 	X0_augmented.rows(9,11) = omega_0;
 
-	arma::vec pos_0 = {1000,0,0};
-	X0_augmented.rows(0,2) = pos_0;
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
@@ -214,7 +223,8 @@ int main() {
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph));
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph,
+		// 1));
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
@@ -233,7 +243,7 @@ int main() {
 	estimated_shape_model -> construct_kd_tree_shape();
 	args.set_estimated_shape_model(estimated_shape_model.get());
 
-	estimated_shape_model -> compute_volume_sd();
+	// estimated_shape_model -> compute_volume_sd();
 
 	args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
 	args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
@@ -261,14 +271,19 @@ int main() {
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	// Since the asteroid state is not estimated, it is frozen
-	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-4,1e-4,1e-4,1e-9,1e-9,1e-9};
+	arma::vec P0_diag = {100,100,100,1e-6,1e-6,1e-6,1e-5,1e-5,1e-5,1e-10,1e-10,1e-10};
+
+
 	arma::mat P0 = arma::diagmat(P0_diag);
 	arma::mat Q = std::pow(PROCESS_NOISE_SIGMA ,2) * arma::eye<arma::mat>(3,3);
 
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
 
-	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn(X0_estimated_augmented.n_rows);
+	// X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
+	arma::vec error = {1,1,1,1e-2,1e-3,-1e-3,1e-2,2e-3,1e-5,1e-10,1e-10,1e-10};
+	
+	X0_estimated_augmented += error;
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;

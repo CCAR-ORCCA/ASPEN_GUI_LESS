@@ -61,20 +61,42 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 }
 
 void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::mat & P_bar,
-	const arma::vec & res,const arma::mat & R) const{
+	const arma::vec & res,const arma::mat & R,bool done_iterating) const{
 
+
+	std::cout << "-- EKF measurement update\n";
 	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
 	
 
+	std::cout << "-- H matrix:\n";
+	std::cout << H << std::endl;
+	
 	// The Kalman gain is computed
 	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
+
+	std::cout << "-- Kalman gain first matrix component:\n";
+	std::cout << P_bar * H.t() << std::endl;
+
+	std::cout << "-- Kalman gain second matrix component:\n";
+	std::cout << arma::inv(H * P_bar * H.t() + R) << std::endl;
+
+	std::cout << "-- Kalman gain :\n";
+	std::cout << K << std::endl;
+
+	std::cout << "-- Residuals :\n";
+	std::cout << res << std::endl;
+
+	std::cout << "-- Innovation :\n";
+	std::cout << K * res << std::endl;
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;
 	
 	// The covariance is updated
-	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
-	P_bar = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
+	if (done_iterating){
+		auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
+		P_bar = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
+	}
 
 }
 

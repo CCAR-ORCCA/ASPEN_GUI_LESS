@@ -224,11 +224,13 @@ int  BatchFilter::run(
 		if (variation < 1e-2){
 		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Batch Filter has converged" << std::endl;
+
+
 		#endif
 			iterations = i;
 			break;
 		}
-		else if (rms_res > old_residuals){
+		else if (rms_res > old_residuals && i > 4){
 		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Residuals are bouncing around. Exiting" << std::endl;
 		#endif
@@ -248,6 +250,14 @@ int  BatchFilter::run(
 
 	}
 
+
+
+	std::cout << "--- Batch output:" << std::endl;
+	std::cout << X_bar.t() << std::endl;
+	std::cout << "--- True output:" << std::endl;
+	std::cout << this -> true_state_history[0].t() << std::endl;
+	std::cout << "--- Batch error:" << std::endl;
+	std::cout << (this -> true_state_history[0] - X_bar).t() << std::endl;
 
 	std::cout << "-- State Covariance \n";
 	std::cout << P_hat_0 << std::endl;

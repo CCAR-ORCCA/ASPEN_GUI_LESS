@@ -203,6 +203,12 @@ public:
 		const arma::mat & P_X);
 
 
+	/**	
+	Sets patch covariance to prescribed value
+	@param P_X prescribed value of patch covariance
+	*/
+
+	void set_P_X(arma::mat P_X){this -> P_X = P_X;}
 
 
 

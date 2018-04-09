@@ -27,7 +27,7 @@ protected:
 	virtual void time_update(double t_now, double t_next,
 		arma::vec & X_hat, arma::mat & P_hat) const = 0;
 	virtual void measurement_update(double t, arma::vec & X_bar, arma::mat & P_bar,
-		const arma::vec & res,const arma::mat & R) const = 0;
+		const arma::vec & res,const arma::mat & R,bool done_iterating = false) const = 0;
 
 	arma::vec compute_residual(double t,const arma::vec & X_hat,
 		const arma::vec & Y_true);
