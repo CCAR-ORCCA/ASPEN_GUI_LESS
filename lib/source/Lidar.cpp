@@ -100,7 +100,6 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
 
-	
 	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
 		this -> focal_plane[pixel] -> reset( shape_model);
 	}

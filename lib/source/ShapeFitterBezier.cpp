@@ -418,7 +418,7 @@ void ShapeFitterBezier::find_footpoint_omp(Footpoint & footpoint) const {
 		Bezier * patch = dynamic_cast<Bezier *> (*el);
 
 		ShapeFitterBezier::find_footpoint_in_patch_omp(patch,footpoint);
-		
+
 	}
 
 
@@ -432,7 +432,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 	arma::mat::fixed<3,2> dbezier_dchi;
 	arma::vec::fixed<2> chi = {1./3,1./3};
 
-	arma::vec Pbar = patch -> evaluate(chi(0),chi(1));
+	arma::vec::fixed<3> Pbar = patch -> evaluate(chi(0),chi(1));
 	unsigned int N_iter = 30;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
@@ -453,7 +453,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
 		
 		if (error < 1e-5){
-			std::cout << "found footpoint\n";
+
 			if (footpoint.element != nullptr){
 
 			// If true, then the previous footpoint was better
@@ -467,13 +467,13 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 				return ;
 			}	
 
-			Bezier * patch = dynamic_cast<Bezier *>(footpoint.element);
 			
 			footpoint . Pbar = Pbar;
 			footpoint . u = chi(0);
 			footpoint . v = chi(1);
 			footpoint . n = patch -> get_normal(chi(0),chi(1));
 			footpoint . element = patch;
+
 		}
 
 	}
