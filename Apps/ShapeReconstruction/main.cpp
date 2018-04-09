@@ -75,7 +75,7 @@
 #define SURFACE_SAMPLES 30
 
 // If true, the state covariance is used to provide an a-priori to the batch
-#define USE_PHAT_IN_BATCH true
+#define USE_PHAT_IN_BATCH false
 
 ///////////////////////////////////////////
 
@@ -315,7 +315,10 @@ int main() {
 	filter.set_observations_fun(
 		Observations::obs_pos_mrp_ekf_computed,
 		Observations::obs_pos_mrp_ekf_computed_jac,
-		Observations::obs_pos_mrp_ekf_lidar);	
+		Observations::obs_pos_ekf_lidar);	
+
+
+
 
 	filter.set_estimate_dynamics_fun(
 		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
