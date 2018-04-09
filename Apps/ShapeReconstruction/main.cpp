@@ -290,7 +290,7 @@ int main() {
 
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
 
-	X0_estimated_augmented += error;
+	// X0_estimated_augmented += error;
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;
