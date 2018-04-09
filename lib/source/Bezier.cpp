@@ -960,7 +960,7 @@ void Bezier::train_patch_covariance(){
 	arma::vec L = arma::ones<arma::vec>(N_C) * std::log(alpha);	
 	arma::vec lower_bounds =  L - 1;
 	arma::vec upper_bounds = L + 3;	
-	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
+
 
 	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&footpoints,&v_i_norm);
 
@@ -975,15 +975,21 @@ void Bezier::train_patch_covariance(){
 	psopt.run( true,true);
 
 	L = psopt.get_result();
+
+	
+	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
+
+	#if BEZIER_DEBUG
+	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
+
 	std::cout << "-- Final parametrization: " << L.t() << std::endl;
 
 	arma::vec L_correct_shape = arma::vectorise(arma::repmat(L,1,3),1).t();
 	std::cout << L_correct_shape << std::endl;
-
-	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
-
 	std::cout << "-- Final covariance: " << std::endl;
 	std::cout << this -> P_X << std::endl;
+	#endif
+	
 
 }
 
@@ -1033,9 +1039,10 @@ void Bezier::compute_range_biases(){
 	this -> fitting_residuals = arma::stddev(old_res_vec);
 	this -> fitting_residuals_mean = arma::mean(old_res_vec);
 
+	#if BEZIER_DEBUG
 	std::cout << "-- Postfit range residuals Mean without biases: " << arma::mean(old_res_vec) << std::endl;
 	std::cout << "-- Postfit range residuals RMS without biases: " << arma::stddev(old_res_vec) << std::endl;
-	
+	#endif 
 	
 	// for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 	// 	double u = this -> footpoints[i].u;

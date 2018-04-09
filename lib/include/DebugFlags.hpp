@@ -19,6 +19,9 @@
 #define KDTTREE_SHAPE_DEBUG 0
 #define KDTTREE_PC_DEBUG 0
 
+// Bezier debug flags
+#define BEZIER_DEBUG 0
+
 
 // ICP DEBUG FLAGS
 #define ICP_DEBUG 0

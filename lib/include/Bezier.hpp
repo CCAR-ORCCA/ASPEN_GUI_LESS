@@ -13,6 +13,7 @@
 
 #include <set>
 #include <map>
+#include <DebugFlags.hpp>
 
 struct NewPoint{
 	NewPoint(std::shared_ptr<ControlPoint> point ,

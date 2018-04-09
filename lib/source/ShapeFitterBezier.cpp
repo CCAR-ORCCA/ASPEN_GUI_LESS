@@ -35,22 +35,27 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	// First, patches that were seen are cleared
 	// Then, the footpoints are added to the patches
 	std::set<Bezier *> trained_patches;
+	std::vector<Bezier *> trained_patches_vector;
+
 	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
 		Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
-		
 		if (trained_patches.find(patch) == trained_patches.end()){
 			patch -> reset_footpoints();
 			trained_patches.insert(patch);
 		}
 		patch -> add_footpoint(*footpoint);
+	}
 
+	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch ){
+		trained_patches_vector.push_back(*patch);
 	}
 
 
 	// Once this is done, each patch is trained
-	boost::progress_display progress(trained_patches.size());
-	std::cout << "- Training "<< trained_patches.size() <<  " patches ..." << std::endl;
-	for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch){
+	boost::progress_display progress(trained_patches_vector.size());
+	std::cout << "- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
+	for (int i = 0; i < trained_patches_vector.size(); ++i){
+		Bezier * patch = trained_patches_vector[i];
 		(*patch) -> train_patch_covariance();
 		(*patch) -> compute_range_biases();
 		++progress;
@@ -450,6 +455,11 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 		chi += dchi;
 		Pbar = patch -> evaluate(chi(0),chi(1));
 
+		// If true, spurious footpoint search, abort
+		if (arma::max(chi) > 0.99 || arma::min(chi) < 0.01 || arma::sum(chi) > 0.99 || arma::sum(chi) < 0.01 ){
+			return ;
+		}	
+
 		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
 		
 		if (error < 1e-5){
@@ -462,10 +472,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 				}
 			}
 
-			// If true, spurious footpoint
-			if (arma::max(chi) > 0.99 || arma::min(chi) < 0.01 || arma::sum(chi) > 0.99 || arma::sum(chi) < 0.01 ){
-				return ;
-			}	
+			
 
 			
 			footpoint . Pbar = Pbar;
