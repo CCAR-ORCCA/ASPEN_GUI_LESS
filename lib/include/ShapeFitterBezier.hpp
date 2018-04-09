@@ -39,7 +39,6 @@ public:
 protected:
 
 	ShapeModelBezier * shape_model;
-	std::vector<Footpoint> find_footpoints() const;
 
 	std::vector<Footpoint> find_footpoints_omp() const;
 
@@ -57,13 +56,11 @@ void add_to_problem(std::vector<T>& coeffs,
 	bool update_shape(std::vector<Footpoint> & footpoints,double ridge_coef);
 
 	
-	static void find_footpoint_in_patch(Bezier * patch,Footpoint & footpoint);
-	static void find_footpoint_in_patch_omp(arma::vec P_tilde,Bezier * patch,std::shared_ptr<Footpoint> & footpoint);
+	static void find_footpoint_in_patch_omp(Bezier * patch,Footpoint & footpoint);
 
 
-	void find_footpoint(Footpoint & footpoint,Element * & element_guess) const ;
-
-	std::shared_ptr<Footpoint> find_footpoint_omp(arma::vec P_tilde) const ;
+	void find_footpoint_omp(Footpoint & footpoint) const ;
+	
 	PC * pc;
 
 

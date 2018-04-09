@@ -10,7 +10,7 @@ struct Footpoint{
 	double u;
 	double v;
 	arma::vec n;
-	Element * element;
+	Element * element = nullptr;
 };
 
 #endif
