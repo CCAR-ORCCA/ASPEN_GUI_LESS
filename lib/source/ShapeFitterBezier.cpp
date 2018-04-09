@@ -56,8 +56,8 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	std::cout << "- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
 	for (int i = 0; i < trained_patches_vector.size(); ++i){
 		Bezier * patch = trained_patches_vector[i];
-		(*patch) -> train_patch_covariance();
-		(*patch) -> compute_range_biases();
+		patch -> train_patch_covariance();
+		patch -> compute_range_biases();
 		++progress;
 	}
 	std::cout << "- Done training "<< trained_patches.size() <<  " patches " << std::endl;
