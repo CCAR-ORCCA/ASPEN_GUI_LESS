@@ -313,8 +313,8 @@ int main() {
 	NavigationFilter filter(args);
 
 	filter.set_observations_fun(
-		Observations::obs_pos_mrp_ekf_computed,
-		Observations::obs_pos_mrp_ekf_computed_jac,
+		Observations::obs_pos_ekf_computed,
+		Observations::obs_pos_ekf_computed_jac,
 		Observations::obs_pos_ekf_lidar);	
 
 
