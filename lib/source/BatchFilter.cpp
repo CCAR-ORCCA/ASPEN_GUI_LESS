@@ -76,7 +76,7 @@ int  BatchFilter::run(
 		arma::mat info_hat = arma::inv(this -> args.get_state_covariance());
 		this -> info_mat_bar_0.submat(0,0,2,2) = info_hat.submat(0,0,2,2);
 
-		if (X_hat_0.n_rows == 6){
+		if (X_bar.n_rows == 6){
 			this -> info_mat_bar_0.submat(3,3,5,5) = info_hat.submat(6,6,8,8);
 			this -> info_mat_bar_0.submat(0,3,2,5) = info_hat.submat(0,6,2,8);
 			this -> info_mat_bar_0.submat(3,0,5,2) = info_hat.submat(0,6,2,8);
