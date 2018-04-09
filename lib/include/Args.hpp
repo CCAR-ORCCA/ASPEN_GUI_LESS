@@ -23,6 +23,14 @@ public:
 		this -> true_shape_model = shape_model;
 	}
 
+	void set_state_covariance(arma::mat P_hat){
+		this -> P_hat = P_hat;
+	}
+
+	arma::mat get_state_covariance() const{
+		return this -> P_hat;
+	}
+
 	void set_estimated_shape_model(ShapeModel * shape_model) {
 		this -> estimated_shape_model = shape_model;
 	}
@@ -324,6 +332,13 @@ public:
 		return this -> estimated_mrp_BN;
 	}
 
+	void set_use_P_hat_in_batch(bool use_Phat){
+		this -> use_P_hat_in_batch = use_Phat;
+	}
+	bool get_use_P_hat_in_batch() const{
+		return this -> use_P_hat_in_batch;
+	}
+
 
 protected:
 
@@ -346,6 +361,7 @@ protected:
 	double ref_radius ;
 
 	bool stopping_bool = false;
+	bool use_P_hat_in_batch = false;
 
 	FrameGraph * frame_graph;
 	ShapeModel * estimated_shape_model;
@@ -365,6 +381,7 @@ protected:
 	arma::mat true_inertia;
 	arma::mat estimated_inertia;
 
+	arma::mat P_hat;
 
 	std::shared_ptr<arma::mat> batch_output_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
 

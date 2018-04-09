@@ -25,7 +25,10 @@ protected:
 		const arma::vec & X0_true_augmented,
 		bool save = false);
 
-	void set_states(const arma::vec & X_hat,arma::vec X_true,unsigned int t);
+	void set_states(const arma::vec & X_hat,
+		arma::vec X_true,
+		const arma::mat & P_hat,
+		unsigned int t);
 
 	
 };

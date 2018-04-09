@@ -58,24 +58,20 @@ int NavigationFilter::run(
 			assert(this -> estimated_state_history.is_empty());
 			assert(this -> estimated_covariance_history.is_empty());
 
-			this -> set_states(X_hat,this -> true_state_history[t],t);
+			this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
 
-			// 
+			// The batch is called to compute a position/attitude measurement
 			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],X_hat,this -> args);
-
 
 			// The prefit residual are computed
 			auto y_bar = this -> compute_residual(0,X_hat,Y_true_from_lidar);
 
 			// The measurement update is performed
 			this -> measurement_update(0,X_hat, P_hat,y_bar,*this -> args.get_batch_output_covariance_ptr());
-			this -> set_states(X_hat,this -> true_state_history[t],t);
+			this -> set_states(X_hat,this -> true_state_history[t],P_hat,t
+				);
 			
-
-
-
-
-				// The postfit residual are computed 
+			// The postfit residual are computed 
 			auto y_hat = this -> compute_residual(0,X_hat,Y_true_from_lidar);
 
 				// STORE RESULTS 
@@ -95,7 +91,7 @@ int NavigationFilter::run(
 
 		// SNC is applied 
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
-		this -> set_states(X_hat,this -> true_state_history[t+1],t + 1);
+		this -> set_states(X_hat,this -> true_state_history[t+1],P_hat,t + 1);
 
 		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],X_hat,this -> args);
 
@@ -105,7 +101,7 @@ int NavigationFilter::run(
 		// The measurement update is performed
 		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,
 			*this -> args.get_batch_output_covariance_ptr());
-		this -> set_states(X_hat,this -> true_state_history[t],t);
+		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
 
 		// The postfit residual is computed 
 		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
@@ -127,7 +123,7 @@ int NavigationFilter::run(
 }
 
 
-void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,unsigned int t){
+void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,const arma::mat & P_hat,unsigned int t){
 	
 
 	this -> args.set_estimated_pos(X_hat.subvec(0,2));
@@ -138,6 +134,7 @@ void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,unsig
 	this -> args.set_true_vel(X_true.subvec(3,5));
 	this -> args.set_true_mrp_BN(X_true.subvec(6,8));
 
+	this -> args.set_state_covariance(P_hat);
 
 	// std::cout << this -> args.get_estimated_pos().t() << std::endl;
 	// std::cout << this -> args.get_estimated_vel().t() << std::endl;
@@ -145,9 +142,6 @@ void NavigationFilter::set_states(const arma::vec & X_hat,arma::vec X_true,unsig
 	// std::cout << this -> args.get_true_pos().t() << std::endl;
 	// std::cout << this -> args.get_true_vel().t() << std::endl;
 	// std::cout << this -> args.get_true_mrp_BN().t() << std::endl << std::endl;
-
-
-
 
 }
 
