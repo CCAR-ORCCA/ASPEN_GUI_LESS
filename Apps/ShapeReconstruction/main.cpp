@@ -278,8 +278,8 @@ int main() {
 	arma::vec P0_diag = {
 		100,100,100,//position
 		1e-6,1e-6,1e-6,//velocity
-		1e-35,1e-35,1e-35,// mrp
-		1e-35,1e-35,1e-35 // angular velocity
+		5e-6,5e-6,5e-6,// mrp
+		1e-10,1e-10,1e-10 // angular velocity
 	};
 
 	arma::mat P0 = arma::diagmat(P0_diag);
