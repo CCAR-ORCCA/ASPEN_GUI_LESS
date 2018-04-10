@@ -35,7 +35,7 @@
 
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-56 // angular velocity
+#define PROCESS_NOISE_SIGMA_OMEG 1e-15 // angular velocity
 
 
 // Times (s)
@@ -278,8 +278,8 @@ int main() {
 	arma::vec P0_diag = {
 		100,100,100,//position
 		1e-6,1e-6,1e-6,//velocity
-		5e-6,5e-6,5e-6,// mrp
-		1e-10,1e-10,1e-10 // angular velocity
+		1e-8,1e-8,1e-8,// mrp
+		1e-15,1e-15,1e-15 // angular velocity
 	};
 
 	arma::mat P0 = arma::diagmat(P0_diag);
