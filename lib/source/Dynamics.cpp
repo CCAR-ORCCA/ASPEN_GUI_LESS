@@ -27,9 +27,7 @@ arma::mat Dynamics::point_mass_jac_odeint(double t, const arma::vec & x, const A
 	arma::vec pos_inertial = x . subvec(0, 2);
 	return args.get_dyn_analyses() -> point_mass_jacobian(pos_inertial , args . get_mass());
 
-
 }
-
 
 arma::mat Dynamics::gamma_OD(double dt){
 	arma::mat gamma = arma::zeros<arma::mat>(6,3);
@@ -297,8 +295,12 @@ arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, co
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
 	arma::vec pos = X . subvec(0, 2);
+	arma::vec attitude = X . subvec(6, 11);
+
 
 	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos , args . get_estimated_mass());
+	A.submat(6,6,11,11) += args.get_dyn_analyses() -> attitude_jacobian(attitude , args . get_estimated_inertia());
+
 
 	return A;
 
@@ -355,7 +357,16 @@ arma::vec Dynamics::true_attitude_dxdt(double t, const arma::vec & X, const Args
 
 }
 
-
+arma::mat Dynamics::create_Q(double sigma_vel,double sigma_omeg){
+	arma::mat Q = arma::zeros<arma::mat>(6,6);
+	Q.submat(0,0,2,2) = std::pow(sigma_vel,2) * arma::eye<arma::mat>(3,3);
+	Q.submat(3,3,5,5) = std::pow(sigma_omeg,2) * arma::eye<arma::mat>(3,3);
+	return Q;
+}
+arma::mat Dynamics::create_Q(double sigma_vel){
+	
+	return std::pow(sigma_vel,2) * arma::eye<arma::mat>(3,3);
+}
 
 // double Dynamics::energy_attitude(double t, arma::vec X , Args * args) {
 
@@ -373,7 +384,7 @@ arma::vec Dynamics::true_attitude_dxdt(double t, const arma::vec & X, const Args
 // 	// arma::vec omega = X.rows(3,5);
 // 	// arma::vec pos = X.rows(6,8);
 // 	// arma::vec vel = X.rows(9,11);
-	
+
 
 // 	// dxdt.rows(0,5) = attitude_dxdt(t,X.rows(0,5),args);
 

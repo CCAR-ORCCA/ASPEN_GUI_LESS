@@ -45,7 +45,8 @@ namespace Dynamics{
 	arma::vec estimated_attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
 	arma::vec true_attitude_dxdt(double t, const arma::vec & X, const Args & args) ;
 
-
+	arma::mat create_Q(double sigma_vel,double sigma_omeg);
+	arma::mat create_Q(double sigma_vel);
 
 }
 

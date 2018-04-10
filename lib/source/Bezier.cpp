@@ -728,7 +728,7 @@ arma::mat Bezier::partial_bezier(
 	const double u,
 	const double v) const{
 
-	arma::mat partials = arma::zeros<arma::mat>(3,2);
+	arma::mat::fixed<3,2> partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){	
 		int i = std::get<0>(this -> forw_table.at(l));
 		int j = std::get<1>(this -> forw_table.at(l));
@@ -972,7 +972,7 @@ void Bezier::train_patch_covariance(){
 		N_iter,
 		args);
 
-	psopt.run( true,true);
+	psopt.run( true,false);
 
 	L = psopt.get_result();
 

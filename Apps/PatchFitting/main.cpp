@@ -39,7 +39,7 @@ int main(){
 	shape_io_bezier.load_bezier_shape_model(&nominal_patch);
 	shape_perturbed_bezier.load_bezier_shape_model(&perturbed_patch);
 
-
+	nominal_patch.construct_kd_tree_shape();
 
 	for (unsigned int i = 0; i < perturbed_patch . get_control_points() -> size(); ++i){
 		auto p = perturbed_patch . get_control_points() -> at(i);
@@ -61,11 +61,11 @@ int main(){
 		"L",
 		20,
 		20 ,
-		256,
-		256,
+		512,
+		512,
 		1e-1,
 		1,
-		0 * 1e-2,
+		1e-2,
 		0);
 
 
@@ -97,16 +97,22 @@ int main(){
 	frame_graph.get_frame("B") -> set_origin_from_parent(target_pos);
 	frame_graph.get_frame("B") -> set_mrp_from_parent(mrp_BN);
 
+	std::cout << "sending flash\n";
+
 	lidar.send_flash(&nominal_patch,true);
 
+	std::cout << "creating pc \n";
+
 	PC pc_true(lidar.get_focal_plane());
+	std::cout << "done creating pc \n";
+
 	pc_true.save("../output/true_pc_before_transform.obj");
 	pc_true.transform(LN.t(),lidar_pos);
 	pc_true.save("../output/true_pc.obj");
 
-	ShapeFitterBezier shape_fitter(&perturbed_patch,
-		&pc_true);
+	ShapeFitterBezier shape_fitter(&perturbed_patch,&pc_true);
 
+	std::cout << "fitting shape\n";
 	shape_fitter.fit_shape_batch(5,0);
 	perturbed_patch.save_both("../output/fit");
 

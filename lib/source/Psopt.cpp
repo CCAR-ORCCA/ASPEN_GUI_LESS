@@ -154,8 +154,9 @@ double tolerance) {
 
 		// Check for convergence
 		if (iter + 1 == this -> iter_max) {
-			if (pedantic)
-			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
+			if (pedantic){
+				std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
+			}
 			break;
 		}
 		else if (std::abs(local_best_score.max() - local_best_score.min()) < tolerance) {
@@ -164,7 +165,6 @@ double tolerance) {
 
 		if (pedantic == true) {
 			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
-
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
 			std::cout <<  "Global best at: " << global_best << std::endl;
 

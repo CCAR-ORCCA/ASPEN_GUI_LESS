@@ -442,9 +442,8 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 	unsigned int N_iter = 30;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
-
 		dbezier_dchi = patch -> partial_bezier(chi(0),chi(1));
-
+		
 		H.row(0) = dbezier_dchi.col(0).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_du(chi(0),chi(1));
 		H.row(1) = dbezier_dchi.col(1).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_dv(chi(0),chi(1));
 

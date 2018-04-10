@@ -177,7 +177,7 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),6);
-	arma::vec u,n,n_inertial,impact_point;
+	arma::vec u,n,n_inertial;
 	arma::mat P(3,3);
 
 	auto P_cm = static_cast<ShapeModelBezier * >(args.get_estimated_shape_model()) -> get_cm_cov();
@@ -204,7 +204,8 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 				double u_t, v_t;
 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
-				impact_point = focal_plane -> at(i) -> get_impact_point_target_frame();
+			
+
 				n = bezier -> get_normal(u_t,v_t);
 
 				P = bezier -> covariance_surface_point(u_t,v_t,u);
@@ -224,7 +225,7 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 			H.submat(i,0,i,2) = - n_inertial.t() / arma::dot(n,u);
 
 			// Partial of range measurements with respect to attitude
-			H.submat(i,3,i,5) = - 4 * n.t() / arma::dot(n,u) * RBK::tilde(impact_point);
+			H.submat(i,3,i,5) = - 4 * n.t() / arma::dot(n,u) * RBK::tilde(focal_plane -> at(i) -> get_impact_point_target_frame());
 
 
 		}

@@ -33,8 +33,10 @@
 #define LOS_NOISE_SD_BASELINE 5e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
-// Process noise (m/s^2)
-#define PROCESS_NOISE_SIGMA 1e-10
+// Process noise 
+#define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
+#define PROCESS_NOISE_SIGMA_OMEG 1e-56 // angular velocity
+
 
 // Times (s)
 #define T0 0
@@ -280,9 +282,10 @@ int main() {
 		1e-35,1e-35,1e-35 // angular velocity
 	};
 
-
 	arma::mat P0 = arma::diagmat(P0_diag);
-	arma::mat Q = std::pow(PROCESS_NOISE_SIGMA ,2) * arma::eye<arma::mat>(3,3);
+	
+	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
+
 
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
@@ -312,11 +315,9 @@ int main() {
 	NavigationFilter filter(args);
 
 	filter.set_observations_fun(
-		Observations::obs_pos_ekf_computed,
-		Observations::obs_pos_ekf_computed_jac,
-		Observations::obs_pos_ekf_lidar);	
-
-
+		Observations::obs_pos_mrp_ekf_computed,
+		Observations::obs_pos_mrp_ekf_computed_jac,
+		Observations::obs_pos_mrp_ekf_lidar);	
 
 
 	filter.set_estimate_dynamics_fun(
@@ -326,8 +327,7 @@ int main() {
 
 
 	filter.set_initial_information_matrix(arma::inv(P0));
-	filter.set_gamma_fun(Dynamics::gamma_OD_augmented);
-
+	filter.set_gamma_fun(Dynamics::gamma_OD);
 
 	auto start = std::chrono::system_clock::now();
 	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);

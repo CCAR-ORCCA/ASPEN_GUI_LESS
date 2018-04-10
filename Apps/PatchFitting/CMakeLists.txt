@@ -106,6 +106,12 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
+
+
+
 # # Find SBGAT 
 # find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
 # include_directories(${SBGATCORE_INCLUDE_HEADER})
@@ -141,6 +147,7 @@ ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
+${VTK_LIBRARIES}
 # ${SBGATCORE_LIBRARY}
 ${ASPEN_LIBRARY}
 )

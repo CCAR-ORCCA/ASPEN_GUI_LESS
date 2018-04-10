@@ -60,13 +60,19 @@ public:
 	@return spherical harmonics acceleration evaluated in the body-fixed frame
 	*/
 	arma::vec spherical_harmo_acc(const unsigned int n_degree,
-	const double ref_radius,
-	const double  mu,
-	arma::vec pos, 
-	arma::mat * Cbar,
-	arma::mat * Sbar);
+		const double ref_radius,
+		const double  mu,
+		arma::vec pos, 
+		arma::mat * Cbar,
+		arma::mat * Sbar);
 
-
+	/**
+	Computes the jacobian of the dynamics of a rigid body undergoing torque free rotation
+	@param attitude attitude set and associated angular velocity
+	@param inertia inertia tensor of rigid body
+	@return jacobian of dynamics
+	*/
+	arma::mat attitude_jacobian(arma::vec & attitude ,const arma::mat & inertia) const ;
 
 
 protected:
@@ -74,10 +80,10 @@ protected:
 	ShapeModelTri * shape_model;
 
 	void GetBnmNormalizedExterior(int n_degree,
-	arma::mat & b_bar_real,
-	arma::mat & b_bar_imag,
-	arma::vec pos,
-	double ref_radius);
+		arma::mat & b_bar_real,
+		arma::mat & b_bar_imag,
+		arma::vec pos,
+		double ref_radius);
 
 };
 
