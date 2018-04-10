@@ -173,7 +173,7 @@ int  BatchFilter::run(
 			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
 			R(p,p) = std::pow(sigmas_range_vector[p],2);
 
-			if (std::abs(y_bar(p)) > 3 * rms_res){
+			if (std::abs(y_bar(p)) > 6 * rms_res){
 				H.row(p).fill(0);
 				y_bar(p) = 0;
 			}

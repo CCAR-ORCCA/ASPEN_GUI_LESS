@@ -52,8 +52,8 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 
 	// Once this is done, each patch is trained
-	boost::progress_display progress(trained_patches_vector.size());
 	std::cout << "- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
+	boost::progress_display progress(trained_patches_vector.size());
 	#pragma omp parallel for
 	for (int i = 0; i < trained_patches_vector.size(); ++i){
 		Bezier * patch = trained_patches_vector[i];
@@ -443,7 +443,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 
 	for (unsigned int i = 0; i < N_iter; ++i){
 		dbezier_dchi = patch -> partial_bezier(chi(0),chi(1));
-		
+
 		H.row(0) = dbezier_dchi.col(0).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_du(chi(0),chi(1));
 		H.row(1) = dbezier_dchi.col(1).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch -> partial_bezier_dv(chi(0),chi(1));
 
