@@ -90,7 +90,7 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	// Consistency test to see if the filter has converged
 	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
 	arma::mat P_hat = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
-	double consistency_test = arma::dot(X_bar,arma::solve(P_hat,X_bar)) - 9;
+	double consistency_test = arma::dot(K * res,arma::solve(P_hat,K * res)) - 9;
 
 	std::cout << "--- Consistency test: \n" << consistency_test << " \n";
 
