@@ -134,7 +134,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				if (time_index != this -> filter_arguments -> get_index_init()){
 					ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
-					shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),this -> filter_arguments -> get_ridge_coef());
+					shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
 				}
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
@@ -387,7 +387,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),destination_pc_concatenated.get());
 
-	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_iter_filter(),this -> filter_arguments -> get_ridge_coef());
+	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
 
 	a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
 

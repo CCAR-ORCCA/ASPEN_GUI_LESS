@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 128 // Goldeneye
-#define COL_RESOLUTION 128 // Goldeneye
+#define ROW_RESOLUTION 64 // Goldeneye
+#define COL_RESOLUTION 64 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -35,12 +35,15 @@
 
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
+#define PROCESS_NOISE_SIGMA_OMEG 0e-10 // angular velocity
 
 
 // Times (s)
 #define T0 0
 #define TF 600000 // 10 days
+
+// Number of navigation times
+#define NAVIGATION_TIMES 40
 
 // Indices
 #define INDEX_INIT 400 // index where shape reconstruction takes place
@@ -52,8 +55,6 @@
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
 
-// Filter iterations
-#define ITER_FILTER 4
 
 // Number of edges in a-priori
 #define N_EDGES 3000
@@ -78,6 +79,12 @@
 
 // If true, the state covariance is used to provide an a-priori to the batch
 #define USE_PHAT_IN_BATCH false
+
+// Filter iterations
+#define N_ITER_SHAPE_FILTER 4
+
+// Number of iterations in the navigation filter measurement update
+#define N_ITER_MES_UPDATE 4
 
 ///////////////////////////////////////////
 
@@ -139,7 +146,7 @@ int main() {
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
-
+	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
@@ -214,7 +221,7 @@ int main() {
 	shape_filter_args.set_index_init(std::min(INDEX_INIT,int(times.size())));
 	shape_filter_args.set_index_end(std::min(INDEX_END,int(times.size())));
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
-	shape_filter_args.set_iter_filter(ITER_FILTER);
+	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
@@ -222,14 +229,15 @@ int main() {
 
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-	shape_filter.run_shape_reconstruction(times,X_augmented,true);
+	// shape_filter.run_shape_reconstruction(times,X_augmented,true);
 	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&true_shape_model,"E",&frame_graph,
-		// 1));
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
+		ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
+		);
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
@@ -278,21 +286,17 @@ int main() {
 	arma::vec P0_diag = {
 		100,100,100,//position
 		1e-6,1e-6,1e-6,//velocity
-		1e-18,1e-18,1e-18,// mrp
-		1e-15,1e-15,1e-15 // angular velocity
+		1e-4,1e-4,1e-4,// mrp
+		1e-10,1e-10,1e-10 // angular velocity
 	};
 
 	arma::mat P0 = arma::diagmat(P0_diag);
 	
-	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
-
-
 	arma::vec X0_true_augmented = X_augmented[INDEX_END];
 	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
 
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
 
-	// X0_estimated_augmented += error;
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;
@@ -303,31 +307,31 @@ int main() {
 	std::cout << "Initial Error: " << std::endl;
 	std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
 
-	arma::vec nav_times = arma::regspace<arma::vec>(T0 + T_obs[INDEX_END],  1./INSTRUMENT_FREQUENCY_NAV,  TF + T_obs[INDEX_END]); 
+	arma::vec nav_times(NAVIGATION_TIMES);
 
 	// Times
 	std::vector<double> nav_times_vec;
-	for (unsigned int i = 0; i < nav_times.n_rows; ++i){
+	for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
+		nav_times(i) = T0 + T_obs[INDEX_END] + double(i)/INSTRUMENT_FREQUENCY_NAV;
 		nav_times_vec.push_back( nav_times(i));
 	}
 
-
 	NavigationFilter filter(args);
+	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
+	filter.set_gamma_fun(Dynamics::gamma_OD);
+
 
 	filter.set_observations_fun(
 		Observations::obs_pos_mrp_ekf_computed,
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
 
-
 	filter.set_estimate_dynamics_fun(
 		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
 		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
 		Dynamics::point_mass_attitude_dxdt_inertial);
 
-
 	filter.set_initial_information_matrix(arma::inv(P0));
-	filter.set_gamma_fun(Dynamics::gamma_OD);
 
 	auto start = std::chrono::system_clock::now();
 	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);

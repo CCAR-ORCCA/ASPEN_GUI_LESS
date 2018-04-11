@@ -322,7 +322,7 @@ public:
 	}
 
 
-	unsigned int get_iter_filter() const {
+	unsigned int get_N_iter_shape_filter() const {
 		return this -> iter_filter;
 	}
 
@@ -333,7 +333,7 @@ public:
 		return this -> surface_samples;
 	}
 
-	void set_iter_filter(unsigned int iter)  {
+	void set_N_iter_shape_filter(unsigned int iter)  {
 		this -> iter_filter = iter;
 	}
 

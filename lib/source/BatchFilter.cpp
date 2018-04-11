@@ -222,6 +222,9 @@ int  BatchFilter::run(
 			X_hat_0.subvec(3,5) = RBK::dcm_to_mrp( RBK::mrp_to_dcm(d_mrp.subvec(3,5)) * RBK::mrp_to_dcm(X_bar.subvec(3,5)));	
 		}
 
+		std::cout << "--- Estimated state in batch:\n";
+		std::cout << X_hat_0.t() << std::endl;
+
 		X_bar = X_hat_0;
 
 
@@ -234,7 +237,7 @@ int  BatchFilter::run(
 		double mean_dif = std::abs(rms_mean) - std::abs(old_mean);
 
 		
-		if (rms_variation < 1e-4){
+		if (rms_variation < 1e-4 && i > 4){
 		#if BATCH_DEBUG || FILTER_DEBUG
 			std::cout << "--- Batch Filter has converged" << std::endl;
 
