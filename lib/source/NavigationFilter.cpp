@@ -75,7 +75,7 @@ int NavigationFilter::run(
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
 
 		this -> iterated_measurement_update(t + 1,T_obs,X_hat, P_hat);
-		
+
 
 	}
 
@@ -178,7 +178,7 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 	// The measurement updated is iterated
 	for (int i =0; i < N_iter; ++i ){
 		std::cout << "---- EFK Iteration: " << i + 1 << "/" << N_iter << std::endl;
-		
+
 		if (i == N_iter - 1){
 			done_iterating = true;
 		}
@@ -198,6 +198,9 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 			*this -> args.get_batch_output_covariance_ptr(),
 			done_iterating);
 		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+		if (done_iterating){
+			break;
+		}
 	}
 
 

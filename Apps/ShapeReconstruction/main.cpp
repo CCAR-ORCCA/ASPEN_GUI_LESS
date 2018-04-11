@@ -23,20 +23,18 @@
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
-// Instrument operating frequency
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0016
-#define INSTRUMENT_FREQUENCY_NAV 0.000145
-
+// Instrument specs
+#define FOCAL_LENGTH 1e1 // meters
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0016 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 
 // Noise
-#define FOCAL_LENGTH 1e1
 #define LOS_NOISE_SD_BASELINE 5e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 0e-10 // angular velocity
-
 
 // Times (s)
 #define T0 0
@@ -147,25 +145,22 @@ int main() {
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
+	
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
-
 
 	// Position
 	arma::vec pos_0 = {1000,0,0};
 	X0_augmented.rows(0,2) = pos_0;
 
-
 	// MRP BN 
 	arma::vec mrp_0 = {0.,0.,0.};
 	X0_augmented.rows(6,8) = mrp_0;
-
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 	arma::vec omega_0 = {0,0,omega};
 	X0_augmented.rows(9,11) = omega_0;
-
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
@@ -285,9 +280,9 @@ int main() {
 	// A-priori covariance on spacecraft state and asteroid state.
 	arma::vec P0_diag = {
 		100,100,100,//position
-		1e-6,1e-6,1e-6,//velocity
-		1e-4,1e-4,1e-4,// mrp
-		1e-10,1e-10,1e-10 // angular velocity
+		1e-5,1e-5,1e-5,//velocity
+		1e-3,1e-3,1e-3,// mrp
+		1e-9,1e-9,1e-9 // angular velocity
 	};
 
 	arma::mat P0 = arma::diagmat(P0_diag);

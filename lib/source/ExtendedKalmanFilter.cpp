@@ -61,7 +61,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 }
 
 void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::mat & P_bar,
-	const arma::vec & res,const arma::mat & R,bool done_iterating) const{
+	const arma::vec & res,const arma::mat & R,bool & done_iterating) const{
 
 
 	std::cout << "-- EKF measurement update\n";
@@ -86,16 +86,24 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 
 	// The innovation is added to the state
 	X_bar = X_bar + K * res;
+
+	// Consistency test to see if the filter has converged
+	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
+	arma::mat P_hat = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
+	double consistency_test = arma::dot(X_bar,arma::solve(P_hat,X_bar)) - 9;
+
+	std::cout << "--- Consistency test: \n" << consistency_test << " \n";
+
 	
 	// The covariance is updated
 	if (done_iterating){
-		auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
-		P_bar = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
+		P_bar = P_hat;
+		std::cout << "--- State covariance after update\n";
+		std::cout << P_bar << std::endl;
+
 	}
 
-	std::cout << "--- State covariance after update\n";
-	std::cout << P_bar << std::endl;
-
+	
 
 }
 
