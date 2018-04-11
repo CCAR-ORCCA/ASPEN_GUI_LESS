@@ -30,6 +30,11 @@ protected:
 		const arma::mat & P_hat,
 		unsigned int t);
 
+	void iterated_measurement_update(unsigned int t, 
+		const std::vector<double> & T_obs,
+		arma::vec & X_hat, arma::mat & P_hat,const Args & args);
+
+
 	
 };
 #endif

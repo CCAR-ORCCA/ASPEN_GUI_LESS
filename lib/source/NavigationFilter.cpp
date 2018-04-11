@@ -40,6 +40,7 @@ int NavigationFilter::run(
 	arma::vec X_hat = X0_estimated_augmented;
 	arma::mat P_hat = arma::inv(this -> info_mat_bar_0);
 	arma::mat dcm_LB = arma::zeros<arma::mat>(3,3);
+	arma::vec Y_true_from_lidar;
 
 	#if NAVIGATION_DEBUG
 	std::cout << "-- Running the Navigation Filter" << std::endl;
@@ -57,22 +58,33 @@ int NavigationFilter::run(
 
 			assert(this -> estimated_state_history.is_empty());
 			assert(this -> estimated_covariance_history.is_empty());
+			
 
-			this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+			bool done_iterating = false;
+			auto N_iter = 10;
+
+
+			for (int i =0; i < N_iter; ++i ){
+
+				if (i == N_iter - 1){
+					done_iterating = true;
+				}
+				this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
 
 			// The batch is called to compute a position/attitude measurement
-			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[0],X_hat,this -> args);
+				Y_true_from_lidar = this -> true_observation_fun(T_obs[0],X_hat,this -> args);
 
 			// The prefit residual are computed
-			auto y_bar = this -> compute_residual(0,X_hat,Y_true_from_lidar);
+				auto y_bar = this -> compute_residual(T_obs[0],X_hat,Y_true_from_lidar);
 
 			// The measurement update is performed
-			this -> measurement_update(0,X_hat, P_hat,y_bar,*this -> args.get_batch_output_covariance_ptr());
-			this -> set_states(X_hat,this -> true_state_history[t],P_hat,t
-				);
-			
+				this -> measurement_update(T_obs[0],X_hat, P_hat,y_bar,*this -> args.get_batch_output_covariance_ptr(),done_iterating);
+				this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+			}
+
+
 			// The postfit residual are computed 
-			auto y_hat = this -> compute_residual(0,X_hat,Y_true_from_lidar);
+			auto y_hat = this -> compute_residual(T_obs[0],X_hat,Y_true_from_lidar);
 
 				// STORE RESULTS 
 			this -> estimated_state_history.push_back(X_hat);
@@ -91,17 +103,29 @@ int NavigationFilter::run(
 
 		// SNC is applied 
 		this -> apply_SNC(T_obs[t + 1] - T_obs[t],P_hat,Q);
-		this -> set_states(X_hat,this -> true_state_history[t+1],P_hat,t + 1);
 
-		arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],X_hat,this -> args);
+
+		bool done_iterating = false;
+		auto N_iter = 10;
+
+		for (int i =0; i < N_iter; ++i ){
+
+			if (i == N_iter - 1){
+				done_iterating = true;
+			}
+
+			this -> set_states(X_hat,this -> true_state_history[t+1],P_hat,t + 1);
+
+			arma::vec Y_true_from_lidar = this -> true_observation_fun(T_obs[t + 1],X_hat,this -> args);
 
 		// The prefit residual is computed
-		auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
+			auto y_bar = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
 
 		// The measurement update is performed
-		this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,
-			*this -> args.get_batch_output_covariance_ptr());
-		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+			this -> measurement_update(T_obs[t+1],X_hat, P_hat,y_bar,
+				*this -> args.get_batch_output_covariance_ptr(),done_iterating);
+			this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+		}
 
 		// The postfit residual is computed 
 		auto y_hat = this -> compute_residual(T_obs[t+1],X_hat,Y_true_from_lidar);
@@ -194,6 +218,52 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 
 }
 
+
+
+
+
+
+void NavigationFilter::iterated_measurement_update(unsigned int t,
+	const std::vector<double> & T_obs,
+	arma::vec & X_hat, 
+	arma::mat & P_hat,
+	const Args & args){
+
+
+	bool done_iterating = false;
+	auto N_iter = args.get_N_iter_mes_update();
+	arma::vec Y_true_from_lidar;
+
+	// The measurement updated is iterated
+	for (int i =0; i < N_iter; ++i ){
+
+		if (i == N_iter - 1){
+			done_iterating = true;
+		}
+		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+
+		// The batch is called to compute a position/attitude measurement
+		Y_true_from_lidar = this -> true_observation_fun(T_obs[t],X_hat,this -> args);
+
+		// The prefit residual are computed
+		auto y_bar = this -> compute_residual(T_obs[t],X_hat,Y_true_from_lidar);
+
+			// The measurement update is performed
+		this -> measurement_update(T_obs[t],X_hat, P_hat,y_bar,*this -> args.get_batch_output_covariance_ptr(),done_iterating);
+		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+	}
+
+
+	// The postfit residual are computed 
+	arma::vec y_hat = this -> compute_residual(T_obs[t],X_hat,Y_true_from_lidar);
+
+	// the results are stored
+	this -> estimated_state_history.push_back(X_hat);
+	this -> residuals.push_back(y_hat);
+	this -> estimated_covariance_history.push_back(P_hat);
+
+
+}
 
 
 

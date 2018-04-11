@@ -339,6 +339,14 @@ public:
 		return this -> use_P_hat_in_batch;
 	}
 
+	int get_N_iter_mes_update() const{
+		return this -> N_iter_mes_update;
+	}
+
+	void set_N_iter_mes_update(int N_iter_mes_update){
+		this -> N_iter_mes_update = N_iter_mes_update;
+	}
+
 
 protected:
 
@@ -355,8 +363,8 @@ protected:
 	double sd_noise;
 	double sd_noise_prop = 0;
 
-	// unsigned int degree;
 	int harmonics_degree;
+	int N_iter_mes_update;
 
 	double ref_radius ;
 

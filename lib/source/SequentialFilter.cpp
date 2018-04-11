@@ -14,7 +14,7 @@ void SequentialFilter::apply_SNC(double dt,arma::mat & P_bar,const arma::mat & Q
 	if (this -> gamma_fun != nullptr){
 		arma::mat Gamma = this -> gamma_fun(dt);
 
-		if (Q.n_rows ==3){
+		if (Q.n_rows == 3){
 			P_bar += Gamma * Q * Gamma.t();
 		}
 		else{
