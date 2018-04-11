@@ -82,7 +82,7 @@
 #define N_ITER_SHAPE_FILTER 4
 
 // Number of iterations in the navigation filter measurement update
-#define N_ITER_MES_UPDATE 4
+#define N_ITER_MES_UPDATE 10
 
 ///////////////////////////////////////////
 
