@@ -41,7 +41,7 @@
 #define TF 600000 // 10 days
 
 // Number of navigation times
-#define NAVIGATION_TIMES 40
+#define NAVIGATION_TIMES 80
 
 // Indices
 #define INDEX_INIT 400 // index where shape reconstruction takes place
@@ -82,7 +82,7 @@
 #define N_ITER_SHAPE_FILTER 4
 
 // Number of iterations in the navigation filter measurement update
-#define N_ITER_MES_UPDATE 10
+#define N_ITER_MES_UPDATE 8
 
 // If true, will exit IEKF if consistency test is satisfied
 #define USE_CONSISTENCY_TEST false
@@ -149,7 +149,7 @@ int main() {
 	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
-	
+
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
@@ -163,7 +163,7 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {0,0,omega};
+	arma::vec omega_0 = {omega * 1e-2,- omega * 5e-2,omega};
 	X0_augmented.rows(9,11) = omega_0;
 
 	// Velocity determined from sma
