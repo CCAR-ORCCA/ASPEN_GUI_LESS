@@ -34,7 +34,7 @@
 
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 0e-10 // angular velocity
+#define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
 
 // Times (s)
 #define T0 0
