@@ -198,6 +198,7 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 			*this -> args.get_batch_output_covariance_ptr(),
 			done_iterating);
 		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
+		
 		if (done_iterating){
 			break;
 		}
