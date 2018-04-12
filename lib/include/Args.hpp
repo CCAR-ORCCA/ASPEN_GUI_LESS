@@ -347,6 +347,14 @@ public:
 		this -> N_iter_mes_update = N_iter_mes_update;
 	}
 
+	bool get_use_consistency_test() const{
+		return this -> use_consistency_test;
+	}
+
+	void set_use_consistency_test(bool use_consistency_test){
+		this -> use_consistency_test = use_consistency_test;
+	}
+
 
 protected:
 
@@ -370,6 +378,7 @@ protected:
 
 	bool stopping_bool = false;
 	bool use_P_hat_in_batch = false;
+	bool use_consistency_test = false;
 
 	FrameGraph * frame_graph;
 	ShapeModel * estimated_shape_model;

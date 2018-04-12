@@ -94,7 +94,7 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 
 	std::cout << "--- Consistency test: \n" << consistency_test << " \n";
 
-	if (consistency_test < 0){
+	if (consistency_test < 0 && this -> args.get_use_consistency_test()){
 		done_iterating = true;
 	}
 	

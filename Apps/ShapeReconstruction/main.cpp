@@ -84,6 +84,9 @@
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 10
 
+// If true, will exit IEKF if consistency test is satisfied
+#define USE_CONSISTENCY_TEST false
+
 ///////////////////////////////////////////
 
 int main() {
@@ -145,6 +148,7 @@ int main() {
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
+	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
@@ -221,6 +225,7 @@ int main() {
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_surface_samples(SURFACE_SAMPLES);
+
 
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
