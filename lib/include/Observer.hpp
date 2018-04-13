@@ -65,15 +65,15 @@ void operator()( arma::vec & x,  double t){
 		arma::vec sigma = x.subvec(6,8);
 		x.subvec(6,8) = - sigma / arma::dot(sigma,sigma);
 
-		// Switching matrix
-		arma::mat Theta = arma::eye<arma::mat>(12,12);
-		Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
+		if (x.n_rows > 12){
+			// Switching matrix
+			arma::mat Theta = arma::eye<arma::mat>(12,12);
+			Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
 
-		arma::mat switched_stm = Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12);
-		
-		// The stm is switched
-		x.rows(12,12 + 12 * 12 - 1) = arma::vectorise(switched_stm);
-
+			// The stm is switched
+			arma::mat switched_stm = Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12);
+			x.rows(12,12 + 12 * 12 - 1) = arma::vectorise(switched_stm);
+		}
 	}
 	
 	m_states.push_back( x );
