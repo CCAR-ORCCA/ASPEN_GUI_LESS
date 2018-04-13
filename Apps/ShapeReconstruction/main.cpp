@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64 // Goldeneye
-#define COL_RESOLUTION 64 // Goldeneye
+#define ROW_RESOLUTION 128 // Goldeneye
+#define COL_RESOLUTION 128 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -70,7 +70,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 // Number of surface samples per facet to use
 #define SURFACE_SAMPLES 30
@@ -163,7 +163,7 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {omega * 1e-2,omega * 1e-2,omega};
+	arma::vec omega_0 = {0,0,omega};
 	X0_augmented.rows(9,11) = omega_0;
 
 	// Velocity determined from sma
