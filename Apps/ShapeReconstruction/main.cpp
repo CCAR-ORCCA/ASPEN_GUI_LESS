@@ -163,7 +163,7 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {omega * 1e-2,- omega * 1e-2,omega};
+	arma::vec omega_0 = {0,0,omega};
 	X0_augmented.rows(9,11) = omega_0;
 
 	// Velocity determined from sma
