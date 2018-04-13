@@ -69,8 +69,8 @@ void operator()( arma::vec & x,  double t){
 		arma::mat Theta = arma::eye<arma::mat>(12,12);
 		Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
 
-		arma::mat switched_stm = Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12) * Theta.t();
-
+		arma::mat switched_stm = Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12);
+		
 		// The stm is switched
 		x.rows(12,12 + 12 * 12 - 1) = arma::vectorise(switched_stm);
 
