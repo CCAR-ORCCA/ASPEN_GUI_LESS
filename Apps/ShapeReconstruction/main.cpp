@@ -9,7 +9,6 @@
 #include <ShapeBuilderArguments.hpp>
 
 #include <NavigationFilter.hpp>
-#include <ShapeFitterBezier.hpp>
 
 #include <chrono>
 #include <boost/progress.hpp>

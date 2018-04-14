@@ -46,13 +46,10 @@ def plot_lidar(path,savepath = None):
 # 	plt.clf()
 
 
-# plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/RayTracing/build/incidence.txt")
-
 # plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true.txt")
-# plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true_incidence.txt")
-
 
 # plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_bezier.txt")
-# plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true.txt")
-# plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_bezier.txt","/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true.txt")
+
+plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_bezier_250000.000000.txt")
+# plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true_250000.000000.txt")
 

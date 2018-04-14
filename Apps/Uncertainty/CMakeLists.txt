@@ -123,6 +123,9 @@ if(OPENMP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+# Find VTK Package
+find_package(VTK REQUIRED PATHS ${VTK_PATH})
+include(${VTK_USE_FILE})
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
@@ -144,6 +147,7 @@ ${CGAL_LIBRARIES}
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${SBGATCORE_LIBRARY}
 ${ASPEN_LIBRARY}
+${VTK_LIBRARIES}
 )
 
 

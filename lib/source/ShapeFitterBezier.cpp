@@ -30,7 +30,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	std::cout << " - Done fitting. Recalculating footpoints\n";
 	footpoints = this -> find_footpoints_omp();
 
-
 	// The footpoints are assigned to the patches
 	// First, patches that were seen are cleared
 	// Then, the footpoints are added to the patches
@@ -52,7 +51,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 
 	// Once this is done, each patch is trained
-	std::cout << "- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
+	std::cout << "\n- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
 	boost::progress_display progress(trained_patches_vector.size());
 	#pragma omp parallel for
 	for (int i = 0; i < trained_patches_vector.size(); ++i){
@@ -62,7 +61,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 		++progress;
 	}
 	std::cout << "- Done training "<< trained_patches_vector.size() <<  " patches " << std::endl;
-
 
 
 	// The covariances are re-assigned to the control points
@@ -377,14 +375,14 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	std::cout << "Finding footpoints ...";
 
-	boost::progress_display progress(this -> pc -> get_size());
 
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
 		Footpoint footpoint;
 		footpoint.Ptilde = this -> pc -> get_point_coordinates(i);
 		pc_to_footpoint.push_back(footpoint);
 	}
-
+	boost::progress_display progress(this -> pc -> get_size());
+	
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
 		this -> find_footpoint_omp(pc_to_footpoint[i]);
@@ -409,15 +407,18 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 void ShapeFitterBezier::find_footpoint_omp(Footpoint & footpoint) const {
 	
 
+
 	double distance = std::numeric_limits<double>::infinity();
 	std::shared_ptr<ControlPoint> closest_control_point;
 
-	this -> shape_model -> get_KDTreeControlPoints() -> closest_point_search(footpoint.Ptilde,
+	this -> shape_model -> get_KDTreeControlPoints() -> closest_point_search(
+		footpoint.Ptilde,
 		this -> shape_model -> get_KDTreeControlPoints(),
 		closest_control_point,
 		distance);
 
 	auto owning_elements = closest_control_point -> get_owning_elements();
+	
 
 		// The patches that this control point belongs to are searched
 	for (auto el = owning_elements.begin(); el != owning_elements.end(); ++el){

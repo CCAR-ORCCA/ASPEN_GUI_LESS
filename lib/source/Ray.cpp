@@ -220,7 +220,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,n)));
 			double max_range = a * incidence_angle  + b;
 
-		
+
 
 			if (store){
 				if (this -> true_range > t ) {
@@ -254,10 +254,12 @@ arma::vec Ray::get_KD_impact() const{
 }
 
 
-bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
+bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use_KD_impact) {
 
 	arma::vec S = *this -> origin_target_frame;
 	arma::vec dir = *this -> direction_target_frame;
+
+
 	arma::mat u_tilde = RBK::tilde(dir);
 
 	// The ray caster iterates until a valid intersect is found
@@ -268,15 +270,22 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 	E.col(0) = patch -> get_control_point_coordinates(patch -> get_degree(),0) - patch -> get_control_point_coordinates(0,0);
 	E.col(1) = patch -> get_control_point_coordinates(0,patch -> get_degree()) - patch -> get_control_point_coordinates(0,0);
 
-	arma::vec chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch -> get_control_point_coordinates(0,0)));
+	arma::vec::fixed<2> chi;
+	if (use_KD_impact){
+		chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch -> get_control_point_coordinates(0,0)));
+	} 
+	else{
+		chi(0) = 1./3;
+		chi(1) = 1./3;
+	}
+
 
 	arma::vec dchi = arma::zeros<arma::vec>(2);
 
-	arma::mat H = arma::zeros<arma::mat>(3,2);
-	arma::vec Y = arma::zeros<arma::vec>(3);
-	arma::vec impact(3);
+	arma::mat::fixed<3,2> H = arma::zeros<arma::mat>(3,2);
+	arma::vec::fixed<3> Y = arma::zeros<arma::vec>(3);
+	arma::vec::fixed<3> impact;
 
-	
 	for (unsigned int i = 0; i < N_iter_max; ++i){
 		double u_t = chi(0);
 		double v_t = chi(1);
@@ -350,7 +359,6 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v) {
 		
 
 	}
-
 	return false;
 
 }

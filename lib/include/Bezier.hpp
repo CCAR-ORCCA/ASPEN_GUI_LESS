@@ -82,8 +82,6 @@ public:
 	*/
 	void elevate_degree();
 
-
-
 	
 	/**
 	Evaluates the bezier patch at the barycentric 
@@ -94,6 +92,12 @@ public:
 	*/
 	arma::vec evaluate(const double u, const double v) const;
 
+	/**
+	Evaluates the log-likelihood
+	@param P_X prescribed patch covariance to use in the log-likelihood
+	evaluation
+	*/
+	double evaluate_log_likelihood(const arma::mat & P_X);
 
 
 	/**
@@ -499,11 +503,7 @@ protected:
 
 	void construct_index_tables();
 
-	double initialize_covariance(const std::vector<Footpoint> & footpoints,
-		std::vector<arma::vec> & v,
-		std::vector<arma::vec> & W,
-		std::vector<arma::vec> & v_i_norm,
-		std::vector<double> & epsilon);
+	double initialize_covariance();
 
 
 	/**
@@ -593,6 +593,12 @@ protected:
 	std::vector<Footpoint> footpoints;
 
 	arma::vec biases;
+
+
+	std::vector<arma::vec> v;
+	std::vector<arma::vec> W;
+	std::vector<arma::vec> v_i_norm;
+	std::vector<double> epsilon;
 
 };
 #endif

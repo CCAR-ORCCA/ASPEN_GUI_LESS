@@ -1,8 +1,6 @@
 
-
 // Ray debug flags
 #define RAY_DEBUG 0
-
 
 // Various filter debug flags
 #define FILTER_DEBUG 1
@@ -21,7 +19,6 @@
 
 // Bezier debug flags
 #define BEZIER_DEBUG 0
-
 
 // ICP DEBUG FLAGS
 #define ICP_DEBUG 0

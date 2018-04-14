@@ -67,13 +67,11 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	std::cout << "-- EKF measurement update\n";
 	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
 	
-
 	// The Kalman gain is computed
 	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
 
 	std::cout << "--- State covariance before update\n";
 	std::cout << P_bar << std::endl;
-
 
 	std::cout << "--- Kalman gain :\n";
 	std::cout << K << std::endl;

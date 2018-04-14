@@ -1,11 +1,14 @@
-#include "Bezier.hpp"
-#include "ControlPoint.hpp"
-#include "Ray.hpp"
-#include "ShapeModelBezier.hpp"
-
-
-
+#include <Bezier.hpp>
+#include <ControlPoint.hpp>
+#include <Ray.hpp>
+#include <PC.hpp>
+#include <ShapeFitterBezier.hpp>
+#include <ShapeModelBezier.hpp>
 #include <chrono>
+
+#include "boost/progress.hpp"
+
+
 
 
 int main(){
@@ -51,11 +54,14 @@ int main(){
 	dummy.save_both("nominal");
 
 	// A 18 by 18 covariance is created
-	arma::mat P_X = 1 * arma::randu<arma::mat>(18,18);
-	P_X = (P_X + P_X.t() + 4 * arma::eye<arma::mat>(18,18));
-	P_X = 1e-2 * P_X / arma::abs(P_X).max();
-	
+	arma::mat P_X(18,18);
 
+	for (int i = 0; i < 6; ++i){
+		arma::vec rand_vec = arma::randu<arma::vec>(1);
+		double rand_n = 0.01 * rand_vec(0) + 0.001;
+		P_X.submat(3 * i, 3 * i, 3 * i + 2, 3 * i + 2) = rand_n * arma::eye<arma::mat>(3,3);
+	}
+	
 	// Removing correlations
 	// arma::mat P_X_no_correl = arma::diagmat(P_X.diag());
 	arma::mat P_X_no_correl = P_X;
@@ -67,30 +73,31 @@ int main(){
 	arma::vec E(18);
 
 	// The measurement direction is created
-	int N_rays = 100000;
+	int N_rays = 50000;
 	arma::vec ranges(N_rays);
 	arma::vec pos = {2,0,5};
 	arma::vec dir = nominal_patch.get_center() - pos;
+
 	
 	dir = arma::normalise(dir);
 	Ray original_ray(pos,dir);
 
 	// The a-priori surface is ray traced
 	double u,v;
-	original_ray.single_patch_ray_casting(&nominal_patch,u,v);
+	original_ray.single_patch_ray_casting(&nominal_patch,u,v,false);
+
 	double apriori_range = original_ray.get_true_range();
 
 	// arma::mat P = nominal_patch.covariance_surface_point(u,v,dir,P_X_no_correl);
-	arma::mat P = nominal_patch.covariance_surface_point_efficient(u,v,dir,P_X_no_correl);
-
+	arma::mat P = nominal_patch.covariance_surface_point(u,v,dir,P_X_no_correl);
 
 	auto start = std::chrono::system_clock::now();
 
-	// #pragma omp parallel for
 	arma::vec data(N_rays);
 	arma::vec simulated(N_rays);
+	arma::mat training_data(3,N_rays);
 
-
+	boost::progress_display progress(N_rays);
 
 	for (unsigned int i = 0; i < N_rays; ++ i){
 
@@ -107,15 +114,44 @@ int main(){
 		v4 -> set_coordinates(nominal_coords4 + E.rows(12,14));
 		v5 -> set_coordinates(nominal_coords5 + E.rows(15,17));
 
+
 		// The patch is ray traced
-		bool hit = ray.single_patch_ray_casting(&nominal_patch,u,v);
+		bool hit = ray.single_patch_ray_casting(&nominal_patch,u,v,false);
 		if (!hit){
 			throw(std::runtime_error("Missed the target"));
 		}
-		data(i) = ray.get_true_range() - apriori_range;
+		data(i) = (ray.get_true_range() - apriori_range)/std::sqrt(arma::dot(dir,P * dir ));
 
 		arma::vec r = arma::randn(1);
-		simulated(i) =  r(0) * std::sqrt(arma::dot(dir,P * dir )) ;
+		simulated(i) =  r(0);
+
+		// The training is validated by creating a point cloud of impacts
+
+		arma::vec V0 = {0,0,0};
+		arma::vec V1 = {1,0,0};
+		arma::vec V2 = {0,1,0};
+
+		arma::vec random = arma::randu<arma::vec>(2);
+		
+		double u = random(0);
+		double v = random(1);
+
+		arma::vec rand_coords = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2;
+		u = rand_coords(0);
+		v = rand_coords(1);
+
+		arma::vec dir_training = arma::normalise(nominal_patch.evaluate(u,v) - pos);
+		Ray ray_training(pos,dir_training);
+
+		hit = ray_training.single_patch_ray_casting(&nominal_patch,u,v,false);
+		
+		if (!hit){
+			throw(std::runtime_error("Missed the target"));
+		}
+
+		training_data.col(i) = ray_training.get_impact_point();
+
+		++progress;
 
 	}
 
@@ -127,16 +163,54 @@ int main(){
 	std::cout << " Range mean from data: " << arma::mean(data) << std::endl;
 	std::cout << " Range mean from apriori: " << apriori_range << std::endl;
 	std::cout << " Standard deviation from data: " << std::sqrt(arma::var( data, 1 )) << std::endl;
-	std::cout << " Standard deviation from covariance: " << std::sqrt(arma::dot(dir,P * dir )) << std::endl;
-	std::cout << " Percentage of sd error: " << std::abs(std::sqrt(arma::var( data, 1 )) - std::sqrt(arma::dot(dir,P * dir ))) / std::sqrt(arma::dot(dir,P * dir )) * 100  << " % " << std::endl;
+	std::cout << " Standard deviation from covariance: " << 1 << std::endl;
+	std::cout << " Percentage of sd error: " << std::abs(arma::stddev(data) - 1)  * 100  << " % " << std::endl;
 
 	simulated.save("simulated.txt",arma::raw_ascii);
 	data.save("data.txt",arma::raw_ascii);
 
-	
 	// The nominal patch is saved
 	dummy.save_both("perturbed") ;
 
+	// Creating the training PC
+	PC training_pc(dir,training_data);
+
+	// The patch is moved back to its nominal coordinates
+	v0 -> set_coordinates(nominal_coords0);
+	v1 -> set_coordinates(nominal_coords1);
+	v2 -> set_coordinates(nominal_coords2);
+	v3 -> set_coordinates(nominal_coords3);
+	v4 -> set_coordinates(nominal_coords4);
+	v5 -> set_coordinates(nominal_coords5);
+
+	dummy.construct_kd_tree_control_points();
+	ShapeFitterBezier shape_fitter(&dummy,&training_pc);
+
+	shape_fitter.fit_shape_batch(0,0);
+	Bezier * trained_patch = static_cast<Bezier *>(dummy . get_elements() -> at(0).get());
+
+	std::cout << "Trained covariance: " << std::endl;
+	std::cout <<  trained_patch -> get_P_X().diag();
+
+	std::cout << "True covariance: " << std::endl;
+	std::cout << P_X.diag();
+
+	std::cout << "Trained point standard deviations: " << std::endl;
+	std::cout << arma::sqrt(trained_patch -> get_P_X().diag());
+
+	std::cout << "True point standard deviations: " << std::endl;
+	std::cout << arma::sqrt(P_X.diag());
+
+	std::cout << "Error (\%):\n";
+	std::cout << (arma::sqrt(trained_patch -> get_P_X().diag()) - arma::sqrt(P_X.diag())) / arma::sqrt(P_X.diag()) * 100;
+
+	training_pc.save("training_pc.obj");
+
+	std::cout << "Trained log-likelihood:" << std::endl;
+	std::cout << trained_patch -> evaluate_log_likelihood(trained_patch -> get_P_X()) << std::endl;
+
+	std::cout << "True log-likelihood:" << std::endl;
+	std::cout << trained_patch -> evaluate_log_likelihood(P_X) << std::endl;
 
 
 	return 0;

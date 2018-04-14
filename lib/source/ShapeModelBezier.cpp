@@ -130,6 +130,13 @@ arma::mat ShapeModelBezier::random_sampling(unsigned int N,const arma::mat & R) 
 ShapeModelBezier::ShapeModelBezier(Bezier patch){
 
 	this -> elements.push_back(std::make_shared<Bezier>(patch));
+	this -> control_points = (*this -> elements[0] -> get_control_points());
+
+	// The ownership relationships are reset
+	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
+		this -> control_points[i] -> reset_ownership();
+		this -> control_points[i] -> add_ownership(this -> elements[0].get());
+	}
 }
 
 void ShapeModelBezier::compute_surface_area(){

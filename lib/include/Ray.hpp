@@ -131,9 +131,10 @@ public:
 	@param patch pointer to ray traced patch
 	@param u first barycentric coordinate
 	@param v second barycentric coordinate
+	@param use_KD_impact true if the ray casting must be initialized at the point from the overlaying kd tree
 	*/
 	
-	bool single_patch_ray_casting(Bezier * patch,double & u, double & v) ;
+	bool single_patch_ray_casting(Bezier * patch,double & u, double & v,bool use_KD_impact = true) ;
 
 	Element * get_guess() const;
 	Element * get_super_element() const;
