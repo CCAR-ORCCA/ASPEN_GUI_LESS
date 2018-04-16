@@ -1,5 +1,6 @@
 #include <Lidar.hpp>
 #include <ShapeModelTri.hpp>
+#include <ShapeModelBezier.hpp>
 #include <ShapeModelImporter.hpp>
 #include <ShapeBuilder.hpp>
 #include <Observations.hpp>
