@@ -193,12 +193,14 @@ std::cout << this -> population << std::endl;
 
 }
 
+template<class T> arma::vec Psopt<T>::get_result() const{
+return this -> result.t();
+}
+
 // Explicit declaration
 template class Psopt<std::pair<const std::vector<Footpoint> * ,std::vector<arma::vec> * > >;
 template class Psopt<std::pair<const std::vector<Footpoint> * ,Bezier * > >;
 
- template<class T> arma::vec Psopt<T>::get_result() const{
-return this -> result.t();
-}
+
 
 

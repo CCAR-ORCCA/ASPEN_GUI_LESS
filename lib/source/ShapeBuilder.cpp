@@ -13,17 +13,13 @@
 #include "ControlPoint.hpp"
 #include "Facet.hpp"
 #include "Element.hpp"
-
-
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterBezier.hpp"
 
-#include "CGAL_interface.hpp"
+#include <CGAL_interface.hpp>
 #include <RigidBodyKinematics.hpp>
+
 #include <boost/progress.hpp>
-
-
-
 #include <chrono>
 
 
@@ -37,7 +33,6 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 	this -> filter_arguments = filter_arguments;
-
 }
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
@@ -47,10 +42,7 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> frame_graph = frame_graph;
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
-
 }
-
-
 
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,
@@ -98,7 +90,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		// shape model and the source point cloud
 
 		this -> store_point_clouds(time_index);
-
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 

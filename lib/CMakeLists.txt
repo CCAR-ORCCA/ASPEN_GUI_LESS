@@ -16,10 +16,7 @@
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
-set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
-
-# Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
-set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
+# set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.3.0_1/bin/)
 
 ################################################################################
 #
@@ -34,12 +31,12 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	message("-- This is Fortuna")
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
-	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 
 else()
 	set(IS_FORTUNA OFF)
 	message("-- This is not Fortuna")
-
+	# set(RBK_LOC "/usr/local/Cellar/rbk/*")
 endif()
 
 # Building procedure
@@ -52,27 +49,27 @@ if (${IS_FORTUNA})
 else()
 	if(APPLE)
 		if(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-			message("Switching to OMP-friendly GCC ")
-	    	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
-			set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
+		message("Switching to OMP-friendly GCC ")
+		set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
+		set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
 
 		else()# no OMP-compliant compiler was found on this mac. 
-			message(FATAL_ERROR "No OMP-compliant compiler was found on this Mac.")
-		endif()
-	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
-				message("Switching to /usr/local/gcc ")
-		    	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-				set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
+		message("No OMP-compliant compiler was found on this Mac.")
 	endif()
+	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
+	message("Switching to /usr/local/gcc ")
+	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
+	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
+endif()
 endif()
 
 project(${LIB_NAME})
+cmake_minimum_required(VERSION 3.0.0)
 
 # Specify the version used
 if (${CMAKE_MAJOR_VERSION} LESS 3)
 	message(FATAL_ERROR " You are running an outdated version of CMake")
 endif()
-
 
 cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
@@ -82,7 +79,6 @@ add_definitions(-Wall -O2)
 
 # Enable C++17 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-
 
 # Set path to include and source folders
 if (${IS_FORTUNA})
@@ -98,7 +94,6 @@ endif()
 # Include directories
 include_directories(include)
 include_directories(external/Gnuplot/include)
-include_directories(external/CGAL_interface/include)
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
@@ -117,6 +112,9 @@ find_package(CGAL REQUIRED)
 include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
+# Find CGAL_interface
+find_package(CGAL_interface REQUIRED)
+include_directories(${CGAL_interface_INCLUDE_DIR})
 
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})
@@ -137,58 +135,60 @@ endif()
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
 	find_library(GFORTRAN_LIBRARY gfortran
-	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
+		PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
 endif()
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
-source/BatchFilter.cpp
-source/BBox.cpp
-source/Bezier.cpp
-source/ControlPoint.cpp
-source/DynamicAnalyses.cpp
-source/Dynamics.cpp
-source/Element.cpp
-source/EllipsoidFitter.cpp
-source/EventFunction.cpp
-source/ExtendedKalmanFilter.cpp
-source/Facet.cpp
-source/Filter.cpp
-source/FrameGraph.cpp
-source/ICP.cpp
-source/Interpolator.cpp
-source/KDTreePC.cpp
-source/KDTreeShape.cpp
-source/KDTreeControlPoints.cpp
-source/Lidar.cpp
-source/NavigationFilter.cpp
-source/Observations.cpp
-source/PC.cpp
-source/PointNormal.cpp
-source/Psopt.cpp
-source/Ray.cpp
-source/RefFrame.cpp
-source/SequentialFilter.cpp
-source/ShapeBuilder.cpp
-source/ShapeFitterBezier.cpp
-source/ShapeModel.cpp
-source/ShapeModelBezier.cpp
-source/ShapeModelImporter.cpp
-source/ShapeModelTri.cpp
-external/Gnuplot/source/GNUPlot.cpp
-external/CGAL_interface/source/CGAL_interface.cpp
-)
+	source/BatchFilter.cpp
+	source/BBox.cpp
+	source/Bezier.cpp
+	source/ControlPoint.cpp
+	source/DynamicAnalyses.cpp
+	source/Dynamics.cpp
+	source/Element.cpp
+	source/EventFunction.cpp
+	source/ExtendedKalmanFilter.cpp
+	source/Facet.cpp
+	source/Filter.cpp
+	source/FrameGraph.cpp
+	source/ICP.cpp
+	source/Interpolator.cpp
+	source/KDTreePC.cpp
+	source/KDTreeShape.cpp
+	source/KDTreeControlPoints.cpp
+	source/Lidar.cpp
+	source/NavigationFilter.cpp
+	source/Observations.cpp
+	source/PC.cpp
+	source/PointNormal.cpp
+	source/Psopt.cpp
+	source/Ray.cpp
+	source/RefFrame.cpp
+	source/SequentialFilter.cpp
+	source/ShapeBuilder.cpp
+	source/ShapeFitterBezier.cpp
+	source/ShapeModel.cpp
+	source/ShapeModelBezier.cpp
+	source/ShapeModelImporter.cpp
+	source/ShapeModelTri.cpp
+	external/Gnuplot/source/GNUPlot.cpp
+	)
 
 # Linking
 set(library_dependencies
-${ARMADILLO_LIBRARIES}
-${Boost_LIBRARIES}
-${RBK_LIBRARY}
-${CGAL_LIBRARIES} 
-${CGAL_3RD_PARTY_LIBRARIES}
-${VTK_LIBRARIES}
-)
+	${ARMADILLO_LIBRARIES}
+	${Boost_LIBRARIES}
+	${RBK_LIBRARY}
+	${CGAL_LIBRARIES} 
+	${CGAL_3RD_PARTY_LIBRARIES}
+	${CGAL_interface_LIBRARY}
+	${VTK_LIBRARIES}
+	)
+
+
+
 
 
 target_link_libraries(${LIB_NAME} ${library_dependencies})

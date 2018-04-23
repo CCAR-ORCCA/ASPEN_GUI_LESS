@@ -213,10 +213,9 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial(double t,const arma::vec &
 
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
 	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
-	arma::vec dxdt_small_body = Dynamics::true_attitude_dxdt(t, X_small_body, args);
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;
-	dxdt.subvec(6,11) = dxdt_small_body;
+	dxdt.subvec(6,11) = Dynamics::true_attitude_dxdt(t, X_small_body, args);
 
 	return dxdt;
 
