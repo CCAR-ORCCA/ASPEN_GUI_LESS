@@ -159,12 +159,7 @@ protected:
 	*/
 	void concatenate_point_clouds(unsigned int index);
 
-
-
-
-
 	void initialize_shape(unsigned int index);
-
 
 
 	/**
@@ -206,10 +201,11 @@ protected:
 	std::shared_ptr<PC> destination_pc = nullptr;
 	std::shared_ptr<PC> source_pc = nullptr;
 	std::shared_ptr<PC> destination_pc_shape = nullptr;
-	// std::shared_ptr<PC> destination_pc_concatenated = nullptr;
 
 	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
 
+
+	std::vector< std::shared_ptr<PC> > all_registered_pc;
 
 
 };

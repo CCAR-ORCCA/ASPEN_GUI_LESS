@@ -9,6 +9,11 @@ struct ICPException : public std::exception {
 	}
 };
 
+struct ICPNoPairsException : public std::exception {
+	const char * what () const throw () {
+		return "No valid point pairs were found";
+	}
+};
 
 struct MissingFootpointException : public std::exception {
 	const char * what () const throw () {

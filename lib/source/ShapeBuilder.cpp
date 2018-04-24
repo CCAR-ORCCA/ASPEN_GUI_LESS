@@ -8,6 +8,7 @@
 #include "ShapeBuilderArguments.hpp"
 #include "PC.hpp"
 #include "ICP.hpp"
+#include "BundleAdjuster.hpp"
 #include "Ray.hpp"
 #include "CustomException.hpp"
 #include "ControlPoint.hpp"
@@ -91,6 +92,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> store_point_clouds(time_index);
 
+		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
+			this -> all_registered_pc.push_back(this -> destination_pc);
+		}
+
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 
@@ -103,7 +108,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			X_pc = icp_pc.get_X();
 
 			this -> source_pc -> transform(M_pc,X_pc);
-			this -> source_pc -> save("../output/pc/source_registered_" + std::to_string(time_index) + ".obj");
+			this -> all_registered_pc.push_back(this -> source_pc);
+
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj");
 
 			if (time_index <= this -> filter_arguments -> get_index_init()){
 				this -> concatenate_point_clouds(time_index);
@@ -207,9 +214,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane()));
 
-			this -> source_pc -> save(
-				"../output/pc/source_pc_" + std::to_string(index) + ".txt",arma::eye<arma::mat>(3,3),arma::zeros<arma::vec>(3),false,false);
-
 		}
 	}
 }
@@ -294,6 +298,14 @@ void ShapeBuilder::get_new_states(
 
 
 void ShapeBuilder::initialize_shape(unsigned int time_index){
+
+	// The point clouds are bundle-adjusted
+	BundleAdjuster bundle_adjuster(&this -> all_registered_pc);
+
+
+	throw;	
+
+
 
 
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";

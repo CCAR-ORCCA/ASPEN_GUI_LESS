@@ -16,7 +16,7 @@
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
-# set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.3.0_1/bin/)
+set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.3.0_1/bin/)
 
 ################################################################################
 #
@@ -144,6 +144,7 @@ add_library(${LIB_NAME} SHARED
 	source/BatchFilter.cpp
 	source/BBox.cpp
 	source/Bezier.cpp
+	source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
 	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
