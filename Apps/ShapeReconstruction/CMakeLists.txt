@@ -17,7 +17,7 @@
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
 # Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
-set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.2.0/bin/)
+# set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.3.0_1/bin/)
 
 # Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
 set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
@@ -62,7 +62,7 @@ else()
 			set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
 
 		else()# no OMP-compliant compiler was found on this mac. 
-			message(FATAL_ERROR "No OMP-compliant compiler was found on this Mac.")
+			message("No OMP-compliant compiler was found on this Mac.")
 		endif()
 	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
 				message("Switching to /usr/local/gcc ")
@@ -107,17 +107,18 @@ find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
 include_directories(${RBK_INCLUDE_DIR})
 
 
-
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})
 include(${VTK_USE_FILE})
-
 
 # Find CGAL
 find_package(CGAL REQUIRED)
 include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
+# Find CGAL interface
+find_package(CGAL_interface REQUIRED)
+include_directories( ${CGAL_interface_INCLUDE_DIR} )
 
 # Find SBGAT 
 # find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
@@ -156,6 +157,7 @@ ${CGAL_LIBRARIES}
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${VTK_LIBRARIES}
 # ${SBGATCORE_LIBRARY}
+${CGAL_interface_LIBRARY}
 ${ASPEN_LIBRARY}
 )
 

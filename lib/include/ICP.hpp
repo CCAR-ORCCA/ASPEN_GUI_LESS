@@ -47,6 +47,8 @@ public:
 		const arma::mat & dcm = arma::eye<arma::mat>(3, 3),
 		const arma::vec & x= arma::zeros<arma::vec>(3));
 
+	static arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
+	
 protected:
 	std::shared_ptr<PC> pc_destination;
 	std::shared_ptr<PC> pc_source;
@@ -59,7 +61,6 @@ protected:
 		arma::vec X_0,
 		bool use_omp );
 
-	arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
 
 	double compute_rms_residuals(
 		const arma::mat & dcm,

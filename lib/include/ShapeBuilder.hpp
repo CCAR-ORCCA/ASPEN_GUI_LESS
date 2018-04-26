@@ -4,8 +4,7 @@
 #include <armadillo>
 #include <memory>
 #include <set>
-
-
+#include <string>
 
 class Lidar;
 class PC;

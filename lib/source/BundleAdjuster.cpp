@@ -2,7 +2,7 @@
 #include <armadillo>
 #include "ICP.hpp"
 #include "boost/progress.hpp"
-
+#include "DebugFlags.hpp"
 
 
 BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_){
@@ -10,37 +10,53 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	this -> all_registered_pc = all_registered_pc_;
 
 	// The connectivity between point clouds is inferred
-	this -> find_point_cloud_connectivity();
+	std::cout << "- Forming point cloud pairs" << std::endl;
+	this -> find_point_cloud_pairs();
+
+	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
+	this -> update_point_cloud_pairs();
 
 	// solve the bundle adjustment problem
 	this -> solve_bundle_adjustment();
+	std::cout << "- Solved bundle adjustment" << std::endl;
 
 	// The connectivity matrix is saved
 	this -> save_connectivity_matrix();
 }
 
-
 void BundleAdjuster::solve_bundle_adjustment(){
 
-
-	int N_iter = 5;
+	int N_iter = 3;
 	int Q = this -> all_registered_pc -> size();
-
 
 	arma::vec dX;
 
-
-
 	for (int iter = 0 ; iter < N_iter; ++iter){
 
+		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
+
 		arma::sp_mat Lambda(6 * (Q-1),6 * (Q-1));
-		arma::vec N(6 * (Q-1));
+		arma::vec N = arma::zeros<arma::vec>(6 * (Q-1));
 
 		// For each point-cloud pair
+		#if !BUNDLE_ADJUSTER_DEBUG
+		boost::progress_display progress(this -> point_cloud_pairs.size());
+		#endif 
+
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
 			arma::mat Lambda_k;
 			arma::vec N_k;
+
+
+			if (this -> point_cloud_pairs . at(k).D_k != 0 && this -> point_cloud_pairs . at(k).S_k != 0){
+				Lambda_k = arma::zeros<arma::mat>(12,12);
+				N_k = arma::zeros<arma::vec>(12);
+			}
+			else{
+				Lambda_k = arma::zeros<arma::mat>(6,6);
+				N_k = arma::zeros<arma::vec>(6);
+			}
 
 			// The Lambda_k and N_k specific to this point-cloud pair are computed
 			this -> assemble_subproblem(Lambda_k,N_k,this -> point_cloud_pairs . at(k));
@@ -48,38 +64,90 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			// They are added to the whole problem
 			this -> add_subproblem_to_problem(Lambda,N,Lambda_k,N_k,this -> point_cloud_pairs . at(k));
 
-		}
+
+			#if !BUNDLE_ADJUSTER_DEBUG
+			++progress;
+			#else
+
+			std::cout << "Subproblem info matrix: " << std::endl;
+			std::cout << Lambda_k << std::endl;
+			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
+			std::cout << "Subproblem normal matrix: " << std::endl;
+			std::cout << N_k << std::endl;
+			std::cout << "Problem normal matrix: " << std::endl;
+			std::cout << N << std::endl;
+			#endif 
+
+
+		}	
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << "Problem Information matrix: " << std::endl;
+		std::cout << arma::mat(Lambda) << std::endl;
+		arma::mat(Lambda).save("lambda.txt",arma::raw_ascii);
+		std::cout << "Problem normal matrix: " << std::endl;
+		std::cout << N << std::endl;
+		#endif
+
+		std::cout << "- Solving for the deviation" << std::endl;
 
 		// The deviation in all of the rigid transforms is computed
-		dX = arma::spsolve(Lambda,N);
+
+		arma::superlu_opts settings;
+		settings.equilibrate = true;
+		settings.symmetric = true;
+
+
+		// dX = arma::spsolve(Lambda,N,"superlu",settings);
+		dX = arma::spsolve(Lambda,N,"superlu",settings);
+
 
 		// It is applied to all of the point clouds (minus the first one)
+		std::cout << "- Applying the deviation" << std::endl;
+
 		this -> apply_deviation(dX);
+		std::cout << "\n- Updating the point pairs" << std::endl;
 
 		// The point cloud pairs are updated: their residuals are update
 		this -> update_point_cloud_pairs();
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << "Deviation: " << std::endl;
+		std::cout << dX << std::endl;
+		std::cout << "Information matrix: " << std::endl;
+		std::cout << arma::mat(Lambda) << std::endl;
+		arma::mat(Lambda).save("lambda.txt",arma::raw_ascii);
+		#endif
 
 	}
 
 
 }
 
-void BundleAdjuster::find_point_cloud_connectivity(){
+void BundleAdjuster::find_point_cloud_pairs(){
 
 	int M = this -> all_registered_pc -> size();
+	
 
-	boost::progress_display progress(M - 1);
 
 	std::vector< BundleAdjuster::PointCloudPair > point_cloud_pairs_temps;
 	for (int i = 0; i < M ; ++i){
-		for (int j = 0; j < i; ++j){
+		for (int j = i + 1; j < M; ++j){
 			point_cloud_pairs_temps.push_back(BundleAdjuster::PointCloudPair());
 		}
 	}
 
+	#if BUNDLE_ADJUSTER_DEBUG
+
+	std::cout << "Number of registered point clouds: " << M << std::endl;
+	std::cout << "Maximum number of point cloud pairs: " << point_cloud_pairs_temps.size() << std::endl;
+	
+	#endif
+
+	boost::progress_display progress(M - 1);
 
 	// The point clouds connectivity is reconstructed
-	#pragma omp parallel for
+	#pragma omp parallel for 
 	for (int i = 0; i < M ; ++i){
 		for (int j = 0; j < i; ++j){
 
@@ -104,8 +172,12 @@ void BundleAdjuster::find_point_cloud_connectivity(){
 				pair.error = error;
 				pair.N_pairs = N_pairs;
 				pair.N_accepted_pairs = point_pairs.size();
+				if (N_pairs < point_pairs.size()){
+					throw(std::runtime_error("There can't be more accepted pairs than possible number of pairs"));
+				}
 
 				point_cloud_pairs_temps[j + i * (i - 1) / 2] = pair;
+
 
 
 			}
@@ -119,13 +191,46 @@ void BundleAdjuster::find_point_cloud_connectivity(){
 		++progress;
 	}
 
+	std::vector< PointCloudPair > all_point_cloud_pairs;
+
 	// The potential point-cloud pairs are formed
 	for (unsigned int i = 0; i < point_cloud_pairs_temps.size(); ++i){
 		if (point_cloud_pairs_temps[i].S_k >= 0){
-			this -> point_cloud_pairs.push_back(point_cloud_pairs_temps[i]);
+			all_point_cloud_pairs.push_back(point_cloud_pairs_temps[i]);
 		}
 	}
 
+	// Only the good point cloud pairs are retained
+	std::cout << "- Pruning point cloud pairs\n";
+	this -> find_good_pairs(all_point_cloud_pairs);
+
+}
+
+
+void BundleAdjuster::find_good_pairs(const std::vector< PointCloudPair > & all_point_cloud_pairs){
+
+	boost::progress_display progress(all_point_cloud_pairs.size());
+
+	for (unsigned int i = 0; i < all_point_cloud_pairs.size(); ++i){
+		
+		PointCloudPair point_cloud_pair = all_point_cloud_pairs.at(i);
+
+		double quality = double(point_cloud_pair.N_accepted_pairs) / point_cloud_pair.N_pairs ;
+
+		// If the two pairs are sequential, they are added
+		if (std::abs(point_cloud_pair.S_k - point_cloud_pair.D_k) == 1){
+			this -> point_cloud_pairs.push_back(point_cloud_pair);
+		}
+		else if (quality > 0.9){
+			this -> point_cloud_pairs.push_back(point_cloud_pair);
+
+		}
+
+		++progress;
+
+	}
+
+	std::cout << "\nNumber of point cloud pairs: " << this -> point_cloud_pairs.size() << std::endl;
 }
 
 
@@ -136,22 +241,60 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	std::vector<PointPair> point_pairs;
 
 	// The point pairs must be computed using the current estimate of the point clouds' rigid transform
-	ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(point_cloud_pair.S_k),this -> all_registered_pc -> at(point_cloud_pair.D_k),0);		
+	ICP::compute_pairs(
+		point_pairs,
+		this -> all_registered_pc -> at(point_cloud_pair.S_k),
+		this -> all_registered_pc -> at(point_cloud_pair.D_k),
+		0);		
 
-	arma::rowvec H_ki = arma::zeros<arma::rowvec>(12);
+
+	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << " Subproblem : " << point_cloud_pair.S_k << " / " << point_cloud_pair.D_k << std::endl;
+	std::cout << " Number of pairs: " << point_pairs.size() << std::endl;
+	std::cout << " Residuals: " << ICP::compute_rms_residuals(point_pairs) << std::endl;
+	#endif
+
+	arma::rowvec H_ki;
+
+
+	if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
+		H_ki = arma::zeros<arma::rowvec>(12);
+	}
+	else{
+		H_ki = arma::zeros<arma::rowvec>(6);
+	}
 
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
 		double y_ki = ICP::compute_normal_distance(point_pairs[i]);
+		arma::mat n = point_pairs[i].second -> get_normal();
 
-		H_ki.subvec(0,2) = point_pairs[i].second -> get_normal().t();
-		H_ki.subvec(3,5) = - 4 * H_ki.subvec(0,2) * RBK::tilde(point_pairs[i].first -> get_point());
-		H_ki.subvec(6,8) = - H_ki.subvec(0,2);
-		H_ki.subvec(9,11) = 4 * ( H_ki.subvec(0,2) * RBK::tilde(point_pairs[i].second -> get_point()));
+		if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
 
+			H_ki.subvec(0,2) = n.t();
+			H_ki.subvec(3,5) = ICP::dGdSigma_multiplicative(arma::zeros<arma::vec>(3),point_pairs[i].first -> get_point(),n);
+			H_ki.subvec(6,8) = - n.t();
+			H_ki.subvec(9,11) = 4 * ( - n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
+				+ (point_pairs[i].first -> get_point() - point_pairs[i].second -> get_point()).t() * RBK::tilde(n));
 
+		}
 
+		else if(point_cloud_pair.S_k != 0) {
+			H_ki.subvec(0,2) = n.t();
+			H_ki.subvec(3,5) = ICP::dGdSigma_multiplicative(arma::zeros<arma::vec>(3),point_pairs[i].first -> get_point(),n);
+
+		}
+
+		else{
+			H_ki.subvec(0,2) = - n.t();
+			H_ki.subvec(3,5) = 4 * ( - n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
+				+ (point_pairs[i].first -> get_point() - point_pairs[i].second -> get_point()).t() * RBK::tilde(n));
+
+		}
+
+		// epsilon = y - Hx !!!
+		H_ki = - H_ki;
 
 		Lambda_k += H_ki.t() * H_ki;
 		N_k += H_ki.t() * y_ki;
@@ -162,63 +305,141 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 void BundleAdjuster::update_point_cloud_pairs(){
 
+	double max_error = -1;
+	double mean_error = 0 ;
+
+	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+		
+		std::vector<PointPair> point_pairs;
+
+		ICP::compute_pairs(point_pairs,
+			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k),
+			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k),
+			0);
+
+		double error = ICP::compute_rms_residuals(point_pairs);
+
+		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_size());
+		int N_pairs = (int)(std::pow(2, p - 0));
+
+
+		this -> point_cloud_pairs[k].error = error;
+		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
+		this -> point_cloud_pairs[k].N_pairs = N_pairs;
+
+
+
+
+
+		if (error > max_error){
+			max_error = error;
+		}
+		mean_error += error / this -> point_cloud_pairs.size();
+
+	}
+
+	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP RMS error: " << max_error << std::endl;
 
 }
 
 
 
-
-
-
-void BundleAdjuster::add_subproblem_to_problem(arma::sp_mat & Lambda,arma::vec & N,const arma::mat & Lambda_k,const arma::mat & N_k,
+void BundleAdjuster::add_subproblem_to_problem(arma::sp_mat & Lambda,arma::vec & N,const arma::mat & Lambda_k,const arma::vec & N_k,
 	const PointCloudPair & point_cloud_pair){
+
+	int S_k = point_cloud_pair.S_k;
+	int D_k = point_cloud_pair.D_k;
+	
+	if (D_k != 0 && S_k != 0){
+
+		// S_k substate
+		N.subvec(6 * (S_k - 1), 6 * (S_k - 1) + 5) += N_k.subvec(0,5);
+		Lambda.submat(6 * (S_k - 1),6 * (S_k - 1),
+			6 * (S_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k.submat(0,0,5,5);
+
+		// D_k substate
+		N.subvec(6 * (D_k - 1), 6 * (D_k - 1) + 5) += N_k.subvec(6,11);
+
+		Lambda.submat(6 * (D_k - 1),6 * (D_k - 1),
+			6 * (D_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k.submat(6,6,11,11);
+
+		// Cross-correlations
+		Lambda.submat(6 * (D_k - 1),6 * (S_k - 1),
+			6 * (D_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k.submat(0,6,5,11);
+
+		Lambda.submat(6 * (S_k - 1),6 * (D_k - 1),
+			6 * (S_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k.submat(0,6,5,11);
+
+	}
+
+	else if (S_k != 0){
+
+		// S_k substate
+		N.subvec(6 * (S_k - 1), 6 * (S_k - 1) + 5) += N_k;
+		Lambda.submat(6 * (S_k - 1),6 * (S_k - 1),
+			6 * (S_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k;
+
+	}
+	else {
+		// D_k substate
+		N.subvec(6 * (D_k - 1), 6 * (D_k - 1) + 5) += N_k;
+		Lambda.submat(6 * (D_k - 1),6 * (D_k - 1),
+			6 * (D_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k;
+	}
+
 
 }
 
 void BundleAdjuster::apply_deviation(const arma::vec & dX){
 
+	boost::progress_display progress(this -> all_registered_pc -> size());
 
+	#pragma omp parallel for
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 
-
-		this -> all_registered_pc -> at(i) -> transform(RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
+		this -> all_registered_pc -> at(i) -> transform(
+			RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
 			dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
+		++progress;
 
 	}
 
 }
-
 
 
 void BundleAdjuster::save_connectivity_matrix() const{
 	int M = this -> point_cloud_pairs. size();
 	int Q = this -> all_registered_pc -> size();
 
+
 	arma::mat connectivity_matrix_res(Q,Q);
 	arma::mat connectivity_matrix_overlap(Q,Q);
 	arma::mat connectivity_matrix_N_pairs(Q,Q);
 
 
-	connectivity_matrix_res.fill(arma::datum::nan);
-	connectivity_matrix_overlap.fill(arma::datum::nan);
-
+	connectivity_matrix_res.fill(-1);
+	connectivity_matrix_overlap.fill(-1);
 
 	for (int k = 0; k < M; ++k){
 		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
+
 		connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
 		connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
 
-		connectivity_matrix_overlap(point_cloud_pair.S_k,point_cloud_pair.D_k) = double(point_cloud_pair.N_accepted_pairs) / point_cloud_pair.N_pairs;
-		connectivity_matrix_overlap(point_cloud_pair.D_k,point_cloud_pair.S_k) = double(point_cloud_pair.N_accepted_pairs) / point_cloud_pair.N_pairs;
+		connectivity_matrix_overlap(point_cloud_pair.S_k,point_cloud_pair.D_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
+		connectivity_matrix_overlap(point_cloud_pair.D_k,point_cloud_pair.S_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
 
 		connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
 		connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
 
+		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba_"  ".obj");
+
 	}
 
-	connectivity_matrix_res.save("../output/connectivity_res.csv",arma::csv_ascii);
-	connectivity_matrix_overlap.save("../output/connectivity_overlap.csv",arma::csv_ascii);
-	connectivity_matrix_N_pairs.save("../output/connectivity_N_pairs.csv",arma::csv_ascii);
+	connectivity_matrix_res.save("../output/connectivity_res.txt",arma::raw_ascii);
+	connectivity_matrix_overlap.save("../output/connectivity_overlap.txt",arma::raw_ascii);
+	connectivity_matrix_N_pairs.save("../output/connectivity_N_pairs.txt",arma::raw_ascii);
 
 
 }

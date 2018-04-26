@@ -35,6 +35,11 @@ public:
 
 	PC(std::vector<std::shared_ptr<PointNormal> > point_normals);
 
+
+	PC(std::vector< std::shared_ptr<PC> > & pcs,double downsampling_factor = 1);
+
+
+
 	PC(std::string filename);
 	/*
 	Constructor
@@ -163,7 +168,7 @@ public:
 	std::vector< std::shared_ptr<PointNormal> > get_points() const;
 
 
-	
+
 	/**
 	Saves pc to file after applying a rigid transform
 	@param path save path
@@ -189,7 +194,6 @@ public:
 
 
 
-
 protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
@@ -197,7 +201,7 @@ protected:
 
 	std::shared_ptr<KDTreePC> kdt_points;
 
-
+	arma::vec los;
 
 };
 

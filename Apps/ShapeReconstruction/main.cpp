@@ -38,14 +38,12 @@
 
 // Times (s)
 #define T0 0
-#define TF 600000 // 10 days
+
+// Number of obervation times
+#define OBSERVATION_TIMES 400
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
-
-// Indices
-#define INDEX_INIT 400 // index where shape reconstruction takes place
-#define INDEX_END 400 // end of shape fitting (must be less or equal than the number of simulation time. this is checked)
 
 // Downsampling factor (between 0 and 1)
 #define DOWNSAMPLING_FACTOR 0.3
@@ -70,7 +68,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 // Number of surface samples per facet to use
 #define SURFACE_SAMPLES 30
@@ -136,7 +134,6 @@ int main() {
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
-
 	// Integrator extra arguments
 	Args args;
 	args.set_frame_graph(&frame_graph);
@@ -174,8 +171,8 @@ int main() {
 
 	X0_augmented.rows(3,5) = vel_0_inertial;
 
-	arma::vec times = arma::regspace<arma::vec>(T0,  1./INSTRUMENT_FREQUENCY_SHAPE,  TF); 
-	arma::vec times_dense = arma::regspace<arma::vec>(T0,  10,  TF); 
+	arma::vec times = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES); 
+	arma::vec times_dense = arma::linspace<arma::vec>(T0,  times(times.n_rows - 1),  OBSERVATION_TIMES * 10); 
 
 	std::vector<double> T_obs,T_obs_dense;
 
@@ -217,8 +214,6 @@ int main() {
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_index_init(std::min(INDEX_INIT,int(times.size())));
-	shape_filter_args.set_index_end(std::min(INDEX_END,int(times.size())));
 	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
 	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
@@ -292,8 +287,8 @@ int main() {
 
 	arma::mat P0 = arma::diagmat(P0_diag);
 	
-	arma::vec X0_true_augmented = X_augmented[INDEX_END];
-	arma::vec X0_estimated_augmented = X_augmented[INDEX_END];
+	arma::vec X0_true_augmented = X_augmented.back();
+	arma::vec X0_estimated_augmented = X_augmented.back();
 
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
 
@@ -312,7 +307,7 @@ int main() {
 	// Times
 	std::vector<double> nav_times_vec;
 	for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
-		nav_times(i) = T0 + T_obs[INDEX_END] + double(i)/INSTRUMENT_FREQUENCY_NAV;
+		nav_times(i) = T_obs[T_obs.size() - 1] + double(i)/INSTRUMENT_FREQUENCY_NAV;
 		nav_times_vec.push_back( nav_times(i));
 	}
 

@@ -64,13 +64,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
-	for (unsigned int time_index = 0; time_index <= this -> filter_arguments -> get_index_end(); ++time_index) {
+	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
 
 		std::stringstream ss;
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
 		std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " / " <<  this -> filter_arguments -> get_index_end()  << ", Time : " << times(time_index) << " / " <<  times( this -> filter_arguments -> get_index_end()) << " ########################" << std::endl;
+		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
 
@@ -94,6 +94,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
+			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj");
+
 		}
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
@@ -112,11 +114,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj");
 
-			if (time_index <= this -> filter_arguments -> get_index_init()){
-				this -> concatenate_point_clouds(time_index);
-			}
+			this -> concatenate_point_clouds(time_index);
+			
 
-			if (time_index == this -> filter_arguments -> get_index_init()|| !this -> filter_arguments -> get_use_icp()){
+			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
 				this -> initialize_shape(time_index);
 
@@ -124,16 +125,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					return;
 				}
 
-			}
+				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
 
-			
-			if (this -> estimated_shape_model != nullptr ){
-
-				if (time_index != this -> filter_arguments -> get_index_init()){
-					ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
-
-					shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
-				}
+				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
+				
 
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
@@ -303,11 +298,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	BundleAdjuster bundle_adjuster(&this -> all_registered_pc);
 
 
-	throw;	
-
-
-
-
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
@@ -318,8 +308,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	if (this -> filter_arguments -> get_use_icp()){
 		
-		destination_pc_concatenated = std::make_shared<PC>(PC(this -> concatenated_pc_vector));
+		// destination_pc_concatenated = std::make_shared<PC>(PC(this -> concatenated_pc_vector));
 
+		destination_pc_concatenated = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
 
 		destination_pc_concatenated -> save(
 			pc_path, 

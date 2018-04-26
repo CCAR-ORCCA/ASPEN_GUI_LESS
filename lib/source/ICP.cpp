@@ -1,7 +1,8 @@
 #include "ICP.hpp"
 
 
-ICP::ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
+ICP::ICP(std::shared_ptr<PC> pc_destination, 
+	std::shared_ptr<PC> pc_source,
 	arma::mat dcm_0,
 	arma::vec X_0,
 	bool use_omp) {
@@ -170,7 +171,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				n_i = this -> point_pairs[pair_index].second -> get_normal();
 
 				// The partial derivative of the observation model is computed
-				H = this -> dGdSigma_multiplicative(mrp, P_i, n_i);
+				H = ICP::dGdSigma_multiplicative(mrp, P_i, n_i);
 
 				Info_mat_temp(arma::span(0,2),arma::span(0,2)) = H.t() * H;
 				Info_mat_temp(arma::span(0,2),arma::span(3,5)) = H.t() * n_i.t();
@@ -214,9 +215,15 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				x);
 
 			#if ICP_DEBUG
+			std::cout << "\nInfo mat: " << std::endl;
+			std::cout << Info_mat << std::endl;
+			std::cout << "\nNormal mat: " << std::endl;
+			std::cout << Normal_mat << std::endl;
+			std::cout << "\nDeviation : " << std::endl;
+			std::cout << dX << std::endl;
 			std::cout << "\nResiduals: " << J << std::endl;
-			std::cout << "MRP: " << mrp.t() << std::endl;
-			std::cout << "x: " << x.t() << std::endl;
+			std::cout << "MRP: \n" << mrp << std::endl;
+			std::cout << "x: \n" << x << std::endl;
 			std::cout << "Covariance :\n" << std::endl;
 			std::cout << arma::inv(Info_mat) << std::endl;
 			#endif

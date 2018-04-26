@@ -16,10 +16,10 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane) {
 		}
 	}
 
-	arma::vec los = {1,0,0};
+	this -> los = {1,0,0};
 	
 	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(los);
+	this -> construct_normals(this -> los);
 
 }
 
@@ -57,7 +57,27 @@ PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 }
 
 
+PC::PC(std::vector< std::shared_ptr<PC> > & pcs,double downsampling_factor){
 
+	std::vector< std::shared_ptr<PointNormal> > points_normals;
+	for (unsigned int i = 0; i < pcs.size();++i){
+
+		std::vector< std::shared_ptr<PointNormal> > points_from_pc = pcs[i] -> get_points();
+
+		int N_points = int(downsampling_factor * pcs[i] -> get_size());
+
+		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> get_size() - 1);		
+		random_order = arma::shuffle(random_order);		
+
+		for (unsigned int p = 0; p < N_points; ++p){
+			points_normals.push_back(points_from_pc[random_order(p)]);
+		}
+
+	}
+	
+	this -> construct_kd_tree(points_normals);
+
+}
 
 
 PC::PC(std::string filename) {
@@ -140,11 +160,10 @@ void PC::transform(const arma::mat & dcm, const arma::vec & x){
 		points_normals.push_back(pn);
 	}
 
-	// Actually this should work
-	arma::vec los = {1,0,0};
+	this -> los = dcm * this -> los;
 
 	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(dcm * los);
+	this -> construct_normals(this -> los);
 
 
 }
@@ -503,6 +522,9 @@ void PC::construct_normals(arma::vec los_dir) {
 	}
 
 }
+
+
+
 
 arma::vec PC::get_center() const{
 
