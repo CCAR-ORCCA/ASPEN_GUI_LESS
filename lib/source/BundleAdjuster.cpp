@@ -209,24 +209,24 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 void BundleAdjuster::find_good_pairs(const std::vector< PointCloudPair > & all_point_cloud_pairs){
 
-	boost::progress_display progress(all_point_cloud_pairs.size());
-
 	for (unsigned int i = 0; i < all_point_cloud_pairs.size(); ++i){
 		
 		PointCloudPair point_cloud_pair = all_point_cloud_pairs.at(i);
 
 		double quality = double(point_cloud_pair.N_accepted_pairs) / point_cloud_pair.N_pairs ;
 
+
+		int time_difference =  std::abs(point_cloud_pair.S_k - point_cloud_pair.D_k);
+
 		// If the two pairs are sequential, they are added
-		if (std::abs(point_cloud_pair.S_k - point_cloud_pair.D_k) == 1){
+		if (time_difference == 1){
 			this -> point_cloud_pairs.push_back(point_cloud_pair);
 		}
-		else if (quality > 0.9){
-			this -> point_cloud_pairs.push_back(point_cloud_pair);
 
+		else if (quality > 0.9 && this -> point_cloud_pairs.size() <= 1000) {
+			this -> point_cloud_pairs.push_back(point_cloud_pair);
 		}
 
-		++progress;
 
 	}
 

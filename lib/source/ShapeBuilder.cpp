@@ -24,7 +24,6 @@
 #include <chrono>
 
 
-
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
 	ShapeModelTri * true_shape_model,
