@@ -31,6 +31,8 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	message("-- This is Fortuna")
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
+	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
+
 	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 
 else()
@@ -113,7 +115,7 @@ include( ${CGAL_USE_FILE} )
 include( CGAL_CreateSingleSourceCGALProgram )
 
 # Find CGAL_interface
-find_package(CGAL_interface REQUIRED)
+find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
 include_directories(${CGAL_interface_INCLUDE_DIR})
 
 # Find VTK Package
