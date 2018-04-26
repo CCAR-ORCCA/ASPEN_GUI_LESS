@@ -29,7 +29,7 @@
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 5e-2
+#define LOS_NOISE_SD_BASELINE 5e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
