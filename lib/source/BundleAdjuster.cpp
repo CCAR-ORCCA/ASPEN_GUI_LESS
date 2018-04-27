@@ -200,6 +200,7 @@ void BundleAdjuster::find_point_cloud_pairs(){
 				pair.N_accepted_pairs = point_pairs.size();
 
 				if (double(point_pairs.size()) / double(N_pairs) > min_overlap){
+					std::cout << "Using pair " << i << " / " << j << " for loop closure" << std::endl;
 					this -> point_cloud_pairs.push_back(pair);
 					closed_loop = true;
 					break;

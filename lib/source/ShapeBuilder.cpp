@@ -337,6 +337,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	else{
 
 		arma::mat points,normals;
+		throw;
 
 		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_surface_samples(),points,normals);
 
