@@ -46,7 +46,7 @@
 #define NAVIGATION_TIMES 80
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.5
+#define DOWNSAMPLING_FACTOR 0.3
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5

@@ -141,6 +141,8 @@ void BundleAdjuster::find_point_cloud_pairs(){
 	std::vector<PointPair> point_pairs;
 
 	double min_overlap = std::numeric_limits<double>::infinity();
+	double max_error = - std::numeric_limits<double>::infinity();
+
 
 	for (int i = 1; i < M ; ++i){
 
@@ -163,6 +165,9 @@ void BundleAdjuster::find_point_cloud_pairs(){
 		this -> point_cloud_pairs.push_back(pair);
 		if (min_overlap > double(point_pairs.size()) / double(N_pairs)){
 			min_overlap = double(point_pairs.size()) / double(N_pairs);
+		}
+		if (max_error > error){
+			max_error = error;
 		}
 
 	}
@@ -188,7 +193,7 @@ void BundleAdjuster::find_point_cloud_pairs(){
 				pair.N_pairs = N_pairs;
 				pair.N_accepted_pairs = point_pairs.size();
 
-				if (double(point_pairs.size()) / double(N_pairs) > min_overlap){
+				if (double(point_pairs.size()) / double(N_pairs) > min_overlap && error < 4 * max_error){
 					this -> point_cloud_pairs.push_back(pair);
 					break;
 				}

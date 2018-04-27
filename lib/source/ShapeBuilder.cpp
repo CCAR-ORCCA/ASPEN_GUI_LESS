@@ -293,6 +293,12 @@ void ShapeBuilder::get_new_states(
 
 void ShapeBuilder::initialize_shape(unsigned int time_index){
 
+
+
+	std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
+
+	pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj");
+
 	// The point clouds are bundle-adjusted
 	BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
 
