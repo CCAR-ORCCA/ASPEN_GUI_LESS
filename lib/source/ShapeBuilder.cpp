@@ -118,17 +118,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
-				this -> initialize_shape(time_index);
-
-				if (!this -> filter_arguments -> get_use_icp()){
-					return;
-				}
-
-				ShapeFitterBezier shape_fitter(this -> estimated_shape_model.get(),this -> source_pc.get());
-
-				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
 				
-
+				this -> initialize_shape(time_index);
+				
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 
 
@@ -390,8 +382,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
 
 	a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
-
-
 
 	// The estimated shape model is finally initialized
 	this -> estimated_shape_model = a_priori_bezier;
