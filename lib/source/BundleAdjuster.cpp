@@ -145,8 +145,6 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 
 	for (int i = 1; i < M ; ++i){
-
-
 		int h = 5;
 
 		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(i-1),h);				
@@ -163,16 +161,24 @@ void BundleAdjuster::find_point_cloud_pairs(){
 		pair.N_accepted_pairs = point_pairs.size();
 
 		this -> point_cloud_pairs.push_back(pair);
+
 		if (min_overlap > double(point_pairs.size()) / double(N_pairs)){
 			min_overlap = double(point_pairs.size()) / double(N_pairs);
 		}
+
 		if (max_error > error){
 			max_error = error;
 		}
 
 	}
 
+	bool closed_loop = false;
+
 	for (int i = 0; i <= (int)(double(M) / 2) ; ++i){
+
+		if(closed_loop){
+			break;
+		}
 
 		for (int j = M - 1; j > i; --j){
 
@@ -193,8 +199,9 @@ void BundleAdjuster::find_point_cloud_pairs(){
 				pair.N_pairs = N_pairs;
 				pair.N_accepted_pairs = point_pairs.size();
 
-				if (double(point_pairs.size()) / double(N_pairs) > min_overlap && error < 6 * max_error){
+				if (double(point_pairs.size()) / double(N_pairs) > min_overlap){
 					this -> point_cloud_pairs.push_back(pair);
+					closed_loop = true;
 					break;
 				}
 
