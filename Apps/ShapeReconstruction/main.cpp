@@ -247,6 +247,9 @@ int main() {
 
 	std::cout << "\ncenter of mass after shifting: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
 
+	estimated_shape_model -> save_both("../output/shape_model/fit_shape_after_shift");
+
+
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
 	std::cout << "\ncenter of mass after rotating: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
