@@ -267,7 +267,7 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 		return node;
 	}
 
-	unsigned int longest_axis = bounding_box_lengths.index_max();
+	int longest_axis = bounding_box_lengths.index_max();
 
 	if (longest_axis < 0 || longest_axis > 2){
 		throw(std::runtime_error("overflow in longest_axis"));

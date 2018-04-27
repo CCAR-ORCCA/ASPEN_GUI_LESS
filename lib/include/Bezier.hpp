@@ -542,7 +542,7 @@ protected:
 	@param n set size
 	@return number of combinations
 	*/
-	static unsigned int combinations(unsigned int k, unsigned int n);
+	static int combinations(int k, int n);
 
 	/**
 	Generates the forward table associating a local index l to the corrsponding triplet (i,j,k) 

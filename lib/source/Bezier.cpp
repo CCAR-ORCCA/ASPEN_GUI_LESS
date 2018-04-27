@@ -1032,8 +1032,6 @@ void Bezier::compute_range_biases(){
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
-		double u = this -> footpoints[i].u;
-		double v = this -> footpoints[i].v;
 		arma::vec normal = this -> footpoints[i].n;
 		arma::vec Ptilde = this -> footpoints[i].Ptilde;
 		arma::vec Pbar = this -> footpoints[i].Pbar;
@@ -1414,7 +1412,7 @@ double Bezier::g(double u, double v) const{
 
 }
 
-unsigned int Bezier::combinations(unsigned int k, unsigned int n){
+int Bezier::combinations(int k, int n){
 
 	if (k < 0 || k > n || n < 0){
 		return 0;

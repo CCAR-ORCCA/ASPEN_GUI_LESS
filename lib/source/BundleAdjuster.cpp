@@ -35,8 +35,14 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
 
-		arma::sp_mat Lambda(6 * (Q-1),6 * (Q-1));
-		arma::vec N = arma::zeros<arma::vec>(6 * (Q-1));
+		std::vector<T> coefficients;          
+		EigVec Nmat(6 * (Q - 1)); 
+		Nmat.setZero();
+		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
+
+
+
+
 
 		// For each point-cloud pair
 		#if !BUNDLE_ADJUSTER_DEBUG
@@ -62,7 +68,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			this -> assemble_subproblem(Lambda_k,N_k,this -> point_cloud_pairs . at(k));
 
 			// They are added to the whole problem
-			this -> add_subproblem_to_problem(Lambda,N,Lambda_k,N_k,this -> point_cloud_pairs . at(k));
+			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k,N_k,this -> point_cloud_pairs . at(k));
 
 
 			#if !BUNDLE_ADJUSTER_DEBUG
@@ -74,32 +80,31 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
 			std::cout << "Subproblem normal matrix: " << std::endl;
 			std::cout << N_k << std::endl;
-			std::cout << "Problem normal matrix: " << std::endl;
-			std::cout << N << std::endl;
 			#endif 
 
 
 		}	
 
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "Problem Information matrix: " << std::endl;
-		std::cout << arma::mat(Lambda) << std::endl;
-		arma::mat(Lambda).save("lambda.txt",arma::raw_ascii);
-		std::cout << "Problem normal matrix: " << std::endl;
-		std::cout << N << std::endl;
-		#endif
-
+		
 		std::cout << "- Solving for the deviation" << std::endl;
 
 		// The deviation in all of the rigid transforms is computed
-
-		arma::superlu_opts settings;
-		settings.equilibrate = true;
-		settings.symmetric = true;
-
+		Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
 
 		// dX = arma::spsolve(Lambda,N,"superlu",settings);
-		dX = arma::spsolve(Lambda,N,"superlu",settings);
+
+		// Transitionning to Eigen
+		// The cholesky decomposition of Lambda is computed
+		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
+
+		// The deviation is computed
+		EigVec deviation = chol.solve(Nmat);    
+
+
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < 6 * (Q-1); ++i){
+			dX(i) = deviation(i);
+		}
 
 
 		// It is applied to all of the point clouds (minus the first one)
@@ -114,9 +119,6 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		#if BUNDLE_ADJUSTER_DEBUG
 		std::cout << "Deviation: " << std::endl;
 		std::cout << dX << std::endl;
-		std::cout << "Information matrix: " << std::endl;
-		std::cout << arma::mat(Lambda) << std::endl;
-		arma::mat(Lambda).save("lambda.txt",arma::raw_ascii);
 		#endif
 
 	}
@@ -345,7 +347,10 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 
 
-void BundleAdjuster::add_subproblem_to_problem(arma::sp_mat & Lambda,arma::vec & N,const arma::mat & Lambda_k,const arma::vec & N_k,
+void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
+	EigVec & N,
+	const arma::mat & Lambda_k,
+	const arma::vec & N_k,
 	const PointCloudPair & point_cloud_pair){
 
 	int S_k = point_cloud_pair.S_k;
@@ -354,38 +359,54 @@ void BundleAdjuster::add_subproblem_to_problem(arma::sp_mat & Lambda,arma::vec &
 	if (D_k != 0 && S_k != 0){
 
 		// S_k substate
-		N.subvec(6 * (S_k - 1), 6 * (S_k - 1) + 5) += N_k.subvec(0,5);
-		Lambda.submat(6 * (S_k - 1),6 * (S_k - 1),
-			6 * (S_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k.submat(0,0,5,5);
-
+		for(unsigned int i = 0; i < 6; ++i){
+			for(unsigned int j = 0; j < 6; ++j){
+				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (S_k - 1) + j,Lambda_k(i,j)));
+			}
+			N(6 * (S_k - 1) + i) = N_k(i);
+		}
+		
 		// D_k substate
-		N.subvec(6 * (D_k - 1), 6 * (D_k - 1) + 5) += N_k.subvec(6,11);
+		for(unsigned int i = 0; i < 6; ++i){
+			for(unsigned int j = 0; j < 6; ++j){
+				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i + 6,j + 6)));
+			}
+			N(6 * (D_k - 1) + i) = N_k(i + 6);
+		}
 
-		Lambda.submat(6 * (D_k - 1),6 * (D_k - 1),
-			6 * (D_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k.submat(6,6,11,11);
+
 
 		// Cross-correlations
-		Lambda.submat(6 * (D_k - 1),6 * (S_k - 1),
-			6 * (D_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k.submat(0,6,5,11);
+		for(unsigned int i = 0; i < 6; ++i){
+			for(unsigned int j = 0; j < 6; ++j){
+				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i,j + 6)));
+				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (S_k - 1) + j,Lambda_k(i + 6,j)));
 
-		Lambda.submat(6 * (S_k - 1),6 * (D_k - 1),
-			6 * (S_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k.submat(0,6,5,11);
+			}
+		}
 
 	}
 
 	else if (S_k != 0){
 
 		// S_k substate
-		N.subvec(6 * (S_k - 1), 6 * (S_k - 1) + 5) += N_k;
-		Lambda.submat(6 * (S_k - 1),6 * (S_k - 1),
-			6 * (S_k - 1) + 5,6 * (S_k - 1) + 5) += Lambda_k;
+		for(unsigned int i = 0; i < 6; ++i){
+			for(unsigned int j = 0; j < 6; ++j){
+				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (S_k - 1) + j,Lambda_k(i,j)));
+			}
+			N(6 * (S_k - 1) + i) = N_k(i);
+		}
+
 
 	}
 	else {
-		// D_k substate
-		N.subvec(6 * (D_k - 1), 6 * (D_k - 1) + 5) += N_k;
-		Lambda.submat(6 * (D_k - 1),6 * (D_k - 1),
-			6 * (D_k - 1) + 5,6 * (D_k - 1) + 5) += Lambda_k;
+
+		for(unsigned int i = 0; i < 6; ++i){
+			for(unsigned int j = 0; j < 6; ++j){
+				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i,j)));
+			}
+			N(6 * (D_k - 1) + i) = N_k(i);
+		}
 	}
 
 

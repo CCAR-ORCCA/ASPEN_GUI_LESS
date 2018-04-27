@@ -303,17 +303,10 @@ void ShapeModelTri::compute_center_of_mass() {
 		arma::vec r1 =  vertices -> at(1) -> get_coordinates();
 		arma::vec r2 =  vertices -> at(2) -> get_coordinates();
 
-		double * r0d =  vertices -> at(0) -> get_coordinates() . colptr(0);
-		double * r1d =  vertices -> at(1) -> get_coordinates() . colptr(0);
-		double * r2d =  vertices -> at(2) -> get_coordinates() . colptr(0);
-
+		
 		double dv = 1. / 6. * arma::dot(r1, arma::cross(r1 - r0, r2 - r0));
 
-		double dr_x = (r0d[0] + r1d[0] + r2d[0]) / 4.;
-		double dr_y = (r0d[1] + r1d[1] + r2d[1]) / 4.;
-		double dr_z = (r0d[2] + r1d[2] + r2d[2]) / 4.;
-
-
+		
 		C += (r0 + r1 + r2) / 4 * dv / volume;
 
 	}

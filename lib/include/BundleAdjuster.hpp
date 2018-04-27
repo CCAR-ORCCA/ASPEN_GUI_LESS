@@ -4,6 +4,18 @@
 #include <memory>
 #include "PC.hpp"
 
+#include <Eigen/Sparse>
+#include <Eigen/Jacobi>
+ #include <Eigen/Dense>
+
+
+
+typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
+typedef Eigen::Triplet<double> T;
+typedef Eigen::VectorXd EigVec;
+
+
 class BundleAdjuster {
 
 public:
@@ -29,7 +41,11 @@ protected:
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair);
 
-	void add_subproblem_to_problem(arma::sp_mat & Lambda,arma::vec & N,const arma::mat & Lambda_k,const arma::vec & N_k,
+	void add_subproblem_to_problem(
+		std::vector<T>& coeffs,
+	    EigVec & N,
+		const arma::mat & Lambda_k,
+		const arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair);
 
 	void apply_deviation(const arma::vec & dX);
