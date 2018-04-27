@@ -29,7 +29,7 @@
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 5e-1
+#define LOS_NOISE_SD_BASELINE 1e-1
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
@@ -46,7 +46,7 @@
 #define NAVIGATION_TIMES 80
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 1
+#define DOWNSAMPLING_FACTOR 0.5
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
