@@ -19,7 +19,7 @@ typedef Eigen::VectorXd EigVec;
 class BundleAdjuster {
 
 public:
-	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_);
+	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter);
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -35,6 +35,7 @@ protected:
 
 	std::vector< std::shared_ptr<PC> > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
+	int N_iter;
 
 	void find_point_cloud_pairs();
 	void save_connectivity_matrix() const;

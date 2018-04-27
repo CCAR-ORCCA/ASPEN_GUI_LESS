@@ -220,6 +220,14 @@ public:
 		this -> estimate_shape = estim_shape;
 	}
 
+	void set_N_iter_bundle_adjustment(int n){
+		this -> N_iter_bundle_adjustment = n;
+	}
+
+	int get_N_iter_bundle_adjustment() const{
+		return this -> N_iter_bundle_adjustment;
+	}
+
 	bool get_estimate_shape() const {
 		return this -> estimate_shape;
 	}
@@ -424,6 +432,7 @@ protected:
 	unsigned int N_edges;
 	unsigned int shape_degree;
 	unsigned int surface_samples;
+	int N_iter_bundle_adjustment;
 
 
 

@@ -40,13 +40,13 @@
 #define T0 0
 
 // Number of obervation times
-#define OBSERVATION_TIMES 400
+#define OBSERVATION_TIMES 100
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.3
+#define DOWNSAMPLING_FACTOR 1
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
@@ -78,6 +78,9 @@
 
 // Filter iterations
 #define N_ITER_SHAPE_FILTER 4
+	
+// Number of iterations in bundle adjustment
+#define N_ITER_BUNDLE_ADJUSTMENT 4
 
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 8
@@ -220,6 +223,8 @@ int main() {
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_surface_samples(SURFACE_SAMPLES);
+	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
+
 
 
 

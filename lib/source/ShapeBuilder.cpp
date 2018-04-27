@@ -294,7 +294,7 @@ void ShapeBuilder::get_new_states(
 void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	// The point clouds are bundle-adjusted
-	BundleAdjuster bundle_adjuster(&this -> all_registered_pc);
+	BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
 
 
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";

@@ -5,9 +5,10 @@
 #include "DebugFlags.hpp"
 
 
-BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_){
+BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, int N_iter){
 
 	this -> all_registered_pc = all_registered_pc_;
+	this -> N_iter = N_iter;
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Forming point cloud pairs" << std::endl;
@@ -16,9 +17,11 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
 
+	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
-	this -> solve_bundle_adjustment();
-	std::cout << "- Solved bundle adjustment" << std::endl;
+		this -> solve_bundle_adjustment();
+		std::cout << "- Solved bundle adjustment" << std::endl;
+	}
 
 	// The connectivity matrix is saved
 	this -> save_connectivity_matrix();
@@ -26,12 +29,10 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 void BundleAdjuster::solve_bundle_adjustment(){
 
-	int N_iter = 3;
 	int Q = this -> all_registered_pc -> size();
 
-	arma::vec dX;
 
-	for (int iter = 0 ; iter < N_iter; ++iter){
+	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
 		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
 
@@ -39,6 +40,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		EigVec Nmat(6 * (Q - 1)); 
 		Nmat.setZero();
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
+		arma::vec dX(6 * (Q - 1));
 
 
 
@@ -130,37 +132,48 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 	int M = this -> all_registered_pc -> size();
 	
-
-
-	std::vector< BundleAdjuster::PointCloudPair > point_cloud_pairs_temps;
-	for (int i = 0; i < M ; ++i){
-		for (int j = i + 1; j < M; ++j){
-			point_cloud_pairs_temps.push_back(BundleAdjuster::PointCloudPair());
-		}
-	}
-
 	#if BUNDLE_ADJUSTER_DEBUG
 
 	std::cout << "Number of registered point clouds: " << M << std::endl;
-	std::cout << "Maximum number of point cloud pairs: " << point_cloud_pairs_temps.size() << std::endl;
 	
 	#endif
 
-	boost::progress_display progress(M - 1);
+	std::vector<PointPair> point_pairs;
 
-	// The point clouds connectivity is reconstructed
-	#pragma omp parallel for 
-	for (int i = 0; i < M ; ++i){
-		for (int j = 0; j < i; ++j){
+	double min_overlap = std::numeric_limits<double>::infinity();
 
-			std::vector<PointPair> point_pairs;
+	for (int i = 1; i < M ; ++i){
 
-		// Point pairs are formed between the two point clouds so as to determine what is 
-		// their alignement error
+
+		int h = 5;
+
+		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(i-1),h);				
+		double error = ICP::compute_rms_residuals(point_pairs);
+
+		double p = std::log2(this -> all_registered_pc -> at(i) -> get_size());
+		int N_pairs = (int)(std::pow(2, p - h));
+
+		BundleAdjuster::PointCloudPair pair;
+		pair.S_k = i;
+		pair.D_k = i - 1;
+		pair.error = error;
+		pair.N_pairs = N_pairs;
+		pair.N_accepted_pairs = point_pairs.size();
+
+		this -> point_cloud_pairs.push_back(pair);
+		if (min_overlap > double(point_pairs.size()) / double(N_pairs)){
+			min_overlap = double(point_pairs.size()) / double(N_pairs);
+		}
+
+	}
+
+	for (int i = 0; i <= (int)(double(M) / 2) ; ++i){
+
+		for (int j = M - 1; j > i; --j){
 
 			try{
 
-				int h = 5;
+				int h = 4;
 
 				ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(j),h);				
 				double error = ICP::compute_rms_residuals(point_pairs);
@@ -174,11 +187,11 @@ void BundleAdjuster::find_point_cloud_pairs(){
 				pair.error = error;
 				pair.N_pairs = N_pairs;
 				pair.N_accepted_pairs = point_pairs.size();
-				if (N_pairs < point_pairs.size()){
-					throw(std::runtime_error("There can't be more accepted pairs than possible number of pairs"));
-				}
 
-				point_cloud_pairs_temps[j + i * (i - 1) / 2] = pair;
+				if (double(point_pairs.size()) / double(N_pairs) > min_overlap){
+					this -> point_cloud_pairs.push_back(pair);
+					break;
+				}
 
 
 
@@ -190,21 +203,7 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 			}
 		}
-		++progress;
 	}
-
-	std::vector< PointCloudPair > all_point_cloud_pairs;
-
-	// The potential point-cloud pairs are formed
-	for (unsigned int i = 0; i < point_cloud_pairs_temps.size(); ++i){
-		if (point_cloud_pairs_temps[i].S_k >= 0){
-			all_point_cloud_pairs.push_back(point_cloud_pairs_temps[i]);
-		}
-	}
-
-	// Only the good point cloud pairs are retained
-	std::cout << "- Pruning point cloud pairs\n";
-	this -> find_good_pairs(all_point_cloud_pairs);
 
 }
 
@@ -225,9 +224,9 @@ void BundleAdjuster::find_good_pairs(const std::vector< PointCloudPair > & all_p
 			this -> point_cloud_pairs.push_back(point_cloud_pair);
 		}
 
-		else if (quality > 0.9 && this -> point_cloud_pairs.size() <= 1000) {
-			this -> point_cloud_pairs.push_back(point_cloud_pair);
-		}
+		// else if (quality > 0.9 && this -> point_cloud_pairs.size() <= 1000) {
+		// 	this -> point_cloud_pairs.push_back(point_cloud_pair);
+		// }
 
 
 	}
@@ -313,18 +312,19 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
 		std::vector<PointPair> point_pairs;
+		int h = 4;
 
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k),
 			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k),
-			0);
+			h);
 
 		double error = ICP::compute_rms_residuals(point_pairs);
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_size());
-		int N_pairs = (int)(std::pow(2, p - 0));
+		int N_pairs = (int)(std::pow(2, p - h));
 
-
+		
 		this -> point_cloud_pairs[k].error = error;
 		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
@@ -363,7 +363,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (S_k - 1) + j,Lambda_k(i,j)));
 			}
-			N(6 * (S_k - 1) + i) = N_k(i);
+			N(6 * (S_k - 1) + i) += N_k(i);
 		}
 		
 		// D_k substate
@@ -371,7 +371,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i + 6,j + 6)));
 			}
-			N(6 * (D_k - 1) + i) = N_k(i + 6);
+			N(6 * (D_k - 1) + i) += N_k(i + 6);
 		}
 
 
@@ -394,7 +394,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (S_k - 1) + j,Lambda_k(i,j)));
 			}
-			N(6 * (S_k - 1) + i) = N_k(i);
+			N(6 * (S_k - 1) + i) += N_k(i);
 		}
 
 
@@ -405,7 +405,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i,j)));
 			}
-			N(6 * (D_k - 1) + i) = N_k(i);
+			N(6 * (D_k - 1) + i) += N_k(i);
 		}
 	}
 
