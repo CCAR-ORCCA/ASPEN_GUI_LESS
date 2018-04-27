@@ -112,8 +112,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> source_pc);
 
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj");
-
-			this -> concatenate_point_clouds(time_index);
 			
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
@@ -145,30 +143,6 @@ std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() cons
 	return this -> estimated_shape_model;
 }
 
-
-void ShapeBuilder::concatenate_point_clouds(unsigned int index){
-
-	// The destination point cloud is augmented with the source point cloud
-	std::vector< std::shared_ptr<PointNormal> > source_points = this -> source_pc -> get_points();
-
-	int N_source_pc_points = int(this -> filter_arguments -> get_downsampling_factor() * source_points.size());
-
-	// These points have their coordinate in the stitching frame
-	// Their normals have been computed and also transformed
-
-	arma::uvec random_order =  arma::regspace< arma::uvec>(0,  source_points.size() - 1);		
-	random_order = arma::shuffle(random_order);		
-
-	for (int i = 0; i < N_source_pc_points; ++i){
-
-		this -> concatenated_pc_vector.push_back(source_points[random_order(i)]);
-
-	}
-
-	
-
-
-}
 
 
 
@@ -305,7 +279,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	if (this -> filter_arguments -> get_use_icp()){
 		
-		// destination_pc_concatenated = std::make_shared<PC>(PC(this -> concatenated_pc_vector));
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
 
