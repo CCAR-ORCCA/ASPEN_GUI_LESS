@@ -16,14 +16,6 @@
 # OMP-friendly GCC Major version (will only be used on Mac OS systems)
 set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 
-# Path to OMP-Friendly GCC Compiler (will only be used on Mac OS systems)
-# set (OMP_FRIENDLY_GCC_PATH /usr/local/Cellar/gcc/7.3.0_1/bin/)
-
-# Path to VTKConfig.cmake (not mandatory if VTK is installed at a standard location)
-set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
-
-
-
 ################################################################################
 #
 #
@@ -40,11 +32,14 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
-
-else()
-	set(IS_FORTUNA OFF)
-	message("-- This is not Fortuna")
-
+	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
+elseif(UNIX AND NOT APPLE)
+	set(IS_FORTUNA ON)
+	set(RBK_LOC "/usr/local/lib/cmake/RigidBodyKinematics")
+	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	set(ASPEN_LOC "/usr/local/lib/cmake/ASPEN")
+	set(CGAL_interface_LOC "/usr/local/lib/cmake/CGAL_interface")
+	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
 endif()
 
 
@@ -65,11 +60,8 @@ else()
 		else()# no OMP-compliant compiler was found on this mac. 
 			message("No OMP-compliant compiler was found on this Mac.")
 		endif()
-	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
-				message("Switching to /usr/local/gcc ")
-		    	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-				set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
-	endif()
+		endif()
+		
 endif()
 
 project(${EXE_NAME})
@@ -92,7 +84,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 find_package(ASPEN REQUIRED PATHS ${ASPEN_LOC}) 
 include_directories(${ASPEN_INCLUDE_HEADER}) 
 include_directories(${ASPEN_INCLUDE_GNUPLOT}) 
-include_directories(${ASPEN_INCLUDE_CGAL}) 
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
@@ -139,15 +130,16 @@ endif()
 
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
-if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
-	find_library(GFORTRAN_LIBRARY gfortran
-	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
-	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
-endif()
+# if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
+# 	find_library(GFORTRAN_LIBRARY gfortran
+# 	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
+# 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
+# endif()
 
 # Add source files in root directory
 add_executable(${EXE_NAME}
 main.cpp)
+
 
 # Linking
 set(library_dependencies
