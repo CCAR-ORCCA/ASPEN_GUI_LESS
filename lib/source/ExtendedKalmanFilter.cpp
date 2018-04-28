@@ -95,12 +95,12 @@ void ExtendedKalmanFilter::measurement_update(double t,
 	arma::mat P_hat = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
 	double mahalanobis_distance = arma::dot(K * res,arma::solve(P_hat,K * res));
 
-	double mahalanobis_distance_variation = std::abs(previous_mahalanobis_distance - mahalanobis_distance)/mahalanobis_distance * 100 ; 
+	double mahalanobis_distance_variation = (previous_mahalanobis_distance - mahalanobis_distance)/mahalanobis_distance * 100 ; 
 
 	std::cout << "--- Mahalanobis distance: \n" << mahalanobis_distance << " \n";
 	std::cout << "--- Variation of Mahalanobis distance: \n" << mahalanobis_distance_variation << " \n";
 
-	if (mahalanobis_distance_variation < 1e-1){
+	if (mahalanobis_distance_variation < 0){
 		done_iterating = true;
 	}
 	else{

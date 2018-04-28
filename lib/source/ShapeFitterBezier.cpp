@@ -366,9 +366,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 }
 
-
-
-
 std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	std::vector<Footpoint> pc_to_footpoint,footpoints;

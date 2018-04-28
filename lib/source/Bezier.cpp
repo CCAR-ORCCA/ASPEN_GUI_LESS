@@ -957,7 +957,7 @@ void Bezier::train_patch_covariance(){
 
 	arma::vec L = arma::ones<arma::vec>(N_C) * std::log(alpha);	
 	arma::vec lower_bounds =  L - 1;
-	arma::vec upper_bounds = L + 3;	
+	arma::vec upper_bounds = L + 1;	
 
 
 	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&this -> footpoints,&this -> v_i_norm);
@@ -969,7 +969,7 @@ void Bezier::train_patch_covariance(){
 	Psopt<std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > > psopt(Bezier::compute_log_likelihood_block_diagonal, 
 		lower_bounds,
 		upper_bounds, 
-		500,
+		200,
 		N_iter,
 		args);
 
