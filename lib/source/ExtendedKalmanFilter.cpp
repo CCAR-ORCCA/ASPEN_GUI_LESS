@@ -60,8 +60,12 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 
 }
 
-void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::mat & P_bar,
-	const arma::vec & res,const arma::mat & R,bool & done_iterating) const{
+void ExtendedKalmanFilter::measurement_update(double t,
+	arma::vec & X_bar,
+	arma::mat & P_bar,
+	const arma::vec & res,const arma::mat & R,
+	bool & done_iterating,
+	double & previous_mahalanobis_distance) const{
 
 
 	std::cout << "-- EKF measurement update\n";
@@ -88,12 +92,17 @@ void ExtendedKalmanFilter::measurement_update(double t,arma::vec & X_bar, arma::
 	// Consistency test to see if the filter has converged
 	auto I = arma::eye<arma::mat>(X_bar.n_rows,X_bar.n_rows);
 	arma::mat P_hat = (I - K * H) * P_bar * (I - K * H).t() + K * R * K.t();
-	double consistency_test = arma::dot(K * res,arma::solve(P_hat,K * res)) - 9;
+	double mahalanobis_distance = arma::dot(K * res,arma::solve(P_hat,K * res));
 
-	std::cout << "--- Consistency test: \n" << consistency_test << " \n";
+	double mahalanobis_distance_variation = std::abs(previous_mahalanobis_distance - mahalanobis_distance)/mahalanobis_distance * 100 ; 
 
-	if (consistency_test < 0 && this -> args.get_use_consistency_test()){
+	std::cout << "--- Variation of Mahalanobis distance: \n" << mahalanobis_distance_variation << " \n";
+
+	if (mahalanobis_distance_variation < 1e-1){
 		done_iterating = true;
+	}
+	else{
+		previous_mahalanobis_distance = mahalanobis_distance;
 	}
 	
 	// The covariance is updated

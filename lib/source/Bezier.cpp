@@ -973,14 +973,14 @@ void Bezier::train_patch_covariance(){
 		N_iter,
 		args);
 
-	psopt.run(true,true);
+	psopt.run(true,false);
 
 	L = psopt.get_result();
 
 	
 	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
 
-	// #if BEZIER_DEBUG
+	#if BEZIER_DEBUG
 	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
 	std::cout << "-- Initial log-likelihood: " << initial_ll << std::endl;
 
@@ -992,7 +992,7 @@ void Bezier::train_patch_covariance(){
 	std::cout << L_correct_shape << std::endl;
 	std::cout << "-- Final covariance: " << std::endl;
 	std::cout << this -> P_X << std::endl;
-	// #endif
+	#endif
 	
 
 }

@@ -46,7 +46,7 @@
 #define NAVIGATION_TIMES 80
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.33
+#define DOWNSAMPLING_FACTOR 0.2
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
@@ -80,7 +80,7 @@
 #define N_ITER_SHAPE_FILTER 4
 	
 // Number of iterations in bundle adjustment
-#define N_ITER_BUNDLE_ADJUSTMENT 10
+#define N_ITER_BUNDLE_ADJUSTMENT 0
 
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 8

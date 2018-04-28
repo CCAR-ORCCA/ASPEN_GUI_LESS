@@ -22,7 +22,9 @@ protected:
 	virtual void time_update(double t_now, double t_next,
 		arma::vec & X_hat, arma::mat & P_hat) const;
 	virtual void measurement_update(double t, arma::vec & X_bar, arma::mat & P_bar,
-		const arma::vec & res,const arma::mat & R,bool & done_iterating) const;
+		const arma::vec & res,const arma::mat & R,
+		bool & done_iterating,
+		double & previous_mahalanobis_distance) const;
 
 };
 #endif

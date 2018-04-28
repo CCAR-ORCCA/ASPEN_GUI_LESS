@@ -174,6 +174,7 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 	bool done_iterating = false;
 	auto N_iter = this -> args.get_N_iter_mes_update();
 	arma::vec Y_true_from_lidar;
+	double previous_mahalanobis_distance = std::numeric_limits<double>::infinity();
 
 	// The measurement updated is iterated
 	for (int i =0; i < N_iter; ++i ){
@@ -196,7 +197,9 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 			P_hat,
 			y_bar,
 			*this -> args.get_batch_output_covariance_ptr(),
-			done_iterating);
+			done_iterating,
+			previous_mahalanobis_distance
+			);
 		this -> set_states(X_hat,this -> true_state_history[t],P_hat,t);
 		
 		if (done_iterating){
