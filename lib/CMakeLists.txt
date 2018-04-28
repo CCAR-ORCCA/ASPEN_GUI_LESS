@@ -35,10 +35,11 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 
 	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 
-else()
-	set(IS_FORTUNA OFF)
-	message("-- This is not Fortuna")
-	# set(RBK_LOC "/usr/local/Cellar/rbk/*")
+elseif (UNIX AND NOT APPLE)
+
+
+	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
+	
 endif()
 
 # Building procedure
@@ -58,10 +59,7 @@ else()
 		else()# no OMP-compliant compiler was found on this mac. 
 		message("No OMP-compliant compiler was found on this Mac.")
 	endif()
-	else() # Running on Linux. Will switch back to compiler in /usr/local/bin
-	message("Switching to /usr/local/gcc ")
-	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
+	
 endif()
 endif()
 
@@ -87,6 +85,10 @@ if (${IS_FORTUNA})
 	set(INCLUDES_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/include)
 	set(EXTERNAL_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/external)
 	set(SOURCE_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/source)
+elseif (UNIX AND NOT APPLE)
+	set(INCLUDES_PATH /home/ben/Work/ASPEN_gui_less/lib/include)
+	set(EXTERNAL_PATH /home/ben/Work/ASPEN_gui_less/lib/external)
+	set(SOURCE_PATH /home/ben/Work/ASPEN_gui_less/lib/source)
 else()
 	set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/include)
 	set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/external)
@@ -135,11 +137,11 @@ endif()
 
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
-if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
-	find_library(GFORTRAN_LIBRARY gfortran
-		PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
-	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
-endif()
+# if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
+# 	find_library(GFORTRAN_LIBRARY gfortran
+# 		PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
+# 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
+# endif()
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
@@ -198,7 +200,6 @@ target_link_libraries(${LIB_NAME} ${library_dependencies})
 
 file(GLOB includes include/*.hpp)
 file(GLOB includes_gnuplot external/Gnuplot/include/*.hpp)
-file(GLOB includes_cgal external/CGAL_interface/include/*.hpp)
 
 # Installing
 if (NOT ${IS_FORTUNA})
@@ -206,16 +207,18 @@ if (NOT ${IS_FORTUNA})
 	install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
 	install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
 	install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
-	install(FILES ${includes_cgal} DESTINATION /usr/local/include/ASPEN/external/CGAL_interface/)
 	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /usr/local/lib/cmake/ASPEN/)
 
-
+elseif(UNIX AND NOT APPLE)
+	install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
+	install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
+	install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
+	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
 else()
 
 	install (TARGETS ${LIB_NAME} DESTINATION /home/bebe0705/libs/local/lib)
 	install(FILES ${includes} DESTINATION /home/bebe0705/libs/local/include/ASPEN/)
 	install(FILES ${includes_gnuplot} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/Gnuplot/)
-	install(FILES ${includes_cgal} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/CGAL_interface/)
 	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
 endif()
 
