@@ -63,7 +63,8 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 void ExtendedKalmanFilter::measurement_update(double t,
 	arma::vec & X_bar,
 	arma::mat & P_bar,
-	const arma::vec & res,const arma::mat & R,
+	const arma::vec & res,
+	const arma::mat & R,
 	bool & done_iterating,
 	double & previous_mahalanobis_distance) const{
 
