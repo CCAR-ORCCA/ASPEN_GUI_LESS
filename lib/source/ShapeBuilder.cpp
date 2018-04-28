@@ -260,24 +260,25 @@ void ShapeBuilder::get_new_states(
 void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 
-
-	std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
-
-	pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj");
-
-	// The point clouds are bundle-adjusted
-	BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
-
-
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
-	std::shared_ptr<PC> destination_pc_concatenated;
-
-
-	std::cout << "-- Constructing point cloud...\n";
 
 	if (this -> filter_arguments -> get_use_icp()){
+
+		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
+
+		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj");
+
+	// The point clouds are bundle-adjusted
+		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
+
+
+		std::shared_ptr<PC> destination_pc_concatenated;
+
+
+		std::cout << "-- Constructing point cloud...\n";
+
 		
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
@@ -302,7 +303,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	else{
 
 		arma::mat points,normals;
-		throw;
 
 		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_surface_samples(),points,normals);
 
