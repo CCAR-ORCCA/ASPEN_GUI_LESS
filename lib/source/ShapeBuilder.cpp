@@ -263,7 +263,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
-
+	std::shared_ptr<PC> destination_pc_concatenated;
+	
 	if (this -> filter_arguments -> get_use_icp()){
 
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
@@ -274,7 +275,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
 
 
-		std::shared_ptr<PC> destination_pc_concatenated;
 
 
 		std::cout << "-- Constructing point cloud...\n";
