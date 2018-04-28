@@ -97,6 +97,7 @@ void ExtendedKalmanFilter::measurement_update(double t,
 
 	double mahalanobis_distance_variation = std::abs(previous_mahalanobis_distance - mahalanobis_distance)/mahalanobis_distance * 100 ; 
 
+	std::cout << "--- Mahalanobis distance: \n" << mahalanobis_distance << " \n";
 	std::cout << "--- Variation of Mahalanobis distance: \n" << mahalanobis_distance_variation << " \n";
 
 	if (mahalanobis_distance_variation < 1e-1){
