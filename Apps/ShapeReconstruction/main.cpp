@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 128 // Goldeneye
-#define COL_RESOLUTION 128 // Goldeneye
+#define ROW_RESOLUTION 64 // Goldeneye
+#define COL_RESOLUTION 64 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -29,7 +29,7 @@
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 1e-1
+#define LOS_NOISE_SD_BASELINE 1e-3
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
@@ -80,7 +80,7 @@
 #define N_ITER_SHAPE_FILTER 4
 	
 // Number of iterations in bundle adjustment
-#define N_ITER_BUNDLE_ADJUSTMENT 0
+#define N_ITER_BUNDLE_ADJUSTMENT 5
 
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 8

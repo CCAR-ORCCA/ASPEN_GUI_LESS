@@ -120,7 +120,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> initialize_shape(time_index);
 				
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-
+				return;
 
 			}
 
@@ -264,7 +264,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
-	
+
 	if (this -> filter_arguments -> get_use_icp()){
 
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
