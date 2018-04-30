@@ -318,7 +318,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 		arma::mat points,normals;
 
-		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_surface_samples(),points,normals);
+		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_points_retained(),points,normals);
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
 

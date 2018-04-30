@@ -70,9 +70,6 @@
 // Use ICP (false if point cloud is generated from true shape)
 #define USE_ICP false
 
-// Number of surface samples per facet to use
-#define SURFACE_SAMPLES 30
-
 // If true, the state covariance is used to provide an a-priori to the batch
 #define USE_PHAT_IN_BATCH false
 
@@ -222,10 +219,7 @@ int main() {
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
-	shape_filter_args.set_surface_samples(SURFACE_SAMPLES);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
-
-
 
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
