@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64 // Goldeneye
-#define COL_RESOLUTION 64 // Goldeneye
+#define ROW_RESOLUTION 80 // Goldeneye
+#define COL_RESOLUTION 80 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
