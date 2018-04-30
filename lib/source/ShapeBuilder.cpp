@@ -104,12 +104,21 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
-			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+			// This ICP can fail. If so, the update is still applied and will be fixed 
+			// in the bundle adjustment
+			try{
+				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-			M_pc = icp_pc.get_M();
-			X_pc = icp_pc.get_X();
+				M_pc = icp_pc.get_M();
+				X_pc = icp_pc.get_X();
+			}
+			catch(ICPException & e){
+				std::cout << e.what() << std::endl;
+			}
+
 
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);

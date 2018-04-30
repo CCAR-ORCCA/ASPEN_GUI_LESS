@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 100 // Goldeneye
-#define COL_RESOLUTION 100 // Goldeneye
+#define ROW_RESOLUTION 64 // Goldeneye
+#define COL_RESOLUTION 64 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -59,7 +59,7 @@
 #define SHAPE_DEGREE 2
 
 // Target shape
-#define TARGET_SHAPE "itokawa_64_scaled_aligned"
+#define TARGET_SHAPE "itokawa_128_scaled_aligned"
 
 // Spin rate (hours)
 #define SPIN_RATE 12.

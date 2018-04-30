@@ -178,7 +178,7 @@ void NavigationFilter::iterated_measurement_update(unsigned int t,
 
 	// The measurement updated is iterated
 	for (int i =0; i < N_iter; ++i ){
-		std::cout << "---- EFK Iteration: " << i + 1 << "/" << N_iter << std::endl;
+		std::cout << "---- EKF Iteration: " << i + 1 << "/" << N_iter << std::endl;
 
 		if (i == N_iter - 1){
 			done_iterating = true;
