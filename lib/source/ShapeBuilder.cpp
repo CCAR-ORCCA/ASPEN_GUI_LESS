@@ -16,6 +16,7 @@
 #include "Element.hpp"
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterBezier.hpp"
+#include "IOFlags.hpp"
 
 #include <CGAL_interface.hpp>
 #include <RigidBodyKinematics.hpp>
@@ -93,8 +94,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
-			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 
+			#if IOFLAGS_shape_builder
+			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#endif
 		}
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
@@ -111,7 +114,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
+			#if IOFLAGS_shape_builder
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#endif
 			
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){

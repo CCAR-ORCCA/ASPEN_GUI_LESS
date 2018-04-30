@@ -44,10 +44,6 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
 		arma::vec dX(6 * (Q - 1));
 
-
-
-
-
 		// For each point-cloud pair
 		#if !BUNDLE_ADJUSTER_DEBUG
 		boost::progress_display progress(this -> point_cloud_pairs.size());
@@ -404,8 +400,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 
 }
-
-
 
 void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	EigVec & N,
