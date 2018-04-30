@@ -59,7 +59,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			arma::vec N_k;
 
 
-			if (this -> point_cloud_pairs . at(k).D_k != 0 && this -> point_cloud_pairs . at(k).S_k != 0){
+			if (this -> point_cloud_pairs . at(k).D_k != this -> ground_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> ground_pc_index){
 				Lambda_k = arma::zeros<arma::mat>(12,12);
 				N_k = arma::zeros<arma::vec>(12);
 			}
@@ -182,8 +182,7 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 	}
 
-	bool closed_loop = false;
-
+	std::cout << "- Using point cloud " << this -> ground_pc_index << " as ground point cloud\n";
 	std::cout << "- Scanning pairs\n";
 	boost::progress_display progress(M);
 
