@@ -279,9 +279,9 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 
 	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << " Subproblem : " << point_cloud_pair.S_k << " / " << point_cloud_pair.D_k << std::endl;
-	std::cout << " Number of pairs: " << point_pairs.size() << std::endl;
-	std::cout << " Residuals: " << ICP::compute_rms_residuals(point_pairs) << std::endl;
+	std::cout << " - Subproblem : " << point_cloud_pair.S_k << " / " << point_cloud_pair.D_k << std::endl;
+	std::cout << " - Number of pairs: " << point_pairs.size() << std::endl;
+	std::cout << " - Residuals: " << ICP::compute_rms_residuals(point_pairs) << std::endl;
 	#endif
 
 	arma::rowvec H_ki;
@@ -295,6 +295,9 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	}
 
 
+	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << " - Looping over the point pairs"
+	#endif
 
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
