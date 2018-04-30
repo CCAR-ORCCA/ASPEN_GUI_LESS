@@ -296,7 +296,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 
 	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << " - Looping over the point pairs"
+	std::cout << " - Looping over the point pairs\n";
 	#endif
 
 	// For all the point pairs that where formed
