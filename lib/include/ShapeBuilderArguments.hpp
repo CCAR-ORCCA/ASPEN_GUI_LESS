@@ -334,12 +334,6 @@ public:
 		return this -> iter_filter;
 	}
 
-	void set_surface_samples(unsigned int samples){
-		this -> surface_samples = samples;
-	}
-	unsigned int get_surface_samples() const{
-		return this -> surface_samples;
-	}
 
 	void set_N_iter_shape_filter(unsigned int iter)  {
 		this -> iter_filter = iter;
@@ -431,7 +425,6 @@ protected:
 	unsigned int iter_filter ;
 	unsigned int N_edges;
 	unsigned int shape_degree;
-	unsigned int surface_samples;
 	int N_iter_bundle_adjustment;
 
 

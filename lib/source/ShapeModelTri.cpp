@@ -160,7 +160,8 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 
 	// N points are randomly sampled from the surface of the shape model
 	
-	#pragma omp parallel for
+	// #pragma omp parallel for
+	std::cout << " - Sampling surface points from the true shape model ...\n";
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){
 
 		auto vertices = this -> elements[f] -> get_control_points();

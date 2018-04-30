@@ -279,8 +279,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 			this -> LN_t0,this -> x_t0);
 
 
-
-
 		std::cout << "-- Constructing point cloud...\n";
 
 		
