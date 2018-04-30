@@ -1,6 +1,7 @@
 #include "ShapeModelTri.hpp"
 #include "Facet.hpp"
 #include "Ray.hpp"
+#include <boost/progress.hpp>
 
 
 #pragma omp declare reduction (+ : arma::vec : omp_out += omp_in)\
@@ -160,8 +161,8 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 	points = arma::zeros<arma::mat>(3,N);
 	normals = arma::zeros<arma::mat>(3, N);
 
-
 	// N points are randomly sampled from the surface of the shape model
+	boost::progress_display progress(this -> elements.size());
 	
 	// #pragma omp parallel for
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){
@@ -174,7 +175,7 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 
 		arma::vec noise_intensity = arma::randu<arma::vec>(1);
 
-		for (unsigned int i = 0; i < N_points_per_element; ++i){
+		for (int i = 0; i < N_points_per_element; ++i){
 
 			arma::vec random = arma::randu<arma::vec>(2);
 			double u = random(0);
@@ -184,6 +185,7 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 			normals.col(N_points_per_element * f + i) = arma::normalise(arma::normalise(arma::cross(V1 - V0,V2 - V0)) + 0.1 * arma::randn<arma::vec>(3));
 
 		}
+		++progress;
 	}
 
 }
