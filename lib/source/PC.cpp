@@ -60,7 +60,7 @@ PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
-	double downsampling_factor;
+	double downsampling_factor = 1;
 	int N_points_total = 0;
 	for (unsigned int i = 0; i < pcs.size();++i){
 

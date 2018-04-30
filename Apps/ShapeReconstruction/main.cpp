@@ -46,7 +46,7 @@
 #define NAVIGATION_TIMES 80
 
 // Number of points to be retained in the shape fitting
-#define POINTS_RETAINED 800000
+#define POINTS_RETAINED 500000
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
