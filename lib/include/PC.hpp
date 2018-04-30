@@ -36,7 +36,7 @@ public:
 	PC(std::vector<std::shared_ptr<PointNormal> > point_normals);
 
 
-	PC(std::vector< std::shared_ptr<PC> > & pcs,double downsampling_factor = 1);
+	PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained = -1);
 
 
 

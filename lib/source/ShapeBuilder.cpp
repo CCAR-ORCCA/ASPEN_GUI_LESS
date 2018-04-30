@@ -261,7 +261,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 	if (this -> filter_arguments -> get_use_icp()){
 
-		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
+		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_points_retained()));
 
 		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
@@ -276,7 +276,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 		
 
-		destination_pc_concatenated = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
+		destination_pc_concatenated = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_points_retained()));
 
 		destination_pc_concatenated -> save(
 			pc_path, 

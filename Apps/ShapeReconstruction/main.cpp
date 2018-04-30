@@ -45,8 +45,8 @@
 // Number of navigation times
 #define NAVIGATION_TIMES 80
 
-// Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.3
+// Number of points to be retained in the shape fitting
+#define POINTS_RETAINED 800000
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
@@ -83,7 +83,7 @@
 #define N_ITER_BUNDLE_ADJUSTMENT 10
 
 // Number of iterations in the navigation filter measurement update
-#define N_ITER_MES_UPDATE 8
+#define N_ITER_MES_UPDATE 15
 
 // If true, will exit IEKF if consistency test is satisfied
 #define USE_CONSISTENCY_TEST false
@@ -158,7 +158,7 @@ int main() {
 	X0_augmented.rows(0,2) = pos_0;
 
 	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.4142};
+	arma::vec mrp_0 = {0.,0.,0.};
 	X0_augmented.rows(6,8) = mrp_0;
 
 	// Angular velocity in body frame
@@ -217,7 +217,7 @@ int main() {
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_downsampling_factor(DOWNSAMPLING_FACTOR);
+	shape_filter_args.set_points_retained(POINTS_RETAINED);
 	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
 	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);

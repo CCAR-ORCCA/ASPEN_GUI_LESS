@@ -189,12 +189,12 @@ public:
 	}
 
 
-	void set_downsampling_factor(double df){
-		this -> downsampling_factor = df;
+	void set_points_retained(int p){
+		this -> points_retained = p;
 	}
 
-	double get_downsampling_factor() const{
-		return this -> downsampling_factor;
+	int get_points_retained() const{
+		return this -> points_retained;
 	}
 
 
@@ -417,7 +417,7 @@ protected:
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
-	double downsampling_factor;
+	int points_retained;
 
 	unsigned int index_init;
 	unsigned int index_end;

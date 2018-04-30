@@ -57,19 +57,30 @@ PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 }
 
 
-PC::PC(std::vector< std::shared_ptr<PC> > & pcs,double downsampling_factor){
+PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
+	double downsampling_factor;
+	int N_points_total = 0;
+	for (unsigned int i = 0; i < pcs.size();++i){
+
+		N_points_total += pcs[i] -> get_size();
+	}
+
+	if (points_retained > 0){
+		downsampling_factor = double(points_retained) / N_points_total;
+	}
+
 	for (unsigned int i = 0; i < pcs.size();++i){
 
 		std::vector< std::shared_ptr<PointNormal> > points_from_pc = pcs[i] -> get_points();
 
-		int N_points = int(downsampling_factor * pcs[i] -> get_size());
-
 		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> get_size() - 1);		
-		random_order = arma::shuffle(random_order);		
+		random_order = arma::shuffle(random_order);	
 
-		for (unsigned int p = 0; p < N_points; ++p){
+		int points_to_keep = (int)	(downsampling_factor *  pcs[i] -> get_size());
+
+		for (unsigned int p = 0; p < points_to_keep; ++p){
 			points_normals.push_back(points_from_pc[random_order(p)]);
 		}
 
