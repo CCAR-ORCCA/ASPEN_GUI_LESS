@@ -211,11 +211,11 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 				P = bezier -> covariance_surface_point(u_t,v_t,u);
 
 				double sigma_range = std::sqrt(arma::dot(u,P * u));
-				double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
+				// double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
 
-				args.get_sigma_consider_vector_ptr() -> push_back(sigma_cm);
-				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
-				args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
+				args.get_sigma_consider_vector_ptr() -> push_back(sigma_range);
+				// args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
+				// args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 
 			}
 

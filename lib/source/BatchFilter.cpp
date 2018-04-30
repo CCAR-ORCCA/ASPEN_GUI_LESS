@@ -170,8 +170,11 @@ int  BatchFilter::run(
 
 			P_cc(p,p) = std::pow(sigma_consider_vector[p],2);
 
-			W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
-			R(p,p) = std::pow(sigmas_range_vector[p],2);
+			// W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
+			// R(p,p) = std::pow(sigmas_range_vector[p],2);
+
+			W(p,p) = 1./std::pow(this -> args.get_sd_noise(),2);
+			R(p,p) = std::pow(this -> args.get_sd_noise(),2);
 
 			if (std::abs(y_bar(p)) > 6 * rms_res){
 				H.row(p).fill(0);
@@ -206,11 +209,9 @@ int  BatchFilter::run(
 		std::cout << "--- Normal mat:\n " << normal_mat << std::endl;
 		std::cout << "---  Deviation: "<< std::endl;
 		std::cout << dx_hat << std::endl;
-		std::cout << "---  Deviation with consider effect: "<< std::endl;
-		std::cout << dx_hat + dx_hat_consider<< std::endl;
 		#endif
 
-		
+
 		// The deviation is applied to the state
 		arma::vec X_hat_0(X_bar.n_rows);
 		arma::vec X_hat_0_add = X_bar + dx_hat + dx_hat_consider;
