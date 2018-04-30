@@ -215,7 +215,9 @@ void BundleAdjuster::find_point_cloud_pairs(){
 				// Restricting loop closure to 
 				// pairs featuring 0 as one of their point clouds
 			if (double(point_pairs.size()) / double(N_pairs) > min_overlap ){
+				#if BUNDLE_ADJUSTER_DEBUG
 				std::cout << "Using pair " << this -> ground_pc_index << " / " << j << " for loop closure" << std::endl;
+				#endif
 				this -> point_cloud_pairs.push_back(pair);
 				break;
 			}
