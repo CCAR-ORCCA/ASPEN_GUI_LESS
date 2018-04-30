@@ -158,8 +158,8 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 
 	int N_points_per_element = int(double(N) / this -> elements.size());
 
-	points = arma::zeros<arma::mat>(3,N);
-	normals = arma::zeros<arma::mat>(3, N);
+	points = arma::zeros<arma::mat>(3,N_points_per_element * this -> elements.size());
+	normals = arma::zeros<arma::mat>(3, N_points_per_element * this -> elements.size());
 
 	// N points are randomly sampled from the surface of the shape model
 	boost::progress_display progress(this -> elements.size());
