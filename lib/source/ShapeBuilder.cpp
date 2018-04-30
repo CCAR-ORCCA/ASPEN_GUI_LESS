@@ -93,7 +93,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
-			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj");
+			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 
 		}
 
@@ -111,7 +111,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj");
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
@@ -179,25 +179,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 }
 
 
-void ShapeBuilder::perform_measurements_pc(
-	const arma::vec & X_S, 
-	double time, 
-	const arma::mat & NE_tD_EN_tS_pc,
-	const arma::vec & X_relative_from_pc,
-	const arma::mat & LN_t_S, 
-	const arma::mat & LN_t_D, 
-	const arma::vec & mrp_BN,
-	const arma::vec & X_relative_true,
-	const arma::mat & offset_DCM,
-	const arma::vec & OL_t0,
-	const arma::mat & LN_t0){
-
-	// Measurements are stored
-	arma::vec mrp_mes_pc;
-
-
-}
-
 
 void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S, 
 	double time, 
@@ -253,6 +234,13 @@ void ShapeBuilder::get_new_states(
 	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 	dcm_LB = dcm_LN * RBK::mrp_to_dcm(X_S.rows(3, 8)).t();
 
+
+	if (this -> LN_t0.n_rows == 0){
+		this -> LN_t0 = dcm_LN;
+		this -> x_t0 = lidar_pos;
+
+	}
+
 }
 
 
@@ -263,16 +251,18 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
 	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
+	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
 
 	if (this -> filter_arguments -> get_use_icp()){
 
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_downsampling_factor()));
 
-		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj");
+		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 	// The point clouds are bundle-adjusted
-		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment());
+		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			this -> LN_t0,this -> x_t0);
 
 
 
@@ -298,6 +288,16 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 			arma::zeros<arma::vec>(3), 
 			false,
 			true);
+
+
+		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
+		// should perfectly overlap without noise and bundle-adjustment/ICP errors
+
+
+		destination_pc_concatenated -> save(pc_aligned_path_obj, this -> LN_t0.t(),this -> x_t0);
+
+
+
 	}
 
 	else{
@@ -324,6 +324,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 
 
 	}
+
+
 
 
 	std::cout << "-- Running PSR...\n";

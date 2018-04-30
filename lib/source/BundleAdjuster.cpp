@@ -5,9 +5,11 @@
 #include "DebugFlags.hpp"
 
 
-BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, int N_iter){
+BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, int N_iter,arma::mat LN_t0,arma::vec x_t0){
 
 	this -> all_registered_pc = all_registered_pc_;
+	this -> LN_t0 = LN_t0;
+	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
 	// The connectivity between point clouds is inferred
@@ -174,49 +176,51 @@ void BundleAdjuster::find_point_cloud_pairs(){
 
 	bool closed_loop = false;
 
-	for (int i = 0; i <= (int)(double(M) / 2) ; ++i){
+	std::cout << "- Scanning pairs\n";
+	boost::progress_display progress(M);
 
-		if(closed_loop){
-			break;
+
+	for (int j = M - 1; j > 0; --j){
+
+		try{
+
+			int h = 4;
+
+			ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(0),this -> all_registered_pc -> at(j),h);				
+			double error = ICP::compute_rms_residuals(point_pairs);
+
+			double p = std::log2(this -> all_registered_pc -> at(0) -> get_size());
+			int N_pairs = (int)(std::pow(2, p - h));
+
+			BundleAdjuster::PointCloudPair pair;
+			pair.S_k = 0;
+			pair.D_k = j;
+			pair.error = error;
+			pair.N_pairs = N_pairs;
+			pair.N_accepted_pairs = point_pairs.size();
+
+				// Restricting loop closure to 
+				// pairs featuring 0 as one of their point clouds
+			if (double(point_pairs.size()) / double(N_pairs) > min_overlap ){
+				std::cout << "Using pair " << 0 << " / " << j << " for loop closure" << std::endl;
+				this -> point_cloud_pairs.push_back(pair);
+				closed_loop = true;
+				break;
+			}
+
+
 		}
+		catch(ICPNoPairsException & e){
 
-		for (int j = M - 1; j > i; --j){
-
-			try{
-
-				int h = 4;
-
-				ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(j),h);				
-				double error = ICP::compute_rms_residuals(point_pairs);
-
-				double p = std::log2(this -> all_registered_pc -> at(i) -> get_size());
-				int N_pairs = (int)(std::pow(2, p - h));
-
-				BundleAdjuster::PointCloudPair pair;
-				pair.S_k = i;
-				pair.D_k = j;
-				pair.error = error;
-				pair.N_pairs = N_pairs;
-				pair.N_accepted_pairs = point_pairs.size();
-
-				if (double(point_pairs.size()) / double(N_pairs) > min_overlap){
-					std::cout << "Using pair " << i << " / " << j << " for loop closure" << std::endl;
-					this -> point_cloud_pairs.push_back(pair);
-					closed_loop = true;
-					break;
-				}
-
-
-
-			}
-			catch(ICPNoPairsException & e){
-
-			}
-			catch(ICPException & e){
-
-			}
 		}
+		catch(ICPException & e){
+
+		}
+		++progress;
+
 	}
+
+	
 
 	std::cout << "\nNumber of point cloud pairs: " << this -> point_cloud_pairs.size() << std::endl;
 
@@ -280,6 +284,8 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		H_ki = arma::zeros<arma::rowvec>(6);
 	}
 
+
+
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
@@ -321,8 +327,13 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 void BundleAdjuster::update_point_cloud_pairs(){
 
-	double max_error = -1;
-	double mean_error = 0 ;
+	double max_rms_error = -1;
+	double max_mean_error = -1;
+
+	double mean_rms_error = 0 ;
+	int worst_Sk_rms,worst_Dk_rms;
+	int worst_Sk_mean,worst_Dk_mean;
+
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
@@ -334,29 +345,44 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k),
 			h);
 
-		double error = ICP::compute_rms_residuals(point_pairs);
+		double rms_error = ICP::compute_rms_residuals(point_pairs);
+		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs));
+
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_size());
 		int N_pairs = (int)(std::pow(2, p - h));
 
 		
-		this -> point_cloud_pairs[k].error = error;
+		this -> point_cloud_pairs[k].error = rms_error;
 		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
 
 
 
-
-
-		if (error > max_error){
-			max_error = error;
+		if (rms_error > max_rms_error){
+			max_rms_error = rms_error;
+			worst_Dk_rms = this -> point_cloud_pairs[k].D_k;
+			worst_Sk_rms = this -> point_cloud_pairs[k].S_k;
 		}
-		mean_error += error / this -> point_cloud_pairs.size();
+
+		if (mean_error > max_mean_error){
+			max_mean_error = mean_error;
+			worst_Dk_mean = this -> point_cloud_pairs[k].D_k;
+			worst_Sk_mean = this -> point_cloud_pairs[k].S_k;
+		}
+
+		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
+		
+
+		std::cout << "(" << this -> point_cloud_pairs[k].S_k << " , " <<this -> point_cloud_pairs[k].D_k <<  ") : " << mean_error << " , " << rms_error << std::endl;
+
 
 	}
 
-	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP RMS error: " << max_error << std::endl;
+	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_rms_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << worst_Sk_rms << " , " <<worst_Dk_rms <<  ") : " << max_rms_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << worst_Sk_mean << " , " <<worst_Dk_mean <<  ") : " << max_mean_error << std::endl;
+
 
 }
 
@@ -469,7 +495,7 @@ void BundleAdjuster::save_connectivity_matrix() const{
 		connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
 		connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
 
-		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba_"  ".obj");
+		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 	}
 

@@ -46,7 +46,7 @@
 #define NAVIGATION_TIMES 80
 
 // Downsampling factor (between 0 and 1)
-#define DOWNSAMPLING_FACTOR 0.2
+#define DOWNSAMPLING_FACTOR 0.3
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
@@ -80,7 +80,7 @@
 #define N_ITER_SHAPE_FILTER 4
 	
 // Number of iterations in bundle adjustment
-#define N_ITER_BUNDLE_ADJUSTMENT 5
+#define N_ITER_BUNDLE_ADJUSTMENT 10
 
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 8
@@ -158,7 +158,7 @@ int main() {
 	X0_augmented.rows(0,2) = pos_0;
 
 	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.};
+	arma::vec mrp_0 = {0.,0.,0.4142};
 	X0_augmented.rows(6,8) = mrp_0;
 
 	// Angular velocity in body frame

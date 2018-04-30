@@ -19,7 +19,7 @@ typedef Eigen::VectorXd EigVec;
 class BundleAdjuster {
 
 public:
-	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter);
+	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter,arma::mat LN_t0,arma::vec x_t0);
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -59,6 +59,8 @@ protected:
 
 	void find_good_pairs(const std::vector< PointCloudPair > & all_point_cloud_pairs);
 
+	arma::mat LN_t0;
+	arma::vec x_t0;
 
 
 

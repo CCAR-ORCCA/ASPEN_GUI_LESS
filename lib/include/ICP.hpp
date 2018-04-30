@@ -42,6 +42,10 @@ public:
 		const arma::mat & dcm = arma::eye<arma::mat>(3, 3),
 		const arma::vec & x = arma::zeros<arma::vec>(3));
 
+	static double compute_mean_residuals(
+		const std::vector<PointPair> & point_pairs,
+		const arma::mat & dcm = arma::eye<arma::mat>(3, 3),
+		const arma::vec & x = arma::zeros<arma::vec>(3));
 
 	static double compute_normal_distance(const PointPair & point_pair, 
 		const arma::mat & dcm = arma::eye<arma::mat>(3, 3),

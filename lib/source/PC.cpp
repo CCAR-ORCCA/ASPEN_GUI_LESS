@@ -142,11 +142,6 @@ PC::PC(std::string filename) {
 
 
 
-
-
-
-
-
 void PC::transform(const arma::mat & dcm, const arma::vec & x){
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;

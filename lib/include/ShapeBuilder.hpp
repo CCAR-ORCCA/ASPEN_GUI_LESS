@@ -206,6 +206,10 @@ protected:
 
 	std::vector< std::shared_ptr<PC> > all_registered_pc;
 
+	arma::mat LN_t0;
+	arma::vec x_t0;
+
+
 
 };
 

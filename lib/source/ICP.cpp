@@ -65,6 +65,26 @@ double ICP::compute_rms_residuals(
 }
 
 
+double ICP::compute_mean_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat & dcm,
+	const arma::vec & x) {
+
+	double J = 0;
+
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+
+		J += ICP::compute_normal_distance(point_pairs[pair_index],  dcm,x);
+
+	}
+
+	J = J / point_pairs.size();
+	return J;
+
+}
+
+
 double ICP::compute_rms_residuals(
 	const arma::mat & dcm,
 	const arma::vec & x) {
