@@ -306,8 +306,6 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		arma::mat n = point_pairs[i].second -> get_normal();
 
 
-		std::cout << i << std::endl;
-
 
 		if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
 
@@ -339,6 +337,10 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		N_k += H_ki.t() * y_ki;
 
 	}
+
+	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << " - Done with this sub-problem\n";
+	#endif
 
 }
 
@@ -414,7 +416,8 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	int S_k = point_cloud_pair.S_k;
 	int D_k = point_cloud_pair.D_k;
 
-	int offset_S_k, offset_D_k;
+	int offset_S_k = 0;
+	int offset_D_k = 0;
 	
 	if (S_k > this -> ground_pc_index){
 		offset_S_k = -6;
@@ -423,6 +426,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	if (D_k > this -> ground_pc_index){
 		offset_D_k = -6;
 	}
+
 	
 	if (D_k != this -> ground_pc_index && S_k != this -> ground_pc_index){
 
@@ -469,6 +473,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	}
 	else {
 
+		// D_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * D_k + offset_D_k + i, 6 * D_k + offset_D_k + j,Lambda_k(i,j)));
