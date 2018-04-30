@@ -174,7 +174,7 @@ void BundleAdjuster::find_point_cloud_pairs(){
 			max_error = error;
 		}
 
-		if (this -> all_registered_pc -> at(i) -> get_size() > this -> ground_pc_index){
+		if (this -> all_registered_pc -> at(i) -> get_size() > this -> all_registered_pc -> at(this -> ground_pc_index) -> get_size()){
 			this -> ground_pc_index = i;
 		}
 
