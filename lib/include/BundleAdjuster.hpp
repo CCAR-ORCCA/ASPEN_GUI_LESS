@@ -62,6 +62,8 @@ protected:
 	arma::mat LN_t0;
 	arma::vec x_t0;
 
+	int ground_pc_index;
+
 
 
 };
