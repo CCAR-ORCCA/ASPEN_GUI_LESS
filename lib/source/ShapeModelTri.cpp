@@ -153,15 +153,17 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 
 void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const{
 
+	std::cout << " - Sampling surface points from the true shape model ...\n";
 
-	points = arma::zeros<arma::mat>(3,this -> elements.size() * N);
-	normals = arma::zeros<arma::mat>(3,this -> elements.size() * N);
+	int N_points_per_element = int(double(N) / this -> elements.size());
+
+	points = arma::zeros<arma::mat>(3,N);
+	normals = arma::zeros<arma::mat>(3, N);
 
 
 	// N points are randomly sampled from the surface of the shape model
 	
 	// #pragma omp parallel for
-	std::cout << " - Sampling surface points from the true shape model ...\n";
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){
 
 		auto vertices = this -> elements[f] -> get_control_points();
@@ -172,14 +174,14 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 
 		arma::vec noise_intensity = arma::randu<arma::vec>(1);
 
-		for (unsigned int i = 0; i < N; ++i){
+		for (unsigned int i = 0; i < N_points_per_element; ++i){
 
 			arma::vec random = arma::randu<arma::vec>(2);
 			double u = random(0);
 			double v = random(1);
 
-			points.col(N * f + i) = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2 +  noise_intensity(0) * arma::randn<arma::vec>(3);
-			normals.col(N * f + i) = arma::normalise(arma::normalise(arma::cross(V1 - V0,V2 - V0)) + 0.1 * arma::randn<arma::vec>(3));
+			points.col(N_points_per_element * f + i) = (1 - std::sqrt(u)) * V0 + std::sqrt(u) * ( 1 - v) * V1 + std::sqrt(u) * v * V2 +  noise_intensity(0) * arma::randn<arma::vec>(3);
+			normals.col(N_points_per_element * f + i) = arma::normalise(arma::normalise(arma::cross(V1 - V0,V2 - V0)) + 0.1 * arma::randn<arma::vec>(3));
 
 		}
 	}
