@@ -198,7 +198,7 @@ int  BatchFilter::run(
 		P_hat_0 = arma::inv(info_mat) ;
 
 		// The consider matrices are computed
-		arma::mat S_xc = - P_hat_0 * H.t() * R;
+		arma::mat S_xc = - P_hat_0 * H.t() * W;
 		P_consider = S_xc * P_cc * S_xc.t();
 
 
