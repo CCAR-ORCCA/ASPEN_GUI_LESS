@@ -213,7 +213,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 			#if BUNDLE_ADJUSTER_DEBUG
 
-					std::cout << " ---- Formed pair " << pc_index << " , " << pc_in_bin.back() << std::endl;
+					std::cout << " ---- Formed pair " << pc_in_bin[pc_in_bin.back()] << " , " << pc_in_bin[pc_index] << std::endl;
 			#endif
 					pairs.insert(new_pair);
 
