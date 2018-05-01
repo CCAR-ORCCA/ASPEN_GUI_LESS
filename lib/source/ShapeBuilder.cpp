@@ -34,6 +34,7 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 	this -> filter_arguments = filter_arguments;
+
 }
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
@@ -53,6 +54,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::cout << "Running the filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
+	arma::mat longitude_latitude = arma::mat( times.n_rows, 2);
 
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
@@ -114,7 +116,19 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the instrument frame at t_D == t_0
 				M_pc = icp_pc.get_M();
 				X_pc = icp_pc.get_X();
-			
+
+				arma::vec u_L = {1,0,0};
+				arma::vec u_B = M_pc * u_L;
+
+				double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+				double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+
+				arma::rowvec long_lat = {longitude,latitude};
+
+				longitude_latitude.row(time_index) = long_lat;
+
+
+
 			}
 			catch(ICPException & e){
 				std::cout << e.what() << std::endl;
@@ -132,7 +146,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
 				
-				this -> initialize_shape(time_index);
+				this -> initialize_shape(time_index,longitude_latitude);
 				
 				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
 				return;
@@ -260,7 +274,7 @@ void ShapeBuilder::get_new_states(
 
 
 
-void ShapeBuilder::initialize_shape(unsigned int time_index){
+void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & longitude_latitude){
 
 
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
@@ -268,6 +282,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index){
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
+
+	longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
 
 	if (this -> filter_arguments -> get_use_icp()){
 

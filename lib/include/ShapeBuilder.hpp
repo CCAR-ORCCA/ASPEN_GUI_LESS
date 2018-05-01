@@ -158,7 +158,7 @@ protected:
 	*/
 	void concatenate_point_clouds(unsigned int index);
 
-	void initialize_shape(unsigned int index);
+	void initialize_shape(unsigned int index,const arma::mat & longitude_latitude);
 
 
 	/**
@@ -208,7 +208,6 @@ protected:
 
 	arma::mat LN_t0;
 	arma::vec x_t0;
-
 
 
 };
