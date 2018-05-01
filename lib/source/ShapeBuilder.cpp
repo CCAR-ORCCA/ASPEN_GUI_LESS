@@ -144,7 +144,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			// Bundle adjustment is run over the three last point clouds
-			if ((this -> all_registered_pc.size() > 2 && time_index - last_ba_call_index == 2) || last_ba_call_index < 0){
+			if (this -> all_registered_pc.size() > 2 && (time_index - last_ba_call_index == 2 || last_ba_call_index < 0  )){
 
 				std::vector< std::shared_ptr<PC> > pc_to_bundle_adjust;
 
