@@ -183,7 +183,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	for (int i = 0; i < longitude_latitude.n_rows; ++i){
 		int bin_longitude = int(longitude_latitude(i,0) / d_bin_longitude) + n_bins_longitude/2;
 		int bin_latitude = int(longitude_latitude(i,1) / d_bin_latitude) + n_bins_latitude/2;
-		bins[n_bins_latitude - bin_latitude][bin_longitude].push_back(i);
+		bins[n_bins_latitude - bin_latitude - 1][bin_longitude].push_back(i);
 	}
 
 	#if BUNDLE_ADJUSTER_DEBUG
@@ -200,8 +200,8 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 			std::cout << " --- Pulling bin  " << bin_latitude << " " << bin_longitude << std::endl;
 			#endif
-			
-			std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude][bin_longitude];
+
+			std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude - 1][bin_longitude];
 			
 
 
