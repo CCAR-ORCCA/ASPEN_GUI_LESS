@@ -162,8 +162,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	std::set<std::set<int> > pairs;
 	
 	// The successive measurements are added
-	for (int i = 0; i < longitude_latitude.n_rows - 1; ++i){
-
+	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
 		std::set<int> new_pair;
 		new_pair.insert(i);
 		new_pair.insert(i + 1);
