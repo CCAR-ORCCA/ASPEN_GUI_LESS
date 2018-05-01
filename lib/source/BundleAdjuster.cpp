@@ -143,12 +143,6 @@ void BundleAdjuster::ICP_pass(){
 		++progress;
 	}
 
-
-
-
-
-
-
 }
 
 
@@ -209,7 +203,6 @@ void BundleAdjuster::find_point_cloud_pairs(){
 	std::cout << "- Using point cloud " << this -> ground_pc_index << " as ground point cloud\n";
 	std::cout << "- Scanning pairs\n";
 	boost::progress_display progress(M);
-
 
 	for (int j = 0; j < M; ++j){
 

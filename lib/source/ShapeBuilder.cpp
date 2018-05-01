@@ -114,11 +114,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the instrument frame at t_D == t_0
 				M_pc = icp_pc.get_M();
 				X_pc = icp_pc.get_X();
-
-
-				std::cout << arma::norm(RBK::dcm_to_prv(dcm_LB * RBK::mrp_to_dcm(mrp_LN))) * 180 / arma::datum::pi << std::endl;
-
-
+			
 			}
 			catch(ICPException & e){
 				std::cout << e.what() << std::endl;
