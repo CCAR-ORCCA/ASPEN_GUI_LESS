@@ -19,8 +19,12 @@ typedef Eigen::VectorXd EigVec;
 class BundleAdjuster {
 
 public:
-	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter,arma::mat LN_t0,arma::vec x_t0,
-		const arma::mat & longitude_latitude);
+	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,
+		int N_iter,
+		const arma::mat & LN_t0 = arma::eye<arma::mat>(3,3),
+		const arma::vec & x_t0 = arma::zeros<arma::vec>(3),
+		const arma::mat & longitude_latitude = arma::zeros<arma::mat>(1,1),
+		bool save_connectivity = true);
 
 	struct PointCloudPair {
 		int S_k = -1;

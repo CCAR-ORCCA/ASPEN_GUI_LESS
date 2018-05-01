@@ -140,6 +140,30 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
+
+			// Bundle adjustment in run over the three last point clouds
+			if (this -> all_registered_pc.size() > 2){
+
+				std::vector< std::shared_ptr<PC> > pc_to_bundle_adjust;
+
+				pc_to_bundle_adjust.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - 2]);
+				pc_to_bundle_adjust.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - 1]);
+				pc_to_bundle_adjust.push_back(this -> all_registered_pc.back());
+
+				BundleAdjuster bundle_adjuster(&pc_to_bundle_adjust,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					arma::eye<arma::mat>(3,3),
+					arma::zeros<arma::vec>(3),
+					arma::zeros<arma::mat>(1,1),
+					false);
+
+			}
+
+
+
+
+
+
 			#if IOFLAGS_shape_builder
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
