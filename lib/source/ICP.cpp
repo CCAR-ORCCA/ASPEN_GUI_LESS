@@ -5,7 +5,7 @@ ICP::ICP(std::shared_ptr<PC> pc_destination,
 	std::shared_ptr<PC> pc_source,
 	arma::mat dcm_0,
 	arma::vec X_0,
-	bool use_omp) {
+	bool verbose) {
 
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
@@ -13,18 +13,14 @@ ICP::ICP(std::shared_ptr<PC> pc_destination,
 	auto start = std::chrono::system_clock::now();
 
 	
-	this -> register_pc_mrp_multiplicative_partials(100,
-		1e-8,
-		1e-8,
-		dcm_0,
-		X_0,
-		use_omp);
+	this -> register_pc_mrp_multiplicative_partials(100,1e-8,1e-8,dcm_0,X_0);
 	auto end = std::chrono::system_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
-	std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
-	
+	if (verbose){
+		std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
+	}
 
 
 }
@@ -110,7 +106,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	const double stol,
 	arma::mat dcm_0,
 	arma::vec X_0,
-	bool use_omp) {
+	bool verbose) {
 
 	double J  = std::numeric_limits<double>::infinity();
 	double J_0  = std::numeric_limits<double>::infinity();

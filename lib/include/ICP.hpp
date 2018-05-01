@@ -20,7 +20,7 @@ public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 		arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
 		arma::vec X_0 = arma::zeros<arma::vec>(3),
-		bool use_omp = false);
+		bool verbose = true);
 
 	arma::vec get_X() const;
 	arma::mat get_M() const;
@@ -63,7 +63,7 @@ protected:
 		const double stol,
 		arma::mat dcm_0 ,
 		arma::vec X_0,
-		bool use_omp );
+		bool verbose = true);
 
 
 	double compute_rms_residuals(
