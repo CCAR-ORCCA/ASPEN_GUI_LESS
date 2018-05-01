@@ -19,7 +19,8 @@ typedef Eigen::VectorXd EigVec;
 class BundleAdjuster {
 
 public:
-	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter,arma::mat LN_t0,arma::vec x_t0);
+	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,int N_iter,arma::mat LN_t0,arma::vec x_t0,
+		const arma::mat & longitude_latitude);
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -37,8 +38,7 @@ protected:
 	std::vector< PointCloudPair > point_cloud_pairs;
 	int N_iter;
 
-	void find_point_cloud_pairs();
-	void save_connectivity_matrix() const;
+	void save_connectivity() const;
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair);
 
@@ -53,13 +53,11 @@ protected:
 
 	void ICP_pass();
 
-
 	void solve_bundle_adjustment();
 
+	void create_pairs(const arma::mat & longitude_latitude);
 
 	void update_point_cloud_pairs();
-
-	void find_good_pairs(const std::vector< PointCloudPair > & all_point_cloud_pairs);
 
 	arma::mat LN_t0;
 	arma::vec x_t0;

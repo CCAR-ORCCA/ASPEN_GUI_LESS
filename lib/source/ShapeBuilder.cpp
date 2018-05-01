@@ -96,6 +96,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
+			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
+
 
 			#if IOFLAGS_shape_builder
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
@@ -282,7 +284,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
-
 	longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
 
 	if (this -> filter_arguments -> get_use_icp()){
@@ -293,7 +294,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 
 	// The point clouds are bundle-adjusted
 		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			this -> LN_t0,this -> x_t0);
+			this -> LN_t0,this -> x_t0,longitude_latitude);
 
 
 		std::cout << "-- Constructing point cloud...\n";

@@ -5,16 +5,20 @@
 #include "DebugFlags.hpp"
 
 
-BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, int N_iter,arma::mat LN_t0,arma::vec x_t0){
+BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
+	int N_iter,
+	arma::mat LN_t0,arma::vec x_t0,
+	const arma::mat & longitude_latitude){
 
 	this -> all_registered_pc = all_registered_pc_;
 	this -> LN_t0 = LN_t0;
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
+
 	// The connectivity between point clouds is inferred
-	std::cout << "- Forming point cloud pairs" << std::endl;
-	this -> find_point_cloud_pairs();
+	std::cout << "- Creating point cloud pairs" << std::endl;
+	this -> create_pairs(longitude_latitude);
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
@@ -26,7 +30,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	}
 
 	// The connectivity matrix is saved
-	this -> save_connectivity_matrix();
+	this -> save_connectivity();
 }
 
 void BundleAdjuster::solve_bundle_adjustment(){
@@ -146,143 +150,202 @@ void BundleAdjuster::ICP_pass(){
 }
 
 
+void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 
-void BundleAdjuster::find_point_cloud_pairs(){
+	int n_bins_longitude = 72;
+	int n_bins_latitude = 36;
 
-	int M = this -> all_registered_pc -> size();
-	
+	double d_bin_longitude = 360./ n_bins_longitude;
+	double d_bin_latitude = 180./ n_bins_latitude;
+
+	std::vector< std::vector< std::vector< int > > > bins;
+
 	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << "-- Creating the empty bin matrix" << std::endl;
+	#endif
+	for (int i = 0; i < n_bins_latitude; ++i){
 
-	std::cout << "Number of registered point clouds: " << M << std::endl;
-	
+		std::vector< std::vector < int > > row;
+
+		for (int j = 0; j < n_bins_longitude; ++j){
+			std::vector < int > empty_vector;
+			row.push_back(empty_vector);
+		}
+		bins.push_back(row);
+
+	}
+
+	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << "-- Fetching point clouds in bins" << std::endl;
 	#endif
 
-	std::vector<PointPair> point_pairs;
+	for (int i = 0; i < longitude_latitude.n_rows; ++i){
+		int bin_longitude = int(longitude_latitude(i,0) / d_bin_longitude) + n_bins_longitude/2;
+		int bin_latitude = int(longitude_latitude(i,1) / d_bin_latitude) + n_bins_latitude/2;
+		bins[n_bins_latitude - bin_latitude][bin_longitude].push_back(i);
+	}
 
-	double min_overlap = std::numeric_limits<double>::infinity();
-	double max_error = - std::numeric_limits<double>::infinity();
+	#if BUNDLE_ADJUSTER_DEBUG
+	std::cout << "-- Forming pairs" << std::endl;
+	#endif
 
-	this -> ground_pc_index = 0;
+	std::set<std::set<int> > pairs;
 
+	for (int bin_latitude = 0; bin_latitude < n_bins_latitude; ++bin_latitude){
+		for (int bin_longitude = 0; bin_longitude < n_bins_longitude; ++bin_longitude){
+			
+			std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude][bin_longitude];
+			
 
-	for (int i = 1; i < M ; ++i){
-		int h = 5;
+			while(pc_in_bin.size() > 1){
+				for (int pc_index = 0; pc_index < pc_in_bin.size() - 1; ++pc_index){
+					std::set<int> new_pair;
+					new_pair.insert(pc_in_bin[pc_in_bin.back()]);
+					new_pair.insert(pc_in_bin[pc_index]);
+					pairs.insert(new_pair);
 
-		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(i-1),h);				
+				}
+				pc_in_bin.pop_back();
+			}
+
+		}
+	}
+	#if BUNDLE_ADJUSTER_DEBUG
+
+	std::cout << "-- Number of pairs: " << pairs.size() << std::endl;
+	std::cout << "-- Storing pairs" << std::endl;
+	#endif
+
+	for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
+
+		int S_k =(*pair_iter-> begin());
+		int D_k =(*std::next(pair_iter-> begin()));
+		int h = 0;
+		std::vector<PointPair> point_pairs;
+
+		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(S_k),this -> all_registered_pc -> at(D_k),h);				
 		double error = ICP::compute_rms_residuals(point_pairs);
 
-		double p = std::log2(this -> all_registered_pc -> at(i) -> get_size());
+		double p = std::log2(this -> all_registered_pc -> at(S_k) -> get_size());
 		int N_pairs = (int)(std::pow(2, p - h));
 
 		BundleAdjuster::PointCloudPair pair;
-		pair.S_k = i;
-		pair.D_k = i - 1;
+		pair.S_k = S_k;
+		pair.D_k = D_k;
 		pair.error = error;
 		pair.N_pairs = N_pairs;
 		pair.N_accepted_pairs = point_pairs.size();
-
 		this -> point_cloud_pairs.push_back(pair);
 
-		if (min_overlap > double(point_pairs.size()) / double(N_pairs)){
-			min_overlap = double(point_pairs.size()) / double(N_pairs);
-		}
-
-		if (max_error > error){
-			max_error = error;
-		}
-
-		if (this -> all_registered_pc -> at(i) -> get_size() > this -> all_registered_pc -> at(this -> ground_pc_index) -> get_size()){
-			this -> ground_pc_index = i;
-		}
-
-
-
-	}
-
-	std::cout << "- Using point cloud " << this -> ground_pc_index << " as ground point cloud\n";
-	std::cout << "- Scanning pairs\n";
-	boost::progress_display progress(M);
-
-	for (int j = 0; j < M; ++j){
-
-		// The ground pc index cannot be registered to itself
-		// Neither can it be registered again to a pc it has already been paired with
-		if (std::abs(j - this -> ground_pc_index) < 3){
-			continue;
-		}
-
-		try{
-
-			int h = 4;
-
-			ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(this -> ground_pc_index),this -> all_registered_pc -> at(j),h);				
-			double error = ICP::compute_rms_residuals(point_pairs);
-
-			double p = std::log2(this -> all_registered_pc -> at(this -> ground_pc_index) -> get_size());
-			int N_pairs = (int)(std::pow(2, p - h));
-
-			BundleAdjuster::PointCloudPair pair;
-			pair.S_k = this -> ground_pc_index;
-			pair.D_k = j;
-			pair.error = error;
-			pair.N_pairs = N_pairs;
-			pair.N_accepted_pairs = point_pairs.size();
-
-				// Restricting loop closure to 
-				// pairs featuring 0 as one of their point clouds
-			if (double(point_pairs.size()) / double(N_pairs) > min_overlap ){
-				#if BUNDLE_ADJUSTER_DEBUG
-				std::cout << "Using pair " << this -> ground_pc_index << " / " << j << " for loop closure" << std::endl;
-				#endif
-				this -> point_cloud_pairs.push_back(pair);
-				break;
-			}
-
-
-		}
-		catch(ICPNoPairsException & e){
-
-		}
-		catch(ICPException & e){
-
-		}
-		++progress;
-
-	}
-
-	
-
-	std::cout << "\nNumber of point cloud pairs: " << this -> point_cloud_pairs.size() << std::endl;
-
-
-}
-
-
-void BundleAdjuster::find_good_pairs(const std::vector< PointCloudPair > & all_point_cloud_pairs){
-
-	for (unsigned int i = 0; i < all_point_cloud_pairs.size(); ++i){
-		
-		PointCloudPair point_cloud_pair = all_point_cloud_pairs.at(i);
-
-		double quality = double(point_cloud_pair.N_accepted_pairs) / point_cloud_pair.N_pairs ;
-
-
-		int time_difference =  std::abs(point_cloud_pair.S_k - point_cloud_pair.D_k);
-
-		// If the two pairs are sequential, they are added
-		if (time_difference == 1){
-			this -> point_cloud_pairs.push_back(point_cloud_pair);
-		}
-
-		// else if (quality > 0.9 && this -> point_cloud_pairs.size() <= 1000) {
-		// 	this -> point_cloud_pairs.push_back(point_cloud_pair);
-		// }
-
 
 	}
 
 }
+
+// void BundleAdjuster::find_point_cloud_pairs(){
+
+// 	int M = this -> all_registered_pc -> size();
+
+// 	#if BUNDLE_ADJUSTER_DEBUG
+
+// 	std::cout << "Number of registered point clouds: " << M << std::endl;
+
+// 	#endif
+
+// 	std::vector<PointPair> point_pairs;
+
+// 	double min_overlap = std::numeric_limits<double>::infinity();
+// 	double max_error = - std::numeric_limits<double>::infinity();
+
+// 	this -> ground_pc_index = 0;
+
+
+// 	for (int i = 1; i < M ; ++i){
+// 		int h = 5;
+
+// 		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(i),this -> all_registered_pc -> at(i-1),h);				
+// 		double error = ICP::compute_rms_residuals(point_pairs);
+
+// 		double p = std::log2(this -> all_registered_pc -> at(i) -> get_size());
+// 		int N_pairs = (int)(std::pow(2, p - h));
+
+// 		BundleAdjuster::PointCloudPair pair;
+// 		pair.S_k = i;
+// 		pair.D_k = i - 1;
+// 		pair.error = error;
+// 		pair.N_pairs = N_pairs;
+// 		pair.N_accepted_pairs = point_pairs.size();
+
+// 		this -> point_cloud_pairs.push_back(pair);
+
+// 		if (this -> all_registered_pc -> at(i) -> get_size() > this -> all_registered_pc -> at(this -> ground_pc_index) -> get_size()){
+// 			this -> ground_pc_index = i;
+// 		}
+
+
+
+// 	}
+
+// 	std::cout << "- Using point cloud " << this -> ground_pc_index << " as ground point cloud\n";
+// 	std::cout << "- Longitude/latitude pairing\n";
+// 	boost::progress_display progress(M);
+
+// 	for (int j = 0; j < M; ++j){
+
+// 		// The ground pc index cannot be registered to itself
+// 		// Neither can it be registered again to a pc it has already been paired with
+// 		if (std::abs(j - this -> ground_pc_index) < 3){
+// 			continue;
+// 		}
+
+// 		try{
+
+// 			int h = 4;
+
+// 			ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(this -> ground_pc_index),this -> all_registered_pc -> at(j),h);				
+// 			double error = ICP::compute_rms_residuals(point_pairs);
+
+// 			double p = std::log2(this -> all_registered_pc -> at(this -> ground_pc_index) -> get_size());
+// 			int N_pairs = (int)(std::pow(2, p - h));
+
+// 			BundleAdjuster::PointCloudPair pair;
+// 			pair.S_k = this -> ground_pc_index;
+// 			pair.D_k = j;
+// 			pair.error = error;
+// 			pair.N_pairs = N_pairs;
+// 			pair.N_accepted_pairs = point_pairs.size();
+
+// 				// Restricting loop closure to 
+// 				// pairs featuring 0 as one of their point clouds
+// 			if (double(point_pairs.size()) / double(N_pairs) > min_overlap ){
+// 				#if BUNDLE_ADJUSTER_DEBUG
+// 				std::cout << "Using pair " << this -> ground_pc_index << " / " << j << " for loop closure" << std::endl;
+// 				#endif
+// 				this -> point_cloud_pairs.push_back(pair);
+// 				break;
+// 			}
+
+
+// 		}
+// 		catch(ICPNoPairsException & e){
+
+// 		}
+// 		catch(ICPException & e){
+
+// 		}
+// 		++progress;
+
+// 	}
+
+
+
+// 	std::cout << "\nNumber of point cloud pairs: " << this -> point_cloud_pairs.size() << std::endl;
+
+
+// }
+
+
 
 
 
@@ -530,7 +593,7 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 }
 
 
-void BundleAdjuster::save_connectivity_matrix() const{
+void BundleAdjuster::save_connectivity() const{
 	int M = this -> point_cloud_pairs. size();
 	int Q = this -> all_registered_pc -> size();
 
