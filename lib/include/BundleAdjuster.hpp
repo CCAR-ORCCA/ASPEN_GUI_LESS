@@ -44,12 +44,14 @@ protected:
 
 	void add_subproblem_to_problem(
 		std::vector<T>& coeffs,
-	    EigVec & N,
+		EigVec & N,
 		const arma::mat & Lambda_k,
 		const arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair);
 
 	void apply_deviation(const arma::vec & dX);
+
+	void ICP_pass();
 
 
 	void solve_bundle_adjustment();

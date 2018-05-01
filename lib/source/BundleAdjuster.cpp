@@ -22,6 +22,9 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment();
+		this -> ICP_pass();
+		this -> solve_bundle_adjustment();
+		
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}
 
@@ -125,6 +128,31 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 
 }
+
+void BundleAdjuster::ICP_pass(){
+
+	arma::mat M_pc;
+	arma::vec X_pc;
+	
+	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
+		ICP icp_pc(this -> all_registered_pc -> at(i), this -> all_registered_pc -> at(i + 1), M_pc, X_pc);
+
+		M_pc = icp_pc.get_M();
+		X_pc = icp_pc.get_X();
+
+		 this -> all_registered_pc -> at(i + 1) -> transform(M_pc,X_pc);
+	}
+
+
+
+
+
+
+
+}
+
+
+
 
 void BundleAdjuster::find_point_cloud_pairs(){
 
