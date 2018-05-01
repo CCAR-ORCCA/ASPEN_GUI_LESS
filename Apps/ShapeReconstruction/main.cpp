@@ -18,8 +18,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 64 // Goldeneye
-#define COL_RESOLUTION 64 // Goldeneye
+#define ROW_RESOLUTION 128 // Goldeneye
+#define COL_RESOLUTION 128 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -30,7 +30,7 @@
 #define SKIP_FACTOR 0.95 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 1e-1
+#define LOS_NOISE_SD_BASELINE 1e0
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
