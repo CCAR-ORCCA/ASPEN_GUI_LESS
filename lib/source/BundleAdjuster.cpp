@@ -191,11 +191,21 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	#endif
 
 	std::set<std::set<int> > pairs;
+	
+	// The successive measurements are added
+	for (int i = 0; i < longitude_latitude.n_rows - 1; ++i){
 
+		std::set<int> new_pair;
+		new_pair.insert(i);
+		new_pair.insert(i + 1);
+		pairs.insert(new_pair);
+
+	}
+
+	// The rest of the pairs are inferred from the binning of longitude/latitude
 	for (int bin_latitude = 0; bin_latitude < n_bins_latitude; ++bin_latitude){
 		for (int bin_longitude = 0; bin_longitude < n_bins_longitude; ++bin_longitude){
 			
-
 			#if BUNDLE_ADJUSTER_DEBUG
 
 			std::cout << " --- Pulling bin  " << bin_latitude << " " << bin_longitude << std::endl;
@@ -203,8 +213,6 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 			std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude - 1][bin_longitude];
 			
-
-
 			while(pc_in_bin.size() > 1){
 				for (int pc_index = 0; pc_index < pc_in_bin.size() - 1; ++pc_index){
 					std::set<int> new_pair;
@@ -223,6 +231,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 		}
 	}
+
 	#if BUNDLE_ADJUSTER_DEBUG
 	std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
 	std::cout << " -- Storing pairs" << std::endl;
