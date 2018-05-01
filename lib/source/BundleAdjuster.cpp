@@ -162,7 +162,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	std::vector< std::vector< std::vector< int > > > bins;
 
 	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << "-- Creating the empty bin matrix" << std::endl;
+	std::cout << " -- Creating the empty bin matrix" << std::endl;
 	#endif
 	for (int i = 0; i < n_bins_latitude; ++i){
 
@@ -177,7 +177,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	}
 
 	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << "-- Fetching point clouds in bins" << std::endl;
+	std::cout << " -- Fetching point clouds in bins" << std::endl;
 	#endif
 
 	for (int i = 0; i < longitude_latitude.n_rows; ++i){
@@ -187,7 +187,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	}
 
 	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << "-- Forming pairs" << std::endl;
+	std::cout << " -- Forming pairs" << std::endl;
 	#endif
 
 	std::set<std::set<int> > pairs;
@@ -197,6 +197,11 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 			
 			std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude][bin_longitude];
 			
+			#if BUNDLE_ADJUSTER_DEBUG
+
+			std::cout << " --- Pulling bin  " << bin_latitude << " " << bin_longitude << std::endl;
+			#endif
+
 
 			while(pc_in_bin.size() > 1){
 				for (int pc_index = 0; pc_index < pc_in_bin.size() - 1; ++pc_index){
@@ -205,7 +210,10 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 					new_pair.insert(pc_in_bin[pc_index]);
 					pairs.insert(new_pair);
 
-					std::cout << "formed pair " << pc_index << " " << pc_in_bin.back() << std::endl;
+			#if BUNDLE_ADJUSTER_DEBUG
+
+					std::cout << " --- Formed pair " << pc_index << " " << pc_in_bin.back() << std::endl;
+			#endif
 
 				}
 				pc_in_bin.pop_back();
@@ -215,8 +223,8 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 	}
 	#if BUNDLE_ADJUSTER_DEBUG
 
-	std::cout << "-- Number of pairs: " << pairs.size() << std::endl;
-	std::cout << "-- Storing pairs" << std::endl;
+	std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
+	std::cout << " -- Storing pairs" << std::endl;
 	#endif
 
 	for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
