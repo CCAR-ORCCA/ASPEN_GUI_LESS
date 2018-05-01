@@ -101,18 +101,12 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise,double skipping_f
 	std::vector<int> active_pixel_indices;
 
 	int pixels_skipped = int(double(this -> y_res) * (1 - skipping_factor));
-	std::cout << "pixels skipped: " << pixels_skipped << std::endl;
 
 	for (unsigned int pixel = 0; pixel < resolution; ++pixel){
 		this -> focal_plane[pixel] -> reset( shape_model);
 
 		if (active_pixel_indices.size() == 0 || pixel - active_pixel_indices.back() >= pixels_skipped){
 			active_pixel_indices.push_back(pixel);
-			std::cout << "using " << pixel << std::endl;
-
-		}
-		else{
-			std::cout << "skipping " << pixel << std::endl;
 		}
 	}
 
