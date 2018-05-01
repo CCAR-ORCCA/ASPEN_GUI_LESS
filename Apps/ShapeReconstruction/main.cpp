@@ -27,6 +27,7 @@
 #define FOCAL_LENGTH 1e1 // meters
 #define INSTRUMENT_FREQUENCY_SHAPE 0.0016 // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
+#define SKIP_FACTOR 1 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase 
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 1e-1
@@ -146,6 +147,8 @@ int main() {
 	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
+	args.set_skip_factor(SKIP_FACTOR);
+
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);

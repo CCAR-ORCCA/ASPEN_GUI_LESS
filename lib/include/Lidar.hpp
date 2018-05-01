@@ -147,9 +147,11 @@ public:
 	Depending on whether the target is hit or not,
 	the corresponding members of the cast ray are updated
 	@param shape_model Pointer to the shape model being observed
+	@param skip_factor determines the number of pixels skipped between two active pixels. 
+	default is skip_factor == 1 (all pixels are used)
 	*/
 
-	void send_flash(ShapeModel * shape_model,bool add_noise) ;
+	void send_flash(ShapeModel * shape_model,bool add_noise,double skip_factor = 1) ;
 
 
 	/**

@@ -1,5 +1,6 @@
 #include "Observations.hpp"
 #include "ShapeModelBezier.hpp"
+#include "IOFlags.hpp"
 
 // Observations: need range measurements between
 // spacecraft and bezier surface
@@ -41,15 +42,17 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	// it will be added elsewhere in the filter)
 	
 
-	lidar -> send_flash(args.get_true_shape_model(),false);
+	lidar -> send_flash(args.get_true_shape_model(),false,args.get_skip_factor());
 
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
 	auto focal_plane = lidar -> get_focal_plane();
 	
 	arma::vec ranges = arma::vec(focal_plane -> size());
-	lidar -> save("../output/lidar/pc_true_" + std::to_string(t),true);
 
+	#if IOFLAGS_observations
+	lidar -> save("../output/lidar/pc_true_" + std::to_string(t),true);
+	#endif
 
 	
 
@@ -94,7 +97,7 @@ arma::vec Observations::obs_lidar_range_computed(
 
 
 	// Getting the true observations (noise is added)
-	lidar -> send_flash(args.get_estimated_shape_model(),false);
+	lidar -> send_flash(args.get_estimated_shape_model(),false,args.get_skip_factor());
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
 	auto focal_plane = lidar -> get_focal_plane();

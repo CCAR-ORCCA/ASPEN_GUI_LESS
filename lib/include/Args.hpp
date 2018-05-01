@@ -355,6 +355,14 @@ public:
 		this -> use_consistency_test = use_consistency_test;
 	}
 
+	void set_skip_factor(double sf){
+		this -> skip_factor = sf;
+	}
+
+	double get_skip_factor() const{
+		return this -> skip_factor;
+	}
+
 
 protected:
 
@@ -366,6 +374,8 @@ protected:
 	double minimum_elevation;
 	double mass;
 	double estimated_mass;
+
+	double skip_factor;
 
 
 	double sd_noise;

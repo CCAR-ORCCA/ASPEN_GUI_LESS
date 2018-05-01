@@ -94,34 +94,45 @@ double Lidar::get_size_y() const {
 }
 
 
-void Lidar::send_flash(ShapeModel * shape_model,bool add_noise) {
+void Lidar::send_flash(ShapeModel * shape_model,bool add_noise,double skipping_factor) {
 
 
 	unsigned int y_res = this -> z_res;
 	unsigned int z_res = this -> y_res;
-
-	for (unsigned int pixel = 0; pixel < y_res * z_res; ++pixel){
-		this -> focal_plane[pixel] -> reset( shape_model);
-	}
-	
-	auto start = std::chrono::system_clock::now();
 	unsigned int resolution = y_res * z_res;
+
+	std::vector<int> active_pixel_indices;
+
+	int pixels_skipped = int(double(y_res) * (1 - skipping_factor));
+
+
+	for (unsigned int pixel = 0; pixel < resolution; ++pixel){
+		this -> focal_plane[pixel] -> reset( shape_model);
+
+		if (active_pixel_indices.size() == 0 || pixel - active_pixel_indices.back() >= pixels_skipped){
+			active_pixel_indices.push_back(pixel);
+		}
+	}
+
+
+
+	auto start = std::chrono::system_clock::now();
 	
 	#pragma omp parallel for if (USE_OMP_LIDAR)
-	for (unsigned int pixel = 0; pixel < resolution; ++pixel){
+	for  (int pixel = 0; pixel < active_pixel_indices.size(); ++pixel){
 
-		bool hit = shape_model -> ray_trace(this -> focal_plane[pixel].get());
+		bool hit = shape_model -> ray_trace(this -> focal_plane[active_pixel_indices[pixel]].get());
 
 		// If there's a hit, noise is added along the line of sight on the true measurement
 		if (hit && add_noise) {
 
 			arma::vec random_vec = arma::randn(1);
-			double true_range = this -> focal_plane[pixel] -> get_true_range();
+			double true_range = this -> focal_plane[active_pixel_indices[pixel]] -> get_true_range();
 
 			double noise_sd = this -> los_noise_sd_baseline + this -> los_noise_fraction_mes_truth * true_range;			
 			double noise = noise_sd * random_vec(0);
 
-			this -> focal_plane[pixel] -> set_true_range(true_range + noise);
+			this -> focal_plane[active_pixel_indices[pixel]] -> set_true_range(true_range + noise);
 			
 			
 		}
