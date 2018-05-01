@@ -224,7 +224,6 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 		}
 	}
 	#if BUNDLE_ADJUSTER_DEBUG
-
 	std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
 	std::cout << " -- Storing pairs" << std::endl;
 	#endif
@@ -233,6 +232,14 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 		int S_k =(*pair_iter-> begin());
 		int D_k =(*std::next(pair_iter-> begin()));
+
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << " --- Reading pair " << S_k << " , " << D_k << std::endl;
+
+		#endif
+
+
 		int h = 0;
 		std::vector<PointPair> point_pairs;
 
