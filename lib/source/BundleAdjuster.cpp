@@ -24,7 +24,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 		this -> solve_bundle_adjustment();
 		this -> ICP_pass();
 		this -> solve_bundle_adjustment();
-		
+
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}
 
@@ -131,16 +131,19 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 void BundleAdjuster::ICP_pass(){
 
-	arma::mat M_pc;
-	arma::vec X_pc;
+	arma::mat M_pc = arma::eye<arma::mat>(3,3);
+	arma::vec X_pc = arma::zeros<arma::vec>(3);
 	
+	boost::progress_display progress(this -> all_registered_pc -> size() - 1);
+
 	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
 		ICP icp_pc(this -> all_registered_pc -> at(i), this -> all_registered_pc -> at(i + 1), M_pc, X_pc);
 
 		M_pc = icp_pc.get_M();
 		X_pc = icp_pc.get_X();
 
-		 this -> all_registered_pc -> at(i + 1) -> transform(M_pc,X_pc);
+		this -> all_registered_pc -> at(i + 1) -> transform(M_pc,X_pc);
+		++progress;
 	}
 
 
