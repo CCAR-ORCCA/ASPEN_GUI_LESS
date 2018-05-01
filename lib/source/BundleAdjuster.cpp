@@ -199,7 +199,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 		std::cout << " -- Fetching point clouds in bins" << std::endl;
 	#endif
 
-		for (int i = 0; i < longitude_latitude.n_rows; ++i){
+		for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 			int bin_longitude = int(longitude_latitude(i,0) / d_bin_longitude) + n_bins_longitude/2;
 			int bin_latitude = int(longitude_latitude(i,1) / d_bin_latitude) + n_bins_latitude/2;
 			bins[n_bins_latitude - bin_latitude - 1][bin_longitude].push_back(i);

@@ -62,7 +62,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
 	arma::vec mrp_LN(3);
 
-	int last_ba_call_index = -1;
+	int last_ba_call_index = 0;
 
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -143,23 +143,17 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> source_pc);
 
 
-			// Bundle adjustment is run over the three last point clouds
-			if (this -> all_registered_pc.size() > 2 && (time_index - last_ba_call_index == 2 || last_ba_call_index < 0  )){
-
-				std::vector< std::shared_ptr<PC> > pc_to_bundle_adjust;
-
-				pc_to_bundle_adjust.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - 2]);
-				pc_to_bundle_adjust.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - 1]);
-				pc_to_bundle_adjust.push_back(this -> all_registered_pc.back());
-
-				BundleAdjuster bundle_adjuster(&pc_to_bundle_adjust,
-					4,
-					arma::eye<arma::mat>(3,3),
-					arma::zeros<arma::vec>(3),
-					arma::zeros<arma::mat>(1,1),
-					false);
+			// Bundle adjustment is periodically run
+			if (time_index - last_ba_call_index == 20  ){
 
 				last_ba_call_index = time_index;
+
+				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					arma::eye<arma::mat>(3,3),
+					arma::zeros<arma::vec>(3),
+					longitude_latitude,
+					false);
 
 			}
 
