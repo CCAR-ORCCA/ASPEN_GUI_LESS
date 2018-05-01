@@ -50,6 +50,6 @@ def plot_lidar(path,savepath = None):
 
 # plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_bezier.txt")
 
-plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_bezier_250000.000000.txt")
+plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true_380409.482759.txt")
 # plot_lidar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/lidar/pc_true_250000.000000.txt")
 

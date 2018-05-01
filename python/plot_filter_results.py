@@ -278,12 +278,8 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
     X_hat_augmented[1:,:] = X_hat[0:3,:]
     X_true_augmented[1:,:] = X_true[0:3,:]
 
-
-
     np.savetxt(path + "X_hat_augmented.txt",X_hat_augmented)
     np.savetxt(path + "X_true_augmented.txt",X_true_augmented)
-
-
 
     sd = []
 
@@ -392,5 +388,5 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
 path_no_icp = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/snowbird_2018/paper/Figures/no_ICP"
 path_with_icp = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/snowbird_2018/paper/Figures/with_ICP"
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/test/",savepath = None )
+plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",savepath = None )
 

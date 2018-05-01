@@ -69,7 +69,7 @@
 #define DENSITY 1900
 
 // Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP false
+#define USE_ICP true
 
 // If true, the state covariance is used to provide an a-priori to the batch
 #define USE_PHAT_IN_BATCH false
