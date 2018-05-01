@@ -27,7 +27,7 @@
 #define FOCAL_LENGTH 1e1 // meters
 #define INSTRUMENT_FREQUENCY_SHAPE 0.0016 // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
-#define SKIP_FACTOR 1 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase 
+#define SKIP_FACTOR 0.5 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase 
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 1e-1
