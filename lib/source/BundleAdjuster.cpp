@@ -219,8 +219,6 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 
 }
 
-
-
 void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair){
 
 	// The point-pairs in the prescribed point-cloud pair are formed (with h = 0, so we are using them all)

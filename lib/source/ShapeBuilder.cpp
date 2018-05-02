@@ -168,8 +168,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						this -> LN_t0,
 						this -> x_t0,
 						longitude_latitude,
-						false,
-						true);
+						true,
+						false);
 				}
 				else{
 					std::cout << " -- Applying BA to successive point clouds\n";
