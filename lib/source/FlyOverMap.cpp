@@ -45,7 +45,6 @@ void FlyOverMap::update_label(int label,double longitude, double latitude){
 	this -> bins[this -> n_bins_latitude -  new_bin_latitude - 1][ new_bin_longitude].push_back(label);
 	this -> labels[label] = std::make_pair(this -> n_bins_latitude -  new_bin_latitude - 1,new_bin_longitude);
 
-
 	if ((old_bin_coordinates.first != this -> n_bins_latitude -  new_bin_latitude - 1) || (old_bin_coordinates.second != new_bin_longitude )){
 		std::cout << "Updated label " << label << std::endl;
 	}

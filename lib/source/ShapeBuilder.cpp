@@ -178,6 +178,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 30; ++pc){
 					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 				}
+				longitude_latitude.save("../output/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				BundleAdjuster bundle_adjuster(&pc_to_ba,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
@@ -197,6 +198,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Flyover detected\n";
 				last_ba_call_index = time_index;
+				longitude_latitude.save("../output/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
@@ -353,8 +355,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
-	longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-	
+	longitude_latitude.save("../output/longitude_latitude_final.txt",arma::raw_ascii);
+
 	if (this -> filter_arguments -> get_use_icp()){
 
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_points_retained()));
@@ -398,9 +400,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
 			0,
 			&this -> fly_over_map,
+			longitude_latitude,
 			this -> LN_t0,
 			this -> x_t0,
-			longitude_latitude,
 			true,true);
 
 
