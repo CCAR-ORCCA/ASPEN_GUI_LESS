@@ -64,6 +64,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int last_ba_call_index = 0;
 
 
+
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
@@ -180,7 +181,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 			}
 
-			if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude)){
+			if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
 				std::cout << " -- Flyover detected\n";
 				last_ba_call_index = time_index;
@@ -203,7 +204,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 			longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
-			
+
 
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
