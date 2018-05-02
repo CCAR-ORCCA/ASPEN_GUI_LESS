@@ -171,14 +171,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				
 				std::cout << " -- Applying BA to successive point clouds\n";
-
-
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
-
 
 				int ground_pc_ba_index = this -> all_registered_pc.size() - 30 - 1;
 
-				for (unsigned int pc = ground_pc_ba_index; pc < ground_pc_ba_index + 30; ++pc){
+				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 30; ++pc){
 					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 				}
 
