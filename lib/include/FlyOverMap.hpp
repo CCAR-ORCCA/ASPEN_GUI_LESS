@@ -11,7 +11,6 @@
 class FlyOverMap{
 public:
 	FlyOverMap(int n_bins_longitude = 72,int n_bins_latitude = 36);
-	~FlyOverMap();
 
 	void add_label(int label, double longitude, double latitude);
 
@@ -36,7 +35,7 @@ protected:
 	std::vector<int> get_bin(int bin_longitude,int bin_latitude ) const;
 
 	int get_bin_depth(int bin_longitude,int bin_latitude ) const;
-	
+
 
 	std::vector< std::vector< std::vector< int > > > bins;
 
