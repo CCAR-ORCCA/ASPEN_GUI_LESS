@@ -157,6 +157,7 @@ add_library(${LIB_NAME} SHARED
 	source/ExtendedKalmanFilter.cpp
 	source/Facet.cpp
 	source/Filter.cpp
+	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
 	source/ICP.cpp
 	source/Interpolator.cpp

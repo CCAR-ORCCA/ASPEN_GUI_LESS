@@ -34,7 +34,6 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 	this -> filter_arguments = filter_arguments;
-
 }
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
@@ -112,9 +111,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
+			bool icp_converged = false;
+			double longitude,latitude;
+
 			try{
 				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
-
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -124,12 +125,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec u_L = {1,0,0};
 				arma::vec u_B = M_pc * u_L;
 
-				double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-				double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+				longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+				latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
 
 				arma::rowvec long_lat = {longitude,latitude};
 
 				longitude_latitude.row(time_index) = long_lat;
+				this -> fly_over_map.add_label(time_index,longitude,latitude);
+				icp_converged = true;
 
 			}
 
@@ -144,16 +147,46 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			// Bundle adjustment is periodically run
-			if (time_index - last_ba_call_index == 20  ){
+			// If an overlap with previous measurements is detected
+			// or if the bundle adjustment has not been for a 
+			// certain number of observations
+			if (time_index - last_ba_call_index == 30){
 
+				last_ba_call_index = time_index;
+
+				std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+				for (unsigned int pc = 0; pc < 30; ++pc){
+					pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
+				}
+
+				BundleAdjuster bundle_adjuster(&pc_to_ba,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					&this -> fly_over_map,
+					this -> LN_t0,
+					this -> x_t0,
+					longitude_latitude,
+					false,
+					false);
+
+			}
+
+			else if (icp_converged && this -> fly_over_map. has_flyovers(longitude,latitude)){
+
+				std::cout << " -- Flyover detected\n";
 				last_ba_call_index = time_index;
 
 				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					arma::eye<arma::mat>(3,3),
-					arma::zeros<arma::vec>(3),
+					&this -> fly_over_map,
+					this -> LN_t0,
+					this -> x_t0,
 					longitude_latitude,
+					false,
 					true);
+
+
+
 
 			}
 
@@ -312,8 +345,13 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 	// The point clouds are bundle-adjusted
-		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			this -> LN_t0,this -> x_t0,longitude_latitude);
+		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+			this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			&this -> fly_over_map,
+			this -> LN_t0,
+			this -> x_t0,
+			longitude_latitude,
+			true,true);
 
 
 		std::cout << "-- Constructing point cloud...\n";

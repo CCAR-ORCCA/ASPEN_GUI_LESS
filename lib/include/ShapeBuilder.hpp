@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include "FlyOverMap.hpp"
 
 class Lidar;
 class PC;
@@ -208,6 +209,7 @@ protected:
 
 	arma::mat LN_t0;
 	arma::vec x_t0;
+	FlyOverMap fly_over_map;
 
 
 };

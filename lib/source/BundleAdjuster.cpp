@@ -3,15 +3,19 @@
 #include "ICP.hpp"
 #include "boost/progress.hpp"
 #include "DebugFlags.hpp"
+#include "FlyOverMap.hpp"
 
 
 BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
+	FlyOverMap * fly_over_map,
 	const arma::mat & LN_t0,
 	const arma::vec & x_t0,
 	const arma::mat & longitude_latitude,
+	bool look_for_closure,
 	bool save_connectivity){
 
+	this -> fly_over_map = fly_over_map;
 	this -> all_registered_pc = all_registered_pc_;
 	this -> LN_t0 = LN_t0;
 	this -> x_t0 = x_t0;
@@ -20,7 +24,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs(longitude_latitude);
+	this -> create_pairs(longitude_latitude,look_for_closure);
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
@@ -154,12 +158,14 @@ void BundleAdjuster::ICP_pass(){
 }
 
 
-void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
-
-
+void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look_for_closure){
 
 
 	std::set<std::set<int> > pairs;
+
+	if (look_for_closure){
+		pairs = this -> fly_over_map -> get_flyovers();
+	}
 	
 	// The successive measurements are added
 	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
@@ -170,76 +176,6 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude){
 
 	}
 
-	if (longitude_latitude.n_rows > 1){
-
-		int n_bins_longitude = 72;
-		int n_bins_latitude = 36;
-
-		double d_bin_longitude = 360./ n_bins_longitude;
-		double d_bin_latitude = 180./ n_bins_latitude;
-
-		std::vector< std::vector< std::vector< int > > > bins;
-
-	#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << " -- Creating the empty bin matrix" << std::endl;
-	#endif
-		for (int i = 0; i < n_bins_latitude; ++i){
-
-			std::vector< std::vector < int > > row;
-
-			for (int j = 0; j < n_bins_longitude; ++j){
-				std::vector < int > empty_vector;
-				row.push_back(empty_vector);
-			}
-			bins.push_back(row);
-
-		}
-
-	#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << " -- Fetching point clouds in bins" << std::endl;
-	#endif
-
-		for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
-			int bin_longitude = int(longitude_latitude(i,0) / d_bin_longitude) + n_bins_longitude/2;
-			int bin_latitude = int(longitude_latitude(i,1) / d_bin_latitude) + n_bins_latitude/2;
-			bins[n_bins_latitude - bin_latitude - 1][bin_longitude].push_back(i);
-		}
-
-	#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << " -- Forming pairs" << std::endl;
-	#endif
-
-
-	// The rest of the pairs are inferred from the binning of longitude/latitude
-		for (int bin_latitude = 0; bin_latitude < n_bins_latitude; ++bin_latitude){
-			for (int bin_longitude = 0; bin_longitude < n_bins_longitude; ++bin_longitude){
-
-			#if BUNDLE_ADJUSTER_DEBUG
-
-				std::cout << " --- Pulling bin  " << bin_latitude << " " << bin_longitude << std::endl;
-			#endif
-
-				std::vector < int > pc_in_bin = bins[n_bins_latitude - bin_latitude - 1][bin_longitude];
-
-				while(pc_in_bin.size() > 1){
-					for (int pc_index = 0; pc_index < pc_in_bin.size() - 1; ++pc_index){
-						std::set<int> new_pair;
-						new_pair.insert(pc_in_bin.back());
-						new_pair.insert(pc_in_bin[pc_index]);
-
-			#if BUNDLE_ADJUSTER_DEBUG
-
-						std::cout << " ---- Formed pair " << pc_in_bin.back() << " , " << pc_in_bin[pc_index] << std::endl;
-			#endif
-						pairs.insert(new_pair);
-
-					}
-					pc_in_bin.pop_back();
-				}
-
-			}
-		}
-	}
 
 	#if BUNDLE_ADJUSTER_DEBUG
 	std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
@@ -554,7 +490,9 @@ void BundleAdjuster::save_connectivity() const{
 		connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
 		connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
 
-		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba.obj",this -> LN_t0.t(),this -> x_t0);
+		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba.obj",
+			this -> LN_t0.t(),
+			this -> x_t0);
 
 	}
 
