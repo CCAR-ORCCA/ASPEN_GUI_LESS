@@ -9,9 +9,9 @@
 BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	FlyOverMap * fly_over_map,
+	arma::mat & longitude_latitude,
 	const arma::mat & LN_t0,
 	const arma::vec & x_t0,
-	const arma::mat & longitude_latitude,
 	bool look_for_closure,
 	bool save_connectivity){
 
@@ -21,6 +21,9 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
+	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
+		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
+	}
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
@@ -35,16 +38,72 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}
 
+	this -> update_flyover_map(longitude_latitude);
+
+
 	// The connectivity matrix is saved
 	if (save_connectivity){
 		this -> save_connectivity();
 	}
 }
 
+
+
+void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
+
+	// Updating the pcs. The first one is fixed
+	for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
+
+		arma::vec old_los = {0,0,0};
+		arma::vec new_los = {0,0,0};
+		arma::rowvec long_lat = longitude_latitude.row(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()));
+		double old_longitude = long_lat(0);
+		double old_latitude = long_lat(1);
+
+		double new_longitude,new_latitude;
+
+		if (old_longitude > 0){
+			if (std::abs(old_longitude) <= 90){
+				old_los(0) = 1;
+				old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
+
+			}
+			else{
+				old_los(0) = -1;
+				old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
+			}
+		}
+		else{
+			if (std::abs(old_longitude) <= 90){
+				old_los(0) = 1;
+				old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
+			}
+			else{
+				old_los(0) = -1;
+				old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
+			}
+		}
+
+		old_los(2) = arma::norm(old_los.subvec(0,1)) * std::tan(arma::datum::pi / 180 * old_latitude );
+		old_los = arma::normalise(old_los);
+		new_los = this -> rotation_increment.at(pc - 1) * old_los;
+
+		new_longitude = 180. / arma::datum::pi * std::atan2(new_los(1),new_los(0));
+		new_latitude = 180. / arma::datum::pi * std::atan(new_los(2)/arma::norm(new_los.subvec(0,1)));
+
+		longitude_latitude(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()),0) = new_longitude;
+		longitude_latitude(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()),1) = new_latitude;
+
+	}
+
+}
+
+
+
+
 void BundleAdjuster::solve_bundle_adjustment(){
 
 	int Q = this -> all_registered_pc -> size();
-
 
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
@@ -347,7 +406,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
-			
+
 		std::string label_S_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_label();
 		std::string label_D_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k) -> get_label();
 
@@ -357,8 +416,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	}
 
 	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << worst_Sk_rms << " , " <<worst_Dk_rms <<  ") : " << max_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << worst_Sk_mean << " , " <<worst_Dk_mean <<  ") : " << max_mean_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << this -> all_registered_pc -> at(worst_Sk_rms) -> get_label() << " , " << this -> all_registered_pc -> at(worst_Dk_rms) -> get_label() <<  ") : " << max_rms_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << this -> all_registered_pc -> at(worst_Sk_mean) -> get_label() << " , " <<this -> all_registered_pc -> at(worst_Dk_mean) -> get_label() <<  ") : " << max_mean_error << std::endl;
 
 
 }
@@ -455,6 +514,9 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 				RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)), 
 				dX.subvec(6 * i , 6 * i + 2));
 
+
+			this -> rotation_increment[i] = RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)) * this -> rotation_increment[i];
+
 		}
 		else if (i > this -> ground_pc_index){
 
@@ -462,6 +524,7 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 				RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
 				dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
 
+			this -> rotation_increment[i] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i];
 		}
 
 		++progress;

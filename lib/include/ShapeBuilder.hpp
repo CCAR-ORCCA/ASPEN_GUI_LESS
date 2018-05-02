@@ -159,8 +159,7 @@ protected:
 	*/
 	void concatenate_point_clouds(unsigned int index);
 
-	void initialize_shape(unsigned int index,const arma::mat & longitude_latitude);
-
+	void initialize_shape(unsigned int index,arma::mat & longitude_latitude);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states

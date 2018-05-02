@@ -26,7 +26,29 @@ void FlyOverMap::add_label(int label, double longitude, double latitude){
 	int bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
 	int bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
 	this -> bins[this -> n_bins_latitude -  bin_latitude - 1][ bin_longitude].push_back(label);
+	this -> labels[label] = std::make_pair(this -> n_bins_latitude -  bin_latitude - 1,bin_longitude);
+}
 
+void FlyOverMap::update_label(int label,double longitude, double latitude){
+
+	// Cleaning up the old bin
+	std::pair<int,int> old_bin_coordinates = this -> labels[label];
+	std::vector<int> old_bin = this -> bins[old_bin_coordinates.first][old_bin_coordinates.second];
+	
+	old_bin.erase(std::find(old_bin.begin(), old_bin.end(), label));
+	this -> bins[old_bin_coordinates.first][old_bin_coordinates.second] = old_bin;
+
+	// Moving to the new bin
+	int new_bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
+	int new_bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
+
+	this -> bins[this -> n_bins_latitude -  new_bin_latitude - 1][ new_bin_longitude].push_back(label);
+	this -> labels[label] = std::make_pair(this -> n_bins_latitude -  new_bin_latitude - 1,new_bin_longitude);
+
+
+	if ((old_bin_coordinates.first != this -> n_bins_latitude -  new_bin_latitude - 1) || (old_bin_coordinates.second != new_bin_longitude )){
+		std::cout << "Updated label " << label << std::endl;
+	}
 }
 
 std::vector<int> FlyOverMap::get_bin(int bin_longitude,int bin_latitude )const {

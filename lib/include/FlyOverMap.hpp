@@ -3,6 +3,9 @@
 
 #include <set>
 #include <vector>
+#include <algorithm>
+
+#include <map>
 #include <iostream>
 
 
@@ -13,8 +16,7 @@ public:
 	FlyOverMap(int n_bins_longitude = 72,int n_bins_latitude = 36);
 
 	void add_label(int label, double longitude, double latitude);
-
-
+	void update_label(int label,double longitude, double latitude);
 
 	void get_flyovers_in_bin(int bin_longitude,int bin_latitude,
 		std::set<std::set<int> > & flyovers) const;
@@ -38,6 +40,9 @@ protected:
 
 
 	std::vector< std::vector< std::vector< int > > > bins;
+
+	std::map<int , std::pair<int,int> >  labels;
+
 
 
 };

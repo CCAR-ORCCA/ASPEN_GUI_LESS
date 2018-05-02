@@ -24,9 +24,9 @@ public:
 	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,
 		int N_iter,
 		FlyOverMap * fly_over_map,
+		arma::mat & longitude_latitude,
 		const arma::mat & LN_t0 = arma::eye<arma::mat>(3,3),
 		const arma::vec & x_t0 = arma::zeros<arma::vec>(3),
-		const arma::mat & longitude_latitude = arma::zeros<arma::mat>(1,1),
 		bool save_connectivity = true,
 		bool look_for_closure = true);
 
@@ -59,6 +59,9 @@ protected:
 
 	void apply_deviation(const arma::vec & dX);
 
+	void update_flyover_map(arma::mat & longitude_latitude);
+
+
 	void ICP_pass();
 
 	void solve_bundle_adjustment();
@@ -72,6 +75,8 @@ protected:
 
 	int ground_pc_index = 0;
 	FlyOverMap * fly_over_map;
+
+	std::vector<arma::mat> rotation_increment;
 
 
 

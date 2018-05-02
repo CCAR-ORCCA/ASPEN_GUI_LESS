@@ -182,9 +182,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				BundleAdjuster bundle_adjuster(&pc_to_ba,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 					&this -> fly_over_map,
+					longitude_latitude,
+
 					this -> LN_t0,
 					this -> x_t0,
-					longitude_latitude,
 					false,
 					false);
 
@@ -199,9 +200,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 					&this -> fly_over_map,
+					longitude_latitude,
+
 					this -> LN_t0,
 					this -> x_t0,
-					longitude_latitude,
 					true,
 					false);
 			}
@@ -213,7 +215,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#if IOFLAGS_shape_builder
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
-			longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
+			longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 
 
@@ -341,7 +343,7 @@ void ShapeBuilder::get_new_states(
 
 
 
-void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & longitude_latitude){
+void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitude_latitude){
 
 
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
@@ -361,9 +363,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 			BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
 				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 				&this -> fly_over_map,
+				longitude_latitude,
 				this -> LN_t0,
 				this -> x_t0,
-				longitude_latitude,
 				true,true);
 		}
 		
