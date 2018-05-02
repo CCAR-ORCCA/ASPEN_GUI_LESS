@@ -54,9 +54,10 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 	// Updating the pcs. The first one is fixed
 	for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
 
+		std::string label = this -> all_registered_pc -> at(pc) -> get_label();
 		arma::vec old_los = {0,0,0};
 		arma::vec new_los = {0,0,0};
-		arma::rowvec long_lat = longitude_latitude.row(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()));
+		arma::rowvec long_lat = longitude_latitude.row(std::stoi( label));
 		double old_longitude = long_lat(0);
 		double old_latitude = long_lat(1);
 
@@ -91,9 +92,9 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 		new_longitude = 180. / arma::datum::pi * std::atan2(new_los(1),new_los(0));
 		new_latitude = 180. / arma::datum::pi * std::atan(new_los(2)/arma::norm(new_los.subvec(0,1)));
 
-		longitude_latitude(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()),0) = new_longitude;
-		longitude_latitude(std::stoi( this -> all_registered_pc -> at(pc) -> get_label()),1) = new_latitude;
-
+		longitude_latitude(std::stoi(label),0) = new_longitude;
+		longitude_latitude(std::stoi(label),1) = new_latitude;
+		this -> fly_over_map -> update_label(label,new_longitude,new_latitude);
 	}
 
 }
