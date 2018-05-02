@@ -94,7 +94,7 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
 		longitude_latitude(std::stoi(label),0) = new_longitude;
 		longitude_latitude(std::stoi(label),1) = new_latitude;
-		this -> fly_over_map -> update_label(label,new_longitude,new_latitude);
+		this -> fly_over_map -> update_label(std::stoi(label),new_longitude,new_latitude);
 	}
 
 }
