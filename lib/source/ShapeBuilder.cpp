@@ -131,7 +131,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::rowvec long_lat = {longitude,latitude};
 
 				longitude_latitude.row(time_index) = long_lat;
-				// this -> fly_over_map.add_label(time_index,longitude,latitude);
+				this -> fly_over_map.add_label(time_index,longitude,latitude);
 				icp_converged = true;
 
 			}
@@ -139,6 +139,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			catch(ICPException & e){
 				std::cout << e.what() << std::endl;
 			}
+
+			std::cout << "out" << std::endl;
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
