@@ -169,7 +169,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 		std::cout << " -- Flyover pairs: \n";
 		for (auto iter_pair = pairs.begin(); iter_pair != pairs.end(); ++iter_pair){
 			std::set<int> pair = *iter_pair;
-			int S_k = pair.begin();
+			int S_k = *pair.begin();
 			int D_k = *std::next(pair.begin());
 			std::string label_S_k = this -> all_registered_pc -> at(S_k) -> get_label();
 			std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
