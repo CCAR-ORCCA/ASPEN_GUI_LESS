@@ -153,7 +153,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::eye<arma::mat>(3,3),
 					arma::zeros<arma::vec>(3),
 					longitude_latitude,
-					false);
+					true);
 
 			}
 
