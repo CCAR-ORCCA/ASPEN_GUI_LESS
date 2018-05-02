@@ -148,14 +148,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
-			// or if the bundle adjustment has not been for a 
+			// or if the bundle adjustment has not been run for a 
 			// certain number of observations
+			// Should probably replace this by an adaptive threshold based
+			// on a prediction of the alignment error
 
 			if (time_index - last_ba_call_index == 30){
 
 				last_ba_call_index = time_index;
 
-				if (icp_converged && this -> fly_over_map. has_flyovers(longitude,latitude)){
+				if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude)){
 
 					std::cout << " -- Flyover detected\n";
 					last_ba_call_index = time_index;
