@@ -514,7 +514,6 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 				RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)), 
 				dX.subvec(6 * i , 6 * i + 2));
 
-
 			this -> rotation_increment[i] = RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)) * this -> rotation_increment[i];
 
 		}
@@ -524,7 +523,7 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 				RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
 				dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
 
-			this -> rotation_increment[i] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i];
+			this -> rotation_increment[i - 1] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i];
 		}
 
 		++progress;
