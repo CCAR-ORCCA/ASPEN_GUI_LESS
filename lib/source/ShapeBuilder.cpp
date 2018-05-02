@@ -188,6 +188,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> x_t0,
 					false,
 					false);
+				longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				
 			}
@@ -206,6 +207,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> x_t0,
 					true,
 					false);
+				longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+
 			}
 
 
@@ -215,7 +218,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#if IOFLAGS_shape_builder
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
-			longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 
 
@@ -351,7 +353,8 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
-
+	longitude_latitude.save("../output/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+	
 	if (this -> filter_arguments -> get_use_icp()){
 
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_points_retained()));
@@ -393,12 +396,12 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 
 
 		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-				0,
-				&this -> fly_over_map,
-				this -> LN_t0,
-				this -> x_t0,
-				longitude_latitude,
-				true,true);
+			0,
+			&this -> fly_over_map,
+			this -> LN_t0,
+			this -> x_t0,
+			longitude_latitude,
+			true,true);
 
 
 		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
