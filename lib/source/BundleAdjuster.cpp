@@ -175,7 +175,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 			std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
 
 
-			std::cout << "( " << label_S_k << " , " << label_D_k << " )" << std::endl;
+			std::cout << "(" << label_S_k << "," << label_D_k << ")" << std::endl;
 		}
 	}
 

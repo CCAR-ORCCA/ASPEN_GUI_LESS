@@ -53,7 +53,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::cout << "Running the filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
-	arma::mat longitude_latitude = arma::mat( times.n_rows, 2);
+	arma::mat longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
 
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
@@ -98,6 +98,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
+			this -> fly_over_map.add_label(time_index,0,0);
 
 
 			#if IOFLAGS_shape_builder
@@ -157,40 +158,41 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				last_ba_call_index = time_index;
 
-				if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude)){
+				
+				std::cout << " -- Applying BA to successive point clouds\n";
 
-					std::cout << " -- Flyover detected\n";
-					last_ba_call_index = time_index;
 
-					BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-						&this -> fly_over_map,
-						this -> LN_t0,
-						this -> x_t0,
-						longitude_latitude,
-						true,
-						false);
+				std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+				for (unsigned int pc = 0; pc <= 30; ++pc){
+					pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
 				}
-				else{
-					std::cout << " -- Applying BA to successive point clouds\n";
 
+				BundleAdjuster bundle_adjuster(&pc_to_ba,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					&this -> fly_over_map,
+					this -> LN_t0,
+					this -> x_t0,
+					longitude_latitude,
+					false,
+					false);
 
-					std::vector<std::shared_ptr<PC > > pc_to_ba;
+				
+			}
 
-					for (unsigned int pc = 0; pc < 30; ++pc){
-						pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
-					}
+			if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude)){
 
-					BundleAdjuster bundle_adjuster(&pc_to_ba,
-						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-						&this -> fly_over_map,
-						this -> LN_t0,
-						this -> x_t0,
-						longitude_latitude,
-						false,
-						false);
+				std::cout << " -- Flyover detected\n";
+				last_ba_call_index = time_index;
 
-				}
+				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					&this -> fly_over_map,
+					this -> LN_t0,
+					this -> x_t0,
+					longitude_latitude,
+					true,
+					false);
 			}
 
 
@@ -200,6 +202,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#if IOFLAGS_shape_builder
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
+			longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
+			
 
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
@@ -334,7 +338,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 	std::string a_priori_path = "../output/shape_model/apriori.obj";
 	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
 	std::shared_ptr<PC> destination_pc_concatenated;
-	longitude_latitude.save("../output/longitude_latitude.txt",arma::raw_ascii);
 
 	if (this -> filter_arguments -> get_use_icp()){
 
