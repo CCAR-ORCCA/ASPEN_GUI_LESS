@@ -26,7 +26,6 @@ void FlyOverMap::add_label(int label, double longitude, double latitude){
 	int bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
 	int bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
 	this -> bins[this -> n_bins_latitude -  bin_latitude - 1][ bin_longitude].push_back(label);
-	std::cout << "inserted label at " << bin_latitude << " " << bin_longitude << std::endl;
 
 }
 
