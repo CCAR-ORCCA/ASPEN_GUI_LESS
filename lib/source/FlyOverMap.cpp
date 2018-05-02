@@ -8,8 +8,6 @@ FlyOverMap::FlyOverMap(int n_bins_longitude,int n_bins_latitude){
 	this -> d_bin_longitude = 360./ this -> n_bins_longitude;
 	this -> d_bin_latitude = 180./ this -> n_bins_latitude;
 
-
-	std::cout << " -- Creating the empty bin matrix" << std::endl;
 	for (int i = 0; i < this -> n_bins_latitude; ++i){
 
 		std::vector< std::vector < int > > row;
@@ -27,6 +25,7 @@ void FlyOverMap::add_label(int label, double longitude, double latitude){
 
 	int bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
 	int bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
+	std::cout << "inserting label" << std::endl;
 	this -> bins[this -> n_bins_latitude -  bin_latitude - 1][ bin_longitude].push_back(label);
 
 }
