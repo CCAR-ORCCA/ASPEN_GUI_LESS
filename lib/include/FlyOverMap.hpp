@@ -19,7 +19,7 @@ public:
 	void get_flyovers_in_bin(int bin_longitude,int bin_latitude,
 		std::set<std::set<int> > & flyovers) const;
 
-	bool has_flyovers(int bin_longitude,int bin_latitude) const ;
+	bool has_flyovers(double longitude, double latitude) const ;
 
 
 	std::set<std::set< int> > get_flyovers() const;

@@ -60,7 +60,10 @@ void FlyOverMap::get_flyovers_in_bin(int bin_longitude,int bin_latitude,
 
 }
 
-bool FlyOverMap::has_flyovers(int bin_longitude,int bin_latitude) const {
+bool FlyOverMap::has_flyovers(double longitude, double latitude) const {
+
+	int bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
+	int bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
 	return (this -> get_bin_depth(bin_longitude,bin_latitude ) > 1) ;
 }
 

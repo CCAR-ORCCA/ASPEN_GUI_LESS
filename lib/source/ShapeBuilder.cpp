@@ -151,7 +151,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// or if the bundle adjustment has not been for a 
 			// certain number of observations
 
-			std::cout << time_index - last_ba_call_index << std::endl;
 			if (time_index - last_ba_call_index == 30){
 				std::cout << " -- Applying BA to successive point clouds\n";
 
