@@ -131,7 +131,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::rowvec long_lat = {longitude,latitude};
 
 				longitude_latitude.row(time_index) = long_lat;
-				this -> fly_over_map.add_label(time_index,longitude,latitude);
+				// this -> fly_over_map.add_label(time_index,longitude,latitude);
 				icp_converged = true;
 
 			}
