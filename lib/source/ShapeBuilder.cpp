@@ -233,7 +233,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 	// No point cloud has been collected yet
 	if (this -> destination_pc == nullptr) {
 
-		this -> destination_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),time_index));
+		this -> destination_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
 
 	}
 
@@ -242,7 +242,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		// Only one source point cloud has been collected
 		if (this -> source_pc == nullptr) {
 
-			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),time_index));
+			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
 
 			
 		}
@@ -253,7 +253,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 			// The source and destination point clouds are combined into the new source point cloud
 			this -> destination_pc = this -> source_pc;
 
-			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),time_index));
+			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
 
 		}
 	}

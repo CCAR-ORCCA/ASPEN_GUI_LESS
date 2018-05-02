@@ -625,7 +625,7 @@ double PC::get_bbox_diagonal() const{
 
 }
 
-std::string get_label() const{
+std::string PC::get_label() const{
 	return this -> label;
 }
 
