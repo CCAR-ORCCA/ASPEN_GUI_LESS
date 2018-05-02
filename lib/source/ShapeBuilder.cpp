@@ -175,8 +175,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-				for (unsigned int pc = 0; pc <= 30; ++pc){
-					pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
+				
+				int ground_pc_ba_index = this -> all_registered_pc.size() - 30;
+
+				for (unsigned int pc = ground_pc_ba_index; pc < ground_pc_ba_index + 30; ++pc){
+					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 				}
 
 				BundleAdjuster bundle_adjuster(&pc_to_ba,
