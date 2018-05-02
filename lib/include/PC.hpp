@@ -22,7 +22,7 @@ public:
 	@param focal_plane Pointer to focal plane whose individual rays impacting with the target
 	yield the point cloud
 	*/
-	PC(std::vector<std::shared_ptr<Ray> > * focal_plane,int label);
+	PC(std::vector<std::shared_ptr<Ray> > * focal_plane,int label_);
 
 	PC(arma::mat & points,arma::mat & normals) ;
 

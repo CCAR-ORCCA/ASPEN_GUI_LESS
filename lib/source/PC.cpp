@@ -1,6 +1,6 @@
 #include "PC.hpp"
 
-PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label) {
+PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label_) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
@@ -20,7 +20,7 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label) {
 	
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(this -> los);
-	this -> label = label;
+	this -> label = std::to_string(label_);
 
 }
 
