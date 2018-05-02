@@ -65,7 +65,7 @@ bool FlyOverMap::has_flyovers(double longitude, double latitude) const {
 	int bin_longitude = int(longitude / this -> d_bin_longitude) + this -> n_bins_longitude/2;
 	int bin_latitude = int(latitude / this -> d_bin_latitude) + this -> n_bins_latitude/2;
 	
-	std::set<std::set<int> > & flyovers;
+	std::set<std::set<int> > flyovers;
 	this -> get_flyovers_in_bin(bin_longitude,bin_latitude,flyovers );
 
 	return (flyovers.size() > 0) ;
