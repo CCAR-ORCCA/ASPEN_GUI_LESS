@@ -317,8 +317,7 @@ void ICP::compute_pairs(
 	double p = std::log2(source_pc -> get_size());
 	int N_points = (int)(std::pow(2, p - h));
 
-	// 
-
+	// a maximum of $N_points pairs will be formed. $N_points points are extracted from the source point cloud
 	arma::ivec random_source_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, source_pc -> get_size() - 1)));
 	std::vector<PointPair> destination_source_dist_vector;
 
@@ -327,7 +326,9 @@ void ICP::compute_pairs(
 		destination_source_dist_vector.push_back(destination_source_dist_pair);
 	}
 
-
+	// The $N_points half-pair we defined are mapped to the destination frame using the 
+	// a-priori transform. Then, the destination pc is queried for the closest destination point
+	// to the mapped source point
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
@@ -340,12 +341,16 @@ void ICP::compute_pairs(
 
 		// If the two normals are compatible, the points are matched
 		if (arma::dot(n_dest,n_source_transformed) > std::sqrt(2) / 2 ) {
-
 			destination_source_dist_vector[i].first = closest_destination_point;
 
 		}
 	}
 
+
+	// The destination point is mapped to the source frame using the inverse of the a-priori transform
+	// Then, the source pc is queried for the closest source point
+	// to the mapped destination point
+	// This double mapping process gets rid of edge points
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 		if (destination_source_dist_vector[i].first != nullptr){
@@ -365,9 +370,10 @@ void ICP::compute_pairs(
 	}
 
 
+
+
+	// The source/destination pairs are pre-formed
 	std::vector<std::pair<unsigned int , double> > formed_pairs;
-
-
 
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 		
@@ -378,20 +384,20 @@ void ICP::compute_pairs(
 
 			formed_pairs.push_back(std::make_pair(i,std::pow(arma::dot(n,test_source_point - D),2)));
 		}
-	}
+	}	
 
+	// Pairing error statistics are collected
 	arma::vec dist_vec(formed_pairs.size());
-
 	if (formed_pairs.size()== 0){
 		throw(ICPNoPairsException());
 	}
-
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 		dist_vec(i) = formed_pairs[i].second;
 	}
 
-	// Remove outliers 
+	// Only pairs featuring an error that is less a one sd threshold are inliers 
+	// included in the final pairing
 	double mean = arma::mean(dist_vec);
 	double sd = arma::stddev(dist_vec);
 	

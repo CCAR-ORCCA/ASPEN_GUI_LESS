@@ -390,6 +390,15 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 			true);
 
 
+		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+				0,
+				&this -> fly_over_map,
+				this -> LN_t0,
+				this -> x_t0,
+				longitude_latitude,
+				true,true);
+
+
 		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
 		// should perfectly overlap without noise and bundle-adjustment/ICP errors
 
