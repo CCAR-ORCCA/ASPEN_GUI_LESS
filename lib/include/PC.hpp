@@ -22,7 +22,7 @@ public:
 	@param focal_plane Pointer to focal plane whose individual rays impacting with the target
 	yield the point cloud
 	*/
-	PC(std::vector<std::shared_ptr<Ray> > * focal_plane);
+	PC(std::vector<std::shared_ptr<Ray> > * focal_plane,int label);
 
 	PC(arma::mat & points,arma::mat & normals) ;
 
@@ -193,6 +193,9 @@ public:
 	static void save(arma::mat & points,std::string path);
 
 
+	std::string get_label() const;
+
+
 
 protected:
 
@@ -202,6 +205,8 @@ protected:
 	std::shared_ptr<KDTreePC> kdt_points;
 
 	arma::vec los;
+	std::string label;
+
 
 };
 

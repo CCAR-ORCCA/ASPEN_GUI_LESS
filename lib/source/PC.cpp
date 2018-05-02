@@ -1,6 +1,6 @@
 #include "PC.hpp"
 
-PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane) {
+PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label) {
 
 	std::vector< std::shared_ptr<PointNormal> > points_normals;
 
@@ -20,6 +20,7 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane) {
 	
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(this -> los);
+	this -> label = label;
 
 }
 
@@ -622,6 +623,10 @@ double PC::get_bbox_diagonal() const{
 
 	return arma::norm(bbox_max - bbox_min);
 
+}
+
+std::string get_label() const{
+	return this -> label;
 }
 
 

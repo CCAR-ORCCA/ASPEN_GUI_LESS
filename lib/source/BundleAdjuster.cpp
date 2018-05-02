@@ -165,7 +165,20 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 
 	if (look_for_closure){
 		pairs = this -> fly_over_map -> get_flyovers();
+
+		std::cout << " -- Flyover pairs: \n";
+		for (auto iter_pair = pairs.begin(); iter_pair != pairs.end(); ++iter_pair){
+			std::set<int> pair = *iter_pair;
+			int S_k = *iter_pair.begin();
+			int D_k = *std::next(iter_pair.begin());
+			std::string label_S_k = this -> all_registered_pc -> at(S_k) -> get_label();
+			std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
+
+
+			std::cout << "( " << label_S_k << " , " << label_D_k << " )" << std::endl;
+		}
 	}
+
 	
 	// The successive measurements are added
 	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
@@ -189,13 +202,6 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 
 		int S_k = (*pair_set.begin());
 		int D_k =(*std::next(pair_set.begin()));
-
-
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << " --- Reading pair " << S_k << " , " << D_k << std::endl;
-
-		#endif
-
 
 		int h = 0;
 		std::vector<PointPair> point_pairs;
@@ -341,9 +347,11 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
-		
+			
+		std::string label_S_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_label();
+		std::string label_D_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k) -> get_label();
 
-		std::cout << "(" << this -> point_cloud_pairs[k].S_k << " , " <<this -> point_cloud_pairs[k].D_k <<  ") : " << mean_error << " , " << rms_error << std::endl;
+		std::cout << "(" << label_S_k << " , " <<label_D_k <<  ") : " << mean_error << " , " << rms_error << std::endl;
 
 
 	}
