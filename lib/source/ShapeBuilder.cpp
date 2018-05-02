@@ -191,35 +191,28 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 			}
 
-		}
+
 
 
 
 			#if IOFLAGS_shape_builder
-		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 
-		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-			std::cout << "- Initializing shape model" << std::endl;
+			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+				std::cout << "- Initializing shape model" << std::endl;
 
-			this -> initialize_shape(time_index,longitude_latitude);
+				this -> initialize_shape(time_index,longitude_latitude);
 
-			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-			return;
+				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+				return;
+
+			}
 
 		}
 
 	}
-
-}
-
-
-
-
-
-
-
 
 
 }
