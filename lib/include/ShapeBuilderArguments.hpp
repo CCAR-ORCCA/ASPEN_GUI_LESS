@@ -400,6 +400,15 @@ public:
 	}
 
 
+	bool get_use_ba() const{
+		return this -> use_ba;
+	}
+	void set_use_ba(bool use_ba_) {
+		this -> use_ba = use_ba_;
+	}
+
+
+
 protected:
 
 
@@ -435,6 +444,7 @@ protected:
 	bool estimate_shape;
 	bool has_transitioned_to_shape = false;
 	bool use_icp = true;
+	bool use_ba = false;
 
 
 	std::vector<arma::vec> spin_axis_mes_history;

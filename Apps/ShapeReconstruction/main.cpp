@@ -30,9 +30,8 @@
 #define SKIP_FACTOR 0.95 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 5e-1
+#define LOS_NOISE_SD_BASELINE 5e-3
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
-
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
@@ -77,6 +76,10 @@
 // Filter iterations
 #define N_ITER_SHAPE_FILTER 4
 	
+
+// Whether or not the bundle adjustment should be used
+#define USE_BA false
+
 // Number of iterations in bundle adjustment
 #define N_ITER_BUNDLE_ADJUSTMENT 10
 
@@ -148,7 +151,7 @@ int main() {
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
-
+	
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
@@ -223,7 +226,8 @@ int main() {
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
-
+	shape_filter_args.set_use_ba(USE_BA);
+	
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);

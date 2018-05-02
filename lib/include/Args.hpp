@@ -363,7 +363,6 @@ public:
 		return this -> skip_factor;
 	}
 
-
 protected:
 
 	double density;

@@ -124,6 +124,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				M_pc = icp_pc.get_M();
 				X_pc = icp_pc.get_X();
 
+
+				/****************************************************************************/
+				// ONLY FOR DEBUG
+				if (!this -> filter_arguments-> get_use_ba()){
+					M_pc = this -> LB_t0 * dcm_LB.t();
+					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
+					X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+				}
+				/****************************************************************************/
+
 				arma::vec u_L = {1,0,0};
 				arma::vec u_B = M_pc * u_L;
 
@@ -155,7 +165,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should probably replace this by an adaptive threshold based
 			// on a prediction of the alignment error
 
-			if (time_index - last_ba_call_index == 30){
+			if (this -> filter_arguments-> get_use_ba() && time_index - last_ba_call_index == 30){
 
 				last_ba_call_index = time_index;
 
@@ -181,7 +191,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 			}
 
-			if (icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
+			if (this -> filter_arguments-> get_use_ba() && icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
 				std::cout << " -- Flyover detected\n";
 				last_ba_call_index = time_index;
@@ -306,7 +316,7 @@ void ShapeBuilder::get_new_states(
 	lidar_pos = X_S.rows(0, 2);
 	lidar_vel = X_S.rows(3, 5);
 
-	// The [LB] DCM is assembled. Note that e_r does not exactly have to point towards the target
+	// The [LN] DCM is assembled. Note that e_r does not exactly have to point towards the target
 	// barycenter
 	arma::vec e_r = - arma::normalise(lidar_pos);
 	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
@@ -318,14 +328,14 @@ void ShapeBuilder::get_new_states(
 	dcm_LN.row(2) = e_h.t();
 
 	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
-	dcm_LB = dcm_LN * RBK::mrp_to_dcm(X_S.rows(3, 8)).t();
-
+	dcm_LB = dcm_LN * RBK::mrp_to_dcm(X_S.rows(6, 8)).t();
 
 	if (this -> LN_t0.n_rows == 0){
 		this -> LN_t0 = dcm_LN;
 		this -> x_t0 = lidar_pos;
-
+		this -> LB_t0 = dcm_LB;
 	}
+
 
 }
 
@@ -347,15 +357,16 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,const arma::mat & lo
 		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 	// The point clouds are bundle-adjusted
-		BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-			this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			&this -> fly_over_map,
-			this -> LN_t0,
-			this -> x_t0,
-			longitude_latitude,
-			true,true);
-
-
+		if (this -> filter_arguments-> get_use_ba()){
+			BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				&this -> fly_over_map,
+				this -> LN_t0,
+				this -> x_t0,
+				longitude_latitude,
+				true,true);
+		}
+		
 		std::cout << "-- Constructing point cloud...\n";
 
 		
