@@ -23,7 +23,6 @@ public:
 	to be flagged as degenerated
 	@param minimum_ray_per_facet Minimum number of rays per facet to include the facet in the
 	@param max_split_count Maximum time a facet (and its children) can get split
-
 	@param reject_outliers True if facet residuals differing from the mean by more than one sigma should be excluded
 	@param split_status True if the shape model is to be split
 	@param use_cholesky True is Cholesky decomposition should be used to solve the normal equation
@@ -55,9 +54,7 @@ public:
 	}
 	double get_ridge_coef() const {
 		return this -> ridge_coef;
-
 	}
-
 
 	bool get_use_cholesky() const {
 		return this -> use_cholesky;
@@ -425,8 +422,6 @@ protected:
 	unsigned int index_init;
 	unsigned int index_end;
 	
-
-
 	unsigned int minimum_ray_per_facet = 1;
 	unsigned int max_split_count = 1000;
 	unsigned int N_iterations;
@@ -435,8 +430,6 @@ protected:
 	unsigned int N_edges;
 	unsigned int shape_degree;
 	int N_iter_bundle_adjustment;
-
-
 
 	bool split_status;
 	bool use_cholesky;
