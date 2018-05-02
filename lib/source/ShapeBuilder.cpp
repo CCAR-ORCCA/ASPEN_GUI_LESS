@@ -67,7 +67,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
-	for (unsigned int time_index = 0; time_index < times.n_rows; ++time_index) {
+	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
 
 		std::stringstream ss;
 		ss << std::setw(6) << std::setfill('0') << time_index + 1;
@@ -139,8 +139,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			catch(ICPException & e){
 				std::cout << e.what() << std::endl;
 			}
-
-			std::cout << "out" << std::endl;
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
