@@ -29,8 +29,6 @@ void FlyOverMap::add_label(int label, double longitude, double latitude){
 
 }
 
-
-
 std::vector<int> FlyOverMap::get_bin(int bin_longitude,int bin_latitude )const {
 	return this -> bins[this -> n_bins_latitude - bin_latitude - 1][bin_longitude];
 }
@@ -39,7 +37,6 @@ std::vector<int> FlyOverMap::get_bin(int bin_longitude,int bin_latitude )const {
 int FlyOverMap::get_bin_depth(int bin_longitude,int bin_latitude ) const {
 	return this -> bins[this -> n_bins_latitude - bin_latitude - 1][bin_longitude].size();
 }
-
 
 void FlyOverMap::get_flyovers_in_bin(int bin_longitude,int bin_latitude,
 	std::set<std::set<int> > & flyovers) const {

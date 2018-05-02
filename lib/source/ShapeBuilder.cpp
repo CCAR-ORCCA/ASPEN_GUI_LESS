@@ -152,66 +152,67 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// certain number of observations
 
 			if (time_index - last_ba_call_index == 30){
-				std::cout << " -- Applying BA to successive point clouds\n";
 
 				last_ba_call_index = time_index;
 
-				std::vector<std::shared_ptr<PC > > pc_to_ba;
+				if (icp_converged && this -> fly_over_map. has_flyovers(longitude,latitude)){
 
-				for (unsigned int pc = 0; pc < 30; ++pc){
-					pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
+					std::cout << " -- Flyover detected\n";
+					last_ba_call_index = time_index;
+
+					BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+						&this -> fly_over_map,
+						this -> LN_t0,
+						this -> x_t0,
+						longitude_latitude,
+						false,
+						true);
 				}
-
-				BundleAdjuster bundle_adjuster(&pc_to_ba,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					&this -> fly_over_map,
-					this -> LN_t0,
-					this -> x_t0,
-					longitude_latitude,
-					false,
-					false);
-
-			}
-
-			else if (icp_converged && this -> fly_over_map. has_flyovers(longitude,latitude)){
-
-				std::cout << " -- Flyover detected\n";
-				last_ba_call_index = time_index;
-
-				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					&this -> fly_over_map,
-					this -> LN_t0,
-					this -> x_t0,
-					longitude_latitude,
-					false,
-					true);
+				else{
+					std::cout << " -- Applying BA to successive point clouds\n";
 
 
+					std::vector<std::shared_ptr<PC > > pc_to_ba;
 
+					for (unsigned int pc = 0; pc < 30; ++pc){
+						pc_to_ba.push_back(this -> all_registered_pc[this -> all_registered_pc.size() - 1 - pc]);
+					}
 
-			}
+					BundleAdjuster bundle_adjuster(&pc_to_ba,
+						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+						&this -> fly_over_map,
+						this -> LN_t0,
+						this -> x_t0,
+						longitude_latitude,
+						false,
+						false);
 
-
-
-			#if IOFLAGS_shape_builder
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
-			#endif
-			
-
-			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-				std::cout << "- Initializing shape model" << std::endl;
-				
-				this -> initialize_shape(time_index,longitude_latitude);
-				
-				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-				return;
-
+				}
 			}
 
 		}
 
+
+
+			#if IOFLAGS_shape_builder
+		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#endif
+
+
+		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+			std::cout << "- Initializing shape model" << std::endl;
+
+			this -> initialize_shape(time_index,longitude_latitude);
+
+			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+			return;
+
+		}
+
 	}
+
+}
 
 
 
