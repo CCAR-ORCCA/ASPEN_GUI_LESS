@@ -78,7 +78,7 @@
 	
 
 // Whether or not the bundle adjustment should be used
-#define USE_BA false
+#define USE_BA true
 
 // Number of iterations in bundle adjustment
 #define N_ITER_BUNDLE_ADJUSTMENT 10
@@ -248,11 +248,9 @@ int main() {
 
 	std::cout << "\ncenter of mass after shifting: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
 
-
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
 	std::cout << "\ncenter of mass after rotating: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
-
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
