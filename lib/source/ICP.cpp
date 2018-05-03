@@ -345,13 +345,17 @@ void ICP::compute_pairs(
 
 	std::cout << " Querying destination KD tree  " << std::endl;
 
+		std::cout << dcm_D << std::endl;
+		std::cout << dcm_S << std::endl;
+		std::cout << x_S.t() << std::endl;
+		std::cout << x_D.t() << std::endl << std::endl 
+
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
 		arma::vec test_source_point = dcm_D.t() * (dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S - x_D);
 
-		std::cout << test_source_point << std::endl;
 
 		std::shared_ptr<PointNormal> closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 
