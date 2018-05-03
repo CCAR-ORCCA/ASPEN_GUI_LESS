@@ -391,11 +391,13 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
-		arma::mat x_S = arma::zeros<arma::vec>(3);
+		arma::vec x_S = arma::zeros<arma::vec>(3);
 		arma::mat dcm_S = arma::eye<arma::mat>(3,3);
 
-		arma::mat x_D = arma::zeros<arma::vec>(3);
+		arma::vec x_D = arma::zeros<arma::vec>(3);
 		arma::mat dcm_D = arma::eye<arma::mat>(3,3);
+
+		std::cout << point_cloud_pair.S_k << " " << point_cloud_pair.D_k << std::endl;
 
 		if (point_cloud_pair.S_k != 0){
 			x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
