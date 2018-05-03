@@ -595,7 +595,7 @@ void BundleAdjuster::update_point_clouds(){
 		int mrp_index = 6 * (i - 1) + 3;
 
 		arma::vec x = this-> X.subvec(x_index , x_index + 2);
-		arma::vec mrp = this -> X.subvec(mrp_index + 3, mrp_index + 5);
+		arma::vec mrp = this -> X.subvec(mrp_index, mrp_index + 2);
 
 		arma::mat NS_bar = RBK::mrp_to_dcm(mrp);
 
