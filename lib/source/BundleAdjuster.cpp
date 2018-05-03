@@ -419,7 +419,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
 		}
 
-		std::cout << " -- Recomputing point pairs for point cloud pair " <<  " (" << label_S_k << " , " <<label_D_k <<  ")" << std::endl;
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(point_cloud_pair.S_k),
 			this -> all_registered_pc -> at(point_cloud_pair.D_k),
@@ -428,7 +427,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			x_S,
 			dcm_D ,
 			x_D );
-		std::cout << " -- Computing residuals "<< std::endl;
 
 		double rms_error = ICP::compute_rms_residuals(point_pairs,
 			dcm_S ,
@@ -436,7 +434,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			dcm_D ,
 			x_D);
 
-		std::cout << " -- Computing mean "<< std::endl;
 
 		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs,
 			dcm_S ,
