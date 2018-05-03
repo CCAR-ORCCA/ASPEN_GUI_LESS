@@ -559,6 +559,10 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 		arma::vec dx  = {deviation(x_index),deviation(x_index + 1),deviation(x_index + 2)};
 		
 
+
+
+
+
 		// The mrp used in the partials 
 		// instantiates
 		// [NS_bar]
@@ -574,9 +578,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 		arma::mat NS_bar = RBK::mrp_to_dcm(this -> X.subvec(mrp_index, mrp_index + 2));
 
 		this -> X.subvec(x_index , x_index + 2) += dx;
-		this -> X.subvec(mrp_index, mrp_index + 2) += RBK::dcm_to_mrp(NS_bar * SS_bar.t());
-
-		
+		this -> X.subvec(mrp_index, mrp_index + 2) = RBK::dcm_to_mrp(NS_bar * SS_bar.t());
 
 		++progress;
 
