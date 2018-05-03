@@ -25,7 +25,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0016 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.002 // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 #define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
@@ -40,7 +40,7 @@
 #define T0 0
 
 // Number of obervation times
-#define OBSERVATION_TIMES 800
+#define OBSERVATION_TIMES 400
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
