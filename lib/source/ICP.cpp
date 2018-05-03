@@ -333,8 +333,6 @@ void ICP::compute_pairs(
 	arma::ivec random_source_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, source_pc -> get_size() - 1)));
 	std::vector<PointPair> destination_source_dist_vector;
 
-	std::cout << " Sampling " << std::endl;
-
 	for (unsigned int i = 0; i < random_source_indices.n_rows; ++i) {
 		PointPair destination_source_dist_pair = std::make_pair(nullptr,source_pc -> get_point(random_source_indices(i)));
 		destination_source_dist_vector.push_back(destination_source_dist_pair);
@@ -352,6 +350,8 @@ void ICP::compute_pairs(
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
 		arma::vec test_source_point = dcm_D.t() * (dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S - x_D);
+
+		std::cout << test_source_point << std::endl;
 
 		std::shared_ptr<PointNormal> closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 
