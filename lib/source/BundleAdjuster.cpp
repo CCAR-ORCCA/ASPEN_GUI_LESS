@@ -122,11 +122,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		Nmat.setZero();
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
 		
-		// For each point-cloud pair
-		#if !BUNDLE_ADJUSTER_DEBUG
-		boost::progress_display progress(this -> point_cloud_pairs.size());
-		#endif 
-
+		
 		std::vector<arma::mat> Lambda_k_vector;
 		std::vector<arma::vec> N_k_vector;
 
@@ -152,10 +148,19 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 		}
 
+		// For each point-cloud pair
+		#if !BUNDLE_ADJUSTER_DEBUG
+		boost::progress_display progress(this -> point_cloud_pairs.size());
+		#endif 
+
 		#pragma omp parallel for
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 			// The Lambda_k and N_k specific to this point-cloud pair are computed
 			this -> assemble_subproblem(Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
+			#if !BUNDLE_ADJUSTER_DEBUG
+			++progress;
+			#else
+
 		}
 
 
@@ -164,10 +169,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			// They are added to the whole problem
 			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
 
-			#if !BUNDLE_ADJUSTER_DEBUG
-			++progress;
-			#else
-
+			
 			std::cout << "Subproblem info matrix: " << std::endl;
 			std::cout << Lambda_k << std::endl;
 			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
