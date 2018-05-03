@@ -398,6 +398,10 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
+		std::string label_S_k = this -> all_registered_pc -> at(point_cloud_pair.S_k) -> get_label();
+		std::string label_D_k = this -> all_registered_pc -> at(point_cloud_pair.D_k) -> get_label();
+
+
 		arma::vec x_S = arma::zeros<arma::vec>(3);
 		arma::mat dcm_S = arma::eye<arma::mat>(3,3);
 
@@ -462,9 +466,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
 
-		std::string label_S_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_label();
-		std::string label_D_k = this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k) -> get_label();
-
+		
 		std::cout << " -- (" << label_S_k << " , " <<label_D_k <<  ") : " << mean_error << " , " << rms_error << std::endl;
 
 
