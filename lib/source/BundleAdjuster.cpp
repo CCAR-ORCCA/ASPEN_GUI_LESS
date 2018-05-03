@@ -545,7 +545,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 
 
-void BundleAdjuster::apply_deviation(const EigVec & deviation){
+void BundleAdjuster::apply_deviation(EigVec & deviation){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
