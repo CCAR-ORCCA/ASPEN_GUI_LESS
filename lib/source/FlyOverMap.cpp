@@ -50,6 +50,18 @@ void FlyOverMap::update_label(int label,double longitude, double latitude){
 	}
 }
 
+
+void FlyOverMap::remove_label(int label){
+
+	// Cleaning up the old bin
+	std::pair<int,int> old_bin_coordinates = this -> labels[label];
+	std::vector<int> old_bin = this -> bins[old_bin_coordinates.first][old_bin_coordinates.second];
+	
+	old_bin.erase(std::find(old_bin.begin(), old_bin.end(), label));
+	this -> bins[old_bin_coordinates.first][old_bin_coordinates.second] = old_bin;
+
+}
+
 std::vector<int> FlyOverMap::get_bin(int bin_longitude,int bin_latitude )const {
 	return this -> bins[this -> n_bins_latitude - bin_latitude - 1][bin_longitude];
 }

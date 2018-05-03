@@ -17,6 +17,8 @@ public:
 
 	void add_label(int label, double longitude, double latitude);
 	void update_label(int label,double longitude, double latitude);
+	void remove_label(int label);
+
 
 	void get_flyovers_in_bin(int bin_longitude,int bin_latitude,
 		std::set<std::set<int> > & flyovers) const;
@@ -25,6 +27,7 @@ public:
 
 
 	std::set<std::set< int> > get_flyovers() const;
+	std::vector<int> get_bin(int bin_longitude,int bin_latitude ) const;
 
 
 protected:
@@ -34,7 +37,6 @@ protected:
 	double d_bin_longitude;
 	double d_bin_latitude;
 
-	std::vector<int> get_bin(int bin_longitude,int bin_latitude ) const;
 
 	int get_bin_depth(int bin_longitude,int bin_latitude ) const;
 
