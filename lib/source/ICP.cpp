@@ -306,7 +306,7 @@ arma::rowvec ICP::dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec
 }
 
 
-void ICP::compute_pairs(int h,const arma::mat & dcm,const arma::mat & x) {
+void ICP::compute_pairs(int h,const arma::mat & dcm,const arma::vec & x) {
 
 	ICP::compute_pairs(this -> point_pairs,this -> pc_source,this -> pc_destination,h, dcm,x);
 }
@@ -317,9 +317,9 @@ void ICP::compute_pairs(
 	std::shared_ptr<PC> destination_pc, 
 	int h,
 	const arma::mat & dcm_S,
-	const arma::mat & x_S,
+	const arma::vec & x_S,
 	const arma::mat & dcm_D,
-	const arma::mat & x_D){
+	const arma::vec & x_D){
 
 	point_pairs.clear();
 

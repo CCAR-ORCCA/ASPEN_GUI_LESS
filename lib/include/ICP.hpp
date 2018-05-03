@@ -35,9 +35,9 @@ public:
 		std::shared_ptr<PC> destination_pc, 
 		int h,
 		const arma::mat & dcm_S = arma::eye<arma::mat>(3, 3),
-		const arma::mat & x_S = arma::zeros<arma::vec>(3),
+		const arma::vec & x_S = arma::zeros<arma::vec>(3),
 		const arma::mat & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::mat & x_D = arma::zeros<arma::vec>(3));
+		const arma::vec & x_D = arma::zeros<arma::vec>(3));
 	
 	static  double compute_rms_residuals(
 		const std::vector<PointPair> & point_pairs,
