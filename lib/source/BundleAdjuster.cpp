@@ -34,10 +34,11 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment_parallel();
+		this -> solve_bundle_adjustment();
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}
 
+	this -> update_point_clouds();
 	this -> update_flyover_map(longitude_latitude);
 
 
@@ -101,11 +102,12 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
 
 
-
 void BundleAdjuster::solve_bundle_adjustment(){
 
 	int Q = this -> all_registered_pc -> size();
 
+	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
 		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
@@ -114,104 +116,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		EigVec Nmat(6 * (Q - 1)); 
 		Nmat.setZero();
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
-		arma::vec dX(6 * (Q - 1));
-
-		// For each point-cloud pair
-		#if !BUNDLE_ADJUSTER_DEBUG
-		boost::progress_display progress(this -> point_cloud_pairs.size());
-		#endif 
-
-		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-
-			arma::mat Lambda_k;
-			arma::vec N_k;
-
-			if (this -> point_cloud_pairs . at(k).D_k != this -> ground_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> ground_pc_index){
-				Lambda_k = arma::zeros<arma::mat>(12,12);
-				N_k = arma::zeros<arma::vec>(12);
-			}
-			else{
-				Lambda_k = arma::zeros<arma::mat>(6,6);
-				N_k = arma::zeros<arma::vec>(6);
-			}
-
-			// The Lambda_k and N_k specific to this point-cloud pair are computed
-			this -> assemble_subproblem(Lambda_k,N_k,this -> point_cloud_pairs . at(k));
-
-			// They are added to the whole problem
-			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k,N_k,this -> point_cloud_pairs . at(k));
-
-
-			#if !BUNDLE_ADJUSTER_DEBUG
-			++progress;
-			#else
-
-			std::cout << "Subproblem info matrix: " << std::endl;
-			std::cout << Lambda_k << std::endl;
-			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
-			std::cout << "Subproblem normal matrix: " << std::endl;
-			std::cout << N_k << std::endl;
-			#endif 
-
-
-		}	
-
 		
-		std::cout << "- Solving for the deviation" << std::endl;
-
-		// The deviation in all of the rigid transforms is computed
-		Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
-
-		// dX = arma::spsolve(Lambda,N,"superlu",settings);
-
-		// Transitionning to Eigen
-		// The cholesky decomposition of Lambda is computed
-		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
-
-		// The deviation is computed
-		EigVec deviation = chol.solve(Nmat);    
-
-
-		#pragma omp parallel for
-		for (unsigned int i = 0; i < 6 * (Q-1); ++i){
-			dX(i) = deviation(i);
-		}
-
-
-		// It is applied to all of the point clouds (minus the first one)
-		std::cout << "- Applying the deviation" << std::endl;
-
-		this -> apply_deviation(dX);
-		std::cout << "\n- Updating the point pairs" << std::endl;
-
-		// The point cloud pairs are updated: their residuals are update
-		this -> update_point_cloud_pairs();
-
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "Deviation: " << std::endl;
-		std::cout << dX << std::endl;
-		#endif
-
-	}
-
-
-}
-
-
-void BundleAdjuster::solve_bundle_adjustment_parallel(){
-
-	int Q = this -> all_registered_pc -> size();
-
-	for (int iter = 0 ; iter < this -> N_iter; ++iter){
-
-		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
-
-		std::vector<T> coefficients;          
-		EigVec Nmat(6 * (Q - 1)); 
-		Nmat.setZero();
-		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
-		arma::vec dX(6 * (Q - 1));
-
 		// For each point-cloud pair
 		#if !BUNDLE_ADJUSTER_DEBUG
 		boost::progress_display progress(this -> point_cloud_pairs.size());
@@ -284,16 +189,10 @@ void BundleAdjuster::solve_bundle_adjustment_parallel(){
 		EigVec deviation = chol.solve(Nmat);    
 
 
-		#pragma omp parallel for
-		for (unsigned int i = 0; i < 6 * (Q-1); ++i){
-			dX(i) = deviation(i);
-		}
-
-
 		// It is applied to all of the point clouds (minus the first one)
 		std::cout << "- Applying the deviation" << std::endl;
 
-		this -> apply_deviation(dX);
+		this -> apply_deviation(deviation);
 		std::cout << "\n- Updating the point pairs" << std::endl;
 
 		// The point cloud pairs are updated: their residuals are update
@@ -301,7 +200,7 @@ void BundleAdjuster::solve_bundle_adjustment_parallel(){
 
 		#if BUNDLE_ADJUSTER_DEBUG
 		std::cout << "Deviation: " << std::endl;
-		std::cout << dX << std::endl;
+		std::cout << this -> dX << std::endl;
 		#endif
 
 	}
@@ -384,13 +283,37 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	std::vector<PointPair> point_pairs;
 
 	// The point pairs must be computed using the current estimate of the point clouds' rigid transform
-	ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(point_cloud_pair.S_k),this -> all_registered_pc -> at(point_cloud_pair.D_k),0);		
+
+	arma::mat x_S = arma::zeros<arma::vec>(3);
+	arma::mat dcm_S = arma::eye<arma::mat>(3,3);
+
+	arma::mat x_D = arma::zeros<arma::vec>(3);
+	arma::mat dcm_D = arma::eye<arma::mat>(3,3);
+
+	if (point_cloud_pair.S_k != 0){
+		x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
+		dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.S_k - 1) + 3, 6 * (point_cloud_pair.S_k - 1) + 5));
+	}
+
+	if (point_cloud_pair.D_k != 0){
+		x_D = this -> X.subvec(6 * (point_cloud_pair.D_k - 1) , 6 * (point_cloud_pair.D_k - 1) + 2);
+		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
+	}
+	
+	ICP::compute_pairs(point_pairs,
+		this -> all_registered_pc -> at(point_cloud_pair.S_k),
+		this -> all_registered_pc -> at(point_cloud_pair.D_k),
+		0,
+		dcm_S,
+		x_S,
+		dcm_D,
+		x_D);		
 
 
 	#if BUNDLE_ADJUSTER_DEBUG
 	std::cout << " - Subproblem : " << point_cloud_pair.S_k << " / " << point_cloud_pair.D_k << std::endl;
 	std::cout << " - Number of pairs: " << point_pairs.size() << std::endl;
-	std::cout << " - Residuals: " << ICP::compute_rms_residuals(point_pairs) << std::endl;
+	std::cout << " - Residuals: " << ICP::compute_rms_residuals(point_pairs,dcm_S,x_S,dcm_D,x_D) << std::endl;
 	#endif
 
 	arma::rowvec H_ki;
@@ -411,29 +334,29 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
-		double y_ki = ICP::compute_normal_distance(point_pairs[i]);
+		double y_ki = ICP::compute_normal_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
 		arma::mat n = point_pairs[i].second -> get_normal();
 
 		if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
 
-			H_ki.subvec(0,2) = n.t();
-			H_ki.subvec(3,5) = ICP::dGdSigma_multiplicative(arma::zeros<arma::vec>(3),point_pairs[i].first -> get_point(),n);
-			H_ki.subvec(6,8) = - n.t();
-			H_ki.subvec(9,11) = 4 * ( - n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
-				+ (point_pairs[i].first -> get_point() - point_pairs[i].second -> get_point()).t() * RBK::tilde(n));
-
+			H_ki.subvec(0,2) = n.t() * dcm_D;
+			H_ki.subvec(3,5) = - 4 * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
+			H_ki.subvec(6,8) = - n.t() * dcm_D;
+			H_ki.subvec(9,11) = 4 * ( n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
+				- (dcm_S * point_pairs[i].first -> get_point() + x_S - dcm_D * point_pairs[i].second -> get_point() - x_D).t() * dcm_D * RBK::tilde(n));
+			// think I fixed a sign error
 		}
 
 		else if(point_cloud_pair.S_k != this -> ground_pc_index) {
-			H_ki.subvec(0,2) = n.t();
-			H_ki.subvec(3,5) = ICP::dGdSigma_multiplicative(arma::zeros<arma::vec>(3),point_pairs[i].first -> get_point(),n);
+			H_ki.subvec(0,2) = n.t() * dcm_D;
+			H_ki.subvec(3,5) = - 4 * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
 
 		}
 
 		else{
-			H_ki.subvec(0,2) = - n.t();
-			H_ki.subvec(3,5) = 4 * ( - n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
-				+ (point_pairs[i].first -> get_point() - point_pairs[i].second -> get_point()).t() * RBK::tilde(n));
+			H_ki.subvec(0,2) = - n.t() * dcm_D;
+			H_ki.subvec(3,5) = 4 * ( n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
+				- (dcm_S * point_pairs[i].first -> get_point() + x_S - dcm_D * point_pairs[i].second -> get_point() - x_D).t() * dcm_D * RBK::tilde(n));
 
 		}
 
@@ -466,13 +389,45 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		std::vector<PointPair> point_pairs;
 		int h = 4;
 
-		ICP::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k),
-			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k),
-			h);
+		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
-		double rms_error = ICP::compute_rms_residuals(point_pairs);
-		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs));
+		arma::mat x_S = arma::zeros<arma::vec>(3);
+		arma::mat dcm_S = arma::eye<arma::mat>(3,3);
+
+		arma::mat x_D = arma::zeros<arma::vec>(3);
+		arma::mat dcm_D = arma::eye<arma::mat>(3,3);
+
+		if (point_cloud_pair.S_k != 0){
+			x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
+			dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.S_k - 1) + 3, 6 * (point_cloud_pair.S_k - 1) + 5));
+		}
+
+		if (point_cloud_pair.D_k != 0){
+			x_D = this -> X.subvec(6 * (point_cloud_pair.D_k - 1) , 6 * (point_cloud_pair.D_k - 1) + 2);
+			dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
+		}
+
+
+		ICP::compute_pairs(point_pairs,
+			this -> all_registered_pc -> at(point_cloud_pair.S_k),
+			this -> all_registered_pc -> at(point_cloud_pair.D_k),
+			h,
+			dcm_S ,
+			x_S,
+			dcm_D ,
+			x_D );
+
+		double rms_error = ICP::compute_rms_residuals(point_pairs,
+			dcm_S ,
+			x_S,
+			dcm_D ,
+			x_D);
+
+		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs,
+			dcm_S ,
+			x_S,
+			dcm_D ,
+			x_D));
 
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_size());
@@ -580,18 +535,37 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 
 
-void BundleAdjuster::apply_deviation(const arma::vec & dX){
+void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
 	#pragma omp parallel for
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 
-		this -> all_registered_pc -> at(i) -> transform(
-			RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
-			dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
 
-		this -> rotation_increment[i - 1] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i -1 ];
+		int x_index = 6 * (i - 1);
+		int mrp_index = 6 * (i - 1) + 3;
+
+		arma::vec dx  = {deviation(x_index),deviation(x_index + 1),deviation(x_index + 3)};
+		
+
+		// The mrp used in the partials 
+		// instantiates
+		// [NS_bar]
+		// but the solved for d_mrp
+		// corresponds to 
+		// [SS_bar]
+		// so need to apply 
+		// [S_barS] = dcm_to_mrp(-d_mrp)
+		// as in [NS_bar] = [NS_bar] * [S_barS]
+		arma::vec d_mrp  = {deviation(mrp_index),deviation(mrp_index + 1),deviation(mrp_index + 3)};
+		
+		arma::mat SS_bar = RBK::mrp_to_dcm(d_mrp);
+		arma::mat NS_bar = RBK::mrp_to_dcm(this -> X.subvec(mrp_index + 3, mrp_index + 5));
+
+		this -> X.subvec(x_index , x_index + 2) += dx;
+		this -> X.subvec(mrp_index + 3, mrp_index + 5) += RBK::dcm_to_mrp(NS_bar * SS_bar.t());
+
 		
 
 		++progress;
@@ -600,6 +574,33 @@ void BundleAdjuster::apply_deviation(const arma::vec & dX){
 
 }
 
+
+void BundleAdjuster::update_point_clouds(){
+
+	boost::progress_display progress(this -> all_registered_pc -> size());
+
+#pragma omp parallel for
+	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+
+
+		int x_index = 6 * (i - 1);
+		int mrp_index = 6 * (i - 1) + 3;
+
+		arma::vec x = this-> X.subvec(x_index , x_index + 2);
+		arma::vec mrp = this -> X.subvec(mrp_index + 3, mrp_index + 5);
+
+		arma::mat NS_bar = RBK::mrp_to_dcm(mrp);
+
+		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
+
+		this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
+		
+		++progress;
+
+	}
+
+
+}
 
 void BundleAdjuster::save_connectivity() const{
 	int M = this -> point_cloud_pairs. size();

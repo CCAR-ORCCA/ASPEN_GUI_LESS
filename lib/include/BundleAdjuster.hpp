@@ -57,21 +57,21 @@ protected:
 		const arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair);
 
-	void apply_deviation(const arma::vec & dX);
+	void apply_deviation(const EigVec & deviation);
 
 	void update_flyover_map(arma::mat & longitude_latitude);
 
-
 	void solve_bundle_adjustment();
-	void solve_bundle_adjustment_parallel();
 
 
 	void create_pairs(const arma::mat & longitude_latitude,bool look_for_closure);
 
 	void update_point_cloud_pairs();
+	void update_point_clouds();
 
 	arma::mat LN_t0;
 	arma::vec x_t0;
+	arma::vec X;
 
 	int ground_pc_index = 0;
 
