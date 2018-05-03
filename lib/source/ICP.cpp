@@ -333,7 +333,7 @@ void ICP::compute_pairs(
 	arma::ivec random_source_indices = arma::unique(arma::randi<arma::ivec>(N_points, arma::distr_param(0, source_pc -> get_size() - 1)));
 	std::vector<PointPair> destination_source_dist_vector;
 
-	std::Cout << " Sampling " << std::endl;
+	std::cout << " Sampling " << std::endl;
 
 	for (unsigned int i = 0; i < random_source_indices.n_rows; ++i) {
 		PointPair destination_source_dist_pair = std::make_pair(nullptr,source_pc -> get_point(random_source_indices(i)));
@@ -345,7 +345,7 @@ void ICP::compute_pairs(
 	// to the mapped source point
 
 
-	std::Cout << " Querying destination KD tree  " << std::endl;
+	std::cout << " Querying destination KD tree  " << std::endl;
 
 
 	#pragma omp parallel for
@@ -371,7 +371,7 @@ void ICP::compute_pairs(
 	// to the mapped destination point
 	// This double mapping process gets rid of edge points
 
-	std::Cout << " Querying source KD tree  " << std::endl;
+	std::cout << " Querying source KD tree  " << std::endl;
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
