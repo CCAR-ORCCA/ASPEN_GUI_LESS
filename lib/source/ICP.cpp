@@ -343,9 +343,6 @@ void ICP::compute_pairs(
 	// to the mapped source point
 
 
-	std::cout << " Querying destination KD tree  " << std::endl;
-
-
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
@@ -370,7 +367,6 @@ void ICP::compute_pairs(
 	// to the mapped destination point
 	// This double mapping process gets rid of edge points
 
-	std::cout << " Querying source KD tree  " << std::endl;
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {

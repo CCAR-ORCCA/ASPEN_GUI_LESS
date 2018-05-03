@@ -549,7 +549,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 
 
@@ -558,6 +558,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 		arma::vec dx  = {deviation(x_index),deviation(x_index + 1),deviation(x_index + 2)};
 		
+
 
 
 
@@ -579,6 +580,9 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 		this -> X.subvec(x_index , x_index + 2) += dx;
 		this -> X.subvec(mrp_index, mrp_index + 2) = RBK::dcm_to_mrp(NS_bar * SS_bar.t());
+
+
+		std::cout << dx.t() << std::endl;
 
 		++progress;
 
