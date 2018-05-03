@@ -81,7 +81,7 @@ protected:
 	void compute_pairs(
 		int h,
 		const arma::mat & dcm = arma::eye<arma::mat>(3,3),
-		const arma::mat & x = arma::zeros<arma::vec>(3));
+		const arma::vec & x = arma::zeros<arma::vec>(3));
 
 	
 	arma::vec X;
