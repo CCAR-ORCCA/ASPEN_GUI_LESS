@@ -40,7 +40,7 @@
 #define T0 0
 
 // Number of obervation times
-#define OBSERVATION_TIMES 400
+#define OBSERVATION_TIMES 800
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
