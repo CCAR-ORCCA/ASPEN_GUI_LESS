@@ -25,7 +25,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.002 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0016 // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 #define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
@@ -40,7 +40,7 @@
 #define T0 0
 
 // Number of obervation times
-#define OBSERVATION_TIMES 1500
+#define OBSERVATION_TIMES 400
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
@@ -50,7 +50,6 @@
 
 // Ridge coef (regularization of normal equations)
 #define RIDGE_COEF 0e-5
-
 
 // Number of edges in a-priori
 #define N_EDGES 3000
@@ -63,6 +62,9 @@
 
 // Spin rate (hours)
 #define SPIN_RATE 12.
+
+// Orbit inclination (degrees)
+#define INCLINATION 60
 
 // Density (kg/m^3)
 #define DENSITY 1900
@@ -172,7 +174,8 @@ int main() {
 	double a = arma::norm(pos_0);
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0,std::cos(arma::datum::pi/6)*v,std::sin(arma::datum::pi/6)*v};
+
+	arma::vec vel_0_inertial = {0,std::cos(arma::datum::pi/ 180 * INCLINATION)*v,std::sin(arma::datum::pi/ 180 * INCLINATION)*v};
 
 	X0_augmented.rows(3,5) = vel_0_inertial;
 
