@@ -428,12 +428,15 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			x_S,
 			dcm_D ,
 			x_D );
+		std::cout << " -- Computing residuals "<< std::endl;
 
 		double rms_error = ICP::compute_rms_residuals(point_pairs,
 			dcm_S ,
 			x_S,
 			dcm_D ,
 			x_D);
+
+		std::cout << " -- Computing mean "<< std::endl;
 
 		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs,
 			dcm_S ,
