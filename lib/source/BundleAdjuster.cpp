@@ -21,6 +21,11 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
+
+	int Q = this -> all_registered_pc -> size();
+
+	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+
 	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
 		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
 	}
@@ -397,7 +402,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		arma::vec x_D = arma::zeros<arma::vec>(3);
 		arma::mat dcm_D = arma::eye<arma::mat>(3,3);
 
-		std::cout << point_cloud_pair.S_k << " " << point_cloud_pair.D_k << std::endl;
 
 		if (point_cloud_pair.S_k != 0){
 			x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
