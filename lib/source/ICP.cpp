@@ -348,7 +348,7 @@ void ICP::compute_pairs(
 		std::cout << dcm_D << std::endl;
 		std::cout << dcm_S << std::endl;
 		std::cout << x_S.t() << std::endl;
-		std::cout << x_D.t() << std::endl << std::endl 
+		std::cout << x_D.t() << std::endl << std::endl ;
 
 
 	#pragma omp parallel for
