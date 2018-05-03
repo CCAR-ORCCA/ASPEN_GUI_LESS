@@ -99,8 +99,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
+			
 			this -> fly_over_map.add_label(time_index,0,0);
-
 
 			#if IOFLAGS_shape_builder
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
@@ -126,7 +126,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				/****************************************************************************/
-				// ONLY FOR DEBUG
+				// ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS
 				if (!this -> filter_arguments-> get_use_ba()){
 					M_pc = this -> LB_t0 * dcm_LB.t();
 					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
@@ -194,23 +194,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 			}
 
-			if (this -> filter_arguments-> get_use_ba() && icp_converged && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
+			if (icp_converged){
+				if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
-				std::cout << " -- Flyover detected\n";
-				last_ba_call_index = time_index;
-				longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+					std::cout << " -- Flyover detected\n";
+					last_ba_call_index = time_index;
+					longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					&this -> fly_over_map,
-					longitude_latitude,
+					BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+						&this -> fly_over_map,
+						longitude_latitude,
 
-					this -> LN_t0,
-					this -> x_t0,
-					true,
-					false);
-				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+						this -> LN_t0,
+						this -> x_t0,
+						true,
+						false);
+					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
+				}
 			}
 
 
@@ -342,10 +344,7 @@ void ShapeBuilder::get_new_states(
 		this -> LB_t0 = dcm_LB;
 	}
 
-
 }
-
-
 
 void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitude_latitude){
 
@@ -362,11 +361,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 
 
 	if (this -> filter_arguments -> get_use_icp()){
-
-
-		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(this -> all_registered_pc,this -> filter_arguments -> get_points_retained()));
-
-		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 	// The point clouds are bundle-adjusted
 		std::vector<std::shared_ptr< PC>> kept_pcs;
@@ -403,6 +397,9 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 		}
 		
 		std::cout << "-- Constructing point cloud...\n";
+		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
+
+		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
 		
 
@@ -439,7 +436,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 
 
 		destination_pc_concatenated -> save(pc_aligned_path_obj, this -> LN_t0.t(),this -> x_t0);
-
 
 
 	}

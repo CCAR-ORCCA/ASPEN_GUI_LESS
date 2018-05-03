@@ -62,9 +62,9 @@ protected:
 	void update_flyover_map(arma::mat & longitude_latitude);
 
 
-	void ICP_pass();
-
 	void solve_bundle_adjustment();
+	void solve_bundle_adjustment_parallel();
+
 
 	void create_pairs(const arma::mat & longitude_latitude,bool look_for_closure);
 
@@ -74,9 +74,11 @@ protected:
 	arma::vec x_t0;
 
 	int ground_pc_index = 0;
+
 	FlyOverMap * fly_over_map;
 
 	std::vector<arma::mat> rotation_increment;
+
 
 
 

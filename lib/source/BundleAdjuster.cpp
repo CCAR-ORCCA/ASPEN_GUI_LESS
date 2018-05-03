@@ -34,7 +34,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment();
+		this -> solve_bundle_adjustment_parallel();
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}
 
@@ -126,7 +126,6 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			arma::mat Lambda_k;
 			arma::vec N_k;
 
-
 			if (this -> point_cloud_pairs . at(k).D_k != this -> ground_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> ground_pc_index){
 				Lambda_k = arma::zeros<arma::mat>(12,12);
 				N_k = arma::zeros<arma::vec>(12);
@@ -198,24 +197,118 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 }
 
-void BundleAdjuster::ICP_pass(){
 
-	arma::mat M_pc = arma::eye<arma::mat>(3,3);
-	arma::vec X_pc = arma::zeros<arma::vec>(3);
+void BundleAdjuster::solve_bundle_adjustment_parallel(){
 
-	boost::progress_display progress(this -> all_registered_pc -> size() - 1);
+	int Q = this -> all_registered_pc -> size();
 
-	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
-		ICP icp_pc(this -> all_registered_pc -> at(i), this -> all_registered_pc -> at(i + 1), M_pc, X_pc);
+	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
-		M_pc = icp_pc.get_M();
-		X_pc = icp_pc.get_X();
+		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
 
-		this -> all_registered_pc -> at(i + 1) -> transform(M_pc,X_pc);
-		++progress;
+		std::vector<T> coefficients;          
+		EigVec Nmat(6 * (Q - 1)); 
+		Nmat.setZero();
+		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
+		arma::vec dX(6 * (Q - 1));
+
+		// For each point-cloud pair
+		#if !BUNDLE_ADJUSTER_DEBUG
+		boost::progress_display progress(this -> point_cloud_pairs.size());
+		#endif 
+
+		std::vector<arma::mat> Lambda_k_vector;
+		std::vector<arma::vec> N_k_vector;
+
+		// The subproblem matrices are pre-allocated
+		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+
+			arma::mat Lambda_k;
+			arma::vec N_k;
+
+
+			if (this -> point_cloud_pairs . at(k).D_k != this -> ground_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> ground_pc_index){
+				Lambda_k = arma::zeros<arma::mat>(12,12);
+				N_k = arma::zeros<arma::vec>(12);
+			}
+
+			else{
+				Lambda_k = arma::zeros<arma::mat>(6,6);
+				N_k = arma::zeros<arma::vec>(6);
+			}
+
+			Lambda_k_vector.push_back(Lambda_k);
+			N_k_vector.push_back(N_k);
+
+		}
+
+		#pragma omp parallel for
+		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+			// The Lambda_k and N_k specific to this point-cloud pair are computed
+			this -> assemble_subproblem(Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
+		}
+
+
+		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+
+			// They are added to the whole problem
+			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
+
+			#if !BUNDLE_ADJUSTER_DEBUG
+			++progress;
+			#else
+
+			std::cout << "Subproblem info matrix: " << std::endl;
+			std::cout << Lambda_k << std::endl;
+			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
+			std::cout << "Subproblem normal matrix: " << std::endl;
+			std::cout << N_k << std::endl;
+			#endif 
+
+
+		}	
+
+		
+		std::cout << "- Solving for the deviation" << std::endl;
+
+		// The deviation in all of the rigid transforms is computed
+		Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
+
+		// dX = arma::spsolve(Lambda,N,"superlu",settings);
+
+		// Transitionning to Eigen
+		// The cholesky decomposition of Lambda is computed
+		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
+
+		// The deviation is computed
+		EigVec deviation = chol.solve(Nmat);    
+
+
+		#pragma omp parallel for
+		for (unsigned int i = 0; i < 6 * (Q-1); ++i){
+			dX(i) = deviation(i);
+		}
+
+
+		// It is applied to all of the point clouds (minus the first one)
+		std::cout << "- Applying the deviation" << std::endl;
+
+		this -> apply_deviation(dX);
+		std::cout << "\n- Updating the point pairs" << std::endl;
+
+		// The point cloud pairs are updated: their residuals are update
+		this -> update_point_cloud_pairs();
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << "Deviation: " << std::endl;
+		std::cout << dX << std::endl;
+		#endif
+
 	}
 
+
 }
+
 
 
 void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look_for_closure){
@@ -320,8 +413,6 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 		double y_ki = ICP::compute_normal_distance(point_pairs[i]);
 		arma::mat n = point_pairs[i].second -> get_normal();
-
-
 
 		if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
 
@@ -432,100 +523,76 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	int S_k = point_cloud_pair.S_k;
 	int D_k = point_cloud_pair.D_k;
 
-	int offset_S_k = 0;
-	int offset_D_k = 0;
 	
-	if (S_k > this -> ground_pc_index){
-		offset_S_k = -6;
-	}
-
-	if (D_k > this -> ground_pc_index){
-		offset_D_k = -6;
-	}
-
-	
-	if (D_k != this -> ground_pc_index && S_k != this -> ground_pc_index){
+	if (D_k != 0 && S_k != 0){
 
 		// S_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
-				coeffs.push_back(T(6 * S_k + offset_S_k + i, 6 * S_k + offset_S_k + j,Lambda_k(i,j)));
+				coeffs.push_back(T(6 * (S_k - 1) + i, 6 * (S_k -1) + j,Lambda_k(i,j)));
 			}
-			N(6 * S_k + offset_S_k + i) += N_k(i);
+			N(6 * (S_k -1 ) + i) += N_k(i);
 		}
 		
 		// D_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
-				coeffs.push_back(T(6 * D_k + offset_D_k + i, 6 * D_k + offset_D_k + j,Lambda_k(i + 6,j + 6)));
+				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i + 6,j + 6)));
 			}
-			N(6 * D_k + offset_D_k + i) += N_k(i + 6);
+			N(6 *(D_k -1) + i) += N_k(i + 6);
 		}
-
-
 
 		// Cross-correlations
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
-				coeffs.push_back(T(6 * S_k + offset_S_k + i, 6 * D_k + offset_D_k + j,Lambda_k(i,j + 6)));
-				coeffs.push_back(T(6 * D_k + offset_D_k + i, 6 * S_k + offset_S_k + j,Lambda_k(i + 6,j)));
-
+				coeffs.push_back(T(6 * (S_k-1)  + i, 6 * (D_k -1) + j,Lambda_k(i,j + 6)));
+				coeffs.push_back(T(6 * (D_k -1) + i, 6 * (S_k -1) + j,Lambda_k(i + 6,j)));
 			}
 		}
 
 	}
 
-	else if (S_k != this -> ground_pc_index){
+	else if (S_k != 0){
 
 		// S_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
-				coeffs.push_back(T(6 * S_k + offset_S_k + i, 6 * S_k + offset_S_k + j,Lambda_k(i,j)));
+				coeffs.push_back(T(6 * (S_k-1)  + i, 6 * (S_k -1) + j,Lambda_k(i,j)));
 			}
-			N(6 * S_k + offset_S_k + i) += N_k(i);
+			N(6 * (S_k -1)  + i) += N_k(i);
 		}
 
-
 	}
+
 	else {
 
 		// D_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
-				coeffs.push_back(T(6 * D_k + offset_D_k + i, 6 * D_k + offset_D_k + j,Lambda_k(i,j)));
+				coeffs.push_back(T(6 * (D_k-1)  + i, 6 * (D_k -1) + j,Lambda_k(i,j)));
 			}
-			N(6 * D_k + offset_D_k + i) += N_k(i);
+			N(6 * (D_k -1) + i) += N_k(i);
 		}
 	}
 
-
 }
+
+
+
 
 void BundleAdjuster::apply_deviation(const arma::vec & dX){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < this -> all_registered_pc -> size(); ++i){
+	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 
+		this -> all_registered_pc -> at(i) -> transform(
+			RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
+			dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
 
-		if (i < this -> ground_pc_index){
-
-			this -> all_registered_pc -> at(i) -> transform(
-				RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)), 
-				dX.subvec(6 * i , 6 * i + 2));
-
-			this -> rotation_increment[i] = RBK::mrp_to_dcm(dX.subvec(6 * i + 3, 6 * i + 5)) * this -> rotation_increment[i];
-
-		}
-		else if (i > this -> ground_pc_index){
-
-			this -> all_registered_pc -> at(i) -> transform(
-				RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)), 
-				dX.subvec(6 * (i - 1) , 6 * (i - 1) + 2));
-
-			this -> rotation_increment[i - 1] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i -1 ];
-		}
+		this -> rotation_increment[i - 1] = RBK::mrp_to_dcm(dX.subvec(6 * (i - 1) + 3, 6 * (i - 1) + 5)) * this -> rotation_increment[i -1 ];
+		
 
 		++progress;
 
