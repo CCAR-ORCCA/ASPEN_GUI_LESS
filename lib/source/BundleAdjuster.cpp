@@ -192,6 +192,8 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		// The cholesky decomposition of Lambda is computed
 		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
 
+		std::cout << Nmat << std::endl;
+
 		// The deviation is computed
 		EigVec deviation = chol.solve(Nmat);    
 
