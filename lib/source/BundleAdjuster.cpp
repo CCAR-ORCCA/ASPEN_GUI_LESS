@@ -163,6 +163,8 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 		}
 
+		std::cout << "Normal matrix" << std::endl;
+
 		std::cout << Nmat << std::endl;
 
 
@@ -548,11 +550,11 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 
 
-void BundleAdjuster::apply_deviation(EigVec & deviation){
+void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
-	// #pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 
 
@@ -561,11 +563,6 @@ void BundleAdjuster::apply_deviation(EigVec & deviation){
 
 		arma::vec dx  = {deviation(x_index),deviation(x_index + 1),deviation(x_index + 2)};
 		
-
-
-
-
-
 
 		// The mrp used in the partials 
 		// instantiates

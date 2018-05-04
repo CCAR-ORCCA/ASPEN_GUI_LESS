@@ -57,7 +57,7 @@ protected:
 		const arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair);
 
-	void apply_deviation(EigVec & deviation);
+	void apply_deviation(const EigVec & deviation);
 
 	void update_flyover_map(arma::mat & longitude_latitude);
 
