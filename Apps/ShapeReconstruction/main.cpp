@@ -25,7 +25,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.002 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0016  // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 #define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
@@ -58,13 +58,13 @@
 #define SHAPE_DEGREE 2
 
 // Target shape
-#define TARGET_SHAPE "itokawa_128_scaled_aligned"
+#define TARGET_SHAPE "itokawa_64_scaled_aligned"
 
 // Spin rate (hours)
 #define SPIN_RATE 12.
 
 // Orbit inclination (degrees)
-#define INCLINATION 60
+#define INCLINATION 45
 
 // Density (kg/m^3)
 #define DENSITY 1900
@@ -79,7 +79,7 @@
 #define N_ITER_SHAPE_FILTER 4
 
 // Whether or not the bundle adjustment should be used
-#define USE_BA true
+#define USE_BA false
 
 // Number of iterations in bundle adjustment
 #define N_ITER_BUNDLE_ADJUSTMENT 30
@@ -158,7 +158,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// Position
-	arma::vec pos_0 = {1000,0,0};
+	arma::vec pos_0 = {1000,100,0};
 	X0_augmented.rows(0,2) = pos_0;
 
 	// MRP BN 
