@@ -159,7 +159,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			this -> assemble_subproblem(Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
 			#if !BUNDLE_ADJUSTER_DEBUG
 			++progress;
-			#else
+			#endif
 
 		}
 
@@ -173,7 +173,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			// They are added to the whole problem
 			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
 
-			
+			#if BUNDLE_ADJUSTER_DEBUG
 			std::cout << "Subproblem info matrix: " << std::endl;
 			std::cout << Lambda_k << std::endl;
 			std::cout << "Conditionning : " << arma::cond(Lambda_k) << std::endl;
