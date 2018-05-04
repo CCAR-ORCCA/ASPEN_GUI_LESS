@@ -30,7 +30,7 @@
 #define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 1e0
+#define LOS_NOISE_SD_BASELINE 3e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
@@ -40,7 +40,7 @@
 #define T0 0
 
 // Number of obervation times
-#define OBSERVATION_TIMES 800
+#define OBSERVATION_TIMES 1600
 
 // Number of navigation times
 #define NAVIGATION_TIMES 80
@@ -82,7 +82,7 @@
 #define USE_BA true
 
 // Number of iterations in bundle adjustment
-#define N_ITER_BUNDLE_ADJUSTMENT 20
+#define N_ITER_BUNDLE_ADJUSTMENT 30
 
 // Number of iterations in the navigation filter measurement update
 #define N_ITER_MES_UPDATE 10
