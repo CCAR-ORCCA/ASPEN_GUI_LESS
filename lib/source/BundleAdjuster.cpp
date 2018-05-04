@@ -346,22 +346,22 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 		if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
 
-			H_ki.subvec(0,2) = n.t() * dcm_D;
+			H_ki.subvec(0,2) = n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
-			H_ki.subvec(6,8) = - n.t() * dcm_D;
+			H_ki.subvec(6,8) = - n.t() * dcm_D.t();
 			H_ki.subvec(9,11) = 4 * ( n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
 				- (dcm_S * point_pairs[i].first -> get_point() + x_S - dcm_D * point_pairs[i].second -> get_point() - x_D).t() * dcm_D * RBK::tilde(n));
 			// think I fixed a sign error
 		}
 
 		else if(point_cloud_pair.S_k != this -> ground_pc_index) {
-			H_ki.subvec(0,2) = n.t() * dcm_D;
+			H_ki.subvec(0,2) = n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
 
 		}
 
 		else{
-			H_ki.subvec(0,2) = - n.t() * dcm_D;
+			H_ki.subvec(0,2) = - n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = 4 * ( n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
 				- (dcm_S * point_pairs[i].first -> get_point() + x_S - dcm_D * point_pairs[i].second -> get_point() - x_D).t() * dcm_D * RBK::tilde(n));
 
