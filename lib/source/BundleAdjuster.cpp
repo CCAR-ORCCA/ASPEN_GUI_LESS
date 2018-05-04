@@ -21,7 +21,6 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
-
 	int Q = this -> all_registered_pc -> size();
 
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
@@ -45,7 +44,6 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	this -> update_point_clouds();
 	this -> update_flyover_map(longitude_latitude);
-
 
 	// The connectivity matrix is saved
 	if (save_connectivity){

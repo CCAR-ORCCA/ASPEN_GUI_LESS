@@ -20,8 +20,7 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 	// the lidar) is formed by the fixel of coordinates (0,0);
 
 	double y, z;
-	double x = this -> lidar -> get_focal_length();
-
+	double x = this -> lidar -> get_focal_length(); // positions the pixel in the focal plane 
 	double pz = this -> lidar -> get_size_z() / this -> lidar -> get_z_res();
 	double py = this -> lidar -> get_size_y() / this -> lidar -> get_y_res();
 
@@ -49,8 +48,9 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	// Origin and direction
 	arma::vec origin = {x, z, y};
-	this -> origin = std::make_shared<arma::vec>(origin);
 	this -> direction = std::make_shared<arma::vec>(arma::normalise( origin));
+	this -> origin = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+
 
 	this -> origin_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
 	this -> direction_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));

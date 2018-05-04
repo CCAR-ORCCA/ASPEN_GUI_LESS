@@ -107,6 +107,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#endif
 		}
 
+
+
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 
@@ -128,9 +130,43 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/****************************************************************************/
 				// ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS
 				if (!this -> filter_arguments-> get_use_ba()){
+
+
+
 					M_pc = this -> LB_t0 * dcm_LB.t();
+
 					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 					X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+
+					// arma::mat M_transformed = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN);
+					// arma::vec X_transformed = this -> LN_t0.t() * X_pc;
+
+
+					// arma::vec e = {0,0,1};
+
+					// arma::mat observable_components(3,2);
+					// observable_components.col(0) = arma::normalise(arma::cross(e,arma::randu<arma::vec>(3)));
+					// observable_components.col(1) = arma::normalise(arma::cross(e,observable_components.col(0)));
+
+					// arma::mat lhs = (M_transformed - arma::eye<arma::mat>(3,3)) * observable_components;
+					// arma::vec rhs = - X_transformed;
+
+					// arma::vec comps = arma::solve(lhs.t() * lhs,lhs.t() * rhs);
+
+
+					// std::cout << (observable_components * comps).t() << std::endl;
+					// std::cout <<  (-lidar_pos).t() << std::endl; 
+					// std::cout << "Error in norm (observable components) : " << arma::norm( (arma::eye<arma::mat>(3,3) - e * e.t()) * (observable_components * comps + lidar_pos )) << std::endl;
+
+
+
+					// std::cout << M_transformed * (- lidar_pos) + this -> x_t0 + X_transformed << std::endl;
+
+
+
+
+					// throw;
+
 				}
 				/****************************************************************************/
 
