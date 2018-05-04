@@ -202,8 +202,6 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		// It is applied to all of the point clouds (minus the first one)
 		std::cout << "- Applying the deviation" << std::endl;
 
-		std::cout << deviation << std::endl;
-
 		this -> apply_deviation(deviation);
 		std::cout << "\n- Updating the point pairs" << std::endl;
 
