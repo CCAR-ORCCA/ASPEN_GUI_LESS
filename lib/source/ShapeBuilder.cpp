@@ -139,10 +139,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::vec X_transformed = this -> LN_t0.t() * X_pc;
 
 
-			
-
-
-					std::cout << M_transformed * lidar_pos - this -> x_t0 + X_transformed << std::endl;
+					std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
 
 
 
