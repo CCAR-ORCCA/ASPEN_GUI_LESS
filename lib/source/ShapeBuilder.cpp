@@ -157,7 +157,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
 
-				std::cout << - M_p_k * lidar_pos + this -> x_t0 + X_p_k  << std::endl;
+				// std::cout << - M_p_k * lidar_pos + this -> x_t0 + X_p_k  << std::endl;
 
 
 				RigidTransform rigid_transform;
