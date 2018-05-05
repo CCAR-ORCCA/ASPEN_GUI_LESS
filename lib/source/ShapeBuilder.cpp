@@ -139,9 +139,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::vec X_transformed = this -> LN_t0.t() * X_pc;
 
 
-					// std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
-
-					std::cout << lidar_pos.t() << std::endl;
+					std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
 
 					// throw;
 
@@ -171,7 +169,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					true_particle(6) = this -> true_kep_state_t0.get_mu();
 
 					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
-					
+
 
 					IODFinder iod_finder(&rigid_transforms, 
 						100, 
