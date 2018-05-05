@@ -30,6 +30,8 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 	arma::vec elements = psopt.get_result();
 	this -> keplerian_state_at_epoch = OC::KepState(elements.subvec(0,5),elements(6));
 
+	std::cout << "Minimum of cost function : " << IODFinder::cost_function(elements,this-> rigid_transforms) << std::endl;
+
 }
 
 OC::KepState IODFinder::get_result() const{
