@@ -184,8 +184,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				if (rigid_transforms.size() == 6){
 
 					IODFinder iod_finder(&rigid_transforms, 
-						30, 
-						100,
+						100, 
+						1000,
 						true);
 
 
