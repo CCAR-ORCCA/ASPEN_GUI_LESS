@@ -157,7 +157,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-					// std::cout << M_transformed * (- lidar_pos) + this -> x_t0 + X_transformed << std::endl;
 
 
 
@@ -181,7 +180,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 6){
+				if (rigid_transforms.size() == 15){
 
 					IODFinder iod_finder(&rigid_transforms, 
 						100, 
@@ -197,14 +196,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					iod_finder.run(lower_bounds,upper_bounds);
 					OC::KepState estimated_state = iod_finder.get_result();
-
-					std::cout << " True keplerian state at epoch: " << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-					std::cout << " Estimated keplerian state at epoch: " << estimated_state.get_state() << " with mu :" << estimated_state.get_mu() << std::endl;
 					arma::vec true_particle(7);
 					true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 					true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-					std::cout << "evaluting the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
+					std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+					std::cout << " Estimated keplerian state at epoch: \n" << estimated_state.get_state() << " with mu :" << estimated_state.get_mu() << std::endl;
+					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
 
 					throw;
 
