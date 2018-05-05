@@ -171,9 +171,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					
 
 					IODFinder iod_finder(&rigid_transforms, 
-						100, 
-						1000,
-						true);
+						500, 
+						2000,
+						false);
 
 
 					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
