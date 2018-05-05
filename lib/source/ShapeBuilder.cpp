@@ -186,7 +186,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					// arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
 
 					arma::vec lower_bounds = 0.9 * true_particle;
-					arma::vec lower_bounds = 1.1 * true_particle;
+					arma::vec upper_bounds = 1.1 * true_particle;
 
 
 					iod_finder.run(lower_bounds,upper_bounds);
