@@ -199,7 +199,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					OC::KepState estimated_state = iod_finder.get_result();
 
 					std::cout << " True keplerian state at epoch: " << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-					std::cout << " Estimated keplerian state at epoch: " << this -> estimated_state.get_state() << " with mu :" << this -> estimated_state.get_mu() << std::endl;
+					std::cout << " Estimated keplerian state at epoch: " << estimated_state.get_state() << " with mu :" << estimated_state.get_mu() << std::endl;
 					
 
 					throw;
