@@ -129,7 +129,7 @@ find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
 
 # Find OrbitConversions 
-find_package(OrbitConversions REQUIRED)
+find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
 include_directories(${OC_INCLUDE_DIR})
 
 
