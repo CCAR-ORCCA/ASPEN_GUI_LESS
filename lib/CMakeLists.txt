@@ -30,9 +30,9 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	message("-- This is Fortuna")
+	set(OC_LOC "/home/bebe0705/libs/local/lib/cmake/OrbitConversions")
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
 	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
-
 	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 
 elseif (UNIX AND NOT APPLE)
