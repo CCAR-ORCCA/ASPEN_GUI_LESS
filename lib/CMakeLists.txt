@@ -78,7 +78,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 add_definitions(-Wall -O2)
 
 # Enable C++17 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
 
 # Set path to include and source folders
 if (${IS_FORTUNA})
