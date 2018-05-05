@@ -115,8 +115,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the bundle adjustment
 			bool icp_converged = false;
 			double longitude,latitude;
-			arma::mat M_p_k = M_pc;
-			arma::vec X_p_k = X_pc;
+			arma::mat M_p_k_old = M_pc;
+			arma::vec X_p_k_old = X_pc;
 
 			try{
 				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
@@ -139,7 +139,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::vec X_transformed = this -> LN_t0.t() * X_pc;
 
 
-					std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
+					// std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
 
 					// throw;
 
@@ -151,8 +151,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				// Adding the rigid transform
 
-				M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-				X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k.t() * (X_pc - X_p_k);
+
+
+				arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
+
+
+				std::cout << - M_p_k * lidar_pos + this -> x_t0 + X_p_k  << std::endl;
+
 
 				RigidTransform rigid_transform;
 				rigid_transform.M_k = M_p_k;
