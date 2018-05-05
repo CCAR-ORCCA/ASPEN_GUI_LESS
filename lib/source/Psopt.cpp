@@ -78,7 +78,7 @@ double tolerance) {
 		// The population is updated by adding the velocities to it
 		this -> population = this -> population + velocities;
 
-		// #pragma omp parallel for 
+		#pragma omp parallel for 
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 
 			for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
