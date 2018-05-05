@@ -175,20 +175,23 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						2000,
 						false);
 
+					arma::vec true_particle(7);
+					true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
+					true_particle(6) = this -> true_kep_state_t0.get_mu();
 
 					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
 					double mu_max = 1.5 * this -> true_kep_state_t0.get_mu();
 
-					arma::vec lower_bounds = {750,0,0,0,0,0,mu_min};
-					arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
+					// arma::vec lower_bounds = {750,0,0,0,0,0,mu_min};
+					// arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
+
+					arma::vec lower_bounds = 0.9 * true_particle;
+					arma::vec lower_bounds = 1.1 * true_particle;
+
 
 					iod_finder.run(lower_bounds,upper_bounds);
 					OC::KepState estimated_state = iod_finder.get_result();
-					arma::vec true_particle(7);
-
-					true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
-
-					true_particle(6) = 1.1 * this -> true_kep_state_t0.get_mu();
+					
 
 					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
 
