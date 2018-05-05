@@ -29,6 +29,8 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
+	set(OC_LOC "/home/bebe0705/libs/local/lib/cmake/OrbitConversions")
+
 	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
@@ -99,6 +101,11 @@ find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
 include_directories(${RBK_INCLUDE_DIR})
 
 
+# Find RBK 
+find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
+include_directories(${OC_INCLUDE_DIR})
+
+
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})
 include(${VTK_USE_FILE})
@@ -146,6 +153,7 @@ set(library_dependencies
 ${ARMADILLO_LIBRARIES}
 ${Boost_LIBRARIES}
 ${RBK_LIBRARY}
+${OC_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${VTK_LIBRARIES}
