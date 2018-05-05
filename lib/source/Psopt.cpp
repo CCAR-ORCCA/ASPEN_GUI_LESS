@@ -198,8 +198,10 @@ return this -> result.t();
 }
 
 // Explicit declaration
+struct RigidTransform;
 template class Psopt<std::pair<const std::vector<Footpoint> * ,std::vector<arma::vec> * > >;
 template class Psopt<std::pair<const std::vector<Footpoint> * ,Bezier * > >;
+template class Psopt<std::vector<RigidTransform> *>;
 
 
 

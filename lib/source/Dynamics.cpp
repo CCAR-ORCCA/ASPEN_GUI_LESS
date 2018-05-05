@@ -49,24 +49,6 @@ arma::mat Dynamics::gamma_OD_augmented(double dt){
 }
 
 
-arma::vec Dynamics::point_mass_dxdt_body_frame(double t, arma::vec X, Args * args) {
-
-	arma::vec attitude_state = args -> get_interpolator() -> interpolate(t, true);
-
-	arma::vec mrp_TN = attitude_state.rows(0, 2);
-	arma::vec omega_TN = attitude_state.rows(3, 5);
-
-	arma::vec pos_body = X . subvec(0, 2);
-	arma::vec vel_body = X . subvec(3, 5);
-
-	arma::vec acc_body_grav = args -> get_dyn_analyses() -> point_mass_acceleration(pos_body , args -> get_mass());
-	arma::vec acc_body_frame = acc_body_grav - (2 * arma::cross(omega_TN, vel_body) + omega_TN * omega_TN.t() * pos_body - pos_body * omega_TN.t() * omega_TN);
-
-	arma::vec dxdt = { X(3), X(4), X(5), acc_body_frame(0), acc_body_frame(1), acc_body_frame(2)};
-	return dxdt;
-
-}
-
 
 arma::vec Dynamics::point_mass_attitude_dxdt_body_frame(double t,const arma::vec & X, const Args & args) {
 

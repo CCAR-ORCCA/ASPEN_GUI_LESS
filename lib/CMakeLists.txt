@@ -128,6 +128,11 @@ include(${VTK_USE_FILE})
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
 
+# Find OrbitConversions 
+find_package(OrbitConversions REQUIRED)
+include_directories(${OC_INCLUDE_DIR})
+
+
 # Find OpenMP
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -160,7 +165,7 @@ add_library(${LIB_NAME} SHARED
 	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
 	source/ICP.cpp
-	source/Interpolator.cpp
+	source/IODFinder.cpp
 	source/KDTreePC.cpp
 	source/KDTreeShape.cpp
 	source/KDTreeControlPoints.cpp
@@ -191,6 +196,7 @@ set(library_dependencies
 	${CGAL_3RD_PARTY_LIBRARIES}
 	${CGAL_interface_LIBRARY}
 	${VTK_LIBRARIES}
+	${OC_LIBRARY}
 	)
 
 

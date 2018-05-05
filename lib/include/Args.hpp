@@ -3,7 +3,6 @@
 
 #include "FrameGraph.hpp"
 #include "ShapeModelTri.hpp"
-#include "Interpolator.hpp"
 #include "DynamicAnalyses.hpp"
 #include "Lidar.hpp"
 
@@ -107,11 +106,7 @@ public:
 		return this -> frame_graph;
 	}
 
-	
 
-	void set_interpolator(Interpolator * interpolator) {
-		this -> interpolator = interpolator;
-	}
 
 	void set_stopping_bool(bool stop) {
 		this -> stopping_bool = stop;
@@ -156,9 +151,6 @@ public:
 		return this -> stopping_bool;
 	}
 
-	Interpolator * get_interpolator() const{
-		return this -> interpolator;
-	}
 
 	void set_sd_noise(double sd_noise){
 		this -> sd_noise = sd_noise;
@@ -394,7 +386,6 @@ protected:
 	ShapeModelTri * true_shape_model;
 
 	DynamicAnalyses * dyn_analyses;
-	Interpolator * interpolator;
 	Lidar * lidar;
 
 	arma::vec constant_omega;

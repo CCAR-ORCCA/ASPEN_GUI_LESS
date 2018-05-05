@@ -1,5 +1,4 @@
 #include "ShapeBuilder.hpp"
-
 #include "ShapeModelTri.hpp"
 #include "ShapeModelBezier.hpp"
 
@@ -9,17 +8,15 @@
 #include "PC.hpp"
 #include "ICP.hpp"
 #include "BundleAdjuster.hpp"
-#include "Ray.hpp"
 #include "CustomException.hpp"
 #include "ControlPoint.hpp"
-#include "Facet.hpp"
-#include "Element.hpp"
 #include "ShapeModelImporter.hpp"
 #include "ShapeFitterBezier.hpp"
 #include "IOFlags.hpp"
-
+#include "IODFinder.hpp"
 #include <CGAL_interface.hpp>
 #include <RigidBodyKinematics.hpp>
+
 
 #include <boost/progress.hpp>
 #include <chrono>
@@ -60,10 +57,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
 	arma::vec mrp_LN(3);
-
+	std::vector<RigidTransform> rigid_transforms;
+	std::vector<arma::vec> mrps_LN;
 	int last_ba_call_index = 0;
-
-
+	
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
@@ -79,6 +76,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		X_S = X[time_index];
 
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
+		mrps_LN.push_back(mrp_LN);
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
@@ -117,6 +115,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the bundle adjustment
 			bool icp_converged = false;
 			double longitude,latitude;
+			arma::mat M_p_k = M_pc;
+			arma::vec X_p_k = X_pc;
 
 			try{
 				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
@@ -126,12 +126,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				M_pc = icp_pc.get_M();
 				X_pc = icp_pc.get_X();
 
-
 				/****************************************************************************/
 				// ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS
 				if (!this -> filter_arguments-> get_use_ba()){
-
-
 
 					M_pc = this -> LB_t0 * dcm_LB.t();
 
@@ -170,6 +167,45 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 				/****************************************************************************/
 
+
+
+
+				// Adding the rigid transform
+
+				M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+				X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * (X_pc - X_p_k);
+
+				RigidTransform rigid_transform;
+				rigid_transform.M_k = M_p_k;
+				rigid_transform.X_k = X_p_k;
+				rigid_transform.t_k = times(time_index);
+				rigid_transforms.push_back(rigid_transform);
+
+				if (rigid_transforms.size() == 6){
+
+					IODFinder iod_finder(&rigid_transforms, 
+						30, 
+						100,
+						true);
+
+
+					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
+					double mu_max = 1.5 * this -> true_kep_state_t0.get_mu();
+
+					arma::vec lower_bounds = {750,0,0,0,0,0,mu_min};
+					arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
+
+					iod_finder.run(lower_bounds,upper_bounds);
+					OC::KepState estimated_state = iod_finder.get_result();
+
+					std::cout << " True keplerian state at epoch: " << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+					std::cout << " Estimated keplerian state at epoch: " << this -> estimated_state.get_state() << " with mu :" << this -> estimated_state.get_mu() << std::endl;
+					
+
+					throw;
+
+				}
+
 				arma::vec u_L = {1,0,0};
 				arma::vec u_B = M_pc * u_L;
 
@@ -205,7 +241,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				last_ba_call_index = time_index;
 
-				
+
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
@@ -227,7 +263,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false);
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				
+
 			}
 
 			if (icp_converged){
@@ -303,7 +339,7 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 
 			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
 
-			
+
 		}
 
 		// Two point clouds have been collected : "nominal case")
@@ -378,6 +414,10 @@ void ShapeBuilder::get_new_states(
 		this -> LN_t0 = dcm_LN;
 		this -> x_t0 = lidar_pos;
 		this -> LB_t0 = dcm_LB;
+
+		OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
+		this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+
 	}
 
 }
@@ -412,7 +452,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 				}
 			}
 			std::cout << " - Keeping all pcs until # " << max << " over a total of " << this -> all_registered_pc.size() << std::endl;
-			
+
 			for(int pc = 0; pc <= max; ++pc){
 				kept_pcs.push_back(this -> all_registered_pc.at(pc));
 			}
@@ -431,13 +471,13 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 		else{
 			kept_pcs = this -> all_registered_pc;
 		}
-		
+
 		std::cout << "-- Constructing point cloud...\n";
 		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
 
 		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
 
-		
+
 
 		destination_pc_concatenated = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
 
