@@ -174,13 +174,23 @@ double tolerance) {
 			this -> resample(global_best_index);
 			velocities.fill(0);
 			last_resampling_iter = iter;
+
+
+			if (maximize){
+				local_best_score.fill(- arma::datum::inf);
+			}
+
+			else{
+				local_best_score.fill(arma::datum::inf);
+			}
+			local_best_score(global_best_index) = last_best_score;
+
 			if (pedantic){
 				std::cout << "Resampling ... " << std::endl;
 			}
 		}
 
 		last_best_score = global_best_score;
-
 
 
 
@@ -216,15 +226,15 @@ double tolerance) {
 
 
 template<class T> void Psopt<T>::resample(int global_best_index){
-	
-	arma::rowvec global_best = this -> population.row(global_best_index);
-	for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
-		this -> population.col(state_index) = (this -> upper_bounds(state_index)
-			- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
-		+ this -> lower_bounds(state_index);
-	}
 
-	this -> population.row(global_best_index) = global_best;
+arma::rowvec global_best = this -> population.row(global_best_index);
+for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
+	this -> population.col(state_index) = (this -> upper_bounds(state_index)
+		- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
+	+ this -> lower_bounds(state_index);
+}
+
+this -> population.row(global_best_index) = global_best;
 
 }
 
