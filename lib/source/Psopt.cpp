@@ -80,7 +80,7 @@ double tolerance) {
 
 		// #pragma omp parallel for 
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
-
+			std::cout << particle << std::endl;
 			for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 
 				// Boundary check
