@@ -166,13 +166,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 100){
+				if (rigid_transforms.size() == 1500){
 
 					
 
 					IODFinder iod_finder(&rigid_transforms, 
 						1500, 
-						100,
+						1000,
 						true);
 
 					arma::vec true_particle(7);

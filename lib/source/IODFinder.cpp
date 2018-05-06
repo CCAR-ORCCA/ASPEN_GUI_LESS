@@ -27,7 +27,7 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 
 	std::cout << "Running IODFinder\n";
 
-	psopt.run(false,this -> pedantic,true);
+	psopt.run(false,this -> pedantic);
 
 	arma::vec elements = psopt.get_result();
 	std::cout << "Minimum of cost function : " << IODFinder::cost_function(elements,this-> rigid_transforms) << std::endl;
