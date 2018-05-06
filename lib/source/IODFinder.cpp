@@ -30,9 +30,12 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 	psopt.run(false,this -> pedantic,true);
 
 	arma::vec elements = psopt.get_result();
+	std::cout << "Minimum of cost function : " << IODFinder::cost_function(elements,this-> rigid_transforms) << std::endl;
+	
+	elements(0) *= 1e3;
+
 	this -> keplerian_state_at_epoch = OC::KepState(elements.subvec(0,5),elements(6));
 
-	std::cout << "Minimum of cost function : " << IODFinder::cost_function(elements,this-> rigid_transforms) << std::endl;
 
 }
 
@@ -43,8 +46,16 @@ OC::KepState IODFinder::get_result() const{
 double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args){
 
 	// Particle State ordering:
-	// [a,e,i,Omega,omega,M0_0,mu]
+	// [lambda,e,i,Omega,omega,M0_0,mu]
+
+	// a = lambda * a_bar
+	// a_bar = 1e3 by convenience
+
+	particle(0) *= 1000;
+
 	OC::KepState kep_state(particle.subvec(0,5),particle(6));
+
+
 
 	int N =  args -> size();
 	arma::mat positions(3,N + 1);
