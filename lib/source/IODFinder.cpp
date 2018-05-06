@@ -64,7 +64,7 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 		epsilon.subvec( 3 * k, 3 * k + 2) = positions.col(k) - M_k * positions.col(k + 1) + X_k;
 	}
 
-	return std::exp(arma::norm(epsilon));
+	return arma::norm(epsilon);
 
 }
 
