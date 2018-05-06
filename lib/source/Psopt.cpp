@@ -90,6 +90,9 @@ double tolerance) {
 					while (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
 					}
+					velocities(particle)(state_index) *= -1;
+
+
 				}
 
 
@@ -97,6 +100,8 @@ double tolerance) {
 					while (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
 					}
+					velocities(particle)(state_index) *= -1;
+					
 				}
 
 				// Nearest-integer wrapping
