@@ -32,6 +32,8 @@ public:
 		double tolerance = 1e-3);
 
 	void print_pop();
+
+
 	
 
 
@@ -46,6 +48,9 @@ protected:
 	arma::mat population;
 	std::vector<bool> integer_components;
 	T args;
+
+
+template<class T> void resample(int global_best_index);
 
 
 };

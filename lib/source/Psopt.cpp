@@ -52,6 +52,7 @@ double tolerance) {
 		+ this -> lower_bounds(state_index);
 	}
 
+
 	// The velocities are generated
 	arma::mat velocities = arma::zeros <arma::mat>(this -> population_size, this -> lower_bounds.n_rows);
 
@@ -62,15 +63,20 @@ double tolerance) {
 	arma::vec local_best_score = arma::vec(this -> population_size);
 	
 	double global_best_score;
+	double last_best_score;
+
+	int last_resampling_iter = 0;
 
 	if (maximize){
 		local_best_score.fill(- arma::datum::inf);
 		global_best_score = - arma::datum::inf ;
+		last_best_score = - arma::datum::inf;
 	}
 
 	else{
 		local_best_score.fill(arma::datum::inf);
 		global_best_score = arma::datum::inf ;
+		last_best_score = arma::datum::inf ;
 	}
 
 
@@ -162,12 +168,32 @@ double tolerance) {
 			break;
 		}
 
+
+
+		if (std::abs(global_best_score - last_best_score) / last_best_score * 100 < 1e-2 && iter - last_resampling_iter > 15){
+			this -> resample(global_best_index);
+			velocities.fill(0);
+			last_resampling_iter = iter;
+			if (pedantic){
+				std::cout << "Resampling ... " << std::endl;
+			}
+		}
+
+		last_best_score = global_best_score;
+
+
+
+
 		if (pedantic == true) {
 			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
 			std::cout <<  "Global best at: " << global_best << std::endl;
 
+			
+
+
 		}
+
 
 	}
 
@@ -182,6 +208,23 @@ double tolerance) {
 	
 	this -> result = global_best;
 	this -> result_score = global_best_score;
+
+}
+
+
+
+
+
+template<class T> void Psopt<T>::resample(int global_best_index){
+	
+	arma::rowvec global_best = this -> population.row(global_best_index);
+	for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
+		this -> population.col(state_index) = (this -> upper_bounds(state_index)
+			- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
+		+ this -> lower_bounds(state_index);
+	}
+
+	this -> population.row(global_best_index) = global_best;
 
 }
 
