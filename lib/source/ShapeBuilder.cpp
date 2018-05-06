@@ -189,8 +189,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-					double a_min = 0.5;
-					double a_max = 1.5;
+					double a_min = 750;
+					double a_max = 1500;
 
 					double e_min = 0.001;
 					double e_max = 0.9999;
