@@ -166,24 +166,45 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 15){
+				if (rigid_transforms.size() == 10){
 
 					
 
 					IODFinder iod_finder(&rigid_transforms, 
 						1500, 
 						500,
-						false);
+						true);
 
 					arma::vec true_particle(7);
 					true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 					true_particle(6) = this -> true_kep_state_t0.get_mu();
 
+					double a_min = 750;
+					double a_max = 1250;
+
+					double e_min = 0.001;
+					double e_max = 0.5;
+
+					double i_min = 0;
+					double i_max = arma::datum::pi ;
+
+					double Omega_min = 0; 
+					double Omega_max = 2 * arma::datum::pi ; 
+
+					double omega_min = 0; 
+					double omega_max = 2 * arma::datum::pi ; 
+
+					double M0_min = 0; 
+					double M0_max = 2 * arma::datum::pi ; 
+
+
+
 					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
 					double mu_max = 1.5 * this -> true_kep_state_t0.get_mu();
 
-					arma::vec lower_bounds = {750,0,0.1,0,0,0,mu_min};
-					arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
+
+					arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
+					arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
 
 					// arma::vec lower_bounds = true_particle - 0.1 * arma::ones<arma::vec>(true_particle.n_rows);
