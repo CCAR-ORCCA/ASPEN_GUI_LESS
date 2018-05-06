@@ -165,10 +165,7 @@ double tolerance) {
 			if (arma::norm(velocities.row(particle)) > max_velocity) {
 				velocities.row(particle) = velocities.row(particle) / arma::norm(velocities.row(particle)) * max_velocity;
 			}
-			if (pedantic){
-				std::cout << this -> population.row(particle) << std::endl;
-				std::cout << velocities.row(particle) << std::endl << std::endl;
-			}
+			
 		}
 
 		throw;
