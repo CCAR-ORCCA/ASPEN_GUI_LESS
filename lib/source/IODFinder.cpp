@@ -24,7 +24,7 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 		this -> particles,
 		this -> N_iter,
 		this -> rigid_transforms);
-	
+
 	std::cout << "Running IODFinder\n";
 
 	psopt.run(false,this -> pedantic);
@@ -42,7 +42,6 @@ OC::KepState IODFinder::get_result() const{
 
 double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args){
 
-	std::cout << "in cost function" << std::endl;
 	// Particle State ordering:
 	// [a,e,i,Omega,omega,M0_0,mu]
 	OC::KepState kep_state(particle.subvec(0,5),particle(6));
@@ -53,7 +52,6 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	positions.col(0) = kep_state.convert_to_cart(0).get_position_vector();
 
 	for (int k = 1; k < N + 1; ++k){
-		std::cout << k << std::endl;
 		double t_k = args -> at(k - 1).t_k;
 		positions.col(k) = kep_state.convert_to_cart(t_k).get_position_vector();
 	}
