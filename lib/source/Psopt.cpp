@@ -150,7 +150,7 @@ double tolerance) {
 			std::cout << "particle " << particle << std::endl;
 			std::cout << arma::norm(local_best(particle) - this -> population.row(particle))<<std::endl;
 			std::cout << this -> population.row(particle) << std::endl;
-			std::cout << local_best(particle)<< std::endl;
+			std::cout << local_best.row(particle)<< std::endl;
 			std::cout << velocities.row(particle)  << std::endl  << std::endl;
 
 
