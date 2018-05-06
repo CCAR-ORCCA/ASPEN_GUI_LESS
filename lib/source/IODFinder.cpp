@@ -27,7 +27,7 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 
 	std::cout << "Running IODFinder\n";
 
-	psopt.run(false,this -> pedantic);
+	psopt.run(false,this -> pedantic,true);
 
 	arma::vec elements = psopt.get_result();
 	this -> keplerian_state_at_epoch = OC::KepState(elements.subvec(0,5),elements(6));

@@ -203,8 +203,6 @@ double tolerance) {
 			std::cout << "Mean velocities: " << arma::mean(velocities,0);
 			std::cout << "RMS velocities: " << arma::stddev(velocities,0);
 
-		
-
 		}
 
 
