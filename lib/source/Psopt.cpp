@@ -85,14 +85,14 @@ double tolerance) {
 
 				// Boundary check
 				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
+					while (this -> population.row(particle)(state_index) >= this -> upper_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
 					}
 				}
 
 
 				else if (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
+					while (this -> population.row(particle)(state_index) <= this -> lower_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
 					}
 				}
