@@ -87,7 +87,6 @@ double tolerance) {
 				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
 					while (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
-						std::cout << this -> population.row(particle)(state_index)  << std::endl;
 					}
 				}
 
