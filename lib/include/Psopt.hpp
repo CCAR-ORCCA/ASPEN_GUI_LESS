@@ -50,7 +50,7 @@ protected:
 	T args;
 
 
-template<class T> void resample(int global_best_index);
+	void resample(int global_best_index);
 
 
 };
