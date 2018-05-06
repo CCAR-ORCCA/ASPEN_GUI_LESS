@@ -172,7 +172,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					IODFinder iod_finder(&rigid_transforms, 
 						1500, 
-						100000,
+						100,
 						true);
 
 					arma::vec true_particle(7);
@@ -220,6 +220,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					iod_finder.run(lower_bounds,upper_bounds);
 					OC::KepState estimated_state = iod_finder.get_result();
+
 					
 
 					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
