@@ -47,7 +47,6 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	OC::KepState kep_state(particle.subvec(0,5),particle(6));
 
 	int N =  args -> size();
-
 	arma::mat positions(3,N + 1);
 	positions.col(0) = kep_state.convert_to_cart(0).get_position_vector();
 
