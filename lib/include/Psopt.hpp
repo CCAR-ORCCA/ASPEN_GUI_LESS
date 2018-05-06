@@ -26,7 +26,7 @@ public:
 		bool maximize = false,
 		bool pedantic = false,
 		bool resample = false,
-		double max_velocity = 10,
+		double max_velocity = 1e10,
 		double inertial_weight = 0.65,
 		double memory_weight = 2,
 		double social_weight = 2,
