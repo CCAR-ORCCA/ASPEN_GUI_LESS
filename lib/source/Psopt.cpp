@@ -38,6 +38,7 @@ T args) {
 template<class T> void Psopt<T>::run(
 bool maximize,
 bool pedantic,
+bool resample,
 double max_velocity,
 double inertial_weight,
 double memory_weight,
@@ -170,8 +171,9 @@ double tolerance) {
 
 
 
-		if (std::abs(global_best_score - last_best_score) / last_best_score * 100 < 1e-2 && iter - last_resampling_iter > 15){
+		if (resample && std::abs(global_best_score - last_best_score) / last_best_score * 100 < 1e-2 && iter - last_resampling_iter > 15){
 			this -> resample(global_best_index);
+			
 			velocities.fill(0);
 			last_resampling_iter = iter;
 
@@ -198,9 +200,10 @@ double tolerance) {
 			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
 			std::cout <<  "Global best at: " << global_best << std::endl;
+			std::cout << "Mean velocities: " << arma::mean(velocities,0);
+			std::cout << "RMS velocities: " << arma::stddev(velocities,0);
 
-			
-
+		
 
 		}
 
