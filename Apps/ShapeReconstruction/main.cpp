@@ -30,7 +30,7 @@
 #define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 3e-2
+#define LOS_NOISE_SD_BASELINE 1e0
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
