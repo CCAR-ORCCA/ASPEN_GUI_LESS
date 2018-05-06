@@ -145,11 +145,18 @@ double tolerance) {
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 			arma::vec random_weights = arma::randu<arma::vec>(2);
 
+
+
+			
+			std::cout << arma::norm(local_best(particle) - this -> population.row(particle));
+			std::cout << velocities.row(particle);
+
+			
+
 			velocities.row(particle) = (inertial_weight * velocities.row(particle) 
 				+ random_weights(0) * memory_weight * (local_best(particle) - this -> population.row(particle))
 				+ random_weights(1) * social_weight * (global_best - this -> population.row(particle)));
 
-			std::cout << arma::norm(local_best(particle) - this -> population.row(particle));
 
 
 			// Velocity dampening
@@ -161,6 +168,8 @@ double tolerance) {
 				std::cout << velocities.row(particle) << std::endl << std::endl;
 			}
 		}
+
+		throw;
 
 		// Check for convergence
 		if (iter + 1 == this -> iter_max) {
