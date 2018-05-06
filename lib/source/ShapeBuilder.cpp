@@ -186,13 +186,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					// arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
 
 
-					arma::vec lower_bounds = 0.99 * true_particle;
-					arma::vec upper_bounds = 1.01 * true_particle;
-
-					std::cout << true_particle.t() << std::endl;
-					std::cout << lower_bounds.t() << std::endl;
-					std::cout << upper_bounds.t() << std::endl;
-
+					arma::vec lower_bounds = true_particle - 0.1 * arma::ones<arma::vec>(true_particle.n_rows);
+					arma::vec upper_bounds = true_particle + 0.1 * arma::ones<arma::vec>(true_particle.n_rows);
 
 
 					iod_finder.run(lower_bounds,upper_bounds);

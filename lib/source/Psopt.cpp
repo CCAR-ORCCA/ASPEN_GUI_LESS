@@ -75,16 +75,13 @@ double tolerance) {
 
 
 	for (unsigned int iter = 0; iter < this -> iter_max; ++iter)  {
-		std::cout << iter << std::endl;
 		// The population is updated by adding the velocities to it
 		this -> population = this -> population + velocities;
 
-		// #pragma omp parallel for 
+		#pragma omp parallel for 
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 			for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 
-
-				std::cout << this -> population.row(particle)(state_index) << std::endl  << std::endl;
 
 				// Boundary check
 				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
@@ -110,7 +107,6 @@ double tolerance) {
 			}
 
 			// the cost function is evaluated at the particle
-			std::cout << "Evaluating cost function at particle " << particle << std::endl;
 			scores(particle) = (* this -> fitfun)(this -> population.row(particle).t(), this -> args);
 
 			// The local best is updated if need be
