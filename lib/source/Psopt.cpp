@@ -68,13 +68,11 @@ double tolerance) {
 	if (maximize){
 		local_best_score.fill(- arma::datum::inf);
 		global_best_score = - arma::datum::inf ;
-		last_best_score = - arma::datum::inf;
 	}
 
 	else{
 		local_best_score.fill(arma::datum::inf);
 		global_best_score = arma::datum::inf ;
-		last_best_score = arma::datum::inf ;
 	}
 
 
