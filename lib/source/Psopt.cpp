@@ -149,7 +149,7 @@ double tolerance) {
 				+ random_weights(0) * memory_weight * (local_best(particle) - this -> population.row(particle))
 				+ random_weights(1) * social_weight * (global_best - this -> population.row(particle)));
 
-			assert(arma::norm(local_best(particle) - this -> population.row(particle)) == 0);
+			std::cout << arma::norm(local_best(particle) - this -> population.row(particle));
 
 
 			// Velocity dampening
