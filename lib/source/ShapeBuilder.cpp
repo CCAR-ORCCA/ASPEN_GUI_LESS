@@ -188,11 +188,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					double i_min = 0;
 					double i_max = arma::datum::pi ;
 
-					double Omega_min = 0; 
-					double Omega_max = 2 * arma::datum::pi ; 
+					double Omega_min = -arma::datum::pi; 
+					double Omega_max = arma::datum::pi ; 
 
-					double omega_min = 0; 
-					double omega_max = 2 * arma::datum::pi ; 
+					double omega_min = -arma::datum::pi; 
+					double omega_max = arma::datum::pi ; 
 
 					double M0_min = 0; 
 					double M0_max = 2 * arma::datum::pi ; 
