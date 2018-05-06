@@ -158,7 +158,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// Position
-	arma::vec pos_0 = {1000,100,0};
+	arma::vec pos_0 = {1000,500,0};
 	X0_augmented.rows(0,2) = pos_0;
 
 	// MRP BN 
