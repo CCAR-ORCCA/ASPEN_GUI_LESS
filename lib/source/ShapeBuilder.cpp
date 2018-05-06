@@ -166,7 +166,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 30){
+				if (rigid_transforms.size() == 60){
 
 					
 
@@ -183,7 +183,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					double a_max = 1250;
 
 					double e_min = 0.001;
-					double e_max = 0.5;
+					double e_max = 0.9999;
 
 					double i_min = 0;
 					double i_max = arma::datum::pi ;
@@ -196,8 +196,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					double M0_min = 0; 
 					double M0_max = 2 * arma::datum::pi ; 
-
-
 
 					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
 					double mu_max = 1.5 * this -> true_kep_state_t0.get_mu();
