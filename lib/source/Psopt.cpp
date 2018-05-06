@@ -147,11 +147,12 @@ double tolerance) {
 
 
 
-			
-			std::cout << arma::norm(local_best(particle) - this -> population.row(particle));
+
+			std::cout << arma::norm(local_best(particle) - this -> population.row(particle))<<std::endl;
+			std::cout << local_best(particle);
 			std::cout << velocities.row(particle);
 
-			
+
 
 			velocities.row(particle) = (inertial_weight * velocities.row(particle) 
 				+ random_weights(0) * memory_weight * (local_best(particle) - this -> population.row(particle))
