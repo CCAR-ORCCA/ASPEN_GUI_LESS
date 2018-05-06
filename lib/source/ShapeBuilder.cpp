@@ -166,7 +166,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 10){
+				if (rigid_transforms.size() == 15){
 
 					
 
@@ -182,7 +182,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
 					double mu_max = 1.5 * this -> true_kep_state_t0.get_mu();
 
-					arma::vec lower_bounds = {750,0,0,0,0,0,mu_min};
+					arma::vec lower_bounds = {750,0,0.1,0,0,0,mu_min};
 					arma::vec upper_bounds = {1250,0.9999,arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,2 * arma::datum::pi,mu_max};
 
 
