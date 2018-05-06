@@ -79,7 +79,7 @@
 #define N_ITER_SHAPE_FILTER 4
 
 // Whether or not the bundle adjustment should be used
-#define USE_BA false
+#define USE_BA true
 
 // Number of iterations in bundle adjustment
 #define N_ITER_BUNDLE_ADJUSTMENT 30
