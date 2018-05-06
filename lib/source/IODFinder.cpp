@@ -17,7 +17,6 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 
 
 void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bounds){
-	std::cout << "Running IODFinder\n";
 
 	Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function, 
 		lower_bounds,
@@ -25,6 +24,9 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 		this -> particles,
 		this -> N_iter,
 		this -> rigid_transforms);
+	
+	std::cout << "Running IODFinder\n";
+
 	psopt.run(false,this -> pedantic);
 
 	arma::vec elements = psopt.get_result();

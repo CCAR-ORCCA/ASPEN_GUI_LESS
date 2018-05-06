@@ -73,8 +73,9 @@ double tolerance) {
 		global_best_score = arma::datum::inf ;
 	}
 
-	for (unsigned int iter = 0; iter < this -> iter_max; ++iter)  {
 
+	for (unsigned int iter = 0; iter < this -> iter_max; ++iter)  {
+		std::cout << iter << std::endl;
 		// The population is updated by adding the velocities to it
 		this -> population = this -> population + velocities;
 
@@ -105,6 +106,7 @@ double tolerance) {
 			}
 
 			// the cost function is evaluated at the particle
+			std::cout << "Evaluating cost function at particle " << particle << std::endl;
 			scores(particle) = (* this -> fitfun)(this -> population.row(particle).t(), this -> args);
 
 
