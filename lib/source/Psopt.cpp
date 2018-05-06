@@ -85,14 +85,15 @@ double tolerance) {
 
 				// Boundary check
 				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) >= this -> upper_bounds(state_index)) {
+					while (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
+						std::cout << this -> population.row(particle)(state_index)  << std::endl;
 					}
 				}
 
 
 				else if (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) <= this -> lower_bounds(state_index)) {
+					while (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
 					}
 				}
@@ -108,7 +109,6 @@ double tolerance) {
 			// the cost function is evaluated at the particle
 			std::cout << "Evaluating cost function at particle " << particle << std::endl;
 			scores(particle) = (* this -> fitfun)(this -> population.row(particle).t(), this -> args);
-
 
 			// The local best is updated if need be
 			if (maximize){
