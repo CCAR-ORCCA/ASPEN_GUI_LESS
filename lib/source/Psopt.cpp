@@ -82,7 +82,7 @@ int convergence_interval) {
 
 
 
-	for (unsigned int iter = 0; iter < this -> iter_max; ++iter)  {
+	for (unsigned int iter = 1; iter < this -> iter_max; ++iter)  {
 		// The population is updated by adding the velocities to it
 		this -> population = this -> population + velocities;
 
@@ -163,7 +163,7 @@ int convergence_interval) {
 		}
 
 		if (pedantic == true) {
-			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
+			std::cout << std::to_string(iter) << "/" << iter_max << std::endl;
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
 			std::cout <<  "Global best at: " << global_best << std::endl;
 			std::cout << "Mean velocities: " << arma::mean(velocities,0);
@@ -176,12 +176,14 @@ int convergence_interval) {
 				break;
 			}
 			else{
-				previous_global_best_score = global_best_score;
-				previous_iter_check = iter;
+				
 
 				if (pedantic == true) {
 					std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
 				}
+
+				previous_global_best_score = global_best_score;
+				previous_iter_check = iter;
 
 			}
 		}
