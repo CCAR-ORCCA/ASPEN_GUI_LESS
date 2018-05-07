@@ -200,7 +200,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				for (int i = 0; i <= time_index; ++i){
 					double dt = times(i);
-					double f = OC::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 
 					arma::vec u_H = {1,0,0};
@@ -214,7 +214,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					longitude_latitude.row(i) = long_lat;
 					this -> fly_over_map.add_label(i,longitude,latitude);
 					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-					
+
 				}
 
 
