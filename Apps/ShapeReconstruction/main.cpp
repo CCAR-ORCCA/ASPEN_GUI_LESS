@@ -51,7 +51,7 @@
 #define N_ITER_SHAPE_FILTER 4 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 #define N_ITER_BUNDLE_ADJUSTMENT 30 // Number of iterations in bundle adjustment
-
+#define RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
@@ -300,6 +300,7 @@ int main() {
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
 	shape_filter_args.set_use_ba(USE_BA);
+	shape_filter_args.set_rigid_transforms_number(RIGID_TRANSFORMS_NUMBER);
 	
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);

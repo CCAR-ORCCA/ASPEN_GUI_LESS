@@ -405,6 +405,14 @@ public:
 	}
 
 
+	int get_rigid_transforms_number() const{
+		return this -> rigid_transforms_number;
+	}
+
+	void set_rigid_transforms_number(int n) {
+		this -> rigid_transforms_number = n;
+	}
+
 
 protected:
 
@@ -418,6 +426,7 @@ protected:
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
 	int points_retained;
+	int rigid_transforms_number;
 
 	unsigned int index_init;
 	unsigned int index_end;
