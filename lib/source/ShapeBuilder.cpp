@@ -117,6 +117,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			try{
 				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+				icp_converged = true;
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -140,16 +141,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				// Adding the rigid transform
-
 				arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
-
 
 				RigidTransform rigid_transform;
 				rigid_transform.M_k = M_p_k;
 				rigid_transform.X_k = X_p_k;
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
+				OC::KepState est_kep_state;
 
 				if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
@@ -183,33 +183,42 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					double mu_min = 0.1 * this -> true_kep_state_t0.get_mu();
 					double mu_max = 10 * this -> true_kep_state_t0.get_mu();
 
-
 					arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
 					arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
 					iod_finder.run(lower_bounds,upper_bounds);
-					OC::KepState estimated_state = iod_finder.get_result();
-
+					est_kep_state = iod_finder.get_result();
 
 					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
 					std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-					std::cout << " Estimated keplerian state at epoch: \n" << estimated_state.get_state() << " with mu :" << estimated_state.get_mu() << std::endl;
-
-					throw;
+					std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
 				}
 
-				arma::vec u_L = {1,0,0};
-				arma::vec u_B = M_pc * u_L;
 
-				longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-				latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+				// The spacecraft longitude/latitude is computed from the estimated keplerian state
 
-				arma::rowvec long_lat = {longitude,latitude};
+				for (int i = 0; i <= time_index; ++i){
+					double dt = times(i);
+					double f = OC::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 
-				longitude_latitude.row(time_index) = long_lat;
-				this -> fly_over_map.add_label(time_index,longitude,latitude);
-				icp_converged = true;
+					arma::vec u_H = {1,0,0};
+					arma::vec u_B = M_pc * DCM_HN.t() * u_H;
+
+					longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+					latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+
+					arma::rowvec long_lat = {longitude,latitude};
+
+					longitude_latitude.row(i) = long_lat;
+					this -> fly_over_map.add_label(i,longitude,latitude);
+					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+					
+				}
+
+
+				throw;
 
 			}
 

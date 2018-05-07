@@ -177,7 +177,6 @@ int convergence_interval) {
 			}
 			else{
 				
-
 				if (pedantic == true) {
 					std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
 				}
