@@ -105,10 +105,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#endif
 		}
 
-
-
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
-
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
@@ -135,13 +132,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 					X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
 
-					arma::mat M_transformed = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN);
-					arma::vec X_transformed = this -> LN_t0.t() * X_pc;
-
-
-					// std::cout << - M_transformed * lidar_pos + this -> x_t0 + X_transformed << std::endl;
-
-					// throw;
 
 				}
 				/****************************************************************************/
@@ -151,13 +141,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				// Adding the rigid transform
 
-
-
 				arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
-
-
-				// std::cout << - M_p_k * lidar_pos + this -> x_t0 + X_p_k  << std::endl;
 
 
 				RigidTransform rigid_transform;
@@ -166,7 +151,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == 100){
+				if (rigid_transforms.size() == 10){
 
 					IODFinder iod_finder(&rigid_transforms, 
 						1500, 

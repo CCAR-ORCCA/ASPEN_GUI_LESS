@@ -50,6 +50,7 @@ public:
 				dxdt.subvec(this -> N_est + this -> N_est * this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1) = derivative;
 
+			
 			}	
 
 			if (this -> estimate_dynamics_fun != nullptr){
@@ -66,8 +67,6 @@ public:
 				
 				arma::mat A = this -> jacobian_estimate_dynamics_fun(t,
 					X_spc_estimated,this -> args);
-
-
 
 
 				arma::vec derivative = this -> estimate_dynamics_fun(t,
