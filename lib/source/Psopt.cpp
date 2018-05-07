@@ -47,7 +47,7 @@ int convergence_interval) {
 
 
 	// The population is randomly generated
-	for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
+	for (int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 		this -> population.col(state_index) = (this -> upper_bounds(state_index)
 			- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
 		+ this -> lower_bounds(state_index);
