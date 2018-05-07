@@ -38,59 +38,41 @@
 #define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
 
-// Times (s)
+// Times
 #define T0 0
+#define OBSERVATION_TIMES 1600 // shape reconstruction steps
+#define NAVIGATION_TIMES 80 // navigation steps
 
-// Number of obervation times
-#define OBSERVATION_TIMES 1600
+// Shape fitting parameters
+#define POINTS_RETAINED 500000 // Number of points to be retained in the shape fitting
+#define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
+#define N_EDGES 300 // Number of edges in a-priori
+#define SHAPE_DEGREE 2 // Shape degree
+#define N_ITER_SHAPE_FILTER 4 // Filter iterations
+#define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
+#define N_ITER_BUNDLE_ADJUSTMENT 30 // Number of iterations in bundle adjustment
 
-// Number of navigation times
-#define NAVIGATION_TIMES 80
 
-// Number of points to be retained in the shape fitting
-#define POINTS_RETAINED 500000
+// Target properties
+#define SPIN_RATE 12. // Spin rate (hours)
+#define DENSITY 1900 // Density (kg/m^3)
+#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
+#define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
-// Ridge coef (regularization of normal equations)
-#define RIDGE_COEF 0e-5
+// Orbit properties
+#define INCLINATION 45 // Orbit inclination (degrees)
 
-// Number of edges in a-priori
-#define N_EDGES 3000
+// Navigation parameters
+#define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
+#define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
+#define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
-// Shape order
-#define SHAPE_DEGREE 2
+// CHEATS
 
-// Target shape
-#define TARGET_SHAPE "itokawa_64_scaled_aligned"
+#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
-// Spin rate (hours)
-#define SPIN_RATE 12.
 
-// Orbit inclination (degrees)
-#define INCLINATION 45
-
-// Density (kg/m^3)
-#define DENSITY 1900
-
-// Use ICP (false if point cloud is generated from true shape)
-#define USE_ICP true
-
-// If true, the state covariance is used to provide an a-priori to the batch
-#define USE_PHAT_IN_BATCH false
-
-// Filter iterations
-#define N_ITER_SHAPE_FILTER 4
-
-// Whether or not the bundle adjustment should be used
-#define USE_BA true
-
-// Number of iterations in bundle adjustment
-#define N_ITER_BUNDLE_ADJUSTMENT 30
-
-// Number of iterations in the navigation filter measurement update
-#define N_ITER_MES_UPDATE 10
-
-// If true, will exit IEKF if consistency test is satisfied
-#define USE_CONSISTENCY_TEST false
 
 ///////////////////////////////////////////
 
@@ -113,16 +95,17 @@ int main() {
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
 
-#ifdef __APPLE__
-	ShapeModelImporter shape_io_truth(
-		"/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/"+ std::string(TARGET_SHAPE) + ".obj", 1, true);
-#elif __linux__
-	ShapeModelImporter shape_io_truth(
-		"../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj", 1 , true);
-#else
+	std::string path_to_shape;
 
+#ifdef __APPLE__
+	path_to_shape = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/"+ std::string(TARGET_SHAPE) + ".obj";
+#elif __linux__
+	path_to_shape = "../../../resources/shape_models/" +std::string(TARGET_SHAPE) +".obj";
+#else
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
+
+	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
 
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
@@ -160,10 +143,11 @@ int main() {
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/
 	/******************************************************/
+	# if USE_HARMONICS
 
 
 	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-	reader -> SetFileName(TARGET_SHAPE);
+	reader -> SetFileName(path_to_shape.c_str());
 	reader -> Update(); 
 
 
@@ -173,13 +157,13 @@ int main() {
 	spherical_harmonics -> SetScaleMeters();
 	spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
 	spherical_harmonics -> IsNormalized(); // can be skipped as normalized coefficients is the default parameter
-	spherical_harmonics -> SetDegree(5);
+	spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
 	spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-	spherical_harmonics -> SaveToJson("harmo_" + std::string(TARGET_SHAPE) + ".json");
+	spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
 	args.set_sbgat_harmonics(spherical_harmonics);
-
+	#endif
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
@@ -233,7 +217,7 @@ int main() {
 	/******************************************************/
 
 	arma::vec times = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES); 
-	arma::vec times_dense = arma::linspace<arma::vec>(T0,  times(times.n_rows - 1),  OBSERVATION_TIMES * 10); 
+	arma::vec times_dense = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,  OBSERVATION_TIMES * 10); 
 
 	std::vector<double> T_obs,T_obs_dense;
 
@@ -252,23 +236,53 @@ int main() {
 	args.set_true_inertia(true_shape_model.get_inertia());
 	auto N_true = X0_augmented.n_rows;
 
+
+
+	# if USE_HARMONICS
 	System dynamics(args,N_true,Dynamics::harmonics_attitude_dxdt_inertial );
+	#else 
+	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_inertial );
+	#endif 
+
+	arma::vec X_augmented_1 = X0_augmented;
+
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs.begin(), T_obs.end(),1e-3,
+	boost::numeric::odeint::integrate_times(stepper, 
+		dynamics, 
+		X_augmented_1,
+		T_obs.begin(), 
+		T_obs.end(),
+		1e-3,
 		Observer::push_back_augmented_state(X_augmented));
 
+	auto stepper_dense = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
+	
+	arma::vec X_augmented_2 = X0_augmented;
+
 	// The orbit is propagated with a finer timestep for visualization purposes
-	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs_dense.begin(), 
-		T_obs_dense.end(),1e-3,
+	boost::numeric::odeint::integrate_times(stepper_dense, 
+		dynamics, 
+		X_augmented_2, 
+		T_obs_dense.begin(), 
+		T_obs_dense.end(),
+		1e-3,
 		Observer::push_back_augmented_state(X_augmented_dense));
 
 	arma::mat X_dense(12,X_augmented_dense.size());
+	arma::vec T_dense_arma(X_augmented_dense.size());
 	for (unsigned int i = 0; i < X_augmented_dense.size(); ++i){
 		X_dense.col(i) = X_augmented_dense[i];
+		T_dense_arma(i) = T_obs_dense[i];
 	}
-	X_dense.save("../output/trajectory.txt",arma::raw_ascii);
-	
+
+	# if USE_HARMONICS
+	X_dense.save("../output/trajectory_harmo.txt",arma::raw_ascii);
+	#else
+	X_dense.save("../output/trajectory_point_mass.txt",arma::raw_ascii);
+	#endif
+
+	T_dense_arma.save("../output/T_traj.txt",arma::raw_ascii);
 
 	/******************************************************/
 	/******************************************************/
