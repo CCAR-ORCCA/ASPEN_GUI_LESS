@@ -405,13 +405,31 @@ public:
 	}
 
 
-	int get_rigid_transforms_number() const{
-		return this -> rigid_transforms_number;
+	int get_iod_rigid_transforms_number() const{
+		return this -> iod_rigid_transforms_number;
 	}
 
-	void set_rigid_transforms_number(int n) {
-		this -> rigid_transforms_number = n;
+	void set_iod_rigid_transforms_number(int n) {
+		this -> iod_rigid_transforms_number = n;
 	}
+
+	int get_iod_particles() const{
+		return this -> iod_particles;
+	}
+
+	void set_iod_particles(int n) {
+		this -> iod_particles = n;
+	}
+
+
+	int get_iod_iterations() const{
+		return this -> iod_iterations;
+	}
+
+	void set_iod_iterations(int n) {
+		this -> iod_iterations = n;
+	}
+
 
 
 protected:
@@ -426,7 +444,10 @@ protected:
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
 	int points_retained;
-	int rigid_transforms_number;
+	int iod_rigid_transforms_number;
+	int iod_iterations;
+	int iod_particles;
+
 
 	unsigned int index_init;
 	unsigned int index_end;

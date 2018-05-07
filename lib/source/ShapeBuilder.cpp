@@ -151,11 +151,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				if (rigid_transforms.size() == this -> filter_arguments -> get_rigid_transforms_number()){
+				if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 					IODFinder iod_finder(&rigid_transforms, 
-						1500, 
-						10000,
+						this -> filter_arguments -> get_iod_iterations(), 
+						this -> filter_arguments -> get_iod_particles(),
 						true);
 
 					arma::vec true_particle(7);
