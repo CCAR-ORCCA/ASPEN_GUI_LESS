@@ -200,6 +200,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 
+						std::cout << DCM_HN << std::endl;
 						arma::vec u_H = {1,0,0};
 						arma::vec u_B = M_pcs[i] * DCM_HN.t() * u_H;
 
