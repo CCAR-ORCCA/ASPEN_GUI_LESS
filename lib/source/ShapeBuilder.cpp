@@ -138,8 +138,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/****************************************************************************/
 
 
-
-
 				// Adding the rigid transform
 				arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
