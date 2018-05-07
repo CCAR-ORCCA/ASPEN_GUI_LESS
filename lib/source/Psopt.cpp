@@ -171,7 +171,7 @@ int convergence_interval) {
 		}
 
 		// Check for convergence
-		if (iter - previous_iter_check > convergence_interval &&  std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
+		if (iter > (convergence_interval + previous_iter_check) &&  std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
 			break;
 		}
 		else{
