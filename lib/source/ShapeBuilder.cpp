@@ -193,32 +193,34 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 					std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
+					// The spacecraft longitude/latitude is computed from the estimated keplerian state
+					for (int i = 0; i <= time_index; ++i){
+						double dt = times(i);
+						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
+
+						arma::vec u_H = {1,0,0};
+						arma::vec u_B = M_pc * DCM_HN.t() * u_H;
+
+						longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+						latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+
+						arma::rowvec long_lat = {longitude,latitude};
+
+						longitude_latitude.row(i) = long_lat;
+						this -> fly_over_map.add_label(i,longitude,latitude);
+						longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+					}
+
+
+					throw;
+
+
+
 				}
 
 
-				// The spacecraft longitude/latitude is computed from the estimated keplerian state
-
-				for (int i = 0; i <= time_index; ++i){
-					double dt = times(i);
-					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-
-					arma::vec u_H = {1,0,0};
-					arma::vec u_B = M_pc * DCM_HN.t() * u_H;
-
-					longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-					latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-
-					arma::rowvec long_lat = {longitude,latitude};
-
-					longitude_latitude.row(i) = long_lat;
-					this -> fly_over_map.add_label(i,longitude,latitude);
-					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-				}
-
-
-				throw;
+				
 
 			}
 
