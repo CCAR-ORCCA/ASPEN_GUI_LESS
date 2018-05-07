@@ -55,13 +55,13 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 500 // Number of particles
+#define IOD_PARTICLES 1000 // Number of particles
 #define IOD_ITERATIONS 100000 // Number of iteraions
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
-#define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
+#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Orbit properties
