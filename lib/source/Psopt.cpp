@@ -42,7 +42,8 @@ double max_velocity,
 double inertial_weight,
 double memory_weight,
 double social_weight,
-double tolerance) {
+double tolerance,
+int convergence_interval) {
 
 
 	// The population is randomly generated
@@ -63,6 +64,8 @@ double tolerance) {
 	arma::vec local_best_score = arma::vec(this -> population_size);
 	
 	double global_best_score;
+	int last_iter_check =0;
+	double previous_global_best_score;
 
 
 	if (maximize){
@@ -74,6 +77,9 @@ double tolerance) {
 		local_best_score.fill(arma::datum::inf);
 		global_best_score = arma::datum::inf ;
 	}
+
+	previous_global_best_score = global_best_score;
+
 
 
 	for (unsigned int iter = 0; iter < this -> iter_max; ++iter)  {
@@ -158,18 +164,13 @@ double tolerance) {
 
 
 		// Check for convergence
-		if (iter + 1 == this -> iter_max) {
-			if (pedantic){
-				std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
-			}
+		if (iter - previous_iter_check > convergence_interval &&  std::abs(global_best_score - previous_global_best_score)/previous_global_best_score  < tolerance) {
 			break;
 		}
-		else if (std::abs(local_best_score.max() - local_best_score.min()) < tolerance) {
-			break;
+		else{
+			previous_global_best_score = global_best_score;
+			previous_iter_check = iter;
 		}
-
-
-
 
 
 		if (pedantic == true) {
@@ -178,7 +179,6 @@ double tolerance) {
 			std::cout <<  "Global best at: " << global_best << std::endl;
 			std::cout << "Mean velocities: " << arma::mean(velocities,0);
 			std::cout << "RMS velocities: " << arma::stddev(velocities,0);
-
 		}
 
 
