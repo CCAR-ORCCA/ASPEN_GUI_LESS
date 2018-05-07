@@ -64,7 +64,7 @@ int convergence_interval) {
 	arma::vec local_best_score = arma::vec(this -> population_size);
 	
 	double global_best_score;
-	int last_iter_check =0;
+	int previous_iter_check =0;
 	double previous_global_best_score;
 
 
