@@ -5,6 +5,7 @@
 #include "ShapeModelTri.hpp"
 #include "DynamicAnalyses.hpp"
 #include "Lidar.hpp"
+#include <SBGATSphericalHarmo.hpp>
 
 class Args {
 
@@ -355,6 +356,18 @@ public:
 		return this -> skip_factor;
 	}
 
+
+
+	vtkSmartPointer<SBGATSphericalHarmo> get_sbgat_harmonics() const{
+		return this -> sbgat_harmonics;
+	}
+
+
+	void set_sbgat_harmonics(vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics) {
+		this -> sbgat_harmonics = spherical_harmonics;
+	}
+
+
 protected:
 
 	double density;
@@ -408,20 +421,14 @@ protected:
 	arma::vec estimated_pos;
 	arma::vec estimated_vel;
 
-
 	arma::vec true_mrp_BN;
 	arma::vec estimated_mrp_BN;
-
-
-
-	
-	// std::vector<arma::vec> * true_small_body_attitude;
-	// std::vector<arma::vec> * estimated_small_body_attitude;
-
 
 	std::vector<double> * sigma_consider_vector_ptr;
 	std::vector<double> * biases_consider_vector_ptr;
 	std::vector<double> * sigmas_range_vector_ptr;
+
+	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics;
 
 
 

@@ -32,6 +32,7 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	message("-- This is Fortuna")
 	set(OC_LOC "/home/bebe0705/libs/local/lib/cmake/OrbitConversions")
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
+	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
 	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 
@@ -78,8 +79,11 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 add_definitions(-Wall -O2)
 
 # Enable C++17 
+if (EXISTS /home/bebe0705/.am_fortuna)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
-
+else()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+endif()
 # Set path to include and source folders
 if (${IS_FORTUNA})
 	set(INCLUDES_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/include)
@@ -131,6 +135,10 @@ include( ${EIGEN3_USE_FILE} )
 # Find OrbitConversions 
 find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
 include_directories(${OC_INCLUDE_DIR})
+
+# Find SbgatCore 
+find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
+include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 
 # Find OpenMP
@@ -197,6 +205,7 @@ set(library_dependencies
 	${CGAL_interface_LIBRARY}
 	${VTK_LIBRARIES}
 	${OC_LIBRARY}
+	${SBGATCORE_LIBRARY}
 	)
 
 

@@ -316,6 +316,12 @@ public:
 		std::shared_ptr<ControlPoint> Cr);
 
 
+	/**
+	Returns radius of circumscribing sphere, measured from the shape's center of mass
+	@return radius of circumscribing sphere
+	*/
+	double get_circumscribing_radius() const;
+
 
 protected:
 

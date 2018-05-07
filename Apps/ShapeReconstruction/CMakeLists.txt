@@ -30,15 +30,14 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/home/bebe0705/libs/local/lib/cmake/RigidBodyKinematics")
 	set(OC_LOC "/home/bebe0705/libs/local/lib/cmake/OrbitConversions")
-
-	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/home/bebe0705/libs/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/home/bebe0705/libs/local/lib/cmake/CGAL_interface")
 	set (VTK_PATH /usr/local/VTK-8.1.0/lib/cmake/vtk-8.1)
 elseif(UNIX AND NOT APPLE)
 	set(IS_FORTUNA ON)
 	set(RBK_LOC "/usr/local/lib/cmake/RigidBodyKinematics")
-	# set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
+	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/usr/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/usr/local/lib/cmake/CGAL_interface")
 	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
@@ -79,8 +78,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
 add_definitions(-Wall -O2 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
 
+
+
+# Enable C++17 
+if (EXISTS /home/bebe0705/.am_fortuna)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
+else()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+endif()
 
 # Find ASPEN
 find_package(ASPEN REQUIRED PATHS ${ASPEN_LOC}) 
@@ -120,8 +126,8 @@ find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
 include_directories( ${CGAL_interface_INCLUDE_DIR} )
 
 # Find SBGAT 
-# find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-# include_directories(${SBGATCORE_INCLUDE_HEADER})
+find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
+include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 
 # Find Eigen3
@@ -157,7 +163,7 @@ ${OC_LIBRARY}
 ${CGAL_LIBRARIES} 
 ${CGAL_3RD_PARTY_LIBRARIES}
 ${VTK_LIBRARIES}
-# ${SBGATCORE_LIBRARY}
+${SBGATCORE_LIBRARY}
 ${CGAL_interface_LIBRARY}
 ${ASPEN_LIBRARY}
 )

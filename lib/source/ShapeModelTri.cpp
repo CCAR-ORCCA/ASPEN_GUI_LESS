@@ -66,7 +66,6 @@ void ShapeModelTri::construct_kd_tree_shape() {
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
 
-
 	std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }

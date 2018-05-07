@@ -10,10 +10,12 @@
 #include <ShapeBuilderArguments.hpp>
 
 #include <NavigationFilter.hpp>
+#include <SBGATSphericalHarmo.hpp>
 
 #include <chrono>
 #include <boost/progress.hpp>
 #include <boost/numeric/odeint.hpp>
+#include <vtkOBJReader.h>
 
 // Various constants that set up the visibility emulator scenario
 
@@ -152,32 +154,83 @@ int main() {
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
+
+
+	/******************************************************/
+	/********* Computation of spherical harmonics *********/
+	/**************** about orbited shape *****************/
+	/******************************************************/
+
+
+	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+	reader -> SetFileName(TARGET_SHAPE);
+	reader -> Update(); 
+
+
+	vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
+	spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
+	spherical_harmonics -> SetDensity(DENSITY);
+	spherical_harmonics -> SetScaleMeters();
+	spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
+	spherical_harmonics -> IsNormalized(); // can be skipped as normalized coefficients is the default parameter
+	spherical_harmonics -> SetDegree(5);
+	spherical_harmonics -> Update();
+
+	// The spherical harmonics are saved to a file
+	spherical_harmonics -> SaveToJson("harmo_" + std::string(TARGET_SHAPE) + ".json");
+	args.set_sbgat_harmonics(spherical_harmonics);
+
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+
+
 	
+	/******************************************************/
+	/******************************************************/
+	/***************( True ) Initial state ****************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+
 
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// Position
 	arma::vec pos_0 = {1000,500,0};
-	X0_augmented.rows(0,2) = pos_0;
 
 	// MRP BN 
 	arma::vec mrp_0 = {0.,0.,0.};
-	X0_augmented.rows(6,8) = mrp_0;
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 	arma::vec omega_0 = {0,0,omega};
-	X0_augmented.rows(9,11) = omega_0;
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-
 	arma::vec vel_0_inertial = {0,std::cos(arma::datum::pi/ 180 * INCLINATION)*v,std::sin(arma::datum::pi/ 180 * INCLINATION)*v};
 
+	X0_augmented.rows(0,2) = pos_0;
 	X0_augmented.rows(3,5) = vel_0_inertial;
+	X0_augmented.rows(6,8) = mrp_0;
+	X0_augmented.rows(9,11) = omega_0;
+
+
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+
+
+	/******************************************************/
+	/******************************************************/
+	/*********** Propagation of (true) state **************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
 
 	arma::vec times = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES); 
 	arma::vec times_dense = arma::linspace<arma::vec>(T0,  times(times.n_rows - 1),  OBSERVATION_TIMES * 10); 
@@ -194,16 +247,14 @@ int main() {
 	// Containers
 	std::vector<arma::vec> X_augmented,X_augmented_dense;
 
-	auto N_true = X0_augmented.n_rows;
 
 	// Set active inertia here
 	args.set_true_inertia(true_shape_model.get_inertia());
+	auto N_true = X0_augmented.n_rows;
 
-	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_inertial );
-
+	System dynamics(args,N_true,Dynamics::harmonics_attitude_dxdt_inertial );
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_augmented, T_obs.begin(), T_obs.end(),1e-3,
 		Observer::push_back_augmented_state(X_augmented));
 
@@ -218,6 +269,12 @@ int main() {
 	}
 	X_dense.save("../output/trajectory.txt",arma::raw_ascii);
 	
+
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
 
 
 	ShapeBuilderArguments shape_filter_args;

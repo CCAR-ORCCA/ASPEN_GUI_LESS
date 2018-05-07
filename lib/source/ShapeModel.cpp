@@ -506,6 +506,21 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 }
 
 
+double ShapeModel::get_circumscribing_radius() const{
+
+	double radius  = arma::norm(this -> control_points[0] -> get_coordinates() - this -> cm );
+
+	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
+		radius = std::max(arma::norm(this -> control_points[vertex_index] -> get_coordinates() - this -> cm),radius);
+	}
+
+	return radius;
+
+
+
+}
+
+
 
 
 
