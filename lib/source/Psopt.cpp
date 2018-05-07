@@ -64,7 +64,7 @@ int convergence_interval) {
 	arma::vec local_best_score = arma::vec(this -> population_size);
 	
 	double global_best_score;
-	int previous_iter_check =0;
+	int previous_iter_check = 0;
 	double previous_global_best_score;
 
 
@@ -162,17 +162,6 @@ int convergence_interval) {
 			
 		}
 
-
-		// Check for convergence
-		if (iter - previous_iter_check > convergence_interval &&  std::abs(global_best_score - previous_global_best_score)/previous_global_best_score  < tolerance) {
-			break;
-		}
-		else{
-			previous_global_best_score = global_best_score;
-			previous_iter_check = iter;
-		}
-
-
 		if (pedantic == true) {
 			std::cout << std::to_string(iter + 1) << "/" << iter_max << std::endl;
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
@@ -180,6 +169,22 @@ int convergence_interval) {
 			std::cout << "Mean velocities: " << arma::mean(velocities,0);
 			std::cout << "RMS velocities: " << arma::stddev(velocities,0);
 		}
+
+		// Check for convergence
+		if (iter - previous_iter_check > convergence_interval &&  std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
+			break;
+		}
+		else{
+			previous_global_best_score = global_best_score;
+			previous_iter_check = iter;
+
+			if (pedantic == true) {
+				std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
+			}
+
+		}
+
+
 
 
 	}
