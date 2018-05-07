@@ -171,17 +171,19 @@ int convergence_interval) {
 		}
 
 		// Check for convergence
-		if (iter > (convergence_interval + previous_iter_check) &&  std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
-			break;
-		}
-		else{
-			previous_global_best_score = global_best_score;
-			previous_iter_check = iter;
-
-			if (pedantic == true) {
-				std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
+		if (iter > (convergence_interval + previous_iter_check)){
+			if(std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
+				break;
 			}
+			else{
+				previous_global_best_score = global_best_score;
+				previous_iter_check = iter;
 
+				if (pedantic == true) {
+					std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
+				}
+
+			}
 		}
 
 
