@@ -62,7 +62,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::mat> M_pcs;
 
 	int last_ba_call_index = 0;
-	
+	int last_IOD_epoch_index = 0;
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
@@ -195,12 +195,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
-					for (int i = 0; i <= time_index; ++i){
-						double dt = times(i);
+					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
+						
+						double dt = times(i) - times(last_IOD_epoch_index);
 						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 
-						std::cout << DCM_HN << std::endl;
 						arma::vec u_H = {1,0,0};
 						arma::vec u_B = M_pcs[i] * DCM_HN.t() * u_H;
 
@@ -214,10 +214,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 					}
 
+					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
+
+					// The proper container and indices are reset
+					last_IOD_epoch_index = time_index;
+					rigid_transforms.clear();
+
 
 					throw;
-
-
 
 				}
 
