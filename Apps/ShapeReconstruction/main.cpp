@@ -55,8 +55,8 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 1000 // Number of particles
-#define IOD_ITERATIONS 100 // Number of iteraions
+#define IOD_PARTICLES 5000 // Number of particles
+#define IOD_ITERATIONS 3000 // Number of iteraions
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
