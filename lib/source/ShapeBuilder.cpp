@@ -63,6 +63,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
+	std::vector<arma::mat> M_pcs;
+
 
 
 	int last_ba_call_index = 0;
@@ -81,21 +83,27 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		X_S = X[time_index];
 
+
+
+
+
+
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
 		BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
+		M_pcs.push_back(M_pc);
+
 		
 		if (BN_estimated.size() == 0){
 			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
 		}
 		else{
-
 			// M_pc(k) is [LN](tk-1)[NB](tk-1)[BN](tk)[NL](tk)
 			// M_pc(k-1) is [LN](tk-2)[NB](tk-2)[BN](tk-1)[NL](tk-1)
-			// so BN_estimated(k) is M_pc(0) * M_pc(1) * ... * M_pc(k)
+			// so [LN](0)[NB](0)[BN](tk)[NL](tk) is M_pc(0) * M_pc(1) * M_pc(2) * ... * M_pc(k)
+			// by convention, [NB](0) = I and M_pc(0) = I
 
-			BN_estimated.push_back(BN_estimated.back() * M_pc);
-
+			BN_estimated.push_back(this -> LN_t0.t() * M_pcs.back() * RBK::mrp_to_dcm(mrp_LN));
 		}
 
 
@@ -161,6 +169,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				}
 				/****************************************************************************/
+
+
+				// Saving M_pc
+				M_pcs.push_back(M_pc);
 
 
 				// Adding the rigid transform
