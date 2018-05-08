@@ -92,7 +92,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		
 
 		
-
+		std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated[i] * BN_true[i].t())) << std::endl;
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
@@ -223,9 +223,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
 
-
-
-
 						/******************
 						** ESTIMATED STATE*
 						*******************/
@@ -260,9 +257,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::rowvec true_long_lat = {true_longitude,true_latitude};
 
 					true_longitude_latitude.row(i) = true_long_lat;
-
-
-
 
 
 					std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated[i] * BN_true[i].t())) << std::endl;
