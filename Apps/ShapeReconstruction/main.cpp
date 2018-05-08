@@ -74,7 +74,7 @@
 
 // CHEATS
 
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
 
