@@ -29,7 +29,7 @@ public:
 		double inertial_weight = 0.65,
 		double memory_weight = 2,
 		double social_weight = 2,
-		double tolerance = 1e-3,
+		double tolerance = 1e-6,
 		int convergence_interval = 100);
 
 	void print_pop();
