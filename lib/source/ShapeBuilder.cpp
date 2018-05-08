@@ -223,14 +223,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
 
+
+
+
 						/******************
 						** ESTIMATED STATE*
 						*******************/
 					double dt = times(i) - times(last_IOD_epoch_index);
+					arma::vec u_H = {1,0,0};
+
+
 					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-					arma::vec u_H = {1,0,0};
 					arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+
 					longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
 					latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
 					arma::rowvec long_lat = {longitude,latitude};
@@ -246,8 +252,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
 					arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
 
-					arma::vec u_H_true = {1,0,0};
-					arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
+					arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H;
 
 					double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
 					double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
@@ -258,6 +263,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
+
+
+					std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated[i] * BN_true[i].t()));
+					std::cout << arma::norm(RBK::dcm_to_prv(DCM_HN_true * DCM_HN.t()));
+					
+
+
 				}
 
 				std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
@@ -265,7 +277,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 
-					// The proper container and indices are reset
+					// The proper containers and indices are reset
 
 				last_IOD_epoch_index = time_index;
 				rigid_transforms.clear();
@@ -274,13 +286,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			// The measured BN dcm is saved
+			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
-
-			std::cout << BN_true.back() << std::endl;
-
-			std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back().t())) << std::endl;
-
 
 
 
