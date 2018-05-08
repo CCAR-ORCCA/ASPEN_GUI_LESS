@@ -51,10 +51,8 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	int N =  args -> size();
 	arma::mat positions(3,N + 1);
 
-
 	// Since the dt at which images are captured is constant, the epoch can be inferred
 	// by subtracting dt to the first rigid transform's t_k
-
 	double dt = args -> at(1).t_k -  args -> at(0).t_k;
 	assert(dt == args -> at(2).t_k -  args -> at(1).t_k);
 	double epoch_time = args -> at(0).t_k - dt;

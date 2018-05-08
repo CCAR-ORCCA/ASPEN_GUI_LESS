@@ -150,6 +150,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.X_k = X_p_k;
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
+
+				std::cout << " -- Rigid transform " << k << " :\n";
+				std::cout << " --- t_k : " << times(time_index) << std::endl;
+				std::cout << " --- M_k \n" << M_p_k << std::endl;
+				std::cout << " --- X_k \n" << X_p_k << std::endl << std::endl;
+
 				OC::KepState est_kep_state;
 
 				if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
