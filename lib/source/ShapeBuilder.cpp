@@ -93,7 +93,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		else{
 			// M_pc(k) is [LN](0)[NB](0)[BN](tk)[NL](tk)
 			// by convention, [NB](0) = I and M_pc(0) = I
-			BN_estimated.push_back(this -> LN_t0.t() * M_pc);
+			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 		}
 
 
