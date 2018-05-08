@@ -84,16 +84,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
+		if(BN_estimated.size() == 0){
+			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
+			BN_true.push_back(arma::eye<arma::mat>(3,3));
+		}
 
 		
-		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-		BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
-		BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 		
-
-		
-		std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated.back() * BN_true.back().t())) << std::endl;
-
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
@@ -155,6 +152,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 				/****************************************************************************/
 
+
+			// The measured BN dcm is saved
+			// using the ICP measurement
+			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
+			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
+			BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
+
+
+			std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated.back() * BN_true.back().t())) << std::endl;
 
 
 				// Adding the rigid transform
@@ -277,12 +283,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transforms.clear();
 
 			}
-
-
-			// The measured BN dcm is saved
-			// using the ICP measurement
-			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 
 
 
