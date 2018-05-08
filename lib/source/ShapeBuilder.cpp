@@ -90,7 +90,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		}
 		else{
 
-
 			// M_pc(k) is [LN](tk-1)[NB](tk-1)[BN](tk)[NL](tk)
 			// M_pc(k-1) is [LN](tk-2)[NB](tk-2)[BN](tk-1)[NL](tk-1)
 			// so BN_estimated(k) is M_pc(0) * M_pc(1) * ... * M_pc(k)
