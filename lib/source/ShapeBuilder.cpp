@@ -120,6 +120,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			try{
 				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+
+
 				icp_converged = true;
 
 			// These two align the consecutive point clouds 
@@ -136,9 +138,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 					X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
 
-					std::cout << X_pc.t() << std::endl;
-					std::cout << M_pc.t() << std::endl  << std::endl;
-
 
 				}
 				/****************************************************************************/
@@ -153,11 +152,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.X_k = X_p_k;
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
-
-				std::cout << " -- Rigid transform " << rigid_transforms.size() << " :\n";
-				std::cout << " --- t_k : " << times(time_index) << std::endl;
-				std::cout << " --- M_k \n" << M_p_k << std::endl;
-				std::cout << " --- X_k \n" << X_p_k << std::endl << std::endl;
 
 				OC::KepState est_kep_state;
 
@@ -223,12 +217,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					}
 
 					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
+					longitude_latitude.save("../output/maps/longitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+
 
 					// The proper container and indices are reset
 					last_IOD_epoch_index = time_index;
 					rigid_transforms.clear();
-
-
 
 				}
 
