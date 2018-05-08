@@ -94,7 +94,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		}
 		else{
-
 			// M_pc(k) is [LN](tk-1)[NB](tk-1)[BN](tk)[NL](tk)
 			// M_pc(k-1) is [LN](tk-2)[NB](tk-2)[BN](tk-1)[NL](tk-1)
 			// so [LN](0)[NB](0)[BN](tk)[NL](tk) is M_pc(0) * M_pc(1) * M_pc(2) * ... * M_pc(k)
@@ -108,6 +107,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 		std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back())) << std::endl;
+		std::cout << arma::norm(RBK::dcm_to_prv( LN_0_NL_k.back() * (this -> LN_t0.t() * RBK::mrp_to_dcm(mrp_LN)))) << std::endl;
+
 
 
 
