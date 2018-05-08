@@ -58,10 +58,11 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	double epoch_time = args -> at(0).t_k - dt;
 
 	positions.col(0) = kep_state.convert_to_cart(epoch_time).get_position_vector();
-
+	
 	for (int k = 1; k < N + 1; ++k){
 		double t_k = args -> at(k - 1).t_k;
-		positions.col(k) = kep_state.convert_to_cart(t_k).get_position_vector();
+		double time_from_epoch = t_k - epoch_time;
+		positions.col(k) = kep_state.convert_to_cart(time_from_epoch).get_position_vector();
 	}
 
 	arma::vec epsilon = arma::zeros<arma::vec>(3 * N);
