@@ -221,6 +221,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 					// The proper container and indices are reset
+
+					OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
+					this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+					
 					last_IOD_epoch_index = time_index;
 					rigid_transforms.clear();
 
