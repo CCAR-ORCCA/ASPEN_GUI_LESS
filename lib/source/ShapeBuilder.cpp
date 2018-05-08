@@ -215,12 +215,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
-				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
-
-
-
-
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
@@ -276,6 +270,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				}
+
+				
+
+				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
+				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+
 
 				std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
 				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
