@@ -221,7 +221,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					rigid_transforms.clear();
 
 
-					throw;
 
 				}
 
@@ -316,6 +315,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				return;
 
 			}
+
+			throw;
+			
 
 		}
 
