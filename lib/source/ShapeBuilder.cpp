@@ -211,7 +211,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 						longitude_latitude.row(i) = long_lat;
 						this -> fly_over_map.add_label(i,longitude,latitude);
-						longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 					}
 
 					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
@@ -271,8 +270,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false,
 					false);
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-					throw;
-				
+
 
 			}
 
@@ -293,9 +291,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						true,
 						false);
 					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-					
+
 				}
-				
+
 			}
 
 
