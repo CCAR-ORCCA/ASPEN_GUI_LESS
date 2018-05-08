@@ -151,7 +151,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				rigid_transform.t_k = times(time_index);
 				rigid_transforms.push_back(rigid_transform);
 
-				std::cout << " -- Rigid transform " << rigid_transforms.size() + 1 << " :\n";
+				std::cout << " -- Rigid transform " << rigid_transforms.size() << " :\n";
 				std::cout << " --- t_k : " << times(time_index) << std::endl;
 				std::cout << " --- M_k \n" << M_p_k << std::endl;
 				std::cout << " --- X_k \n" << X_p_k << std::endl << std::endl;
