@@ -214,7 +214,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 							
 
-
 						/******************
 						** ESTIMATED STATE*
 						*******************/
@@ -236,8 +235,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						**** TRUE STATE ****
 						********************/
 						double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
-						arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
-
+						arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
+						
 						arma::vec u_H_true = {1,0,0};
 						arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
 
