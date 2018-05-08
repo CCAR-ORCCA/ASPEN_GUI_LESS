@@ -159,7 +159,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 			BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
 
-				// Adding the rigid transform
+			// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
+			// from t_k to t_(k-1)
 			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
@@ -214,7 +215,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
 
-
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
@@ -256,22 +256,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					true_longitude_latitude.row(i) = true_long_lat;
 
 
-					std::cout << f << " " << true_f << std::endl;
-					std::cout << est_kep_state.get_M0() << " " << this -> true_kep_state_t0.get_M0() << std::endl;
-					std::cout << est_kep_state.get_n() << " " << this -> true_kep_state_t0.get_n() << std::endl;
-
-
-
-					std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated[i] * BN_true[i].t())) << std::endl;
-					std::cout << arma::norm(RBK::dcm_to_prv(DCM_HN_true * DCM_HN.t())) << std::endl << std::endl;
-					
-
-
-
-
 				}
 
-				
+
 
 				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
