@@ -51,6 +51,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 	arma::mat longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
+	arma::mat true_longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
+
 
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
@@ -60,6 +62,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> M_pcs;
+	std::vector<arma::mat> BN_true;
+
 
 	int last_ba_call_index = 0;
 	int last_IOD_epoch_index = 0;
@@ -80,6 +84,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
+		BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
@@ -197,34 +202,62 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 					std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
-					// The spacecraft longitude/latitude is computed from the estimated keplerian state
-					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
-						
-						double dt = times(i) - times(last_IOD_epoch_index);
-						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 
-						arma::vec u_H = {1,0,0};
-						arma::vec u_B = M_pcs[i] * DCM_HN.t() * u_H;
-
-						longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-						latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-
-						arma::rowvec long_lat = {longitude,latitude};
-
-						longitude_latitude.row(i) = long_lat;
-						this -> fly_over_map.add_label(i,longitude,latitude);
-					}
-
-					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
-					longitude_latitude.save("../output/maps/longitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-
-					// The proper container and indices are reset
 
 					OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 					this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
 					
+
+
+
+					// The spacecraft longitude/latitude is computed from the estimated keplerian state
+					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
+							
+
+
+						/******************
+						** ESTIMATED STATE*
+						*******************/
+						double dt = times(i) - times(last_IOD_epoch_index);
+						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
+						arma::vec u_H = {1,0,0};
+						arma::vec u_B = M_pcs[i] * DCM_HN.t() * u_H;
+						longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+						latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+						arma::rowvec long_lat = {longitude,latitude};
+						longitude_latitude.row(i) = long_lat;
+
+
+						this -> fly_over_map.add_label(i,longitude,latitude);
+
+
+						/*******************
+						**** TRUE STATE ****
+						********************/
+						double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
+						arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
+
+						arma::vec u_H_true = {1,0,0};
+						arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
+
+						double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
+						double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+
+					
+						true_longitude_latitude.row(i) = {true_longitude,true_latitude};
+
+
+
+					}
+
+					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
+					longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+					true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+
+
+					// The proper container and indices are reset
+
 					last_IOD_epoch_index = time_index;
 					rigid_transforms.clear();
 
