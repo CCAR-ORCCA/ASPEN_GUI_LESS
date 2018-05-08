@@ -159,10 +159,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 			BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
 
-
-			std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated.back() * BN_true.back().t())) << std::endl;
-
-
 				// Adding the rigid transform
 			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
@@ -249,6 +245,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> fly_over_map.add_label(i,longitude,latitude);
 
 
+
 						/*******************
 						**** TRUE STATE ****
 						********************/
@@ -265,9 +262,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					true_longitude_latitude.row(i) = true_long_lat;
 
 
+					std::cout << f << " " << true_f << std::endl;
+					
 					std::cout << arma::norm(RBK::dcm_to_prv(BN_estimated[i] * BN_true[i].t())) << std::endl;
 					std::cout << arma::norm(RBK::dcm_to_prv(DCM_HN_true * DCM_HN.t())) << std::endl << std::endl;
 					
+
+
 
 
 				}
