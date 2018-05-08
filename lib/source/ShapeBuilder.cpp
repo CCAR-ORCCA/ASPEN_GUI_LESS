@@ -63,7 +63,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
-	std::vector<arma::mat> M_pcs;
+	std::vector<arma::mat> NL_0_LN_k;
 
 
 
@@ -83,33 +83,31 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		X_S = X[time_index];
 
-
-
-
-
-
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
 		BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
-		M_pcs.push_back(M_pc);
 
 		
 		if (BN_estimated.size() == 0){
 			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
+			NL_0_LN_k.push_back(arma::eye<arma::mat>(3,3));
+
 		}
 		else{
+
 			// M_pc(k) is [LN](tk-1)[NB](tk-1)[BN](tk)[NL](tk)
 			// M_pc(k-1) is [LN](tk-2)[NB](tk-2)[BN](tk-1)[NL](tk-1)
 			// so [LN](0)[NB](0)[BN](tk)[NL](tk) is M_pc(0) * M_pc(1) * M_pc(2) * ... * M_pc(k)
 			// by convention, [NB](0) = I and M_pc(0) = I
 
-			BN_estimated.push_back(this -> LN_t0.t() * M_pcs.back() * RBK::mrp_to_dcm(mrp_LN));
+			NL_0_LN_k.push_back(NL_0_LN_k.back() * M_pc);
+
+			BN_estimated.push_back(this -> LN_t0.t() * NL_0_LN_k.back() * RBK::mrp_to_dcm(mrp_LN));
 
 		}
 
 
-
-			std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back())) << std::endl;
+		std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back())) << std::endl;
 
 
 
@@ -150,158 +148,154 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			arma::mat M_p_k_old = M_pc;
 			arma::vec X_p_k_old = X_pc;
 
-			try{
-				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+			
+			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
 
-				icp_converged = true;
+			icp_converged = true;
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-				M_pc = icp_pc.get_M();
-				X_pc = icp_pc.get_X();
+			M_pc = icp_pc.get_M();
+			X_pc = icp_pc.get_X();
 
 				/****************************************************************************/
 				// ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS
-				if (!this -> filter_arguments-> get_use_ba()){
+			if (!this -> filter_arguments-> get_use_ba()){
 
-					M_pc = this -> LB_t0 * dcm_LB.t();
+				M_pc = this -> LB_t0 * dcm_LB.t();
 
-					arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
-					X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
+				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
 
 
-				}
+			}
 				/****************************************************************************/
 
 
 				// Saving M_pc
-				M_pcs.push_back(M_pc);
+			NL_0_LN_k.push_back(M_pc);
 
 
 				// Adding the rigid transform
-				arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-				arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
-				RigidTransform rigid_transform;
-				rigid_transform.M_k = M_p_k;
-				rigid_transform.X_k = X_p_k;
-				rigid_transform.t_k = times(time_index);
-				rigid_transforms.push_back(rigid_transform);
+			RigidTransform rigid_transform;
+			rigid_transform.M_k = M_p_k;
+			rigid_transform.X_k = X_p_k;
+			rigid_transform.t_k = times(time_index);
+			rigid_transforms.push_back(rigid_transform);
 
-				OC::KepState est_kep_state;
+			OC::KepState est_kep_state;
 
-				if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+			if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
-					IODFinder iod_finder(&rigid_transforms, 
-						this -> filter_arguments -> get_iod_iterations(), 
-						this -> filter_arguments -> get_iod_particles(),
-						true);
+				IODFinder iod_finder(&rigid_transforms, 
+					this -> filter_arguments -> get_iod_iterations(), 
+					this -> filter_arguments -> get_iod_particles(),
+					true);
 
-					arma::vec true_particle(7);
-					true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
-					true_particle(6) = this -> true_kep_state_t0.get_mu();
+				arma::vec true_particle(7);
+				true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
+				true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-					double a_min = 500;
-					double a_max = 20000;
+				double a_min = 500;
+				double a_max = 20000;
 
-					double e_min = 0.001;
-					double e_max = 0.9999;
+				double e_min = 0.001;
+				double e_max = 0.9999;
 
-					double i_min = 0;
-					double i_max = arma::datum::pi ;
+				double i_min = 0;
+				double i_max = arma::datum::pi ;
 
-					double Omega_min = -arma::datum::pi; 
-					double Omega_max = arma::datum::pi; 
+				double Omega_min = -arma::datum::pi; 
+				double Omega_max = arma::datum::pi; 
 
-					double omega_min = -arma::datum::pi; 
-					double omega_max = arma::datum::pi ; 
+				double omega_min = -arma::datum::pi; 
+				double omega_max = arma::datum::pi ; 
 
-					double M0_min = 0; 
-					double M0_max = 2 *arma::datum::pi ; 
+				double M0_min = 0; 
+				double M0_max = 2 *arma::datum::pi ; 
 
-					double mu_min = 0.2 * this -> true_kep_state_t0.get_mu();
-					double mu_max = 5 * this -> true_kep_state_t0.get_mu();
+				double mu_min = 0.2 * this -> true_kep_state_t0.get_mu();
+				double mu_max = 5 * this -> true_kep_state_t0.get_mu();
 
-					arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
-					arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
+				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
+				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
-					iod_finder.run(lower_bounds,upper_bounds);
-					est_kep_state = iod_finder.get_result();
+				iod_finder.run(lower_bounds,upper_bounds);
+				est_kep_state = iod_finder.get_result();
 
-					std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
-					std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-					std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
+				std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
+				std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+				std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
 
 
-					OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
-					this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
+				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
 
 
 
 
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
-					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
+				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
 
 						/******************
 						** ESTIMATED STATE*
 						*******************/
-						double dt = times(i) - times(last_IOD_epoch_index);
-						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-						arma::vec u_H = {1,0,0};
-						arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
-						longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-						latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-						arma::rowvec long_lat = {longitude,latitude};
-						longitude_latitude.row(i) = long_lat;
+					double dt = times(i) - times(last_IOD_epoch_index);
+					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
+					arma::vec u_H = {1,0,0};
+					arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+					longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+					latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+					arma::rowvec long_lat = {longitude,latitude};
+					longitude_latitude.row(i) = long_lat;
 
 
-						this -> fly_over_map.add_label(i,longitude,latitude);
+					this -> fly_over_map.add_label(i,longitude,latitude);
 
 
 						/*******************
 						**** TRUE STATE ****
 						********************/
-						double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
-						arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
+					double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
+					arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
 
-						arma::vec u_H_true = {1,0,0};
-						arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
+					arma::vec u_H_true = {1,0,0};
+					arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
 
-						double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
-						double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+					double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
+					double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
 
-						arma::rowvec true_long_lat = {true_longitude,true_latitude};
+					arma::rowvec true_long_lat = {true_longitude,true_latitude};
 
-						true_longitude_latitude.row(i) = true_long_lat;
+					true_longitude_latitude.row(i) = true_long_lat;
 
 
 
-					}
+				}
 
-					std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
-					longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-					true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+				std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
+				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 
 					// The proper container and indices are reset
 
-					last_IOD_epoch_index = time_index;
-					rigid_transforms.clear();
-
-				}
-
-
-
+				last_IOD_epoch_index = time_index;
+				rigid_transforms.clear();
 
 			}
 
-			catch(ICPException & e){
-				std::cout << e.what() << std::endl;
-			}
+
+
+
+			
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
