@@ -61,7 +61,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec mrp_LN(3);
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
-	std::vector<arma::mat> M_pcs;
+	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
 
 
@@ -80,11 +80,27 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
-		M_pcs.push_back(M_pc);
 
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
 		BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
+		
+		if (BN_estimated.size() == 0){
+			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
+		}
+		else{
+
+
+			// M_pc(k) is [LN](tk-1)[NB](tk-1)[BN](tk)[NL](tk)
+			// M_pc(k-1) is [LN](tk-2)[NB](tk-2)[BN](tk-1)[NL](tk-1)
+			// so BN_estimated(k) is M_pc(0) * M_pc(1) * ... * M_pc(k)
+
+			BN_estimated.push_back(BN_estimated.back() * M_pc);
+
+		}
+
+
+
 
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
@@ -105,7 +121,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
-			
+
 			this -> fly_over_map.add_label(time_index,0,0);
 
 			#if IOFLAGS_shape_builder
@@ -206,13 +222,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 					this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
-					
+
 
 
 
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
 					for (int i = last_IOD_epoch_index; i <= time_index; ++i){
-							
+
 
 						/******************
 						** ESTIMATED STATE*
@@ -221,7 +237,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 						arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
 						arma::vec u_H = {1,0,0};
-						arma::vec u_B = M_pcs[i] * DCM_HN.t() * u_H;
+						arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
 						longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
 						latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
 						arma::rowvec long_lat = {longitude,latitude};
@@ -236,7 +252,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						********************/
 						double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
 						arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
-						
+
 						arma::vec u_H_true = {1,0,0};
 						arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H_true;
 
@@ -244,7 +260,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
 
 						arma::rowvec true_long_lat = {true_longitude,true_latitude};
-						
+
 						true_longitude_latitude.row(i) = true_long_lat;
 
 
@@ -264,7 +280,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 
 
-				
+
 
 			}
 
