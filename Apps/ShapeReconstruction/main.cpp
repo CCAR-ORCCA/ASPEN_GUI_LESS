@@ -20,8 +20,8 @@
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
-#define ROW_RESOLUTION 128 // Goldeneye
-#define COL_RESOLUTION 128 // Goldeneye
+#define ROW_RESOLUTION 64 // Goldeneye
+#define COL_RESOLUTION 64 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -55,13 +55,13 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 10000 // Number of particles
+#define IOD_PARTICLES 300 // Number of particles
 #define IOD_ITERATIONS 30000 // Number of iterations
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
-#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
+#define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Orbit properties
@@ -73,11 +73,8 @@
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
 // CHEATS
-
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
-
-
 
 ///////////////////////////////////////////
 
@@ -174,7 +171,6 @@ int main() {
 	/******************************************************/
 
 
-	
 	/******************************************************/
 	/******************************************************/
 	/***************( True ) Initial state ****************/
@@ -207,12 +203,10 @@ int main() {
 	X0_augmented.rows(6,8) = mrp_0;
 	X0_augmented.rows(9,11) = omega_0;
 
-
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
-
 
 	/******************************************************/
 	/******************************************************/
