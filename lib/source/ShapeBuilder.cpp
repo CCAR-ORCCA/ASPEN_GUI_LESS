@@ -271,7 +271,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false,
 					false);
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
+					throw;
+				
 
 			}
 
@@ -292,7 +293,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						true,
 						false);
 					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-					throw;
 					
 				}
 				
