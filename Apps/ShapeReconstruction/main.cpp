@@ -61,7 +61,7 @@
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
-#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
+#define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Orbit properties
@@ -74,7 +74,7 @@
 
 // CHEATS
 
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
 
