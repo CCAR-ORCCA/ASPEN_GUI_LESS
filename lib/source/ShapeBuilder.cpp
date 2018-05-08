@@ -263,8 +263,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 					std::cout << f << " " << true_f << std::endl;
-					std::cout << estimated_kep_state_t0.get_M0() << " " << this -> true_kep_state_t0.get_M0() << std::endl;
-					std::cout << estimated_kep_state_t0.get_n() << " " << this -> true_kep_state_t0.get_n() << std::endl;
+					std::cout << est_kep_state.get_M0() << " " << this -> true_kep_state_t0.get_M0() << std::endl;
+					std::cout << est_kep_state.get_n() << " " << this -> true_kep_state_t0.get_n() << std::endl;
 
 
 
