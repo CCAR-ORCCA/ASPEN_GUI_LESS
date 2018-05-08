@@ -63,7 +63,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
-	std::vector<arma::mat> NL_0_LN_k;
+	std::vector<arma::mat> LN_0_NL_k;
 
 
 
@@ -90,7 +90,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		
 		if (BN_estimated.size() == 0){
 			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
-			NL_0_LN_k.push_back(arma::eye<arma::mat>(3,3));
+			LN_0_NL_k.push_back(arma::eye<arma::mat>(3,3));
 
 		}
 		else{
@@ -100,9 +100,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// so [LN](0)[NB](0)[BN](tk)[NL](tk) is M_pc(0) * M_pc(1) * M_pc(2) * ... * M_pc(k)
 			// by convention, [NB](0) = I and M_pc(0) = I
 
-			NL_0_LN_k.push_back(NL_0_LN_k.back() * M_pc);
+			LN_0_NL_k.push_back(LN_0_NL_k.back() * M_pc);
 
-			BN_estimated.push_back(this -> LN_t0.t() * NL_0_LN_k.back() * RBK::mrp_to_dcm(mrp_LN));
+			BN_estimated.push_back(this -> LN_t0.t() * LN_0_NL_k.back() * RBK::mrp_to_dcm(mrp_LN));
 
 		}
 
@@ -172,9 +172,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 				/****************************************************************************/
 
-
-				// Saving M_pc
-			NL_0_LN_k.push_back(M_pc);
 
 
 				// Adding the rigid transform
