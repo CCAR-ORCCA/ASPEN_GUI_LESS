@@ -91,13 +91,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
 		}
 		else{
-			// M_pc(k) is [LN](0)[NB](0)[BN](tk)[NL](tk)
-			// by convention, [NB](0) = I and M_pc(0) = I
+				
+			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 		}
 
 
-		std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back())) << std::endl;
+		std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back().t())) << std::endl;
 
 
 
