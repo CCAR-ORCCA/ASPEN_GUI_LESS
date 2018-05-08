@@ -55,7 +55,7 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 10000 // Number of particles
+#define IOD_PARTICLES 100000 // Number of particles
 #define IOD_ITERATIONS 3000 // Number of iteraions
 
 // Target properties
@@ -74,7 +74,7 @@
 
 // CHEATS
 
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
 
