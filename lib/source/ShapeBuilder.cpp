@@ -244,8 +244,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
 						double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
 
-					
-						true_longitude_latitude.row(i) = {true_longitude,true_latitude};
+						arma::rowvec true_long_lat = {true_longitude,true_latitude};
+						
+						true_longitude_latitude.row(i) = true_long_lat;
 
 
 
