@@ -96,6 +96,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
 		}
 
+		std::cout << BN_true << std::endl;
 
 		std::cout << arma::norm(RBK::dcm_to_prv( BN_estimated.back() * BN_true.back().t())) << std::endl;
 
