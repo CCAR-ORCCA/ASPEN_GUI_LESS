@@ -276,8 +276,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			}
 
-
-
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
 			this -> source_pc -> transform(M_pc,X_pc);

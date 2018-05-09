@@ -451,7 +451,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
 
 
-
 		if (rms_error > max_rms_error){
 			max_rms_error = rms_error;
 			worst_Dk_rms = this -> point_cloud_pairs[k].D_k;
@@ -467,7 +466,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
 
 		
-		std::cout << " -- (" << label_S_k << " , " <<label_D_k <<  ") : " << mean_error << " , " << rms_error << std::endl;
+		std::cout << " -- (" << label_S_k << " , " <<label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << std::endl;
 
 
 	}
