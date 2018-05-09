@@ -58,9 +58,6 @@ const int  & convergence_interval) {
 
 	// Check that boundary conditions are consistent
 	std::set<std::string> allowed_boundary_conditions = {"w","c"};
-	if (boundary_conditions.size()  != this -> lower_bounds.size() && boundary_conditions.size() != 0){
-		throw(std::runtime_error("The number of boundary conditions if not consistent with the number of states"));
-	}
 	for (auto iter = boundary_conditions.begin(); iter != boundary_conditions.end(); ++iter){
 		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
 			throw(std::runtime_error("The boundary condition ' "+ iter -> second + " on the state of index (" + std::to_string(iter -> first) + ") is neither 'w' (wrapping) or 'c' (clamp) "));
