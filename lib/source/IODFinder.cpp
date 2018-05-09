@@ -23,9 +23,17 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 		this -> N_iter,
 		this -> rigid_transforms);
 
+
+	std::map<int,std::string> boundary_conditions = {
+		std::make_pair<int,std::string>(2,"w"),
+		std::make_pair<int,std::string>(3,"w"),
+		std::make_pair<int,std::string>(4,"w"),
+		std::make_pair<int,std::string>(5,"w"),
+	};
+
 	std::cout << "Running IODFinder\n";
 
-	psopt.run(false,verbose_level);
+	psopt.run(false,verbose_level,boundary_conditions);
 
 	arma::vec elements = psopt.get_result();
 
@@ -54,7 +62,7 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	double dt = args -> at(1).t_k -  args -> at(0).t_k;
 	assert(dt == args -> at(2).t_k -  args -> at(1).t_k);
 	double epoch_time = args -> at(0).t_k - dt;
-	
+
 	if (verbose_level > 1){
 		std::cout << "\n - Epoch time: " << epoch_time;
 		std::cout << "\n - dt: " << dt << std::endl;

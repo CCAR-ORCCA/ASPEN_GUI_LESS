@@ -23,15 +23,15 @@ public:
 	arma::vec get_result() const;
 
 	void run(
-		bool maximize = false,
-		int verbose_level = 0,
-		std::map<int,std::string> boundary_conditions = std::map<int,std::string>(),
-		double max_velocity = 10,
-		double inertial_weight = 0.65,
-		double memory_weight = 2,
-		double social_weight = 2,
-		double tolerance = 1e-6,
-		int convergence_interval = 100);
+		const bool&  maximize = false,
+		const int & verbose_level = 0,
+		const std::map<int,std::string> & boundary_conditions = std::map<int,std::string>(),
+		const double & max_velocity = 10,
+		const double & inertial_weight = 0.65,
+		const double & memory_weight = 2,
+		const double & social_weight = 2,
+		const double & tolerance = 1e-6,
+		const int & convergence_interval = 100);
 
 	void print_pop();
 

@@ -35,15 +35,15 @@ T args) {
 
 
 template<class T> void Psopt<T>::run(
-bool maximize,
-int verbose_level,
-std::map<int,std::string> boundary_conditions,
-double max_velocity,
-double inertial_weight,
-double memory_weight,
-double social_weight,
-double tolerance,
-int convergence_interval) {
+const bool &  maximize,
+const int &  verbose_level,
+const std::map<int,std::string> & boundary_conditions,
+const double &  max_velocity,
+const double &  inertial_weight,
+const double &  memory_weight,
+const double &  social_weight,
+const double &  tolerance,
+const int  & convergence_interval) {
 
 	// Check that bounds are consistent
 	if (arma::min(this -> upper_bounds - this -> lower_bounds) <= 0){
