@@ -67,7 +67,7 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 		positions.col(k) = kep_state.convert_to_cart(time_from_epoch).get_position_vector();
 
 
-		if (verbose_level > 0){
+		if (verbose_level > 1){
 			std::cout << " Transform index : " << k << std::endl;
 			std::cout << " Time from epoch : " << time_from_epoch << std::endl;
 
