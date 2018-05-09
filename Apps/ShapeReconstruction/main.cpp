@@ -183,7 +183,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// Position
-	arma::vec pos_0 = {1000,50,50};
+	arma::vec pos_0 = {1000,50,150};
 
 	// MRP BN 
 	arma::vec mrp_0 = {0.,0.,0.};
