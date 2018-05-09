@@ -131,6 +131,9 @@ const int  & convergence_interval) {
 					// distance to boundary to get within the search interval
 						double distance_to_boundary_inside = this -> population.row(particle)(state_index) - this -> upper_bounds(state_index);
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - distance_to_boundary_inside;
+
+						// The velocity of the particle is mirrored
+						velocities.row(particle)(state_index) *= -1;
 					}
 					
 				}
@@ -149,6 +152,9 @@ const int  & convergence_interval) {
 						double distance_to_boundary_inside = this -> lower_bounds(state_index) - this -> population.row(particle)(state_index);
 
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + distance_to_boundary_inside;
+
+						// The velocity of the particle is mirrored
+						velocities.row(particle)(state_index) *= -1;
 					}
 
 				}
@@ -193,6 +199,7 @@ const int  & convergence_interval) {
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 			arma::vec random_weights = arma::randu<arma::vec>(2);
 
+
 			velocities.row(particle) = (inertial_weight * velocities.row(particle) 
 				+ random_weights(0) * memory_weight * (local_best.row(particle) - this -> population.row(particle))
 				+ random_weights(1) * social_weight * (global_best - this -> population.row(particle)));
@@ -201,6 +208,11 @@ const int  & convergence_interval) {
 			if (arma::norm(velocities.row(particle)) > max_velocity) {
 				velocities.row(particle) = velocities.row(particle) / arma::norm(velocities.row(particle)) * max_velocity;
 			}
+
+
+
+
+
 			
 		}
 
