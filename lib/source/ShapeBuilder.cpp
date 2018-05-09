@@ -203,7 +203,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
 				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
-				iod_finder.run(lower_bounds,upper_bounds,1);
+				iod_finder.run(lower_bounds,upper_bounds,1,guess);
 				est_kep_state = iod_finder.get_result();
 
 				arma::vec est_particle(7);
@@ -215,7 +215,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
 				std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 				std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
-
 
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
@@ -290,16 +289,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should probably replace this by an adaptive threshold based
 			// on a prediction of the alignment error
 
-			if (this -> filter_arguments-> get_use_ba() && time_index - last_ba_call_index == 60){
+			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 60){
 
 				last_ba_call_index = time_index;
 
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
-				std::cout << this -> all_registered_pc.size() << std::endl;
-				std::cout << 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() << std::endl;
-
+				
 
 				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 
