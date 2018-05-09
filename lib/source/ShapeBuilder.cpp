@@ -158,8 +158,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 			// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1 + last_IOD_epoch_index]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1 + last_IOD_epoch_index]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;
