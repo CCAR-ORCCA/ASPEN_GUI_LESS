@@ -164,7 +164,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;
 			rigid_transform.X_k = X_p_k;
-			rigid_transform.t_k = times(time_index);
+			rigid_transform.t_k = times(time_index - last_IOD_epoch_index);
 			rigid_transforms.push_back(rigid_transform);
 
 			OC::KepState est_kep_state;

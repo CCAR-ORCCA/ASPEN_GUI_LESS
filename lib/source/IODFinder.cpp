@@ -56,7 +56,7 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	double epoch_time = args -> at(0).t_k - dt;
 	
 	if (verbose_level > 1){
-		std::cout << "\n - Epoch time: " << epoch_time << std::endl;
+		std::cout << "\n - Epoch time: " << epoch_time;
 		std::cout << "\n - dt: " << dt << std::endl;
 
 	}
