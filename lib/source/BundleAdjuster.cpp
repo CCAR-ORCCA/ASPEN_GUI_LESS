@@ -471,7 +471,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		if (label_S_k == "179" && label_D_k == "180"){
 
 			 this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("test_179.obj");
-			 this -> all_registered_pc -> at(point_cloud_pair.D_k) -> save("test_179.obj");
+			 this -> all_registered_pc -> at(point_cloud_pair.D_k) -> save("test_180.obj");
 			 throw;
 
 		}
