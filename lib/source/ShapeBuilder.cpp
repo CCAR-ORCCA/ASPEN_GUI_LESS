@@ -182,7 +182,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				double a_min = 500;
 				double a_max = 2000;
 
-				double e_min = 0.001;
+				double e_min = 0.01;
 				double e_max = 0.9999;
 
 				double i_min = 0;
