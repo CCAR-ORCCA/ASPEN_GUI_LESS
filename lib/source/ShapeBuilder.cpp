@@ -220,7 +220,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					// The spacecraft longitude/latitude is computed from the estimated keplerian state
 				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
-
 						/******************
 						** ESTIMATED STATE*
 						*******************/
@@ -239,7 +238,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 					this -> fly_over_map.add_label(i,longitude,latitude);
-
 
 
 						/*******************
@@ -300,9 +298,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-				int ground_pc_ba_index = this -> all_registered_pc.size() - 30 - 1;
+				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 
-				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 30; ++pc){
+				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 2 * this -> filter_arguments -> get_iod_rigid_transforms_number(); ++pc){
 					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 				}
 
@@ -318,30 +316,30 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false,
 					false);
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
+				throw;
 
 			}
 
-			if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
+			// if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
-				std::cout << " -- Flyover detected\n";
-				last_ba_call_index = time_index;
-				longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// 	std::cout << " -- Flyover detected\n";
+			// 	last_ba_call_index = time_index;
+			// 	longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					&this -> fly_over_map,
-					longitude_latitude,
+			// 	BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+			// 		this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			// 		&this -> fly_over_map,
+			// 		longitude_latitude,
 
-					this -> LN_t0,
-					this -> x_t0,
-					true,
-					false);
-				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// 		this -> LN_t0,
+			// 		this -> x_t0,
+			// 		true,
+			// 		false);
+			// 	longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				
 
-			}
+			// }
 
 
 
