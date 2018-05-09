@@ -9,12 +9,7 @@
 template <class T> class Psopt {
 
 public:
-	// constructor
-	Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
-		const arma::vec & upper_bounds, const unsigned int & population_size,
-		const unsigned int & iter_max,
-		const std::vector<bool> & integer_components, T  args);
-
+	
 	Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
 		const arma::vec & upper_bounds, const unsigned int & population_size,
 		const unsigned int & iter_max,
@@ -31,9 +26,10 @@ public:
 		const double & memory_weight = 2,
 		const double & social_weight = 2,
 		const double & tolerance = 1e-6,
-		const int & convergence_interval = 100);
+		const int & convergence_interval = 100.);
 
 	void print_pop();
+	void resample(int index_best);
 
 
 	
@@ -48,7 +44,6 @@ protected:
 	unsigned int population_size;
 	unsigned int iter_max;
 	arma::mat population;
-	std::vector<bool> integer_components;
 	T args;
 
 };

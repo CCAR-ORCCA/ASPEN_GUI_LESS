@@ -2,22 +2,6 @@
 #include "Footpoint.hpp"
 #include "Bezier.hpp"
 
-template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
-const arma::vec & upper_bounds, const unsigned int & population_size,
-const unsigned int & iter_max ,
-const std::vector<bool> & integer_components, T args) {
-	this -> fitfun = fitfun;
-	this -> lower_bounds = lower_bounds;
-	this -> upper_bounds = upper_bounds;
-	this -> population_size = population_size;
-	this -> iter_max = iter_max;
-	this -> population = arma::zeros <arma::mat> (this -> population_size, this -> lower_bounds.n_rows);
-	this -> integer_components = integer_components;
-	this -> args = args;
-
-	assert(this -> integer_components.size() == this -> lower_bounds.n_rows);
-}
-
 
 template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
 const arma::vec & upper_bounds, const unsigned int & population_size,
@@ -61,6 +45,7 @@ const int  & convergence_interval) {
 
 	// Check that boundary conditions are consistent
 	std::set<std::string> allowed_boundary_conditions = {"w","c"};
+
 	for (auto iter = boundary_conditions.begin(); iter != boundary_conditions.end(); ++iter){
 		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
 			throw(std::runtime_error("The boundary condition ' "+ iter -> second + " on the state of index (" + std::to_string(iter -> first) + ") is neither 'w' (wrapping) or 'c' (clamp) "));
@@ -126,12 +111,11 @@ const int  & convergence_interval) {
 				} 
 				catch(std::out_of_range & e){
 
-					// if no boundary condition was defined for this state. PSO will fall back to the default
+					// if no boundary condition was defined for this state, the PSO will fall back to the default
 					// clamping condition
 					clamp = true;
 					wrap = false;
 				}
-
 
 
 				// Boundary check
@@ -152,7 +136,6 @@ const int  & convergence_interval) {
 					
 				}
 
-
 				else if (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
 					
 					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
@@ -171,12 +154,6 @@ const int  & convergence_interval) {
 
 				}
 
-				// Nearest-integer wrapping
-				if (this -> integer_components.size() > 0){
-					if (this -> integer_components[state_index] == true) {
-						this -> population.row(particle)(state_index) = std::round(this -> population.row(particle)(state_index));
-					}
-				}
 			}
 
 			// the cost function is evaluated at the particle
@@ -213,6 +190,7 @@ const int  & convergence_interval) {
 		global_best = local_best.row(global_best_index);
 
 		// The velocities for each particle are updated
+		#pragma omp parallel for 
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 			arma::vec random_weights = arma::randu<arma::vec>(2);
 
