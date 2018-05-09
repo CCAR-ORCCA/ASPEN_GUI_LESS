@@ -123,7 +123,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
-			bool icp_converged = false;
 			double longitude,latitude;
 			arma::mat M_p_k_old = M_pc;
 			arma::vec X_p_k_old = X_pc;
@@ -131,8 +130,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
-
-			icp_converged = true;
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -161,8 +158,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 			// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1 + last_IOD_epoch_index]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1 + last_IOD_epoch_index]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;
@@ -320,25 +317,24 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			}
 
-			if (icp_converged){
-				if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
+			if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
-					std::cout << " -- Flyover detected\n";
-					last_ba_call_index = time_index;
-					longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+				std::cout << " -- Flyover detected\n";
+				last_ba_call_index = time_index;
+				longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-					BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-						&this -> fly_over_map,
-						longitude_latitude,
+				BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					&this -> fly_over_map,
+					longitude_latitude,
 
-						this -> LN_t0,
-						this -> x_t0,
-						true,
-						false);
-					longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+					this -> LN_t0,
+					this -> x_t0,
+					true,
+					false);
+				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				}
+				
 
 			}
 
