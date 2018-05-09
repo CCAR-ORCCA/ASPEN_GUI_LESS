@@ -24,7 +24,7 @@ public:
 
 	void run(
 		bool maximize = false,
-		bool pedantic = false,
+		int verbose_level = 0,
 		double max_velocity = 10,
 		double inertial_weight = 0.65,
 		double memory_weight = 2,

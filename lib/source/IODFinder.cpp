@@ -40,7 +40,7 @@ OC::KepState IODFinder::get_result() const{
 	return this -> keplerian_state_at_epoch;
 }
 
-double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args,bool verbose){
+double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level){
 
 	// Particle State ordering:
 	// [a,e,i,Omega,omega,M0_0,mu]
@@ -56,7 +56,8 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	double dt = args -> at(1).t_k -  args -> at(0).t_k;
 	assert(dt == args -> at(2).t_k -  args -> at(1).t_k);
 	double epoch_time = args -> at(0).t_k - dt;
-	if (verbose){
+	
+	if (verbose_level > 0){
 		std::cout << epoch_time << std::endl;
 	}
 

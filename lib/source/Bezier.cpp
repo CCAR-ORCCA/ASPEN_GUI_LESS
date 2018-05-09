@@ -1224,7 +1224,7 @@ void Bezier::reset_footpoints(){
 }
 
 double Bezier::compute_log_likelihood_full_diagonal(arma::vec L,
-	std::pair<const std::vector<Footpoint> * ,Bezier * > args,bool verbose){
+	std::pair<const std::vector<Footpoint> * ,Bezier * > args,int verbose_level){
 
 	// All the footpoints are processed
 	double log_likelihood = 0;
@@ -1254,7 +1254,7 @@ double Bezier::compute_log_likelihood_full_diagonal(arma::vec L,
 
 
 double Bezier::compute_log_likelihood_block_diagonal(arma::vec L,
-	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,bool verbose){
+	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,int verbose_level){
 
 	// All the footpoints are processed
 	double log_likelihood = 0;

@@ -2,7 +2,7 @@
 #include "Footpoint.hpp"
 #include "Bezier.hpp"
 
-template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,bool), const arma::vec & lower_bounds,
+template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
 const arma::vec & upper_bounds, const unsigned int & population_size,
 const unsigned int & iter_max ,
 const std::vector<bool> & integer_components, T args) {
@@ -19,7 +19,7 @@ const std::vector<bool> & integer_components, T args) {
 }
 
 
-template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,bool), const arma::vec & lower_bounds,
+template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
 const arma::vec & upper_bounds, const unsigned int & population_size,
 const unsigned int & iter_max ,
 T args) {
@@ -31,13 +31,12 @@ T args) {
 	this -> population = arma::zeros <arma::mat> (this -> population_size, this -> lower_bounds.n_rows);
 	this -> integer_components = integer_components;
 	this -> args = args;
-
 }
 
 
 template<class T> void Psopt<T>::run(
 bool maximize,
-bool pedantic,
+int verbose_level,
 double max_velocity,
 double inertial_weight,
 double memory_weight,
@@ -115,7 +114,7 @@ int convergence_interval) {
 			}
 
 			// the cost function is evaluated at the particle
-			scores(particle) = (* this -> fitfun)(this -> population.row(particle).t(), this -> args);
+			scores(particle) = (* this -> fitfun)(this -> population.row(particle).t(), this -> args,verbose_level);
 
 			// The local best is updated if need be
 			if (maximize){

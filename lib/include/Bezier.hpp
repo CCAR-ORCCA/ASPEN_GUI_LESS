@@ -350,10 +350,10 @@ public:
 		const int n);
 
 	static double compute_log_likelihood_full_diagonal(arma::vec L, 
-		std::pair<const std::vector<Footpoint> * , Bezier * > args,bool verbose = false);
+		std::pair<const std::vector<Footpoint> * , Bezier * > args,int verbose_level = 0);
 
 	static double compute_log_likelihood_block_diagonal(arma::vec L,
-		std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,bool verbose = false);
+		std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,int verbose_level = 0);
 
 	/**
 	Add footpoint to Bezier patch for the covariance training phase
