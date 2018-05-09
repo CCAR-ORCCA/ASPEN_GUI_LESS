@@ -43,7 +43,7 @@ protected:
 	double result_score;
 	arma::vec lower_bounds;
 	arma::vec upper_bounds;
-	double (*fitfun)(arma::vec, T ,bool);
+	double (*fitfun)(arma::vec, T ,int);
 	unsigned int population_size;
 	unsigned int iter_max;
 	arma::mat population;
