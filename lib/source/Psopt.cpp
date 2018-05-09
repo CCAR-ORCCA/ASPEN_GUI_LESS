@@ -135,7 +135,7 @@ const int  & convergence_interval) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						// velocities.row(particle)(state_index) = -velocities.row(particle)(state_index);
+						velocities.row(particle)(state_index) *= -1;
 					}
 					
 				}
@@ -156,7 +156,7 @@ const int  & convergence_interval) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						// velocities.row(particle)(state_index) = -velocities.row(particle)(state_index);
+						velocities.row(particle)(state_index) *= -1;
 					}
 
 				}
