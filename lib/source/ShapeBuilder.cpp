@@ -66,7 +66,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-	int last_ba_call_index = 15;
+	int last_ba_call_index = 0;
 	int last_IOD_epoch_index = 0;
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
