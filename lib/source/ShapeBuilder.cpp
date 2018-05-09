@@ -66,7 +66,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-	int last_ba_call_index = 0;
+	int last_ba_call_index = 15;
 	int last_IOD_epoch_index = 0;
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -179,8 +179,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 				true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-				double a_min = 500;
-				double a_max = 2000;
+				double a_min = 250;
+				double a_max = 20000;
 
 				double e_min = 0.05;
 				double e_max = 0.9999;
@@ -260,8 +260,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				}
 
-
-
 				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
 
@@ -272,8 +270,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-
-					// The proper containers and indices are reset
+				// The proper containers and indices are reset
 
 				last_IOD_epoch_index = time_index;
 				rigid_transforms.clear();
@@ -308,6 +305,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 30; ++pc){
 					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 				}
+
 				longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				BundleAdjuster bundle_adjuster(&pc_to_ba,
