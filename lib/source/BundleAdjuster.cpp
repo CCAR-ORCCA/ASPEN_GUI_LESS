@@ -468,13 +468,13 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		
 		std::cout << " -- (" << label_S_k << " , " << label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << std::endl;
 
-		if (label_S_k == "179" && label_D_k == "180"){
+		// if (label_S_k == "179" && label_D_k == "180"){
 
-			 this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("test_179.obj");
-			 this -> all_registered_pc -> at(point_cloud_pair.D_k) -> save("test_180.obj");
-			 throw;
+		// 	 this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("test_179.obj");
+		// 	 this -> all_registered_pc -> at(point_cloud_pair.D_k) -> save("test_180.obj");
+		// 	 throw;
 
-		}
+		// }
 
 	}
 
@@ -605,9 +605,9 @@ void BundleAdjuster::update_point_clouds(){
 
 		arma::mat NS_bar = RBK::mrp_to_dcm(mrp);
 
-		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
+		// this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
 
-		this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
+		// this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
 		
 		++progress;
 
