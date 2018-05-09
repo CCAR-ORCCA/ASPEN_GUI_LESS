@@ -121,8 +121,8 @@ int convergence_interval) {
 
 				try  {
 					char condition = boundary_conditions.at(state_index);
-					wrap = ("w" == condition);
-					clamp = ("c" == condition);
+					wrap = (char("w") == condition);
+					clamp = (char("c") == condition);
 				} 
 				catch(std::out_of_range & e){
 
