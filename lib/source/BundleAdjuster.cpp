@@ -466,8 +466,15 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
 
 		
-		std::cout << " -- (" << label_S_k << " , " <<label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << std::endl;
+		std::cout << " -- (" << label_S_k << " , " << label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << std::endl;
 
+		if (label_S_k == "179" && label_D_k == "180"){
+
+			 this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("test_179.obj");
+			 this -> all_registered_pc -> at(point_cloud_pair.D_k) -> save("test_179.obj");
+			 throw;
+
+		}
 
 	}
 
