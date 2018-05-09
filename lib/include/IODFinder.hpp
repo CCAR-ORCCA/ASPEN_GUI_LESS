@@ -23,7 +23,7 @@ public:
 		int N_iter, 
 		int particles);
 
-	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0,const arma::vec & guess);
+	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0,const arma::vec & guess  = {});
 
 	void run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level = 0);
 	OC::KepState get_result() const;
