@@ -394,7 +394,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
 		std::vector<PointPair> point_pairs;
-		int h = 4;
+		int h = 0;
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
