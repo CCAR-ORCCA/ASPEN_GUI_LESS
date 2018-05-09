@@ -45,7 +45,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds();
-	std::cout << "- Updating flyover map ... " << std::endl;
+	std::cout << "\n- Updating flyover map ... " << std::endl;
 	this -> update_flyover_map(longitude_latitude);
 
 	// The connectivity matrix is saved
@@ -60,6 +60,9 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
 	// Updating the pcs. The first one is fixed
 	for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
+
+		std::cout << pc << std::endl;
+		std::cout <<  this -> rotation_increment.size() << std::endl  << std::endl;
 
 		std::string label = this -> all_registered_pc -> at(pc) -> get_label();
 		arma::vec old_los = {0,0,0};
