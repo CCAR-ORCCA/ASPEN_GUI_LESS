@@ -37,12 +37,37 @@ T args) {
 template<class T> void Psopt<T>::run(
 bool maximize,
 int verbose_level,
+std::vector<char> boundary_condition,
 double max_velocity,
 double inertial_weight,
 double memory_weight,
 double social_weight,
 double tolerance,
 int convergence_interval) {
+
+	// Check that bounds are consistent
+	if (arma::min(this -> upper_bounds - this -> lower_bounds) <= 0){
+		throw(std::runtime_error("The lower bounds cannot be less or equal than the upper bounds"));
+	}
+	if (this -> upper_bounds.size() != this -> lower_bounds.size()){
+		throw(std::runtime_error("The lower bounds should be as many as the upper bounds"));
+	}
+	if (this -> upper_bounds.size() == 0){
+		throw(std::runtime_error("There cannot be 0 states operated on by the PSO"));
+	}
+
+	// Check that boundary conditions are consistent
+	std::set<char> allowed_boundary_conditions = {"w","c"};
+	if (boundary_conditions.size()  != this -> lower_bounds.size() && boundary_conditions.size() != 0){
+		throw(std::runtime_error("The number of boundary conditions if not consistent with the number of states"));
+	}
+	for (auto iter = boundary_conditions.begin(); iter != boundary_conditions.end(); ++iter){
+		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
+			throw(std::runtime_error("The boundary condition ' "+std::to_string(iter -> second) + " is neither 'w' (wrapping) or 'c' (clamp) "));
+		}
+
+	}
+
 
 
 	// The population is randomly generated
@@ -51,6 +76,7 @@ int convergence_interval) {
 			- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
 		+ this -> lower_bounds(state_index);
 	}
+
 
 
 	// The velocities are generated
@@ -82,6 +108,7 @@ int convergence_interval) {
 
 
 	for (unsigned int iter = 1; iter < this -> iter_max; ++iter)  {
+
 		// The population is updated by adding the velocities to it
 		this -> population = this -> population + velocities;
 
@@ -89,18 +116,53 @@ int convergence_interval) {
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
 			for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 
+				bool wrap;
+				bool clamp;
+
+				try  {
+					char condition = boundary_conditions.at(state_index);
+					wrap = ("w" == condition);
+					clamp = ("c" == condition);
+				} 
+				catch(std::out_of_range & e){
+
+					// if no boundary condition was defined for this state. PSO will fall back to the default
+					// clamping condition
+					clamp = true;
+					wrap = false;
+				}
+
+
 
 				// Boundary check
 				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
-						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
+
+					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
+					if(wrap){
+						this -> population.row(particle)(state_index) = this -> lower_bounds(state_index); 
 					}
+					else if (clamp){
+					// else the state is clamped on the boundary using the 
+					// distance to boundary to get within the search interval
+						double distance_to_boundary_inside = this -> population.row(particle)(state_index) - this -> upper_bounds(state_index);
+						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - distance_to_boundary_inside;
+					}
+					
 				}
 
 
 				else if (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
-					while (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
-						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + (this -> upper_bounds(state_index) - this -> lower_bounds(state_index));
+					
+					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
+					if(wrap){
+						this -> population.row(particle)(state_index) = this -> upper_bounds(state_index); 
+					}
+					else if (clamp){
+					// else the state is clamped on the boundary using the
+					// distance to boundary to get within the search interval
+						double distance_to_boundary_inside = this -> lower_bounds(state_index) - this -> population.row(particle)(state_index);
+
+						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + distance_to_boundary_inside;
 					}
 
 				}
