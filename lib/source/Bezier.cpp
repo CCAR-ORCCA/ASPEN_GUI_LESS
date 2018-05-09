@@ -973,7 +973,7 @@ void Bezier::train_patch_covariance(){
 		N_iter,
 		args);
 
-	psopt.run(true,false);
+	psopt.run(true,0);
 
 	L = psopt.get_result();
 
