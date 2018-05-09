@@ -291,7 +291,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should probably replace this by an adaptive threshold based
 			// on a prediction of the alignment error
 
-			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 60){
+			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 2 * this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 				last_ba_call_index = time_index;
 
@@ -318,7 +318,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false,
 					false);
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-				throw;
 
 			}
 
