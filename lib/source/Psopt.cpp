@@ -140,6 +140,8 @@ const int  & convergence_interval) {
 					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
 					if(wrap){
 						this -> population.row(particle)(state_index) = this -> lower_bounds(state_index); 
+						velocities.row(particle)(state_index) = 0;
+
 					}
 					else if (clamp){
 					// else the state is clamped on the boundary using the 
@@ -156,6 +158,8 @@ const int  & convergence_interval) {
 					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
 					if(wrap){
 						this -> population.row(particle)(state_index) = this -> upper_bounds(state_index); 
+						velocities.row(particle)(state_index) = 0;
+						
 					}
 					else if (clamp){
 					// else the state is clamped on the boundary using the
