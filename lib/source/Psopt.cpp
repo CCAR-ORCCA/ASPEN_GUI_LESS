@@ -161,7 +161,7 @@ int convergence_interval) {
 			
 		}
 
-		if (pedantic == true) {
+		if (verbose_level > 0) {
 			std::cout << std::to_string(iter) << "/" << iter_max << std::endl;
 			std::cout << std::endl << "Global best score: " << global_best_score << std::endl;;
 			std::cout <<  "Global best at: " << global_best << std::endl;
@@ -174,7 +174,7 @@ int convergence_interval) {
 
 		if (iter > (convergence_interval + previous_iter_check)){
 
-			if (pedantic == true) {
+			if (verbose_level > 0) {
 				std::cout << "Relative variation in global score since last check: " << std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score) << std::endl;
 			}
 			if(std::abs(global_best_score - previous_global_best_score)/std::abs(previous_global_best_score)  < tolerance) {
@@ -194,11 +194,11 @@ int convergence_interval) {
 
 	}
 
-	if (maximize && pedantic){
+	if (maximize && verbose_level > 0){
 		std::cout << std::endl << "Global Maximum at: " << global_best;
 		std::cout << "Global Maximum: " << global_best_score << std::endl;
 	}	
-	else if (pedantic){
+	else if (verbose_level > 0){
 		std::cout << std::endl << "Global Minimum at: " << global_best;
 		std::cout << "Global Minimum: " << global_best_score << std::endl;
 	}
