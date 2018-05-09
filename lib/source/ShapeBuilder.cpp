@@ -297,6 +297,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
+				std::cout << this -> all_registered_pc.size() << std::endl;
+				std::cout << 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() << std::endl;
+				
 
 				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 
