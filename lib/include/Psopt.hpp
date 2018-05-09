@@ -20,7 +20,7 @@ public:
 		const arma::vec & upper_bounds, const unsigned int & population_size,
 		const unsigned int & iter_max,
 		T args,
-		const arma::vec * guess);
+		const arma::vec & guess);
 
 	arma::vec get_result() const;
 
