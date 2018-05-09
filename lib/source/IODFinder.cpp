@@ -14,7 +14,7 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 
 
 
-void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level,const arma::vec & guess = {}){
+void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level,const arma::vec & guess){
 
 	Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function, 
 		lower_bounds,
