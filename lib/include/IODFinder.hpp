@@ -21,12 +21,11 @@ public:
 
 	IODFinder(std::vector<RigidTransform> * rigid_transforms, 
 		int N_iter, 
-		int particles,
-		bool pedantic = false);
+		int particles);
 
 	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 
-	void run(const arma::vec & lower_bounds,const arma::vec & upper_bounds);
+	void run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level = 0);
 	OC::KepState get_result() const;
 
 protected:
@@ -36,7 +35,6 @@ protected:
 	std::vector<RigidTransform> * rigid_transforms;
 	OC::KepState keplerian_state_at_epoch;
 
-	bool pedantic;
 
 };
 

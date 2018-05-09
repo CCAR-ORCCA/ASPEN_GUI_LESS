@@ -204,7 +204,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
 				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
-				iod_finder.run(lower_bounds,upper_bounds);
+				iod_finder.run(lower_bounds,upper_bounds,1);
 				est_kep_state = iod_finder.get_result();
 
 				arma::vec est_particle(7);
