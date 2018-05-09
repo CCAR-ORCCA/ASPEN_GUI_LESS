@@ -267,6 +267,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
+				std::cout << "New last_IOD_epoch_index:  " << time_index << std::endl;
+
 				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
