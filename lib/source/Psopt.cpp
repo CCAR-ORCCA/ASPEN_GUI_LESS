@@ -63,7 +63,7 @@ int convergence_interval) {
 	}
 	for (auto iter = boundary_conditions.begin(); iter != boundary_conditions.end(); ++iter){
 		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
-			throw(std::runtime_error("The boundary condition ' "+ iter -> second + " on the state of index (" + iter -> first + ") is neither 'w' (wrapping) or 'c' (clamp) "));
+			throw(std::runtime_error("The boundary condition ' "+ iter -> second + " on the state of index (" + std::to_string(iter -> first) + ") is neither 'w' (wrapping) or 'c' (clamp) "));
 		}
 
 	}
