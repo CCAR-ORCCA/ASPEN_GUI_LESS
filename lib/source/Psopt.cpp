@@ -13,7 +13,6 @@ T args) {
 	this -> population_size = population_size;
 	this -> iter_max = iter_max;
 	this -> population = arma::zeros <arma::mat> (this -> population_size, this -> lower_bounds.n_rows);
-	this -> integer_components = integer_components;
 	this -> args = args;
 }
 
