@@ -30,7 +30,6 @@ void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bound
 	psopt.run(false,this -> pedantic);
 
 	arma::vec elements = psopt.get_result();
-	std::cout << "Minimum of cost function : " << IODFinder::cost_function(elements,this-> rigid_transforms) << std::endl;
 
 	this -> keplerian_state_at_epoch = OC::KepState(elements.subvec(0,5),elements(6));
 
@@ -41,7 +40,7 @@ OC::KepState IODFinder::get_result() const{
 	return this -> keplerian_state_at_epoch;
 }
 
-double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args){
+double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args,bool verbose){
 
 	// Particle State ordering:
 	// [a,e,i,Omega,omega,M0_0,mu]
@@ -53,10 +52,13 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 
 	// Since the dt at which images are captured is constant, the epoch can be inferred
 	// by subtracting dt to the first rigid transform's t_k
-	
+
 	double dt = args -> at(1).t_k -  args -> at(0).t_k;
 	assert(dt == args -> at(2).t_k -  args -> at(1).t_k);
 	double epoch_time = args -> at(0).t_k - dt;
+	if (verbose){
+		std::cout << epoch_time << std::endl;
+	}
 
 	positions.col(0) = kep_state.convert_to_cart(epoch_time).get_position_vector();
 

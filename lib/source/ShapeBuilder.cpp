@@ -207,7 +207,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				iod_finder.run(lower_bounds,upper_bounds);
 				est_kep_state = iod_finder.get_result();
 
-				std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms) << std::endl;
+				arma::vec est_particle(7);
+				est_particle.subvec(0,5) = est_particle.get_state();
+				est_particle(6) = est_particle.get_mu();
+
+
+				std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,true) << std::endl;
+				std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,true) << std::endl;
 				std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 				std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 

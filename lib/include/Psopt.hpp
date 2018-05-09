@@ -10,12 +10,12 @@ template <class T> class Psopt {
 
 public:
 	// constructor
-	Psopt(double (*fitfun)(arma::vec, T ), const arma::vec & lower_bounds,
+	Psopt(double (*fitfun)(arma::vec, T ,bool), const arma::vec & lower_bounds,
 		const arma::vec & upper_bounds, const unsigned int & population_size,
 		const unsigned int & iter_max,
 		const std::vector<bool> & integer_components, T  args);
 
-	Psopt(double (*fitfun)(arma::vec, T ), const arma::vec & lower_bounds,
+	Psopt(double (*fitfun)(arma::vec, T ,bool), const arma::vec & lower_bounds,
 		const arma::vec & upper_bounds, const unsigned int & population_size,
 		const unsigned int & iter_max,
 		T args);
@@ -43,7 +43,7 @@ protected:
 	double result_score;
 	arma::vec lower_bounds;
 	arma::vec upper_bounds;
-	double (*fitfun)(arma::vec, T );
+	double (*fitfun)(arma::vec, T ,bool);
 	unsigned int population_size;
 	unsigned int iter_max;
 	arma::mat population;

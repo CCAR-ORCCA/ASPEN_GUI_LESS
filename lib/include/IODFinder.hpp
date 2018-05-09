@@ -24,7 +24,7 @@ public:
 		int particles,
 		bool pedantic = false);
 
-	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args);
+	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,bool verbose = false);
 
 	void run(const arma::vec & lower_bounds,const arma::vec & upper_bounds);
 	OC::KepState get_result() const;
