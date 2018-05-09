@@ -40,9 +40,12 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 	// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment();
 		std::cout << "- Solved bundle adjustment" << std::endl;
-	}
+	}	
 
+
+	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds();
+	std::cout << "- Updating flyover map ... " << std::endl;
 	this -> update_flyover_map(longitude_latitude);
 
 	// The connectivity matrix is saved
