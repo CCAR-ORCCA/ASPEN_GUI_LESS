@@ -50,7 +50,10 @@ const int  & convergence_interval) {
 		throw(std::runtime_error("The lower bounds cannot be less or equal than the upper bounds"));
 	}
 	if (this -> upper_bounds.size() != this -> lower_bounds.size()){
-		throw(std::runtime_error("The lower bounds should be as many as the upper bounds"));
+		throw(std::runtime_error("There must be as many lower bounds ("
+			+ std::to_string(this -> lower_bounds.size())  
+			+ ") as upper bounds(" 
+			+ std::to_string(this -> upper_bounds.size()) + ")"));
 	}
 	if (this -> upper_bounds.size() == 0){
 		throw(std::runtime_error("There cannot be 0 states operated on by the PSO"));

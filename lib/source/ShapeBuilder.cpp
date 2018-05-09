@@ -180,7 +180,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				true_particle(6) = this -> true_kep_state_t0.get_mu();
 
 				double a_min = 500;
-				double a_max = 20000;
+				double a_max = 2000;
 
 				double e_min = 0.001;
 				double e_max = 0.9999;
@@ -195,10 +195,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				double omega_max = arma::datum::pi ; 
 
 				double M0_min = 0; 
-				double M0_max = 2 *arma::datum::pi ; 
+				double M0_max = 2 * arma::datum::pi ; 
 
-				double mu_min = 0.2 * this -> true_kep_state_t0.get_mu();
-				double mu_max = 5 * this -> true_kep_state_t0.get_mu();
+				double mu_min = 0.5 * this -> true_kep_state_t0.get_mu();
+				double mu_max = 2 * this -> true_kep_state_t0.get_mu();
 
 				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
 				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
