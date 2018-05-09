@@ -37,7 +37,7 @@ T args) {
 template<class T> void Psopt<T>::run(
 bool maximize,
 int verbose_level,
-std::vector<char> boundary_condition,
+std::map<int,char> boundary_conditions,
 double max_velocity,
 double inertial_weight,
 double memory_weight,
@@ -63,7 +63,7 @@ int convergence_interval) {
 	}
 	for (auto iter = boundary_conditions.begin(); iter != boundary_conditions.end(); ++iter){
 		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
-			throw(std::runtime_error("The boundary condition ' "+std::to_string(iter -> second) + " is neither 'w' (wrapping) or 'c' (clamp) "));
+			throw(std::runtime_error("The boundary condition ' "+ std::to_string(iter -> second) + " on the state of index (" + iter -> first + ") is neither 'w' (wrapping) or 'c' (clamp) "));
 		}
 
 	}
