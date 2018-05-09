@@ -98,6 +98,8 @@ const int  & convergence_interval) {
 
 		#pragma omp parallel for 
 		for (unsigned int particle = 0; particle < this -> population_size; ++particle) {
+
+
 			for (unsigned int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 
 				bool wrap;
@@ -133,7 +135,7 @@ const int  & convergence_interval) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						velocities.row(particle)(state_index) *= -1;
+						velocities.row(particle)(state_index) = -velocities.row(particle)(state_index);
 					}
 					
 				}
@@ -154,7 +156,7 @@ const int  & convergence_interval) {
 						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						velocities.row(particle)(state_index) *= -1;
+						velocities.row(particle)(state_index) = -velocities.row(particle)(state_index);
 					}
 
 				}
