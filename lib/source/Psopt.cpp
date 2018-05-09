@@ -120,7 +120,7 @@ int convergence_interval) {
 				bool clamp;
 
 				try  {
-					char condition = boundary_conditions.at(state_index);
+					std::string condition = boundary_conditions.at(state_index);
 					wrap = ("w" == condition);
 					clamp = ("c" == condition);
 				} 
