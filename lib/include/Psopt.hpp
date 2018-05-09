@@ -25,7 +25,7 @@ public:
 	void run(
 		bool maximize = false,
 		int verbose_level = 0,
-		std::map<int,char> boundary_conditions = std::map<int,char>(),
+		std::map<int,std::string> boundary_conditions = std::map<int,std::string>(),
 		double max_velocity = 10,
 		double inertial_weight = 0.65,
 		double memory_weight = 2,

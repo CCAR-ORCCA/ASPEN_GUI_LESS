@@ -37,7 +37,7 @@ T args) {
 template<class T> void Psopt<T>::run(
 bool maximize,
 int verbose_level,
-std::map<int,char> boundary_conditions,
+std::map<int,std::string> boundary_conditions,
 double max_velocity,
 double inertial_weight,
 double memory_weight,
@@ -57,7 +57,7 @@ int convergence_interval) {
 	}
 
 	// Check that boundary conditions are consistent
-	std::set<char> allowed_boundary_conditions = {"w","c"};
+	std::set<std::string> allowed_boundary_conditions = {"w","c"};
 	if (boundary_conditions.size()  != this -> lower_bounds.size() && boundary_conditions.size() != 0){
 		throw(std::runtime_error("The number of boundary conditions if not consistent with the number of states"));
 	}
@@ -121,8 +121,8 @@ int convergence_interval) {
 
 				try  {
 					char condition = boundary_conditions.at(state_index);
-					wrap = (char("w") == condition);
-					clamp = (char("c") == condition);
+					wrap = ("w" == condition);
+					clamp = ("c" == condition);
 				} 
 				catch(std::out_of_range & e){
 
