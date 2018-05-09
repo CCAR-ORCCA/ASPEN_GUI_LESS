@@ -208,8 +208,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				est_kep_state = iod_finder.get_result();
 
 				arma::vec est_particle(7);
-				est_particle.subvec(0,5) = est_particle.get_state();
-				est_particle(6) = est_particle.get_mu();
+				est_particle.subvec(0,5) = est_kep_state.get_state();
+				est_particle(6) = est_kep_state.get_mu();
 
 
 				std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,true) << std::endl;
