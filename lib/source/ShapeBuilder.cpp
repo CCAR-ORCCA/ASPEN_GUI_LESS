@@ -173,8 +173,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				IODFinder iod_finder(&rigid_transforms, 
 					this -> filter_arguments -> get_iod_iterations(), 
-					this -> filter_arguments -> get_iod_particles(),
-					true);
+					this -> filter_arguments -> get_iod_particles());
 
 				arma::vec true_particle(7);
 				true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();

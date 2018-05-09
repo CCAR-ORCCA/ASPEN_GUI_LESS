@@ -10,7 +10,6 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 	this -> N_iter = N_iter;
 	this -> particles = particles;
 	this -> rigid_transforms = rigid_transforms;
-	this -> pedantic = pedantic;
 }
 
 
