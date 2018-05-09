@@ -63,6 +63,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
+	arma::vec iod_guess;
 
 
 
@@ -203,7 +204,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
 				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
 
-				iod_finder.run(lower_bounds,upper_bounds,1,guess);
+				iod_finder.run(lower_bounds,upper_bounds,1,iod_guess);
 				est_kep_state = iod_finder.get_result();
 
 				arma::vec est_particle(7);
@@ -259,16 +260,17 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+				
+				// A guess particle is formed by assuming that the keplerian state will be unchanged.
+				// The M0 is adjusted to the time of the next epoch
+				iod_guess = est_particle;
+				iod_guess(5) += est_kep_state.get_n() * (times(time_index) - times(last_IOD_epoch_index));
 
-
-				std::cout << "last_IOD_epoch_index:  " << last_IOD_epoch_index << std::endl;
-				std::cout << "New last_IOD_epoch_index:  " << time_index << std::endl;
 
 				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 				// The proper containers and indices are reset
-
 				last_IOD_epoch_index = time_index;
 				rigid_transforms.clear();
 

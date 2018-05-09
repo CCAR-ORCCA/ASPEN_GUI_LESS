@@ -17,6 +17,23 @@ T args) {
 }
 
 
+template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
+const arma::vec & upper_bounds, const unsigned int & population_size,
+const unsigned int & iter_max ,
+T args,const arma::vec & guess) {
+	this -> fitfun = fitfun;
+	this -> lower_bounds = lower_bounds;
+	this -> upper_bounds = upper_bounds;
+	this -> population_size = population_size;
+	this -> iter_max = iter_max;
+	this -> population = arma::zeros <arma::mat> (this -> population_size, this -> lower_bounds.n_rows);
+	this -> args = args;
+	this -> guess = guess;
+}
+
+
+
+
 template<class T> void Psopt<T>::run(
 const bool &  maximize,
 const int &  verbose_level,
@@ -61,6 +78,10 @@ const int  & convergence_interval) {
 		+ this -> lower_bounds(state_index);
 	}
 
+	// If a guess is available, one particle is set to it
+	if (this -> guess.n_rows != 0){
+		this -> population.row(0) = guess.t();
+	}
 
 
 	// The velocities are generated

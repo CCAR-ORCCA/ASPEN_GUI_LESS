@@ -16,12 +16,14 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 
 void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level,const arma::vec & guess){
 
+	
 	Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function, 
 		lower_bounds,
 		upper_bounds, 
 		this -> particles,
 		this -> N_iter,
-		this -> rigid_transforms);
+		this -> rigid_transforms,
+		guess);
 
 
 	std::map<int,std::string> boundary_conditions = {
