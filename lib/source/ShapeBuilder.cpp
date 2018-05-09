@@ -290,7 +290,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should probably replace this by an adaptive threshold based
 			// on a prediction of the alignment error
 
-			if (this -> filter_arguments-> get_use_ba() && time_index - last_ba_call_index == 30){
+			if (this -> filter_arguments-> get_use_ba() && time_index - last_ba_call_index == 60){
 
 				last_ba_call_index = time_index;
 
@@ -299,7 +299,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 				std::cout << this -> all_registered_pc.size() << std::endl;
 				std::cout << 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() << std::endl;
-				
+
 
 				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 
