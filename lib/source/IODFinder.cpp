@@ -69,6 +69,7 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 
 		if (verbose_level > 1){
 			std::cout << " - Transform index : " << k << std::endl;
+			std::cout << " - Time from 0 : " << t_k << std::endl;
 			std::cout << " - Time from epoch : " << time_from_epoch << std::endl << std::endl;
 
 		}
