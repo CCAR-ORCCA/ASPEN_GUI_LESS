@@ -55,7 +55,7 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 10000 // Number of particles
+#define IOD_PARTICLES 1000 // Number of particles
 #define IOD_ITERATIONS 30000 // Number of iterations
 
 // Target properties
@@ -183,7 +183,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// Position
-	arma::vec pos_0 = {1000,500,0};
+	arma::vec pos_0 = {1000,50,50};
 
 	// MRP BN 
 	arma::vec mrp_0 = {0.,0.,0.};
