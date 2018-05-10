@@ -352,8 +352,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 
 
-			BundleAdjuster bundle_adjuster(&M_pcs,
-				&X_pcs,
+			BundleAdjuster bundle_adjuster(M_pcs,
+				X_pcs,
 				&pc_to_ba,
 				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 				this -> LN_t0,

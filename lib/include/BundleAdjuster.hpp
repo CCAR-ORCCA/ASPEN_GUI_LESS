@@ -26,8 +26,8 @@ public:
 
 
 	BundleAdjuster(
-		std::vector<arma::mat> * M_pcs,
-		std::vector<arma::vec> * X_pcs,
+		arma::vector<arma::mat> * M_pcs, 
+		arma::vector<arma::vec> & X_pcs,
 		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 		int N_iter,
 		const arma::mat & LN_t0,
@@ -81,7 +81,7 @@ protected:
 	void create_pairs(bool look_for_closure = false);
 
 	void update_point_cloud_pairs();
-	void update_point_clouds();
+	void update_point_clouds(arma::vector<arma::mat> * M_pcs, arma::vector<arma::vec> & X_pcs);
 
 	arma::mat LN_t0;
 	arma::vec x_t0;

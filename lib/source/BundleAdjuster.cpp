@@ -640,7 +640,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 }
 
 
-void BundleAdjuster::update_point_clouds(){
+void BundleAdjuster::update_point_clouds(arma::vector<arma::mat> * M_pcs, arma::vector<arma::vec> & X_pcs){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 
@@ -662,8 +662,8 @@ void BundleAdjuster::update_point_clouds(){
 		this -> position_increment[i - 1] = this -> position_increment[i -1 ] + x;
 
 
-		(*this -> M_pcs[i - 1]) = this -> rotation_increment[i - 1] * (*this -> M_pcs[i - 1]);
-		(*this -> X_pcs[i - 1]) += this -> position_increment[i - 1];
+		M_pcs[i - 1] = this -> rotation_increment[i - 1] * M_pcs[i - 1];
+		X_pcs[i - 1] += this -> position_increment[i - 1];
 
 
 		++progress;
