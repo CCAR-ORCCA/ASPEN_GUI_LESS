@@ -571,13 +571,13 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 				this -> fly_over_map.remove_label(std::stoi(this -> all_registered_pc. at(pc) -> get_label()));
 			}
 
-			BundleAdjuster bundle_adjuster(&kept_pcs,
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				&this -> fly_over_map,
-				longitude_latitude,
-				this -> LN_t0,
-				this -> x_t0,
-				true,true);
+			// BundleAdjuster bundle_adjuster(&kept_pcs,
+			// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			// 	&this -> fly_over_map,
+			// 	longitude_latitude,
+			// 	this -> LN_t0,
+			// 	this -> x_t0,
+			// 	true,true);
 		}
 		else{
 			kept_pcs = this -> all_registered_pc;
