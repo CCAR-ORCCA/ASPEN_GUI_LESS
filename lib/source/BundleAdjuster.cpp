@@ -92,7 +92,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs(longitude_latitude,look_for_closure);
+	this -> create_pairs(look_for_closure);
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
@@ -279,7 +279,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 
 
-void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look_for_closure){
+void BundleAdjuster::create_pairs(bool look_for_closure){
 
 
 	std::set<std::set<int> > pairs;

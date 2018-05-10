@@ -78,7 +78,7 @@ protected:
 	void solve_bundle_adjustment();
 
 
-	void create_pairs(const arma::mat & longitude_latitude,bool look_for_closure);
+	void create_pairs(bool look_for_closure = false);
 
 	void update_point_cloud_pairs();
 	void update_point_clouds();
