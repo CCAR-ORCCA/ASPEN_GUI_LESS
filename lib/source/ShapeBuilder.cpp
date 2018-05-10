@@ -289,7 +289,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Running IOD before correction\n";
 
-				this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
+				this -> assemble_rigid_transforms_IOD(rigid_transforms,
+					times,
+					last_ba_call_index,
+					time_index, 
+					mrps_LN,
+					X_pcs,
+					M_pcs);
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
@@ -396,8 +402,8 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const int t0_index,
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
-	const std::vector<arma::vec> &  X_pcs,
-	const std::vector<arma::mat> &  M_pcs){
+	const std::mat<int,arma::vec> &  X_pcs,
+	const std::mat<int,arma::mat> &  M_pcs){
 
 	rigid_transforms.clear();
 
@@ -408,16 +414,9 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 		if (k != 0){
 
-			if (t0_index != 0){
-				M_p_k_old = M_pcs.at(k - 1);
-				X_p_k_old = X_pcs.at(k - 1);
-			}
-			else{
-				M_p_k_old = arma::zeros<arma::mat>(3,3); 
-				X_p_k_old = arma::zeros<arma::mat>(3);
-			}
-
-
+			M_p_k_old = M_pcs.at(k - 1);
+			X_p_k_old = X_pcs.at(k - 1);
+			
 
 	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 	// from t_k to t_(k-1)
