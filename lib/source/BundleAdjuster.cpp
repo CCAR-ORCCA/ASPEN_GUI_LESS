@@ -125,52 +125,52 @@ BundleAdjuster::BundleAdjuster(
 
 void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
-	// Updating the pcs. The first one is fixed
-	for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
+	// // Updating the pcs. The first one is fixed
+	// for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
 
 
-		std::string label = this -> all_registered_pc -> at(pc) -> get_label();
-		arma::vec old_los = {0,0,0};
-		arma::vec new_los = {0,0,0};
-		arma::rowvec long_lat = longitude_latitude.row(std::stoi( label));
-		double old_longitude = long_lat(0);
-		double old_latitude = long_lat(1);
+	// 	std::string label = this -> all_registered_pc -> at(pc) -> get_label();
+	// 	arma::vec old_los = {0,0,0};
+	// 	arma::vec new_los = {0,0,0};
+	// 	arma::rowvec long_lat = longitude_latitude.row(std::stoi( label));
+	// 	double old_longitude = long_lat(0);
+	// 	double old_latitude = long_lat(1);
 
-		double new_longitude,new_latitude;
+	// 	double new_longitude,new_latitude;
 
-		if (old_longitude > 0){
-			if (std::abs(old_longitude) <= 90){
-				old_los(0) = 1;
-				old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
+	// 	if (old_longitude > 0){
+	// 		if (std::abs(old_longitude) <= 90){
+	// 			old_los(0) = 1;
+	// 			old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
 
-			}
-			else{
-				old_los(0) = -1;
-				old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
-			}
-		}
-		else{
-			if (std::abs(old_longitude) <= 90){
-				old_los(0) = 1;
-				old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
-			}
-			else{
-				old_los(0) = -1;
-				old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
-			}
-		}
+	// 		}
+	// 		else{
+	// 			old_los(0) = -1;
+	// 			old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
+	// 		}
+	// 	}
+	// 	else{
+	// 		if (std::abs(old_longitude) <= 90){
+	// 			old_los(0) = 1;
+	// 			old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
+	// 		}
+	// 		else{
+	// 			old_los(0) = -1;
+	// 			old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
+	// 		}
+	// 	}
 
-		old_los(2) = arma::norm(old_los.subvec(0,1)) * std::tan(arma::datum::pi / 180 * old_latitude );
-		old_los = arma::normalise(old_los);
-		new_los = this -> rotation_increment.at(pc - 1) * old_los;
+	// 	old_los(2) = arma::norm(old_los.subvec(0,1)) * std::tan(arma::datum::pi / 180 * old_latitude );
+	// 	old_los = arma::normalise(old_los);
+	// 	new_los = this -> rotation_increment.at(pc - 1) * old_los;
 
-		new_longitude = 180. / arma::datum::pi * std::atan2(new_los(1),new_los(0));
-		new_latitude = 180. / arma::datum::pi * std::atan(new_los(2)/arma::norm(new_los.subvec(0,1)));
+	// 	new_longitude = 180. / arma::datum::pi * std::atan2(new_los(1),new_los(0));
+	// 	new_latitude = 180. / arma::datum::pi * std::atan(new_los(2)/arma::norm(new_los.subvec(0,1)));
 
-		longitude_latitude(std::stoi(label),0) = new_longitude;
-		longitude_latitude(std::stoi(label),1) = new_latitude;
-		this -> fly_over_map -> update_label(std::stoi(label),new_longitude,new_latitude);
-	}
+	// 	longitude_latitude(std::stoi(label),0) = new_longitude;
+	// 	longitude_latitude(std::stoi(label),1) = new_latitude;
+	// 	this -> fly_over_map -> update_label(std::stoi(label),new_longitude,new_latitude);
+	// }
 
 }
 
