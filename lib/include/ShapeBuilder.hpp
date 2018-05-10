@@ -134,9 +134,8 @@ protected:
 	Assembles the rigid transforms needed to evaluate the IOD cost function
 	@param rigid_transforms rigid transforms to assemble
 	@param times vector of times
-	@param t0_index timestamp of the destination point cloud in the first rigid transform
-	@param tf_index timestamp of the destination point cloud in the last rigid transform
-	@param IOD_epoch_index timestamp of epoch in current IOD run
+	@param t0_index timestamp of epoch in current IOD run
+	@param tf_index timestamp of last considered state in IOD run
 	@param mrps_LN time history of (true) [LN] in mrp form
 	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp

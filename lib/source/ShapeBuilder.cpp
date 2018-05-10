@@ -281,45 +281,60 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
-			if (this -> filter_arguments -> get_use_ba() 
-				&& time_index - last_ba_call_index == 30){
+			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 30){
 
-				last_ba_call_index = time_index;
 
-			std::cout << " -- Applying BA to successive point clouds\n";
-			std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+				// The IOD Finder is ran before running bundle adjustment
+				std::vector<RigidTransform> rigid_transforms;
+
+				this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
+
+
+
+
+
+				std::cout << " -- Applying BA to successive point clouds\n";
+				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
 			// The rigid transforms corresponding to the bundle adjusted point clouds are stored
-			std::vector<arma::mat > M_pcs_to_ba;
-			std::vector<arma::vec > X_pcs_to_ba;
+				std::vector<arma::mat > M_pcs_to_ba;
+				std::vector<arma::vec > X_pcs_to_ba;
 
 
-			int ground_pc_ba_index = 0;
+				int ground_pc_ba_index = 0;
 
-			for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
-				pc_to_ba.push_back(this -> all_registered_pc[pc]);
+				for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
+					pc_to_ba.push_back(this -> all_registered_pc[pc]);
 
-				if (pc != ground_pc_ba_index){
-					M_pcs_to_ba.push_back(M_pcs[pc - 1]);
-					X_pcs_to_ba.push_back(X_pcs[pc - 1]);
+					if (pc != ground_pc_ba_index){
+						M_pcs_to_ba.push_back(M_pcs[pc - 1]);
+						X_pcs_to_ba.push_back(X_pcs[pc - 1]);
+					}
+
 				}
 
-			}
 
-
-			BundleAdjuster bundle_adjuster(M_pcs,
-				X_pcs,
-				&pc_to_ba,
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				this -> LN_t0,
-				this -> x_t0,
-				false);
+				BundleAdjuster bundle_adjuster(M_pcs,
+					X_pcs,
+					&pc_to_ba,
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					this -> LN_t0,
+					this -> x_t0,
+					false);
 
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-		}
+
+
+
+				last_ba_call_index = time_index;
+				
+
+
+			}
 
 			// if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
@@ -347,26 +362,26 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			#if IOFLAGS_shape_builder
-		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 
 
-		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-			std::cout << "- Initializing shape model" << std::endl;
+			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+				std::cout << "- Initializing shape model" << std::endl;
 
-			this -> initialize_shape(time_index,longitude_latitude);
+				this -> initialize_shape(time_index,longitude_latitude);
 
-			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-			return;
+				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+				return;
+
+			}
+
+
 
 		}
 
-
-
 	}
-
-}
 
 
 }
@@ -381,11 +396,9 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
-	const int IOD_epoch_index,
 	const std::vector<arma::vec>  & mrps_LN,
 	const std::vector<arma::vec> &  X_pcs,
 	const std::vector<arma::mat> &  M_pcs){
-
 
 	rigid_transforms.clear();
 
@@ -415,7 +428,7 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;
 			rigid_transform.X_k = X_p_k;
-			rigid_transform.t_k = times(k - IOD_epoch_index);
+			rigid_transform.t_k = times(k - t0_index);
 			rigid_transforms.push_back(rigid_transform);
 
 		}
