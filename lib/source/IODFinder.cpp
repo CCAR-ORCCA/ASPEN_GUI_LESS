@@ -1,5 +1,6 @@
 #include "IODFinder.hpp"
 #include "Psopt.hpp"
+#include "IODBounds.hpp"
 
 
 
@@ -14,8 +15,13 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 
 
 
-void IODFinder::run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level,const arma::vec & guess){
+void IODFinder::run(arma::vec lower_bounds,arma::vec upper_bounds,int verbose_level,const arma::vec & guess){
 
+
+	if (lower_bounds.n_rows == 0){
+		lower_bounds = {A_MIN,E_MIN,I_MIN,RAAN_MIN,OMEGA_MIN,M0_MIN,MU_MIN};
+		upper_bounds = {A_MAX,E_MAX,I_MAX,RAAN_MAX,OMEGA_MAX,M0_MAX,MU_MAX};
+	}
 	
 	Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function, 
 		lower_bounds,

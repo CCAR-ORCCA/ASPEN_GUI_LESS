@@ -61,8 +61,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec mrp_LN(3);
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
-	std::vector<arma::mat> BN_estimated;
-	std::vector<arma::mat> BN_true;
+	std::map<int,arma::mat> BN_estimated;
+	std::map<int,arma::mat> BN_true;
 	std::vector<arma::vec> X_pcs;
 	std::vector<arma::mat> M_pcs;
 
@@ -88,10 +88,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
 		mrps_LN.push_back(mrp_LN);
-		if(BN_estimated.size() == 0){
-			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
-			BN_true.push_back(arma::eye<arma::mat>(3,3));
-		}
+		
 
 		
 		
@@ -120,6 +117,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#if IOFLAGS_shape_builder
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
+
+			BN_estimated[0] = arma::eye<arma::mat>(3,3);
+			BN_true[0] = arma::eye<arma::mat>(3,3);
+			
+
+
+
 		}
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
@@ -152,37 +156,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/****************************************************************************/
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			// BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
-			// BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
+			BN_estimated[time_index] = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN);
+			BN_true[time_index] = dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN);
 
 			// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 			// // from t_k to t_(k-1)
@@ -215,30 +193,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 			// 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-			// 	double a_min = 250;
-			// 	double a_max = 20000;
-
-			// 	double e_min = 0.05;
-			// 	double e_max = 0.9999;
-
-			// 	double i_min = 0;
-			// 	double i_max = arma::datum::pi ;
-
-			// 	double Omega_min = -arma::datum::pi; 
-			// 	double Omega_max = arma::datum::pi; 
-
-			// 	double omega_min = -arma::datum::pi; 
-			// 	double omega_max = arma::datum::pi ; 
-
-			// 	double M0_min = 0; 
-			// 	double M0_max = 2 * arma::datum::pi ; 
-
-			// 	double mu_min = 0.25 * this -> true_kep_state_t0.get_mu();
-			// 	double mu_max = 4 * this -> true_kep_state_t0.get_mu();
-
-			// 	arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
-			// 	arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
-
+			
 			// 	iod_finder.run(lower_bounds,upper_bounds,1,iod_guess);
 			// 	est_kep_state = iod_finder.get_result();
 
@@ -294,7 +249,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// 	OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 			// 	this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
-				
+
 			// 	// A guess particle is formed by assuming that the keplerian state will be unchanged.
 			// 	// The M0 is adjusted to the time of the next epoch
 			// 	iod_guess = est_particle;
@@ -317,7 +272,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			M_pcs.push_back(M_pc);
 			X_pcs.push_back(X_pc);
-
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -367,8 +321,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				false);
 
 
-			longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-			longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 		}
 

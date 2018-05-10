@@ -25,7 +25,7 @@ public:
 
 	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 
-	void run(const arma::vec & lower_bounds,const arma::vec & upper_bounds,int verbose_level = 0,const arma::vec & guess  = {});
+	void run( arma::vec lower_bounds = {}, arma::vec upper_bounds = {},int verbose_level = 0,const arma::vec & guess  = {});
 	OC::KepState get_result() const;
 
 protected:
