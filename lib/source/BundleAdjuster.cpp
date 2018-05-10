@@ -662,8 +662,8 @@ void BundleAdjuster::update_point_clouds(){
 		this -> position_increment[i - 1] = this -> position_increment[i -1 ] + x;
 
 
-		this -> M_pcs[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
-		this -> X_pcs[i - 1] += this -> position_increment[i -1 ] + x;
+		(*this -> M_pcs[i - 1]) = this -> rotation_increment[i - 1] * (*this -> M_pcs[i - 1]);
+		(*this -> X_pcs[i - 1]) += this -> position_increment[i - 1];
 
 
 		++progress;
