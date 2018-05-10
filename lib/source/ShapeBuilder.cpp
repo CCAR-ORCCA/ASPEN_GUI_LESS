@@ -289,44 +289,22 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Running IOD before correction\n";
 
-				this -> assemble_rigid_transforms_IOD(rigid_transforms,
-					times,
-					last_ba_call_index,
-					time_index, 
-					mrps_LN,
-					X_pcs,
-					M_pcs);
+				this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-				// The rigid transforms corresponding to the bundle adjusted point clouds are stored
-				std::vector<arma::mat > M_pcs_to_ba;
-				std::vector<arma::vec > X_pcs_to_ba;
-
-
-				int ground_pc_ba_index = 0;
-
-				// for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
-				// 	pc_to_ba.push_back(this -> all_registered_pc[pc]);
-
-				// 	if (pc != ground_pc_ba_index){
-				// 		M_pcs_to_ba.push_back(M_pcs[pc - 1]);
-				// 		X_pcs_to_ba.push_back(X_pcs[pc - 1]);
-				// 	}
-
-				// }
-
-
+				
 				BundleAdjuster bundle_adjuster(last_ba_call_index, 
 					time_index,
 					M_pcs,
 					X_pcs,
-					&pc_to_ba,
+					&this -> all_registered_pc,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 					this -> LN_t0,
 					this -> x_t0,
 					false);
+				throw;
 
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
@@ -431,7 +409,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 		}
 
-
 		OC::KepState est_kep_state;
 
 			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
@@ -439,10 +416,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 	}
-
-
-
-
 
 
 
