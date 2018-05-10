@@ -180,11 +180,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 
-
-
-
-
-
 			// 	IODFinder iod_finder(&rigid_transforms, 
 			// 		this -> filter_arguments -> get_iod_iterations(), 
 			// 		this -> filter_arguments -> get_iod_particles());
@@ -380,6 +375,84 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() const{
 	return this -> estimated_shape_model;
 }
+
+
+void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
+	const arma::vec & times, 
+	const int t0_index,
+	const int tf_index,
+	const int IOD_epoch_index,
+	const std::vector<arma::vec>  & mrps_LN,
+	const std::vector<arma::vec> &  X_pcs,
+	const std::vector<arma::mat> &  M_pcs){
+
+
+	rigid_transforms.clear();
+
+	arma::mat M_p_k_old;
+	arma::vec X_p_k_old;
+
+	for (int k = t0_index ; k <=  tf_index; ++ k){
+
+		if (k != 0){
+
+			if (t0_index != 0){
+				M_p_k_old = M_pcs.at(k - 1);
+				X_p_k_old = X_pcs.at(k - 1);
+			}
+			else{
+				M_p_k_old = arma::zeros<arma::mat>(3,3); 
+				X_p_k_old = arma::zeros<arma::mat>(3);
+			}
+
+
+
+	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
+	// from t_k to t_(k-1)
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_p_k_old.t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_p_k_old.t() * (X_pcs.at(k) - X_p_k_old);
+
+			RigidTransform rigid_transform;
+			rigid_transform.M_k = M_p_k;
+			rigid_transform.X_k = X_p_k;
+			rigid_transform.t_k = times(k - IOD_epoch_index);
+			rigid_transforms.push_back(rigid_transform);
+
+		}
+
+
+		OC::KepState est_kep_state;
+
+			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
+			// span N+1 times
+			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
 
 
 

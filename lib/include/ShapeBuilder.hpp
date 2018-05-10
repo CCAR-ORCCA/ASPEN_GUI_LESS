@@ -120,10 +120,38 @@ protected:
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
 	void get_new_states(const arma::vec & X_S, 
-	arma::mat & dcm_LB, 
-	arma::vec & mrp_LN, 
-	arma::vec & lidar_pos,
-	arma::vec & lidar_vel);
+		arma::mat & dcm_LB, 
+		arma::vec & mrp_LN, 
+		arma::vec & lidar_pos,
+		arma::vec & lidar_vel);
+
+
+
+
+
+
+	/**
+	Assembles the rigid transforms needed to evaluate the IOD cost function
+	@param rigid_transforms rigid transforms to assemble
+	@param times vector of times
+	@param t0_index timestamp of the destination point cloud in the first rigid transform
+	@param tf_index timestamp of the destination point cloud in the last rigid transform
+	@param IOD_epoch_index timestamp of epoch in current IOD run
+	@param mrps_LN time history of (true) [LN] in mrp form
+	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
+	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
+
+	*/
+	void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
+		const arma::vec & times, 
+		const int t0_index,
+		const int tf_index,
+		const int IOD_epoch_index,
+		const std::vector<arma::vec>  & mrps_LN,
+		const std::vector<arma::vec> &  X_pcs,
+		const std::vector<arma::mat> &  M_pcs);
+
+
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
