@@ -82,7 +82,7 @@ protected:
 	void create_pairs(bool look_for_closure = false);
 
 	void update_point_cloud_pairs();
-	void update_point_clouds(std::vector<arma::mat> & M_pcs, std::vector<arma::vec> & X_pcs);
+	void update_point_clouds(std::map<int,arma::mat> & M_pcs, std::map<int,arma::vec> & X_pcs);
 
 	arma::mat LN_t0;
 	arma::vec x_t0;
