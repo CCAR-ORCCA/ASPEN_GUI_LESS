@@ -10,16 +10,14 @@
 
 
 BundleAdjuster::BundleAdjuster(
-	std::vector<arma::mat> * M_pcs,
-	std::vector<arma::vec> * X_pcs,
+	std::vector<arma::mat> & M_pcs,
+	std::vector<arma::vec> & X_pcs,
 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	const arma::mat & LN_t0,
 	const arma::vec & x_t0,
 	bool save_connectivity){
 
-	this -> M_pcs = M_pcs;
-	this -> X_pcs = X_pcs;
 
 	this -> all_registered_pc = all_registered_pc_;
 	this -> LN_t0 = LN_t0;
@@ -50,7 +48,7 @@ BundleAdjuster::BundleAdjuster(
 
 
 	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds();
+	this -> update_point_clouds(M_pcs,X_pcs);
 	
 
 	// The connectivity matrix is saved
