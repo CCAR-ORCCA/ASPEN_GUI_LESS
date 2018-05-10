@@ -170,7 +170,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			OC::KepState est_kep_state;
 
 
-
 			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
 			// span N+1 times
 			if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
@@ -228,7 +227,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						*******************/
 					double dt = times(i) - times(last_IOD_epoch_index);
 					arma::vec u_H = {1,0,0};
-
 
 					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
@@ -510,7 +508,6 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 			// Only the point clouds that looped with the first one are kept
 			std::vector<int> bin = this -> fly_over_map.get_bin(36,18);
 			
-
 			int max = 400;
 			// int max  = bin[0];
 			// for (auto iter = bin.begin(); iter != bin.end(); ++iter){
