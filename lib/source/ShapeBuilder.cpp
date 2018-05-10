@@ -364,7 +364,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 				this -> LN_t0,
 				this -> x_t0,
-				false,
 				false);
 
 
