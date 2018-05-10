@@ -145,7 +145,6 @@ protected:
 		const arma::vec & times, 
 		const int t0_index,
 		const int tf_index,
-		const int IOD_epoch_index,
 		const std::vector<arma::vec>  & mrps_LN,
 		const std::vector<arma::vec> &  X_pcs,
 		const std::vector<arma::mat> &  M_pcs);
