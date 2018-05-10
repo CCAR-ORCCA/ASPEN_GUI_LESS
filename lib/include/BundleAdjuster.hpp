@@ -22,11 +22,7 @@ class BundleAdjuster {
 
 public:
 
-
-
-
-	BundleAdjuster(
-		arma::vector<arma::mat> & M_pcs, 
+	BundleAdjuster(arma::vector<arma::mat> & M_pcs, 
 		arma::vector<arma::vec> & X_pcs,
 		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 		int N_iter,
@@ -94,14 +90,6 @@ protected:
 	// Holds the correction to apply to the considered rigid transforms
 	std::vector<arma::mat> rotation_increment;
 	std::vector<arma::vec> position_increment;
-
-	std::vector<arma::mat> * M_pcs;
-	std::vector<arma::vec> * X_pcs;
-
-
-
-
-
 
 
 };
