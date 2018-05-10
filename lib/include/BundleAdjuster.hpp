@@ -21,6 +21,20 @@ class FlyOverMap;
 class BundleAdjuster {
 
 public:
+
+
+
+
+	BundleAdjuster(
+		std::vector<arma::mat> * M_pcs,
+		std::vector<arma::vec> * X_pcs,
+		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
+		int N_iter,
+		const arma::mat & LN_t0,
+		const arma::vec & x_t0,
+		bool save_connectivity);
+
+
 	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,
 		int N_iter,
 		FlyOverMap * fly_over_map,
@@ -77,7 +91,15 @@ protected:
 
 	FlyOverMap * fly_over_map;
 
+	// Holds the correction to apply to the considered rigid transforms
 	std::vector<arma::mat> rotation_increment;
+	std::vector<arma::vec> position_increment;
+
+	std::vector<arma::mat> * M_pcs;
+	std::vector<arma::vec> * X_pcs;
+
+
+
 
 
 

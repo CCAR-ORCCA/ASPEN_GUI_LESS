@@ -131,7 +131,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
-
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
 			M_pc = icp_pc.get_M();
@@ -150,132 +149,163 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/****************************************************************************/
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
-			BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
+			// BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN));
+			// BN_true.push_back(dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN));
 
-			// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
-			// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
+			// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
+			// // from t_k to t_(k-1)
+			// arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+			// arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
 
-			RigidTransform rigid_transform;
-			rigid_transform.M_k = M_p_k;
-			rigid_transform.X_k = X_p_k;
-			rigid_transform.t_k = times(time_index - last_IOD_epoch_index);
-			rigid_transforms.push_back(rigid_transform);
+			// RigidTransform rigid_transform;
+			// rigid_transform.M_k = M_p_k;
+			// rigid_transform.X_k = X_p_k;
+			// rigid_transform.t_k = times(time_index - last_IOD_epoch_index);
+			// rigid_transforms.push_back(rigid_transform);
 
-			OC::KepState est_kep_state;
-
+			// OC::KepState est_kep_state;
 
 			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
 			// span N+1 times
-			if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-
-				IODFinder iod_finder(&rigid_transforms, 
-					this -> filter_arguments -> get_iod_iterations(), 
-					this -> filter_arguments -> get_iod_particles());
-
-				arma::vec true_particle(7);
-				true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
-				true_particle(6) = this -> true_kep_state_t0.get_mu();
-
-				double a_min = 250;
-				double a_max = 20000;
-
-				double e_min = 0.05;
-				double e_max = 0.9999;
-
-				double i_min = 0;
-				double i_max = arma::datum::pi ;
-
-				double Omega_min = -arma::datum::pi; 
-				double Omega_max = arma::datum::pi; 
-
-				double omega_min = -arma::datum::pi; 
-				double omega_max = arma::datum::pi ; 
-
-				double M0_min = 0; 
-				double M0_max = 2 * arma::datum::pi ; 
-
-				double mu_min = 0.25 * this -> true_kep_state_t0.get_mu();
-				double mu_max = 4 * this -> true_kep_state_t0.get_mu();
-
-				arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
-				arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
-
-				iod_finder.run(lower_bounds,upper_bounds,1,iod_guess);
-				est_kep_state = iod_finder.get_result();
-
-				arma::vec est_particle(7);
-				est_particle.subvec(0,5) = est_kep_state.get_state();
-				est_particle(6) = est_kep_state.get_mu();
+			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 
-				std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
-				std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
-				std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-				std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
-
-					// The spacecraft longitude/latitude is computed from the estimated keplerian state
-				for (int i = last_IOD_epoch_index; i <= time_index; ++i){
-
-						/******************
-						** ESTIMATED STATE*
-						*******************/
-					double dt = times(i) - times(last_IOD_epoch_index);
-					arma::vec u_H = {1,0,0};
-
-					double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-					arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-					arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
-
-					longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-					latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-					arma::rowvec long_lat = {longitude,latitude};
-					longitude_latitude.row(i) = long_lat;
 
 
-					this -> fly_over_map.add_label(i,longitude,latitude);
 
 
-						/*******************
-						**** TRUE STATE ****
-						********************/
-					double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
-					arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
 
-					arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H;
+			// 	IODFinder iod_finder(&rigid_transforms, 
+			// 		this -> filter_arguments -> get_iod_iterations(), 
+			// 		this -> filter_arguments -> get_iod_particles());
 
-					double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
-					double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+			// 	arma::vec true_particle(7);
+			// 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
+			// 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-					arma::rowvec true_long_lat = {true_longitude,true_latitude};
+			// 	double a_min = 250;
+			// 	double a_max = 20000;
 
-					true_longitude_latitude.row(i) = true_long_lat;
+			// 	double e_min = 0.05;
+			// 	double e_max = 0.9999;
+
+			// 	double i_min = 0;
+			// 	double i_max = arma::datum::pi ;
+
+			// 	double Omega_min = -arma::datum::pi; 
+			// 	double Omega_max = arma::datum::pi; 
+
+			// 	double omega_min = -arma::datum::pi; 
+			// 	double omega_max = arma::datum::pi ; 
+
+			// 	double M0_min = 0; 
+			// 	double M0_max = 2 * arma::datum::pi ; 
+
+			// 	double mu_min = 0.25 * this -> true_kep_state_t0.get_mu();
+			// 	double mu_max = 4 * this -> true_kep_state_t0.get_mu();
+
+			// 	arma::vec lower_bounds = {a_min,e_min,i_min,Omega_min,omega_min,M0_min,mu_min};
+			// 	arma::vec upper_bounds = {a_max,e_max,i_max,Omega_max,omega_max,M0_max,mu_max};
+
+			// 	iod_finder.run(lower_bounds,upper_bounds,1,iod_guess);
+			// 	est_kep_state = iod_finder.get_result();
+
+			// 	arma::vec est_particle(7);
+			// 	est_particle.subvec(0,5) = est_kep_state.get_state();
+			// 	est_particle(6) = est_kep_state.get_mu();
 
 
-				}
+			// 	std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
+			// 	std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
+			// 	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+			// 	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
-				OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
-				this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
+			// 		// The spacecraft longitude/latitude is computed from the estimated keplerian state
+			// 	for (int i = last_IOD_epoch_index; i <= time_index; ++i){
+
+			// 			/******************
+			// 			** ESTIMATED STATE*
+			// 			*******************/
+			// 		double dt = times(i) - times(last_IOD_epoch_index);
+			// 		arma::vec u_H = {1,0,0};
+
+			// 		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+			// 		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
+			// 		arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+
+			// 		longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+			// 		latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+			// 		arma::rowvec long_lat = {longitude,latitude};
+			// 		longitude_latitude.row(i) = long_lat;
+
+
+			// 		this -> fly_over_map.add_label(i,longitude,latitude);
+
+
+			// 			/*******************
+			// 			**** TRUE STATE ****
+			// 			********************/
+			// 		double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
+			// 		arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
+
+			// 		arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H;
+
+			// 		double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
+			// 		double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+
+			// 		arma::rowvec true_long_lat = {true_longitude,true_latitude};
+
+			// 		true_longitude_latitude.row(i) = true_long_lat;
+
+
+			// 	}
+
+			// 	OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
+			// 	this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
 				
-				// A guess particle is formed by assuming that the keplerian state will be unchanged.
-				// The M0 is adjusted to the time of the next epoch
-				iod_guess = est_particle;
-				iod_guess(5) += est_kep_state.get_n() * (times(time_index) - times(last_IOD_epoch_index));
+			// 	// A guess particle is formed by assuming that the keplerian state will be unchanged.
+			// 	// The M0 is adjusted to the time of the next epoch
+			// 	iod_guess = est_particle;
+			// 	iod_guess(5) += est_kep_state.get_n() * (times(time_index) - times(last_IOD_epoch_index));
 
 
-				longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-				true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// 	longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			// 	true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				// The proper containers and indices are reset
-				last_IOD_epoch_index = time_index;
-				rigid_transforms.clear();
+			// 	// The proper containers and indices are reset
+			// 	last_IOD_epoch_index = time_index;
+			// 	rigid_transforms.clear();
 
-			}
+			// }
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
@@ -297,34 +327,45 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
 			if (this -> filter_arguments -> get_use_ba() 
-				&& time_index - last_ba_call_index == 2 * this -> filter_arguments -> get_iod_rigid_transforms_number()){
+				&& time_index - last_ba_call_index == 30){
 
 				last_ba_call_index = time_index;
 
-				std::cout << " -- Applying BA to successive point clouds\n";
-				std::vector<std::shared_ptr<PC > > pc_to_ba;
-				
-				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
+			std::cout << " -- Applying BA to successive point clouds\n";
+			std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 2 * this -> filter_arguments -> get_iod_rigid_transforms_number(); ++pc){
-					pc_to_ba.push_back(this -> all_registered_pc[pc]);
+			// The rigid transforms corresponding to the bundle adjusted point clouds are stored
+			std::vector<arma::mat > M_pcs_to_ba;
+			std::vector<arma::vec > X_pcs_to_ba;
+
+
+			int ground_pc_ba_index = 0;
+
+			for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
+				pc_to_ba.push_back(this -> all_registered_pc[pc]);
+
+				if (pc != ground_pc_ba_index){
+					M_pcs_to_ba.push_back(M_pcs[pc - 1]);
+					X_pcs_to_ba.push_back(X_pcs[pc - 1]);
 				}
 
-				longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-				BundleAdjuster bundle_adjuster(&pc_to_ba,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					&this -> fly_over_map,
-					longitude_latitude,
-
-					this -> LN_t0,
-					this -> x_t0,
-					false,
-					false);
-
-				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
 			}
+
+
+			BundleAdjuster bundle_adjuster(&M_pcs,
+				&X_pcs,
+				&pc_to_ba,
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				this -> LN_t0,
+				this -> x_t0,
+				false,
+				false);
+
+
+			longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+
+		}
 
 			// if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
 
@@ -352,26 +393,26 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			#if IOFLAGS_shape_builder
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 
 
-			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-				std::cout << "- Initializing shape model" << std::endl;
+		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+			std::cout << "- Initializing shape model" << std::endl;
 
-				this -> initialize_shape(time_index,longitude_latitude);
+			this -> initialize_shape(time_index,longitude_latitude);
 
-				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-				return;
-
-			}
-
-
+			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+			return;
 
 		}
 
+
+
 	}
+
+}
 
 
 }
