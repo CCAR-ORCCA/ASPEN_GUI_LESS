@@ -350,13 +350,14 @@ int main() {
 	std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
 
 
-	/**
-	END OF SHAPE RECONSTRUCTION FILTER
-	*/
+	/***************************************/
+	/* END OF SHAPE RECONSTRUCTION FILTER */
+	/*************************************/
+	
 
-	/**
-	BEGINNING OF NAVIGATION FILTER
-	*/
+	/***************************************/
+	/* BEGINNING OF NAVIGATION FILTER ******/
+	/***************************************/
 
 	// A-priori covariance on spacecraft state and asteroid state.
 	arma::vec P0_diag = {
@@ -402,10 +403,19 @@ int main() {
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
 
+
+	# if USE_HARMONICS
+	filter.set_estimate_dynamics_fun(
+		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
+		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
+		Dynamics::harmonics_attitude_dxdt_inertial);
+	#else 
 	filter.set_estimate_dynamics_fun(
 		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
 		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
 		Dynamics::point_mass_attitude_dxdt_inertial);
+	#endif 
+
 
 	filter.set_initial_information_matrix(arma::inv(P0));
 

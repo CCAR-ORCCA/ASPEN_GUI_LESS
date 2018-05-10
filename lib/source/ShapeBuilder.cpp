@@ -323,7 +323,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> x_t0,
 					false,
 					false);
-				
+
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 			}
@@ -509,12 +509,16 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 
 			// Only the point clouds that looped with the first one are kept
 			std::vector<int> bin = this -> fly_over_map.get_bin(36,18);
-			int max  = bin[0];
-			for (auto iter = bin.begin(); iter != bin.end(); ++iter){
-				if (*iter > max){
-					max = *iter;
-				}
-			}
+			
+
+			int max = 400;
+			// int max  = bin[0];
+			// for (auto iter = bin.begin(); iter != bin.end(); ++iter){
+			// 	if (*iter > max){
+			// 		max = *iter;
+			// 	}
+			// }
+
 			std::cout << " - Keeping all pcs until # " << max << " over a total of " << this -> all_registered_pc.size() << std::endl;
 
 			for(int pc = 0; pc <= max; ++pc){

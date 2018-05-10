@@ -138,7 +138,6 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_augmented_cp, tbegin, tend,1e-3,
 		Observer::push_back_augmented_state(this -> true_state_history));
 
-	
 
 	if (save == true){
 
