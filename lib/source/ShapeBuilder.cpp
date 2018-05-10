@@ -63,7 +63,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::map<int,arma::mat> BN_estimated;
 	std::map<int,arma::mat> BN_true;
-	std::mat<int,arma::vec> X_pcs;
+	std::map<int,arma::vec> X_pcs;
 	std::map<int,arma::mat> M_pcs;
 
 	arma::vec iod_guess;
