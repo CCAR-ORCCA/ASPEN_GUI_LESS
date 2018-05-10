@@ -120,6 +120,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			BN_estimated[0] = arma::eye<arma::mat>(3,3);
 			BN_true[0] = arma::eye<arma::mat>(3,3);
+
+			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
+			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
 
 
@@ -132,9 +135,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
 			double longitude,latitude;
-			arma::mat M_p_k_old = M_pc;
-			arma::vec X_p_k_old = X_pc;
-
 			
 			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
@@ -265,8 +265,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
-			M_pcs.push_back(M_pc);
-			X_pcs.push_back(X_pc);
+			M_pcs[time_index] = M_pc;
+			X_pcs[time_index] = X_pc;
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
