@@ -138,16 +138,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			X_pc = icp_pc.get_X();
 
 				/****************************************************************************/
-				// ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS
+				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
 			if (!this -> filter_arguments-> get_use_ba()){
 
 				M_pc = this -> LB_t0 * dcm_LB.t();
 
 				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
-
-
 			}
+				/****************************************************************************/
 				/****************************************************************************/
 
 
@@ -170,6 +169,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			OC::KepState est_kep_state;
 
+
+
+			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
+			// span N+1 times
 			if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 				IODFinder iod_finder(&rigid_transforms, 
@@ -289,15 +292,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should probably replace this by an adaptive threshold based
 			// on a prediction of the alignment error
 
-			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 2 * this -> filter_arguments -> get_iod_rigid_transforms_number()){
+			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
+			// span N+1 times
+			// The bundle adjustment covers two IOD runs so that the end state of the first run can be stiched
+			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
+			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
+			
+			if (this -> filter_arguments -> get_use_ba() 
+				&& time_index - last_ba_call_index == 2 * this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 				last_ba_call_index = time_index;
-
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 				
-
 				int ground_pc_ba_index = this -> all_registered_pc.size() - 2 * this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 
 				for (unsigned int pc = ground_pc_ba_index; pc <= ground_pc_ba_index + 2 * this -> filter_arguments -> get_iod_rigid_transforms_number(); ++pc){
@@ -315,6 +323,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> x_t0,
 					false,
 					false);
+				
 				longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 			}
@@ -336,7 +345,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// 		false);
 			// 	longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				
+
 
 			// }
 

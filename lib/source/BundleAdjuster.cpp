@@ -262,7 +262,7 @@ void BundleAdjuster::create_pairs(const arma::mat & longitude_latitude,bool look
 		int S_k = (*pair_set.begin());
 		int D_k =(*std::next(pair_set.begin()));
 
-		int h = 0;
+		int h = 4;
 		std::vector<PointPair> point_pairs;
 
 		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(S_k),this -> all_registered_pc -> at(D_k),h);				
@@ -394,7 +394,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
 		std::vector<PointPair> point_pairs;
-		int h = 0;
+		int h = 4;
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
@@ -549,8 +549,6 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 }
 
 
-
-
 void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
@@ -564,7 +562,6 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 		arma::vec dx  = {deviation(x_index),deviation(x_index + 1),deviation(x_index + 2)};
 		
-
 		// The mrp used in the partials 
 		// instantiates
 		// [NS_bar]
@@ -605,9 +602,9 @@ void BundleAdjuster::update_point_clouds(){
 
 		arma::mat NS_bar = RBK::mrp_to_dcm(mrp);
 
-		// this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
+		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
 
-		// this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
+		this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
 		
 		++progress;
 
