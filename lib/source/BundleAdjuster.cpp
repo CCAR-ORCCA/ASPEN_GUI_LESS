@@ -67,57 +67,57 @@ BundleAdjuster::BundleAdjuster(
 
 
 
-BundleAdjuster::BundleAdjuster(
-	std::vector<arma::mat> & M_pcs,
-	std::vector<arma::vec> & X_pcs,
-	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
-	int N_iter,
-	FlyOverMap * fly_over_map,
-	arma::mat & longitude_latitude,
-	const arma::mat & LN_t0,
-	const arma::vec & x_t0,
-	bool look_for_closure,
-	bool save_connectivity){
+// BundleAdjuster::BundleAdjuster(
+// 	std::vector<arma::mat> & M_pcs,
+// 	std::vector<arma::vec> & X_pcs,
+// 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
+// 	int N_iter,
+// 	FlyOverMap * fly_over_map,
+// 	arma::mat & longitude_latitude,
+// 	const arma::mat & LN_t0,
+// 	const arma::vec & x_t0,
+// 	bool look_for_closure,
+// 	bool save_connectivity){
 
-	this -> fly_over_map = fly_over_map;
-	this -> all_registered_pc = all_registered_pc_;
-	this -> LN_t0 = LN_t0;
-	this -> x_t0 = x_t0;
-	this -> N_iter = N_iter;
+// 	this -> fly_over_map = fly_over_map;
+// 	this -> all_registered_pc = all_registered_pc_;
+// 	this -> LN_t0 = LN_t0;
+// 	this -> x_t0 = x_t0;
+// 	this -> N_iter = N_iter;
 
-	int Q = this -> all_registered_pc -> size();
+// 	int Q = this -> all_registered_pc -> size();
 
-	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+// 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
-	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
-		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
-		this -> position_increment.push_back(arma::zeros<arma::vec>(3));
-	}
+// 	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
+// 		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
+// 		this -> position_increment.push_back(arma::zeros<arma::vec>(3));
+// 	}
 
-	// The connectivity between point clouds is inferred
-	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs(look_for_closure);
+// 	// The connectivity between point clouds is inferred
+// 	std::cout << "- Creating point cloud pairs" << std::endl;
+// 	this -> create_pairs(look_for_closure);
 
-	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
-	this -> update_point_cloud_pairs();
+// 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
+// 	this -> update_point_cloud_pairs();
 
-	if (this -> N_iter > 0){
-	// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment();
-		std::cout << "- Solved bundle adjustment" << std::endl;
-	}	
+// 	if (this -> N_iter > 0){
+// 	// solve the bundle adjustment problem
+// 		this -> solve_bundle_adjustment();
+// 		std::cout << "- Solved bundle adjustment" << std::endl;
+// 	}	
 
 
-	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds( M_pcs,X_pcs);
-	std::cout << "\n- Updating flyover map ... " << std::endl;
-	this -> update_flyover_map(longitude_latitude);
+// 	std::cout << "- Updating point clouds ... " << std::endl;
+// 	this -> update_point_clouds( M_pcs,X_pcs);
+// 	std::cout << "\n- Updating flyover map ... " << std::endl;
+// 	this -> update_flyover_map(longitude_latitude);
 
-	// The connectivity matrix is saved
-	if (save_connectivity){
-		this -> save_connectivity();
-	}
-}
+// 	// The connectivity matrix is saved
+// 	if (save_connectivity){
+// 		this -> save_connectivity();
+// 	}
+// }
 
 
 

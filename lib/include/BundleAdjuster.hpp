@@ -24,8 +24,8 @@ public:
 
 	BundleAdjuster(int t0, 
 		int tf, 
-		std::vector<arma::mat> & M_pcs, 
-		std::vector<arma::vec> & X_pcs,
+		std::map<int,arma::mat> & M_pcs, 
+		std::map<int,arma::mat> & X_pcs,
 		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 		int N_iter,
 		const arma::mat & LN_t0,
@@ -33,17 +33,17 @@ public:
 		bool save_connectivity);
 
 
-	BundleAdjuster(
-		std::vector<arma::mat> & M_pcs,
-		std::vector<arma::vec> & X_pcs,
-		std::vector< std::shared_ptr<PC> > * all_registered_pc_,
-		int N_iter,
-		FlyOverMap * fly_over_map,
-		arma::mat & longitude_latitude,
-		const arma::mat & LN_t0 = arma::eye<arma::mat>(3,3),
-		const arma::vec & x_t0 = arma::zeros<arma::vec>(3),
-		bool save_connectivity = true,
-		bool look_for_closure = true);
+	// BundleAdjuster(
+	// 	std::vector<arma::mat> & M_pcs,
+	// 	std::vector<arma::vec> & X_pcs,
+	// 	std::vector< std::shared_ptr<PC> > * all_registered_pc_,
+	// 	int N_iter,
+	// 	FlyOverMap * fly_over_map,
+	// 	arma::mat & longitude_latitude,
+	// 	const arma::mat & LN_t0 = arma::eye<arma::mat>(3,3),
+	// 	const arma::vec & x_t0 = arma::zeros<arma::vec>(3),
+	// 	bool save_connectivity = true,
+	// 	bool look_for_closure = true);
 
 	struct PointCloudPair {
 		int S_k = -1;
