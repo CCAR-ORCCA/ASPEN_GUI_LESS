@@ -538,7 +538,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_rms_error << std::endl;
 	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Sk_rms]) -> get_label() << " , " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Dk_rms]) -> get_label() <<  ") : " << max_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Sk_mea]n) -> get_label() << " , " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Dk_mean]) -> get_label() <<  ") : " << max_mean_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Sk_mean]) -> get_label() << " , " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Dk_mean]) -> get_label() <<  ") : " << max_mean_error << std::endl;
 
 
 }
@@ -645,10 +645,10 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, std::map<int,arma::vec> & X_pcs){
 
-	boost::progress_display progress(tf - t0);
+	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size() - 1);
 
 #pragma omp parallel for
-	for (unsigned int i = 1; i < tf - t0 + 1; ++i){
+	for (unsigned int i = 1; i < this -> local_pc_index_to_global_pc_index.size(); ++i){
 
 		int x_index = 6 * (i - 1);
 		int mrp_index = 6 * (i - 1) + 3;
