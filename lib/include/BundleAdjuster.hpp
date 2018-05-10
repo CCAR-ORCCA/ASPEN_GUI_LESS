@@ -31,7 +31,10 @@ public:
 		bool save_connectivity);
 
 
-	BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_,
+	BundleAdjuster(
+		std::vector<arma::mat> & M_pcs,
+		std::vector<arma::vec> & X_pcs,
+		std::vector< std::shared_ptr<PC> > * all_registered_pc_,
 		int N_iter,
 		FlyOverMap * fly_over_map,
 		arma::mat & longitude_latitude,

@@ -64,7 +64,10 @@ BundleAdjuster::BundleAdjuster(
 
 
 
-BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
+BundleAdjuster::BundleAdjuster(
+	std::vector<arma::mat> & M_pcs,
+	std::vector<arma::vec> & X_pcs,
+	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	FlyOverMap * fly_over_map,
 	arma::mat & longitude_latitude,
@@ -103,7 +106,7 @@ BundleAdjuster::BundleAdjuster(std::vector< std::shared_ptr<PC> > * all_register
 
 
 	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds();
+	this -> update_point_clouds( M_pcs,X_pcs);
 	std::cout << "\n- Updating flyover map ... " << std::endl;
 	this -> update_flyover_map(longitude_latitude);
 
