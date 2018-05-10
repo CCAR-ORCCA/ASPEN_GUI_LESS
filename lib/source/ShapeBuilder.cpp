@@ -402,8 +402,8 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const int t0_index,
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
-	const std::mat<int,arma::vec> &  X_pcs,
-	const std::mat<int,arma::mat> &  M_pcs){
+	const std::map<int,arma::vec> &  X_pcs,
+	const std::map<int,arma::mat> &  M_pcs){
 
 	rigid_transforms.clear();
 
