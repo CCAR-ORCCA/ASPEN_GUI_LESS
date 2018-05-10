@@ -63,6 +63,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
+	std::vector<arma::vec> X_pcs;
+	std::vector<arma::mat> M_pcs;
+
 	arma::vec iod_guess;
 
 
@@ -311,6 +314,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// the ICP returned
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
+
+			M_pcs.push_back(M_pc);
+			X_pcs.push_back(X_pc);
 
 
 			// Bundle adjustment is periodically run
