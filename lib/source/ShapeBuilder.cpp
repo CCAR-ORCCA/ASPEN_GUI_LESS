@@ -609,13 +609,13 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 			true);
 
 
-		BundleAdjuster bundle_adjuster(&kept_pcs,
-			0,
-			&this -> fly_over_map,
-			longitude_latitude,
-			this -> LN_t0,
-			this -> x_t0,
-			true,true);
+		// BundleAdjuster bundle_adjuster(&kept_pcs,
+		// 	0,
+		// 	&this -> fly_over_map,
+		// 	longitude_latitude,
+		// 	this -> LN_t0,
+		// 	this -> x_t0,
+		// 	true,true);
 
 
 		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
