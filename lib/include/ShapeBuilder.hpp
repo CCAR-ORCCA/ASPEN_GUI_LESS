@@ -16,7 +16,7 @@ class ShapeModelBezier;
 class ShapeBuilderArguments;
 class FrameGraph;
 class PointNormal;
-
+struct RigidTransform;
 
 /**
 ShapeBuilder class hosting:
