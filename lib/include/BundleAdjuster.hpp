@@ -92,7 +92,7 @@ protected:
 
 	FlyOverMap * fly_over_map;
 
-	arma::vector<int> local_pc_index_to_global_pc_index;
+	std::vector<int> local_pc_index_to_global_pc_index;
 
 
 
