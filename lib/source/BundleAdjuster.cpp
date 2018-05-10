@@ -331,7 +331,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		std::vector<PointPair> point_pairs;
 
 		ICP::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k])
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),h);				
 		double error = ICP::compute_rms_residuals(point_pairs);
 
