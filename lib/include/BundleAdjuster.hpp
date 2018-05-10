@@ -25,7 +25,7 @@ public:
 	BundleAdjuster(int t0, 
 		int tf, 
 		std::map<int,arma::mat> & M_pcs, 
-		std::map<int,arma::mat> & X_pcs,
+		std::map<int,arma::vec> & X_pcs,
 		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 		int N_iter,
 		const arma::mat & LN_t0,

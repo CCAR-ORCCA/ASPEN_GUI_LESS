@@ -308,7 +308,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	// The successive measurements are added
 	for (int i = 0; i < this -> local_pc_index_to_global_pc_index.size() - 1; ++i){
 		
-		pairs.insert(std::make_pair<int,int>(i,i+1));
+		pairs.insert(std::make_pair(i,i+1));
 
 	}
 
