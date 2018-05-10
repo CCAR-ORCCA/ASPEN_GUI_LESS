@@ -283,13 +283,18 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 30){
 
-				// The IOD Finder is ran before running bundle adjustment
-				std::vector<RigidTransform> rigid_transforms;
-
+				
 
 				std::cout << " -- Running IOD before correction\n";
 
-				this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
+
+				this -> run_IOD_finder(times,
+					last_ba_call_index ,
+					time_index, 
+					mrps_LN,
+					X_pcs,
+					M_pcs);
+
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
@@ -375,13 +380,63 @@ std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() cons
 }
 
 
+
+
+void ShapeBuilder::run_IOD_finder(const arma::vec & times,
+	const int t0 ,
+	const int tf, 
+	const std::vector<arma::vec> & mrps_LN,
+	const std::map<int,arma::vec> & X_pcs,
+	const std::map<int,arma::mat> M_pcs) const{
+
+
+
+				// The IOD Finder is ran before running bundle adjustment
+	std::vector<RigidTransform> rigid_transforms;
+
+	this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
+
+
+
+	IODFinder iod_finder(&rigid_transforms, 
+		this -> filter_arguments -> get_iod_iterations(), 
+		this -> filter_arguments -> get_iod_particles());
+
+	arma::vec true_particle(7);
+	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
+	true_particle(6) = this -> true_kep_state_t0.get_mu();
+
+
+	iod_finder.run(arma::vec lower_bounds = {},arma::vec upper_bounds = {},1);
+	est_kep_state = iod_finder.get_result();
+
+	arma::vec est_particle(7);
+	est_particle.subvec(0,5) = est_kep_state.get_state();
+	est_particle(6) = est_kep_state.get_mu();
+
+
+	std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
+	std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
+	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
+
+
+
+
+
+
+}
+
+
+
+
 void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
 	const std::map<int,arma::vec> &  X_pcs,
-	const std::map<int,arma::mat> &  M_pcs){
+	const std::map<int,arma::mat> &  M_pcs) const{
 
 	rigid_transforms.clear();
 

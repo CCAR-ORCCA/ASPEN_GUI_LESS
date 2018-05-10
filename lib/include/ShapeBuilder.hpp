@@ -147,7 +147,24 @@ protected:
 		const int tf_index,
 		const std::vector<arma::vec>  & mrps_LN,
 		const std::map<int,arma::vec> &  X_pcs,
-		const std::map<int,arma::mat> &  M_pcs);
+		const std::map<int,arma::mat> &  M_pcs) const;
+
+
+	/**
+	Computes a initial a-priori state minimizing the associated rigid transform norm 
+	@param times vector of times
+	@param t0_index timestamp of epoch in current IOD run
+	@param tf_index timestamp of last considered state in IOD run
+	@param mrps_LN time history of (true) [LN] in mrp form
+	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
+	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
+	*/
+	void run_IOD_finder(const arma::vec & times,
+	const int t0 ,
+	const int tf, 
+	const std::vector<arma::vec> & mrps_LN,
+	const std::map<int,arma::vec> & X_pcs,
+	const std::map<int,arma::mat> M_pcs) const;
 
 
 
