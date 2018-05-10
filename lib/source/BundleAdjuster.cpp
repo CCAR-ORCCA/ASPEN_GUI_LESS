@@ -10,8 +10,10 @@
 
 
 BundleAdjuster::BundleAdjuster(
-	std::vector<arma::mat> & M_pcs,
-	std::vector<arma::vec> & X_pcs,
+	int t0, 
+	int tf,
+	std::map<int,arma::mat> & M_pcs,
+	std::map<int,arma::vec> & X_pcs,
 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	const arma::mat & LN_t0,
@@ -24,14 +26,15 @@ BundleAdjuster::BundleAdjuster(
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
 
-	int Q = this -> all_registered_pc -> size();
+
+	for (int i = t0; i <= tf; ++i){
+		this -> local_pc_index_to_global_pc_index.push_back(i);
+	}
+
+	int Q = this -> local_pc_index_to_global_pc_index. size();
 
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
-	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
-		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
-		this -> position_increment.push_back(arma::zeros<arma::vec>(3));
-	}
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
@@ -199,7 +202,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			arma::vec N_k;
 
 
-			if (this -> point_cloud_pairs . at(k).D_k != this -> ground_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> ground_pc_index){
+			if (this -> point_cloud_pairs . at(k).D_k != 0 && this -> point_cloud_pairs . at(k).S_k != 0){
 				Lambda_k = arma::zeros<arma::mat>(12,12);
 				N_k = arma::zeros<arma::vec>(12);
 			}
@@ -280,34 +283,32 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 
 
-void BundleAdjuster::create_pairs(bool look_for_closure){
+void BundleAdjuster::create_pairs( bool look_for_closure){
 
 
 	std::set<std::set<int> > pairs;
 
-	if (look_for_closure){
-		pairs = this -> fly_over_map -> get_flyovers();
+	// if (look_for_closure){
+	// 	pairs = this -> fly_over_map -> get_flyovers();
 
-		std::cout << " -- Flyover pairs: \n";
-		for (auto iter_pair = pairs.begin(); iter_pair != pairs.end(); ++iter_pair){
-			std::set<int> pair = *iter_pair;
-			int S_k = *pair.begin();
-			int D_k = *std::next(pair.begin());
-			std::string label_S_k = this -> all_registered_pc -> at(S_k) -> get_label();
-			std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
+	// 	std::cout << " -- Flyover pairs: \n";
+	// 	for (auto iter_pair = pairs.begin(); iter_pair != pairs.end(); ++iter_pair){
+	// 		std::set<int> pair = *iter_pair;
+	// 		int S_k = *pair.begin();
+	// 		int D_k = *std::next(pair.begin());
+	// 		std::string label_S_k = this -> all_registered_pc -> at(S_k) -> get_label();
+	// 		std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
 
 
-			std::cout << "(" << label_S_k << "," << label_D_k << ")" << std::endl;
-		}
-	}
+	// 		std::cout << "(" << label_S_k << "," << label_D_k << ")" << std::endl;
+	// 	}
+	// }
 
 	
 	// The successive measurements are added
-	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
-		std::set<int> new_pair;
-		new_pair.insert(i);
-		new_pair.insert(i + 1);
-		pairs.insert(new_pair);
+	for (int i = 0; i < this -> local_pc_index_to_global_pc_index.size() - 1; ++i){
+		
+		pairs.insert(std::make_pair<int,int>(i,i+1));
 
 	}
 
@@ -323,15 +324,17 @@ void BundleAdjuster::create_pairs(bool look_for_closure){
 		std::set<int> pair_set = *pair_iter;
 
 		int S_k = (*pair_set.begin());
-		int D_k =(*std::next(pair_set.begin()));
+		int D_k = (*std::next(pair_set.begin()));
 
 		int h = 4;
 		std::vector<PointPair> point_pairs;
 
-		ICP::compute_pairs(point_pairs,this -> all_registered_pc -> at(S_k),this -> all_registered_pc -> at(D_k),h);				
+		ICP::compute_pairs(point_pairs,
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k])
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),h);				
 		double error = ICP::compute_rms_residuals(point_pairs);
 
-		double p = std::log2(this -> all_registered_pc -> at(S_k) -> get_size());
+		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> get_size());
 		int N_pairs = (int)(std::pow(2, p - h));
 
 		BundleAdjuster::PointCloudPair pair;
@@ -371,8 +374,8 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	}
 	
 	ICP::compute_pairs(point_pairs,
-		this -> all_registered_pc -> at(point_cloud_pair.S_k),
-		this -> all_registered_pc -> at(point_cloud_pair.D_k),
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
 		0,
 		dcm_S,
 		x_S,
@@ -389,7 +392,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	arma::rowvec H_ki;
 
 
-	if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
+	if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
 		H_ki = arma::zeros<arma::rowvec>(12);
 	}
 	else{
@@ -407,7 +410,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		double y_ki = ICP::compute_normal_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
 		arma::mat n = point_pairs[i].second -> get_normal();
 
-		if (point_cloud_pair.D_k != this -> ground_pc_index && point_cloud_pair.S_k != this -> ground_pc_index){
+		if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
 
 			H_ki.subvec(0,2) = n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
@@ -417,7 +420,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 			// think I fixed a sign error
 		}
 
-		else if(point_cloud_pair.S_k != this -> ground_pc_index) {
+		else if(point_cloud_pair.S_k != 0) {
 			H_ki.subvec(0,2) = n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
 
@@ -461,9 +464,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
-		std::string label_S_k = this -> all_registered_pc -> at(point_cloud_pair.S_k) -> get_label();
-		std::string label_D_k = this -> all_registered_pc -> at(point_cloud_pair.D_k) -> get_label();
-
+		std::string label_S_k = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]) -> get_label();
+		std::string label_D_k = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]) -> get_label();
 
 		arma::vec x_S = arma::zeros<arma::vec>(3);
 		arma::mat dcm_S = arma::eye<arma::mat>(3,3);
@@ -483,8 +485,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 
 		ICP::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(point_cloud_pair.S_k),
-			this -> all_registered_pc -> at(point_cloud_pair.D_k),
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
 			h,
 			dcm_S ,
 			x_S,
@@ -505,7 +507,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			x_D));
 
 
-		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> get_size());
+		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[this -> point_cloud_pairs[k].S_k]) -> get_size());
 		int N_pairs = (int)(std::pow(2, p - h));
 
 		
@@ -534,8 +536,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	}
 
 	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << this -> all_registered_pc -> at(worst_Sk_rms) -> get_label() << " , " << this -> all_registered_pc -> at(worst_Dk_rms) -> get_label() <<  ") : " << max_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << this -> all_registered_pc -> at(worst_Sk_mean) -> get_label() << " , " <<this -> all_registered_pc -> at(worst_Dk_mean) -> get_label() <<  ") : " << max_mean_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Sk_rms]) -> get_label() << " , " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Dk_rms]) -> get_label() <<  ") : " << max_rms_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Sk_mea]n) -> get_label() << " , " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[worst_Dk_mean]) -> get_label() <<  ") : " << max_mean_error << std::endl;
 
 
 }
@@ -606,11 +608,10 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
-	boost::progress_display progress(this -> all_registered_pc -> size());
+	boost::progress_display progress(this -> local_pc_index_to_global_pc_index . size() - 1);
 
 	#pragma omp parallel for
-	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
-
+	for (unsigned int i = 1; i < this -> local_pc_index_to_global_pc_index . size(); ++i){
 
 		int x_index = 6 * (i - 1);
 		int mrp_index = 6 * (i - 1) + 3;
@@ -641,13 +642,12 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 }
 
 
-void BundleAdjuster::update_point_clouds(std::vector<arma::mat> & M_pcs, std::vector<arma::vec> & X_pcs){
+void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, std::map<int,arma::vec> & X_pcs){
 
-	boost::progress_display progress(this -> all_registered_pc -> size());
+	boost::progress_display progress(tf - t0);
 
 #pragma omp parallel for
-	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
-
+	for (unsigned int i = 1; i < tf - t0 + 1; ++i){
 
 		int x_index = 6 * (i - 1);
 		int mrp_index = 6 * (i - 1) + 3;
@@ -656,15 +656,12 @@ void BundleAdjuster::update_point_clouds(std::vector<arma::mat> & M_pcs, std::ve
 		arma::vec mrp = this -> X.subvec(mrp_index, mrp_index + 2);
 
 		arma::mat NS_bar = RBK::mrp_to_dcm(mrp);
+		int pc_global_index = this -> local_pc_index_to_global_pc_index[i];
 
-		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
+		this -> all_registered_pc -> at(pc_global_index) -> transform(NS_bar, x);
 
-		this -> rotation_increment[i - 1] = NS_bar * this -> rotation_increment[i -1 ];
-		this -> position_increment[i - 1] = this -> position_increment[i -1 ] + x;
-
-
-		M_pcs[i - 1] = this -> rotation_increment[i - 1] * M_pcs[i - 1];
-		X_pcs[i - 1] += this -> position_increment[i - 1];
+		M_pcs[pc_global_index] = NS_bar * M_pcs[pc_global_index];
+		X_pcs[pc_global_index] += x;
 
 
 		++progress;
@@ -676,7 +673,7 @@ void BundleAdjuster::update_point_clouds(std::vector<arma::mat> & M_pcs, std::ve
 
 void BundleAdjuster::save_connectivity() const{
 	int M = this -> point_cloud_pairs. size();
-	int Q = this -> all_registered_pc -> size();
+	int Q = this -> local_pc_index_to_global_pc_index. size();
 
 
 	arma::mat connectivity_matrix_res(Q,Q);
@@ -690,6 +687,8 @@ void BundleAdjuster::save_connectivity() const{
 	for (int k = 0; k < M; ++k){
 		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
 
+
+
 		connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
 		connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
 
@@ -699,7 +698,7 @@ void BundleAdjuster::save_connectivity() const{
 		connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
 		connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
 
-		this -> all_registered_pc -> at(point_cloud_pair.S_k) -> save("../output/pc/source_" + std::to_string(point_cloud_pair.S_k) + "_ba.obj",
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]) -> save("../output/pc/source_" + std::to_string(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]) + "_ba.obj",
 			this -> LN_t0.t(),
 			this -> x_t0);
 

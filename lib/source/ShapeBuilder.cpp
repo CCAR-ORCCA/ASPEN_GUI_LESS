@@ -63,8 +63,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::vec> mrps_LN;
 	std::map<int,arma::mat> BN_estimated;
 	std::map<int,arma::mat> BN_true;
-	std::vector<arma::vec> X_pcs;
-	std::vector<arma::mat> M_pcs;
+	std::mat<int,arma::vec> X_pcs;
+	std::map<int,arma::mat> M_pcs;
 
 	arma::vec iod_guess;
 
@@ -283,39 +283,38 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 30){
 
-
-
 				// The IOD Finder is ran before running bundle adjustment
 				std::vector<RigidTransform> rigid_transforms;
 
+
+				std::cout << " -- Running IOD before correction\n";
+
 				this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
-
-
-
-
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-			// The rigid transforms corresponding to the bundle adjusted point clouds are stored
+				// The rigid transforms corresponding to the bundle adjusted point clouds are stored
 				std::vector<arma::mat > M_pcs_to_ba;
 				std::vector<arma::vec > X_pcs_to_ba;
 
 
 				int ground_pc_ba_index = 0;
 
-				for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
-					pc_to_ba.push_back(this -> all_registered_pc[pc]);
+				// for (unsigned int pc = ground_pc_ba_index; pc < 30; ++pc){
+				// 	pc_to_ba.push_back(this -> all_registered_pc[pc]);
 
-					if (pc != ground_pc_ba_index){
-						M_pcs_to_ba.push_back(M_pcs[pc - 1]);
-						X_pcs_to_ba.push_back(X_pcs[pc - 1]);
-					}
+				// 	if (pc != ground_pc_ba_index){
+				// 		M_pcs_to_ba.push_back(M_pcs[pc - 1]);
+				// 		X_pcs_to_ba.push_back(X_pcs[pc - 1]);
+				// 	}
 
-				}
+				// }
 
 
-				BundleAdjuster bundle_adjuster(M_pcs,
+				BundleAdjuster bundle_adjuster(last_ba_call_index, 
+					time_index,
+					M_pcs,
 					X_pcs,
 					&pc_to_ba,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
@@ -331,7 +330,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				last_ba_call_index = time_index;
-				
+
 
 
 			}
