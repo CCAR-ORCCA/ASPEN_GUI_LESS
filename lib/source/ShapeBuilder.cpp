@@ -394,7 +394,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 				// The IOD Finder is ran before running bundle adjustment
 	std::vector<RigidTransform> rigid_transforms;
 
-	this -> assemble_rigid_transforms_IOD(rigid_transforms,times,last_ba_call_index,time_index, mrps_LN,X_pcs,M_pcs);
+	this -> assemble_rigid_transforms_IOD(rigid_transforms,times,t0,tf, mrps_LN,X_pcs,M_pcs);
 
 
 
@@ -407,8 +407,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
 
-	iod_finder.run(arma::vec lower_bounds = {},arma::vec upper_bounds = {},1);
-	est_kep_state = iod_finder.get_result();
+	iod_finder.run(arma::zeros<arma::vec>(0),arma::zeros<arma::vec>(0),1);
+	OC::KepState est_kep_state = iod_finder.get_result();
 
 	arma::vec est_particle(7);
 	est_particle.subvec(0,5) = est_kep_state.get_state();
