@@ -309,8 +309,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> LN_t0,
 					this -> x_t0,
 					false);
-				throw;
+				
 
+
+				std::cout << " -- Running IOD after correction\n";
+
+
+				this -> run_IOD_finder(times,
+					last_ba_call_index ,
+					time_index, 
+					mrps_LN,
+					X_pcs,
+					M_pcs);
+
+				throw;
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
