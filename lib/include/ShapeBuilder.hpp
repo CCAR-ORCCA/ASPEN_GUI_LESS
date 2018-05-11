@@ -123,11 +123,15 @@ protected:
 		arma::mat & dcm_LB, 
 		arma::vec & mrp_LN, 
 		arma::vec & lidar_pos,
-		arma::vec & lidar_vel);
+		arma::vec & lidar_vel,
+		std::vector<arma::vec> & mrps_LN,
+		std::vector<arma::mat> & BN_true,
+		std::vector<arma::mat> & HN_true);
 
 
 
-
+	void save_true_ground_track(const std::vectpr<arma::mat> & BN_true,
+		const std::vector<arma::mat> & HN_true);
 
 
 	/**
@@ -160,11 +164,11 @@ protected:
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 	*/
 	void run_IOD_finder(const arma::vec & times,
-	const int t0 ,
-	const int tf, 
-	const std::vector<arma::vec> & mrps_LN,
-	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> M_pcs) const;
+		const int t0 ,
+		const int tf, 
+		const std::vector<arma::vec> & mrps_LN,
+		const std::map<int,arma::vec> & X_pcs,
+		const std::map<int,arma::mat> M_pcs) const;
 
 
 

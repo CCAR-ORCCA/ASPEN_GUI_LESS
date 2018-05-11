@@ -62,7 +62,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
 	std::map<int,arma::mat> BN_estimated;
-	std::map<int,arma::mat> BN_true;
+	std::vector<arma::mat> BN_true;
+	std::vector<arma::mat> HN_true;
 	std::map<int,arma::vec> X_pcs;
 	std::map<int,arma::mat> M_pcs;
 
@@ -86,15 +87,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		X_S = X[time_index];
 
-		this -> get_new_states(X_S,dcm_LB,mrp_LN,lidar_pos,lidar_vel );
-		mrps_LN.push_back(mrp_LN);
+		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
 
-		
-		
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
 
 		// Setting the small body to its new attitude
 		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(X_S.subvec(6,8));
@@ -119,7 +117,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			#endif
 
 			BN_estimated[0] = arma::eye<arma::mat>(3,3);
-			BN_true[0] = arma::eye<arma::mat>(3,3);
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
@@ -159,8 +156,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_estimated[time_index] = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrp_LN);
-			BN_true[time_index] = dcm_LB.t() * RBK::mrp_to_dcm(mrp_LN);
+			BN_estimated[time_index] = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
 
 			// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 			// // from t_k to t_(k-1)
@@ -284,7 +280,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == 30){
 
 				
-
+				this -> save_true_ground_track(BN_true,HN_true);
 				std::cout << " -- Running IOD before correction\n";
 
 
@@ -584,7 +580,10 @@ void ShapeBuilder::get_new_states(
 	arma::mat & dcm_LB, 
 	arma::vec & mrp_LN, 
 	arma::vec & lidar_pos,
-	arma::vec & lidar_vel){
+	arma::vec & lidar_vel,
+	std::vector<arma::vec> & mrps_LN,
+	std::vector<arma::mat> & BN_true,
+	std::vector<arma::mat> & HN_true){
 
 	// Getting the new small body inertial attitude
 	// and spacecraft relative position expressed in the small body centered inertia frame
@@ -598,12 +597,24 @@ void ShapeBuilder::get_new_states(
 	arma::vec e_t = arma::cross(e_h,e_r);
 
 	arma::mat dcm_LN(3,3);
+	arma::mat dcm_HN(3,3);
+
 	dcm_LN.row(0) = e_r.t();
 	dcm_LN.row(1) = e_t.t();
 	dcm_LN.row(2) = e_h.t();
 
-	mrp_LN = RBK::dcm_to_mrp(dcm_LN);
+	dcm_HN.row(0) = -e_r.t();
+	dcm_HN.row(1) = -e_t.t();
+	dcm_HN.row(2) = e_h.t();
+
+	arma::vec mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 	dcm_LB = dcm_LN * RBK::mrp_to_dcm(X_S.rows(6, 8)).t();
+
+	HN_true.push_back(dcm_HN);
+	BN_true.push_back(RBK::mrp_to_dcm(X_S.rows(6, 8)));
+	mrps_LN.push_back(mrp_LN);
+
+
 
 	if (this -> LN_t0.n_rows == 0){
 		this -> LN_t0 = dcm_LN;
@@ -616,6 +627,40 @@ void ShapeBuilder::get_new_states(
 	}
 
 }
+
+
+
+void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true,
+	const std::vector<arma::mat> & HN_true){
+
+
+	arma::vec u_H = {1,0,0};
+
+	arma::mat true_longitude_latitude(true_longitude_latitude.size(),2);
+
+	for (int i = 0; i < BN_true.size(); ++i){
+
+		arma::vec u_B_true = BN_true[i] * HN_true[i].t() * u_H;
+
+		double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
+		double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+
+		arma::rowvec true_long_lat = {true_longitude,true_latitude};
+
+		true_longitude_latitude.row(i) = true_long_lat;
+	}
+
+	true_longitude_latitude.save("true_lat_long.txt",arma::raw_ascii);
+
+
+
+
+}
+
+
+
+
+
 
 void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitude_latitude){
 
