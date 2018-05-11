@@ -315,7 +315,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		
 		if (prop > 70){
 			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" std::endl;
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" <<  std::endl;
 
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
