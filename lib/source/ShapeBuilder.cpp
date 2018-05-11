@@ -634,7 +634,7 @@ void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true
 
 	arma::vec u_H = {1,0,0};
 
-	arma::mat true_longitude_latitude(true_longitude_latitude.size(),2);
+	arma::mat true_longitude_latitude(BN_true.size(),2);
 
 	for (int i = 0; i < BN_true.size(); ++i){
 
