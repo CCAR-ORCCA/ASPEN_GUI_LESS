@@ -39,7 +39,10 @@ BundleAdjuster::BundleAdjuster(
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs();
 
-	
+	if (this -> local_pc_index_to_global_pc_index.size() == 0){
+		std::cout << " - Nothing to do here, no loop closure\n";
+		return;
+	}
 
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
@@ -293,20 +296,16 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	// Checking possible closure between current point cloud and first cloud
 	for (int tf =  local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
-
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> h);
-
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
 
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		double prop = double(point_pairs.size()) / N_pairs * 100;
-
-		assert (prop < 100);
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
@@ -318,16 +317,25 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 			
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
-
 			this -> cutoff_index = tf;
 			break;
-
 		}
 
 	}
 
+	// Only the point cloud pairs that "close the loop" with the ground point cloud are kep
+	std::vector<int> local_pc_index_to_global_pc_index_temp;
+	for (int i = 0; i < this -> cutoff_index; ++i){
+		local_pc_index_to_global_pc_index_temp.push_back(this -> local_pc_index_to_global_pc_index[i]);
+	}
 
-	
+	this -> local_pc_index_to_global_pc_index = local_pc_index_to_global_pc_index_temp;
+
+	if (this -> local_pc_index_to_global_pc_index.size() == 0){
+		return;
+	}
+
+
 	// The successive measurements are added
 	for (int i = 0; i < this -> local_pc_index_to_global_pc_index.size() - 1; ++i){
 		std::set<int> pair = {i,i+1};

@@ -664,9 +664,6 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 	longitude_latitude.save("../output/maps/longitude_latitude_final.txt",arma::raw_ascii);
 
 
-
-
-
 	if (this -> filter_arguments -> get_use_icp()){
 
 	// The point clouds are bundle-adjusted
@@ -681,9 +678,7 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 			for(int pc = 0; pc <= cutoff_index; ++pc){
 				kept_pcs.push_back(this -> all_registered_pc.at(pc));
 			}
-			for (int pc = cutoff_index + 1; pc < this -> all_registered_pc.size(); ++pc){
-				this -> fly_over_map.remove_label(std::stoi(this -> all_registered_pc. at(pc) -> get_label()));
-			}
+			
 
 		}
 		else{
