@@ -130,8 +130,15 @@ protected:
 
 
 	void save_true_ground_track(const std::vector<arma::mat> & BN_true,
-		const std::vector<arma::mat> & HN_true);
+		const std::vector<arma::mat> & HN_true) const;
 
+
+	void save_estimated_ground_track(
+		const arma::vec & times,
+		const int t0 ,
+		const int tf, 
+		const OC::KepState & est_kep_state,
+		const std::vector<arma::mat> BN_estimated);
 
 	/**
 	Assembles the rigid transforms needed to evaluate the IOD cost function
@@ -162,7 +169,7 @@ protected:
 	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 	*/
-	void run_IOD_finder(const arma::vec & times,
+	OC::KepState run_IOD_finder(const arma::vec & times,
 		const int t0 ,
 		const int tf, 
 		const std::vector<arma::vec> & mrps_LN,

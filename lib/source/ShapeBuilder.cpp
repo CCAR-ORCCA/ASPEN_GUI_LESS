@@ -283,12 +283,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Running IOD before correction\n";
 
 
-				this -> run_IOD_finder(times,
+				OC::KepState estimated_state = this -> run_IOD_finder(times,
 					last_ba_call_index ,
 					time_index, 
 					mrps_LN,
 					X_pcs,
 					M_pcs);
+
+
+				this -> save_estimated_ground_track(
+					times,
+					last_ba_call_index ,
+					time_index, 
+					estimated_state,
+					BN_estimated);
 
 
 				std::cout << " -- Applying BA to successive point clouds\n";
@@ -310,7 +318,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Running IOD after correction\n";
 
 
-				this -> run_IOD_finder(times,
+				estimated_state =  this -> run_IOD_finder(times,
 					last_ba_call_index ,
 					time_index, 
 					mrps_LN,
@@ -389,7 +397,7 @@ std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() cons
 
 
 
-void ShapeBuilder::run_IOD_finder(const arma::vec & times,
+OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const int t0 ,
 	const int tf, 
 	const std::vector<arma::vec> & mrps_LN,
@@ -428,7 +436,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
 
-
+	return est_kep_state;
 
 
 
@@ -449,13 +457,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 	arma::mat M_p_k_old;
 	arma::vec X_p_k_old;
-
-
-	std::cout << X_pcs.at(0) << std::endl;
-	std::cout << M_pcs.at(0) << std::endl << std::endl;
-
-	std::cout << X_pcs.at(1) << std::endl;
-	std::cout << M_pcs.at(1) << std::endl << std::endl;
 
 
 
@@ -629,7 +630,7 @@ void ShapeBuilder::get_new_states(
 
 
 void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true,
-	const std::vector<arma::mat> & HN_true){
+	const std::vector<arma::mat> & HN_true) const{
 
 
 	arma::vec u_H = {1,0,0};
@@ -651,10 +652,37 @@ void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true
 	true_longitude_latitude.save("true_lat_long.txt",arma::raw_ascii);
 
 
-
-
 }
 
+
+void ShapeBuilder::save_estimated_ground_track(
+	const arma::vec & times,
+	const int t0 ,
+	const int tf, 
+	const OC::KepState & est_kep_state,
+	const std::vector<arma::mat> BN_estimated) const{
+
+
+	arma::mat longitude_latitude(tf - t0 + 1,2);
+	arma::vec u_H = {1,0,0};
+
+
+	for (int i = t0; i <= tf; ++i){
+
+
+		double dt = times(i) - times(t0);
+
+		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
+		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
+		arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+
+		double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
+		double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
+		arma::rowvec long_lat = {longitude,latitude};
+		longitude_latitude.row(i) = long_lat;
+	}
+
+}
 
 
 
