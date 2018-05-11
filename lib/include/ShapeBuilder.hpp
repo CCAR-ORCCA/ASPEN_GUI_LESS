@@ -138,7 +138,7 @@ protected:
 		const int t0 ,
 		const int tf, 
 		const OC::KepState & est_kep_state,
-		const std::vector<arma::mat> BN_estimated);
+		const std::vector<arma::mat> BN_estimated) const;
 
 	/**
 	Assembles the rigid transforms needed to evaluate the IOD cost function
