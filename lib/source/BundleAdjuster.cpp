@@ -311,7 +311,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		assert (prop < 100);
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " pairs , " << prop << " (%) overlap"<< std::endl;
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 		
 		if (prop > 80){
 			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
@@ -553,7 +553,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
 
 		
-		std::cout << " -- (" << label_S_k << " , " << label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << std::endl;
+		std::cout << " -- (" << label_S_k << " , " << label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << " point pairs" << std::endl;
 
 	}
 

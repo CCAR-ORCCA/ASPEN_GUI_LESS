@@ -47,9 +47,9 @@
 // Shape fitting parameters
 #define POINTS_RETAINED 500000 // Number of points to be retained in the shape fitting
 #define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
-#define N_EDGES 300 // Number of edges in a-priori
+#define N_EDGES 3000 // Number of edges in a-priori
 #define SHAPE_DEGREE 2 // Shape degree
-#define N_ITER_SHAPE_FILTER 4 // Filter iterations
+#define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 #define N_ITER_BUNDLE_ADJUSTMENT 15 // Number of iterations in bundle adjustment
 
