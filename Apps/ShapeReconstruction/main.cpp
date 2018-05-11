@@ -54,7 +54,7 @@
 #define N_ITER_BUNDLE_ADJUSTMENT 30 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 20 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 100 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 30000 // Number of iterations
 

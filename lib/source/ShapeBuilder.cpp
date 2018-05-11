@@ -157,46 +157,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
 			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
 
-			// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
-			// // from t_k to t_(k-1)
-			// arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
-			// arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[time_index - 1]).t() * M_p_k_old.t() * (X_pc - X_p_k_old);
-
-			// RigidTransform rigid_transform;
-			// rigid_transform.M_k = M_p_k;
-			// rigid_transform.X_k = X_p_k;
-			// rigid_transform.t_k = times(time_index - last_IOD_epoch_index);
-			// rigid_transforms.push_back(rigid_transform);
-
-			// OC::KepState est_kep_state;
-
-			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
-			// span N+1 times
-			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-
-
-			// 	IODFinder iod_finder(&rigid_transforms, 
-			// 		this -> filter_arguments -> get_iod_iterations(), 
-			// 		this -> filter_arguments -> get_iod_particles());
-
-			// 	arma::vec true_particle(7);
-			// 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
-			// 	true_particle(6) = this -> true_kep_state_t0.get_mu();
-
 			
-			// 	iod_finder.run(lower_bounds,upper_bounds,1,iod_guess);
-			// 	est_kep_state = iod_finder.get_result();
-
-			// 	arma::vec est_particle(7);
-			// 	est_particle.subvec(0,5) = est_kep_state.get_state();
-			// 	est_particle(6) = est_kep_state.get_mu();
-
-
-			// 	std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
-			// 	std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
-			// 	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-			// 	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
-
 			// 		// The spacecraft longitude/latitude is computed from the estimated keplerian state
 			// 	for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
@@ -339,9 +300,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-
-
 
 				last_ba_call_index = time_index;
 
