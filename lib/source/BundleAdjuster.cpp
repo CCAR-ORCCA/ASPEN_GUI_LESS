@@ -31,6 +31,7 @@ BundleAdjuster::BundleAdjuster(
 		this -> local_pc_index_to_global_pc_index.push_back(i);
 	}
 
+
 	int Q = this -> local_pc_index_to_global_pc_index. size();
 
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
@@ -56,7 +57,7 @@ BundleAdjuster::BundleAdjuster(
 
 	// The connectivity matrix is saved
 	// if (save_connectivity){
-		this -> save_connectivity();
+	this -> save_connectivity();
 	// }
 }
 
@@ -285,6 +286,40 @@ void BundleAdjuster::solve_bundle_adjustment(){
 
 void BundleAdjuster::create_pairs( bool look_for_closure){
 
+	std::vector<PointPair> point_pairs;
+
+	for (int tf = local_pc_index_to_global_pc_index.back(); tf > -1; --tf){
+
+		// Checking possible closure between current point cloud and first cloud
+		for (int closure_index = 0; closure_index < tf; ++closure_index){
+
+			ICP::compute_pairs(point_pairs,
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
+				0,
+				dcm_S,
+				x_S,
+				dcm_D,
+				x_D);	
+
+			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tclosure_indexf]) -> get_label() << " ) : " << point_pairs.size();
+
+		}
+
+
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 	std::set<std::set<int> > pairs;
 
@@ -307,7 +342,6 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	
 	// The successive measurements are added
 	for (int i = 0; i < this -> local_pc_index_to_global_pc_index.size() - 1; ++i){
-		
 		std::set<int> pair = {i,i+1};
 		pairs.insert(pair);
 
@@ -320,7 +354,6 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	#endif
 
 	for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
-
 
 		std::set<int> pair_set = *pair_iter;
 
