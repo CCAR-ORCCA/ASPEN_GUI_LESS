@@ -299,7 +299,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
 			h);
 
-		int p = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size();
+		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size());
 
 		int N_pairs = (int)(std::pow(2, p - h));
 
