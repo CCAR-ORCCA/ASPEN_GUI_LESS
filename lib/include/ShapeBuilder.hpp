@@ -121,7 +121,6 @@ protected:
 	*/
 	void get_new_states(const arma::vec & X_S, 
 		arma::mat & dcm_LB, 
-		arma::vec & mrp_LN, 
 		arma::vec & lidar_pos,
 		arma::vec & lidar_vel,
 		std::vector<arma::vec> & mrps_LN,

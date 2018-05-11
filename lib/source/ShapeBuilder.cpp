@@ -58,7 +58,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec lidar_vel = X_S.rows(3,5);
 
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
-	arma::vec mrp_LN(3);
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
 	std::map<int,arma::mat> BN_estimated;
@@ -578,7 +577,6 @@ void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S,
 void ShapeBuilder::get_new_states(
 	const arma::vec & X_S, 
 	arma::mat & dcm_LB, 
-	arma::vec & mrp_LN, 
 	arma::vec & lidar_pos,
 	arma::vec & lidar_vel,
 	std::vector<arma::vec> & mrps_LN,
