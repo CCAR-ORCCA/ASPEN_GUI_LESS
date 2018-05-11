@@ -240,25 +240,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
 				
-				this -> save_true_ground_track(BN_true,HN_true);
-				std::cout << " -- Running IOD before correction\n";
+				// this -> save_true_ground_track(BN_true,HN_true);
+				// std::cout << " -- Running IOD before correction\n";
 
 
-				OC::KepState estimated_state = this -> run_IOD_finder(times,
-					last_ba_call_index ,
-					time_index, 
-					mrps_LN,
-					X_pcs,
-					M_pcs);
+				// OC::KepState estimated_state = this -> run_IOD_finder(times,
+				// 	last_ba_call_index ,
+				// 	time_index, 
+				// 	mrps_LN,
+				// 	X_pcs,
+				// 	M_pcs);
 
 
-				this -> save_estimated_ground_track(
-					"estimated_lat_long_before.txt",
-					times,
-					last_ba_call_index ,
-					time_index, 
-					estimated_state,
-					BN_estimated);
+				// this -> save_estimated_ground_track(
+				// 	"estimated_lat_long_before.txt",
+				// 	times,
+				// 	last_ba_call_index ,
+				// 	time_index, 
+				// 	estimated_state,
+				// 	BN_estimated);
 
 
 				std::cout << " -- Applying BA to successive point clouds\n";
