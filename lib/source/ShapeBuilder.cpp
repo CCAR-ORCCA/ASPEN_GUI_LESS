@@ -292,6 +292,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				this -> save_estimated_ground_track(
+					"estimated_lat_long_before.txt"
 					times,
 					last_ba_call_index ,
 					time_index, 
@@ -324,6 +325,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					mrps_LN,
 					X_pcs,
 					M_pcs);
+
+
+				this -> save_estimated_ground_track(
+					"estimated_lat_long_after.txt"
+					times,
+					last_ba_call_index ,
+					time_index, 
+					estimated_state,
+					BN_estimated);
 
 				throw;
 
@@ -656,6 +666,7 @@ void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true
 
 
 void ShapeBuilder::save_estimated_ground_track(
+	std::string path,
 	const arma::vec & times,
 	const int t0 ,
 	const int tf, 
@@ -681,6 +692,9 @@ void ShapeBuilder::save_estimated_ground_track(
 		arma::rowvec long_lat = {longitude,latitude};
 		longitude_latitude.row(i) = long_lat;
 	}
+
+	true_longitude_latitude.save(path,arma::raw_ascii);
+
 
 }
 

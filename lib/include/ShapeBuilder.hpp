@@ -134,6 +134,7 @@ protected:
 
 
 	void save_estimated_ground_track(
+		std::string path,
 		const arma::vec & times,
 		const int t0 ,
 		const int tf, 
