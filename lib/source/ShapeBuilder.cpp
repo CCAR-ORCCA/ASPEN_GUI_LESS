@@ -276,7 +276,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					false);
 				
 
-
 				std::cout << " -- Running IOD after correction\n";
 
 
@@ -296,7 +295,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					estimated_state,
 					BN_estimated);
 
-				throw;
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
@@ -684,7 +682,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 			// Only the point clouds that looped with the first one are kept
 			std::vector<int> bin = this -> fly_over_map.get_bin(36,18);
 			
-			int max = 400;
+			int max = 399;
 			// int max  = bin[0];
 			// for (auto iter = bin.begin(); iter != bin.end(); ++iter){
 			// 	if (*iter > max){
