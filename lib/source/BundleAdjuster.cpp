@@ -317,9 +317,10 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 			
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
-			break;
 
 			this -> cutoff_index = tf;
+			break;
+			
 		}
 
 	}
