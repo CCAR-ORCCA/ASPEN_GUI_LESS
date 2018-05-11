@@ -290,38 +290,35 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	std::vector<PointPair> point_pairs;
 	std::set<std::set<int> > pairs;
-	int h = 5;
 
 	int closure_index = 0; 
 
 	// Checking possible closure between current point cloud and first cloud
-	for (int tf = local_pc_index_to_global_pc_index.size() - 1; tf > closure_index; --tf){
+	for (int tf =closure_index + 1 ; tf < local_pc_index_to_global_pc_index.size() - 1; ++tf){
 
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
-			h);
+			this -> h);
 
 		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size());
 
-		int N_pairs = (int)(std::pow(2, p - h));
+		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		double prop = double(point_pairs.size()) / N_pairs * 100;
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " pairs , " << prop << " (%) overlap"<< std::endl;
 		
-		if (prop > 70){
+		if (prop > 75){
 			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
+			
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" <<  std::endl;
 			
-
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
 
-
 			this -> cutoff_index = tf;
-			break;
 		}
 
 	}
@@ -348,16 +345,15 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		int S_k = (*pair_set.begin());
 		int D_k = (*std::next(pair_set.begin()));
 
-		int h = 4;
 		std::vector<PointPair> point_pairs;
 
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),h);				
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),this -> h);				
 		double error = ICP::compute_rms_residuals(point_pairs);
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> get_size());
-		int N_pairs = (int)(std::pow(2, p - h));
+		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		BundleAdjuster::PointCloudPair pair;
 		pair.S_k = S_k;
@@ -482,7 +478,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
 		std::vector<PointPair> point_pairs;
-		int h = 4;
 
 		PointCloudPair point_cloud_pair = this -> point_cloud_pairs[k];
 
@@ -509,7 +504,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
-			h,
+			this -> h,
 			dcm_S ,
 			x_S,
 			dcm_D ,
@@ -530,7 +525,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[this -> point_cloud_pairs[k].S_k]) -> get_size());
-		int N_pairs = (int)(std::pow(2, p - h));
+		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		
 		this -> point_cloud_pairs[k].error = rms_error;

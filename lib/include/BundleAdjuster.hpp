@@ -103,6 +103,7 @@ protected:
 
 
 	int cutoff_index;
+	int h = 5;
 };
 
 
