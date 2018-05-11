@@ -130,7 +130,7 @@ protected:
 
 
 
-	void save_true_ground_track(const std::vectpr<arma::mat> & BN_true,
+	void save_true_ground_track(const std::vector<arma::mat> & BN_true,
 		const std::vector<arma::mat> & HN_true);
 
 
