@@ -300,12 +300,18 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 			this -> h);
 
 
-		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
+		int p_1 = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
+		int p_2 = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size());
 
-		int N_pairs = (int)(std::pow(2, p - this -> h));
+		int N_pairs_1 = (int)(std::pow(2, p_1 - this -> h));
+		int N_pairs_2 = (int)(std::pow(2, p_2 - this -> h));
 
-		std::cout << " N_pair in BA: " << N_pairs << std::endl;
-		double prop = double(point_pairs.size()) / N_pairs * 100;
+
+
+
+		std::cout << " N_pair in BA: " << N_pairs_1 << " , " << N_pairs_2 << std::endl;
+
+		double prop = double(point_pairs.size()) / N_pairs_1 * 100;
 
 		assert (prop < 100);
 
