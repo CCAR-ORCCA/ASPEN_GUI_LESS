@@ -297,7 +297,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					last_ba_call_index ,
 					time_index, 
 					estimated_state,
-					BN_estimated);
+					BN_true);
 
 
 				std::cout << " -- Applying BA to successive point clouds\n";
@@ -333,7 +333,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					last_ba_call_index ,
 					time_index, 
 					estimated_state,
-					BN_estimated);
+					BN_true);
 
 				throw;
 
