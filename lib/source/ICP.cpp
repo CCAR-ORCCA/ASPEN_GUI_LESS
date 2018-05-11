@@ -328,7 +328,6 @@ void ICP::compute_pairs(
 	// int N_points = (int)(source_pc -> get_size() / std::pow(2, h));
 	double p = std::log2(source_pc -> get_size());
 	int N_pairs_max = (int)(std::pow(2, p - h));
-	std::cout << N_pairs_max << std::endl;
 
 	// a maximum of $N_pairs_max pairs will be formed. $N_points points are extracted from the source point cloud	
 	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> get_size() - 1,source_pc -> get_size());
