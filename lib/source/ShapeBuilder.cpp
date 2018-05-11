@@ -660,7 +660,7 @@ void ShapeBuilder::save_estimated_ground_track(
 	const int t0 ,
 	const int tf, 
 	const OC::KepState & est_kep_state,
-	const std::vector<arma::mat> BN_estimated) const{
+	const std::map<int,arma::mat> BN_estimated) const{
 
 
 	arma::mat longitude_latitude(tf - t0 + 1,2);
