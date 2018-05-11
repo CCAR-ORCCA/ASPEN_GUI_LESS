@@ -51,10 +51,10 @@
 #define SHAPE_DEGREE 2 // Shape degree
 #define N_ITER_SHAPE_FILTER 4 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
-#define N_ITER_BUNDLE_ADJUSTMENT 30 // Number of iterations in bundle adjustment
+#define N_ITER_BUNDLE_ADJUSTMENT 15 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 200 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 30000 // Number of iterations
 
