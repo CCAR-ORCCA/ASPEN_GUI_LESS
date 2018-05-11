@@ -264,7 +264,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Applying BA to successive point clouds\n";
 			std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-			BundleAdjuster bundle_adjuster(last_ba_call_index, 
+			BundleAdjuster bundle_adjuster(0, 
 				time_index,
 				M_pcs,
 				X_pcs,
