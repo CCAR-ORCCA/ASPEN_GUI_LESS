@@ -126,9 +126,6 @@ BundleAdjuster::BundleAdjuster(
 // }
 
 
-
-
-
 void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
 	// // Updating the pcs. The first one is fixed
