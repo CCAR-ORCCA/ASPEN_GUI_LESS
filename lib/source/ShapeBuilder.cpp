@@ -693,7 +693,7 @@ void ShapeBuilder::save_estimated_ground_track(
 		longitude_latitude.row(i) = long_lat;
 	}
 
-	true_longitude_latitude.save(path,arma::raw_ascii);
+	longitude_latitude.save(path,arma::raw_ascii);
 
 
 }
