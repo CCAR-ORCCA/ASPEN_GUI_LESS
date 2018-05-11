@@ -292,7 +292,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				this -> save_estimated_ground_track(
-					"estimated_lat_long_before.txt"
+					"estimated_lat_long_before.txt",
 					times,
 					last_ba_call_index ,
 					time_index, 
@@ -328,7 +328,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				this -> save_estimated_ground_track(
-					"estimated_lat_long_after.txt"
+					"estimated_lat_long_after.txt",
 					times,
 					last_ba_call_index ,
 					time_index, 
