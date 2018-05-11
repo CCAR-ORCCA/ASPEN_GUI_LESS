@@ -674,7 +674,7 @@ void ShapeBuilder::save_estimated_ground_track(
 
 		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-		arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+		arma::vec u_B = BN_estimated.at(i) * DCM_HN.t() * u_H;
 
 		double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
 		double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
