@@ -60,7 +60,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
-	std::map<int,arma::mat> BN_estimated;
+	std::vector<arma::mat> BN_estimated;
 	std::vector<arma::mat> BN_true;
 	std::vector<arma::mat> HN_true;
 	std::map<int,arma::vec> X_pcs;
@@ -115,7 +115,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
-			BN_estimated[0] = arma::eye<arma::mat>(3,3);
+			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
@@ -155,7 +155,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_estimated[time_index] = this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]);
+			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
 
 			// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 			// // from t_k to t_(k-1)
@@ -671,7 +671,7 @@ void ShapeBuilder::save_estimated_ground_track(
 	const int t0 ,
 	const int tf, 
 	const OC::KepState & est_kep_state,
-	const std::map<int,arma::mat> BN_estimated) const{
+	const std::vector<arma::mat> BN_estimated) const{
 
 
 	arma::mat longitude_latitude(tf - t0 + 1,2);
