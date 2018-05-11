@@ -279,21 +279,21 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Running IOD after correction\n";
 
 
-				estimated_state =  this -> run_IOD_finder(times,
-					last_ba_call_index ,
-					time_index, 
-					mrps_LN,
-					X_pcs,
-					M_pcs);
+				// estimated_state =  this -> run_IOD_finder(times,
+				// 	last_ba_call_index ,
+				// 	time_index, 
+				// 	mrps_LN,
+				// 	X_pcs,
+				// 	M_pcs);
 
 
-				this -> save_estimated_ground_track(
-					"estimated_lat_long_after.txt",
-					times,
-					last_ba_call_index ,
-					time_index, 
-					estimated_state,
-					BN_estimated);
+				// this -> save_estimated_ground_track(
+				// 	"estimated_lat_long_after.txt",
+				// 	times,
+				// 	last_ba_call_index ,
+				// 	time_index, 
+				// 	estimated_state,
+				// 	BN_estimated);
 
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
