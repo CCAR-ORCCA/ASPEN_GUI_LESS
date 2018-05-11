@@ -34,9 +34,7 @@ BundleAdjuster::BundleAdjuster(
 	}
 
 
-	int Q = this -> local_pc_index_to_global_pc_index. size();
-
-	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+	
 
 
 	// The connectivity between point clouds is inferred
@@ -181,7 +179,7 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 
 void BundleAdjuster::solve_bundle_adjustment(){
 
-	int Q = this -> all_registered_pc -> size();
+	int Q = this -> local_pc_index_to_global_pc_index. size();
 
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
@@ -327,21 +325,6 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	}
 
-	// if (look_for_closure){
-	// 	pairs = this -> fly_over_map -> get_flyovers();
-
-	// 	std::cout << " -- Flyover pairs: \n";
-	// 	for (auto iter_pair = pairs.begin(); iter_pair != pairs.end(); ++iter_pair){
-	// 		std::set<int> pair = *iter_pair;
-	// 		int S_k = *pair.begin();
-	// 		int D_k = *std::next(pair.begin());
-	// 		std::string label_S_k = this -> all_registered_pc -> at(S_k) -> get_label();
-	// 		std::string label_D_k = this -> all_registered_pc -> at(D_k) -> get_label();
-
-
-	// 		std::cout << "(" << label_S_k << "," << label_D_k << ")" << std::endl;
-	// 	}
-	// }
 
 	
 	// The successive measurements are added
