@@ -56,6 +56,8 @@ public:
 
 	};
 
+	int get_cutoff_index() const;
+
 protected:
 	
 
@@ -100,7 +102,7 @@ protected:
 	std::vector<int> local_pc_index_to_global_pc_index;
 
 
-
+	int cutoff_index;
 };
 
 

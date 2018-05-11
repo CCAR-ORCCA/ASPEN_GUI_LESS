@@ -72,6 +72,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	int last_ba_call_index = 0;
 	int last_IOD_epoch_index = 0;
+	int cutoff_index = 0;
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
@@ -238,7 +239,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
 			if (this -> filter_arguments -> get_use_ba() && 
-				 (time_index == times.n_rows - 1 || time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number())){
+				time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 				
 				// this -> save_true_ground_track(BN_true,HN_true);
 				// std::cout << " -- Running IOD before correction\n";
@@ -262,22 +263,21 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				std::cout << " -- Applying BA to successive point clouds\n";
-				std::vector<std::shared_ptr<PC > > pc_to_ba;
+			std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-				BundleAdjuster bundle_adjuster(last_ba_call_index, 
-					time_index,
-					M_pcs,
-					X_pcs,
-					BN_estimated,
-					&this -> all_registered_pc,
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					this -> LN_t0,
-					this -> x_t0,
-					mrps_LN,
-					true);
-				
-				std::cout << " -- Running IOD after correction\n";
+			BundleAdjuster bundle_adjuster(last_ba_call_index, 
+				time_index,
+				M_pcs,
+				X_pcs,
+				BN_estimated,
+				&this -> all_registered_pc,
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				this -> LN_t0,
+				this -> x_t0,
+				mrps_LN,
+				true);
 
+			std::cout << " -- Running IOD after correction\n";
 
 				// estimated_state =  this -> run_IOD_finder(times,
 				// 	last_ba_call_index ,
@@ -299,55 +299,54 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
-				last_ba_call_index = time_index;
+			last_ba_call_index = time_index;
+		}
 
+		else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
+			std::cout << " -- Applying BA to whole point cloud batch\n";
+			std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-			}
+			BundleAdjuster bundle_adjuster(0, 
+				time_index,
+				M_pcs,
+				X_pcs,
+				BN_estimated,
+				&this -> all_registered_pc,
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				this -> LN_t0,
+				this -> x_t0,
+				mrps_LN,
+				true);
 
-			// if (this -> filter_arguments -> get_use_ba() && this -> fly_over_map.has_flyovers(longitude,latitude) && time_index > last_ba_call_index + 15){
+			cutoff_index = bundle_adjuster.get_cutoff_index();
 
-			// 	std::cout << " -- Flyover detected\n";
-			// 	last_ba_call_index = time_index;
-			// 	longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
+			std::cout << " -- Running IOD after correction\n";
 
-			// 	BundleAdjuster bundle_adjuster(&this -> all_registered_pc,
-			// 		this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			// 		&this -> fly_over_map,
-			// 		longitude_latitude,
-
-			// 		this -> LN_t0,
-			// 		this -> x_t0,
-			// 		true,
-			// 		false);
-			// 	longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-
-
-			// }
+		}
 
 
 			#if IOFLAGS_shape_builder
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 
 
-			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-				std::cout << "- Initializing shape model" << std::endl;
+		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+			std::cout << "- Initializing shape model" << std::endl;
 
-				this -> initialize_shape(time_index,longitude_latitude);
+			this -> initialize_shape(cutoff_index,longitude_latitude);
 
-				this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-				return;
-
-			}
-
-
+			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
+			return;
 
 		}
 
+
+
 	}
+
+}
 
 
 }
@@ -655,7 +654,7 @@ void ShapeBuilder::save_estimated_ground_track(
 
 
 
-void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitude_latitude){
+void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude){
 
 
 	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
@@ -677,32 +676,16 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 		if (this -> filter_arguments -> get_use_ba()){
 
 			// Only the point clouds that looped with the first one are kept
-			std::vector<int> bin = this -> fly_over_map.get_bin(36,18);
 			
-			int max = 399;
-			// int max  = bin[0];
-			// for (auto iter = bin.begin(); iter != bin.end(); ++iter){
-			// 	if (*iter > max){
-			// 		max = *iter;
-			// 	}
-			// }
+			std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
 
-			std::cout << " - Keeping all pcs until # " << max << " over a total of " << this -> all_registered_pc.size() << std::endl;
-
-			for(int pc = 0; pc <= max; ++pc){
+			for(int pc = 0; pc <= cutoff_index; ++pc){
 				kept_pcs.push_back(this -> all_registered_pc.at(pc));
 			}
-			for (int pc = max + 1; pc < this -> all_registered_pc.size(); ++pc){
+			for (int pc = cutoff_index + 1; pc < this -> all_registered_pc.size(); ++pc){
 				this -> fly_over_map.remove_label(std::stoi(this -> all_registered_pc. at(pc) -> get_label()));
 			}
 
-			// BundleAdjuster bundle_adjuster(&kept_pcs,
-			// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			// 	&this -> fly_over_map,
-			// 	longitude_latitude,
-			// 	this -> LN_t0,
-			// 	this -> x_t0,
-			// 	true,true);
 		}
 		else{
 			kept_pcs = this -> all_registered_pc;
@@ -734,15 +717,7 @@ void ShapeBuilder::initialize_shape(unsigned int time_index,arma::mat & longitud
 			true);
 
 
-		// BundleAdjuster bundle_adjuster(&kept_pcs,
-		// 	0,
-		// 	&this -> fly_over_map,
-		// 	longitude_latitude,
-		// 	this -> LN_t0,
-		// 	this -> x_t0,
-		// 	true,true);
-
-
+		
 		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
 		// should perfectly overlap without noise and bundle-adjustment/ICP errors
 
