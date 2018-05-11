@@ -311,7 +311,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		double prop = double(point_pairs.size()) / N_pairs * 100;
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " pairs , " << prop << " (%) overlap" std::endl;
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " pairs , " << prop << " (%) overlap"<< std::endl;
 		
 		if (prop > 70){
 			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
