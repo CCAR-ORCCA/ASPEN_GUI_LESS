@@ -304,6 +304,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
+		std::cout << " N_pair in BA: " << N_pairs << std::endl;
 		double prop = double(point_pairs.size()) / N_pairs * 100;
 
 		assert (prop < 100);
