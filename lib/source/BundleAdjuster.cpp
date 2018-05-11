@@ -35,8 +35,6 @@ BundleAdjuster::BundleAdjuster(
 
 
 	
-
-
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs();
@@ -297,12 +295,12 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	for (int tf =  local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
 
 		ICP::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> h);
 
 
-		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size());
+		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
 
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
@@ -310,13 +308,13 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 		assert (prop < 100);
 
-		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
+		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 		
 		if (prop > 80){
-			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
+			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
 			
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" <<  std::endl;
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) in loop closure" <<  std::endl;
 			
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
