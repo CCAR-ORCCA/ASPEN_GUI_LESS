@@ -294,7 +294,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	std::set<std::set<int> > pairs;
 	int h = 5;
 
-	int tf = local_pc_index_to_global_pc_index.back(); 
+	int tf = local_pc_index_to_global_pc_index.size() - 1; 
 
 	// Checking possible closure between current point cloud and first cloud
 	for (int closure_index = 0; closure_index < tf; ++closure_index){
