@@ -237,8 +237,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
-			if (this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-
+			if (this -> filter_arguments -> get_use_ba() && 
+				 (time_index == time.n_rows - 1 || time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number())){
 				
 				// this -> save_true_ground_track(BN_true,HN_true);
 				// std::cout << " -- Running IOD before correction\n";
@@ -325,9 +325,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			// }
-
-
-
 
 
 			#if IOFLAGS_shape_builder
