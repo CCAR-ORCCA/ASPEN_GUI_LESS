@@ -287,7 +287,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	std::vector<PointPair> point_pairs;
 	std::set<std::set<int> > pairs;
-
+	int h = 5;
 
 	int tf = local_pc_index_to_global_pc_index.back(); 
 
@@ -297,10 +297,14 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
-			5);	
+			h);
 
-		double prop = double(point_pairs.size()) / std::min(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size(),
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size()) * 100;
+		int p = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size();
+
+		int N_pairs = (int)(std::pow(2, p - h));
+
+		double prop = double(point_pairs.size()) / N_pairs * 100;
+
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " , " << prop << std::endl;
