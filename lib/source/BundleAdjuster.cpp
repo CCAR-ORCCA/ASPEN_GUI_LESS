@@ -14,10 +14,12 @@ BundleAdjuster::BundleAdjuster(
 	int tf,
 	std::map<int,arma::mat> & M_pcs,
 	std::map<int,arma::vec> & X_pcs,
+	std::vector<arma::mat> & BN_estimated,
 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	const arma::mat & LN_t0,
 	const arma::vec & x_t0,
+	const std::vector<arma::vec> & mrps_LN,
 	bool save_connectivity){
 
 
@@ -52,7 +54,10 @@ BundleAdjuster::BundleAdjuster(
 
 
 	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds(M_pcs,X_pcs);
+	this -> update_point_clouds(M_pcs,
+		X_pcs,
+		BN_estimated,
+		mrps_LN);
 	
 
 	// The connectivity matrix is saved
@@ -308,12 +313,9 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " , " << prop << std::endl;
 		
-
 		if (prop > 70){
-			std::cout << "Choosing " << std::endl;
-
-			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << std::endl;
+			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" std::endl;
 
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
@@ -676,7 +678,10 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 }
 
 
-void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, std::map<int,arma::vec> & X_pcs){
+void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, 
+		std::map<int,arma::vec> & X_pcs,
+		std::vector<arma::mat> & BN_estimated,
+		const std::vector<arma::vec> & mrps_LN){
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size() - 1);
 
@@ -694,9 +699,12 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, std::m
 
 		this -> all_registered_pc -> at(pc_global_index) -> transform(NS_bar, x);
 
+		// The rigid transforms are fixed
 		M_pcs[pc_global_index] = NS_bar * M_pcs[pc_global_index];
 		X_pcs[pc_global_index] += x;
 
+		// The small body attitude is fixed
+		BN_estimated[pc_global_index] = RBK::mrp_to_dcm(mrps_LN[0]).t() * M_pcs[pc_global_index] * RBK::mrp_to_dcm(mrps_LN[pc_global_index]);
 
 		++progress;
 

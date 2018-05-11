@@ -26,10 +26,12 @@ public:
 		int tf, 
 		std::map<int,arma::mat> & M_pcs, 
 		std::map<int,arma::vec> & X_pcs,
+		std::vector<arma::mat> & BN_estimated,
 		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 		int N_iter,
 		const arma::mat & LN_t0,
 		const arma::vec & x_t0,
+		const std::vector<arma::vec> & mrps_LN,
 		bool save_connectivity);
 
 
@@ -82,7 +84,10 @@ protected:
 	void create_pairs(bool look_for_closure = false);
 
 	void update_point_cloud_pairs();
-	void update_point_clouds(std::map<int,arma::mat> & M_pcs, std::map<int,arma::vec> & X_pcs);
+	void update_point_clouds(std::map<int,arma::mat> & M_pcs, 
+		std::map<int,arma::vec> & X_pcs,
+		std::vector<arma::mat> & BN_estimated,
+		const std::vector<arma::vec> & mrps_LN);
 
 	arma::mat LN_t0;
 	arma::vec x_t0;
