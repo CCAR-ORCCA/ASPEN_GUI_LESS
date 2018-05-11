@@ -305,13 +305,23 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 		double prop = double(point_pairs.size()) / N_pairs * 100;
 
-
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " , " << prop << std::endl;
+		
 
+		if (prop > 70){
+			std::cout << "Choosing " << std::endl;
+
+			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << std::endl;
+
+			std::set<int> pair = {tf,closure_index};
+			pairs.insert(pair);
+			break;
+
+		}
 
 	}
-
 
 	// if (look_for_closure){
 	// 	pairs = this -> fly_over_map -> get_flyovers();
