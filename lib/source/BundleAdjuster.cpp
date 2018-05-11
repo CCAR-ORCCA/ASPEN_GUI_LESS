@@ -294,12 +294,13 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	int closure_index = 0; 
 
 	// Checking possible closure between current point cloud and first cloud
-	for (int tf =local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
+	for (int tf =  local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
 
 		ICP::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
 			this -> h);
+
 
 		int p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_size());
 
@@ -320,7 +321,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 			this -> cutoff_index = tf;
 			break;
-			
+
 		}
 
 	}

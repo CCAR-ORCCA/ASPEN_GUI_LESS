@@ -69,7 +69,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec iod_guess;
 
 
-
 	int last_ba_call_index = 0;
 	int last_IOD_epoch_index = 0;
 	int cutoff_index = 0;
