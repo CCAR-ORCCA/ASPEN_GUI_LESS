@@ -41,8 +41,7 @@ BundleAdjuster::BundleAdjuster(
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs();
 
-	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
-	this -> update_point_cloud_pairs();
+	
 
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
@@ -180,8 +179,10 @@ void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
 void BundleAdjuster::solve_bundle_adjustment(){
 
 	int Q = this -> local_pc_index_to_global_pc_index. size();
-
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+
+	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
+	this -> update_point_cloud_pairs();
 
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
@@ -664,9 +665,9 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 
 void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, 
-		std::map<int,arma::vec> & X_pcs,
-		std::vector<arma::mat> & BN_estimated,
-		const std::vector<arma::vec> & mrps_LN){
+	std::map<int,arma::vec> & X_pcs,
+	std::vector<arma::mat> & BN_estimated,
+	const std::vector<arma::vec> & mrps_LN){
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size() - 1);
 
