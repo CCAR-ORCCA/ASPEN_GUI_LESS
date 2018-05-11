@@ -268,10 +268,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					time_index,
 					M_pcs,
 					X_pcs,
+					BN_estimated,
 					&this -> all_registered_pc,
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 					this -> LN_t0,
 					this -> x_t0,
+					mrps_LN,
 					true);
 				
 				std::cout << " -- Running IOD after correction\n";
