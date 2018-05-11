@@ -55,9 +55,9 @@ BundleAdjuster::BundleAdjuster(
 	
 
 	// The connectivity matrix is saved
-	if (save_connectivity){
+	// if (save_connectivity){
 		this -> save_connectivity();
-	}
+	// }
 }
 
 
