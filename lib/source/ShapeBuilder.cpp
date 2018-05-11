@@ -455,6 +455,15 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	arma::mat M_p_k_old;
 	arma::vec X_p_k_old;
 
+
+	std::cout << X_pcs.at(0) << std::endl;
+	std::cout << M_pcs.at(0) << std::endl << std::endl;
+
+	std::cout << X_pcs.at(1) << std::endl;
+	std::cout << M_pcs.at(1) << std::endl << std::endl;
+
+
+
 	for (int k = t0_index ; k <=  tf_index; ++ k){
 
 		if (k != 0){
