@@ -238,7 +238,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
 			if (this -> filter_arguments -> get_use_ba() && 
-				 (time_index == time.n_rows - 1 || time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number())){
+				 (time_index == times.n_rows - 1 || time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number())){
 				
 				// this -> save_true_ground_track(BN_true,HN_true);
 				// std::cout << " -- Running IOD before correction\n";
