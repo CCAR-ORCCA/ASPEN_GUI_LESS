@@ -311,13 +311,17 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 		double prop = double(point_pairs.size()) / N_pairs * 100;
 
 		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
-		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " , " << prop << std::endl;
+		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) : " << point_pairs.size() << " pairs , " << prop << " (%) overlap" std::endl;
 		
 		if (prop > 70){
 			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " , "<<
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " ) in loop closure" <<  std::endl;
+			
+
 			std::set<int> pair = {tf,closure_index};
 			pairs.insert(pair);
+
+
 			this -> cutoff_index = tf;
 			break;
 		}
@@ -645,7 +649,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index . size() - 1);
 
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for (unsigned int i = 1; i < this -> local_pc_index_to_global_pc_index . size(); ++i){
 
 		int x_index = 6 * (i - 1);
