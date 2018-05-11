@@ -330,12 +330,12 @@ void ICP::compute_pairs(
 	int N_points = (int)(std::pow(2, p - h));
 
 	// a maximum of $N_points pairs will be formed. $N_points points are extracted from the source point cloud	
-	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> get_size() - 1,source_pc -> get_size() - 1);
+	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> get_size() - 1,source_pc -> get_size());
 	random_source_indices = arma::shuffle(random_source_indices);
 
 	std::vector<PointPair> destination_source_dist_vector;
 
-	for (unsigned int i = 0; i < N_points; ++i) {
+	for (int i = 0; i < N_points; ++i) {
 		PointPair destination_source_dist_pair = std::make_pair(nullptr,source_pc -> get_point(random_source_indices(i)));
 		destination_source_dist_vector.push_back(destination_source_dist_pair);
 	}
