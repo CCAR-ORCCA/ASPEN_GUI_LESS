@@ -21,7 +21,7 @@ BundleAdjuster::BundleAdjuster(
 	const arma::vec & x_t0,
 	const std::vector<arma::vec> & mrps_LN,
 	bool save_connectivity,
-	int previous_closure_index){
+	int & previous_closure_index){
 
 
 	this -> all_registered_pc = all_registered_pc_;
