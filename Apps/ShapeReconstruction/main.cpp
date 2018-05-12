@@ -36,7 +36,7 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 1e-9 // velocity
+#define PROCESS_NOISE_SIGMA_VEL 1e-8 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
 
 // Times
@@ -186,7 +186,7 @@ int main() {
 	arma::vec pos_0 = {1000,50,150};
 
 	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.};
+	arma::vec mrp_0 = {0.,0.,0.414};
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
