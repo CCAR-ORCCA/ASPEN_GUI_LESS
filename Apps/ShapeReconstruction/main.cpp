@@ -186,7 +186,7 @@ int main() {
 	arma::vec pos_0 = {1000,50,150};
 
 	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.414};
+	arma::vec mrp_0 = {0.,0.,0.214};
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
