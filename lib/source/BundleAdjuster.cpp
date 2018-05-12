@@ -20,7 +20,8 @@ BundleAdjuster::BundleAdjuster(
 	const arma::mat & LN_t0,
 	const arma::vec & x_t0,
 	const std::vector<arma::vec> & mrps_LN,
-	bool save_connectivity){
+	bool save_connectivity,
+	int previous_closure_index){
 
 
 	this -> all_registered_pc = all_registered_pc_;
@@ -35,10 +36,10 @@ BundleAdjuster::BundleAdjuster(
 
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs();
+	this -> create_pairs(previous_closure_index);
 
 	if (this -> local_pc_index_to_global_pc_index.size() == 0){
-		std::cout << " - Nothing to do here, no loop closure\n";
+		std::cout << " - Nothing to do here, no loop closure or already closed\n";
 		return;
 	}
 
@@ -175,43 +176,50 @@ void BundleAdjuster::solve_bundle_adjustment(){
 }
 
 int BundleAdjuster::get_cutoff_index() const{
-	return this -> cutoff_index;
+	return this -> closure_index;
 }
 
-void BundleAdjuster::create_pairs( bool look_for_closure){
+void BundleAdjuster::create_pairs( int & previous_closure_index){
 
 	std::vector<PointPair> point_pairs;
 	std::set<std::set<int> > pairs;
 
-	int closure_index = 0; 
+	int ground_index = 0; 
 
 	// Checking possible closure between current point cloud and first cloud
-	for (int tf =  local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
+	for (int tf = local_pc_index_to_global_pc_index.size() - 1 ; tf > ground_index ; --tf){
 		
 		try{
 			ICP::compute_pairs(point_pairs,
-				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]),
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 				this -> h);
 
-			double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
+			double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_size());
 
 			int N_pairs = (int)(std::pow(2, p - this -> h));
 
 			double prop = double(point_pairs.size()) / N_pairs * 100;
 
-			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
+			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_label() << " , "<<
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 
 			if (prop > 70){
-				std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
+				std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_label() << " , "<<
 
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) in loop closure" <<  std::endl;
 
-				std::set<int> pair = {tf,closure_index};
+				std::set<int> pair = {tf,ground_index};
 				pairs.insert(pair);
-				this -> cutoff_index = tf;
-				break;
+				if (tf != previous_closure_index){
+					this -> closure_index = tf;
+					previous_closure_index = tf;
+					break;
+				}
+				else{
+					this -> local_pc_index_to_global_pc_index.clear();
+					return;
+				}
 			}
 		}
 		catch(ICPNoPairsException & e){
@@ -222,7 +230,7 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	// Only the point cloud pairs that "close the loop" with the ground point cloud are kep
 	std::vector<int> local_pc_index_to_global_pc_index_temp;
-	for (int i = 0; i <= this -> cutoff_index; ++i){
+	for (int i = 0; i <= this -> closure_index; ++i){
 		local_pc_index_to_global_pc_index_temp.push_back(this -> local_pc_index_to_global_pc_index[i]);
 	}
 

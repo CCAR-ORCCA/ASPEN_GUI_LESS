@@ -32,7 +32,8 @@ public:
 		const arma::mat & LN_t0,
 		const arma::vec & x_t0,
 		const std::vector<arma::vec> & mrps_LN,
-		bool save_connectivity);
+		bool save_connectivity,
+		int & previous_closure_index);
 
 
 	// BundleAdjuster(
@@ -83,7 +84,7 @@ protected:
 	void solve_bundle_adjustment();
 
 
-	void create_pairs(bool look_for_closure = false);
+	void create_pairs( int & previous_closure_index);
 
 	void update_point_cloud_pairs();
 	void update_point_clouds(std::map<int,arma::mat> & M_pcs, 
@@ -102,7 +103,7 @@ protected:
 	std::vector<int> local_pc_index_to_global_pc_index;
 
 
-	int cutoff_index = 0;
+	int closure_index = 0;
 	int h = 5;
 };
 

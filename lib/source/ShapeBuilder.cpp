@@ -72,6 +72,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int last_ba_call_index = 0;
 	int last_IOD_epoch_index = 0;
 	int cutoff_index = 0;
+	int previous_closure_index = 0;
+
+
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
@@ -274,7 +277,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> LN_t0,
 				this -> x_t0,
 				mrps_LN,
-				true);
+				false,
+				previous_closure_index);
 
 			std::cout << " -- Running IOD after correction\n";
 
@@ -305,7 +309,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			std::cout << " -- Applying BA to whole point cloud batch\n";
 			std::vector<std::shared_ptr<PC > > pc_to_ba;
-
+			int ground_index = 0;
+			
 			BundleAdjuster bundle_adjuster(0, 
 				time_index,
 				M_pcs,
@@ -316,7 +321,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> LN_t0,
 				this -> x_t0,
 				mrps_LN,
-				true);
+				true,
+				ground_index);
 
 			cutoff_index = bundle_adjuster.get_cutoff_index();
 
