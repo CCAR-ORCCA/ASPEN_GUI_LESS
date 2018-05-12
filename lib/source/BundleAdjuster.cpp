@@ -327,7 +327,6 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 	std::vector<int> local_pc_index_to_global_pc_index_temp;
 	for (int i = 0; i <= this -> cutoff_index; ++i){
 		local_pc_index_to_global_pc_index_temp.push_back(this -> local_pc_index_to_global_pc_index[i]);
-		std::cout << "Keeping point cloud " << this -> all_registered_pc -> at(local_pc_index_to_global_pc_index_temp.back()) -> get_label() << std::endl;
 	}
 
 	this -> local_pc_index_to_global_pc_index = local_pc_index_to_global_pc_index_temp;

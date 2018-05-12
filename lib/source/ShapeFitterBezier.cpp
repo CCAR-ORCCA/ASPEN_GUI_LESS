@@ -53,6 +53,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	// Once this is done, each patch is trained
 	std::cout << "\n- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
 	boost::progress_display progress(trained_patches_vector.size());
+	
 	#pragma omp parallel for
 	for (int i = 0; i < trained_patches_vector.size(); ++i){
 		Bezier * patch = trained_patches_vector[i];
@@ -60,6 +61,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 		patch -> compute_range_biases();
 		++progress;
 	}
+	
 	std::cout << "- Done training "<< trained_patches_vector.size() <<  " patches " << std::endl;
 
 

@@ -36,16 +36,16 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 1e-10 // velocity
+#define PROCESS_NOISE_SIGMA_VEL 1e-9 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 400 // shape reconstruction steps
+#define OBSERVATION_TIMES 600 // shape reconstruction steps
 #define NAVIGATION_TIMES 80 // navigation steps
 
 // Shape fitting parameters
-#define POINTS_RETAINED 500000 // Number of points to be retained in the shape fitting
+#define POINTS_RETAINED 1000000 // Number of points to be retained in the shape fitting
 #define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
 #define N_EDGES 3000 // Number of edges in a-priori
 #define SHAPE_DEGREE 2 // Shape degree
@@ -61,7 +61,7 @@
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
-#define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
+#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Orbit properties
