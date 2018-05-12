@@ -33,8 +33,6 @@ BundleAdjuster::BundleAdjuster(
 		this -> local_pc_index_to_global_pc_index.push_back(i);
 	}
 
-
-	
 	// The connectivity between point clouds is inferred
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs();
@@ -67,113 +65,6 @@ BundleAdjuster::BundleAdjuster(
 
 
 
-
-
-
-
-// BundleAdjuster::BundleAdjuster(
-// 	std::vector<arma::mat> & M_pcs,
-// 	std::vector<arma::vec> & X_pcs,
-// 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
-// 	int N_iter,
-// 	FlyOverMap * fly_over_map,
-// 	arma::mat & longitude_latitude,
-// 	const arma::mat & LN_t0,
-// 	const arma::vec & x_t0,
-// 	bool look_for_closure,
-// 	bool save_connectivity){
-
-// 	this -> fly_over_map = fly_over_map;
-// 	this -> all_registered_pc = all_registered_pc_;
-// 	this -> LN_t0 = LN_t0;
-// 	this -> x_t0 = x_t0;
-// 	this -> N_iter = N_iter;
-
-// 	int Q = this -> all_registered_pc -> size();
-
-// 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
-
-// 	for (unsigned int i = 0; i < this -> all_registered_pc -> size() -1 ; ++i){
-// 		this -> rotation_increment.push_back(arma::eye<arma::mat>(3,3));
-// 		this -> position_increment.push_back(arma::zeros<arma::vec>(3));
-// 	}
-
-// 	// The connectivity between point clouds is inferred
-// 	std::cout << "- Creating point cloud pairs" << std::endl;
-// 	this -> create_pairs(look_for_closure);
-
-// 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
-// 	this -> update_point_cloud_pairs();
-
-// 	if (this -> N_iter > 0){
-// 	// solve the bundle adjustment problem
-// 		this -> solve_bundle_adjustment();
-// 		std::cout << "- Solved bundle adjustment" << std::endl;
-// 	}	
-
-
-// 	std::cout << "- Updating point clouds ... " << std::endl;
-// 	this -> update_point_clouds( M_pcs,X_pcs);
-// 	std::cout << "\n- Updating flyover map ... " << std::endl;
-// 	this -> update_flyover_map(longitude_latitude);
-
-// 	// The connectivity matrix is saved
-// 	if (save_connectivity){
-// 		this -> save_connectivity();
-// 	}
-// }
-
-
-void BundleAdjuster::update_flyover_map(arma::mat & longitude_latitude){
-
-	// // Updating the pcs. The first one is fixed
-	// for (int pc = 1; pc < this -> all_registered_pc -> size(); ++pc){
-
-
-	// 	std::string label = this -> all_registered_pc -> at(pc) -> get_label();
-	// 	arma::vec old_los = {0,0,0};
-	// 	arma::vec new_los = {0,0,0};
-	// 	arma::rowvec long_lat = longitude_latitude.row(std::stoi( label));
-	// 	double old_longitude = long_lat(0);
-	// 	double old_latitude = long_lat(1);
-
-	// 	double new_longitude,new_latitude;
-
-	// 	if (old_longitude > 0){
-	// 		if (std::abs(old_longitude) <= 90){
-	// 			old_los(0) = 1;
-	// 			old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
-
-	// 		}
-	// 		else{
-	// 			old_los(0) = -1;
-	// 			old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
-	// 		}
-	// 	}
-	// 	else{
-	// 		if (std::abs(old_longitude) <= 90){
-	// 			old_los(0) = 1;
-	// 			old_los(1) = std::tan(arma::datum::pi / 180 * old_longitude);
-	// 		}
-	// 		else{
-	// 			old_los(0) = -1;
-	// 			old_los(1) = -std::tan(arma::datum::pi / 180 * old_longitude);
-	// 		}
-	// 	}
-
-	// 	old_los(2) = arma::norm(old_los.subvec(0,1)) * std::tan(arma::datum::pi / 180 * old_latitude );
-	// 	old_los = arma::normalise(old_los);
-	// 	new_los = this -> rotation_increment.at(pc - 1) * old_los;
-
-	// 	new_longitude = 180. / arma::datum::pi * std::atan2(new_los(1),new_los(0));
-	// 	new_latitude = 180. / arma::datum::pi * std::atan(new_los(2)/arma::norm(new_los.subvec(0,1)));
-
-	// 	longitude_latitude(std::stoi(label),0) = new_longitude;
-	// 	longitude_latitude(std::stoi(label),1) = new_latitude;
-	// 	this -> fly_over_map -> update_label(std::stoi(label),new_longitude,new_latitude);
-	// }
-
-}
 
 
 
@@ -296,29 +187,35 @@ void BundleAdjuster::create_pairs( bool look_for_closure){
 
 	// Checking possible closure between current point cloud and first cloud
 	for (int tf =  local_pc_index_to_global_pc_index.size() - 1 ; tf > closure_index ; --tf){
-		ICP::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
-			this -> h);
-
-		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
-
-		int N_pairs = (int)(std::pow(2, p - this -> h));
-
-		double prop = double(point_pairs.size()) / N_pairs * 100;
-
-		std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
-		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 		
-		if (prop > 80){
-			std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
-			
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) in loop closure" <<  std::endl;
-			
-			std::set<int> pair = {tf,closure_index};
-			pairs.insert(pair);
-			this -> cutoff_index = tf;
-			break;
+		try{
+			ICP::compute_pairs(point_pairs,
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]),
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
+				this -> h);
+
+			double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_size());
+
+			int N_pairs = (int)(std::pow(2, p - this -> h));
+
+			double prop = double(point_pairs.size()) / N_pairs * 100;
+
+			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
+			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
+
+			if (prop > 70){
+				std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[closure_index]) -> get_label() << " , "<<
+
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) in loop closure" <<  std::endl;
+
+				std::set<int> pair = {tf,closure_index};
+				pairs.insert(pair);
+				this -> cutoff_index = tf;
+				break;
+			}
+		}
+		catch(ICPNoPairsException & e){
+
 		}
 
 	}

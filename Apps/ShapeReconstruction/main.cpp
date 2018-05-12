@@ -41,7 +41,7 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 600 // shape reconstruction steps
+#define OBSERVATION_TIMES 1000 // shape reconstruction steps
 #define NAVIGATION_TIMES 80 // navigation steps
 
 // Shape fitting parameters

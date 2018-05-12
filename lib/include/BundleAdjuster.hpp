@@ -102,7 +102,7 @@ protected:
 	std::vector<int> local_pc_index_to_global_pc_index;
 
 
-	int cutoff_index;
+	int cutoff_index = 0;
 	int h = 5;
 };
 
