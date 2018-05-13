@@ -157,7 +157,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_measured.push_back(this -> LN_t0.t() * BN_measured.front().t() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
+			BN_measured.push_back(this -> LN_t0.t() * BN_measured.front() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
 
 			// 		// The spacecraft longitude/latitude is computed from the estimated keplerian state
 			// 	for (int i = last_IOD_epoch_index; i <= time_index; ++i){
