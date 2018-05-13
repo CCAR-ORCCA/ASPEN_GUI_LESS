@@ -37,7 +37,7 @@
 
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 1e-8 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-12 // angular velocity
+#define PROCESS_NOISE_SIGMA_OMEG 1e-11 // angular velocity
 
 // Times
 #define T0 0
@@ -190,7 +190,7 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {0,0,omega};
+	arma::vec omega_0 = {1e-2 * omega,1e-2 * omega,omega};
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
@@ -276,12 +276,12 @@ int main() {
 	}
 
 	# if USE_HARMONICS
-	X_dense.save("../output/trajectory_harmo.txt",arma::raw_ascii);
+	X_dense.save("../output/filter/trajectory_harmo.txt",arma::raw_ascii);
 	#else
-	X_dense.save("../output/trajectory_point_mass.txt",arma::raw_ascii);
+	X_dense.save("../output/filter/trajectory_point_mass.txt",arma::raw_ascii);
 	#endif
 
-	T_dense_arma.save("../output/T_traj.txt",arma::raw_ascii);
+	T_dense_arma.save("../output/filter/T_traj.txt",arma::raw_ascii);
 
 	/******************************************************/
 	/******************************************************/
@@ -304,8 +304,6 @@ int main() {
 	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
 
 
-	
-
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);
 	
@@ -314,8 +312,8 @@ int main() {
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
 
 	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
-		// ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
-		// );
+	// 	ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
+	// 	);
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
@@ -354,7 +352,6 @@ int main() {
 	/* END OF SHAPE RECONSTRUCTION FILTER */
 	/*************************************/
 	
-
 	/***************************************/
 	/* BEGINNING OF NAVIGATION FILTER ******/
 	/***************************************/
@@ -364,7 +361,7 @@ int main() {
 		100,100,100,//position
 		1e-5,1e-5,1e-5,//velocity
 		1e-3,1e-3,1e-3,// mrp
-		1e-19,1e-19,1e-19 // angular velocity
+		1e-10,1e-10,1e-10 // angular velocity
 	};
 
 	arma::mat P0 = arma::diagmat(P0_diag);
@@ -373,7 +370,6 @@ int main() {
 	arma::vec X0_estimated_augmented = X_augmented.back();
 
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
-
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;
@@ -396,7 +392,6 @@ int main() {
 	NavigationFilter filter(args);
 	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
 	filter.set_gamma_fun(Dynamics::gamma_OD);
-
 
 	filter.set_observations_fun(
 		Observations::obs_pos_mrp_ekf_computed,
