@@ -42,7 +42,8 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	std::string ref_frame_name,
-	FrameGraph * frame_graph,double surface_noise): ShapeModel(ref_frame_name,frame_graph){
+	FrameGraph * frame_graph,
+	double surface_noise): ShapeModel(ref_frame_name,frame_graph){
 
 	// All the facets of the original shape model are browsed
 	// The shape starts as a uniform union of order-2 Bezier patches

@@ -165,25 +165,25 @@ public:
 	
 
 
-	void append_relative_pos_mes(const arma::vec & relative_pos_mes){
-		this -> relative_pos_mes_history.push_back(relative_pos_mes);
-	}
+	// void append_relative_pos_mes(const arma::vec & relative_pos_mes){
+	// 	this -> relative_pos_mes_history.push_back(relative_pos_mes);
+	// }
 
 
-	void append_relative_pos_true(const arma::vec & relative_pos_true){
-		this -> relative_pos_true_history.push_back(relative_pos_true);
-	}
+	// void append_relative_pos_true(const arma::vec & relative_pos_true){
+	// 	this -> relative_pos_true_history.push_back(relative_pos_true);
+	// }
 
 
 
-	arma::vec get_latest_relative_pos_mes() const{
-		return this -> relative_pos_mes_history.back();
-	}
+	// arma::vec get_latest_relative_pos_mes() const{
+	// 	return this -> relative_pos_mes_history.back();
+	// }
 
 
-	arma::vec get_latest_relative_pos_true() const{
-		return this -> relative_pos_true_history.back();
-	}
+	// arma::vec get_latest_relative_pos_true() const{
+	// 	return this -> relative_pos_true_history.back();
+	// }
 
 
 	void set_points_retained(int p){
@@ -243,23 +243,23 @@ public:
 	*/
 
 
-	void append_mrp_mes(arma::vec mrp_mes) {
-		this -> mrp_mes_history.push_back(mrp_mes);
-	}
+	// void append_mrp_mes(arma::vec mrp_mes) {
+	// 	this -> mrp_mes_history.push_back(mrp_mes);
+	// }
 
-	void append_mrp_true(arma::vec mrp_true) {
-		this -> mrp_true_history.push_back(mrp_true);
-	}
+	// void append_mrp_true(arma::vec mrp_true) {
+	// 	this -> mrp_true_history.push_back(mrp_true);
+	// }
 
-	arma::vec get_latest_mrp_mes() const {
-		return this -> mrp_mes_history.back();
+	// arma::vec get_latest_mrp_mes() const {
+	// 	return this -> mrp_mes_history.back();
 
-	}
+	// }
 
-	arma::vec get_latest_mrp_true() const {
-		return this ->mrp_true_history.back();
+	// arma::vec get_latest_mrp_true() const {
+	// 	return this ->mrp_true_history.back();
 
-	}
+	// }
 
 
 	void set_los_noise_sd_baseline(double los_noise_sd_baseline){
@@ -282,13 +282,13 @@ public:
 	Spin axis
 	*/
 
-	void append_spin_axis_mes(arma::vec spin_axis_mes) {
-		this -> spin_axis_mes_history.push_back(spin_axis_mes);
-	}
+	// void append_spin_axis_mes(arma::vec spin_axis_mes) {
+	// 	this -> spin_axis_mes_history.push_back(spin_axis_mes);
+	// }
 
-	arma::vec get_latest_spin_axis_mes() const {
-		return this -> spin_axis_mes_history.back();
-	}
+	// arma::vec get_latest_spin_axis_mes() const {
+	// 	return this -> spin_axis_mes_history.back();
+	// }
 
 
 
@@ -298,33 +298,33 @@ public:
 
 
 
-	void append_omega_true(arma::vec omega) {
-		this -> omega_true_history.push_back(omega);
-	}
+	// void append_omega_true(arma::vec omega) {
+	// 	this -> omega_true_history.push_back(omega);
+	// }
 
 
 	
-	void append_omega_mes(arma::vec omega) {
-		this -> omega_mes_history.push_back(omega);
-	}
+	// void append_omega_mes(arma::vec omega) {
+	// 	this -> omega_mes_history.push_back(omega);
+	// }
 
-	arma::vec get_latest_omega_mes() const {
-		return this -> omega_mes_history.back();
-	}
-
-
-	void append_time(double time) {
-		this -> time_history.push_back(time);
-	}
+	// arma::vec get_latest_omega_mes() const {
+	// 	return this -> omega_mes_history.back();
+	// }
 
 
-	double get_latest_time() const {
-		return this -> time_history.back() ;
-	}
+	// void append_time(double time) {
+	// 	this -> time_history.push_back(time);
+	// }
 
-	unsigned int get_number_of_measurements() const{
-		return this -> time_history.size();
-	}
+
+	// double get_latest_time() const {
+	// 	return this -> time_history.back() ;
+	// }
+
+	// unsigned int get_number_of_measurements() const{
+	// 	return this -> time_history.size();
+	// }
 
 
 	unsigned int get_N_iter_shape_filter() const {
@@ -344,57 +344,61 @@ public:
 	unsigned int get_N_edges() const{
 		return this -> N_edges;
 	}
-	void save_results() const {
 
-		arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
+
+
+	
+	// void save_results() const {
+
+	// 	arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
 		
-		arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
-		arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
+	// 	arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
+	// 	arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
 
-		arma::mat mrp_mes_time_history_mat = arma::mat(3, this -> mrp_mes_history.size());
-		arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
+	// 	arma::mat mrp_mes_time_history_mat = arma::mat(3, this -> mrp_mes_history.size());
+	// 	arma::mat mrp_true_time_history_mat = arma::mat(3, this -> mrp_true_history.size());
 
-		arma::mat relative_pos_mes_time_history_mat = arma::mat(3, this -> relative_pos_mes_history.size());
-		arma::mat relative_pos_true_time_history_mat = arma::mat(3, this -> relative_pos_true_history.size());
+	// 	arma::mat relative_pos_mes_time_history_mat = arma::mat(3, this -> relative_pos_mes_history.size());
+	// 	arma::mat relative_pos_true_time_history_mat = arma::mat(3, this -> relative_pos_true_history.size());
 
-		assert(this -> mrp_mes_history.size() == this -> mrp_true_history.size());
-		assert(this -> omega_mes_time_history_mat.size() == this -> omega_true_time_history_mat.size());
-		assert(this -> relative_pos_mes_time_history_mat.size() == this -> relative_pos_true_time_history_mat.size());
-		assert(this -> omega_mes_history.size() == this -> mrp_true_history.size());
+	// 	assert(this -> mrp_mes_history.size() == this -> mrp_true_history.size());
+	// 	assert(this -> omega_mes_time_history_mat.size() == this -> omega_true_time_history_mat.size());
+	// 	assert(this -> relative_pos_mes_time_history_mat.size() == this -> relative_pos_true_time_history_mat.size());
+	// 	assert(this -> omega_mes_history.size() == this -> mrp_true_history.size());
 		
 
 
-		for (unsigned int i = 0; i < this -> omega_mes_history.size() ; ++i) {
+	// 	for (unsigned int i = 0; i < this -> omega_mes_history.size() ; ++i) {
 
-			omega_mes_time_history_mat.col(i) = this -> omega_mes_history[i];
-			omega_true_time_history_mat.col(i) = this -> omega_true_history[i];
-			time_mat(i) = this -> time_history[i];
+	// 		omega_mes_time_history_mat.col(i) = this -> omega_mes_history[i];
+	// 		omega_true_time_history_mat.col(i) = this -> omega_true_history[i];
+	// 		time_mat(i) = this -> time_history[i];
 
-		}
+	// 	}
 
-		for (unsigned int i = 0; i < this -> mrp_mes_history.size() ; ++i) {
-			mrp_mes_time_history_mat.col(i) = this -> mrp_mes_history[i];
-			mrp_true_time_history_mat.col(i) = this -> mrp_true_history[i];
-			relative_pos_true_time_history_mat.col(i) = this -> relative_pos_true_history[i];
-			relative_pos_mes_time_history_mat.col(i) = this -> relative_pos_mes_history[i];
-		}
-
-
-		omega_mes_time_history_mat.save("../output/attitude/omega_mes_time_history_mat.txt", arma::raw_ascii);
-		mrp_mes_time_history_mat.save("../output/attitude/mrp_mes_time_history_mat.txt", arma::raw_ascii);
-		mrp_true_time_history_mat.save("../output/attitude/mrp_true_time_history_mat.txt", arma::raw_ascii);
-
-		relative_pos_mes_time_history_mat.save("../output/attitude/relative_pos_mes_time_history_mat.txt", arma::raw_ascii);
-		relative_pos_true_time_history_mat.save("../output/attitude/relative_pos_true_time_history_mat.txt", arma::raw_ascii);
-
-		omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
-		time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
-		// index_time_pc_vec.save("../output/attitude/index_time_pc_vec_time_history.txt", arma::raw_ascii);
-		// index_time_shape_vec.save("../output/attitude/index_time_shape_vec_time_history.txt", arma::raw_ascii);
+	// 	for (unsigned int i = 0; i < this -> mrp_mes_history.size() ; ++i) {
+	// 		mrp_mes_time_history_mat.col(i) = this -> mrp_mes_history[i];
+	// 		mrp_true_time_history_mat.col(i) = this -> mrp_true_history[i];
+	// 		relative_pos_true_time_history_mat.col(i) = this -> relative_pos_true_history[i];
+	// 		relative_pos_mes_time_history_mat.col(i) = this -> relative_pos_mes_history[i];
+	// 	}
 
 
+	// 	omega_mes_time_history_mat.save("../output/attitude/omega_mes_time_history_mat.txt", arma::raw_ascii);
+	// 	mrp_mes_time_history_mat.save("../output/attitude/mrp_mes_time_history_mat.txt", arma::raw_ascii);
+	// 	mrp_true_time_history_mat.save("../output/attitude/mrp_true_time_history_mat.txt", arma::raw_ascii);
 
-	}
+	// 	relative_pos_mes_time_history_mat.save("../output/attitude/relative_pos_mes_time_history_mat.txt", arma::raw_ascii);
+	// 	relative_pos_true_time_history_mat.save("../output/attitude/relative_pos_true_time_history_mat.txt", arma::raw_ascii);
+
+	// 	omega_true_time_history_mat.save("../output/attitude/omega_true_time_history_mat.txt", arma::raw_ascii);
+	// 	time_mat.save("../output/attitude/time_history.txt", arma::raw_ascii);
+	// 	// index_time_pc_vec.save("../output/attitude/index_time_pc_vec_time_history.txt", arma::raw_ascii);
+	// 	// index_time_shape_vec.save("../output/attitude/index_time_shape_vec_time_history.txt", arma::raw_ascii);
+
+
+
+	// }
 
 
 	bool get_use_ba() const{
@@ -470,21 +474,21 @@ protected:
 	bool use_ba = false;
 
 
-	std::vector<arma::vec> spin_axis_mes_history;
-	std::vector<arma::vec> omega_mes_history;
-	std::vector<arma::vec> omega_hat_history;
-	std::vector<arma::vec> omega_true_history;
-	std::vector<arma::vec> mrp_mes_history;
-	std::vector<arma::vec> mrp_true_history;
+	// std::vector<arma::vec> spin_axis_mes_history;
+	// std::vector<arma::vec> omega_mes_history;
+	// std::vector<arma::vec> omega_hat_history;
+	// std::vector<arma::vec> omega_true_history;
+	// std::vector<arma::vec> mrp_mes_history;
+	// std::vector<arma::vec> mrp_true_history;
 
-	std::vector<arma::vec> relative_pos_true_history;
-	std::vector<arma::vec> relative_pos_mes_history;
-
-
-	std::vector<arma::mat > R_omega;
+	// std::vector<arma::vec> relative_pos_true_history;
+	// std::vector<arma::vec> relative_pos_mes_history;
 
 
-	std::vector<double> time_history;
+	// std::vector<arma::mat > R_omega;
+
+
+	// std::vector<double> time_history;
 
 
 

@@ -72,7 +72,7 @@
 #define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
-// CHEATS
+// CHEATS (true: cheat is disabled)
 #define USE_BA true // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
@@ -182,7 +182,7 @@ int main() {
 	// Initial state
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
-	// Position
+	// Position in inertial frame
 	arma::vec pos_0 = {1000,50,150};
 
 	// MRP BN 
@@ -196,7 +196,11 @@ int main() {
 	double a = arma::norm(pos_0);
 	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
 
-	arma::vec vel_0_inertial = {0,std::cos(arma::datum::pi/ 180 * INCLINATION)*v,std::sin(arma::datum::pi/ 180 * INCLINATION)*v};
+	// Velocity in inertial frame
+	arma::vec vel_0_inertial = {0,
+		std::cos(arma::datum::pi/ 180 * INCLINATION)*v,
+		std::sin(arma::datum::pi/ 180 * INCLINATION)*v
+	};
 
 	X0_augmented.rows(0,2) = pos_0;
 	X0_augmented.rows(3,5) = vel_0_inertial;
@@ -256,7 +260,7 @@ int main() {
 		Observer::push_back_augmented_state(X_augmented));
 
 	auto stepper_dense = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-	
+
 	arma::vec X_augmented_2 = X0_augmented;
 
 	// The orbit is propagated with a finer timestep for visualization purposes
@@ -306,7 +310,7 @@ int main() {
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);
-	
+
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
@@ -351,7 +355,7 @@ int main() {
 	/***************************************/
 	/* END OF SHAPE RECONSTRUCTION FILTER */
 	/*************************************/
-	
+
 	/***************************************/
 	/* BEGINNING OF NAVIGATION FILTER ******/
 	/***************************************/

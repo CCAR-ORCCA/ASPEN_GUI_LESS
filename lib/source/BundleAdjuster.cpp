@@ -14,7 +14,7 @@ BundleAdjuster::BundleAdjuster(
 	int tf,
 	std::map<int,arma::mat> & M_pcs,
 	std::map<int,arma::vec> & X_pcs,
-	std::vector<arma::mat> & BN_estimated,
+	std::vector<arma::mat> & BN_measured,
 	std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
 	int N_iter,
 	const arma::mat & LN_t0,
@@ -53,7 +53,7 @@ BundleAdjuster::BundleAdjuster(
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds(M_pcs,
 		X_pcs,
-		BN_estimated,
+		BN_measured,
 		mrps_LN);
 	
 
@@ -577,7 +577,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, 
 	std::map<int,arma::vec> & X_pcs,
-	std::vector<arma::mat> & BN_estimated,
+	std::vector<arma::mat> & BN_measured,
 	const std::vector<arma::vec> & mrps_LN){
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size() - 1);
@@ -601,7 +601,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 		X_pcs[pc_global_index] += x;
 
 		// The small body attitude is fixed
-		BN_estimated[pc_global_index] = RBK::mrp_to_dcm(mrps_LN[0]).t() * M_pcs[pc_global_index] * RBK::mrp_to_dcm(mrps_LN[pc_global_index]);
+		BN_measured[pc_global_index] = RBK::mrp_to_dcm(mrps_LN[0]).t() * M_pcs[pc_global_index] * RBK::mrp_to_dcm(mrps_LN[pc_global_index]);
 
 		++progress;
 

@@ -139,7 +139,7 @@ protected:
 		const int t0 ,
 		const int tf, 
 		const OC::KepState & est_kep_state,
-		const std::vector<arma::mat> BN_estimated) const;
+		const std::vector<arma::mat> BN_measured) const;
 
 	/**
 	Assembles the rigid transforms needed to evaluate the IOD cost function
@@ -205,6 +205,10 @@ protected:
 		const arma::mat & offset_DCM,
 		const arma::vec & OL_t0,
 		const arma::mat & LN_t0);
+
+
+
+	void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
 
 
 	/**

@@ -60,7 +60,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
-	std::vector<arma::mat> BN_estimated;
+	std::vector<arma::mat> BN_measured;
 	std::vector<arma::mat> BN_true;
 	std::vector<arma::mat> HN_true;
 	std::map<int,arma::vec> X_pcs;
@@ -118,14 +118,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
-			BN_estimated.push_back(arma::eye<arma::mat>(3,3));
+			// It is legit to use the true attitude state at the first timestep
+			// as it just defines an offset
+			BN_measured.push_back(RBK::mrp_to_dcm(X_S.subvec(6,8)));
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
-
-
-
 		}
 
 		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
@@ -158,9 +157,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_estimated.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
+			BN_measured.push_back(this -> LN_t0.t() * M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
 
-			
 			// 		// The spacecraft longitude/latitude is computed from the estimated keplerian state
 			// 	for (int i = last_IOD_epoch_index; i <= time_index; ++i){
 
@@ -172,7 +170,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// 		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 			// 		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-			// 		arma::vec u_B = BN_estimated[i] * DCM_HN.t() * u_H;
+			// 		arma::vec u_B = BN_measured[i] * DCM_HN.t() * u_H;
 
 			// 		longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
 			// 		latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
@@ -261,17 +259,21 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				// 	last_ba_call_index ,
 				// 	time_index, 
 				// 	estimated_state,
-				// 	BN_estimated);
+				// 	BN_measured);
 
 
-				std::cout << " -- Applying BA to successive point clouds\n";
+			std::cout << " -- Applying BA to successive point clouds\n";
 			std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+
+			this -> save_attitude("measured_before_BA",time_index,BN_measured);
+			this -> save_attitude("true",time_index,BN_true);
 
 			BundleAdjuster bundle_adjuster(0, 
 				time_index,
 				M_pcs,
 				X_pcs,
-				BN_estimated,
+				BN_measured,
 				&this -> all_registered_pc,
 				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 				this -> LN_t0,
@@ -279,6 +281,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				mrps_LN,
 				false,
 				previous_closure_index);
+
+			this -> save_attitude("measured_after_BA",time_index,BN_measured);
 
 			std::cout << " -- Running IOD after correction\n";
 
@@ -296,7 +300,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				// 	last_ba_call_index ,
 				// 	time_index, 
 				// 	estimated_state,
-				// 	BN_estimated);
+				// 	BN_measured);
 
 
 			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
@@ -315,7 +319,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				time_index,
 				M_pcs,
 				X_pcs,
-				BN_estimated,
+				BN_measured,
 				&this -> all_registered_pc,
 				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
 				this -> LN_t0,
@@ -360,6 +364,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() const{
 	return this -> estimated_shape_model;
 }
+
+
+
+
+void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const{
+
+
+	arma::mat mrp_BN = arma::mat( 3,BN.size());
+	for (int i = 0; i < mrp_BN.n_cols; ++i){
+		mrp_BN.col(i) = RBK::dcm_to_mrp(BN.at(i));
+
+	}
+
+	mrp_BN.save("../output/filter/" + prefix + "_" + std::to_string(index) + ".txt");
+
+}
+
+
+
 
 
 
@@ -513,35 +536,6 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 }
 
 
-
-void ShapeBuilder::perform_measurements_shape(const arma::vec & X_S, 
-	double time, 
-	const arma::mat & M,
-	const arma::mat & NE_tD_EN_tS_pc,
-	const arma::vec & X_pc,
-	const arma::mat & LN_t_S, 
-	const arma::mat & LN_t_D, 
-	const arma::vec & mrp_BN,
-	const arma::vec & X_relative_true,
-	const arma::mat & offset_DCM,
-	const arma::vec & OL_t0,
-	const arma::mat & LN_t0){
-
-
-	this -> filter_arguments -> append_mrp_mes(RBK::dcm_to_mrp( M ));
-
-
-	this -> filter_arguments -> append_time(time);
-	this -> filter_arguments -> append_omega_true(X_S.rows(9, 11));
-	this -> filter_arguments -> append_mrp_true(mrp_BN);
-
-	this -> filter_arguments -> append_relative_pos_mes(arma::zeros<arma::vec>(3));
-	this -> filter_arguments -> append_relative_pos_true(arma::zeros<arma::vec>(3));
-
-}
-
-
-
 void ShapeBuilder::get_new_states(
 	const arma::vec & X_S, 
 	arma::mat & dcm_LB, 
@@ -628,7 +622,7 @@ void ShapeBuilder::save_estimated_ground_track(
 	const int t0 ,
 	const int tf, 
 	const OC::KepState & est_kep_state,
-	const std::vector<arma::mat> BN_estimated) const{
+	const std::vector<arma::mat> BN_measured) const{
 
 
 	arma::mat longitude_latitude(tf - t0 + 1,2);
@@ -642,7 +636,7 @@ void ShapeBuilder::save_estimated_ground_track(
 
 		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
 		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-		arma::vec u_B = BN_estimated.at(i) * DCM_HN.t() * u_H;
+		arma::vec u_B = BN_measured.at(i) * DCM_HN.t() * u_H;
 
 		double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
 		double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
