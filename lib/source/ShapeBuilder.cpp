@@ -377,7 +377,7 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 
 	}
 
-	mrp_BN.save("../output/filter/" + prefix + "_" + std::to_string(index) + ".txt");
+	mrp_BN.save("../output/filter/BN_" + prefix + "_" + std::to_string(index) + ".txt",arma::raw_ascii);
 
 }
 
