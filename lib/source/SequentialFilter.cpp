@@ -18,7 +18,11 @@ void SequentialFilter::apply_SNC(double dt,arma::mat & P_bar,const arma::mat & Q
 			P_bar += Gamma * Q * Gamma.t();
 		}
 		else{
+			// SNC applied to position/velocity state
 			P_bar.submat(0,0,5,5) += Gamma * Q.submat(0,0,2,2) * Gamma.t();
+
+			// SNC applied to attitude/angular velocity state
+			Gamma.submat(0,0,2,2) *= 1./4;
 			P_bar.submat(6,6,11,11) += Gamma * Q.submat(3,3,5,5) * Gamma.t();
 		}
 	}
