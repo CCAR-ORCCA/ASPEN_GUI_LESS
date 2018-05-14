@@ -73,7 +73,7 @@
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
 // CHEATS (true: cheat is disabled)
-#define USE_BA false // Whether or not the bundle adjustment should be used
+#define USE_BA true // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 #define RECONSTRUCT_SHAPE true
 ///////////////////////////////////////////
@@ -92,7 +92,6 @@ int main() {
 	frame_graph.add_transform("N", "B");
 	frame_graph.add_transform("N", "E");
 	frame_graph.add_transform("N", "L");
-
 
 	// Shape model formed with triangles
 	ShapeModelTri true_shape_model("B", &frame_graph);
@@ -315,7 +314,6 @@ int main() {
 	// The reconstructed shape model has its coordinates
 	// expressed in the estimated B frame, "E"
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
-	
 	#else
 
 	// If not, the estimated shape is set to the true shape
