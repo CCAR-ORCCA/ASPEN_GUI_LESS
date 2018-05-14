@@ -602,7 +602,6 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 
 		// The small body attitude is fixed
 		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-
 		BN_measured[pc_global_index] = BN_measured[0] *  RBK::mrp_to_dcm( mrps_LN[0]).t() * M_pcs[pc_global_index] * RBK::mrp_to_dcm(mrps_LN[pc_global_index]);
 
 		++progress;

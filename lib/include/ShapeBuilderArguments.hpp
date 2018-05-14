@@ -347,11 +347,11 @@ public:
 
 
 
-	
+
 	// void save_results() const {
 
 	// 	arma::vec time_mat = arma::vec(this -> omega_mes_history.size());
-		
+
 	// 	arma::mat omega_mes_time_history_mat = arma::mat(3, this -> omega_mes_history.size());
 	// 	arma::mat omega_true_time_history_mat = arma::mat(3, this -> omega_true_history.size());
 
@@ -365,7 +365,7 @@ public:
 	// 	assert(this -> omega_mes_time_history_mat.size() == this -> omega_true_time_history_mat.size());
 	// 	assert(this -> relative_pos_mes_time_history_mat.size() == this -> relative_pos_true_time_history_mat.size());
 	// 	assert(this -> omega_mes_history.size() == this -> mrp_true_history.size());
-		
+
 
 
 	// 	for (unsigned int i = 0; i < this -> omega_mes_history.size() ; ++i) {
@@ -435,6 +435,40 @@ public:
 	}
 
 
+	void set_mrp_EN_final(arma::vec mrp) {
+		this -> mrp_EN_final = mrp;
+	}
+	
+	void set_omega_EN_final(arma::vec omega) {
+		this -> omega_EN_final = omega;
+	}
+
+	void set_position_final(arma::vec pos) {
+		this -> position_final = pos;
+	}
+	
+	void set_velocity_final(arma::vec vel) {
+		this -> velocity_final = vel;
+	}
+
+
+	arma::vec get_mrp_EN_final() const{
+		return this -> mrp_EN_final;
+	}
+
+	arma::vec get_omega_EN_final() const{
+		return this -> omega_EN_final;
+	}
+
+
+	arma::vec get_position_final() const{
+		return this -> position_final;
+	}
+
+	arma::vec get_velocity_final() const{
+		return this -> velocity_final;
+	}
+
 
 protected:
 
@@ -472,6 +506,15 @@ protected:
 	bool has_transitioned_to_shape = false;
 	bool use_icp = true;
 	bool use_ba = false;
+
+
+	arma::vec mrp_EN_final;
+	arma::vec omega_EN_final;
+	arma::vec position_final;
+	arma::vec velocity_final;
+
+
+
 
 
 	// std::vector<arma::vec> spin_axis_mes_history;

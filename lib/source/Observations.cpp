@@ -40,7 +40,6 @@ arma::vec Observations::obs_lidar_range_true(double t,
 
 	// Getting the true observations (noise is NOT added, 
 	// it will be added elsewhere in the filter)
-	
 
 	lidar -> send_flash(args.get_true_shape_model(),false,args.get_skip_factor());
 

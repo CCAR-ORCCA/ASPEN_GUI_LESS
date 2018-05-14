@@ -73,7 +73,7 @@
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
 // CHEATS (true: cheat is disabled)
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 
 ///////////////////////////////////////////
@@ -112,7 +112,6 @@ int main() {
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	
 	true_shape_model.construct_kd_tree_shape();
-
 
 // Lidar
 	Lidar lidar(&frame_graph,
@@ -309,26 +308,30 @@ int main() {
 
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
+
+	#if RECONSTRUCT_SHAPE
 	shape_filter.run_shape_reconstruction(times,X_augmented,true);
-
-
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
+	// The reconstructed shape model has its coordinates
+	// expressed in the estimated B frame, "E"
 	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	
+	#else
 
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
-	// 	ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
-	// 	);
-
+	// If not, the estimated shape is set to the true shape
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
+		ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
+		);
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
 
 	estimated_shape_model -> shift_to_barycenter();
 	estimated_shape_model -> update_mass_properties();
 
-	std::cout << "\ncenter of mass after shifting: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
 	estimated_shape_model -> align_with_principal_axes();
 	estimated_shape_model -> update_mass_properties();
-	std::cout << "\ncenter of mass after rotating: " << estimated_shape_model -> get_center_of_mass().t() << std::endl;
+	#endif 
+
 
 	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
 	estimated_shape_model -> construct_kd_tree_shape();
@@ -341,6 +344,7 @@ int main() {
 
 	std::cout << "Estimated inertia:" << std::endl;
 	std::cout << estimated_shape_model -> get_inertia() << std::endl;
+	
 	std::cout << "True inertia:" << std::endl;
 	std::cout << true_shape_model. get_inertia() << std::endl;
 
@@ -373,7 +377,17 @@ int main() {
 	arma::vec X0_true_augmented = X_augmented.back();
 	arma::vec X0_estimated_augmented = X_augmented.back();
 
+	#if USE_ICP
+	// The initial estimated state is assembled from the output of the shape reconstruction filter
+
+	X0_estimated_augmented.subvec(0,2) = shape_filter.get_position_final();
+	X0_estimated_augmented.subvec(3,5) = shape_filter.get_velocity_final();
+	X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
+	X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
+
+	#else
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
+	#endif
 
 	std::cout << "True state: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;

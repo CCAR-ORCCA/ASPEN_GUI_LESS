@@ -73,6 +73,9 @@ public:
 	std::shared_ptr<ShapeModelBezier> get_estimated_shape_model() const;
 
 
+	arma::vec get_final_measured_attitude() const;
+	arma::vec get_final_measured_omega() const;
+
 
 
 	/**
