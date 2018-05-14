@@ -380,8 +380,8 @@ int main() {
 	#if USE_ICP
 	// The initial estimated state is assembled from the output of the shape reconstruction filter
 
-	X0_estimated_augmented.subvec(0,2) = shape_filter.get_position_final();
-	X0_estimated_augmented.subvec(3,5) = shape_filter.get_velocity_final();
+	X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
+	X0_estimated_augmented.subvec(3,5) = shape_filter_args.get_velocity_final();
 	X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
 	X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
 
