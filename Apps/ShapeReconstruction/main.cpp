@@ -75,7 +75,7 @@
 // CHEATS (true: cheat is disabled)
 #define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
-
+#define RECONSTRUCT_SHAPE true
 ///////////////////////////////////////////
 
 int main() {
