@@ -188,7 +188,7 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {1e-2 * omega,1e-2 * omega,omega};
+	arma::vec omega_0 = {0e-2 * omega,0e-2 * omega,omega};
 
 	// Velocity determined from sma
 	double a = arma::norm(pos_0);
@@ -377,17 +377,19 @@ int main() {
 
 	#if USE_ICP
 	// The initial estimated state is assembled from the output of the shape reconstruction filter
-
+	std::cout << "Generating initial a-priori from rigid transforms ...\n";
 	X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
 	X0_estimated_augmented.subvec(3,5) = shape_filter_args.get_velocity_final();
 	X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
 	X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
 
 	#else
+	std::cout << "Generating initial a-priori from normal distribution ...\n";
+
 	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
 	#endif
 
-	std::cout << "True state: " << std::endl;
+	std::cout << "True State: " << std::endl;
 	std::cout << X0_true_augmented.t() << std::endl;
 
 	std::cout << "Initial Estimated state: " << std::endl;
