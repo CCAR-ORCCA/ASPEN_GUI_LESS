@@ -36,8 +36,8 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 1e-8 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-11 // angular velocity
+#define PROCESS_NOISE_SIGMA_VEL 3e-8 // velocity
+#define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
 
 // Times
 #define T0 0
@@ -45,9 +45,9 @@
 #define NAVIGATION_TIMES 80 // navigation steps
 
 // Shape fitting parameters
-#define POINTS_RETAINED 1000000 // Number of points to be retained in the shape fitting
+#define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
 #define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
-#define N_EDGES 3000 // Number of edges in a-priori
+#define N_EDGES 4000 // Number of edges in a-priori
 #define SHAPE_DEGREE 2 // Shape degree
 #define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
@@ -143,6 +143,8 @@ int main() {
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
+	args.set_true_inertia(true_shape_model.get_inertia());
+
 
 
 	/******************************************************/
@@ -239,8 +241,6 @@ int main() {
 	std::vector<arma::vec> X_augmented,X_augmented_dense;
 
 
-	// Set active inertia here
-	args.set_true_inertia(true_shape_model.get_inertia());
 	auto N_true = X0_augmented.n_rows;
 
 
@@ -412,6 +412,8 @@ int main() {
 		nav_times(i) = T_obs[T_obs.size() - 1] + double(i)/INSTRUMENT_FREQUENCY_NAV;
 		nav_times_vec.push_back( nav_times(i));
 	}
+
+
 
 	NavigationFilter filter(args);
 	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
