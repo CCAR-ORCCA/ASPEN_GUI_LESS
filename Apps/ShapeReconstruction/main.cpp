@@ -65,7 +65,7 @@
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Orbit properties
-#define INCLINATION 45 // Orbit inclination (degrees)
+#define INCLINATION 90 // Orbit inclination (degrees)
 
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
@@ -81,7 +81,7 @@
 // CHEATS (true: cheat is disabled)
 #define USE_BA true // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
-#define RECONSTRUCT_SHAPE false
+#define RECONSTRUCT_SHAPE true
 ///////////////////////////////////////////
 
 int main() {
