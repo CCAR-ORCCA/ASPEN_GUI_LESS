@@ -124,9 +124,6 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	this -> true_state_history.clear();
 
 
-	// Set active inertia here
-	this -> args.set_true_inertia(this -> args.get_true_shape_model() -> get_inertia());
-
 	System dynamics(this -> args,N_true,this -> true_dynamics_fun );
 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
