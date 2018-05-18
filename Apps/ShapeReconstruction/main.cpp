@@ -29,7 +29,7 @@
 #define FOCAL_LENGTH 1e1 // meters
 #define INSTRUMENT_FREQUENCY_SHAPE 0.0016  // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
-#define SKIP_FACTOR 0.92 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
+#define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 5e-1
@@ -74,7 +74,7 @@
 
 // A-priori covariance
 #define SIGMA_POS 10 // a-priori sd on position (m)
-#define SIGMA_VEL 1e-2 // a-priori sd on velocity (m/s)
+#define SIGMA_VEL 1e-3 // a-priori sd on velocity (m/s)
 #define SIGMA_MRP 1e-3 // a-priori sd on mrp (-)
 #define SIGMA_OMEGA 1e-5 // a-priori sd on angular velocity (rad/s)
 
