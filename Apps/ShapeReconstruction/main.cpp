@@ -41,7 +41,7 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 400 // shape reconstruction steps
+#define OBSERVATION_TIMES 1000 // shape reconstruction steps
 #define NAVIGATION_TIMES 80 // navigation steps
 
 // Shape fitting parameters
@@ -81,7 +81,7 @@
 // CHEATS (true: cheat is disabled)
 #define USE_BA true // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
-#define RECONSTRUCT_SHAPE true
+#define RECONSTRUCT_SHAPE false
 ///////////////////////////////////////////
 
 int main() {
@@ -381,7 +381,7 @@ int main() {
 	arma::vec X0_true_augmented = X_augmented.back();
 	arma::vec X0_estimated_augmented = X_augmented.back();
 
-	#if USE_ICP
+	#if USE_ICP && RECONSTRUCT_SHAPE
 	// The initial estimated state is assembled from the output of the shape reconstruction filter
 	std::cout << "Generating initial a-priori from rigid transforms ...\n";
 	X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
