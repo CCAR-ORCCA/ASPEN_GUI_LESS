@@ -36,7 +36,7 @@
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 3e-8 // velocity
+#define PROCESS_NOISE_SIGMA_VEL 2e-8 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
 
 // Times
