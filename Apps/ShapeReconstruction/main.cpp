@@ -382,8 +382,8 @@ int main() {
 
 	arma::mat shape_error_arma(shape_error_results.size(),2);
 	for (unsigned int j = 0; j < shape_error_results.size(); ++j){
-		shape_error_arma(0,j) = shape_error_results[j][0];
-		shape_error_arma(1,j) = shape_error_results[j][1];
+		shape_error_arma(j,0) = shape_error_results[j][0];
+		shape_error_arma(j,1) = shape_error_results[j][1];
 	}
 
 
