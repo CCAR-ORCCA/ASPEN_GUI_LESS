@@ -343,6 +343,65 @@ int main() {
 
 	// estimated_shape_model -> compute_volume_sd();
 
+	auto kd_tree = true_shape_model.get_KDTreeShape();
+
+
+	std::vector<std::array<double ,2> > shape_error_results;
+
+	// The shape error is computed here
+	for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
+		
+		Bezier * patch = static_cast<Bezier *>( estimated_shape_model -> get_elements() -> at(i).get() );
+		arma::vec center = patch -> evaluate(1./3,1./3);
+		arma::vec normal = patch -> get_normal(1./3, 1./3);
+
+		arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
+		double sd = std::sqrt(arma::dot(normal,P * normal));
+
+
+		// a ray is traced from the center towards + normal
+		Ray ray_n(center,normal);
+		true_shape_model.ray_trace(&ray_n);
+		if (ray_n.get_hit_element() != nullptr){
+			double residual = arma::dot(normal,ray_n.get_impact_point()  - center );
+			shape_error_results.push_back({sd,residual});
+		}
+		else{
+		// a ray is traced from the center towards - normal
+			Ray ray_mn(center,-normal);
+			true_shape_model.ray_trace(&ray_mn);
+			if (ray_mn.get_hit_element() != nullptr){
+
+				double residual = arma::dot(-normal,ray_mn.get_impact_point() - center );
+				shape_error_results.push_back({sd,residual});
+			}
+
+		}
+
+	}
+
+	arma::mat shape_error_arma(shape_error_results.size(),2);
+	for (unsigned int j = 0; j < shape_error_results.size(); ++j){
+		shape_error_arma(0,j) = shape_error_results[j][0];
+		shape_error_arma(1,j) = shape_error_results[j][1];
+	}
+
+
+	shape_error_arma.save("../output/shape_error.txt",arma::raw_ascii);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
 	args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
 
@@ -447,6 +506,22 @@ int main() {
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
 	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	filter.write_estimated_state("../output/filter/X_hat.txt");
 	filter.write_true_state("../output/filter/X_true.txt");
