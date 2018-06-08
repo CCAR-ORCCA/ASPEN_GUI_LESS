@@ -343,8 +343,6 @@ int main() {
 
 	// estimated_shape_model -> compute_volume_sd();
 
-	auto kd_tree = true_shape_model.get_KDTreeShape();
-
 
 	std::vector<std::array<double ,2> > shape_error_results;
 
