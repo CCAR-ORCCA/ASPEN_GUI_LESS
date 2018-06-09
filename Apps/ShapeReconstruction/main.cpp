@@ -382,7 +382,7 @@ int main() {
 	}
 
 
-	arma::mat spurious_points_arma(spurious_points.size(),3);
+	arma::mat spurious_points_arma(3,spurious_points.size());
 	for (unsigned int j = 0; j < spurious_points.size(); ++j){
 		spurious_points_arma.col(j) = spurious_points[j];
 	}
