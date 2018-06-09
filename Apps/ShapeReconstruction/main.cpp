@@ -357,26 +357,25 @@ int main() {
 		double sd = std::sqrt(arma::dot(normal,P * normal));
 
 
-		// a ray is traced from the center towards + normal
 		Ray ray_n(center,normal);
 		true_shape_model.ray_trace(&ray_n);
-		if (ray_n.get_hit_element() != nullptr){
-			double residual = arma::dot(normal,ray_n.get_impact_point()  - center );
-			shape_error_results.push_back({sd,residual});
-		}
-		else{
-		// a ray is traced from the center towards - normal
-			Ray ray_mn(center,-normal);
-			true_shape_model.ray_trace(&ray_mn);
-			if (ray_mn.get_hit_element() != nullptr){
 
-				double residual = arma::dot(-normal,ray_mn.get_impact_point() - center );
-				shape_error_results.push_back({sd,residual});
-			}
+		Ray ray_mn(center,-normal);
+		true_shape_model.ray_trace(&ray_mn);
+
+
+		if (ray_n.get_true_range() < ray_mn.get_true_range()){
+			shape_error_results.push_back({sd,ray_n.get_true_range()});
+		}
+		else if (ray_n.get_true_range() > ray_mn.get_true_range()){
+			shape_error_results.push_back({sd,ray_mn.get_true_range()});
 
 		}
 
 	}
+
+
+
 
 	arma::mat shape_error_arma(shape_error_results.size(),2);
 	for (unsigned int j = 0; j < shape_error_results.size(); ++j){
@@ -405,7 +404,7 @@ int main() {
 
 	std::cout << "Estimated inertia:" << std::endl;
 	std::cout << estimated_shape_model -> get_inertia() << std::endl;
-	
+
 	std::cout << "True inertia:" << std::endl;
 	std::cout << true_shape_model. get_inertia() << std::endl;
 
