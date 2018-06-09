@@ -8,6 +8,8 @@
 #include <Observer.hpp>
 #include <System.hpp>
 #include <ShapeBuilderArguments.hpp>
+#include <PC.hpp>
+
 
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
@@ -345,6 +347,8 @@ int main() {
 
 
 	std::vector<std::array<double ,2> > shape_error_results;
+	std::vector<arma::vec> spurious_points;
+
 
 	// The shape error is computed here
 	for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
@@ -371,10 +375,20 @@ int main() {
 			shape_error_results.push_back({sd,ray_mn.get_true_range()});
 
 		}
+		else{
+			spurious_points.push_back(center);
+		}
 
 	}
 
 
+	arma::mat spurious_points_arma(spurious_points.size(),3);
+	for (unsigned int j = 0; j < spurious_points.size(); ++j){
+		spurious_points_arma.col(j) = spurious_points[j];
+	}
+	arma::vec los = {1,0,0};
+	PC spurious_point_pc(los,spurious_points_arma);
+	spurious_point_pc.save("../output/pc/spurious_point_pc.obj");
 
 
 	arma::mat shape_error_arma(shape_error_results.size(),2);
