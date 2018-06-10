@@ -125,7 +125,11 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 	auto control_points = this -> shape_model -> get_control_points();
 
 
-	for (auto point =  control_points -> begin(); point !=  control_points -> end(); ++point){
+	for (unsigned int index =  0 ; index < control_points -> size(); ++index){
+
+	// for (auto point =  control_points -> begin(); point !=  control_points -> end(); ++point){
+
+		auto point = control_points -> at(index);
 
 		Bezier * patch = dynamic_cast<Bezier *>(    *((*point) -> get_owning_elements().begin()));
 		auto indices = patch ->  get_local_indices(*point);
@@ -137,9 +141,9 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 		arma::vec n = patch -> get_normal(u, v);
 		arma::mat proj = double(N_measurements) / double( this -> shape_model -> get_NElements()) * (arma::eye<arma::mat>(3,3) - n * n.t());
 
-		unsigned int index = this -> shape_model -> get_control_point_index(*point);
+		// unsigned int index = this -> shape_model -> get_control_point_index(*point);
+		// std::cout << index + 1 << "/" << control_points -> size() << std::endl;
 
-		std::cout << index + 1 << "/" << control_points -> size() << std::endl;
 		unsigned int row = 3 * index;
 
 
