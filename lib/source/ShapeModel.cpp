@@ -127,6 +127,10 @@ unsigned int ShapeModel::get_NControlPoints() const {
 }
 
 void ShapeModel::initialize_index_table(){
+
+
+	this -> pointer_to_global_index.clear();
+	
 	// The forward look up table is created
 	for (auto iter = this -> control_points.begin(); iter != this -> control_points.end(); ++iter){
 		this -> pointer_to_global_index[*iter] = this -> pointer_to_global_index.size();
