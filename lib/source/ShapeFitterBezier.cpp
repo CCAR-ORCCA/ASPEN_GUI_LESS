@@ -11,6 +11,7 @@ ShapeFitterBezier::ShapeFitterBezier(ShapeModelBezier * shape_model,PC * pc) {
 
 bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
+	std::cout << "- Fitting shape ...\n";
 	std::vector<Footpoint> footpoints;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
