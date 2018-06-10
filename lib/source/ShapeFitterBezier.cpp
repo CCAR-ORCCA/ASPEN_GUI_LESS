@@ -139,7 +139,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 
 		unsigned int index = this -> shape_model -> get_control_point_index(*point);
 
-		std::cout << index + 1 << "/" << control_points.size() << std::endl;
+		std::cout << index + 1 << "/" << control_points -> size() << std::endl;
 		unsigned int row = 3 * index;
 
 
