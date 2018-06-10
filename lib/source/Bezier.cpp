@@ -610,6 +610,7 @@ arma::vec Bezier::evaluate(const double u, const double v) const{
 		int j = std::get<1>(this -> forw_table[l]);
 
 		P += this -> bernstein(u,v,i,j,this -> n) * this -> control_points[l] -> get_coordinates();
+	
 	}
 	return P;
 }
@@ -1368,14 +1369,14 @@ void Bezier::compute_area(){
 
 
 	// The area is computed by quadrature
-	arma::vec weights = {-27./96.,25./96,25./96,25./96};
-	arma::vec u = {1./3.,1./5.,1./5,3./5};
-	arma::vec v = {1./3.,1./5.,3./5,1./5};
+	// arma::vec weights = {-27./96.,25./96,25./96,25./96};
+	// arma::vec u = {1./3.,1./5.,1./5,3./5};
+	// arma::vec v = {1./3.,1./5.,3./5,1./5};
 
-	this -> area = 0;
-	for (int i = 0; i < weights.n_rows; ++i){
-		this -> area += weights(i) * g(u(i),v(i));
-	}
+	// this -> area = 0;
+	// for (int i = 0; i < weights.n_rows; ++i){
+	// 	this -> area += weights(i) * g(u(i),v(i));
+	// }
 
 
 
@@ -1383,6 +1384,7 @@ void Bezier::compute_area(){
 
 void Bezier::compute_center(){
 	this -> center = this -> evaluate(1./3.,1./3.);
+
 }
 
 

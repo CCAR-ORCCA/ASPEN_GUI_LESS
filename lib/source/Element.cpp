@@ -3,6 +3,8 @@
 
 Element::Element(std::vector<std::shared_ptr<ControlPoint > > control_points) {
 	this -> control_points = control_points;
+
+
 }
 
 
@@ -28,9 +30,13 @@ arma::vec  Element::get_normal() const  {
 
 
 void Element::update() {
+
 	this -> compute_normal();
+
 	this -> compute_area();
+
 	this -> compute_center();
+
 }
 
 

@@ -27,7 +27,7 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 
 	std::cout << " Reading " << this -> filename << std::endl;
 	int degree = -1;
-
+	int N_c;
 	while (std::getline(ifs, line)) {
 
 		std::stringstream linestream(line);
@@ -36,6 +36,9 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 			linestream >> degree;
 			continue;
 		}
+
+		N_c = (degree + 1)* (degree + 2) / 2;
+
 
 		char type;
 		linestream >> type;
@@ -54,12 +57,11 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 
 		else if (type == 'f') {
 			std::vector<unsigned int> patch_indices;
-			unsigned int N_c = (degree + 1)* (degree + 2) / 2;
 
 			for (unsigned int i = 0; i < N_c; ++ i){
 				unsigned int v;
 				linestream >> v;
-				patch_indices.push_back(v);
+				patch_indices.push_back(v - 1);
 			}
 
 			shape_patch_indices.push_back(patch_indices);
@@ -95,6 +97,8 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 
 	std::cout << std::endl << " Constructing patches " << std::endl ;
 
+
+
 	boost::progress_display progress_facets(shape_patch_indices.size()) ;
 
 	// Patches are added to the shape model
@@ -103,20 +107,24 @@ void ShapeModelImporter::load_bezier_shape_model(ShapeModelBezier * shape_model)
 		std::vector<std::shared_ptr<ControlPoint>> vertices;
 		
 		// The vertices stored in this patch are pulled.
-		for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+		for ( int i = 0; i < N_c; ++ i){
 			vertices.push_back(vertex_index_to_ptr[shape_patch_indices[patch_index][i]]);
+
 		}
+		
 
 		std::shared_ptr<Bezier> patch = std::make_shared<Bezier>(Bezier(vertices));
 
-		for (unsigned int i = 0; i < (degree + 1)* (degree + 2) / 2; ++ i){
+		for ( int i = 0; i < N_c; ++ i){
 			vertices[i] -> add_ownership(patch.get());
 		}
 
-
 		shape_model -> add_element(patch);
+
 		++progress_facets;
 	}
+
+	std::cout << "done loading patches\n";
 	
 	shape_model -> populate_mass_properties_coefs();
 	shape_model -> update_mass_properties();
