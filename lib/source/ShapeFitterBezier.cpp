@@ -131,8 +131,9 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 
 		auto point = control_points -> at(index);
 
-		Bezier * patch = dynamic_cast<Bezier *>(    *((*point) -> get_owning_elements().begin()));
-		auto indices = patch ->  get_local_indices(*point);
+		Bezier * patch = dynamic_cast<Bezier *>(    *(point -> get_owning_elements().begin()));
+		auto indices = patch ->  get_local_indices(point);
+		
 		unsigned int i = std::get<0>(indices);
 		unsigned int j = std::get<1>(indices);
 		double u = double(i) / double(patch -> get_degree());
