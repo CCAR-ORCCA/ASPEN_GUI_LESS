@@ -803,7 +803,7 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 
 
 	std::cout << "-- Running PSR...\n";
-	CGALINTERFACE::CGAL_interface(pc_path,a_priori_path,this -> filter_arguments -> get_N_edges());
+	CGALINTERFACE::CGAL_interface(pc_path.c_str(),a_priori_path.c_str(),this -> filter_arguments -> get_N_edges());
 
 
 	ShapeModelImporter shape_io_guess(a_priori_path, 1, true);

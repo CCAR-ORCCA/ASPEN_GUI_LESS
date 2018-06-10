@@ -26,6 +26,7 @@ set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
 #
 #
 ################################################################################
+cmake_minimum_required(VERSION 3.0.0)
 
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(IS_FORTUNA ON)
@@ -38,34 +39,23 @@ if (EXISTS /home/bebe0705/.am_fortuna)
 
 elseif (UNIX AND NOT APPLE)
 
-
 	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
 	
+endif()
+
+if (${USE_GCC})
+	include(cmake/FindOmpGcc.cmake)
+else()
+	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
+	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
 endif()
 
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(LIB_NAME ASPEN CACHE STRING "Name of library to be created.")
 
-if (${IS_FORTUNA})
-	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
-else()
-	if(APPLE)
-		if(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-		message("Switching to OMP-friendly GCC ")
-		set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
-		set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
-
-		else()# no OMP-compliant compiler was found on this mac. 
-		message("No OMP-compliant compiler was found on this Mac.")
-	endif()
-	
-endif()
-endif()
 
 project(${LIB_NAME})
-cmake_minimum_required(VERSION 3.0.0)
 
 # Specify the version used
 if (${CMAKE_MAJOR_VERSION} LESS 3)
@@ -208,10 +198,6 @@ set(library_dependencies
 	${SBGATCORE_LIBRARY}
 	)
 
-
-
-
-
 target_link_libraries(${LIB_NAME} ${library_dependencies})
 
 file(GLOB includes include/*.hpp)
@@ -223,7 +209,8 @@ if(${IS_FORTUNA})
 	install (TARGETS ${LIB_NAME} DESTINATION /home/bebe0705/libs/local/lib)
 	install(FILES ${includes} DESTINATION /home/bebe0705/libs/local/include/ASPEN/)
 	install(FILES ${includes_gnuplot} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/Gnuplot/)
-	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
+	install (FILES ${PROJECT_SOURCE_DIR}/cmake/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
+	install (FILES ${PROJECT_SOURCE_DIR}/cmake/FindOmpGcc.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
 
 
 else()
@@ -231,7 +218,9 @@ else()
 	install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
 	install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
 	install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
-	install (FILES ${PROJECT_SOURCE_DIR}/ASPENConfig.cmake DESTINATION /usr/local/share/ASPEN/)
+	install (FILES ${PROJECT_SOURCE_DIR}/cmake/ASPENConfig.cmake DESTINATION /usr/local/share/ASPEN/)
+	install (FILES ${PROJECT_SOURCE_DIR}/cmake/FindOmpGcc.cmake DESTINATION /usr/local/share/ASPEN/)
+
 
 endif()
 
