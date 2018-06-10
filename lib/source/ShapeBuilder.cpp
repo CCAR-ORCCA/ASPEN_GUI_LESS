@@ -729,6 +729,7 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 			std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
 
 			for(int pc = 0; pc <= cutoff_index; ++pc){
+				std::cout << "keeping pc " << 0 << " / " << cutoff_index << std::endl;
 				kept_pcs.push_back(this -> all_registered_pc.at(pc));
 			}
 			
