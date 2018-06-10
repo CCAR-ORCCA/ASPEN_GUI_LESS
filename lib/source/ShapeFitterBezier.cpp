@@ -15,6 +15,8 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	std::vector<Footpoint> footpoints;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
+
+		std::cout << "Iteration " << i + 1 << " / " << N_iter << std::endl;
 		this -> shape_model -> construct_kd_tree_control_points();
 		
 		// The footpoints are found
@@ -281,59 +283,26 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		residuals(k) = y;
 
 	}
-
-
+	std::cout << "- Penalizing tangential motion\n";
 	this -> penalize_tangential_motion(coefficients,footpoints.size());
-
 
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
 
-	// MatrixXd dMat;
-
-	// dMat = MatrixXd(Lambda);
-	// Eigen::JacobiSVD<MatrixXd> svd(Lambda);
-	// double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-	
-	// std::cout << "conditioning: " << cond << std::endl;
-
-
-	// The information matrix is regularized
-	double trace = 0;
-	for (int k=0; k<Lambda.outerSize(); ++k){
-		for (SpMat::InnerIterator it(Lambda,k); it; ++it){
-			if (it.row() == it.col()){
-				trace += it.value();
-			}
-		}
-	}
-
-	// std::cout << "Trace : " << trace << std::endl;
-
-	for (int k=0; k<Lambda.outerSize(); ++k){
-		for (SpMat::InnerIterator it(Lambda,k); it; ++it){
-			if (it.row() == it.col()){
-
-				double & value = it.valueRef();
-				value += ridge_coef * trace;
-			}
-		}
-	}
-
-	// std::cout << Lambda << std::endl;
-
-	// std::cout << "RHS: " << Nmat << std::endl;
-
-
 	// The cholesky decomposition of Lambda is computed
+	std::cout << "- Computing cholesky decomposition of Lambda\n";
+
 	Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
 
 	// The deviation is computed
+	std::cout << "- Solving for deviation\n";
+
 	EigVec deviation = chol.solve(Nmat);    
 
 	arma::vec dC(3*N);
 
+	std::cout << "- Applying deviation deviation\n";
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < 3 * N; ++i){
 		dC(i) = deviation(i);
