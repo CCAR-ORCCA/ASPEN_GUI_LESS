@@ -139,6 +139,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 
 		unsigned int index = this -> shape_model -> get_control_point_index(*point);
 
+		std::cout << index + 1 << "/" << control_points.size() << std::endl;
 		unsigned int row = 3 * index;
 
 
@@ -225,7 +226,7 @@ void ShapeFitterBezier::add_to_problem(
 
 bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double ridge_coef){
 
-	std::cout << "\nUpdating shape from the " << footpoints.size()<<  " footpoints...\n";
+	std::cout << "\nUpdating shape from the " << footpoints.size() <<  " footpoints...\n";
 
 	// The normal and information matrices are created
 	unsigned int N = this -> shape_model -> get_NControlPoints();
@@ -286,6 +287,8 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	std::cout << "- Penalizing tangential motion\n";
 	this -> penalize_tangential_motion(coefficients,footpoints.size());
 
+
+	std::cout << "- Setting Lambda from the coefs\n";
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
