@@ -26,7 +26,7 @@ int main(){
 	#elif __linux__
 	
 	ShapeModelImporter shape_io_guess("/home/bebe0705/libs/ASPEN_GUI_LESS/Apps/ShapeReconstruction/output/shape_model/apriori.obj", 1, true);
-	PC pc("/home/bebe0705/libs/ASPEN_gui_less/Apps/ShapeReconstruction/output/pc/source_transformed_poisson.obj");
+	PC pc("/home/bebe0705/libs/ASPEN_GUI_LESS/Apps/ShapeReconstruction/output/pc/source_transformed_poisson.obj");
 
 	#endif
 
