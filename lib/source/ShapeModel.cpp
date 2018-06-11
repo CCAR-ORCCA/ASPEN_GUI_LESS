@@ -140,8 +140,9 @@ void ShapeModel::initialize_index_table(){
 	assert(this -> control_points.size() == this -> pointer_to_global_index.size());
 
 	for (unsigned int i = 0; i < this -> control_points.size(); ++i ){
-		std::cout << i << " " << this -> pointer_to_global_index[this -> control_points[i]] << std::endl;
-		assert(i == this -> pointer_to_global_index[this -> control_points[i]]);
+		bool test = (i == this -> pointer_to_global_index[this -> control_points[i]]);
+		std::cout << test << std::endl;
+		assert(test);
 	}
 
 }
