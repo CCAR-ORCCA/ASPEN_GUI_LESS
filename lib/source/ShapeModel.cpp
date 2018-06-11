@@ -1,6 +1,6 @@
 #include "ShapeModel.hpp"
 #include <chrono>
-#include <cassert>
+#include <assert.h>
 
 ShapeModel::ShapeModel() {
 
