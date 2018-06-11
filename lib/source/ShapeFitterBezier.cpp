@@ -269,7 +269,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			elements_to_add.push_back((B * footpoint . n.t() 
 				- (footpoint . Ptilde - footpoint . Pbar).t() * dndCk ));
 
-			std::cout << global_point_index << std::endl;
 			global_indices.push_back(global_point_index);
 		}
 		
