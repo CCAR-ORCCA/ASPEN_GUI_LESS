@@ -229,9 +229,6 @@ void ShapeFitterBezier::add_to_problem(
 
 bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double ridge_coef){
 
-
-
-
 	auto all_control_points = this -> shape_model -> get_control_points();
 	for (unsigned int i= 0; i < all_control_points -> size(); ++i){
 		std::cout <<  this -> shape_model -> get_control_point_index(all_control_points -> at(i)) << std::endl;
