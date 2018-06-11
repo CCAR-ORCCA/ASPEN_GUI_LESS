@@ -55,6 +55,13 @@ int main(){
 	
 	a_priori_bezier -> initialize_index_table();
 
+
+	auto all_control_points = a_priori_bezier -> get_control_points();
+	for (unsigned int i= 0; i < all_control_points -> size(); ++i){
+		std::cout << a_priori_bezier -> get_control_point_index(all_control_points -> at(i)) << std::endl;
+
+	}	
+
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&pc);
 
 	shape_fitter.fit_shape_batch(1,0);
