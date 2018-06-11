@@ -128,20 +128,14 @@ unsigned int ShapeModel::get_NControlPoints() const {
 
 void ShapeModel::initialize_index_table(){
 
-
 	this -> pointer_to_global_index.clear();
 
 	// The forward look up table is created
 	for (auto iter = this -> control_points.begin(); iter != this -> control_points.end(); ++iter){
-
-		int index = this -> pointer_to_global_index.size();
+		unsigned int index = this -> pointer_to_global_index.size();
 		this -> pointer_to_global_index[*iter] = index;
 	}
 
-
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i ){
-		std::cout << i << " " << this -> pointer_to_global_index[this -> control_points[i]] << std::endl;
-	}
 
 }
 
