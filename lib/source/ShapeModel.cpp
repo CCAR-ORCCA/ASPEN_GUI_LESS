@@ -133,16 +133,14 @@ void ShapeModel::initialize_index_table(){
 
 	// The forward look up table is created
 	for (auto iter = this -> control_points.begin(); iter != this -> control_points.end(); ++iter){
-		this -> pointer_to_global_index[*iter] = this -> pointer_to_global_index.size();
+
+		int index = this -> pointer_to_global_index.size();
+		this -> pointer_to_global_index[*iter] = index;
 	}
 
 
-	assert(this -> control_points.size() == this -> pointer_to_global_index.size());
-
 	for (unsigned int i = 0; i < this -> control_points.size(); ++i ){
-		bool test = (i == this -> pointer_to_global_index[this -> control_points[i]]);
-		std::cout << test << std::endl;
-		assert(test);
+		std::cout << i << " " << this -> pointer_to_global_index[this -> control_points[i]] << std::endl;
 	}
 
 }
