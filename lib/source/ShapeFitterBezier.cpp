@@ -133,7 +133,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 
 		Bezier * patch = dynamic_cast<Bezier *>(    *(point -> get_owning_elements().begin()));
 		auto indices = patch ->  get_local_indices(point);
-		
+
 		unsigned int i = std::get<0>(indices);
 		unsigned int j = std::get<1>(indices);
 		double u = double(i) / double(patch -> get_degree());
@@ -181,7 +181,6 @@ void ShapeFitterBezier::add_to_problem(
 	const std::vector<int> & global_indices){
 
 
-
 	for (auto outer_index = 0; outer_index != global_indices.size(); ++outer_index){
 
 		int row = 3 * (global_indices[outer_index]);
@@ -223,7 +222,6 @@ void ShapeFitterBezier::add_to_problem(
 		N(row + 1) += y * H_i_row_1;
 		N(row + 2) += y * H_i_row_2;
 
-
 	}
 
 }
@@ -235,8 +233,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 	// The normal and information matrices are created
 	unsigned int N = this -> shape_model -> get_NControlPoints();
-	arma::sp_mat info_mat(3 * N,3 * N);
-	arma::vec normal_mat = arma::zeros<arma::vec>(3 * N);
 	arma::vec residuals = arma::zeros<arma::vec>(footpoints.size());
 
 	std::vector<T> coefficients;            // list of non-zeros coefficients
@@ -248,15 +244,11 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 	// All the measurements are processed	
 	for (unsigned int k = 0; k < footpoints.size(); ++k){
-		++ progress;
 		
 		Footpoint footpoint = footpoints[k];
 		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
 
 		auto control_points = patch -> get_control_points();
-		
-
-
 		std::vector<int> global_indices;
 
 		std::vector<arma::rowvec> elements_to_add;
@@ -265,7 +257,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 
 			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
-
 			auto local_indices = patch -> get_local_indices(*iter_points);
 			unsigned int i = std::get<0>(local_indices);
 			unsigned int j = std::get<1>(local_indices);
@@ -277,7 +268,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			elements_to_add.push_back((B * footpoint . n.t() 
 				- (footpoint . Ptilde - footpoint . Pbar).t() * dndCk ));
 
-
+			std::cout << global_point_index << std::endl;
 			global_indices.push_back(global_point_index);
 		}
 		
@@ -288,12 +279,15 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 		residuals(k) = y;
 
+		++ progress;
+
+
 	}
 	std::cout << "- Penalizing tangential motion\n";
 	this -> penalize_tangential_motion(coefficients,footpoints.size());
 
 
-	std::cout << "- Setting Lambda from the coefs\n";
+	std::cout << "- Setting Lambda from the " << coefficients.size() <<  " coefs\n";
 
 	// The information matrix is constructed
 	Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
@@ -310,11 +304,14 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 	arma::vec dC(3*N);
 
-	std::cout << "- Applying deviation deviation\n";
-	#pragma omp parallel for
+	std::cout << "- Applying deviation\n";
+	// #pragma omp parallel for
 	for (unsigned int i = 0; i < 3 * N; ++i){
+		std::cout << deviation(i) << std::endl;
+
 		dC(i) = deviation(i);
 	}
+
 
 	double update_norm = 0;
 

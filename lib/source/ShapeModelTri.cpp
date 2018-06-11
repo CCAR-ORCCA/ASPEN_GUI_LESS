@@ -172,7 +172,7 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 		auto V1 = vertices -> at(1) -> get_coordinates();
 		auto V2 = vertices -> at(2) -> get_coordinates();
 
-		arma::vec noise_intensity = arma::randu<arma::vec>(1);
+		arma::vec noise_intensity = 1e-1 * arma::randu<arma::vec>(1);
 
 		for (int i = 0; i < N_points_per_element; ++i){
 
