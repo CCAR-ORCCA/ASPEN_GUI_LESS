@@ -24,7 +24,12 @@ int main(){
 	shape_io_guess.load_obj_shape_model(&a_priori_obj);
 
 	
-	PC pc("../pc_cube.obj");
+	arma::mat points,normals;
+	a_priori_obj.random_sampling(100,points, normals);
+	// PC pc("../pc_cube.obj");
+	PC pc(points,normals);
+
+	pc.save("../pc_cube.obj");
 	// PC pc("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/pc/source_transformed_poisson.obj");
 
 
@@ -36,9 +41,7 @@ int main(){
 	ShapeModelImporter shape_io_guess("/home/bebe0705/libs/ASPEN_GUI_LESS/resources/shape_models/cube.obj", 1, true);
 	shape_io_guess.load_obj_shape_model(&a_priori_obj);
 
-	
 	PC pc("../pc_cube.obj");
-	
 
 	#endif
 
@@ -54,7 +57,7 @@ int main(){
 
 	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&pc);
 
-	shape_fitter.fit_shape_batch(5,0);
+	shape_fitter.fit_shape_batch(1,0);
 
 
 
