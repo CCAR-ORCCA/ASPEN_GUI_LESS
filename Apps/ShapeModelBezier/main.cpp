@@ -36,9 +36,9 @@ int main(){
 	ShapeModelImporter shape_io_guess("/home/bebe0705/libs/ASPEN_GUI_LESS/resources/shape_models/cube.obj", 1, true);
 	shape_io_guess.load_obj_shape_model(&a_priori_obj);
 
-	// arma::mat points,normals;
-	// a_priori_obj.random_sampling(30,points, normals);
-	// PC pc(points,normals);
+	arma::mat points,normals;
+	a_priori_obj.random_sampling(30,points, normals);
+	PC pc(points,normals);
 
 	#endif
 
