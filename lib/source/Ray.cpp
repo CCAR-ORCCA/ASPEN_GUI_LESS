@@ -193,10 +193,10 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 	double t = arma::dot(n, p - *this -> origin_target_frame) / arma::dot(n, *this -> direction_target_frame);
 
 	// The normal is facing the opposite way
-	if (arma::dot(n,*this -> direction_target_frame) > 0){
-
-		return false;
-	}
+	// THIS MAY HAVE BROKEN A FEW THINGS
+	// if (arma::dot(n,*this -> direction_target_frame) > 0){
+	// 	return false;
+	// }
 
 	// If the range is positive, this is further tested for
 	// potential intersection with this facet
@@ -205,11 +205,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 
 
 
-
 		if (this -> intersection_inside(H, facet)) {
-
-
-
 
 			// Corresponds to range attenuation in 
 			// Amzajerdian, F., Hines, G. D., Roback, V. E., Petway, L. B., Barnes, B. W., Paul, F., … Bulyshev, A. (2015). Advancing Lidar Sensors Technologies for Next Generation Landing Missions (pp. 1–11). https://doi.org/10.2514/6.2015-0329

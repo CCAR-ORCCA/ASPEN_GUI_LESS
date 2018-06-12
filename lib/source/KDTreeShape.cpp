@@ -169,7 +169,6 @@ bool KDTreeShape::hit(KDTreeShape * node,
 		}
 
 		else {
-			
 			bool hit_element = false;
 
 			// If not, the current node is a leaf
@@ -183,6 +182,7 @@ bool KDTreeShape::hit(KDTreeShape * node,
 						hit_element = true;
 					}
 				}
+
 				// If the shape is a collection of Bezier patches, things get a bit more protracted
 				else{
 					// If the KD tree enclosing the shape is hit, there may be an impact over the bezier shape
@@ -259,6 +259,7 @@ bool KDTreeShape::hit_bbox(Ray * ray) const {
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();
 
+	
 
 	arma::vec all_t(6);
 
@@ -287,10 +288,9 @@ bool KDTreeShape::hit_bbox(Ray * ray) const {
 
 	if (test_point(0) <= this -> bbox . get_xmax() && test_point(0) >= this -> bbox . get_xmin()) {
 
-		if (test_point(1) <= this -> bbox . get_ymax() && test_point(1) >= this -> bbox  .get_ymin()) {
+		if (test_point(1) <= this -> bbox . get_ymax() && test_point(1) >= this -> bbox.get_ymin()) {
 
 			if (test_point(2) <= this -> bbox . get_zmax() && test_point(2) >= this -> bbox . get_zmin()) {
-
 
 				return true;
 

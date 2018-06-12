@@ -132,8 +132,11 @@ void ShapeModel::initialize_index_table(){
 
 	// The forward look up table is created
 	for (auto iter = this -> control_points.begin(); iter != this -> control_points.end(); ++iter){
+		
 		unsigned int index = this -> pointer_to_global_index.size();
+		
 		this -> pointer_to_global_index[*iter] = index;
+	
 	}
 
 

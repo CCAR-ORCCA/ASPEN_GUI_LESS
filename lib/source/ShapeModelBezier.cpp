@@ -1313,13 +1313,13 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 			for (unsigned int index = 0; index < iter -> size(); ++index){
 
 				if (index != iter -> size() - 1){
-					shape_file << iter -> at(index) << " ";
+					shape_file << iter -> at(index)  + 1<< " ";
 				}
 				else if (index == iter -> size() - 1 && iter != shape_patch_indices.end() - 1 ){
-					shape_file << iter -> at(index) << "\n";
+					shape_file << iter -> at(index)  + 1<< "\n";
 				}
 				else{
-					shape_file << iter -> at(index);
+					shape_file << iter -> at(index) + 1;
 				}
 			}
 
@@ -1455,7 +1455,10 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 			for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
 
 				if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
-					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+					
+					unsigned int size =  pointer_to_global_indices.size();
+
+					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = size;
 
 					auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
 					double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
