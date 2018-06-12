@@ -1284,7 +1284,8 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 			for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
 
 				if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index)) == pointer_to_global_indices.end()){
-					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = pointer_to_global_indices.size();
+					unsigned int size = pointer_to_global_indices.size();
+					pointer_to_global_indices[patch -> get_control_points() -> at(index)] = size;
 					global_index_to_pointer[pointer_to_global_indices.size()] = patch -> get_control_points() -> at(index);
 				}
 
