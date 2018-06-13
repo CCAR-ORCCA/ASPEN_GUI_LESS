@@ -362,7 +362,7 @@ int main() {
 		Ray ray_n(center,normal);
 		Ray ray_mn(center,-normal);
 
-		for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++i){
+		for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++facet_index){
 
 			Facet * facet = static_cast<Facet *>(true_shape_model.get_elements() -> at(facet_index).get());
 
