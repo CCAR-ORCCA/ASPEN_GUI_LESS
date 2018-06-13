@@ -182,7 +182,7 @@ Element * Ray::get_super_element() const{
 }
 
 
-bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
+bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
@@ -193,8 +193,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 	double t = arma::dot(n, p - *this -> origin_target_frame) / arma::dot(n, *this -> direction_target_frame);
 
 	// The normal is facing the opposite way
-	// THIS MAY HAVE BROKEN A FEW THINGS
-	if (arma::dot(n,*this -> direction_target_frame) > 0 && !store){
+	if (arma::dot(n,*this -> direction_target_frame) > 0 && outside){
 		return false;
 	}
 

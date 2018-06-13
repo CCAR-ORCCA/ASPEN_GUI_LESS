@@ -118,8 +118,9 @@ public:
 	Rewrites previously found range and intersect if new range is less
 	@param hit true if the facet was hit
 	@param store sets the internal state of the ray to reflect the impacted surface if true
+	@param outside if true, will only accept the ray if it is cast from the outside of the shape
 	*/
-	bool single_facet_ray_casting(Facet * facet,bool store = true) ;
+	bool single_facet_ray_casting(Facet * facet,bool store = true,bool outside = true) ;
 
 
 	/*

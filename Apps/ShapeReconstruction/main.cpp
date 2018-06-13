@@ -349,7 +349,6 @@ int main() {
 	std::vector<std::array<double ,2> > shape_error_results;
 	std::vector<arma::vec> spurious_points;
 
-
 	// The shape error is computed here
 	for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
 		
@@ -360,13 +359,17 @@ int main() {
 		arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
 		double sd = std::sqrt(arma::dot(normal,P * normal));
 
-
 		Ray ray_n(center,normal);
-		true_shape_model.ray_trace(&ray_n);
-
 		Ray ray_mn(center,-normal);
-		true_shape_model.ray_trace(&ray_mn);
 
+		for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++i){
+
+			Facet * facet = static_cast<Facet *>(true_shape_model.get_elements() -> at(facet_index).get());
+
+			ray_n.single_facet_ray_casting(facet,true,false);
+			ray_mn.single_facet_ray_casting(facet,true,false);
+
+		}
 
 		if (ray_n.get_true_range() < ray_mn.get_true_range()){
 			shape_error_results.push_back({sd,ray_n.get_true_range()});
@@ -376,19 +379,11 @@ int main() {
 
 		}
 		else{
-			spurious_points.push_back(center);
+			std::cout << "This ray did not hit\n";
 		}
 
-	}
 
-
-	arma::mat spurious_points_arma(3,spurious_points.size());
-	for (unsigned int j = 0; j < spurious_points.size(); ++j){
-		spurious_points_arma.col(j) = spurious_points[j];
 	}
-	arma::vec los = {1,0,0};
-	PC spurious_point_pc(los,spurious_points_arma);
-	spurious_point_pc.save("../output/pc/spurious_point_pc.obj");
 
 
 	arma::mat shape_error_arma(shape_error_results.size(),2);
