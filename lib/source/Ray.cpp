@@ -194,9 +194,9 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store) {
 
 	// The normal is facing the opposite way
 	// THIS MAY HAVE BROKEN A FEW THINGS
-	// if (arma::dot(n,*this -> direction_target_frame) > 0){
-	// 	return false;
-	// }
+	if (arma::dot(n,*this -> direction_target_frame) > 0 && !store){
+		return false;
+	}
 
 	// If the range is positive, this is further tested for
 	// potential intersection with this facet
