@@ -259,8 +259,6 @@ bool KDTreeShape::hit_bbox(Ray * ray) const {
 	arma::vec * u = ray -> get_direction_target_frame();
 	arma::vec * origin = ray -> get_origin_target_frame();
 
-	
-
 	arma::vec all_t(6);
 
 	all_t(0) = (this ->bbox . get_xmin() - origin -> at(0)) / u -> at(0);
@@ -284,7 +282,6 @@ bool KDTreeShape::hit_bbox(Ray * ray) const {
 	if (ray -> get_true_range() < all_t_sorted(2)) {
 		return false;
 	}
-
 
 	if (test_point(0) <= this -> bbox . get_xmax() && test_point(0) >= this -> bbox . get_xmin()) {
 

@@ -179,6 +179,33 @@ public:
 
 
 
+
+
+	/**
+	Generates all the possible combinations of indices as needed in the inertia moments
+	computation from the tensorization of the base vector
+	@param n_indices number of indices to tensorize
+	@parma base_vector vector of indices to tensorize (contains N such indices pairs)
+	@param index_vectors container holding the final N ^ n_indices vectors of indices pairs
+	@param temp_vector container holding the current vector of indices being built
+
+	@param depth depth of the current vector
+	*/
+	static void build_bezier_index_vectors(const int & n_indices,
+		const std::vector<std::vector<int> > & base_vector,
+		std::vector<std::vector<std::vector<int> > > & index_vectors,
+		std::vector < std::vector<int> > & temp_vector,
+		const int depth = 0);
+
+
+	/**	
+	Builds the vector holding the pair of indices of each point in a Bezier triangle
+	@param n Bezier triangle degree
+	@param base_vector container to hold the pair of indices of each point in a Bezier triangle
+	*/
+	static void build_bezier_base_index_vector(const int n,std::vector<std::vector<int> > & base_vector);
+
+
 protected:
 
 
