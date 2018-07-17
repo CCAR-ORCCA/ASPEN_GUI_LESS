@@ -227,7 +227,6 @@ double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, con
 
 arma::vec Bezier::get_cross_products(const int i, const int j, const int k, const int l, const int m,const int p) const{
 
-
 	arma::vec stacked_cp(9);
 
 	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);

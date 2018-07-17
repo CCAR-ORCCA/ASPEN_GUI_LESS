@@ -1,5 +1,5 @@
 #include "ICP.hpp"
-
+#include "CustomReductions.hpp"
 
 ICP::ICP(std::shared_ptr<PC> pc_destination, 
 	std::shared_ptr<PC> pc_source,
@@ -12,7 +12,6 @@ ICP::ICP(std::shared_ptr<PC> pc_destination,
 	
 	auto start = std::chrono::system_clock::now();
 
-	
 	this -> register_pc_mrp_multiplicative_partials(100,1e-8,1e-8,dcm_0,X_0);
 	auto end = std::chrono::system_clock::now();
 

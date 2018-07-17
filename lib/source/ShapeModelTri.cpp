@@ -332,7 +332,9 @@ void ShapeModelTri::compute_inertia() {
 	double P_xz = 0;
 	double P_yz = 0;
 
-	double l = std::pow(this -> volume, 1. / 3.);
+	// double l = std::pow(this -> volume, 1. / 3.);
+	double l = 1;
+
 
 	# pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;

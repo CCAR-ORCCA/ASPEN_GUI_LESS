@@ -4,10 +4,7 @@
 #include "ShapeModel.hpp"
 #include "Bezier.hpp"
 
-
-
-#pragma omp declare reduction (+ : arma::mat::fixed<3,3> : omp_out += omp_in)\
-initializer( omp_priv = omp_orig )
+#include "CustomReductions.hpp"
 
 class ShapeModelTri;
 
@@ -39,8 +36,8 @@ public:
 	@param surface_noise use in patch covariance setting
 	*/
 	ShapeModelBezier(ShapeModelTri * shape_model,
-	std::string ref_frame_name,
-	FrameGraph * frame_graph,double surface_noise);
+		std::string ref_frame_name,
+		FrameGraph * frame_graph,double surface_noise);
 
 	/**
 	Constructor
@@ -144,11 +141,16 @@ public:
 	void compute_cm_cov();
 
 	/**
-	Runs a Monte Carlo on volume
+	Runs a Monte Carlo on volume, cm
 	@param N number of runs
 	@return results
 	*/
-	arma::vec run_monte_carlo_volume(int N);
+	void run_monte_carlo(int N,
+		arma::vec & results_volume,
+		arma::mat & results_cm,
+		arma::mat & results_inertia,
+		arma::mat & results_moments);
+	
 
 
 	/**
@@ -175,6 +177,26 @@ public:
 	*/
 	arma::mat get_cm_cov() const;
 
+	/**
+	Return the covariance of the parametrization of the inertia tensor
+	@return inertia tensor parametrization covariance 
+	*/
+	arma::mat get_inertia_cov() const {return this -> P_I;}
+
+
+
+
+
+	void build_structure() ;
+
+	void compute_inertia_statistics() ;
+
+
+	arma::mat get_P_moments() const{return this -> P_moments;}
+
+protected:
+
+
 
 
 
@@ -183,18 +205,17 @@ public:
 
 	/**
 	Generates all the possible combinations of indices as needed in the inertia moments
-	computation from the tensorization of the base vector
-	@param n_indices number of indices to tensorize
+	computation from the tensorization of the base vector of Bezier indices
+	@param n_indices number of indices to tensorize 
 	@parma base_vector vector of indices to tensorize (contains N such indices pairs)
 	@param index_vectors container holding the final N ^ n_indices vectors of indices pairs
 	@param temp_vector container holding the current vector of indices being built
-
 	@param depth depth of the current vector
 	*/
 	static void build_bezier_index_vectors(const int & n_indices,
 		const std::vector<std::vector<int> > & base_vector,
 		std::vector<std::vector<std::vector<int> > > & index_vectors,
-		std::vector < std::vector<int> > & temp_vector,
+		std::vector < std::vector<int> > temp_vector = std::vector < std::vector<int> >(),
 		const int depth = 0);
 
 
@@ -206,7 +227,15 @@ public:
 	static void build_bezier_base_index_vector(const int n,std::vector<std::vector<int> > & base_vector);
 
 
-protected:
+	
+	void compute_P_I();
+
+
+	void compute_P_IV();
+	void compute_P_Y();
+	void compute_P_moments();
+
+	static arma::rowvec L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm);
 
 
 
@@ -215,8 +244,41 @@ protected:
 		int i,int j,int k,int l, 
 		int m, int p, int q, int r);
 
-	void construct_mat(arma::mat::fixed<12,3> & mat,
+
+	arma::mat::fixed<6,6> increment_P_I(arma::mat::fixed<6,15> & left_mat,
+		arma::mat::fixed<6,15>  & right_mat, 
+		int i,int j,int k,int l,int m,
+		int p, int q, int r, int s, int t);
+
+
+	arma::vec::fixed<6> increment_P_IV(arma::mat::fixed<6,15> & left_mat,
+		arma::vec::fixed<9>  & right_vec, 
+		int i,int j,int k,int l,int m,
+		int p, int q, int r);
+
+	void construct_cm_mapping_mat(arma::mat::fixed<12,3> & mat,
 		int i,int j,int k,int l);
+
+
+	void construct_inertia_mapping_mat(arma::mat::fixed<6,15> & mat,
+		int i,int j,int k,int l,int m) const;
+
+	static arma::rowvec::fixed<6> partial_T_partial_I() ;
+	static arma::rowvec::fixed<4> partial_Theta_partial_W(const double & T,const double & Pi,const double & U,const double & d);
+	static double partial_theta_partial_Theta(const double & Theta);
+	static arma::rowvec::fixed<3> partial_A_partial_Y(const double & theta,const double & U);
+	static arma::rowvec::fixed<3> partial_B_partial_Y(const double & theta,const double & U);
+	static arma::rowvec::fixed<3> partial_C_partial_Y(const double & theta,const double & U);
+
+
+	arma::mat::fixed<2,6> partial_Z_partial_I() const ;
+	arma::rowvec::fixed<6> partial_Pi_partial_I() const ;
+	arma::mat::fixed<4,6> partial_W_partial_I() const;
+	arma::rowvec::fixed<6> partial_theta_partial_I() const;
+	arma::rowvec::fixed<6> partial_U_partial_I() const ;
+	arma::rowvec::fixed<2> partial_U_partial_Z() const;
+	arma::rowvec::fixed<6> partial_d_partial_I() const ;
+
 
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
@@ -224,14 +286,25 @@ protected:
 	std::vector<std::vector<double> > volume_indices_coefs_table;
 	std::vector<std::vector<double> > inertia_indices_coefs_table;
 
+
+
 	std::vector<std::vector<double> > volume_sd_indices_coefs_table;
 	std::vector<std::vector<double> > cm_cov_1_indices_coefs_table;
 	std::vector<std::vector<double> > cm_cov_2_indices_coefs_table;
+
+	std::vector<std::vector<double> > inertia_stats_1_indices_coefs_table;
+	std::vector<std::vector<double> > inertia_stats_2_indices_coefs_table;
+
 
 
 
 	double volume_sd;
 	arma::mat cm_cov = arma::zeros<arma::mat>(3,3);
+
+	arma::mat::fixed<6,6> P_I;
+	arma::vec::fixed<6> P_IV;
+	arma::mat::fixed<3,3> P_Y;
+	arma::mat::fixed<4,4> P_moments;
 
 
 

@@ -24,6 +24,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
 		auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
+		patch -> set_global_index(i);
 
 		this -> elements.push_back(patch);
 
@@ -32,6 +33,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 		patch -> get_control_points() -> at(2) -> add_ownership(patch.get());
 
 	}
+	this -> build_structure();
 
 	this -> construct_kd_tree_control_points();
 	this -> populate_mass_properties_coefs();
@@ -61,7 +63,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
 		auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
-
+		patch -> set_global_index(i);
 		this -> elements.push_back(patch);
 
 		patch -> get_control_points() -> at(0) -> add_ownership(patch.get());
@@ -70,6 +72,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 		patch -> set_P_X(surface_noise * surface_noise * arma::eye<arma::mat>(9,9));
 
 	}
+	this -> build_structure();
 
 	this -> construct_kd_tree_control_points();
 	this -> populate_mass_properties_coefs();
@@ -200,7 +203,7 @@ void ShapeModelBezier::compute_center_of_mass(){
 
 	int n = this -> get_degree();
 
-	// #pragma omp parallel for reduction(+:cx,cy,cz)
+	#pragma omp parallel for reduction(+:cx,cy,cz)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
 		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
@@ -241,7 +244,8 @@ void ShapeModelBezier::compute_inertia(){
 	arma::mat::fixed<3,3> inertia;
 	inertia.fill(0);
 	double norm_length = std::cbrt(this -> volume);
-	double factor = 1./std::pow(norm_length,5);
+	// double factor = 1./std::pow(norm_length,5);
+	double factor = 1.;
 
 	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
@@ -307,9 +311,6 @@ void ShapeModelBezier::compute_volume_sd(){
 		connected_elements.push_back(elements);
 	}
 
-
-
-
 	std::cout << "- Computing volume sd...\n";
 	boost::progress_display progress(this -> elements.size()) ;
 
@@ -363,16 +364,12 @@ void ShapeModelBezier::compute_volume_sd(){
 				auto Cm = patch_f -> get_control_point(s,t);
 				auto Cp = patch_f -> get_control_point(u,v);
 
-
-
 				arma::mat P;
-
 
 				ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp);
 
 
 				vol_sd += this -> volume_sd_indices_coefs_table[index][12] * arma::dot(left_vec,P * right_vec);
-
 
 			}
 
@@ -390,7 +387,7 @@ void ShapeModelBezier::compute_volume_sd(){
 
 void ShapeModelBezier::compute_cm_cov(){
 
-	std::cout << "- Computing cm covariance ...\n";
+	std::cout << "\n- Computing cm covariance ...\n";
 
 	arma::mat::fixed<3,3> cm_cov_temp;
 
@@ -461,8 +458,7 @@ void ShapeModelBezier::compute_cm_cov(){
 			
 			auto neighbors = connected_elements[e];
 
-			this -> construct_mat(left_mat,i_g,j_g,k_g,l_g);
-
+			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
 			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
 				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
@@ -474,7 +470,7 @@ void ShapeModelBezier::compute_cm_cov(){
 				q_g = patch_f -> get_control_point_global_index(w,x);
 				r_g = patch_f -> get_control_point_global_index(y,z);	
 
-				this -> construct_mat(right_mat,m_g,p_g,q_g,r_g);
+				this -> construct_cm_mapping_mat(right_mat,m_g,p_g,q_g,r_g);
 
 				cm_cov_temp += coefs_row[16] * this -> increment_cm_cov(left_mat,
 					right_mat, 
@@ -486,80 +482,12 @@ void ShapeModelBezier::compute_cm_cov(){
 		++progress;
 	}
 
-
-
-
-	// 		for (int index = 0 ; index <  this -> cm_cov_2_indices_coefs_table.size(); ++index) {
-
-	// 			// i
-	// 			int i =  int(this -> cm_cov_2_indices_coefs_table[index][0]);
-	// 			int j =  int(this -> cm_cov_2_indices_coefs_table[index][1]);
-
-	// 			// j
-	// 			int k =  int(this -> cm_cov_2_indices_coefs_table[index][2]);
-	// 			int l =  int(this -> cm_cov_2_indices_coefs_table[index][3]);
-
-	// 			// k
-	// 			int m =  int(this -> cm_cov_2_indices_coefs_table[index][4]);
-	// 			int p =  int(this -> cm_cov_2_indices_coefs_table[index][5]);
-
-	// 			// l
-	// 			int q =  int(this -> cm_cov_2_indices_coefs_table[index][6]);
-	// 			int r =  int(this -> cm_cov_2_indices_coefs_table[index][7]);
-
-	// 			// m
-	// 			int s =  int(this -> cm_cov_2_indices_coefs_table[index][8]);
-	// 			int t =  int(this -> cm_cov_2_indices_coefs_table[index][9]);
-
-	// 			// p
-	// 			int u =  int(this -> cm_cov_2_indices_coefs_table[index][10]);
-	// 			int v =  int(this -> cm_cov_2_indices_coefs_table[index][11]);
-
-	// 			// q
-	// 			int w =  int(this -> cm_cov_2_indices_coefs_table[index][12]);
-	// 			int x =  int(this -> cm_cov_2_indices_coefs_table[index][13]);
-
-
-	// 			auto Ci = patch_e -> get_control_point(i,j);
-	// 			auto Cj = patch_e -> get_control_point(k,l);
-	// 			auto Ck = patch_e -> get_control_point(m,p);
-	// 			auto Cl = patch_e -> get_control_point(q,r);
-
-	// 			auto Cm = patch_f -> get_control_point(s,t);
-	// 			auto Cp = patch_f -> get_control_point(u,v);
-	// 			auto Cq = patch_f -> get_control_point(w,x);
-
-
-	// 			arma::mat P;
-
-	// 			ShapeModel::assemble_covariance(P,Ci,Cj,Ck,Cl,Cm,Cp,Cq);
-
-	// 			arma::mat left_mat = patch_e -> get_augmented_cross_products(i,j,k,l,m,p,q,r);
-	// 			arma::vec right_vec = patch_f -> get_cross_products(s,t,u,v,w,x);
-
-	// 			arma::mat P_inc = this -> cm_cov_2_indices_coefs_table[index][14] * left_mat.t() * P * right_vec * this -> cm.t();
-
-	// 			cm_cov_temp -= (P_inc + P_inc.t());
-
-	// 		}
-
-
-	// 	}
-
-
-
-	// }
-
-
 	this -> cm_cov = cm_cov_temp / std::pow(this -> volume,2);
-
-
-
 
 }
 
 
-void ShapeModelBezier::construct_mat(arma::mat::fixed<12,3> & mat,
+void ShapeModelBezier::construct_cm_mapping_mat(arma::mat::fixed<12,3> & mat,
 	int i,int j,int k,int l) {
 
 	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
@@ -571,88 +499,66 @@ void ShapeModelBezier::construct_mat(arma::mat::fixed<12,3> & mat,
 	mat.submat(3,0,5,2) = arma::cross(*Ck,*Cl) * Ci -> t();
 	mat.submat(6,0,8,2) = arma::cross(*Cl,*Cj) * Ci -> t();
 	mat.submat(9,0,11,2) = arma::cross(*Cj,*Ck) * Ci -> t();
+
+
 }
 
 
-arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
-	arma::mat::fixed<12,3>  & right_mat, 
-	int i,int j,int k,int l, 
-	int m, int p, int q, int r){
 
-	arma::mat::fixed<3,3> P_temp;
-	P_temp.fill(0);
+void ShapeModelBezier::construct_inertia_mapping_mat(arma::mat::fixed<6,15> & mat,
+	int i,int j,int k,int l,int m) const{
 
-	// First row
+	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
+	arma::vec * Cj = this -> control_points.at(j) -> get_coordinates_pointer_arma();
+	arma::vec * Ck = this -> control_points.at(k) -> get_coordinates_pointer_arma();
+	arma::vec * Cl = this -> control_points.at(l) -> get_coordinates_pointer_arma();
+	arma::vec * Cm = this -> control_points.at(m) -> get_coordinates_pointer_arma();
 
-	if (i == m){
-		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(0,0,2,2);
-	}
-	if (i == p){
-		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(3,0,5,2);
-	}
-	if (i == q){
-		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(6,0,8,2);
-	}
-	if (i == r){
-		P_temp += left_mat.submat(0,0,2,2) * this -> control_points.at(i) -> get_covariance() * right_mat.submat(9,0,11,2);
-	}
-
-	// Second row
-
-	if (j == m){
-		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(0,0,2,2);
-	}
-	if (j == p){
-		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(3,0,5,2);
-	}
-	if (j == q){
-		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(6,0,8,2);
-	}
-	if (j == r){
-		P_temp += left_mat.submat(3,0,5,2).t() * this -> control_points.at(j) -> get_covariance() * right_mat.submat(9,0,11,2);
-	}
-
-	// Third row
-
-	if (k == m){
-		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(0,0,2,2);
-	}
-	if (k == p){
-		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(3,0,5,2);
-	}
-	if (k == q){
-		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(6,0,8,2);
-	}
-	if (k == r){
-		P_temp += left_mat.submat(6,0,8,2).t() * this -> control_points.at(k) -> get_covariance() * right_mat.submat(9,0,11,2);
-	}
+	mat.row(0) = ShapeModelBezier::L_row(0,0,Ci,Cj,Ck,Cl,Cm);
+	mat.row(1) = ShapeModelBezier::L_row(1,1,Ci,Cj,Ck,Cl,Cm);
+	mat.row(2) = ShapeModelBezier::L_row(2,2,Ci,Cj,Ck,Cl,Cm);
+	mat.row(3) = ShapeModelBezier::L_row(0,1,Ci,Cj,Ck,Cl,Cm);
+	mat.row(4) = ShapeModelBezier::L_row(0,2,Ci,Cj,Ck,Cl,Cm);
+	mat.row(5) = ShapeModelBezier::L_row(1,2,Ci,Cj,Ck,Cl,Cm);
 
 
-	// Fourth row
+}
+
+arma::rowvec ShapeModelBezier::L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm){
 
 
-	if (l == m){
-		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(0,0,2,2);
-	}
-	if (l == p){
-		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(3,0,5,2);
-	}
-	if (l == q){
-		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(6,0,8,2);
-	}
-	if (l == r){
-		P_temp += left_mat.submat(9,0,11,2).t() * this -> control_points.at(l) -> get_covariance() * right_mat.submat(9,0,11,2);
-	}
+	arma::vec L_col(15);
+	arma::vec e_q = arma::zeros<arma::vec>(3);
+	e_q(q) = 1;
+	arma::vec e_r = arma::zeros<arma::vec>(3);
+	e_r(r) = 1;
 
+	L_col.rows(0,2) = - arma::dot(*Ck,arma::cross(*Cl,*Cm)) * RBK::tilde(e_r) * RBK::tilde(*Cj) * e_q;
+	L_col.rows(3,5) = - arma::dot(*Ck,arma::cross(*Cl,*Cm)) * RBK::tilde(e_q) * RBK::tilde(*Ci) * e_r;
+	L_col.rows(6,8) = arma::dot(e_r, RBK::tilde(*Ci) * RBK::tilde(*Cj) * e_q ) * arma::cross(*Cl,*Cm);
+	L_col.rows(9,11) = arma::dot(e_r, RBK::tilde(*Ci) * RBK::tilde(*Cj) * e_q ) * arma::cross(*Cm,*Ck);
+	L_col.rows(12,14) = arma::dot(e_r, RBK::tilde(*Ci) * RBK::tilde(*Cj) * e_q ) * arma::cross(*Ck,*Cl);
 
-
-	return P_temp;
+	return L_col.t();
 }
 
 
 
 
-arma::vec ShapeModelBezier::run_monte_carlo_volume(int N){
+
+
+
+
+
+
+
+void ShapeModelBezier::run_monte_carlo(int N,
+	arma::vec & results_volume,
+	arma::mat & results_cm,
+	arma::mat & results_inertia,
+	arma::mat & results_moments){
+
+	arma::arma_rng::set_seed(0);
 
 	// Setting the means
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
@@ -660,56 +566,11 @@ arma::vec ShapeModelBezier::run_monte_carlo_volume(int N){
 	}
 
 	boost::progress_display progress(N) ;
-	arma::vec results_volume(N);
+	results_volume = arma::zeros<arma::vec>(N);
+	results_cm = arma::zeros<arma::mat>(3,N);
+	results_inertia = arma::zeros<arma::mat>(6,N);
+	results_moments = arma::zeros<arma::mat>(4,N);
 
-	for (int iter = 0; iter < N; ++iter){
-
-		++progress;
-
-		for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-
-
-			if (arma::det(this -> control_points[i] -> get_covariance()) > 0){
-
-				this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates()
-					+ arma::chol(this -> control_points[i] -> get_covariance(), "lower") * arma::randn<arma::vec>(3) );
-
-			}
-		}
-
-		this -> compute_volume();
-		results_volume(iter) = this -> get_volume();
-
-	}
-
-
-
-	// Cleaning up
-	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates());
-	}
-	
-
-
-
-	return results_volume;
-
-
-}
-
-
-
-
-
-arma::mat ShapeModelBezier::run_monte_carlo_cm(int N){
-
-	// Setting the means
-	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> set_mean_coordinates();
-	}
-
-	boost::progress_display progress(N) ;
-	arma::mat results_cm(3,N);
 
 	for (int iter = 0; iter < N; ++iter){
 
@@ -727,8 +588,18 @@ arma::mat ShapeModelBezier::run_monte_carlo_cm(int N){
 
 		this -> compute_volume();
 		this -> compute_center_of_mass();
+		this -> compute_inertia();
 
+		arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
+		arma::vec I = {I_C(0,0),I_C(1,1),I_C(2,2),I_C(0,1),I_C(0,2),I_C(1,2)};
+
+		results_volume(iter) = this -> get_volume();
 		results_cm.col(iter) = this -> get_center_of_mass();
+		results_inertia.col(iter) = I;
+		arma::vec col(4);
+		col.rows(0,2) = arma::eig_sym(I_C);
+		col(3) = this -> get_volume();
+		results_moments.col(iter) = col;
 
 	}
 
@@ -738,17 +609,9 @@ arma::mat ShapeModelBezier::run_monte_carlo_cm(int N){
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 		this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates());
 	}
-	
-
-
-
-	return results_cm;
 
 
 }
-
-
-
 
 
 
@@ -795,10 +658,31 @@ void ShapeModelBezier::elevate_degree(bool update){
 	// of the provided shape
 	this -> control_points = new_control_points;
 
-	// The ownership relationships are reset
+
+
+
+	this -> build_structure();
+
+
+
+
+	if (update){
+		this -> construct_kd_tree_control_points();
+		this -> populate_mass_properties_coefs();
+		this -> update_mass_properties();
+	}
+
+
+}
+
+
+void ShapeModelBezier::build_structure() {
+
+// The ownership relationships are reset
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 		this -> control_points[i] -> reset_ownership();
 		this -> control_points[i] -> set_global_index(i);
+
 	}
 
 	// The surface elements are almost the same, expect that they are 
@@ -816,14 +700,13 @@ void ShapeModelBezier::elevate_degree(bool update){
 
 	}
 
-	if (update){
-		this -> construct_kd_tree_control_points();
-		this -> populate_mass_properties_coefs();
-		this -> update_mass_properties();
-	}
 
 
 }
+
+
+
+
 
 void ShapeModelBezier::populate_mass_properties_coefs(){
 
@@ -835,6 +718,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 	this ->	cm_cov_1_indices_coefs_table.clear();
 	this -> cm_cov_2_indices_coefs_table.clear();
+	this -> inertia_stats_1_indices_coefs_table.clear();
 
 	double n = this -> get_degree();
 
@@ -849,8 +733,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	// Volume
 	ShapeModelBezier::build_bezier_index_vectors(3,
 		base_vector,
-		index_vectors,
-		temp_vector);
+		index_vectors);
 
 
 	for (auto vector : index_vectors){
@@ -863,10 +746,9 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int p = vector[2][1];
 
 		double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
-		if (std::abs(alpha) > 1e-13){
-			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
-			this -> volume_indices_coefs_table.push_back(index_vector);
-		}
+		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
+		this -> volume_indices_coefs_table.push_back(index_vector);
+
 	}
 
 
@@ -877,9 +759,8 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(6,
 		base_vector,
-		index_vectors,
-		temp_vector);
-	
+		index_vectors);
+
 	for (auto vector : index_vectors){
 
 		int i = vector[0][0];
@@ -900,18 +781,17 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		double alpha_2 = Bezier::alpha_ijk(q, r, s, t, u, v, n);
 		double aa = alpha_1 * alpha_2;
 
-		if (std::abs(aa) > 1e-13){
-			std::vector<double> index_vector = {
-				double(i),double(j),
-				double(k),double(l),
-				double(m),double(p),
-				double(q),double(r),
-				double(s),double(t),
-				double(u),double(v),
-				aa
-			};
-			this -> volume_sd_indices_coefs_table.push_back(index_vector);
-		}		
+		std::vector<double> index_vector = {
+			double(i),double(j),
+			double(k),double(l),
+			double(m),double(p),
+			double(q),double(r),
+			double(s),double(t),
+			double(u),double(v),
+			aa
+		};
+		this -> volume_sd_indices_coefs_table.push_back(index_vector);
+
 
 
 
@@ -929,13 +809,9 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(4,
 		base_vector,
-		index_vectors,
-		temp_vector);
-
-
+		index_vectors);
 
 	for (auto vector : index_vectors){
-
 
 		int i = vector[0][0];
 		int j = vector[0][1];
@@ -945,23 +821,21 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int p = vector[2][1];
 		int q = vector[3][0];
 		int r = vector[3][1];
-		
+
 		double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
 
-		if (std::abs(gamma) > 1e-13){
-			std::vector<double> index_vector = {
-				double(i),
-				double(j),
-				double(k),
-				double(l),
-				double(m),
-				double(p),
-				double(q),
-				double(r),
-				gamma
-			};
-			this -> cm_gamma_indices_coefs_table.push_back(index_vector);
-		} 
+		std::vector<double> index_vector = {
+			double(i),
+			double(j),
+			double(k),
+			double(l),
+			double(m),
+			double(p),
+			double(q),
+			double(r),
+			gamma
+		} ;
+		this -> cm_gamma_indices_coefs_table.push_back(index_vector);
 
 	}
 
@@ -977,8 +851,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(8,
 		base_vector,
-		index_vectors,
-		temp_vector);
+		index_vectors);
 
 
 
@@ -992,7 +865,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int p = vector[2][1];
 		int q = vector[3][0];
 		int r = vector[3][1];
-		
+
 		int s = vector[4][0];
 		int t = vector[4][1];
 		int u = vector[5][0];
@@ -1008,20 +881,19 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 		double gamma = gamma_1 * gamma_2;
 
-		if (std::abs(gamma) > 1e-13){
-			std::vector<double> index_vector = {
-				double(i),double(j),
-				double(k),double(l),
-				double(m),double(p),
-				double(q),double(r),
-				double(s),double(t),
-				double(u),double(v),
-				double(w),double(x),
-				double(y),double(z),
-				gamma
-			};
-			this -> cm_cov_1_indices_coefs_table.push_back(index_vector);
-		}
+		std::vector<double> index_vector = {
+			double(i),double(j),
+			double(k),double(l),
+			double(m),double(p),
+			double(q),double(r),
+			double(s),double(t),
+			double(u),double(v),
+			double(w),double(x),
+			double(y),double(z),
+			gamma
+		};
+		this -> cm_cov_1_indices_coefs_table.push_back(index_vector);
+
 	}
 
 
@@ -1034,8 +906,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(7,
 		base_vector,
-		index_vectors,
-		temp_vector);
+		index_vectors);
 
 
 
@@ -1049,33 +920,32 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int p = vector[2][1];
 		int q = vector[3][0];
 		int r = vector[3][1];
-		
+
 		int s = vector[4][0];
 		int t = vector[4][1];
 		int u = vector[5][0];
 		int v = vector[5][1];
 		int w = vector[6][0];
 		int x = vector[6][1];
-		
+
 
 		double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
 		double alpha = Bezier::alpha_ijk(s, t, u, v, w, x, n);
 
 		double coef = gamma * alpha;
 
-		if (std::abs(coef) > 1e-13){
-			std::vector<double> index_vector = {
-				double(i),double(j),
-				double(k),double(l),
-				double(m),double(p),
-				double(q),double(r),
-				double(s),double(t),
-				double(u),double(v),
-				double(w),double(x),
-				coef
-			};
-			this -> cm_cov_2_indices_coefs_table.push_back(index_vector);
-		}
+		std::vector<double> index_vector = {
+			double(i),double(j),
+			double(k),double(l),
+			double(m),double(p),
+			double(q),double(r),
+			double(s),double(t),
+			double(u),double(v),
+			double(w),double(x),
+			coef
+		};
+		this -> cm_cov_2_indices_coefs_table.push_back(index_vector);
+
 	}
 	std::cout << "- CM cov coefficients : " << this -> cm_cov_1_indices_coefs_table.size() + this -> cm_cov_2_indices_coefs_table.size() << std::endl;
 
@@ -1085,10 +955,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(5,
 		base_vector,
-		index_vectors,
-		temp_vector);
-
-
+		index_vectors);
 
 	for (auto vector : index_vectors){
 
@@ -1104,18 +971,103 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int t = vector[4][1];
 
 		double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
-		if (std::abs(kappa) > 1e-13){
-			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
-				double(s),double(t),kappa
-			};
-			this -> inertia_indices_coefs_table.push_back(index_vector);
-		}
+		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+			double(s),double(t),kappa
+		};
+		this -> inertia_indices_coefs_table.push_back(index_vector);
 	}
 
 
 
 	std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() + this -> cm_gamma_indices_coefs_table.size() << std::endl;
 
+
+
+
+
+
+	// Inertia statistics 1
+
+	index_vectors.clear();
+	ShapeModelBezier::build_bezier_index_vectors(10,
+		base_vector,
+		index_vectors);
+
+	for (auto vector : index_vectors){
+
+		int i = vector[0][0];
+		int j = vector[0][1];
+		int k = vector[1][0];
+		int l = vector[1][1];
+		int m = vector[2][0];
+		int p = vector[2][1];
+		int q = vector[3][0];
+		int r = vector[3][1];
+		int s = vector[4][0];
+		int t = vector[4][1];
+
+		int u = vector[5][0];
+		int v = vector[5][1];
+		int w = vector[6][0];
+		int x = vector[6][1];
+		int y = vector[7][0];
+		int z = vector[7][1];
+		int a = vector[8][0];
+		int b = vector[8][1];
+		int c = vector[9][0];
+		int d = vector[9][1];
+
+		double kappa_kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n) * Bezier::kappa_ijklm(u, v, w, x, y, z,a, b,c,d, n);
+		// if (std::abs(kappa_kappa) > 1e-13){
+		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+			double(s),double(t),
+			double(u),double(v),double(w),double(x),double(y),double(z),double(a),double(b),
+			double(c),double(d),
+			kappa_kappa
+		};
+		this -> inertia_stats_1_indices_coefs_table.push_back(index_vector);
+		// }
+	}
+
+	// Inertia statistics 2
+
+	index_vectors.clear();
+	ShapeModelBezier::build_bezier_index_vectors(8,
+		base_vector,
+		index_vectors);
+
+	for (auto vector : index_vectors){
+
+		int i = vector[0][0];
+		int j = vector[0][1];
+		int k = vector[1][0];
+		int l = vector[1][1];
+		int m = vector[2][0];
+		int p = vector[2][1];
+		int q = vector[3][0];
+		int r = vector[3][1];
+		int s = vector[4][0];
+		int t = vector[4][1];
+
+		int u = vector[5][0];
+		int v = vector[5][1];
+		int w = vector[6][0];
+		int x = vector[6][1];
+		int y = vector[7][0];
+		int z = vector[7][1];
+
+
+		double alpha_kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n) * Bezier::alpha_ijk(u, v, w, x, y, z, n);
+		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+			double(s),double(t),
+			double(u),double(v),double(w),double(x),double(y),double(z),
+			alpha_kappa
+		};
+		this -> inertia_stats_2_indices_coefs_table.push_back(index_vector);
+
+	}
+
+	std::cout << "- Inertia stats coefficients: " << (this -> inertia_stats_1_indices_coefs_table.size() + this -> inertia_stats_2_indices_coefs_table.size()) << std::endl;
 
 
 }
@@ -1125,7 +1077,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 void ShapeModelBezier::build_bezier_index_vectors(const int & n_indices,
 	const std::vector<std::vector<int> > & base_vector,
 	std::vector<std::vector<std::vector<int> > > & index_vectors,
-	std::vector < std::vector<int> > & temp_vector,
+	std::vector < std::vector<int> > temp_vector,
 	const int depth){
 
 	if (temp_vector.size() == 0){
@@ -1146,10 +1098,6 @@ void ShapeModelBezier::build_bezier_index_vectors(const int & n_indices,
 				depth + 1);
 		}
 
-	}
-
-	if (depth == 0){
-		temp_vector.clear();
 	}
 
 }
@@ -1345,13 +1293,6 @@ void ShapeModelBezier::construct_kd_tree_shape(){
 
 
 
-
-
-
-
-
-
-
 }
 
 
@@ -1449,10 +1390,817 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 
 	}
 
+}
+
+
+
+void ShapeModelBezier::compute_inertia_statistics() {
+	std::cout << "\n- Computing inertia statistics ...\n";
+
+	this -> compute_P_I();
+	this -> compute_P_IV();
+	this -> compute_P_Y();
+	this -> compute_P_moments();
+
 
 }
 
 
+
+
+
+
+void ShapeModelBezier::compute_P_I(){
+
+
+	arma::mat::fixed<6,6> P_I,increment;
+	P_I.fill(0);
+
+
+	std::vector<std::set < Element * > > connected_elements;
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+		auto elements = this -> elements[e] -> get_neighbors(true);
+		connected_elements.push_back(elements);
+	}
+
+	boost::progress_display progress(this -> inertia_stats_1_indices_coefs_table.size()) ;
+
+
+	#pragma omp parallel for reduction (+:P_I)
+
+	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
+
+		auto coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
+
+				// i
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
+
+				// j
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
+
+				// k
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
+
+				// l
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
+
+				// m
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
+
+				// p
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
+
+				// q
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
+
+				// r
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
+
+				// s
+		int a =  int(coefs_row[16]);
+		int b =  int(coefs_row[17]);
+
+				// t
+		int c =  int(coefs_row[18]);
+		int d =  int(coefs_row[19]);
+
+
+		arma::mat::fixed<6,15> left_mat;
+		arma::mat::fixed<6,15> right_mat;
+
+		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+			int i_g,j_g,k_g,l_g,m_g;
+
+			i_g = patch_e -> get_control_point_global_index(i,j);
+			j_g = patch_e -> get_control_point_global_index(k,l);
+			k_g = patch_e -> get_control_point_global_index(m,p);
+			l_g = patch_e -> get_control_point_global_index(q,r);
+			m_g = patch_e -> get_control_point_global_index(s,t);
+
+			auto neighbors = connected_elements[e];
+
+			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
+
+			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+
+
+				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+
+				int p_g,q_g,r_g,s_g,t_g;
+
+				p_g = patch_f -> get_control_point_global_index(u,v);
+				q_g = patch_f -> get_control_point_global_index(w,x);
+				r_g = patch_f -> get_control_point_global_index(y,z);
+				s_g = patch_f -> get_control_point_global_index(a,b);
+				t_g = patch_f -> get_control_point_global_index(c,d);	
+
+				this -> construct_inertia_mapping_mat(right_mat,p_g,q_g,r_g,s_g,t_g);
+
+				increment = this -> increment_P_I(left_mat,
+					right_mat, 
+					i_g,j_g,k_g,l_g,m_g, 
+					p_g,q_g,r_g,s_g,t_g);
+
+				P_I += coefs_row[20] * increment;
+			}
+		}
+
+		++progress;
+	}
+
+	this -> P_I = P_I;
+
+}
+
+
+void ShapeModelBezier::compute_P_IV(){
+
+	arma::vec::fixed<6> P_IV,increment;
+	P_IV.fill(0);
+
+	std::vector<std::set < Element * > > connected_elements;
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+		auto elements = this -> elements[e] -> get_neighbors(true);
+		connected_elements.push_back(elements);
+	}
+
+	boost::progress_display progress(this -> inertia_stats_2_indices_coefs_table.size()) ;
+
+
+	#pragma omp parallel for reduction (+:P_IV)
+
+	for (int index = 0 ; index <  this -> inertia_stats_2_indices_coefs_table.size(); ++index) {
+
+		auto coefs_row = this -> inertia_stats_2_indices_coefs_table[index];
+
+				// i
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
+
+				// j
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
+
+				// k
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
+
+				// l
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
+
+				// m
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
+
+				// p
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
+
+				// q
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
+
+				// r
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
+
+		arma::mat::fixed<6,15> left_mat;
+		arma::vec::fixed<9> right_vec;
+
+		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+
+			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+			int i_g,j_g,k_g,l_g,m_g;
+
+
+			i_g = patch_e -> get_control_point_global_index(i,j);
+			j_g = patch_e -> get_control_point_global_index(k,l);
+			k_g = patch_e -> get_control_point_global_index(m,p);
+			l_g = patch_e -> get_control_point_global_index(q,r);
+			m_g = patch_e -> get_control_point_global_index(s,t);	
+
+
+			auto neighbors = connected_elements[e];
+
+			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
+
+			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+
+
+				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+
+				int p_g,q_g,r_g;
+
+				p_g = patch_f -> get_control_point_global_index(u,v);
+				q_g = patch_f -> get_control_point_global_index(w,x);
+				r_g = patch_f -> get_control_point_global_index(y,z);
+
+
+
+				right_vec = patch_f -> get_cross_products(u,v,w,x,y,z);
+
+				increment = this -> increment_P_IV(left_mat,
+					right_vec, 
+					i_g,j_g,k_g,l_g,m_g, 
+					p_g,q_g,r_g);
+
+
+				P_IV += coefs_row[16] * increment;
+			}
+		}
+
+		++progress;
+	}
+
+	this -> P_IV = P_IV;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+arma::mat::fixed<6,6> ShapeModelBezier::increment_P_I(arma::mat::fixed<6,15> & left_mat,
+	arma::mat::fixed<6,15>  & right_mat, 
+	int i,int j,int k,int l,int m,
+	int p, int q, int r, int s, int t){
+
+	arma::mat::fixed<15,15> P_CC = arma::zeros<arma::mat>(15,15);
+
+	// First row
+	if (i == p){
+		P_CC.submat(0,0,2,2) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == q){
+		P_CC.submat(0,3,2,5) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == r){
+		P_CC.submat(0,6,2,8) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == s){
+		P_CC.submat(0,9,2,11) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == t){
+		P_CC.submat(0,12,2,14) = this -> control_points.at(i) -> get_covariance() ;
+	}
+
+	// Second row
+
+	if (j == p){
+		P_CC.submat(3,0,5,2) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == q){
+		P_CC.submat(3,3,5,5) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == r){
+		P_CC.submat(3,6,5,8) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == s){
+		P_CC.submat(3,9,5,11) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == t){
+		P_CC.submat(3,12,5,14) = this -> control_points.at(j) -> get_covariance() ;
+	}
+
+	// Third row
+
+	if (k == p){
+		P_CC.submat(6,0,8,2) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == q){
+		P_CC.submat(6,3,8,5) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == r){
+		P_CC.submat(6,6,8,8) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == s){
+		P_CC.submat(6,9,8,11) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == t){
+		P_CC.submat(6,12,8,14) = this -> control_points.at(k) -> get_covariance() ;
+	}
+
+
+	// Fourth row
+	if (l == p){
+		P_CC.submat(9,0,11,2) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == q){
+		P_CC.submat(9,3,11,5) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == r){
+		P_CC.submat(9,6,11,8) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == s){
+		P_CC.submat(9,9,11,11) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == t){
+		P_CC.submat(9,12,11,14) = this -> control_points.at(l) -> get_covariance() ;
+	}
+
+
+	// Fifth row
+	if (m == p){
+		P_CC.submat(12,0,14,2) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == q){
+		P_CC.submat(12,3,14,5) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == r){
+		P_CC.submat(12,6,14,8) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == s){
+		P_CC.submat(12,9,14,11) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == t){
+		P_CC.submat(12,12,14,14) = this -> control_points.at(m) -> get_covariance() ;
+	}
+
+
+	return left_mat * P_CC * right_mat.t();
+
+}
+
+
+
+arma::vec::fixed<6> ShapeModelBezier::increment_P_IV(arma::mat::fixed<6,15> & left_mat,
+	arma::vec::fixed<9>  & right_vec, 
+	int i,int j,int k,int l,int m,
+	int p, int q, int r){
+
+	arma::mat::fixed<15,9> P_CC = arma::zeros<arma::mat>(15,9);
+
+	// First row
+	if (i == p){
+		P_CC.submat(0,0,2,2) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == q){
+		P_CC.submat(0,3,2,5) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == r){
+		P_CC.submat(0,6,2,8) = this -> control_points.at(i) -> get_covariance() ;
+	}
+
+
+	// Second row
+
+	if (j == p){
+		P_CC.submat(3,0,5,2) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == q){
+		P_CC.submat(3,3,5,5) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == r){
+		P_CC.submat(3,6,5,8) = this -> control_points.at(j) -> get_covariance() ;
+	}
+
+
+	// Third row
+
+	if (k == p){
+		P_CC.submat(6,0,8,2) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == q){
+		P_CC.submat(6,3,8,5) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == r){
+		P_CC.submat(6,6,8,8) = this -> control_points.at(k) -> get_covariance() ;
+	}
+
+
+
+	// Fourth row
+	if (l == p){
+		P_CC.submat(9,0,11,2) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == q){
+		P_CC.submat(9,3,11,5) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == r){
+		P_CC.submat(9,6,11,8) = this -> control_points.at(l) -> get_covariance() ;
+	}
+
+
+
+	// Fifth row
+	if (m == p){
+		P_CC.submat(12,0,14,2) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == q){
+		P_CC.submat(12,3,14,5) = this -> control_points.at(m) -> get_covariance() ;
+	}
+	if (m == r){
+		P_CC.submat(12,6,14,8) = this -> control_points.at(m) -> get_covariance() ;
+	}
+
+	return left_mat * P_CC * right_vec;
+
+}
+
+
+
+
+
+
+arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
+	arma::mat::fixed<12,3>  & right_mat, 
+	int i,int j,int k,int l, 
+	int m, int p, int q, int r){
+
+	arma::mat::fixed<12,12> P_CC = arma::zeros<arma::mat>(12,12);
+
+		// First row
+
+	if (i == m){
+		P_CC.submat(0,0,2,2) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == p){
+		P_CC.submat(0,3,2,5) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == q){
+		P_CC.submat(0,6,2,8) = this -> control_points.at(i) -> get_covariance() ;
+	}
+	if (i == r){
+		P_CC.submat(0,9,2,11) = this -> control_points.at(i) -> get_covariance() ;
+	}
+
+
+	// Second row
+
+	if (j == m){
+		P_CC.submat(3,0,5,2) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == p){
+		P_CC.submat(3,3,5,5) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == q){
+		P_CC.submat(3,6,5,8) = this -> control_points.at(j) -> get_covariance() ;
+	}
+	if (j == r){
+		P_CC.submat(3,9,5,11) = this -> control_points.at(j) -> get_covariance() ;
+	}
+
+
+	// Third row
+
+	if (k == m){
+		P_CC.submat(6,0,8,2) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == p){
+		P_CC.submat(6,3,8,5) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == q){
+		P_CC.submat(6,6,8,8) = this -> control_points.at(k) -> get_covariance() ;
+	}
+	if (k == r){
+		P_CC.submat(6,9,8,11) = this -> control_points.at(k) -> get_covariance() ;
+	}
+
+
+	// Fourth row
+	if (l == m){
+		P_CC.submat(9,0,11,2) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == p){
+		P_CC.submat(9,3,11,5) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == q){
+		P_CC.submat(9,6,11,8) = this -> control_points.at(l) -> get_covariance() ;
+	}
+	if (l == r){
+		P_CC.submat(9,9,11,11) = this -> control_points.at(l) -> get_covariance() ;
+	}
+
+
+	return left_mat.t() * P_CC * right_mat;
+}
+
+
+
+void ShapeModelBezier::compute_P_Y(){
+
+	double sigma_TT = arma::dot(ShapeModelBezier::partial_T_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_T_partial_I().t());
+	double sigma_TU = arma::dot(ShapeModelBezier::partial_T_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_U_partial_I().t());
+	double sigma_Tt = arma::dot(ShapeModelBezier::partial_T_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_theta_partial_I().t());
+	double sigma_UU = arma::dot(ShapeModelBezier::partial_U_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_U_partial_I().t());
+	double sigma_Ut = arma::dot(ShapeModelBezier::partial_U_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_theta_partial_I().t());
+	double sigma_tt = arma::dot(ShapeModelBezier::partial_theta_partial_I() .t(), 
+		this -> P_I * ShapeModelBezier::partial_U_partial_I().t());
+
+	this -> P_Y = {
+		{sigma_TT,sigma_TU,sigma_Tt},
+		{sigma_TU,sigma_UU,sigma_Ut},
+		{sigma_Tt,sigma_Ut,sigma_tt}
+	};
+}
+
+
+arma::rowvec::fixed<6> ShapeModelBezier::partial_T_partial_I() {
+	arma::rowvec dTdI = {1,1,1,0,0,0};
+	return dTdI;
+}
+
+
+
+
+arma::rowvec::fixed<6> ShapeModelBezier::partial_theta_partial_I() const {
+
+	double T = arma::trace(this -> inertia);
+	double d = arma::det (this -> inertia);
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
+
+	arma::mat::fixed<6,6> Q = {
+		{0,1./2.,1./2,0,0,0},
+		{1./2.,0,1./2,0,0,0},
+		{1./2,1./2.,0,0,0,0},
+		{0,0,0,-1,0,0},
+		{0,0,0,0,-1,0},
+		{0,0,0,0,0,-1}
+	};
+
+
+
+	double Pi = arma::dot(I, Q * I);
+
+	double U = std::sqrt(T * T - 3 * Pi)/3;
+
+	double Theta = (-2 * std::pow(T,3) + 9 * T * Pi - 27 * d)/(54 * std::pow(U,3));
+
+
+	arma::rowvec dthetadI = (ShapeModelBezier::partial_theta_partial_Theta(Theta) 
+		* ShapeModelBezier::partial_Theta_partial_W(T,Pi,U,d) 
+		* ShapeModelBezier::partial_W_partial_I());
+
+	return dthetadI;
+}
+
+
+
+arma::rowvec::fixed<4> ShapeModelBezier::partial_Theta_partial_W(const double & T,const double & Pi,const double & U,const double & d){
+
+	arma::rowvec::fixed<4> dThetadW =  {
+		(-6 * T * T + 9 * Pi) * U,
+		9 * T * U,
+		-27 * U,
+		-3 * (-2 * std::pow(T,3) + 9 * T * Pi - 27 * d)
+	};
+	return 1./(54 * std::pow(U,4)) * dThetadW;
+
+
+}
+
+
+double ShapeModelBezier::partial_theta_partial_Theta(const double & Theta){
+	return - 1. / std::sqrt(1 - Theta * Theta);
+}
+
+
+arma::mat::fixed<4,6> ShapeModelBezier::partial_W_partial_I() const{
+
+	arma::mat::fixed<4,6> dWdI;
+	dWdI.row(0) = ShapeModelBezier::partial_T_partial_I();
+	dWdI.row(1) = ShapeModelBezier::partial_Pi_partial_I();
+	dWdI.row(2) = ShapeModelBezier::partial_d_partial_I();
+	dWdI.row(3) = ShapeModelBezier::partial_U_partial_I();
+
+	return dWdI;
+
+}
+
+arma::rowvec::fixed<6> ShapeModelBezier::partial_d_partial_I() const {
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::rowvec::fixed<6> dddI = {
+		I_yy * I_zz - std::pow(I_yz,2),
+		I_xx * I_zz - std::pow(I_xz,2),
+		I_xx * I_yy - std::pow(I_xy,2),
+		2 * (I_xz * I_yz - I_zz * I_xy),
+		2 * (I_xy * I_yz - I_yy * I_xz),
+		2 * (I_xy * I_xz - I_xx * I_yz)
+	};
+
+	return dddI;
+
+}
+
+
+arma::rowvec::fixed<6> ShapeModelBezier::partial_U_partial_I() const{
+
+	arma::rowvec::fixed<6> dUdI = ShapeModelBezier::partial_U_partial_Z() * ShapeModelBezier::partial_Z_partial_I() ;
+
+
+	return dUdI;
+
+}
+
+
+arma::rowvec::fixed<2> ShapeModelBezier::partial_U_partial_Z() const{
+
+	double T = arma::trace(this -> inertia);
+	double d = arma::det (this -> inertia);
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
+
+	arma::mat::fixed<6,6> Q = {
+		{0,1./2.,1./2,0,0,0},
+		{1./2.,0,1./2,0,0,0},
+		{1./2,1./2.,0,0,0,0},
+		{0,0,0,-1,0,0},
+		{0,0,0,0,-1,0},
+		{0,0,0,0,0,-1}
+	};
+
+	double Pi = arma::dot(I, Q * I);
+	double U = std::sqrt(T * T - 3 * Pi)/3;
+
+
+	arma::rowvec::fixed<2> dUdZ = {2 * T,-3}	;
+	return 1./(18 * U) * dUdZ;
+
+}
+
+arma::mat::fixed<2,6> ShapeModelBezier::partial_Z_partial_I() const {
+
+	arma::mat::fixed<2,6> dZdI;
+	dZdI.row(0) = ShapeModelBezier::partial_T_partial_I();
+	dZdI.row(1) = ShapeModelBezier::partial_Pi_partial_I();
+
+	return dZdI;
+
+}
+
+arma::rowvec::fixed<6> ShapeModelBezier::partial_Pi_partial_I() const {
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
+
+	arma::mat::fixed<6,6> Q = {
+		{0,1./2.,1./2,0,0,0},
+		{1./2.,0,1./2,0,0,0},
+		{1./2,1./2.,0,0,0,0},
+		{0,0,0,-1,0,0},
+		{0,0,0,0,-1,0},
+		{0,0,0,0,0,-1}
+	};
+
+	return 2 * I.t() * Q;
+
+}
+
+
+arma::rowvec::fixed<3> ShapeModelBezier::partial_A_partial_Y(const double & theta,const double & U){
+
+	arma::rowvec::fixed<3> dAdY = {1./3,- 2 * std::cos(theta / 3),2./3 * U * std::sin(theta/3)};
+
+	return dAdY;
+
+}
+
+
+arma::rowvec::fixed<3> ShapeModelBezier::partial_B_partial_Y(const double & theta,const double & U){
+
+	arma::rowvec::fixed<3> dBdY = {1./3,- 2 * std::cos(theta / 3 - 2 * arma::datum::pi /3),2./3 * U * std::sin(theta/3 - 2 * arma::datum::pi /3)};
+
+	return dBdY;
+
+}
+
+arma::rowvec::fixed<3> ShapeModelBezier::partial_C_partial_Y(const double & theta,const double & U){
+
+	arma::rowvec::fixed<3> dCdY = {1./3,- 2 * std::cos(theta / 3 + 2 * arma::datum::pi /3),2./3 * U * std::sin(theta/3 + 2 * arma::datum::pi /3)};
+
+	return dCdY;
+
+}
+
+
+
+
+void ShapeModelBezier::compute_P_moments(){
+
+	arma::mat::fixed<4,4> P_moments;
+
+	double T = arma::trace(this -> inertia);
+	double d = arma::det (this -> inertia);
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
+
+	arma::mat::fixed<6,6> Q = {
+		{0,1./2.,1./2,0,0,0},
+		{1./2.,0,1./2,0,0,0},
+		{1./2,1./2.,0,0,0,0},
+		{0,0,0,-1,0,0},
+		{0,0,0,0,-1,0},
+		{0,0,0,0,0,-1}
+	};
+
+	double Pi = arma::dot(I, Q * I);
+	double U = std::sqrt(T * T - 3 * Pi)/3;
+
+
+
+	double Theta = (-2 * std::pow(T,3) + 9 * T * Pi - 27 * d)/(54 * std::pow(U,3));
+	double theta = std::acos(Theta);
+
+	auto dAdY = ShapeModelBezier::partial_A_partial_Y(theta,U);
+	auto dBdY = ShapeModelBezier::partial_B_partial_Y(theta,U);
+	auto dCdY = ShapeModelBezier::partial_C_partial_Y(theta,U);
+
+	arma::vec::fixed<3> sigma_sq_Y =  {
+		arma::dot(ShapeModelBezier::partial_T_partial_I().t() , this -> P_IV),
+		arma::dot(ShapeModelBezier::partial_U_partial_I().t() , this -> P_IV),
+		arma::dot(ShapeModelBezier::partial_theta_partial_I().t() , this -> P_IV)
+	};
+
+
+
+	P_moments(0,0) = arma::dot(dAdY.t(), this -> P_Y * dAdY.t());
+	P_moments(1,1) = arma::dot(dBdY.t(), this -> P_Y * dBdY.t());
+	P_moments(2,2) = arma::dot(dCdY.t(), this -> P_Y * dCdY.t());
+
+	P_moments(0,1) = arma::dot(dAdY.t(), this -> P_Y * dBdY.t());
+	P_moments(1,0) = P_moments(0,1);
+
+	P_moments(1,2) = arma::dot(dBdY.t(), this -> P_Y * dCdY.t());
+	P_moments(2,1) = P_moments(1,2);
+
+	P_moments(0,2) = arma::dot(dAdY.t(), this -> P_Y * dCdY.t());
+	P_moments(2,0) = P_moments(0,2);
+
+	P_moments(0,3) = arma::dot(dAdY.t(),sigma_sq_Y);
+	P_moments(3,0) = P_moments(0,3);
+
+	P_moments(1,3) = arma::dot(dBdY.t(),sigma_sq_Y);
+	P_moments(3,1) = P_moments(1,3);
+
+	P_moments(2,3) = arma::dot(dCdY.t(),sigma_sq_Y);
+	P_moments(3,2) = P_moments(2,3);
+
+	P_moments(3,3) = std::pow(this -> volume_sd,2);
+
+	this -> P_moments = P_moments;
+
+}
 
 
 

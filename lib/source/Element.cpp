@@ -47,3 +47,11 @@ Element * Element::get_super_element() const{
 void Element::set_super_element(Element * super_element){
 	this -> super_element = super_element;
 }
+
+void Element::set_global_index(int i ){
+	this -> global_index = i;
+}
+
+int Element::get_global_index() const{
+	return this -> global_index;
+}

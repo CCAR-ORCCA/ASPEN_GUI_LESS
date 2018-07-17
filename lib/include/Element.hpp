@@ -75,6 +75,10 @@ public:
 	*/
 	double get_area() const;
 
+	void set_global_index(int i );
+
+	int get_global_index() const;
+
 
 protected:
 
@@ -91,6 +95,7 @@ protected:
 	arma::vec center;
 
 	double area;
+	int global_index;
 
 };
 

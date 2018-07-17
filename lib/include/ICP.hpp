@@ -7,11 +7,6 @@
 #include "OMP_flags.hpp"
 #include "DebugFlags.hpp"
 
-#pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\
-initializer( omp_priv = omp_orig )
-#pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
-initializer( omp_priv = omp_orig )
-
 typedef typename std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > PointPair ;
 
 
