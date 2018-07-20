@@ -145,10 +145,7 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 		return true;
 	}
 
-
-
 }
-
 
 
 void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const{

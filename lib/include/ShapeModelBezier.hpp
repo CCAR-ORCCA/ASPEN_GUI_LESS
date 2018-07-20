@@ -149,9 +149,13 @@ public:
 		arma::vec & results_volume,
 		arma::mat & results_cm,
 		arma::mat & results_inertia,
-		arma::mat & results_moments);
-	
-
+		arma::mat & results_moments,
+		arma::mat & results_mrp,
+		arma::mat & results_lambda_I,
+		arma::mat & results_eigenvectors,
+		arma::mat & results_Evectors,
+		arma::mat & results_Y,
+		arma::mat & results_MI);
 
 	/**
 	Runs a Monte Carlo on volume
@@ -184,7 +188,7 @@ public:
 	arma::mat get_inertia_cov() const {return this -> P_I;}
 
 
-
+	arma::mat get_mrp_cov() const{return this -> P_sigma;}
 
 
 	void build_structure() ;
@@ -193,6 +197,21 @@ public:
 
 
 	arma::mat get_P_moments() const{return this -> P_moments;}
+	arma::mat get_P_Y() const{return this -> P_Y;}
+
+	arma::rowvec::fixed<6> get_P_lambda_I(const int lambda_index) const ;
+	arma::vec::fixed<6> get_P_MI() const{return this -> P_MI;}
+
+
+	arma::mat::fixed<9,9> get_P_eigenvectors() const{return this -> P_eigenvectors;}
+	arma::mat::fixed<9,9> get_P_Evectors() const{return this -> P_Evectors;}
+	arma::vec::fixed<9> get_E_vectors() const;
+
+	void apply_deviation();
+
+	arma::vec d_I() const;
+
+
 
 protected:
 
@@ -227,15 +246,18 @@ protected:
 	static void build_bezier_base_index_vector(const int n,std::vector<std::vector<int> > & base_vector);
 
 
-	
+
 	void compute_P_I();
-
-
-	void compute_P_IV();
+	void compute_P_MI();
 	void compute_P_Y();
-	void compute_P_moments();
+	void compute_P_MX();
 
-	static arma::rowvec L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm);
+	void compute_P_moments();
+	void compute_P_sigma();
+	void compute_P_eigenvectors();
+	void compute_P_Evectors();
+
+	static arma::rowvec::fixed<15> L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm);
 
 
 
@@ -245,13 +267,13 @@ protected:
 		int m, int p, int q, int r);
 
 
-	arma::mat::fixed<6,6> increment_P_I(arma::mat::fixed<6,15> & left_mat,
-		arma::mat::fixed<6,15>  & right_mat, 
+	arma::mat::fixed<6,6> increment_P_I(const arma::mat::fixed<6,15> & left_mat,
+		const arma::mat::fixed<6,15>  & right_mat, 
 		int i,int j,int k,int l,int m,
-		int p, int q, int r, int s, int t);
+		int p, int q, int r, int s, int t) const;
 
 
-	arma::vec::fixed<6> increment_P_IV(arma::mat::fixed<6,15> & left_mat,
+	arma::vec::fixed<6> increment_P_MI(arma::mat::fixed<6,15> & left_mat,
 		arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k,int l,int m,
 		int p, int q, int r);
@@ -269,6 +291,7 @@ protected:
 	static arma::rowvec::fixed<3> partial_A_partial_Y(const double & theta,const double & U);
 	static arma::rowvec::fixed<3> partial_B_partial_Y(const double & theta,const double & U);
 	static arma::rowvec::fixed<3> partial_C_partial_Y(const double & theta,const double & U);
+	static arma::mat::fixed<3,7> partial_r_i_partial_I_lambda(const int i);
 
 
 	arma::mat::fixed<2,6> partial_Z_partial_I() const ;
@@ -278,7 +301,36 @@ protected:
 	arma::rowvec::fixed<6> partial_U_partial_I() const ;
 	arma::rowvec::fixed<2> partial_U_partial_Z() const;
 	arma::rowvec::fixed<6> partial_d_partial_I() const ;
+	arma::mat::fixed<3,3> partial_elambda_Elambda(const double & lambda) const;
+	arma::mat::fixed<9,9> P_E_lambda_E_mu() const ;
 
+	arma::mat::fixed<3,3> P_XX() const ;
+	arma::mat::fixed<3,6> partial_X_partial_I() const;
+	arma::mat::fixed<4,4> partial_M_partial_Y() const;
+	arma::mat::fixed<3,3> get_principal_axes_stable() const;
+
+
+	arma::mat::fixed<3,3> P_ril_rjm(
+		const double lambda, 
+		const double mu,
+		const int i,
+		const int j,
+		const int lambda_index,
+		const int mu_index,
+		const double theta,
+		const double U) const;
+	arma::mat::fixed<9,9> P_R_lambda_R_mu(const double lambda, const double mu,const int lambda_index,
+		const int mu_index,
+		const double theta,
+		const double U) const ;
+
+	arma::mat::fixed<3,9> partial_E_partial_R(const double lambda) const;
+
+	arma::vec::fixed<4> get_Y() const;
+
+
+	arma::rowvec::fixed<6> P_lambda_I(const int lambda_index,const double theta, const double U) const;
+	arma::mat::fixed<3,6> partial_Y_partial_I() const;
 
 	std::shared_ptr<arma::mat> info_mat_ptr = nullptr;
 	std::shared_ptr<arma::vec> dX_bar_ptr = nullptr;
@@ -302,14 +354,17 @@ protected:
 	arma::mat cm_cov = arma::zeros<arma::mat>(3,3);
 
 	arma::mat::fixed<6,6> P_I;
-	arma::vec::fixed<6> P_IV;
-	arma::mat::fixed<3,3> P_Y;
+	arma::vec::fixed<6> P_MI;
+	arma::mat::fixed<4,4> P_Y;
+	arma::vec::fixed<3> P_MX;
+
 	arma::mat::fixed<4,4> P_moments;
+	arma::mat::fixed<9,9> P_eigenvectors;
+	arma::mat::fixed<9,9> P_Evectors;
+	arma::mat::fixed<3,3> P_sigma;
 
 
 
-	
-	
 };
 
 

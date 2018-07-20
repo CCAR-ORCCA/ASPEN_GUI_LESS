@@ -323,6 +323,10 @@ public:
 	double get_circumscribing_radius() const;
 
 
+
+	arma::vec get_inertia_param() const;
+
+
 protected:
 
 	std::vector<std::shared_ptr<Element  > > elements;

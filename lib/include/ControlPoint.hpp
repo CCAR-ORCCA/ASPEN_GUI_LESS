@@ -115,6 +115,8 @@ public:
 	*/
 	void set_covariance(arma::mat P);
 
+	void set_deviation(arma::vec d) { this -> deviation = d;}
+	arma::vec get_deviation() const { return this -> deviation; }
 
 	/**
 	Returns the number of facets owning this vertex
@@ -142,6 +144,7 @@ protected:
 	std::set<Element * > owning_elements;
 	std::map<Element *,arma::uvec> local_numbering;
 	arma::mat covariance = arma::zeros<arma::mat>(3,3);
+	arma::vec deviation = arma::zeros<arma::vec>(3);
 
 	int global_index;
 

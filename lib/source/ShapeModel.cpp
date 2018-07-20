@@ -29,6 +29,20 @@ double ShapeModel::get_volume() const{
 
 
 
+arma::vec ShapeModel::get_inertia_param() const{
+
+	double I_xx = this -> inertia(0,0);
+	double I_yy = this -> inertia(1,1);
+	double I_zz = this -> inertia(2,2);
+	double I_xy = this -> inertia(0,1);
+	double I_xz = this -> inertia(0,2);
+	double I_yz = this -> inertia(1,2);
+
+	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
+
+	return I;
+}
+
 double ShapeModel::get_surface_area() const {
 	return this -> surface_area;
 }
