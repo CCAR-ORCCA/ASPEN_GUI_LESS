@@ -41,7 +41,7 @@ int main(){
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
-	bezier_shape.compute_point_covariances(sigmas_sq,5e-2);
+	bezier_shape.compute_point_covariances(sigmas_sq,2.5e-2);
 
 	bezier_shape.compute_shape_covariance_cholesky();
 
