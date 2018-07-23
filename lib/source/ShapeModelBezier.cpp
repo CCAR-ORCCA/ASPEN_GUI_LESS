@@ -629,7 +629,8 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	results_MI = arma::zeros<arma::mat>(7,N);
 	results_dims = arma::zeros<arma::mat>(3,N);
 
-
+	this -> take_and_save_zslice("slice_baseline.txt",0);
+	this -> save_to_obj("iter_baseline.obj");
 
 
 	for (int iter = 0; iter < N; ++iter){
@@ -1034,17 +1035,19 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 		double coef = gamma * alpha;
 
-		std::vector<double> index_vector = {
-			double(i),double(j),
-			double(k),double(l),
-			double(m),double(p),
-			double(q),double(r),
-			double(s),double(t),
-			double(u),double(v),
-			double(w),double(x),
-			coef
-		};
-		this -> cm_cov_2_indices_coefs_table.push_back(index_vector);
+		if (std::abs(coef) > 0){
+			std::vector<double> index_vector = {
+				double(i),double(j),
+				double(k),double(l),
+				double(m),double(p),
+				double(q),double(r),
+				double(s),double(t),
+				double(u),double(v),
+				double(w),double(x),
+				coef
+			};
+			this -> cm_cov_2_indices_coefs_table.push_back(index_vector);
+		}
 
 	}
 	std::cout << "- CM cov coefficients : " << this -> cm_cov_1_indices_coefs_table.size() + this -> cm_cov_2_indices_coefs_table.size() << std::endl;
@@ -1071,10 +1074,15 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int t = vector[4][1];
 
 		double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
-		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
-			double(s),double(t),kappa
-		};
-		this -> inertia_indices_coefs_table.push_back(index_vector);
+
+		if (std::abs(kappa) > 0){
+
+			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+				double(s),double(t),kappa
+			};
+
+			this -> inertia_indices_coefs_table.push_back(index_vector);
+		}
 	}
 
 
@@ -1358,7 +1366,7 @@ void ShapeModelBezier::compute_shape_covariance_cholesky(){
 			shape_covariance_arma.submat(3 * i,3 * j,3 * i + 2, 3 * j + 2)  = this -> get_point_covariance(i,j);
 			
 
-		
+
 		}
 
 

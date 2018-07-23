@@ -37,7 +37,7 @@ int main(){
 	std::cout << bezier_shape.get_inertia() << std::endl;
 	std::cout << tri_shape.get_inertia() << std::endl;
 
-	double sigmas_sq = std::pow(5e0,2)  ;
+	double sigmas_sq = std::pow(10e0,2)  ;
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
