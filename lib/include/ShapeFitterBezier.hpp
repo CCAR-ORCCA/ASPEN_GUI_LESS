@@ -10,7 +10,7 @@
 
 #include <Eigen/Sparse>
 #include <Eigen/Jacobi>
- #include <Eigen/Dense>
+#include <Eigen/Dense>
 
 typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;

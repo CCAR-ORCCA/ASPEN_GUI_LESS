@@ -12,16 +12,15 @@
 int main(){
 
 
-
-
 	FrameGraph frame_graph;
 	
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter shape_io_true("../../../resources/shape_models/tetra.obj", 1, false);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/itokawa_8.obj", 1, false);
 
 	shape_io_true.load_obj_shape_model(&tri_shape);
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
+
 
 	std::cout << "\nVolume: \n";
 
@@ -38,18 +37,13 @@ int main(){
 	std::cout << bezier_shape.get_inertia() << std::endl;
 	std::cout << tri_shape.get_inertia() << std::endl;
 
-	double sigmas_sq = std::pow(3e-3,2)  ;
+	double sigmas_sq = std::pow(1e-2,2)  ;
 	
-	// arma::vec sigmas_sq = 0.01 * arma::ones<arma::vec>(3) * std::cbrt(bezier_shape.get_volume());
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
+	bezier_shape.compute_point_covariances(sigmas_sq,1e-2);
+	bezier_shape.compute_shape_covariance_cholesky();
 
-	for (unsigned int i = 0; i < bezier_shape.get_NControlPoints(); ++i){
-		auto mrp = arma::randn<arma::vec>(3);
-		auto dcm = RBK::mrp_to_dcm(mrp);
-		arma::mat P =  sigmas_sq * dcm * arma::diagmat( arma::randu<arma::vec>(3)) * dcm.t();
-		bezier_shape.get_control_point(i) -> set_covariance(P);
-	}
 
 	bezier_shape.compute_volume_sd();
 
@@ -78,16 +72,19 @@ int main(){
 	auto eigenvectors_cov = bezier_shape.get_P_eigenvectors();
 	auto Evectors_cov = bezier_shape.get_P_Evectors();
 	auto MI_cov = bezier_shape.get_P_MI();
+	auto dims_cov = bezier_shape.get_P_dims();
+
 
 
 
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
-	int N = 50000;
+	int N = 10000;
 
 	arma::vec results_volume;
 	arma::mat results_cm,results_inertia,results_moments,
-	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI;
+	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
+	results_dims;
 	
 	bezier_shape.run_monte_carlo(N,
 		results_volume,
@@ -99,7 +96,8 @@ int main(){
 		results_eigenvectors,
 		results_Evectors,
 		results_Y,
-		results_MI);
+		results_MI,
+		results_dims);
 	
 	arma::vec results_cm_mean = arma::mean(results_cm,1);
 	arma::vec results_inertia_mean = arma::mean(results_inertia,1);
@@ -110,6 +108,8 @@ int main(){
 	arma::vec results_Evectors_mean = arma::mean(results_Evectors,1);
 	arma::vec results_Y_mean = arma::mean(results_Y,1);
 	arma::vec results_MI_mean = arma::mean(results_MI,1);
+	arma::vec results_dims_mean = arma::mean(results_dims,1);
+
 
 
 	arma::mat cov_cm_mc = arma::zeros(3,3);
@@ -121,6 +121,8 @@ int main(){
 	arma::mat cov_Evectors_mc = arma::zeros<arma::mat>(9,9);
 	arma::mat cov_Y_mc = arma::zeros<arma::mat>(4,4);
 	arma::vec cov_MI_mc = arma::zeros<arma::vec>(6);
+	arma::mat cov_dims_mc = arma::zeros<arma::mat>(3,3);
+
 
 	
 	for (unsigned int i = 0; i < results_cm.n_cols; ++i){
@@ -135,6 +137,7 @@ int main(){
 		cov_Y_mc +=  (results_Y.col(i) - results_Y_mean) * (results_Y.col(i) - results_Y_mean).t();
 
 		cov_MI_mc +=  (results_MI.col(i).rows(0,5) - results_MI_mean.rows(0,5)) * (results_MI.col(i)(6) - results_MI_mean(6));
+		cov_dims_mc +=  (results_dims.col(i) - results_dims_mean) * (results_dims.col(i) - results_dims_mean).t();
 
 	}
 
@@ -147,6 +150,8 @@ int main(){
 	cov_Evectors_mc *= 1./(results_Evectors.n_cols-1);
 	cov_Y_mc *= 1./(results_Y.n_cols-1);
 	cov_MI_mc *= 1./(results_MI.n_cols-1);
+	cov_dims_mc *= 1./(results_dims.n_cols-1);
+
 
 
 
@@ -199,6 +204,14 @@ int main(){
 	std::cout << "Inertia moments covariance from MC: " << std::endl << cov_moments_mc << std::endl;
 	std::cout << "Inertia moments covariance predicted: " << std::endl << moments_cov << std::endl << std::endl;
 	std::cout << "Deviation : " << std::endl << (cov_moments_mc - moments_cov)/cov_moments_mc * 100 << " %" << std::endl << std::endl;
+
+
+	std::cout << "######***** Principal dimensions *****######"<< std::endl;
+
+	std::cout << "Mean dimensions : " << results_dims_mean.t() << std::endl;
+	std::cout << "Inertia dimensions covariance from MC: " << std::endl << cov_dims_mc << std::endl;
+	std::cout << "Inertia dimensions covariance predicted: " << std::endl << dims_cov << std::endl << std::endl;
+	std::cout << "Deviation : " << std::endl << (cov_dims_mc - dims_cov)/cov_dims_mc * 100 << " %" << std::endl << std::endl;
 
 
 	std::cout << "######***** Lambda_I *****######"<< std::endl;

@@ -6,6 +6,13 @@
 
 #include "CustomReductions.hpp"
 
+
+#include <Eigen/Cholesky>
+#include <Eigen/Dense>
+
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
+
+
 class ShapeModelTri;
 
 
@@ -96,7 +103,7 @@ public:
 	/**
 	Gets the shape model degree
 	*/
-	unsigned int get_degree();
+	unsigned int get_degree() const;
 
 	/**
 	Computes the surface area of the shape model
@@ -155,7 +162,8 @@ public:
 		arma::mat & results_eigenvectors,
 		arma::mat & results_Evectors,
 		arma::mat & results_Y,
-		arma::mat & results_MI);
+		arma::mat & results_MI,
+		arma::mat & results_dims);
 
 	/**
 	Runs a Monte Carlo on volume
@@ -206,19 +214,26 @@ public:
 	arma::mat::fixed<9,9> get_P_eigenvectors() const{return this -> P_eigenvectors;}
 	arma::mat::fixed<9,9> get_P_Evectors() const{return this -> P_Evectors;}
 	arma::vec::fixed<9> get_E_vectors() const;
+	arma::mat::fixed<3,3> get_P_dims() const{return this -> P_dims;}
 
 	void apply_deviation();
 
 	arma::vec d_I() const;
 
+	void take_and_save_zslice(std::string path, const double & c) const;
+	void compute_point_covariances(double sigma_sq,double correl_distance) ;
+	void compute_shape_covariance_cholesky();
 
+	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
+	
 
 protected:
 
 
 
-
-
+	
+	void take_zslice(std::vector<std::vector<arma::vec> > & lines, const double & c) const;
+	void save_zslice(std::string path, const std::vector<std::vector<arma::vec> > & lines) const;
 
 
 
@@ -247,12 +262,17 @@ protected:
 
 
 
+	
+
+
 	void compute_P_I();
 	void compute_P_MI();
 	void compute_P_Y();
 	void compute_P_MX();
 
 	void compute_P_moments();
+	void compute_P_dims();
+
 	void compute_P_sigma();
 	void compute_P_eigenvectors();
 	void compute_P_Evectors();
@@ -260,9 +280,13 @@ protected:
 	static arma::rowvec::fixed<15> L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm);
 
 
+	double increment_volume_variance(const arma::vec::fixed<9> & left_vec,
+		const arma::vec::fixed<9>  & right_vec, 
+		int i,int j,int k, 
+		int l, int m, int p);
 
-	arma::mat::fixed<3,3> increment_cm_cov(arma::mat::fixed<12,3> & left_mat,
-		arma::mat::fixed<12,3>  & right_mat, 
+	arma::mat::fixed<3,3> increment_cm_cov(const arma::mat::fixed<12,3> & left_mat,
+		const arma::mat::fixed<12,3>  & right_mat, 
 		int i,int j,int k,int l, 
 		int m, int p, int q, int r);
 
@@ -273,8 +297,8 @@ protected:
 		int p, int q, int r, int s, int t) const;
 
 
-	arma::vec::fixed<6> increment_P_MI(arma::mat::fixed<6,15> & left_mat,
-		arma::vec::fixed<9>  & right_vec, 
+	arma::vec::fixed<6> increment_P_MI(const arma::mat::fixed<6,15> & left_mat,
+		const arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k,int l,int m,
 		int p, int q, int r);
 
@@ -303,6 +327,7 @@ protected:
 	arma::rowvec::fixed<6> partial_d_partial_I() const ;
 	arma::mat::fixed<3,3> partial_elambda_Elambda(const double & lambda) const;
 	arma::mat::fixed<9,9> P_E_lambda_E_mu() const ;
+	arma::mat::fixed<3,4> partial_dim_partial_M() const;
 
 	arma::mat::fixed<3,3> P_XX() const ;
 	arma::mat::fixed<3,6> partial_X_partial_I() const;
@@ -328,6 +353,9 @@ protected:
 
 	arma::vec::fixed<4> get_Y() const;
 
+	arma::vec::fixed<3> get_dims() const;
+
+
 
 	arma::rowvec::fixed<6> P_lambda_I(const int lambda_index,const double theta, const double U) const;
 	arma::mat::fixed<3,6> partial_Y_partial_I() const;
@@ -348,8 +376,6 @@ protected:
 	std::vector<std::vector<double> > inertia_stats_2_indices_coefs_table;
 
 
-
-
 	double volume_sd;
 	arma::mat cm_cov = arma::zeros<arma::mat>(3,3);
 
@@ -362,7 +388,12 @@ protected:
 	arma::mat::fixed<9,9> P_eigenvectors;
 	arma::mat::fixed<9,9> P_Evectors;
 	arma::mat::fixed<3,3> P_sigma;
+	arma::mat::fixed<3,3> P_dims;
 
+	arma::mat shape_covariance_cholesky;
+
+	std::vector < std::vector<int>>  point_covariances_indices;
+	std::vector < std::vector<arma::mat::fixed<3,3> >>  point_covariances;
 
 
 };
