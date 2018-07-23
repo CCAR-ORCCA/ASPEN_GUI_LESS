@@ -439,7 +439,7 @@ void ShapeModelBezier::compute_cm_cov(){
 	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
 
 
-	// #pragma omp parallel for reduction (+:cm_cov_temp)
+	#pragma omp parallel for reduction (+:cm_cov_temp)
 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
