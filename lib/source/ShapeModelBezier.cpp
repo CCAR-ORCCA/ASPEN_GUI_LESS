@@ -681,7 +681,7 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 		// saving shape model
 
-		if (iter < 10){
+		if (iter < 20){
 			this -> take_and_save_zslice("slice_" + std::to_string(iter) + ".txt",0);
 			this -> save_to_obj("iter_" + std::to_string(iter) + ".obj");
 		}
@@ -1237,9 +1237,7 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 
-		Bezier * element = static_cast<Bezier * >(*(this -> get_control_points() -> at(i) -> get_owning_elements().begin()));
-
-		arma::vec ni = element -> get_normal(1./3.,1./3);
+		arma::vec ni = this -> get_control_points() -> at(i) -> get_normal(true);
 
 		arma::vec u_2 = arma::randn<arma::vec>(3);
 		u_2 = arma::normalise(arma::cross(ni,u_2));
@@ -1253,13 +1251,13 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 		for (unsigned int j = i + 1; j < this -> get_NControlPoints(); ++j){
 
-			Bezier * element_j = static_cast<Bezier * >(*(this -> get_control_points() -> at(j) -> get_owning_elements().begin()));
-			arma::vec nj = element_j -> get_normal(1./3.,1./3);
+			arma::vec nj = this -> get_control_points() -> at(j) -> get_normal(true);
 
 			double distance = arma::norm(this -> get_control_points() -> at(i) -> get_coordinates()
 				- this -> get_control_points() -> at(j) -> get_coordinates());
 			
 			if ( distance < 3 * correl_distance){
+
 
 				double decay = std::exp(- std::pow(distance / correl_distance,2)) ;
 

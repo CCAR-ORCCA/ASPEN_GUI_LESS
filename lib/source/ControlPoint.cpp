@@ -1,4 +1,6 @@
 #include "../include/ControlPoint.hpp"
+#include "Bezier.hpp"
+#include "Facet.hpp"
 
 void ControlPoint::set_coordinates(arma::vec coordinates) {
 	this -> coordinates = coordinates;
@@ -120,3 +122,31 @@ arma::vec ControlPoint::get_mean_coordinates()  const {
 unsigned int ControlPoint::get_number_of_owning_elements() const {
 	return this -> owning_elements.size();
 }
+
+
+
+arma::vec ControlPoint::get_normal(bool bezier) const{
+
+	arma::vec n = {0,0,0};
+
+	for (auto it = this -> owning_elements.begin();
+		it != this -> owning_elements.end(); ++it) {
+
+		if (bezier){
+			n += static_cast<Bezier *>((*it)) -> get_normal(1./3,1./3);
+
+		}
+		else{
+			n += static_cast<Facet *>((*it)) -> get_normal();
+		}
+
+	}
+
+	return arma::normalise(n);
+
+
+}
+
+
+
+

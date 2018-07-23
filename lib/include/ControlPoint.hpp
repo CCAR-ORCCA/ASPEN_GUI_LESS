@@ -39,6 +39,15 @@ public:
 	void add_ownership(Element *  el);
 
 
+
+
+
+	
+
+	arma::vec get_normal(bool bezier) const;
+
+
+
 	/**
 	Finds the facets owming both $this and $vertex
 	@return commons_facets Vector of Facet * owning the two vertices
