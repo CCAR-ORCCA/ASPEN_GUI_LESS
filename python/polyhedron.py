@@ -278,59 +278,26 @@ def plot_jacobi(path):
     plt.show()
 
 
-def plot_shape(path,already_in_body_frame = True,ax = None,scale_factor = 1):
+def plot_shape(path,scale_factor = 1,ax = None,show = True):
 
   # The obj file is read
   read_obj = np.loadtxt(path,dtype = 'string')
-
   verts = []
   facets = []
-
   for line_index in range(len(read_obj)):
       if read_obj[line_index,0] == 'v':
           verts += [tuple(scale_factor * np.array(read_obj[line_index,1:],dtype = 'float'))]
       if read_obj[line_index,0] == 'f':
           facets += [np.array(read_obj[line_index,1:],dtype = 'int') - 1]
-
   facets = np.vstack(facets)
 
-  # The barycenter is computed
-  cm = compute_center_of_mass(verts,facets)
-
-  if already_in_body_frame is False:
-    
-    # The direction of the principal axes is also computed
-    inertia = compute_inertia(verts,facets)
-    moments, axes = np.linalg.eigh(inertia)
-
-
-    if (np.linalg.det(axes) < 0):
-      axes[:,0] = - axes[:,0]
-
-    # The shape is centered at its barycenter and oriented along its principal axes
-    for i in range(len(verts)):
-      verts[i] = axes.T.dot(verts[i] - cm);
-
-  # The limits of the bounding box are found
-  x_lim,y_lim,z_lim = compute_bounding_box(verts)
-
-  lim = max(x_lim,y_lim,z_lim)
+  # Creating the 3d axes if need be
   if ax is None:
-    ax = a3.Axes3D(plt.figure())
-    ax.dist = 30
-    ax.azim = - 140
-    ax.elev = 20
-
-  ax.set_xlim([-2 * lim,2 * lim])
-  ax.set_ylim([-2 * lim,2 * lim])
-  ax.set_zlim([-2 * lim,2 * lim])
-
-  ax.set_xlabel("X (m)")
-  ax.set_ylabel("Y (m)")
-  ax.set_zlabel("Z (m)")
-
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+  
+  # Plotting each facet
   for i in np.arange(len(facets)):
-
       trig = [ verts[facets[i,0]], verts[facets[i,1]], verts[facets[i, 2]] ]
       face = a3.art3d.Poly3DCollection([trig])
       face.set_color('grey')
@@ -338,4 +305,6 @@ def plot_shape(path,already_in_body_frame = True,ax = None,scale_factor = 1):
       face.set_alpha(1.)
       ax.add_collection3d(face)
 
-  plt.show()
+  # Showing the plot
+  if(show):
+      plt.show()
