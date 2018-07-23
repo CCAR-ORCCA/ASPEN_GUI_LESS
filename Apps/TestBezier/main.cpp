@@ -37,11 +37,11 @@ int main(){
 	std::cout << bezier_shape.get_inertia() << std::endl;
 	std::cout << tri_shape.get_inertia() << std::endl;
 
-	double sigmas_sq = std::pow(5e-3,2)  ;
+	double sigmas_sq = std::pow(10e-3,2)  ;
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
-	bezier_shape.compute_point_covariances(sigmas_sq,1e-2);
+	bezier_shape.compute_point_covariances(sigmas_sq,2e-2);
 
 	bezier_shape.compute_shape_covariance_cholesky();
 
@@ -98,6 +98,10 @@ int main(){
 		results_Y,
 		results_MI,
 		results_dims);
+
+
+
+
 	
 	arma::vec results_cm_mean = arma::mean(results_cm,1);
 	arma::vec results_inertia_mean = arma::mean(results_inertia,1);
