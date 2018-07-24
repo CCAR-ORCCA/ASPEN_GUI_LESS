@@ -43,7 +43,7 @@ int main(){
 
 	bezier_shape.compute_point_covariances(sigmas_sq,25e-3);
 
-	bezier_shape.compute_shape_covariance_cholesky();
+	bezier_shape.compute_shape_covariance_sqrt();
 
 	bezier_shape.compute_volume_sd();
 

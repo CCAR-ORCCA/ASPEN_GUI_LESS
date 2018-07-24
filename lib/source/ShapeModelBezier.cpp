@@ -776,9 +776,8 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 		++progress;
 
-		arma::vec deviation = this -> shape_covariance_cholesky * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
+		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
 
-		
 		for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 			
 			this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates()
@@ -878,7 +877,7 @@ void ShapeModelBezier::run_monte_carlo_omp(int N,
 	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
 
-		arma::vec deviation = this -> shape_covariance_cholesky * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
+		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
 
 		double volume = this -> compute_volume_omp(deviation);
 		arma::vec::fixed<3> cm = this -> compute_center_of_mass_omp(volume,deviation);
@@ -1572,77 +1571,48 @@ arma::mat::fixed<3,3> ShapeModelBezier::get_point_covariance(int i, int j) const
 }
 
 
-void ShapeModelBezier::compute_shape_covariance_cholesky(){
+void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
-	MatrixXd shape_covariance(
-		3 * this -> get_NControlPoints(),
-		3 * this -> get_NControlPoints());
-	shape_covariance.setZero();
-
-	this -> shape_covariance_cholesky = arma::zeros<arma::mat>(3 * this -> get_NControlPoints(),
+	
+	this -> shape_covariance_sqrt = arma::zeros<arma::mat>(3 * this -> get_NControlPoints(),
 		3 * this -> get_NControlPoints());
 
-	arma::mat P;
+	arma::mat shape_covariance_arma(3 * this -> get_NControlPoints(),
+		3 * this -> get_NControlPoints());
+
 
 	for (int i = 0; i < this -> get_NControlPoints(); ++i){
-
-		std::vector<int> Pi_cor_indices = this -> point_covariances_indices[i];
-
-		for (int correl_index = 0; correl_index < Pi_cor_indices.size(); ++ correl_index){
-
-			int j = Pi_cor_indices[correl_index];
-
-			arma::mat::fixed<3,3> P = this -> point_covariances[i][correl_index];
-
-			for (int i_mat = 0; i_mat < 3; ++i_mat){
-				for (int j_mat = 0; j_mat < 3; ++j_mat){
-
-					shape_covariance(3 * i + i_mat, 3 * j + j_mat) = P(i_mat,j_mat);
-					shape_covariance(3 * j + j_mat, 3 * i + i_mat) = P(i_mat,j_mat);
-				}
-			}
-		}
-	}
-
-	Eigen::LLT<MatrixXd> chol_dec(shape_covariance);
-	MatrixXd shape_covariance_cholesky_eigen = chol_dec.matrixL();
-	arma::mat shape_covariance_arma(3 * this -> get_NControlPoints(),3 * this -> get_NControlPoints());
-
-	for (int i = 0; i < 3 * this -> get_NControlPoints(); ++i){
-
-		for (int j = 0; j < 3 * this -> get_NControlPoints(); ++j){
-
-			this -> shape_covariance_cholesky(i,j) = shape_covariance_cholesky_eigen(i,j);
-		}
-
-	}
-
-	for (int i = 0; i < this -> get_NControlPoints(); ++i){
-
 		for (int j = 0; j < this -> get_NControlPoints(); ++j){
 			shape_covariance_arma.submat(3 * i,3 * j,3 * i + 2, 3 * j + 2)  = this -> get_point_covariance(i,j);
-			
-
-
 		}
-
-
 	}
 
+	arma::vec eig_val;
+	arma::mat eig_vec;
 
-	std::ofstream file_chol("chol_mat.txt");
-	this -> shape_covariance_cholesky.raw_print(file_chol);
+	arma::eig_sym(eig_val,eig_vec,shape_covariance_arma);
+
+
+	// Regularizing the eigenvalue decomposition
+	double min_val = arma::abs(eig_val).min();
+	for (int i = 0; i < eig_val.n_rows; ++i){
+		if (eig_val(i) < 0){
+			eig_val(i) = min_val;
+		}
+	}
+
+	this -> shape_covariance_sqrt = eig_vec * arma::diagmat(arma::sqrt(eig_val)) * eig_vec.t();
 
 	std::ofstream file("cov_mat.txt");
+	std::ofstream file_sqrt("sqrt.txt");
+
+	file.precision(15);
+	file_sqrt.precision(15);
+
 	shape_covariance_arma.raw_print(file);
-
-
-
+	this -> shape_covariance_sqrt.raw_print(file_sqrt);
 
 }
-
-
-
 
 
 void ShapeModelBezier::build_bezier_base_index_vector(const int n,std::vector<std::vector<int> > & base_vector){

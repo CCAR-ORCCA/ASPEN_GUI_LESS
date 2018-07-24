@@ -261,7 +261,7 @@ public:
 	void take_and_save_zslice_omp(std::string path, const double & c,const arma::vec & deviation) const ;
 
 	void compute_point_covariances(double sigma_sq,double correl_distance) ;
-	void compute_shape_covariance_cholesky();
+	void compute_shape_covariance_sqrt();
 
 	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
 
@@ -436,7 +436,7 @@ protected:
 	arma::mat::fixed<3,3> P_sigma;
 	arma::mat::fixed<3,3> P_dims;
 
-	arma::mat shape_covariance_cholesky;
+	arma::mat shape_covariance_sqrt;
 
 	std::vector < std::vector<int>>  point_covariances_indices;
 	std::vector < std::vector<arma::mat::fixed<3,3> >>  point_covariances;
