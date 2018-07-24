@@ -427,7 +427,6 @@ void ShapeModelBezier::find_correlated_elements(){
 		for (unsigned int f = 0; f < this -> get_NElements(); ++f){
 
 			Bezier * patch_f = static_cast<Bezier *>(this -> get_element(f).get());
-			bool correlated = true;
 
 			for (unsigned int i = 0; i < patch_e -> get_control_points() -> size(); ++i){
 				auto Ci = patch_e -> get_control_points() -> at(i);
@@ -438,10 +437,12 @@ void ShapeModelBezier::find_correlated_elements(){
 					int j_g = Cj -> get_global_index();
 
 					// If true, these two patches are correlated
-					if (arma::abs(this -> get_point_covariance(i_g,j_g)).max() > 0 && correlated == false){
+					if (arma::abs(this -> get_point_covariance(i_g,j_g)).max() > 0 
+						&& (std::find(elements_correlated_with_e.begin(),
+							elements_correlated_with_e.end(),
+							f) == elements_correlated_with_e.end() )){
 
 						elements_correlated_with_e.push_back(f);
-						correlated = true;
 
 					}
 
