@@ -433,7 +433,7 @@ void ShapeModelBezier::find_correlated_elements(){
 				int i_g = Ci -> get_global_index();
 				
 				for (unsigned int j = 0; j < patch_f -> get_control_points() -> size(); ++j){
-					auto Cj = patch_e -> get_control_points() -> at(j);
+				auto Cj = patch_f -> get_control_points() -> at(j);
 					int j_g = Cj -> get_global_index();
 
 					// If true, these two patches are correlated
