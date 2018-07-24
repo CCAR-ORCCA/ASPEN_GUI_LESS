@@ -266,9 +266,12 @@ public:
 	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
 
 
+
+
 protected:
 
-
+	void find_correlated_elements();
+	
 
 	
 	void take_zslice(std::vector<std::vector<arma::vec> > & lines, const double & c) const;
@@ -441,6 +444,7 @@ protected:
 	std::vector < std::vector<int>>  point_covariances_indices;
 	std::vector < std::vector<arma::mat::fixed<3,3> >>  point_covariances;
 
+	std::vector<std::vector < int > > correlated_elements;
 
 };
 

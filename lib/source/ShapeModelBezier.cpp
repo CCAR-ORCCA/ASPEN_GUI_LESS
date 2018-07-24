@@ -412,7 +412,52 @@ arma::mat::fixed<3,3> ShapeModelBezier::compute_inertia_omp(const arma::vec & de
 }
 
 
+void ShapeModelBezier::find_correlated_elements(){
 
+
+	this -> correlated_elements.clear();
+
+	for (unsigned int e = 0; e < this -> get_NElements(); ++e){
+
+		Bezier * patch_e = static_cast<Bezier *>(this -> get_element(e).get());
+
+
+		std::vector < int > elements_correlated_with_e ;
+
+		for (unsigned int f = 0; f < this -> get_NElements(); ++f){
+
+			Bezier * patch_f = static_cast<Bezier *>(this -> get_element(f).get());
+			bool correlated = true;
+
+			for (unsigned int i = 0; i < patch_e -> get_control_points() -> size(); ++i){
+				auto Ci = patch_e -> get_control_points() -> at(i);
+				int i_g = Ci -> get_global_index();
+				
+				for (unsigned int j = 0; j < patch_f -> get_control_points() -> size(); ++j){
+					auto Cj = patch_e -> get_control_points() -> at(j);
+					int j_g = Cj -> get_global_index();
+
+					// If true, these two patches are correlated
+					if (arma::abs(this -> get_point_covariance(i_g,j_g)).max() > 0 && correlated == false){
+
+						elements_correlated_with_e.push_back(f);
+						correlated = true;
+
+					}
+
+				}
+
+			}
+
+
+
+		}
+
+		this -> correlated_elements.push_back(elements_correlated_with_e);
+
+	}
+
+}
 
 
 
@@ -458,12 +503,11 @@ void ShapeModelBezier::compute_volume_sd(){
 		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 
-		auto neighbors = connected_elements[e];
+		auto neighbors = this -> correlated_elements[e];
 
-		for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+		for (auto f : neighbors) {
 
 			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
 
 			for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
 
@@ -1534,6 +1578,8 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 	}
 
+
+	this -> find_correlated_elements();
 
 }
 
