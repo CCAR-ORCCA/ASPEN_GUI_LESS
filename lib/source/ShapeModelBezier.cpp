@@ -193,6 +193,43 @@ void ShapeModelBezier::compute_volume(){
 }
 
 
+
+
+
+
+double ShapeModelBezier::compute_volume_omp(const arma::vec & deviation) const{
+	
+	double volume = 0;
+
+	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
+	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+		
+		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
+		
+		for (int index = 0 ; index <  this -> volume_indices_coefs_table.size(); ++index) {
+
+			int i =  int(this -> volume_indices_coefs_table[index][0]);
+			int j =  int(this -> volume_indices_coefs_table[index][1]);
+			int k =  int(this -> volume_indices_coefs_table[index][2]);
+			int l =  int(this -> volume_indices_coefs_table[index][3]);
+			int m =  int(this -> volume_indices_coefs_table[index][4]);
+			int p =  int(this -> volume_indices_coefs_table[index][5]);
+			
+			volume += this -> volume_indices_coefs_table[index][6] * patch -> triple_product(i,j,k,l,m,p,deviation);
+
+		}
+
+	}
+	return volume;
+}
+
+
+
+
+
+
+
+
 void ShapeModelBezier::compute_center_of_mass(){
 
 	this -> cm = arma::zeros<arma::vec>(3);
@@ -235,9 +272,63 @@ void ShapeModelBezier::compute_center_of_mass(){
 
 	this -> cm = {cx,cy,cz};
 	this -> cm = this -> cm / this -> volume;
-
-
 }
+
+
+arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass_omp(const double & volume, const arma::vec & deviation) const{
+
+	double cx = 0;
+	double cy = 0;
+	double cz = 0;
+
+	int n = this -> get_degree();
+
+	#pragma omp parallel for reduction(+:cx,cy,cz)
+	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+
+		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
+
+		for (auto index = 0 ; index <  this -> cm_gamma_indices_coefs_table.size(); ++index) {
+
+			int i =  int(this -> cm_gamma_indices_coefs_table[index][0]);
+			int j =  int(this -> cm_gamma_indices_coefs_table[index][1]);
+			int k =  int(this -> cm_gamma_indices_coefs_table[index][2]);
+			int l =  int(this -> cm_gamma_indices_coefs_table[index][3]);
+			int m =  int(this -> cm_gamma_indices_coefs_table[index][4]);
+			int p =  int(this -> cm_gamma_indices_coefs_table[index][5]);
+			int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
+			int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
+
+			auto Ci = patch -> get_control_point(i,j);
+			
+			int i_g = Ci -> get_global_index();
+			
+			arma::vec result = (Ci -> get_coordinates() 
+				+ deviation.rows(3 * i_g,3 * i_g + 2)) * patch -> triple_product(k,l,m,p,q,r,deviation);
+
+			cx += this -> cm_gamma_indices_coefs_table[index][8] * result(0);
+			cy += this -> cm_gamma_indices_coefs_table[index][8] * result(1);
+			cz += this -> cm_gamma_indices_coefs_table[index][8] * result(2);
+
+
+		}
+
+	}
+
+
+
+	arma::vec cm = {cx,cy,cz};
+
+	return ( cm / volume);
+}
+
+
+
+
+
+
+
+
 
 void ShapeModelBezier::compute_inertia(){
 
@@ -275,10 +366,58 @@ void ShapeModelBezier::compute_inertia(){
 	}
 	this -> inertia = inertia;
 
+}
 
 
+
+arma::mat::fixed<3,3> ShapeModelBezier::compute_inertia_omp(const arma::vec & deviation) const{
+
+	arma::mat::fixed<3,3> inertia = arma::zeros<arma::mat>(3,3);
+
+	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
+	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
+		
+		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
+		
+		for (int index = 0 ; index <  this -> inertia_indices_coefs_table.size(); ++index) {
+
+			int i =  int(this -> inertia_indices_coefs_table[index][0]);
+			int j =  int(this -> inertia_indices_coefs_table[index][1]);
+			int k =  int(this -> inertia_indices_coefs_table[index][2]);
+			int l =  int(this -> inertia_indices_coefs_table[index][3]);
+			int m =  int(this -> inertia_indices_coefs_table[index][4]);
+			int p =  int(this -> inertia_indices_coefs_table[index][5]);
+			int q =  int(this -> inertia_indices_coefs_table[index][6]);
+			int r =  int(this -> inertia_indices_coefs_table[index][7]);
+			int s =  int(this -> inertia_indices_coefs_table[index][8]);
+			int t =  int(this -> inertia_indices_coefs_table[index][9]);
+
+
+			auto Ci = patch -> get_control_point(i,j);
+			auto Cj = patch -> get_control_point(k,l);
+
+			int i_g = Ci -> get_global_index();
+			int j_g = Cj -> get_global_index();
+
+			inertia += (this -> inertia_indices_coefs_table[index][10]  
+				* RBK::tilde(Ci -> get_coordinates() + deviation.rows(3 * i_g, 3 * i_g + 2)) 
+				* RBK::tilde(Cj -> get_coordinates() + deviation.rows(3 * j_g, 3 * j_g + 2))
+				* patch -> triple_product(m,p,q,r,s,t,deviation));
+
+		}
+
+	}
+	return inertia;
 
 }
+
+
+
+
+
+
+
+
 
 
 double ShapeModelBezier::get_volume_sd() const{
@@ -656,7 +795,7 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 		arma::vec moments_col(4);
 		arma::vec eig_val = arma::eig_sym(I_C);
-		arma::mat eig_vec =  this -> get_principal_axes_stable();
+		arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
 		moments_col.rows(0,2) = eig_val;
 		moments_col(3) = this -> get_volume();
 
@@ -672,12 +811,12 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		results_eigenvectors.col(iter).rows(0,2) = eig_vec.col(0);
 		results_eigenvectors.col(iter).rows(3,5) = eig_vec.col(1);
 		results_eigenvectors.col(iter).rows(6,8) = eig_vec.col(2);
-		results_Evectors.col(iter) = this -> get_E_vectors();
-		results_Y.col(iter) = this -> get_Y();
+		results_Evectors.col(iter) = ShapeModelBezier::get_E_vectors(I_C);
+		results_Y.col(iter) = ShapeModelBezier::get_Y(this -> get_volume(),I_C);
 		results_MI.col(iter).rows(0,5) = I;
 		results_MI.col(iter)(6) = this -> volume;
 
-		results_dims.col(iter) = this -> get_dims();
+		results_dims.col(iter) = ShapeModelBezier::get_dims(this -> volume,I_C);
 
 		// saving shape model
 
@@ -700,11 +839,131 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 
 
+void ShapeModelBezier::run_monte_carlo_omp(int N,
+	arma::vec & results_volume,
+	arma::mat & results_cm,
+	arma::mat & results_inertia,
+	arma::mat & results_moments,
+	arma::mat & results_mrp,
+	arma::mat & results_lambda_I,
+	arma::mat & results_eigenvectors,
+	arma::mat & results_Evectors,
+	arma::mat & results_Y,
+	arma::mat & results_MI,
+	arma::mat & results_dims) const{
 
-arma::vec::fixed<3> ShapeModelBezier::get_dims() const{
+	arma::arma_rng::set_seed(0);
+
+	// Setting the means
+	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
+		this -> control_points[i] -> set_mean_coordinates();
+	}
+
+	boost::progress_display progress(N) ;
+	results_volume = arma::zeros<arma::vec>(N);
+	results_cm = arma::zeros<arma::mat>(3,N);
+	results_inertia = arma::zeros<arma::mat>(6,N);
+	results_moments = arma::zeros<arma::mat>(4,N);
+	results_mrp = arma::zeros<arma::mat>(3,N);
+	results_lambda_I = arma::zeros<arma::mat>(7,N);
+	results_eigenvectors = arma::zeros<arma::mat>(9,N);
+	results_Evectors = arma::zeros<arma::mat>(9,N);
+	results_Y = arma::zeros<arma::mat>(4,N);
+	results_MI = arma::zeros<arma::mat>(7,N);
+	results_dims = arma::zeros<arma::mat>(3,N);
+
+	this -> take_and_save_zslice("slice_baseline.txt",0);
+	this -> save_to_obj("iter_baseline.obj");
+
+	#pragma omp parallel for
+	for (int iter = 0; iter < N; ++iter){
+
+		arma::vec deviation = this -> shape_covariance_cholesky * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
+
+		double volume = this -> compute_volume_omp(deviation);
+		arma::vec::fixed<3> cm = this -> compute_center_of_mass_omp(volume,deviation);
+		arma::mat::fixed<3,3> inertia = this -> compute_inertia_omp(deviation);
+
+		arma::mat I_C = inertia - volume * RBK::tilde(cm) * RBK::tilde(cm).t() ;
+		arma::vec I = {I_C(0,0),I_C(1,1),I_C(2,2),I_C(0,1),I_C(0,2),I_C(1,2)};
+
+		arma::vec moments_col(4);
+		arma::vec eig_val = arma::eig_sym(I_C);
+		arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
+		moments_col.rows(0,2) = eig_val;
+		moments_col(3) = volume;
+
+		results_volume(iter) = volume;
+		results_cm.col(iter) = cm;
+		results_inertia.col(iter) = I;
+		results_moments.col(iter) = moments_col;
+		results_mrp.col(iter) = RBK::dcm_to_mrp(eig_vec);
+
+		results_lambda_I.col(iter).rows(0,5) = I;
+		results_lambda_I.col(iter)(6) = eig_val(2);
+
+		results_eigenvectors.col(iter).rows(0,2) = eig_vec.col(0);
+		results_eigenvectors.col(iter).rows(3,5) = eig_vec.col(1);
+		results_eigenvectors.col(iter).rows(6,8) = eig_vec.col(2);
+		results_Evectors.col(iter) = ShapeModelBezier::get_E_vectors(I_C);
+		results_Y.col(iter) = ShapeModelBezier::get_Y(volume,I_C);
+		results_MI.col(iter).rows(0,5) = I;
+		results_MI.col(iter)(6) = volume;
+
+		results_dims.col(iter) = ShapeModelBezier::get_dims(volume,I_C);
+
+		// saving shape model
+
+		if (iter < 20){
+			this -> take_and_save_zslice_omp("slice_" + std::to_string(iter) + ".txt",0,deviation);
+			this -> save_to_obj_omp("iter_" + std::to_string(iter) + ".obj",deviation);
+		}
+
+		++progress;
+
+	}
 
 
-	arma::vec moments = arma::eig_sym(this -> inertia);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+arma::vec::fixed<3> ShapeModelBezier::get_dims(const double & volume,
+	const arma::mat::fixed<3,3> & I_C){
+
+
+	arma::vec moments = arma::eig_sym(I_C);
 
 	double A = moments(0);
 	double B = moments(1);
@@ -716,7 +975,7 @@ arma::vec::fixed<3> ShapeModelBezier::get_dims() const{
 		std::sqrt(A + B - C)
 	};
 
-	return std::sqrt(5./(2 * this -> volume)) * dims;
+	return std::sqrt(5./(2 * volume)) * dims;
 
 
 
@@ -1582,7 +1841,7 @@ unsigned int ShapeModelBezier::get_degree() const{
 }
 
 
-void ShapeModelBezier::save_to_obj(std::string path) {
+void ShapeModelBezier::save_to_obj(std::string path) const{
 
 	// An inverse map going from vertex pointer to global indices is created
 
@@ -1598,7 +1857,7 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 	// The global indices of the control points are found. 
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
-		Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+		Bezier * patch = dynamic_cast<Bezier * >(this -> get_element(i).get());
 
 		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
 
@@ -1672,13 +1931,105 @@ void ShapeModelBezier::save_to_obj(std::string path) {
 
 
 
-arma::vec::fixed<9> ShapeModelBezier::get_E_vectors() const{
+
+
+void ShapeModelBezier::save_to_obj_omp(std::string path, const arma::vec & deviation) const{
+
+	// An inverse map going from vertex pointer to global indices is created
+
+	// Note that the actual vertices on the shape model will not be be 
+	// the control points, but the points lying on the bezier patch
+ 	// they support
+
+	std::map<std::shared_ptr<ControlPoint> , unsigned int> pointer_to_global_indices;
+	std::vector<arma::vec> vertices;
+	std::vector<std::tuple<std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint>,std::shared_ptr<ControlPoint> > > facets;
+
+
+	// The global indices of the control points are found. 
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
+
+		Bezier * patch = static_cast<Bezier * >(this -> get_element(i).get());
+
+		for (unsigned int index = 0; index < patch -> get_control_points() -> size(); ++index){
+
+			if (pointer_to_global_indices.find(patch -> get_control_points() -> at(index))== pointer_to_global_indices.end()){
+
+				unsigned int size =  pointer_to_global_indices.size();
+
+				pointer_to_global_indices[patch -> get_control_points() -> at(index)] = size;
+
+				auto local_indices = patch -> get_local_indices(patch -> get_control_points() -> at(index));
+				double u =  double(std::get<0>(local_indices)) / patch -> get_degree();
+				double v =  double(std::get<1>(local_indices)) / patch -> get_degree();
+
+				arma::vec surface_point = patch -> evaluate_omp(u,v,deviation);
+				vertices.push_back(surface_point);
+			}
+
+		}
+
+
+	// The facets are created
+
+		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
+
+			for (unsigned int t = 0; t < l + 1; ++t){
+
+				if (t <= l){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
+
+					facets.push_back(std::make_tuple(v0,v1,v2));
+				}
+
+				if (t > 0 ){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
+					std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
+
+					facets.push_back(std::make_tuple(v0,v1,v2));
+				}
+
+			}
+
+		}
+	}
+
+	// The coordinates are written to a file
+
+	std::ofstream shape_file;
+	shape_file.open(path);
+
+	for (unsigned int i = 0; i < vertices.size(); ++i){
+		shape_file << "v " << vertices[i](0) << " " << vertices[i](1) << " " << vertices[i](2) << "\n";
+	}
+
+	for (unsigned int i = 0; i < facets.size(); ++i){
+		unsigned int indices[3];
+		indices[0] = pointer_to_global_indices[std::get<0>(facets[i])] + 1;
+		indices[1] = pointer_to_global_indices[std::get<1>(facets[i])] + 1;
+		indices[2] = pointer_to_global_indices[std::get<2>(facets[i])] + 1;
+
+
+		shape_file << "f " << indices[0] << " " << indices[1] << " " << indices[2] << "\n";
+
+	}
+
+}
+
+
+
+arma::vec::fixed<9> ShapeModelBezier::get_E_vectors(const arma::mat::fixed<3,3> & inertia){
 
 	arma::vec::fixed<9> E_vectors;
-	arma::vec moments = arma::eig_sym(this -> inertia);
+	arma::vec moments = arma::eig_sym(inertia);
 	for (int i = 0; i < 3; ++i){
 
-		arma::mat L = this -> inertia - moments(i) * arma::eye<arma::mat>(3,3);
+		arma::mat L = inertia - moments(i) * arma::eye<arma::mat>(3,3);
 
 
 		arma::vec norm_vec = {
@@ -1705,10 +2056,10 @@ arma::vec::fixed<9> ShapeModelBezier::get_E_vectors() const{
 }
 
 
-arma::mat::fixed<3,3> ShapeModelBezier::get_principal_axes_stable() const{
+arma::mat::fixed<3,3> ShapeModelBezier::get_principal_axes_stable(const arma::mat::fixed<3,3> & inertia){
 
 
-	auto E_vectors = this -> get_E_vectors();
+	auto E_vectors = ShapeModelBezier::get_E_vectors(inertia);
 
 	arma::mat::fixed<3,3> pa;
 	pa.col(0) = E_vectors.rows(0,2) / arma::norm( E_vectors.rows(0,2));
@@ -2241,11 +2592,10 @@ arma::rowvec::fixed<6> ShapeModelBezier::partial_theta_partial_I() const {
 
 
 
-arma::vec::fixed<4> ShapeModelBezier::get_Y() const{
+arma::vec::fixed<4> ShapeModelBezier::get_Y(const double & volume, 
+	const arma::mat::fixed<3,3> & I_C
+	) {
 
-
-
-	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
 	double T = arma::trace(I_C);
 	double d = arma::det (I_C);
@@ -2282,7 +2632,7 @@ arma::vec::fixed<4> ShapeModelBezier::get_Y() const{
 	vec(0) = T;
 	vec(1) = U;
 	vec(2) = theta;
-	vec(3) = this -> volume;
+	vec(3) = volume;
 
 	return vec;
 }
@@ -2519,6 +2869,15 @@ void ShapeModelBezier::take_and_save_zslice(std::string path, const double & c) 
 }
 
 
+void ShapeModelBezier::take_and_save_zslice_omp(std::string path, const double & c,const arma::vec & deviation) const {
+
+	std::vector<std::vector<arma::vec> > lines;
+	this -> take_zslice_omp(lines,c,deviation);
+	this -> save_zslice(path,lines);
+
+}
+
+
 
 
 
@@ -2624,6 +2983,93 @@ void ShapeModelBezier::take_zslice(std::vector<std::vector<arma::vec> > & lines,
 
 
 
+void ShapeModelBezier::take_zslice_omp(std::vector<std::vector<arma::vec> > & lines,
+	const double & c,const arma::vec & deviation) const{
+
+
+	arma::vec n_plane = {0,0,1};
+	if (this -> get_degree() != 1){
+		throw(std::runtime_error("Only works with bezier shapes of degree one"));
+	}
+
+	arma::mat::fixed<3,2> T = {
+		{1,0},
+		{0,1},
+		{-1,-1}
+	};
+
+	arma::vec::fixed<3> e3 = {0,0,1};
+	arma::mat::fixed<3,3> C;
+
+	// Each surface element is "sliced"
+	for (auto el = this -> elements.begin(); el != this -> elements.end(); ++el){
+
+		auto Ci = static_cast<Bezier * >((*el).get()) -> get_control_point(1,0);
+		auto Cj = static_cast<Bezier * >((*el).get()) -> get_control_point(0,1);
+		auto Ck = static_cast<Bezier * >((*el).get()) -> get_control_point(0,0);
+
+		int i_g = Ci -> get_global_index();
+		int j_g = Cj -> get_global_index();
+		int k_g = Ck -> get_global_index();
+
+
+		C.col(0) = Ci -> get_coordinates() + deviation.rows(3 * i_g, 3 * i_g + 2);
+		C.col(1) = Cj -> get_coordinates() + deviation.rows(3 * j_g, 3 * j_g + 2);
+		C.col(2) = Ck -> get_coordinates() + deviation.rows(3 * k_g, 3 * k_g + 2);
+
+
+
+
+		arma::rowvec M = n_plane.t() * C * T;
+		double e = c - arma::dot(n_plane,C * e3);
+		arma::vec intersect;
+
+		std::vector <arma::vec> intersects;
+
+		// Looking for an intersect along the u = 0 edge
+		if (std::abs(M(1)) > 1e-6){
+			double v_intersect = e / M(1);
+			if (v_intersect >= 0 && v_intersect <= 1 ){
+				arma::vec Y = {0,v_intersect};
+
+				intersect = C * (T * Y + e3);
+				intersects.push_back(intersect.rows(0,1));
+			}
+		}
+
+		// Looking for an intersect along the v = 0 edge
+		if (std::abs(M(0)) > 1e-6){
+			double u_intersect = e / M(0);
+			if (u_intersect >= 0 && u_intersect <= 1 ){
+				arma::vec Y = {u_intersect,0};
+
+				intersect = C * (T * Y + e3);
+				intersects.push_back(intersect.rows(0,1));
+			}
+		}
+
+		// Looking for an intersect along the w = 0 edge
+		// using u as the parameter
+
+		if (std::abs(M(0) - M(1)) > 1e-6){
+			double u_intersect = (e - M(1)) / (M(0) - M(1));
+			if (u_intersect >= 0 && u_intersect <= 1 ){
+				arma::vec Y = {u_intersect,1 - u_intersect};
+
+				intersect = C * (T * Y + e3);
+				intersects.push_back(intersect.rows(0,1));
+			}
+		}
+		if (intersects.size() == 2){
+			lines.push_back(intersects);
+		}
+
+	}
+
+}
+
+
+
 
 
 
@@ -2633,7 +3079,7 @@ void ShapeModelBezier::compute_P_sigma(){
 
 	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
-	arma::mat eigvec = this -> get_principal_axes_stable();
+	arma::mat eigvec = ShapeModelBezier::get_principal_axes_stable(I_C);
 
 	arma::mat mapping_mat = arma::zeros<arma::mat>(3,9);
 	mapping_mat.submat(0,3,0,5) = eigvec.col(2).t();
@@ -2660,7 +3106,8 @@ arma::mat::fixed<3,4> ShapeModelBezier::partial_dim_partial_M() const{
 		{1,1,-1, -( A + B - C) / this -> volume}
 	} ;
 
-	return 5./(4 * this -> volume) * arma::diagmat(1./this -> get_dims()) * mat;
+	return 5./(4 * this -> volume) * arma::diagmat(1./this -> get_dims(this -> volume,
+		this -> inertia)) * mat;
 
 
 }

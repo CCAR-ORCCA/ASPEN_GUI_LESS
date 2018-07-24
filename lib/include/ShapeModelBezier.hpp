@@ -86,7 +86,13 @@ public:
 	/**
 	Saves the shape model to an obj file as a polyhedron
 	*/
-	void save_to_obj(std::string path) ;
+	void save_to_obj(std::string path) const;
+
+
+	/**
+	Saves the shape model to an obj file as a polyhedron
+	*/
+	void save_to_obj_omp(std::string path,const arma::vec & deviation) const;
 
 
 	/**
@@ -113,14 +119,26 @@ public:
 	Computes the volume of the shape model
 	*/
 	virtual void compute_volume();
+
+	double compute_volume_omp(const arma::vec & deviation) const;
+
+
 	/**
 	Computes the center of mass of the shape model
 	*/
 	virtual void compute_center_of_mass();
+
+	arma::vec::fixed<3> compute_center_of_mass_omp(const double & volume, const arma::vec & deviation) const;
+
+
+
 	/**
 	Computes the inertia tensor of the shape model
 	*/
 	virtual void compute_inertia();
+
+	arma::mat::fixed<3,3> compute_inertia_omp(const arma::vec & deviation) const;
+
 
 	/**
 	Finds the intersect between the provided ray and the shape model
@@ -164,6 +182,24 @@ public:
 		arma::mat & results_Y,
 		arma::mat & results_MI,
 		arma::mat & results_dims);
+
+	/**
+	Runs a Monte Carlo on volume, cm
+	@param N number of runs
+	@return results
+	*/
+	void run_monte_carlo_omp(int N,
+		arma::vec & results_volume,
+		arma::mat & results_cm,
+		arma::mat & results_inertia,
+		arma::mat & results_moments,
+		arma::mat & results_mrp,
+		arma::mat & results_lambda_I,
+		arma::mat & results_eigenvectors,
+		arma::mat & results_Evectors,
+		arma::mat & results_Y,
+		arma::mat & results_MI,
+		arma::mat & results_dims) const;
 
 	/**
 	Runs a Monte Carlo on volume
@@ -213,7 +249,8 @@ public:
 
 	arma::mat::fixed<9,9> get_P_eigenvectors() const{return this -> P_eigenvectors;}
 	arma::mat::fixed<9,9> get_P_Evectors() const{return this -> P_Evectors;}
-	arma::vec::fixed<9> get_E_vectors() const;
+	static arma::vec::fixed<9> get_E_vectors(const arma::mat::fixed<3,3> & inertia);
+
 	arma::mat::fixed<3,3> get_P_dims() const{return this -> P_dims;}
 
 	void apply_deviation();
@@ -221,11 +258,13 @@ public:
 	arma::vec d_I() const;
 
 	void take_and_save_zslice(std::string path, const double & c) const;
+	void take_and_save_zslice_omp(std::string path, const double & c,const arma::vec & deviation) const ;
+
 	void compute_point_covariances(double sigma_sq,double correl_distance) ;
 	void compute_shape_covariance_cholesky();
 
 	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
-	
+
 
 protected:
 
@@ -234,6 +273,9 @@ protected:
 	
 	void take_zslice(std::vector<std::vector<arma::vec> > & lines, const double & c) const;
 	void save_zslice(std::string path, const std::vector<std::vector<arma::vec> > & lines) const;
+
+
+	void take_zslice_omp(std::vector<std::vector<arma::vec> > & lines, const double & c,const arma::vec & deviation) const;
 
 
 
@@ -332,7 +374,8 @@ protected:
 	arma::mat::fixed<3,3> P_XX() const ;
 	arma::mat::fixed<3,6> partial_X_partial_I() const;
 	arma::mat::fixed<4,4> partial_M_partial_Y() const;
-	arma::mat::fixed<3,3> get_principal_axes_stable() const;
+	static arma::mat::fixed<3,3> get_principal_axes_stable(const arma::mat::fixed<3,3> & inertia);
+
 
 
 	arma::mat::fixed<3,3> P_ril_rjm(
@@ -351,9 +394,12 @@ protected:
 
 	arma::mat::fixed<3,9> partial_E_partial_R(const double lambda) const;
 
-	arma::vec::fixed<4> get_Y() const;
+	static arma::vec::fixed<4> get_Y(const double & volume, 
+		const arma::mat::fixed<3,3> & I_C
+		);
 
-	arma::vec::fixed<3> get_dims() const;
+	static arma::vec::fixed<3> get_dims(const double & volume,
+		const arma::mat::fixed<3,3> & I_C);
 
 
 

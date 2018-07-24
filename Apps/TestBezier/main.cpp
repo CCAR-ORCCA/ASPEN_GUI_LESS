@@ -16,7 +16,7 @@ int main(){
 	
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter shape_io_true("../../../resources/shape_models/itokawa_8.obj", 1, false);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/tetra.obj", 1, false);
 
 	shape_io_true.load_obj_shape_model(&tri_shape);
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
@@ -55,7 +55,6 @@ int main(){
 	bezier_shape.compute_inertia_statistics();
 
 
-
 	std::chrono::duration<double> elapsed_seconds = end - start;
 
 	std::cout << "\n Elapsed time computing the covariance : " << elapsed_seconds.count() << "s\n\n";
@@ -79,13 +78,17 @@ int main(){
 
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
-	int N = 10000;
+	int N = 100000;
 
 	arma::vec results_volume;
 	arma::mat results_cm,results_inertia,results_moments,
 	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
 	results_dims;
 	
+
+	start = std::chrono::system_clock::now();
+
+
 	bezier_shape.run_monte_carlo(N,
 		results_volume,
 		results_cm,
@@ -99,7 +102,11 @@ int main(){
 		results_MI,
 		results_dims);
 
+	end = std::chrono::system_clock::now();
 
+	elapsed_seconds = end - start;
+	
+	std::cout << "\nDone running Monte Carlo in " << elapsed_seconds.count() << " s\n";
 
 
 	

@@ -145,6 +145,11 @@ public:
 	*/
 	std::vector<std::shared_ptr<Element> >  * get_elements();
 
+
+
+	std::shared_ptr<Element>  get_element(int i) const {return this -> elements[i];}
+
+
 	/**
 	Augment the internal container storing elements with a new (and not already inserted)
 	one
@@ -339,12 +344,12 @@ protected:
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;
 
-	arma::mat inertia;
+	arma::mat::fixed<3,3> inertia;
 
 	double volume;
 	double surface_area;
 
-	arma::vec cm;
+	arma::vec::fixed<3> cm;
 
 
 

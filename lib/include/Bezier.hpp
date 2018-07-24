@@ -92,6 +92,10 @@ public:
 	*/
 	arma::vec evaluate(const double u, const double v) const;
 
+
+	arma::vec evaluate_omp(const double u, const double v,const arma::vec & deviation) const;
+
+
 	/**
 	Evaluates the log-likelihood
 	@param P_X prescribed patch covariance to use in the log-likelihood
@@ -289,6 +293,19 @@ public:
 	double triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ) const;
 
 
+
+	/**
+	Returns the triple product of points i_ = (i,j), j_ = = (k,l) and k_ = = (m,p), e.g Ci_^T(Cj_ x Ck_)
+	@param i first index of first point
+	@param j second index of first point
+	@param k first index of second point
+	@param l second index of second point
+	@param m first index of third point
+	@param p second index of third point
+	*/
+	double triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ,
+		const arma::vec & deviation) const;
+
 	/**
 	Computes the quadruple product of points i_ = (i,j), j_ = (k,l), k_ = (m,p), l_ = (q,r)  e.g (Ci_^T Cj_) * (Ck_ x Cl_)
 	@param result container storing result of computation
@@ -302,6 +319,7 @@ public:
 	@param r second index of fourth point
 	*/
 	void quadruple_product(double * result,const int i ,const int j ,const int k ,const int l ,const int m ,const int p, const int q, const int r ) const;
+
 
 
 	// Returns the partial derivative d^2P/(dchi dv)

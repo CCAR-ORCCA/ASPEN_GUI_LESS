@@ -107,6 +107,29 @@ double Bezier::triple_product(const int i ,const int j ,const int k ,const int l
 
 }
 
+double Bezier::triple_product(const int i ,const int j ,const int k ,const int l ,const int m ,const int p ,
+	const arma::vec & deviation) const{
+
+	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
+	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
+	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
+	
+	auto Ci =  this -> control_points[this -> rev_table.at(i_)];
+	auto Cj =  this -> control_points[this -> rev_table.at(j_)];
+	auto Ck =  this -> control_points[this -> rev_table.at(k_)];
+
+	int i_g = Ci -> get_global_index();
+	int j_g = Cj -> get_global_index();
+	int k_g = Ck -> get_global_index();
+
+	return arma::dot(Ci -> get_coordinates() + deviation.rows(3 * i_g,3 * i_g + 2),
+		arma::cross(Cj -> get_coordinates() + deviation.rows(3 * j_g,3 * j_g + 2),
+			Ck -> get_coordinates() + deviation.rows(3 * k_g,3 * k_g + 2)));
+
+}
+
+
+
 void Bezier::quadruple_product(double * result,const int i ,const int j ,const int k ,const int l ,const int m ,const int p, const int q, const int r ) const{
 
 	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
@@ -131,6 +154,8 @@ void Bezier::quadruple_product(double * result,const int i ,const int j ,const i
 
 
 }
+
+
 
 
 
@@ -609,7 +634,26 @@ arma::vec Bezier::evaluate(const double u, const double v) const{
 		int j = std::get<1>(this -> forw_table[l]);
 
 		P += this -> bernstein(u,v,i,j,this -> n) * this -> control_points[l] -> get_coordinates();
-	
+
+	}
+	return P;
+}
+
+
+arma::vec Bezier::evaluate_omp(const double u, const double v,const arma::vec & deviation) const{
+
+	arma::vec P = arma::zeros<arma::vec>(3);
+	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
+		
+		int i = std::get<0>(this -> forw_table[l]);
+		int j = std::get<1>(this -> forw_table[l]);
+
+		int l_g = this -> control_points[l] -> get_global_index();
+
+
+		P += this -> bernstein(u,v,i,j,this -> n) * (this -> control_points[l] -> get_coordinates()
+			+ deviation.rows(3 * l_g,3 * l_g + 2));
+
 	}
 	return P;
 }
@@ -1192,7 +1236,7 @@ double Bezier::get_range_bias(const double & u, const double & v) const{
 // 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
 // 	arma::vec lower_bounds =  L - 1;
 // 	arma::vec upper_bounds = L + 3;	
-	
+
 // 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,
 // 		this);
 
