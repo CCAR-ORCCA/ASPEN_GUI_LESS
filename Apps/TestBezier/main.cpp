@@ -16,7 +16,7 @@ int main(){
 	
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter shape_io_true("../../../resources/shape_models/tetra.obj", 1, false);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/bennu.obj", 1, false);
 
 	shape_io_true.load_obj_shape_model(&tri_shape);
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
@@ -41,7 +41,7 @@ int main(){
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
-	bezier_shape.compute_point_covariances(sigmas_sq,2.5e-2);
+	bezier_shape.compute_point_covariances(sigmas_sq,25e-3);
 
 	bezier_shape.compute_shape_covariance_cholesky();
 
@@ -78,7 +78,7 @@ int main(){
 
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
-	int N = 100000;
+	int N = 10000;
 
 	arma::vec results_volume;
 	arma::mat results_cm,results_inertia,results_moments,
@@ -89,7 +89,7 @@ int main(){
 	start = std::chrono::system_clock::now();
 
 
-	bezier_shape.run_monte_carlo_omp(N,
+	bezier_shape.run_monte_carlo(N,
 		results_volume,
 		results_cm,
 		results_inertia,
