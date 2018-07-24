@@ -16,7 +16,7 @@ int main(){
 	
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter shape_io_true("../../../resources/shape_models/itokawa_8.obj", 1, false);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/not_sym.obj", 1, false);
 
 	shape_io_true.load_obj_shape_model(&tri_shape);
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
