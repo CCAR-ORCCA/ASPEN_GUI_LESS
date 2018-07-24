@@ -459,9 +459,10 @@ void ShapeModelBezier::compute_volume_sd(){
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 
 		auto neighbors = connected_elements[e];
-		for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
 
-			Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+		for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+
+			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
 
 			for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
@@ -632,9 +633,10 @@ void ShapeModelBezier::compute_cm_cov(){
 			auto neighbors = connected_elements[e];
 
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
-			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+			
+			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
 
-				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
 				int m_g,p_g,q_g,r_g;
 
@@ -2143,11 +2145,9 @@ void ShapeModelBezier::compute_P_I(){
 
 			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
 
-			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
 
-
-				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
-				int f = patch_f -> get_global_index();
+				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
 				int p_g,q_g,r_g,s_g,t_g;
 
@@ -2330,9 +2330,10 @@ void ShapeModelBezier::compute_P_MI(){
 
 			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
 
-			for (auto it_neighbors = neighbors.begin(); it_neighbors  != neighbors.end(); ++it_neighbors){
+			
+			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
 
-				Bezier * patch_f = static_cast<Bezier * >(*it_neighbors);
+				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
 				int p_g,q_g,r_g;
 
