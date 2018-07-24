@@ -433,7 +433,7 @@ void ShapeModelBezier::find_correlated_elements(){
 				int i_g = Ci -> get_global_index();
 				
 				for (unsigned int j = 0; j < patch_f -> get_control_points() -> size(); ++j){
-				auto Cj = patch_f -> get_control_points() -> at(j);
+					auto Cj = patch_f -> get_control_points() -> at(j);
 					int j_g = Cj -> get_global_index();
 
 					// If true, these two patches are correlated
@@ -444,19 +444,19 @@ void ShapeModelBezier::find_correlated_elements(){
 
 						elements_correlated_with_e.push_back(f);
 
-					}
-
 				}
 
 			}
 
-
-
 		}
 
-		this -> correlated_elements.push_back(elements_correlated_with_e);
+
 
 	}
+
+	this -> correlated_elements.push_back(elements_correlated_with_e);
+
+}
 
 }
 
@@ -675,11 +675,12 @@ void ShapeModelBezier::compute_cm_cov(){
 			k_g = patch_e -> get_control_point_global_index(m,p);
 			l_g = patch_e -> get_control_point_global_index(q,r);
 			
-			auto neighbors = connected_elements[e];
 
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
 			
-			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+			auto neighbors = this -> correlated_elements[e];
+
+			for (auto f : neighbors) {
 
 				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
@@ -2188,11 +2189,13 @@ void ShapeModelBezier::compute_P_I(){
 			l_g = patch_e -> get_control_point_global_index(q,r);
 			m_g = patch_e -> get_control_point_global_index(s,t);
 
-			auto neighbors = connected_elements[e];
 
 			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
 
-			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+
+			auto neighbors = this -> correlated_elements[e];
+
+			for (auto f : neighbors) {
 
 				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
 
@@ -2372,15 +2375,16 @@ void ShapeModelBezier::compute_P_MI(){
 			l_g = patch_e -> get_control_point_global_index(q,r);
 			m_g = patch_e -> get_control_point_global_index(s,t);	
 
-
-			auto neighbors = connected_elements[e];
-
 			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
 
-			
-			for (unsigned int f = 0; f < this -> elements.size(); ++f) {
+
+			auto neighbors = this -> correlated_elements[e];
+
+			for (auto f : neighbors) {
 
 				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
+
+
 
 				int p_g,q_g,r_g;
 
