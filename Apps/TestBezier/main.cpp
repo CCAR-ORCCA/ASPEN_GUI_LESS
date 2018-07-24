@@ -89,7 +89,7 @@ int main(){
 	start = std::chrono::system_clock::now();
 
 
-	bezier_shape.run_monte_carlo(N,
+	bezier_shape.run_monte_carlo_omp(N,
 		results_volume,
 		results_cm,
 		results_inertia,
