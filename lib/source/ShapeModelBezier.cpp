@@ -873,12 +873,10 @@ void ShapeModelBezier::run_monte_carlo(int N,
 			this -> take_and_save_slice(0,"slice_x_" + std::to_string(iter) + ".txt",0);
 
 
-			this -> save_to_obj("iter_" + std::to_string(iter) + ".obj");
+			this -> save_to_obj("output/iter_" + std::to_string(iter) + ".obj");
 		}
 		
 	}
-
-	results_cm.save("cm_spread.txt",arma::raw_ascii);
 
 	// Cleaning up
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
