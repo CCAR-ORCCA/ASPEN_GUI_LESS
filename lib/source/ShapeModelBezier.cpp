@@ -677,7 +677,7 @@ void ShapeModelBezier::compute_cm_cov(){
 			
 
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
-			
+
 			auto neighbors = this -> correlated_elements[e];
 
 			for (auto f : neighbors) {
@@ -779,10 +779,6 @@ void ShapeModelBezier::apply_deviation(){
 }
 
 
-
-
-
-
 void ShapeModelBezier::run_monte_carlo(int N,
 	arma::vec & results_volume,
 	arma::mat & results_cm,
@@ -816,7 +812,11 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	results_MI = arma::zeros<arma::mat>(7,N);
 	results_dims = arma::zeros<arma::mat>(3,N);
 
-	this -> take_and_save_zslice("slice_baseline.txt",0);
+	this -> take_and_save_slice(2,"slice_z_baseline.txt",0);
+	this -> take_and_save_slice(1,"slice_y_baseline.txt",0);
+	this -> take_and_save_slice(0,"slice_x_baseline.txt",0);
+
+
 	this -> save_to_obj("iter_baseline.obj");
 
 
@@ -868,12 +868,17 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		// saving shape model
 
 		if (iter < 20){
-			this -> take_and_save_zslice("slice_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(2,"slice_z_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(1,"slice_y_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(0,"slice_x_" + std::to_string(iter) + ".txt",0);
+
+
 			this -> save_to_obj("iter_" + std::to_string(iter) + ".obj");
 		}
-
-
+		
 	}
+
+	results_cm.save("cm_spread.txt",arma::raw_ascii);
 
 	// Cleaning up
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
@@ -882,127 +887,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 
 }
-
-
-
-
-void ShapeModelBezier::run_monte_carlo_omp(int N,
-	arma::vec & results_volume,
-	arma::mat & results_cm,
-	arma::mat & results_inertia,
-	arma::mat & results_moments,
-	arma::mat & results_mrp,
-	arma::mat & results_lambda_I,
-	arma::mat & results_eigenvectors,
-	arma::mat & results_Evectors,
-	arma::mat & results_Y,
-	arma::mat & results_MI,
-	arma::mat & results_dims) const{
-
-	arma::arma_rng::set_seed(0);
-
-	// Setting the means
-	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> set_mean_coordinates();
-	}
-
-	boost::progress_display progress(N) ;
-	results_volume = arma::zeros<arma::vec>(N);
-	results_cm = arma::zeros<arma::mat>(3,N);
-	results_inertia = arma::zeros<arma::mat>(6,N);
-	results_moments = arma::zeros<arma::mat>(4,N);
-	results_mrp = arma::zeros<arma::mat>(3,N);
-	results_lambda_I = arma::zeros<arma::mat>(7,N);
-	results_eigenvectors = arma::zeros<arma::mat>(9,N);
-	results_Evectors = arma::zeros<arma::mat>(9,N);
-	results_Y = arma::zeros<arma::mat>(4,N);
-	results_MI = arma::zeros<arma::mat>(7,N);
-	results_dims = arma::zeros<arma::mat>(3,N);
-
-	this -> take_and_save_zslice("slice_baseline.txt",0);
-	this -> save_to_obj("iter_baseline.obj");
-
-	#pragma omp parallel for
-	for (int iter = 0; iter < N; ++iter){
-
-		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
-
-		double volume = this -> compute_volume_omp(deviation);
-		arma::vec::fixed<3> cm = this -> compute_center_of_mass_omp(volume,deviation);
-		arma::mat::fixed<3,3> inertia = this -> compute_inertia_omp(deviation);
-
-		arma::mat I_C = inertia - volume * RBK::tilde(cm) * RBK::tilde(cm).t() ;
-		arma::vec I = {I_C(0,0),I_C(1,1),I_C(2,2),I_C(0,1),I_C(0,2),I_C(1,2)};
-
-		arma::vec moments_col(4);
-		arma::vec eig_val = arma::eig_sym(I_C);
-		arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
-		moments_col.rows(0,2) = eig_val;
-		moments_col(3) = volume;
-
-		results_volume(iter) = volume;
-		results_cm.col(iter) = cm;
-		results_inertia.col(iter) = I;
-		results_moments.col(iter) = moments_col;
-		results_mrp.col(iter) = RBK::dcm_to_mrp(eig_vec);
-
-		results_lambda_I.col(iter).rows(0,5) = I;
-		results_lambda_I.col(iter)(6) = eig_val(2);
-
-		results_eigenvectors.col(iter).rows(0,2) = eig_vec.col(0);
-		results_eigenvectors.col(iter).rows(3,5) = eig_vec.col(1);
-		results_eigenvectors.col(iter).rows(6,8) = eig_vec.col(2);
-		results_Evectors.col(iter) = ShapeModelBezier::get_E_vectors(I_C);
-		results_Y.col(iter) = ShapeModelBezier::get_Y(volume,I_C);
-		results_MI.col(iter).rows(0,5) = I;
-		results_MI.col(iter)(6) = volume;
-
-		results_dims.col(iter) = ShapeModelBezier::get_dims(volume,I_C);
-
-		// saving shape model
-
-		if (iter < 20){
-			this -> take_and_save_zslice_omp("slice_" + std::to_string(iter) + ".txt",0,deviation);
-			this -> save_to_obj_omp("iter_" + std::to_string(iter) + ".obj",deviation);
-		}
-
-		++progress;
-
-	}
-
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2882,20 +2766,11 @@ arma::mat::fixed<4,4>  ShapeModelBezier::partial_M_partial_Y() const{
 
 }
 
-void ShapeModelBezier::take_and_save_zslice(std::string path, const double & c) const {
+void ShapeModelBezier::take_and_save_slice(int axis,std::string path, const double & c) const {
 
 	std::vector<std::vector<arma::vec> > lines;
-	this -> take_zslice(lines,c);
-	this -> save_zslice(path,lines);
-
-}
-
-
-void ShapeModelBezier::take_and_save_zslice_omp(std::string path, const double & c,const arma::vec & deviation) const {
-
-	std::vector<std::vector<arma::vec> > lines;
-	this -> take_zslice_omp(lines,c,deviation);
-	this -> save_zslice(path,lines);
+	this -> take_slice(axis,lines,c);
+	this -> save_slice(axis,path,lines);
 
 }
 
@@ -2903,7 +2778,26 @@ void ShapeModelBezier::take_and_save_zslice_omp(std::string path, const double &
 
 
 
-void ShapeModelBezier::save_zslice(std::string path, const std::vector<std::vector<arma::vec> > & lines) const{
+void ShapeModelBezier::save_slice(int axis, 
+	std::string path, const std::vector<std::vector<arma::vec> > & lines) const{
+
+
+	int a_1,a_2;
+
+	if (axis == 0){
+		a_1 = 1;
+		a_2 = 2;
+	}
+	else if (axis == 1){
+		a_1 = 0;
+		a_2 = 2;
+	}
+	else if (axis == 2 ){
+		a_1 = 0;
+		a_2 = 1;	
+	}
+
+
 
 	arma::mat lines_arma;
 
@@ -2912,7 +2806,7 @@ void ShapeModelBezier::save_zslice(std::string path, const std::vector<std::vect
 
 		for (int i = 0; i < lines.size() ; ++i){
 
-			arma::rowvec rowvec = {lines[i][0](0),lines[i][0](1),lines[i][1](0),lines[i][1](1)};
+			arma::rowvec rowvec = {lines[i][0](a_1),lines[i][0](a_2),lines[i][1](a_1),lines[i][1](a_2)};
 			lines_arma.row(i) = rowvec;
 		}
 
@@ -2930,11 +2824,15 @@ void ShapeModelBezier::save_zslice(std::string path, const std::vector<std::vect
 
 
 
-void ShapeModelBezier::take_zslice(std::vector<std::vector<arma::vec> > & lines,
+void ShapeModelBezier::take_slice(int axis,
+	std::vector<std::vector<arma::vec> > & lines,
 	const double & c) const{
 
 
-	arma::vec n_plane = {0,0,1};
+	arma::vec n_plane = {0,0,0};
+	n_plane(axis) = 1;
+
+
 	if (this -> get_degree() != 1){
 		throw(std::runtime_error("Only works with bezier shapes of degree one"));
 	}
@@ -2968,7 +2866,7 @@ void ShapeModelBezier::take_zslice(std::vector<std::vector<arma::vec> > & lines,
 				arma::vec Y = {0,v_intersect};
 
 				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
+				intersects.push_back(intersect);
 			}
 		}
 
@@ -2979,7 +2877,7 @@ void ShapeModelBezier::take_zslice(std::vector<std::vector<arma::vec> > & lines,
 				arma::vec Y = {u_intersect,0};
 
 				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
+				intersects.push_back(intersect);
 			}
 		}
 
@@ -2992,94 +2890,7 @@ void ShapeModelBezier::take_zslice(std::vector<std::vector<arma::vec> > & lines,
 				arma::vec Y = {u_intersect,1 - u_intersect};
 
 				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
-			}
-		}
-		if (intersects.size() == 2){
-			lines.push_back(intersects);
-		}
-
-	}
-
-}
-
-
-
-void ShapeModelBezier::take_zslice_omp(std::vector<std::vector<arma::vec> > & lines,
-	const double & c,const arma::vec & deviation) const{
-
-
-	arma::vec n_plane = {0,0,1};
-	if (this -> get_degree() != 1){
-		throw(std::runtime_error("Only works with bezier shapes of degree one"));
-	}
-
-	arma::mat::fixed<3,2> T = {
-		{1,0},
-		{0,1},
-		{-1,-1}
-	};
-
-	arma::vec::fixed<3> e3 = {0,0,1};
-	arma::mat::fixed<3,3> C;
-
-	// Each surface element is "sliced"
-	for (auto el = this -> elements.begin(); el != this -> elements.end(); ++el){
-
-		auto Ci = static_cast<Bezier * >((*el).get()) -> get_control_point(1,0);
-		auto Cj = static_cast<Bezier * >((*el).get()) -> get_control_point(0,1);
-		auto Ck = static_cast<Bezier * >((*el).get()) -> get_control_point(0,0);
-
-		int i_g = Ci -> get_global_index();
-		int j_g = Cj -> get_global_index();
-		int k_g = Ck -> get_global_index();
-
-
-		C.col(0) = Ci -> get_coordinates() + deviation.rows(3 * i_g, 3 * i_g + 2);
-		C.col(1) = Cj -> get_coordinates() + deviation.rows(3 * j_g, 3 * j_g + 2);
-		C.col(2) = Ck -> get_coordinates() + deviation.rows(3 * k_g, 3 * k_g + 2);
-
-
-
-
-		arma::rowvec M = n_plane.t() * C * T;
-		double e = c - arma::dot(n_plane,C * e3);
-		arma::vec intersect;
-
-		std::vector <arma::vec> intersects;
-
-		// Looking for an intersect along the u = 0 edge
-		if (std::abs(M(1)) > 1e-6){
-			double v_intersect = e / M(1);
-			if (v_intersect >= 0 && v_intersect <= 1 ){
-				arma::vec Y = {0,v_intersect};
-
-				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
-			}
-		}
-
-		// Looking for an intersect along the v = 0 edge
-		if (std::abs(M(0)) > 1e-6){
-			double u_intersect = e / M(0);
-			if (u_intersect >= 0 && u_intersect <= 1 ){
-				arma::vec Y = {u_intersect,0};
-
-				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
-			}
-		}
-
-		// Looking for an intersect along the w = 0 edge
-		// using u as the parameter
-
-		if (std::abs(M(0) - M(1)) > 1e-6){
-			double u_intersect = (e - M(1)) / (M(0) - M(1));
-			if (u_intersect >= 0 && u_intersect <= 1 ){
-				arma::vec Y = {u_intersect,1 - u_intersect};
-
-				intersect = C * (T * Y + e3);
-				intersects.push_back(intersect.rows(0,1));
+				intersects.push_back(intersect);
 			}
 		}
 		if (intersects.size() == 2){

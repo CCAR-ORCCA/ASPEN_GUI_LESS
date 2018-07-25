@@ -257,8 +257,7 @@ public:
 
 	arma::vec d_I() const;
 
-	void take_and_save_zslice(std::string path, const double & c) const;
-	void take_and_save_zslice_omp(std::string path, const double & c,const arma::vec & deviation) const ;
+	void take_and_save_slice(int axis, std::string path, const double & c) const;
 
 	void compute_point_covariances(double sigma_sq,double correl_distance) ;
 	void compute_shape_covariance_sqrt();
@@ -271,14 +270,11 @@ public:
 protected:
 
 	void find_correlated_elements();
+
+
 	
-
-	
-	void take_zslice(std::vector<std::vector<arma::vec> > & lines, const double & c) const;
-	void save_zslice(std::string path, const std::vector<std::vector<arma::vec> > & lines) const;
-
-
-	void take_zslice_omp(std::vector<std::vector<arma::vec> > & lines, const double & c,const arma::vec & deviation) const;
+	void take_slice(int axis, std::vector<std::vector<arma::vec> > & lines, const double & c) const;
+	void save_slice(int axis, std::string path, const std::vector<std::vector<arma::vec> > & lines) const;
 
 
 

@@ -16,7 +16,7 @@ int main(){
 	
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter shape_io_true("../../../resources/shape_models/not_sym.obj", 1, false);
+	ShapeModelImporter shape_io_true("../../../resources/shape_models/itokawa_8.obj", 1, false);
 
 	shape_io_true.load_obj_shape_model(&tri_shape);
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
@@ -37,11 +37,11 @@ int main(){
 	std::cout << bezier_shape.get_inertia() << std::endl;
 	std::cout << tri_shape.get_inertia() << std::endl;
 
-	double sigmas_sq = std::pow(3e-4,2)  ;
+	double sigmas_sq = std::pow(4e-3,2)  ;
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
-	bezier_shape.compute_point_covariances(sigmas_sq,1e0);
+	bezier_shape.compute_point_covariances(sigmas_sq,5e-2);
 
 	bezier_shape.compute_shape_covariance_sqrt();
 
