@@ -812,12 +812,12 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	results_MI = arma::zeros<arma::mat>(7,N);
 	results_dims = arma::zeros<arma::mat>(3,N);
 
-	this -> take_and_save_slice(2,"slice_z_baseline.txt",0);
-	this -> take_and_save_slice(1,"slice_y_baseline.txt",0);
-	this -> take_and_save_slice(0,"slice_x_baseline.txt",0);
+	this -> take_and_save_slice(2,"../output/slice_z_baseline.txt",0);
+	this -> take_and_save_slice(1,"../output/slice_y_baseline.txt",0);
+	this -> take_and_save_slice(0,"../output/slice_x_baseline.txt",0);
 
 
-	this -> save_to_obj("iter_baseline.obj");
+	this -> save_to_obj("../output/iter_baseline.obj");
 
 
 	for (int iter = 0; iter < N; ++iter){
@@ -868,12 +868,12 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		// saving shape model
 
 		if (iter < 20){
-			this -> take_and_save_slice(2,"slice_z_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(1,"slice_y_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(0,"slice_x_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(2,"../output/slice_z_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(1,"../output/slice_y_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(0,"../output/slice_x_" + std::to_string(iter) + ".txt",0);
 
 
-			this -> save_to_obj("output/iter_" + std::to_string(iter) + ".obj");
+			this -> save_to_obj("../output/iter_" + std::to_string(iter) + ".obj");
 		}
 		
 	}
