@@ -183,6 +183,9 @@ int main(){
 	std::cout << "COV CM predicted: " << std::endl << cm_cov << std::endl << std::endl;
 	std::cout << "Deviation : " << std::endl << (cov_cm_mc - cm_cov)/cov_cm_mc * 100 << " %" << std::endl << std::endl;
 
+	
+	cov_cm_mc.save("cov_cm_mc.txt",arma::raw_ascii);
+	cm_cov.save("cm_cov.txt",arma::raw_ascii);
 
 	std::cout << "######***** Inertia *****######"<< std::endl;
 
@@ -191,6 +194,12 @@ int main(){
 	std::cout << "COV Inertia parametrization predicted: " << std::endl << inertia_cov << std::endl << std::endl;
 	std::cout << "Deviation : " << std::endl << (cov_inertia_mc - inertia_cov)/cov_inertia_mc * 100 << " %" << std::endl << std::endl;
 
+
+
+	
+	cov_inertia_mc.save("cov_inertia_mc.txt",arma::raw_ascii);
+	inertia_cov.save("inertia_cov.txt",arma::raw_ascii);
+	
 
 
 	std::cout << "######***** MI *****######"<< std::endl;
@@ -217,12 +226,23 @@ int main(){
 	std::cout << "Deviation : " << std::endl << (cov_moments_mc - moments_cov)/cov_moments_mc * 100 << " %" << std::endl << std::endl;
 
 
+
+	cov_moments_mc.save("cov_moments_mc.txt",arma::raw_ascii);
+	moments_cov.save("moments_cov.txt",arma::raw_ascii);
+	
+
 	std::cout << "######***** Principal dimensions *****######"<< std::endl;
 
 	std::cout << "Mean dimensions : " << results_dims_mean.t() << std::endl;
 	std::cout << "Inertia dimensions covariance from MC: " << std::endl << cov_dims_mc << std::endl;
 	std::cout << "Inertia dimensions covariance predicted: " << std::endl << dims_cov << std::endl << std::endl;
 	std::cout << "Deviation : " << std::endl << (cov_dims_mc - dims_cov)/cov_dims_mc * 100 << " %" << std::endl << std::endl;
+
+
+
+	cov_dims_mc.save("cov_dims_mc.txt",arma::raw_ascii);
+	dims_cov.save("dims_cov.txt",arma::raw_ascii);
+	
 
 
 	std::cout << "######***** Lambda_I *****######"<< std::endl;
@@ -256,6 +276,10 @@ int main(){
 	std::cout << "MRP covariance from MC: " << std::endl << cov_mrp_mc << std::endl;
 	std::cout << "MRP covariance predicted: " << std::endl << mrp_cov << std::endl << std::endl;
 	std::cout << "Deviation : " << std::endl << (cov_mrp_mc - mrp_cov)/cov_mrp_mc * 100 << " %" << std::endl << std::endl;
+
+	cov_mrp_mc.save("cov_mrp_mc.txt",arma::raw_ascii);
+	mrp_cov.save("mrp_cov.txt",arma::raw_ascii);
+
 
 
 
