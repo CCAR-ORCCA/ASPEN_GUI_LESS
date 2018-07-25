@@ -265,7 +265,7 @@ int main(){
 
 	cov_mrp_mc.save("../output/cov_mrp_mc.txt",arma::raw_ascii);
 	mrp_cov.save("../output/mrp_cov.txt",arma::raw_ascii);
-	results_mrp.save("../output/moments_spread.txt",arma::raw_ascii);
+	results_mrp.save("../output/mrp_spread.txt",arma::raw_ascii);
 
 
 
