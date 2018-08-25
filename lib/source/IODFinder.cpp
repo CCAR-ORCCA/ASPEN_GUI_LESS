@@ -17,7 +17,6 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 
 void IODFinder::run(arma::vec lower_bounds,arma::vec upper_bounds,int verbose_level,const arma::vec & guess){
 
-
 	if (lower_bounds.n_rows == 0){
 		lower_bounds = {A_MIN,E_MIN,I_MIN,RAAN_MIN,OMEGA_MIN,M0_MIN,MU_MIN};
 		upper_bounds = {A_MAX,E_MAX,I_MAX,RAAN_MAX,OMEGA_MAX,M0_MAX,MU_MAX};
@@ -38,8 +37,6 @@ void IODFinder::run(arma::vec lower_bounds,arma::vec upper_bounds,int verbose_le
 		std::make_pair<int,std::string>(4,"w"),
 		std::make_pair<int,std::string>(5,"w"),
 	};
-
-	std::cout << "Running IODFinder\n";
 
 	psopt.run(false,verbose_level,boundary_conditions);
 
@@ -94,12 +91,14 @@ double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> 
 	}
 
 	arma::vec epsilon = arma::zeros<arma::vec>(3 * N);
+
 	for (int k = 0; k < N; ++k ){
 
 		arma::mat M_k = args -> at(k).M_k;
 		arma::mat X_k = args -> at(k).X_k;
 
 		epsilon.subvec( 3 * k, 3 * k + 2) = positions.col(k) - M_k * positions.col(k + 1) + X_k;
+
 	}
 
 

@@ -33,11 +33,16 @@ public:
 	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
 		
 		
+
 		if (this -> N_est == 0){
+
 			arma::vec derivative =  this -> true_dynamics_fun(t,X,args);
 			dxdt = derivative;
 
+
+
 		}
+
 		else{
 
 			if (this -> true_dynamics_fun != nullptr){
@@ -47,10 +52,12 @@ public:
 
 					X.subvec(this -> N_est + this -> N_est * this -> N_est,
 						this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1),args);
+
 				dxdt.subvec(this -> N_est + this -> N_est * this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est + this -> N_true - 1) = derivative;
 
-			
+
+
 			}	
 
 			if (this -> estimate_dynamics_fun != nullptr){

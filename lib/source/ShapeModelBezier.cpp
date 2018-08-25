@@ -1433,7 +1433,7 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 		arma::vec u_1 = arma::cross(u_2,ni);
 		arma::mat::fixed<3,3> P = sigma_sq * (ni * ni.t() + epsilon * (u_1 * u_1.t() + u_2 * u_2.t()));
 
-		std::vector<int> Pi_cor_indices = {i};
+		std::vector<int> Pi_cor_indices = {int(i)};
 		std::vector<arma::mat::fixed<3,3>> Pi_cor = {P};
 
 
@@ -1535,14 +1535,14 @@ void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
 	this -> shape_covariance_sqrt = eig_vec * arma::diagmat(arma::sqrt(eig_val)) * eig_vec.t();
 
-	std::ofstream file("cov_mat.txt");
-	std::ofstream file_sqrt("sqrt.txt");
+	// std::ofstream file("cov_mat.txt");
+	// std::ofstream file_sqrt("sqrt.txt");
 
-	file.precision(15);
-	file_sqrt.precision(15);
+	// file.precision(15);
+	// file_sqrt.precision(15);
 
-	shape_covariance_arma.raw_print(file);
-	this -> shape_covariance_sqrt.raw_print(file_sqrt);
+	// shape_covariance_arma.raw_print(file);
+	// this -> shape_covariance_sqrt.raw_print(file_sqrt);
 
 }
 

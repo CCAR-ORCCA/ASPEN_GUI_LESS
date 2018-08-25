@@ -42,6 +42,9 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> true_shape_model = true_shape_model;
 }
 
+
+
+
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,
 	bool save_shape_model) {
@@ -73,7 +76,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int last_IOD_epoch_index = 0;
 	int cutoff_index = 0;
 	int previous_closure_index = 0;
-
 
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -294,17 +296,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				// 	M_pcs);
 
 
-				// this -> save_estimated_ground_track(
-				// 	"estimated_lat_long_after.txt",
-				// 	times,
-				// 	last_ba_call_index ,
-				// 	time_index, 
-				// 	estimated_state,
-				// 	BN_measured);
-
-
-			// longitude_latitude.save("../output/maps/longitude_latitude_before_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-			// longitude_latitude.save("../output/maps/longitude_latitude_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
 
 			last_ba_call_index = time_index;
 		}
@@ -414,6 +405,207 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 }
 
 
+void ShapeBuilder::run_iod(const arma::vec &times ,
+	const std::vector<arma::vec> & X) {
+
+
+	std::cout << "Running the iod filter" << std::endl;
+
+	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
+	arma::mat longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
+	arma::mat true_longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
+
+	arma::vec lidar_pos = X_S.rows(0,2);
+	arma::vec lidar_vel = X_S.rows(3,5);
+
+	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
+	std::vector<RigidTransform> rigid_transforms;
+	std::vector<arma::vec> mrps_LN;
+	std::vector<arma::mat> BN_measured;
+	std::vector<arma::mat> BN_true;
+	std::vector<arma::mat> HN_true;
+	std::map<int,arma::vec> X_pcs;
+	std::map<int,arma::mat> M_pcs;
+
+	arma::vec iod_guess;
+
+	int last_ba_call_index = 0;
+	int last_IOD_epoch_index = 0;
+	int cutoff_index = 0;
+	int previous_closure_index = 0;
+
+
+	arma::mat M_pc = arma::eye<arma::mat>(3,3);
+	arma::vec X_pc = arma::zeros<arma::vec>(3);
+
+	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
+
+		std::stringstream ss;
+		ss << std::setw(6) << std::setfill('0') << time_index + 1;
+		std::string time_index_formatted = ss.str();
+
+		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
+
+		X_S = X[time_index];
+
+		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
+		
+
+		// Setting the Lidar frame to its new state
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
+		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
+
+		// Setting the small body to its new attitude
+		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(X_S.subvec(6,8));
+
+		// Getting the true observations (noise is added)
+		this -> lidar -> send_flash(this -> true_shape_model,true);
+
+		// The rigid transform best aligning the two point clouds is found
+		// The solution to this first registration will be used to prealign the 
+		// shape model and the source point cloud
+
+		this -> store_point_clouds(time_index);
+
+		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
+			this -> all_registered_pc.push_back(this -> destination_pc);
+			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
+
+			#if IOFLAGS_run_iod
+			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#endif
+
+			// It is legit to use the true attitude state at the first timestep
+			// as it just defines an offset
+			BN_measured.push_back(RBK::mrp_to_dcm(X_S.subvec(6,8)));
+
+			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
+			X_pcs[time_index] = arma::zeros<arma::vec>(3);
+			
+		}
+
+
+		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
+
+			// The point-cloud to point-cloud ICP is used for point cloud registration
+			// This ICP can fail. If so, the update is still applied and will be fixed 
+			// in the bundle adjustment
+			double longitude,latitude;
+			
+			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+
+			// These two align the consecutive point clouds 
+			// in the instrument frame at t_D == t_0
+			M_pc = icp_pc.get_M();
+			X_pc = icp_pc.get_X();
+
+				/****************************************************************************/
+				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
+			if (!this -> filter_arguments-> get_use_ba()){
+
+				M_pc = this -> LB_t0 * dcm_LB.t();
+
+				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
+				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+			}
+				/****************************************************************************/
+				/****************************************************************************/
+
+
+			// The measured BN dcm is saved
+			// using the ICP measurement
+			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
+			BN_measured.push_back( BN_measured.front() * this -> LN_t0.t() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
+
+			// The source pc is registered, using the rigid transform that 
+			// the ICP returned
+			this -> source_pc -> transform(M_pc,X_pc);
+			this -> all_registered_pc.push_back(this -> source_pc);
+
+
+			#if IOFLAGS_run_iod
+			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#endif
+
+
+			M_pcs[time_index] = M_pc;
+			X_pcs[time_index] = X_pc;
+
+			// Bundle adjustment is periodically run
+			// If an overlap with previous measurements is detected
+			// or if the bundle adjustment has not been run for a 
+			// certain number of observations
+			// Should probably replace this by an adaptive threshold based
+			// on a prediction of the alignment error
+
+			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
+			// span N+1 times
+			// The bundle adjustment covers two IOD runs so that the end state of the first run can be stiched
+			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
+			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
+			
+
+
+			if (!this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+				OC::KepState estimated_state = this -> run_IOD_finder(times,
+					last_ba_call_index ,
+					time_index, 
+					mrps_LN,
+					X_pcs,
+					M_pcs);
+
+			}
+
+
+			if (this -> filter_arguments -> get_use_ba() && 
+				time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+
+
+
+				std::cout << " -- Applying BA to successive point clouds\n";
+			std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+
+			this -> save_attitude("measured_before_BA",time_index,BN_measured);
+			this -> save_attitude("true",time_index,BN_true);
+
+			BundleAdjuster bundle_adjuster(0, 
+				time_index,
+				M_pcs,
+				X_pcs,
+				BN_measured,
+				&this -> all_registered_pc,
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				this -> LN_t0,
+				this -> x_t0,
+				mrps_LN,
+				false,
+				previous_closure_index);
+
+			this -> save_attitude("measured_after_BA",time_index,BN_measured);
+
+			std::cout << " -- Running IOD after correction\n";
+
+			OC::KepState estimated_state =  this -> run_IOD_finder(times,
+				last_ba_call_index ,
+				previous_closure_index, 
+				mrps_LN,
+				X_pcs,
+				M_pcs);
+
+
+
+			last_ba_call_index = time_index;
+		}
+
+	}
+
+}
+
+
+}
+
+
 std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() const{
 	return this -> estimated_shape_model;
 }
@@ -448,13 +640,14 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::map<int,arma::mat> M_pcs) const{
 
 
+	std::cout << "Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
 
-				// The IOD Finder is ran before running bundle adjustment
+
+
+	// The IOD Finder is ran before running bundle adjustment
 	std::vector<RigidTransform> rigid_transforms;
 
 	this -> assemble_rigid_transforms_IOD(rigid_transforms,times,t0,tf, mrps_LN,X_pcs,M_pcs);
-
-
 
 	IODFinder iod_finder(&rigid_transforms, 
 		this -> filter_arguments -> get_iod_iterations(), 
@@ -464,6 +657,7 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
+	std::cout << "True state:" << true_particle.t() << std::endl;
 
 	iod_finder.run(arma::zeros<arma::vec>(0),arma::zeros<arma::vec>(0),1);
 	OC::KepState est_kep_state = iod_finder.get_result();
@@ -472,12 +666,12 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	est_particle.subvec(0,5) = est_kep_state.get_state();
 	est_particle(6) = est_kep_state.get_mu();
 
+	std::cout << "Results: " << est_particle.t() << std::endl;
 
 	std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
 	std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
 	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
-
 
 	return est_kep_state;
 
@@ -524,27 +718,8 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 		}
 
-		OC::KepState est_kep_state;
-
-			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
-			// span N+1 times
-			// if (rigid_transforms.size() == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-
+		
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

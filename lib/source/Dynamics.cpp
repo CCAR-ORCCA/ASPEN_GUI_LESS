@@ -131,7 +131,8 @@ arma::vec Dynamics::harmonics_attitude_dxdt_body_frame(double t,const arma::vec 
 
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
 	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_frame(0), acc_body_frame(1), acc_body_frame(2)};
-	
+
+
 	arma::vec dxdt_small_body = Dynamics::true_attitude_dxdt(t, X_small_body, args);
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;
@@ -216,6 +217,8 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial(double t,const arma::vec & 
 	// Body frame position
 	pos = BN * pos;
 
+
+
 	// Gravity acceleration expressed in the body frame
 	arma::vec acc = args.get_sbgat_harmonics() -> GetAcceleration(pos);
 
@@ -284,40 +287,6 @@ arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, co
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 arma::vec Dynamics::estimated_attitude_dxdt(double t, const arma::vec & X, const Args & args) {
 
