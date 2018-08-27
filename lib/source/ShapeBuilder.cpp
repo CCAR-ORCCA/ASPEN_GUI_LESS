@@ -490,23 +490,32 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
-			double longitude,latitude;
 			
 			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
 			M_pc = icp_pc.get_M();
-			X_pc = icp_pc.get_X();
+			X_pc = icp_pc.get_X();	
+			
+
+			arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
+			arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
+			arma::vec X_pc_true = M_pc_true * pos_in_L - this -> LN_t0 * this -> x_t0;
+
+			RBK::dcm_to_mrp(M_pc_true).save("../output/transforms/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			X_pc_true.save("../output/transforms/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			
+			RBK::dcm_to_mrp(M_pc).save("../output/transforms/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			X_pc.save("../output/transforms/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			
 
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
-			if (!this -> filter_arguments-> get_use_ba()){
-
-				M_pc = this -> LB_t0 * dcm_LB.t();
-
-				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
-				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+			if (!this -> filter_arguments-> get_use_icp()){
+				std::cout << "\t Using true rigid transform\n";
+				M_pc = M_pc_true;
+				X_pc = X_pc_true;
 			}
 				/****************************************************************************/
 				/****************************************************************************/
@@ -521,7 +530,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			// the ICP returned
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
-
 
 			#if IOFLAGS_run_iod
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
@@ -546,61 +554,50 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			
 
 
-			if (!this -> filter_arguments -> get_use_ba() && time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-				OC::KepState estimated_state = this -> run_IOD_finder(times,
-					last_ba_call_index ,
-					time_index, 
-					mrps_LN,
-					X_pcs,
-					M_pcs);
 
-			}
-
-
-			if (this -> filter_arguments -> get_use_ba() && 
-				time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-
-
-
-				std::cout << " -- Applying BA to successive point clouds\n";
-			std::vector<std::shared_ptr<PC > > pc_to_ba;
-
-
-			this -> save_attitude("measured_before_BA",time_index,BN_measured);
-			this -> save_attitude("true",time_index,BN_true);
-
-			BundleAdjuster bundle_adjuster(0, 
-				time_index,
-				M_pcs,
-				X_pcs,
-				BN_measured,
-				&this -> all_registered_pc,
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				this -> LN_t0,
-				this -> x_t0,
-				mrps_LN,
-				false,
-				previous_closure_index);
-
-			this -> save_attitude("measured_after_BA",time_index,BN_measured);
-
-			std::cout << " -- Running IOD after correction\n";
-
-			OC::KepState estimated_state =  this -> run_IOD_finder(times,
-				last_ba_call_index ,
-				previous_closure_index, 
-				mrps_LN,
-				X_pcs,
-				M_pcs);
-
-
-
-			last_ba_call_index = time_index;
 		}
 
 	}
+	if (!this -> filter_arguments -> get_use_ba()){
+		OC::KepState estimated_state = this -> run_IOD_finder(times,
+			last_ba_call_index ,
+			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
+			mrps_LN,
+			X_pcs,
+			M_pcs);
+	}
 
-}
+
+	else{
+
+		std::cout << " -- Applying BA to successive point clouds\n";
+		std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+
+		BundleAdjuster bundle_adjuster(0, 
+			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1,
+			M_pcs,
+			X_pcs,
+			BN_measured,
+			&this -> all_registered_pc,
+			this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			this -> LN_t0,
+			this -> x_t0,
+			mrps_LN,
+			true,
+			previous_closure_index,
+			0);
+
+		std::cout << " -- Running IOD after correction\n";
+
+		OC::KepState estimated_state =  this -> run_IOD_finder(times,
+			last_ba_call_index ,
+			previous_closure_index, 
+			mrps_LN,
+			X_pcs,
+			M_pcs);
+
+	}
 
 
 }
@@ -640,8 +637,7 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::map<int,arma::mat> M_pcs) const{
 
 
-	std::cout << "Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
-
+	std::cout << "- Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
 
 
 	// The IOD Finder is ran before running bundle adjustment
@@ -696,7 +692,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	arma::vec X_p_k_old;
 
 
-
 	for (int k = t0_index ; k <=  tf_index; ++ k){
 
 		if (k != 0){
@@ -704,7 +699,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 			M_p_k_old = M_pcs.at(k - 1);
 			X_p_k_old = X_pcs.at(k - 1);
 			
-
 	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 	// from t_k to t_(k-1)
 			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_p_k_old.t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);

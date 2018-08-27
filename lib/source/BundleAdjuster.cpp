@@ -21,15 +21,17 @@ BundleAdjuster::BundleAdjuster(
 	const arma::vec & x_t0,
 	const std::vector<arma::vec> & mrps_LN,
 	bool save_connectivity,
-	int & previous_closure_index){
+	int & previous_closure_index,
+	int h){
 
 
 	this -> all_registered_pc = all_registered_pc_;
 	this -> LN_t0 = LN_t0;
 	this -> x_t0 = x_t0;
 	this -> N_iter = N_iter;
+	this -> h= h;
 
-
+	
 	for (int i = t0; i <= tf; ++i){
 		this -> local_pc_index_to_global_pc_index.push_back(i);
 	}
@@ -60,13 +62,14 @@ BundleAdjuster::BundleAdjuster(
 	// The connectivity matrix is saved
 	if (save_connectivity){
 		this -> save_connectivity();
+		// The rigid transforms are saved after being adjusted
+		for (int i = 1; i < M_pcs.size(); ++i){
+			RBK::dcm_to_mrp(M_pcs[i]).save("../output/transforms/sigma_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
+			X_pcs[i].save("../output/transforms/X_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
+
+		}
 	}
 }
-
-
-
-
-
 
 
 void BundleAdjuster::solve_bundle_adjustment(){
@@ -144,7 +147,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		}	
 
 		
-		std::cout << "- Solving for the deviation" << std::endl;
+		std::cout << "\n- Solving for the deviation" << std::endl;
 
 		// The deviation in all of the rigid transforms is computed
 		Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
@@ -156,7 +159,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		EigVec deviation = chol.solve(Nmat);    
 
 		// It is applied to all of the point clouds (minus the first one)
-		std::cout << "- Applying the deviation" << std::endl;
+		std::cout << "\n- Applying the deviation" << std::endl;
 
 		this -> apply_deviation(deviation);
 		std::cout << "\n- Updating the point pairs" << std::endl;
@@ -204,7 +207,7 @@ void BundleAdjuster::create_pairs( int & previous_closure_index){
 			std::cout << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_label() << " , "<<
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 
-			if (prop > 70){
+			if (prop > 75){
 				std::cout << "Choosing " << " ( " << this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_label() << " , "<<
 
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> get_label() << " ) in loop closure" <<  std::endl;
@@ -582,7 +585,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size() - 1);
 
-#pragma omp parallel for
+// #pragma omp parallel for
 	for (unsigned int i = 1; i < this -> local_pc_index_to_global_pc_index.size(); ++i){
 
 		int x_index = 6 * (i - 1);
@@ -599,6 +602,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 		// The rigid transforms are fixed
 		M_pcs[pc_global_index] = NS_bar * M_pcs[pc_global_index];
 		X_pcs[pc_global_index] += x;
+
 
 		// The small body attitude is fixed
 		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);

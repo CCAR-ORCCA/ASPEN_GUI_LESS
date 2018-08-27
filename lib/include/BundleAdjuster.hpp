@@ -15,8 +15,6 @@ typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 typedef Eigen::Triplet<double> T;
 typedef Eigen::VectorXd EigVec;
 
-class FlyOverMap;
-
 
 class BundleAdjuster {
 
@@ -33,20 +31,9 @@ public:
 		const arma::vec & x_t0,
 		const std::vector<arma::vec> & mrps_LN,
 		bool save_connectivity,
-		int & previous_closure_index);
+		int & previous_closure_index,
+		int h = 5);
 
-
-	// BundleAdjuster(
-	// 	std::vector<arma::mat> & M_pcs,
-	// 	std::vector<arma::vec> & X_pcs,
-	// 	std::vector< std::shared_ptr<PC> > * all_registered_pc_,
-	// 	int N_iter,
-	// 	FlyOverMap * fly_over_map,
-	// 	arma::mat & longitude_latitude,
-	// 	const arma::mat & LN_t0 = arma::eye<arma::mat>(3,3),
-	// 	const arma::vec & x_t0 = arma::zeros<arma::vec>(3),
-	// 	bool save_connectivity = true,
-	// 	bool look_for_closure = true);
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -98,13 +85,11 @@ protected:
 
 	int ground_pc_index = 0;
 
-	FlyOverMap * fly_over_map;
-
 	std::vector<int> local_pc_index_to_global_pc_index;
 
 
 	int closure_index = 0;
-	int h = 5;
+	int h;
 };
 
 

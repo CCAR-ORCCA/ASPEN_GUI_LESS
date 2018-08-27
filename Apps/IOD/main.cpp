@@ -19,7 +19,7 @@
 #include <boost/numeric/odeint.hpp>
 #include <vtkOBJReader.h>
 
-// Various constants that set up the visibility emulator scenario
+// Various constants that set up the scenario
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
 // Lidar settings
@@ -31,25 +31,22 @@
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
 #define INSTRUMENT_FREQUENCY_SHAPE 0.001  // frequency at which point clouds are collected for the shape reconstruction phase
-#define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 5e-2
+#define LOS_NOISE_SD_BASELINE 15e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 100 // shape reconstruction steps
-#define NAVIGATION_TIMES 80 // navigation steps
+#define OBSERVATION_TIMES 50 // shape reconstruction steps
 
 // Shape fitting parameters
-#define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
-#define N_ITER_BUNDLE_ADJUSTMENT 15 // Number of iterations in bundle adjustment
+#define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 30000 // Number of iterations
+#define IOD_RIGID_TRANSFORMS_NUMBER 50 // Number of rigid transforms to be used in each IOD run
+#define IOD_PARTICLES 1000 // Number of particles (10000 seems a minimum)
+#define IOD_ITERATIONS 500 // Number of iterations
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
@@ -57,21 +54,14 @@
 #define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
-// Orbit properties
-#define INCLINATION 90 // Orbit inclination (degrees)
-
-// Navigation parameters
-#define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
-#define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
-#define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
-
 // CHEATS (true: cheat is disabled)
 #define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_ICP true // Whether or not the ICP should be used (if not, uses true rigid transforms)
 
 // Initial state
 #define SMA 1000
 #define E 0.25
-#define I 0.4
+#define I 1.4
 #define RAAN 0.2
 #define PERI_OMEGA 0.3
 #define M0 0.1
@@ -141,7 +131,6 @@ int main() {
 	reader -> SetFileName(path_to_shape.c_str());
 	reader -> Update(); 
 
-
 	vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
 	spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
 	spherical_harmonics -> SetDensity(DENSITY);
@@ -171,7 +160,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.214};
+	arma::vec mrp_0 = {0.,0.,0.};
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
@@ -280,12 +269,12 @@ int main() {
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_points_retained(POINTS_RETAINED);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
 	shape_filter_args.set_use_ba(USE_BA);
 	shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
 	shape_filter_args.set_iod_particles(IOD_PARTICLES);
 	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
+	shape_filter_args.set_use_icp(USE_ICP);
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 

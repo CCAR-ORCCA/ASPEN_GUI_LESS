@@ -3,8 +3,8 @@
 
 #include <armadillo>
 
-#define A_MIN 250
-#define A_MAX 10000
+#define A_MIN 750
+#define A_MAX 2000
 
 #define E_MIN 0.01
 #define E_MAX 0.9999
