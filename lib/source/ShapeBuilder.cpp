@@ -450,7 +450,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
-
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
@@ -475,10 +474,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
-			// It is legit to use the true attitude state at the first timestep
-			// as it just defines an offset
-			BN_measured.push_back(RBK::mrp_to_dcm(X_S.subvec(6,8)));
-
+			
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
@@ -497,6 +493,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			// in the instrument frame at t_D == t_0
 			M_pc = icp_pc.get_M();
 			X_pc = icp_pc.get_X();	
+
+
+
 			
 
 			arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
@@ -512,7 +511,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
-			if (!this -> filter_arguments-> get_use_icp()){
+			if (!this -> filter_arguments -> get_use_icp()){
 				std::cout << "\t Using true rigid transform\n";
 				M_pc = M_pc_true;
 				X_pc = X_pc_true;
@@ -521,10 +520,13 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 				/****************************************************************************/
 
 
-			// The measured BN dcm is saved
-			// using the ICP measurement
-			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
-			BN_measured.push_back( BN_measured.front() * this -> LN_t0.t() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
+
+			// Noise is applied to the rigid transforms
+			X_pc += this -> filter_arguments-> get_rigid_transform_noise_sd("X") * arma::randn(3);
+			M_pc = M_pc * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn(3));
+
+
+
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
@@ -539,32 +541,15 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
 
-			// Bundle adjustment is periodically run
-			// If an overlap with previous measurements is detected
-			// or if the bundle adjustment has not been run for a 
-			// certain number of observations
-			// Should probably replace this by an adaptive threshold based
-			// on a prediction of the alignment error
-
-			// N rigids transforms : (t0 --  t1), (t1 -- t2), ... , (tN-1 -- tN)
-			// span N+1 times
-			// The bundle adjustment covers two IOD runs so that the end state of the first run can be stiched
-			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
-			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 			
-
-
-
 		}
 
 	}
+
+	int final_index;
 	if (!this -> filter_arguments -> get_use_ba()){
-		OC::KepState estimated_state = this -> run_IOD_finder(times,
-			last_ba_call_index ,
-			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
-			mrps_LN,
-			X_pcs,
-			M_pcs);
+		final_index = this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
+		
 	}
 
 
@@ -588,16 +573,30 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			previous_closure_index,
 			0);
 
-		std::cout << " -- Running IOD after correction\n";
 
-		OC::KepState estimated_state =  this -> run_IOD_finder(times,
+		std::cout << " -- Running IOD after correction\n";
+		final_index = previous_closure_index;
+
+
+	}
+
+	int mc_iter = 100;
+	arma::mat results(7,mc_iter);
+	for (int i = 0; i < mc_iter; ++i){
+		OC::KepState estimated_state = this -> run_IOD_finder(times,
 			last_ba_call_index ,
-			previous_closure_index, 
+			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
 			mrps_LN,
 			X_pcs,
 			M_pcs);
 
+		OC::CartState cart_state = estimated_state.convert_to_cart(0);
+		results.submat(0,i,5,i) = cart_state.get_state();
+		results.submat(6,i,6,i) = cart_state.get_mu();
+	
 	}
+
+	results.save("results.txt",arma::raw_ascii);
 
 
 }
@@ -643,7 +642,11 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// The IOD Finder is ran before running bundle adjustment
 	std::vector<RigidTransform> rigid_transforms;
 
-	this -> assemble_rigid_transforms_IOD(rigid_transforms,times,t0,tf, mrps_LN,X_pcs,M_pcs);
+	this -> assemble_rigid_transforms_IOD(rigid_transforms,
+		times,
+		t0,
+		tf,
+		mrps_LN,X_pcs,M_pcs);
 
 	IODFinder iod_finder(&rigid_transforms, 
 		this -> filter_arguments -> get_iod_iterations(), 
@@ -653,7 +656,7 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-	std::cout << "True state:" << true_particle.t() << std::endl;
+	std::cout << "True cartesian state:" << this -> true_kep_state_t0.convert_to_cart(0).get_state().t() << std::endl;
 
 	iod_finder.run(arma::zeros<arma::vec>(0),arma::zeros<arma::vec>(0),1);
 	OC::KepState est_kep_state = iod_finder.get_result();
@@ -669,9 +672,9 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
 	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
 
+	iod_finder.run_batch();
+
 	return est_kep_state;
-
-
 
 }
 
@@ -711,7 +714,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 			rigid_transforms.push_back(rigid_transform);
 
 		}
-
 		
 	}
 
@@ -868,12 +870,7 @@ void ShapeBuilder::save_estimated_ground_track(
 
 	longitude_latitude.save(path,arma::raw_ascii);
 
-
 }
-
-
-
-
 
 void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude){
 
@@ -1002,7 +999,6 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 	// The estimated shape model is finally initialized
 	this -> estimated_shape_model = a_priori_bezier;
 	this -> estimated_shape_model -> update_mass_properties();
-
 
 }
 

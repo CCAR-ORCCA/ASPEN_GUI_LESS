@@ -469,6 +469,14 @@ public:
 		return this -> velocity_final;
 	}
 
+	double get_rigid_transform_noise_sd(std::string component) const{
+		return this -> rigid_transforms_noise_sd.at(component);
+	}
+
+	void set_rigid_transform_noise_sd(std::string component,double value){
+		this -> rigid_transforms_noise_sd[component] = value;
+	}
+
 
 protected:
 
@@ -512,6 +520,8 @@ protected:
 	arma::vec omega_EN_final;
 	arma::vec position_final;
 	arma::vec velocity_final;
+
+	std::map<std::string,double> rigid_transforms_noise_sd;
 
 
 

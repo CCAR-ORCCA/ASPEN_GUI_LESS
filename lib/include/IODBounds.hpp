@@ -4,7 +4,7 @@
 #include <armadillo>
 
 #define A_MIN 750
-#define A_MAX 2000
+#define A_MAX 1500
 
 #define E_MIN 0.01
 #define E_MAX 0.9999
@@ -21,7 +21,7 @@
 #define M0_MIN 0 
 #define M0_MAX 2 * arma::datum::pi  
 
-#define MU_MIN 0.25 
-#define MU_MAX 4 
+#define MU_MIN 1
+#define MU_MAX 3 
 
 #endif

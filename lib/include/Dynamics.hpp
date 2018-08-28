@@ -18,6 +18,9 @@ namespace Dynamics{
 	arma::vec point_mass_dxdt_odeint(double t, const arma::vec & x, const Args & args) ;
 	arma::mat point_mass_jac_odeint(double t, const arma::vec & x, const Args & args) ;
 
+	arma::vec point_mass_mu_dxdt_odeint(double t, const arma::vec & x, const Args & args) ;
+	arma::mat point_mass_mu_jac_odeint(double t, const arma::vec & x, const Args & args) ;
+
 	arma::vec joint_sb_spacecraft_body_frame_dyn(double t, arma::vec  X, Args * args);
 
 	arma::vec point_mass_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args);

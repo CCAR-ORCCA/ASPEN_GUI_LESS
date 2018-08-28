@@ -41,15 +41,28 @@ public:
 
 
 
-	
+
+
+	void run_batch();
 
 
 
-
-	
 
 
 protected:
+
+
+
+	static void build_normal_equations(
+		arma::mat & info_mat,
+		arma::vec & normal_mat,
+		double & residuals,
+		const std::vector<RigidTransform> * rigid_transforms,
+		const std::vector<arma::mat> & rigid_transforms_covariances,
+		arma::vec & apriori_state,
+		std::string dynamics_name);
+
+
 
 	static arma::mat::fixed<6,12> compute_dIprime_k_dVtilde_k(
 		const arma::mat::fixed<3,3> & M_k_tilde_bar,
@@ -73,8 +86,9 @@ protected:
 		const arma::vec::fixed<3> CL_kp1_bar);
 
 
-	static arma::mat compute_H_k(const arma::mat & Phi_k, const arma::mat::fixed<3,3> & M_kp1_tilde_bar);
-
+	static arma::mat compute_H_k(const arma::mat & Phi_k, 
+		const arma::mat & Phi_kp1, 
+		const arma::mat::fixed<3,3> & M_kp1_tilde_bar);
 
 	static arma::vec::fixed<3> compute_y_k(
 		const arma::vec::fixed<3> & CL_k_bar,
@@ -90,20 +104,17 @@ protected:
 
 
 
-
-
-
-
-
-
-
-
+	static void compute_stms(const arma::vec::fixed<7> & X_hat,
+	const std::vector<RigidTransform> * rigid_transforms,
+	std::vector<arma::mat> & stms);
 
 
 
 	int particles;
 	int N_iter;
 	std::vector<RigidTransform> * rigid_transforms;
+	std::vector<arma::mat> rigid_transforms_covariances;
+
 	OC::KepState keplerian_state_at_epoch;
 
 

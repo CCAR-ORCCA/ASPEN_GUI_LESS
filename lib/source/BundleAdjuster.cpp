@@ -344,6 +344,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
+
 		double y_ki = ICP::compute_normal_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
 		arma::mat n = point_pairs[i].second -> get_normal();
 
@@ -360,21 +361,19 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		else if(point_cloud_pair.S_k != 0) {
 			H_ki.subvec(0,2) = n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(point_pairs[i].first -> get_point());
-
 		}
 
 		else{
 			H_ki.subvec(0,2) = - n.t() * dcm_D.t();
 			H_ki.subvec(3,5) = 4 * ( n.t() * RBK::tilde(point_pairs[i].second -> get_point()) 
 				- (dcm_S * point_pairs[i].first -> get_point() + x_S - dcm_D * point_pairs[i].second -> get_point() - x_D).t() * dcm_D * RBK::tilde(n));
-
 		}
 
 		// epsilon = y - Hx !!!
 		H_ki = - H_ki;
 
-		Lambda_k += H_ki.t() * H_ki;
-		N_k += H_ki.t() * y_ki;
+		Lambda_k +=  H_ki.t() * H_ki;
+		N_k +=  H_ki.t() * y_ki;
 
 	}
 

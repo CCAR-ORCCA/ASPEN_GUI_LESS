@@ -16,11 +16,40 @@ arma::vec Dynamics::point_mass_dxdt_odeint(double t, const arma::vec & x, const 
 	arma::vec pos_inertial = x . subvec(0, 2);
 	arma::vec acc_inertial = args.get_dyn_analyses() -> point_mass_acceleration(pos_inertial , args . get_mass());
 
-	arma::vec dxdt = { x(3), x(4), x(5), acc_inertial(0), acc_inertial(1), acc_inertial(2)};
+	arma::vec dxdt = {x(3), x(4), x(5), acc_inertial(0), acc_inertial(1), acc_inertial(2)};
 
 	return dxdt;
 
 }
+
+
+arma::vec Dynamics::point_mass_mu_dxdt_odeint(double t, const arma::vec & x, const Args & args) {
+	
+	arma::vec r = x . rows(0, 2);
+
+	arma::vec dxdt(7);
+	dxdt.rows(0,2) = x.rows(3,5);
+	dxdt.rows(3,5) = - args.get_mu()/arma::dot(r,r) * arma::normalise(r);
+	dxdt(6) = 0;
+
+	return dxdt;
+
+}
+
+arma::mat Dynamics::point_mass_mu_jac_odeint(double t, const arma::vec & x, const Args & args) {
+
+	arma::mat A = arma::zeros<arma::mat>(7,7);
+	arma::vec r = x . subvec(0, 2);
+	A.submat(0,3,2,5) = arma::eye<arma::mat>(3,3);
+	A.submat(3,0,5,2) = args.get_mu() / std::pow(arma::dot(r,r),3./2.) * (3 * r * r.t()/arma::dot(r,r) - arma::eye<arma::mat>(3,3));
+
+	A.submat(3,6,5,6) = - arma::normalise(r)/ arma::dot(r,r);
+
+	return A ;
+
+}
+
+
 
 arma::mat Dynamics::point_mass_jac_odeint(double t, const arma::vec & x, const Args & args) {
 

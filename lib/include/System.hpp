@@ -3,7 +3,7 @@
 
 #include <armadillo>
 #include "FixVectorSize.hpp"
-
+#include "Args.hpp"
 class System {
 public:
 
@@ -32,14 +32,10 @@ public:
 
 	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
 		
-		
-
 		if (this -> N_est == 0){
 
 			arma::vec derivative =  this -> true_dynamics_fun(t,X,args);
 			dxdt = derivative;
-
-
 
 		}
 
@@ -62,7 +58,7 @@ public:
 
 			if (this -> estimate_dynamics_fun != nullptr){
 
-				arma::vec X_spc_estimated = arma::vec(12);
+				arma::vec X_spc_estimated = arma::vec(this -> N_est);
 
 				for (unsigned int i = 0; i < X_spc_estimated.n_rows; ++i){
 					X_spc_estimated(i) = X(i);
@@ -87,6 +83,9 @@ public:
 
 		}
 	}
+
+
+
 
 protected:
 	const unsigned int N_est;

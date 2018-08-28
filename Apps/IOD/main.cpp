@@ -30,23 +30,23 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.001  // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0005 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 15e-2
+#define LOS_NOISE_SD_BASELINE 50e-2
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 50 // shape reconstruction steps
+#define OBSERVATION_TIMES 60 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 50 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 1000 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 500 // Number of iterations
+#define IOD_RIGID_TRANSFORMS_NUMBER 60 // Number of rigid transforms to be used in each IOD run
+#define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
+#define IOD_ITERATIONS 100 // Number of iterations
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
@@ -54,9 +54,13 @@
 #define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
-// CHEATS (true: cheat is disabled)
-#define USE_BA true // Whether or not the bundle adjustment should be used
-#define USE_ICP true // Whether or not the ICP should be used (if not, uses true rigid transforms)
+
+// Rigid transform artificial noise
+#define RIGID_TRANSFORM_X_SD 0.1
+#define RIGID_TRANSFORM_SIGMA_SD 0.0
+
+#define USE_BA false // Whether or not the bundle adjustment should be used
+#define USE_ICP false // Whether or not the ICP should be used (if not, uses true rigid transforms)
 
 // Initial state
 #define SMA 1000
@@ -64,7 +68,7 @@
 #define I 1.4
 #define RAAN 0.2
 #define PERI_OMEGA 0.3
-#define M0 0.1
+#define M0 0.
 ///////////////////////////////////////////
 
 int main() {
@@ -275,6 +279,9 @@ int main() {
 	shape_filter_args.set_iod_particles(IOD_PARTICLES);
 	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
 	shape_filter_args.set_use_icp(USE_ICP);
+	shape_filter_args.set_rigid_transform_noise_sd("X",RIGID_TRANSFORM_X_SD);
+	shape_filter_args.set_rigid_transform_noise_sd("sigma",RIGID_TRANSFORM_SIGMA_SD);
+
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
