@@ -579,7 +579,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	arma::mat results(7,mc_iter);
 	boost::progress_display progress(mc_iter);
 	
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for (int i = 0; i < mc_iter; ++i){
 		// std::cout << "\t ## MC iter " << i + 1 << " / " << mc_iter << std::endl;
 
@@ -625,7 +625,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	for (unsigned int i = 0; i < results.n_cols; ++i){
 		cov_mc +=  (results.col(i) - results_mean) * (results.col(i) - results_mean).t();
-		
 	}
 
 	cov_mc *= 1./(results.n_cols-1);
@@ -868,18 +867,19 @@ OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 
 
+
+
+
+
 void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
-	const std::map<int,arma::vec> &  X_pcs,
-	const std::map<int,arma::mat> &  M_pcs){
+	const std::map<int,arma::vec> & X_pcs,
+	const std::map<int,arma::mat> & M_pcs){
 
 	rigid_transforms.clear();
-
-	arma::mat M_p_k_old;
-	arma::vec X_p_k_old;
 
 
 	for (int k = t0_index ; k <=  tf_index; ++ k){
@@ -915,7 +915,6 @@ void ShapeBuilder::compute_rigid_transform_covariances(
 	const std::map<int,arma::vec> &  X_pcs,
 	const std::map<int,arma::mat> &  M_pcs) const{
 
-
 	rigid_transforms_covariances.clear();
 
 	for (int k = 1 ; k < X_pcs.size(); ++ k){
@@ -923,7 +922,6 @@ void ShapeBuilder::compute_rigid_transform_covariances(
 		if (k == 1){
 
 			arma::mat P_Vk = arma::zeros<arma::mat>(6,6);
-
 
 			P_Vk.submat(0,0,2,2) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
 			P_Vk.submat(3,3,5,5) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
@@ -964,7 +962,6 @@ void ShapeBuilder::compute_rigid_transform_covariances(
 
 		}
 
-		
 
 		
 

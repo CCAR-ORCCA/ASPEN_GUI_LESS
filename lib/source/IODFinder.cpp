@@ -267,6 +267,8 @@ arma::mat IODFinder::compute_dIprime_k_dVtilde_k(
 	const arma::mat::fixed<3,3> & LN_k,
 	const arma::mat::fixed<3,3> & LN_km1){
 
+
+
 	arma::vec::fixed<3> a_k_bar = M_km1_tilde_bar.t() * (X_k_tilde_bar - X_km1_tilde_bar);
 	arma::mat::fixed<3,3> Uk_bar = -4 * RBK::tilde(a_k_bar);
 
@@ -325,7 +327,7 @@ arma::mat::fixed<3,6> IODFinder::compute_dsigmatilde_kdZ_k(
 arma::mat::fixed<3,6> IODFinder::compute_J_k(const arma::mat::fixed<3,3> & M_kp1_tilde_bar,
 	const arma::vec::fixed<3> CL_kp1_bar){
 
-	arma::mat::fixed<3,6> J;
+	arma::mat::fixed<3,6> J ;
 
 	J.submat(0,0,2,2) = - arma::eye<arma::mat>(3,3);
 	J.submat(0,3,2,5) = 4 * M_kp1_tilde_bar * RBK::tilde(CL_kp1_bar);
@@ -399,6 +401,7 @@ void IODFinder::build_normal_equations(
 
 
 	for (int k = 0; k < rigid_transforms -> size(); ++ k){
+
 
 		auto M_kp1_prime_bar = rigid_transforms -> at(k).M_k;
 		auto X_kp1_prime_bar = rigid_transforms -> at(k).X_k;
@@ -475,8 +478,10 @@ void IODFinder::run_batch(arma::vec & state,
 		
 		// std::cout << "\t\t Keplerian state at epoch : " << std::endl;
 		// std::cout << new_kepstate.get_state() << std::endl;
-		
+
 	}
+
+	
 
 	state = apriori_state;
 	cov = arma::inv(info_mat);
@@ -654,7 +659,102 @@ void IODFinder::debug_stms(const std::vector<RigidTransform> * rigid_transforms)
 
 
 
+void IODFinder::seq_transform_from_epoch_transform(int k, 
+	RigidTransform & seq_transform_k,
+	const RigidTransform & epoch_transform_k,
+	const RigidTransform & epoch_transform_km1, 
+	const std::vector<arma::vec> & mrps_LN){
 
+	seq_transform_k.t_k = epoch_transform_k.t_k;
+
+	seq_transform_k.M_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * epoch_transform_km1.M_k.t() * epoch_transform_k.M_k * RBK::mrp_to_dcm(mrps_LN[k]);
+	seq_transform_k.X_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * epoch_transform_km1.M_k.t() * (epoch_transform_k.X_k - epoch_transform_km1.X_k);
+
+
+}
+
+
+
+
+
+void IODFinder::debug_rigid_transforms(){
+
+
+
+	RigidTransform epoch_transform_k_nom;
+	RigidTransform epoch_transform_km1_nom;
+
+	
+	RigidTransform epoch_transform_k_perp;
+	RigidTransform epoch_transform_km1_perp;
+
+	RigidTransform seq_transform_k_nom;
+	RigidTransform seq_transform_k_perp;
+
+
+	std::vector<arma::vec> mrps_LN;
+
+	mrps_LN.push_back(arma::randn<arma::vec>(3));
+	mrps_LN.push_back(arma::randn<arma::vec>(3));
+
+	arma::vec mrp_k = {0.4,0.2,0.1};
+	arma::vec mrp_km1 = {-0.4,-0.2,0.1};
+
+	epoch_transform_k_nom.X_k = {1,0,0};
+	epoch_transform_k_nom.M_k = RBK::mrp_to_dcm(mrp_k);
+
+	epoch_transform_km1_nom.X_k = {-1,0.5,0};
+	epoch_transform_km1_nom.M_k = RBK::mrp_to_dcm(mrp_k);
+
+
+	IODFinder::seq_transform_from_epoch_transform(1, 
+		seq_transform_k_nom,
+		epoch_transform_k_nom,
+		epoch_transform_km1_nom, 
+		mrps_LN);
+
+	arma::vec dX_epoch_k = 0.001 * epoch_transform_k_nom.X_k;
+	arma::vec dX_epoch_km1 = 0.001 * epoch_transform_km1_nom.X_k;
+
+	arma::vec dmrp_epoch_k = 0.0 * mrp_k;
+	arma::vec dmrp_epoch_km1 = 0.0 * mrp_km1;
+
+	epoch_transform_k_perp.X_k = epoch_transform_k_nom.X_k +  dX_epoch_k;
+	epoch_transform_km1_perp.X_k = epoch_transform_km1_nom.X_k + dX_epoch_km1;
+
+	epoch_transform_k_perp.M_k = epoch_transform_k_nom.M_k *RBK::mrp_to_dcm(dmrp_epoch_k) ;
+	epoch_transform_km1_perp.M_k = epoch_transform_km1_nom.M_k * RBK::mrp_to_dcm(dmrp_epoch_km1) ;
+
+
+	IODFinder::seq_transform_from_epoch_transform(1, 
+		seq_transform_k_perp,
+		epoch_transform_k_perp,
+		epoch_transform_km1_perp, 
+		mrps_LN);
+
+	arma::vec dX_seq = seq_transform_k_perp.X_k - seq_transform_k_nom.X_k;
+
+
+	arma::mat partial = IODFinder::compute_dIprime_k_dVtilde_k(
+		epoch_transform_k_nom.M_k,
+		epoch_transform_k_nom.X_k,
+		epoch_transform_km1_nom.M_k,
+		epoch_transform_km1_nom.X_k,
+		RBK::mrp_to_dcm(mrps_LN[1]),
+		RBK::mrp_to_dcm(mrps_LN[0]));
+
+
+	arma::vec dV = arma::zeros<arma::vec>(12);
+
+	dV.subvec(0,2) = dX_epoch_k;
+	dV.subvec(3,5) = dX_epoch_km1;
+
+	std::cout << dX_seq.t() << std::endl;
+	std::cout << (partial * dV).t() << std::endl;
+
+	throw;
+
+}
 
 
 

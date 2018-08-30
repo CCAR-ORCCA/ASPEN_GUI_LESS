@@ -49,6 +49,7 @@ public:
 
 	void run_batch(arma::vec & state,arma::mat & cov);
 
+	static void debug_rigid_transforms();
 
 
 	static arma::mat compute_dIprime_k_dVtilde_k(
@@ -61,6 +62,12 @@ public:
 
 
 	void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
+
+
+	static void seq_transform_from_epoch_transform(int k, RigidTransform & seq_transform_k,
+		const RigidTransform & epoch_transform_k,
+		const RigidTransform & epoch_transform_km1, 
+		const std::vector<arma::vec> & mrps_LN);
 
 
 protected:

@@ -9,7 +9,7 @@
 #include <System.hpp>
 #include <ShapeBuilderArguments.hpp>
 #include <PC.hpp>
-
+#include "IODFinder.hpp"
 
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
@@ -73,6 +73,11 @@
 int main() {
 
 	arma::arma_rng::set_seed(0);
+
+
+
+
+
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -282,7 +287,6 @@ int main() {
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_rigid_transform_noise_sd("X",RIGID_TRANSFORM_X_SD);
 	shape_filter_args.set_rigid_transform_noise_sd("sigma",RIGID_TRANSFORM_SIGMA_SD);
-
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
