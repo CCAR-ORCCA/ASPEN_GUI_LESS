@@ -29,7 +29,7 @@ arma::vec Dynamics::point_mass_mu_dxdt_odeint(double t, const arma::vec & x, con
 
 	arma::vec dxdt(7);
 	dxdt.rows(0,2) = x.rows(3,5);
-	dxdt.rows(3,5) = - args.get_mu()/arma::dot(r,r) * arma::normalise(r);
+	dxdt.rows(3,5) = - x(6)/arma::dot(r,r) * arma::normalise(r);
 	dxdt(6) = 0;
 
 	return dxdt;
@@ -41,7 +41,7 @@ arma::mat Dynamics::point_mass_mu_jac_odeint(double t, const arma::vec & x, cons
 	arma::mat A = arma::zeros<arma::mat>(7,7);
 	arma::vec r = x . subvec(0, 2);
 	A.submat(0,3,2,5) = arma::eye<arma::mat>(3,3);
-	A.submat(3,0,5,2) = args.get_mu() / std::pow(arma::dot(r,r),3./2.) * (3 * r * r.t()/arma::dot(r,r) - arma::eye<arma::mat>(3,3));
+	A.submat(3,0,5,2) = x(6) / std::pow(arma::dot(r,r),3./2.) * (3 * r * r.t()/arma::dot(r,r) - arma::eye<arma::mat>(3,3));
 
 	A.submat(3,6,5,6) = - arma::normalise(r)/ arma::dot(r,r);
 

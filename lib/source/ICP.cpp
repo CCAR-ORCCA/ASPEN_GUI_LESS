@@ -5,10 +5,15 @@ ICP::ICP(std::shared_ptr<PC> pc_destination,
 	std::shared_ptr<PC> pc_source,
 	arma::mat dcm_0,
 	arma::vec X_0,
-	bool verbose) {
+	bool verbose,
+	const arma::mat & M_save,
+	const arma::vec & X_save) {
 
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
+
+	this -> M_save = M_save;
+	this -> X_save = X_save;
 	
 	auto start = std::chrono::system_clock::now();
 
@@ -270,6 +275,10 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			}
 
 			else if (iter == iterations_max - 1) {
+
+
+				this -> pc_source -> save("../output/pc/crash.obj",this -> M_save * RBK::mrp_to_dcm(mrp),this -> M_save * x + this -> X_save);
+
 
 				throw ICPException();
 

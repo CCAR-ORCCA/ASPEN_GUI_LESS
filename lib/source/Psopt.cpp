@@ -31,9 +31,6 @@ T args,const arma::vec & guess) {
 	this -> guess = guess;
 }
 
-
-
-
 template<class T> void Psopt<T>::run(
 const bool &  maximize,
 const int &  verbose_level,
@@ -72,16 +69,91 @@ const int  & convergence_interval) {
 
 
 	// The population is randomly generated
+	// If a guess is available, the non-nan dimensions (indeed specified) will be 
+	// normally sampled, centered at this guess
 	for (int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
 		this -> population.col(state_index) = (this -> upper_bounds(state_index)
 			- this -> lower_bounds(state_index)) * arma::randu<arma::vec>(this -> population_size)
 		+ this -> lower_bounds(state_index);
 	}
 
-	// If a guess is available, one particle is set to it
-	if (this -> guess.n_rows != 0){
-		this -> population.row(0) = guess.t();
+	if (this -> guess.n_rows > 0){
+		// 3-sigmas 
+		arma::vec sd_vec = (this -> upper_bounds - this -> lower_bounds)/6;
+
+		for (int state_index = 0; state_index < this -> lower_bounds.n_rows; ++state_index) {
+
+			bool wrap;
+			bool clamp;
+
+			try  {
+				std::string condition = boundary_conditions.at(state_index);
+				wrap = ("w" == condition);
+				clamp = ("c" == condition);
+			} 
+			catch(std::out_of_range & e){
+
+					// if no boundary condition was defined for this state, the PSO will fall back to the default
+					// clamping condition
+				clamp = true;
+				wrap = false;
+			}
+
+
+			if (!std::isnan(this -> guess(state_index))){
+				for (int particle = 0; particle < this -> population_size; ++particle){
+					arma::vec randn_vec = arma::randn(1);
+					
+					this -> population(particle,state_index) = this -> guess(state_index) + sd_vec(state_index) * randn_vec(0);
+
+					// Boundary check
+					if (this -> population(particle,state_index) > this -> upper_bounds(state_index)) {
+
+					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
+						if(wrap){
+							this -> population(particle,state_index) = this -> lower_bounds(state_index); 
+
+						}
+						else if (clamp){
+					// else the state is clamped on the boundary using the 
+					// distance to boundary to get within the search interval
+							double distance_to_boundary_inside = this -> population(particle,state_index) - this -> upper_bounds(state_index);
+							this -> population(particle,state_index) = this -> population(particle,state_index) - distance_to_boundary_inside;
+
+						
+						}
+
+					}
+
+					else if (this -> population(particle,state_index) < this -> lower_bounds(state_index)) {
+
+					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
+						if(wrap){
+							this -> population(particle,state_index) = this -> upper_bounds(state_index); 
+
+						}
+						else if (clamp){
+					// else the state is clamped on the boundary using the
+					// distance to boundary to get within the search interval
+							double distance_to_boundary_inside = this -> lower_bounds(state_index) - this -> population(particle,state_index);
+
+							this -> population(particle,state_index) = this -> population(particle,state_index) + distance_to_boundary_inside;
+
+						
+						}
+
+					}
+
+
+
+				}
+
+			}
+
+		}
+
 	}
+
 
 
 	// The velocities are generated
@@ -141,43 +213,43 @@ const int  & convergence_interval) {
 
 
 				// Boundary check
-				if (this -> population.row(particle)(state_index) > this -> upper_bounds(state_index)) {
+				if (this -> population(particle,state_index) > this -> upper_bounds(state_index)) {
 
 					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
 					if(wrap){
-						this -> population.row(particle)(state_index) = this -> lower_bounds(state_index); 
-						velocities.row(particle)(state_index) = 0;
+						this -> population(particle,state_index) = this -> lower_bounds(state_index); 
+						velocities(particle,state_index) = 0;
 
 					}
 					else if (clamp){
 					// else the state is clamped on the boundary using the 
 					// distance to boundary to get within the search interval
-						double distance_to_boundary_inside = this -> population.row(particle)(state_index) - this -> upper_bounds(state_index);
-						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) - distance_to_boundary_inside;
+						double distance_to_boundary_inside = this -> population(particle,state_index) - this -> upper_bounds(state_index);
+						this -> population(particle,state_index) = this -> population(particle,state_index) - distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						velocities.row(particle)(state_index) *= -1;
+						velocities(particle,state_index) *= -1;
 					}
 					
 				}
 
-				else if (this -> population.row(particle)(state_index) < this -> lower_bounds(state_index)) {
+				else if (this -> population(particle,state_index) < this -> lower_bounds(state_index)) {
 					
 					// if this state is flagged as wrappable (think of an angle in [0,2pi]), then it is set to the other bound 
 					if(wrap){
-						this -> population.row(particle)(state_index) = this -> upper_bounds(state_index); 
-						velocities.row(particle)(state_index) = 0;
+						this -> population(particle,state_index) = this -> upper_bounds(state_index); 
+						velocities(particle,state_index) = 0;
 						
 					}
 					else if (clamp){
 					// else the state is clamped on the boundary using the
 					// distance to boundary to get within the search interval
-						double distance_to_boundary_inside = this -> lower_bounds(state_index) - this -> population.row(particle)(state_index);
+						double distance_to_boundary_inside = this -> lower_bounds(state_index) - this -> population(particle,state_index);
 
-						this -> population.row(particle)(state_index) = this -> population.row(particle)(state_index) + distance_to_boundary_inside;
+						this -> population(particle,state_index) = this -> population(particle,state_index) + distance_to_boundary_inside;
 
 						// The velocity of the particle is mirrored
-						velocities.row(particle)(state_index) *= -1;
+						velocities(particle,state_index) *= -1;
 					}
 
 				}

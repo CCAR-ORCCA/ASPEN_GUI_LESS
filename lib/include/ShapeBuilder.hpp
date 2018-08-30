@@ -82,11 +82,11 @@ public:
 
 
 
-		std::shared_ptr<ShapeModelBezier> get_estimated_shape_model() const;
+	std::shared_ptr<ShapeModelBezier> get_estimated_shape_model() const;
 
 
-		arma::vec get_final_measured_attitude() const;
-		arma::vec get_final_measured_omega() const;
+	arma::vec get_final_measured_attitude() const;
+	arma::vec get_final_measured_omega() const;
 
 
 
@@ -97,14 +97,14 @@ public:
 	@param normal_mat Normal matrix
 	@return x Solution
 	*/
-		arma::vec cholesky(arma::mat & info_mat, arma::mat & normal_mat) const;
+	arma::vec cholesky(arma::mat & info_mat, arma::mat & normal_mat) const;
 
 	/**
 	Moves the latest measurements to the corresponding point clouds
 	and stores them to file
 	@param t time
 	*/
-		void store_point_clouds(int index,const arma::mat & M_pc = arma::eye<arma::mat>(3,3),const arma::mat & X_pc = arma::zeros<arma::vec>(3));
+	void store_point_clouds(int index,const arma::mat & M_pc = arma::eye<arma::mat>(3,3),const arma::mat & X_pc = arma::zeros<arma::vec>(3));
 
 	/**
 	Fits the shape using the prescribed point cloud
@@ -113,15 +113,20 @@ public:
 	@param DS DCM aligning the provided point cloud with the shape
 	@param X_DS translation vector aligning the provided point cloud with the shape
 	*/
-		void fit_shape(PC * pc, 
-			unsigned int N_iter ,
-			double J ,
-			const arma::mat & DS , 
-			const arma::vec & X_DS );
+	void fit_shape(PC * pc, 
+		unsigned int N_iter ,
+		double J ,
+		const arma::mat & DS , 
+		const arma::vec & X_DS );
 
 
 
-	protected:
+protected:
+
+
+
+	arma::vec get_center_collected_pcs(int first_pc_index,int last_pc_index) const;
+
 
 
 
@@ -134,27 +139,27 @@ public:
 	@param lidar_pos reference to relative position of the spacecraft w/r to the barycentric B frame
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
-		void get_new_states(const arma::vec & X_S, 
-			arma::mat & dcm_LB, 
-			arma::vec & lidar_pos,
-			arma::vec & lidar_vel,
-			std::vector<arma::vec> & mrps_LN,
-			std::vector<arma::mat> & BN_true,
-			std::vector<arma::mat> & HN_true);
+	void get_new_states(const arma::vec & X_S, 
+		arma::mat & dcm_LB, 
+		arma::vec & lidar_pos,
+		arma::vec & lidar_vel,
+		std::vector<arma::vec> & mrps_LN,
+		std::vector<arma::mat> & BN_true,
+		std::vector<arma::mat> & HN_true);
 
 
 
-		void save_true_ground_track(const std::vector<arma::mat> & BN_true,
-			const std::vector<arma::mat> & HN_true) const;
+	void save_true_ground_track(const std::vector<arma::mat> & BN_true,
+		const std::vector<arma::mat> & HN_true) const;
 
 
-		void save_estimated_ground_track(
-			std::string path,
-			const arma::vec & times,
-			const int t0 ,
-			const int tf, 
-			const OC::KepState & est_kep_state,
-			const std::vector<arma::mat> BN_measured) const;
+	void save_estimated_ground_track(
+		std::string path,
+		const arma::vec & times,
+		const int t0 ,
+		const int tf, 
+		const OC::KepState & est_kep_state,
+		const std::vector<arma::mat> BN_measured) const;
 
 	/**
 	Assembles the rigid transforms needed to evaluate the IOD cost function
@@ -167,13 +172,24 @@ public:
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 
 	*/
-		void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
-			const arma::vec & times, 
-			const int t0_index,
-			const int tf_index,
-			const std::vector<arma::vec>  & mrps_LN,
-			const std::map<int,arma::vec> &  X_pcs,
-			const std::map<int,arma::mat> &  M_pcs) const;
+	static void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
+		const arma::vec & times, 
+		const int t0_index,
+		const int tf_index,
+		const std::vector<arma::vec>  & mrps_LN,
+		const std::map<int,arma::vec> &  X_pcs,
+		const std::map<int,arma::mat> &  M_pcs);
+
+
+
+	void compute_rigid_transform_covariances(std::vector<arma::mat> & rigid_transforms_covariances,
+		const arma::vec & times, 
+		const int t0_index,
+		const int tf_index,
+		const std::vector<arma::vec>  & mrps_LN,
+		const std::map<int,arma::vec> &  X_pcs,
+		const std::map<int,arma::mat> &  M_pcs) const ;
+
 
 
 	/**
@@ -185,12 +201,14 @@ public:
 	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 	*/
-		OC::KepState run_IOD_finder(const arma::vec & times,
-			const int t0 ,
-			const int tf, 
-			const std::vector<arma::vec> & mrps_LN,
-			const std::map<int,arma::vec> & X_pcs,
-			const std::map<int,arma::mat> M_pcs) const;
+	OC::KepState run_IOD_finder(arma::vec & state,
+		arma::mat & cov,
+		const arma::vec & times,
+		const int t0 ,
+		const int tf, 
+		const std::vector<arma::vec> & mrps_LN,
+		const std::map<int,arma::vec> & X_pcs,
+		const std::map<int,arma::mat> M_pcs) const;
 
 
 
@@ -209,21 +227,21 @@ public:
 	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
 	@param LN_t0 [LN] DCM at the time observations are starting
 	*/
-		void perform_measurements_pc(const arma::vec & X_S, 
-			double time, 
-			const arma::mat & NE_tD_EN_tS_pc,
-			const arma::vec & X_relative_from_pc,
-			const arma::mat & LN_t_S, 
-			const arma::mat & LN_t_D, 
-			const arma::vec & mrp_BN,
-			const arma::vec & X_relative_true ,
-			const arma::mat & offset_DCM,
-			const arma::vec & OL_t0,
-			const arma::mat & LN_t0);
+	void perform_measurements_pc(const arma::vec & X_S, 
+		double time, 
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_relative_from_pc,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true ,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0);
 
 
 
-		void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
+	void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
 
 
 	/**
@@ -231,9 +249,9 @@ public:
 	@param M_pc dcm matrix from the ICP registering the source point cloud to the destination point cloud
 	@param X_pc translation vector from the ICP registering the source point cloud to the destination point cloud
 	*/
-		void concatenate_point_clouds(unsigned int index);
+	void concatenate_point_clouds(unsigned int index);
 
-		void initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude);
+	void initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
@@ -250,46 +268,45 @@ public:
 	@param OL_t0 position of spacecraft in the body frame when measurements start to be accumulated
 	@param LN_t0 [LN] DCM at the time observations are starting
 	*/
-		void perform_measurements_shape(
-			const arma::vec & X_S, 
-			double time, 
-			const arma::mat & M,
-			const arma::mat & NE_tD_EN_tS_pc,
-			const arma::vec & X_pc,
-			const arma::mat & LN_t_S, 
-			const arma::mat & LN_t_D, 
-			const arma::vec & mrp_BN,
-			const arma::vec & X_relative_true,
-			const arma::mat & offset_DCM,
-			const arma::vec & OL_t0,
-			const arma::mat & LN_t0);
+	void perform_measurements_shape(
+		const arma::vec & X_S, 
+		double time, 
+		const arma::mat & M,
+		const arma::mat & NE_tD_EN_tS_pc,
+		const arma::vec & X_pc,
+		const arma::mat & LN_t_S, 
+		const arma::mat & LN_t_D, 
+		const arma::vec & mrp_BN,
+		const arma::vec & X_relative_true,
+		const arma::mat & offset_DCM,
+		const arma::vec & OL_t0,
+		const arma::mat & LN_t0);
 
 
-		ShapeBuilderArguments * filter_arguments;
-		FrameGraph * frame_graph;
-		Lidar * lidar;
-		ShapeModelTri * true_shape_model;
-		std::shared_ptr<ShapeModelBezier> estimated_shape_model;
+	ShapeBuilderArguments * filter_arguments;
+	FrameGraph * frame_graph;
+	Lidar * lidar;
+	ShapeModelTri * true_shape_model;
+	std::shared_ptr<ShapeModelBezier> estimated_shape_model;
 
-		std::shared_ptr<PC> destination_pc = nullptr;
-		std::shared_ptr<PC> source_pc = nullptr;
-		std::shared_ptr<PC> destination_pc_shape = nullptr;
+	std::shared_ptr<PC> destination_pc = nullptr;
+	std::shared_ptr<PC> source_pc = nullptr;
+	std::shared_ptr<PC> destination_pc_shape = nullptr;
 
-		std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
-
-
-		std::vector< std::shared_ptr<PC> > all_registered_pc;
-
-		arma::mat LN_t0;
-		arma::mat LB_t0;
-		OC::KepState true_kep_state_t0;
+	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
 
 
-		arma::vec x_t0;
-		FlyOverMap fly_over_map;
+	std::vector< std::shared_ptr<PC> > all_registered_pc;
+
+	arma::mat LN_t0;
+	arma::mat LB_t0;
+	OC::KepState true_kep_state_t0;
 
 
-	};
+	arma::vec x_t0;
+
+
+};
 
 
 #endif

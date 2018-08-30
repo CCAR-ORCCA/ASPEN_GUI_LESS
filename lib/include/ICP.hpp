@@ -15,7 +15,9 @@ public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
 		arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
 		arma::vec X_0 = arma::zeros<arma::vec>(3),
-		bool verbose = true);
+		bool verbose = true,
+		const arma::mat & M_save = arma::eye<arma::mat>(3,3),
+		const arma::vec & X_save = arma::zeros<arma::vec>(3));
 
 	arma::vec get_X() const;
 	arma::mat get_M() const;
@@ -82,6 +84,8 @@ protected:
 	arma::vec X;
 	arma::mat DCM;
 	arma::mat R;
+	arma::mat M_save;
+	arma::vec X_save;
 	double J_res;
 
 	std::vector<PointPair> point_pairs;

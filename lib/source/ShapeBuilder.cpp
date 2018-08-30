@@ -16,11 +16,10 @@
 #include "IODFinder.hpp"
 #include <CGAL_interface.hpp>
 #include <RigidBodyKinematics.hpp>
-
-
+#include "IODBounds.hpp"
 #include <boost/progress.hpp>
 #include <chrono>
-
+#include <cmath>
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
@@ -41,9 +40,6 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	this -> lidar = lidar;
 	this -> true_shape_model = true_shape_model;
 }
-
-
-
 
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,
@@ -113,8 +109,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
-
-			this -> fly_over_map.add_label(time_index,0,0);
 
 			#if IOFLAGS_shape_builder
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
@@ -487,12 +481,20 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
 			
-			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+			try{
+				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc,false,this -> LN_t0.t(),this -> x_t0);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-			M_pc = icp_pc.get_M();
-			X_pc = icp_pc.get_X();	
+				M_pc = icp_pc.get_M();
+				X_pc = icp_pc.get_X();	
+			}
+			catch(ICPException & e){
+				std::cout << e.what() << std::endl;
+			}
+			catch(ICPNoPairsException & e){
+				std::cout << e.what() << std::endl;
+			}
 
 
 
@@ -518,15 +520,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			}
 				/****************************************************************************/
 				/****************************************************************************/
-
-
-
-			// Noise is applied to the rigid transforms
-			X_pc += this -> filter_arguments-> get_rigid_transform_noise_sd("X") * arma::randn(3);
-			M_pc = M_pc * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn(3));
-
-
-
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
@@ -580,24 +573,63 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	}
 
-	int mc_iter = 100;
+	
+
+	int mc_iter = 400;
 	arma::mat results(7,mc_iter);
+	boost::progress_display progress(mc_iter);
+	
+	#pragma omp parallel for
 	for (int i = 0; i < mc_iter; ++i){
-		OC::KepState estimated_state = this -> run_IOD_finder(times,
+		// std::cout << "\t ## MC iter " << i + 1 << " / " << mc_iter << std::endl;
+
+
+		std::map<int,arma::vec> X_pcs_noisy;
+		std::map<int,arma::mat> M_pcs_noisy;
+
+		arma::vec state;
+		arma::mat cov;
+
+		X_pcs_noisy[0] = X_pcs.at(0) ;
+		M_pcs_noisy[0] = M_pcs.at(0) ;
+
+		for (int k = 1; k < X_pcs.size(); ++k){
+			X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn(3);
+			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn(3));
+		}
+
+		OC::KepState estimated_state = this -> run_IOD_finder(state,
+			cov,
+			times,
 			last_ba_call_index ,
 			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
 			mrps_LN,
-			X_pcs,
-			M_pcs);
+			X_pcs_noisy,
+			M_pcs_noisy);
 
 		OC::CartState cart_state = estimated_state.convert_to_cart(0);
 		results.submat(0,i,5,i) = cart_state.get_state();
 		results.submat(6,i,6,i) = cart_state.get_mu();
-	
+		
+		if (i == 0){
+			cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
+		}
+		++progress;
+
 	}
 
-	results.save("results.txt",arma::raw_ascii);
+	results.save("../output/results.txt",arma::raw_ascii);
 
+	arma::vec results_mean = arma::mean(results,1);
+	arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
+
+	for (unsigned int i = 0; i < results.n_cols; ++i){
+		cov_mc +=  (results.col(i) - results_mean) * (results.col(i) - results_mean).t();
+		
+	}
+
+	cov_mc *= 1./(results.n_cols-1);
+	cov_mc.save("../output/cov_mc.txt",arma::raw_ascii);
 
 }
 
@@ -628,7 +660,9 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 
 
 
-OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
+OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
+	arma::mat & cov,
+	const arma::vec & times,
 	const int t0 ,
 	const int tf, 
 	const std::vector<arma::vec> & mrps_LN,
@@ -636,19 +670,36 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::map<int,arma::mat> M_pcs) const{
 
 
-	std::cout << "- Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
-
+	// std::cout << "- Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
 
 	// The IOD Finder is ran before running bundle adjustment
 	std::vector<RigidTransform> rigid_transforms;
+	std::vector<arma::mat> rigid_transforms_covariances;
 
-	this -> assemble_rigid_transforms_IOD(rigid_transforms,
+
+	ShapeBuilder::assemble_rigid_transforms_IOD(rigid_transforms,
 		times,
 		t0,
 		tf,
-		mrps_LN,X_pcs,M_pcs);
+		mrps_LN,
+		X_pcs,
+		M_pcs);
+
+
+
+	ShapeBuilder::compute_rigid_transform_covariances(
+		rigid_transforms_covariances,
+		times, 
+		t0,
+		tf,
+		mrps_LN,
+		X_pcs,
+		M_pcs);
+
+
 
 	IODFinder iod_finder(&rigid_transforms, 
+		&rigid_transforms_covariances,
 		this -> filter_arguments -> get_iod_iterations(), 
 		this -> filter_arguments -> get_iod_particles());
 
@@ -656,25 +707,161 @@ OC::KepState ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
 	true_particle(6) = this -> true_kep_state_t0.get_mu();
 
-	std::cout << "True cartesian state:" << this -> true_kep_state_t0.convert_to_cart(0).get_state().t() << std::endl;
 
-	iod_finder.run(arma::zeros<arma::vec>(0),arma::zeros<arma::vec>(0),1);
+	// Crude IO
+
+	// get the center of the collected pcs
+	arma::vec center = this -> get_center_collected_pcs(t0,tf);
+	// std::cout << "- Collected pcs center: \n";
+	// std::cout << center << std::endl;
+
+	// std::cout << "- True center of mass: \n";
+	// std::cout << - this -> LN_t0 * this -> x_t0 << std::endl;
+
+	arma::vec r0_crude = - this -> LN_t0.t() * center;
+	arma::vec r1_crude = rigid_transforms[0].M_k .t() * (r0_crude + rigid_transforms[0].X_k);
+	arma::vec r2_crude = rigid_transforms[1].M_k .t() * (r1_crude + rigid_transforms[1].X_k);
+
+	arma::vec r0_true = this -> x_t0;
+	arma::vec r1_true = rigid_transforms[0].M_k .t() * (r0_true + rigid_transforms[0].X_k);
+	arma::vec r2_true = rigid_transforms[1].M_k .t() * (r1_true + rigid_transforms[1].X_k);
+
+	// 2nd order interpolation
+	arma::mat A = arma::zeros<arma::mat>(9,9) ;
+	A.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
+	A.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
+	A.submat(6,0,8,2) = arma::eye<arma::mat>(3,3);
+
+	A.submat(3,3,5,5) = rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
+	A.submat(3,6,5,8) = std::pow(rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
+
+	A.submat(6,3,8,5) = rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
+	A.submat(6,6,8,8) = std::pow(rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
+
+	arma::vec R = arma::vec(9);
+	R.subvec(0,2) = r0_crude;
+	R.subvec(3,5) = r1_crude;
+	R.subvec(6,8) = r2_crude;
+
+	arma::vec coefs = arma::solve(A,R);
+
+	arma::vec v1_crude = coefs.subvec(3,5) + 2 * rigid_transforms[1].t_k * coefs.subvec(6,8);
+	arma::vec v2_crude = coefs.subvec(3,5) + 2 * rigid_transforms[2].t_k * coefs.subvec(6,8);
+
+	arma::vec h = arma::normalise(arma::cross(r0_crude,r1_crude));
+
+	double i_crude = std::acos(h(2));
+	double RAAN_crude = std::atan2(h(0),-h(1));
+	double m0_min_crude,m0_max_crude;
+
+
+	std::string type = "cartesian";
+
+	if (type == "keplerian"){
+		if (arma::dot(r1_crude,v1_crude) > 0){
+			m0_min_crude = 0;
+			m0_max_crude = arma::datum::pi;
+
+		}
+		else{
+			m0_min_crude = arma::datum::pi;
+			m0_max_crude = 2 * arma::datum::pi;
+		}
+
+		arma::vec l_bounds = {
+			A_MIN,
+			E_MIN,
+			I_MIN,
+			RAAN_MIN,
+			OMEGA_MIN,
+			m0_min_crude,
+			MU_MIN
+		};
+
+		arma::vec u_bounds = {
+			A_MAX,
+			E_MAX,
+			I_MAX,
+			RAAN_MAX,
+			OMEGA_MAX,
+			m0_max_crude,
+			MU_MAX
+		};
+
+		
+		arma::vec guess_particle = {NAN,NAN,i_crude,RAAN_crude,NAN,NAN,NAN};
+
+		iod_finder.run(l_bounds,u_bounds,"keplerian",0,guess_particle);
+
+
+
+
+	}
+	else if (type == "cartesian"){
+
+		arma::vec dr =  (r1_crude - r0_crude);
+		double dt = (rigid_transforms[1].t_k - rigid_transforms[0].t_k);
+		arma::vec v0_crude = dr / dt;
+
+
+		arma::vec l_bounds = {
+			r0_crude(0) - 100,
+			r0_crude(1) - 100,
+			r0_crude(2) - 100,
+			v0_crude(0) - 100 / dt,
+			v0_crude(1) - 100 / dt,
+			v0_crude(2) - 100 / dt,
+			MU_MIN
+		};
+
+		arma::vec u_bounds = {
+			r0_crude(0) + 100,
+			r0_crude(1) + 100,
+			r0_crude(2) + 100,
+			v0_crude(0) + 100 / dt,
+			v0_crude(1) + 100 / dt,
+			v0_crude(2) + 100 / dt,
+			MU_MAX
+		};
+
+		
+		arma::vec guess_particle = {
+			r0_crude(0),r0_crude(1),r0_crude(2),
+			v0_crude(0),v0_crude(1),v0_crude(2),
+			NAN
+		};
+
+		iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
+
+
+	}
+
+
+
+
+
+
+
 	OC::KepState est_kep_state = iod_finder.get_result();
 
 	arma::vec est_particle(7);
 	est_particle.subvec(0,5) = est_kep_state.get_state();
 	est_particle(6) = est_kep_state.get_mu();
 
-	std::cout << "Results: " << est_particle.t() << std::endl;
+	// std::cout << "Results: " << est_particle.t() << std::endl;
 
-	std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
-	std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
-	std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-	std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
+	// std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
+	// std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
+	// std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
+	// std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
+	
 
-	iod_finder.run_batch();
+	
+	iod_finder.run_batch(state,cov);
 
-	return est_kep_state;
+	OC::CartState cart_state(state.subvec(0,5),state(6));
+
+	return cart_state.convert_to_kep(0);
 
 }
 
@@ -687,7 +874,7 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
 	const std::map<int,arma::vec> &  X_pcs,
-	const std::map<int,arma::mat> &  M_pcs) const{
+	const std::map<int,arma::mat> &  M_pcs){
 
 	rigid_transforms.clear();
 
@@ -699,22 +886,18 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 		if (k != 0){
 
-			M_p_k_old = M_pcs.at(k - 1);
-			X_p_k_old = X_pcs.at(k - 1);
-			
 	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 	// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_p_k_old.t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_p_k_old.t() * (X_pcs.at(k) - X_p_k_old);
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * (X_pcs.at(k) - X_pcs.at(k - 1));
 
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;
 			rigid_transform.X_k = X_p_k;
 			rigid_transform.t_k = times(k - t0_index);
 			rigid_transforms.push_back(rigid_transform);
-
 		}
-		
+
 	}
 
 
@@ -723,6 +906,76 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 
 
+void ShapeBuilder::compute_rigid_transform_covariances(
+	std::vector<arma::mat> & rigid_transforms_covariances,
+	const arma::vec & times, 
+	const int t0_index,
+	const int tf_index,
+	const std::vector<arma::vec>  & mrps_LN,
+	const std::map<int,arma::vec> &  X_pcs,
+	const std::map<int,arma::mat> &  M_pcs) const{
+
+
+	rigid_transforms_covariances.clear();
+
+	for (int k = 1 ; k < X_pcs.size(); ++ k){
+
+		if (k == 1){
+
+			arma::mat P_Vk = arma::zeros<arma::mat>(6,6);
+
+
+			P_Vk.submat(0,0,2,2) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
+			P_Vk.submat(3,3,5,5) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
+
+
+			arma::mat P_I_prime_k = IODFinder::compute_P_I_prime_k(
+				P_Vk,
+				M_pcs.at(k),
+				X_pcs.at(k),	
+				M_pcs.at(k-1),
+				X_pcs.at(k-1),
+				RBK::mrp_to_dcm(mrps_LN[k]),
+				RBK::mrp_to_dcm(mrps_LN[k-1]));
+
+			rigid_transforms_covariances.push_back(P_I_prime_k);
+
+		}
+		else{
+			arma::mat P_Vk = arma::zeros<arma::mat>(12,12);
+
+
+			P_Vk.submat(0,0,2,2) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
+			P_Vk.submat(3,3,5,5) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
+			P_Vk.submat(6,6,8,8) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
+			P_Vk.submat(9,9,11,11) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
+
+
+			arma::mat P_I_prime_k = IODFinder::compute_P_I_prime_k(
+				P_Vk,
+				M_pcs.at(k),
+				X_pcs.at(k),	
+				M_pcs.at(k-1),
+				X_pcs.at(k-1),
+				RBK::mrp_to_dcm(mrps_LN[k]),
+				RBK::mrp_to_dcm(mrps_LN[k-1]));
+
+			rigid_transforms_covariances.push_back(P_I_prime_k);
+
+		}
+
+		
+
+		
+
+
+	}
+
+
+
+
+
+}
 
 
 
@@ -891,14 +1144,14 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 		if (this -> filter_arguments -> get_use_ba()){
 
 			// Only the point clouds that looped with the first one are kept
-			
+
 			std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
 
 			for(int pc = 0; pc <= cutoff_index; ++pc){
 				std::cout << "keeping pc " << pc << " / " << cutoff_index << std::endl;
 				kept_pcs.push_back(this -> all_registered_pc.at(pc));
 			}
-			
+
 
 		}
 		else{
@@ -931,7 +1184,7 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 			true);
 
 
-		
+
 		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
 		// should perfectly overlap without noise and bundle-adjustment/ICP errors
 
@@ -1002,6 +1255,19 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 
 }
 
+
+
+arma::vec ShapeBuilder::get_center_collected_pcs(int first_pc_index,int last_pc_index) const{
+
+
+	arma::vec center = {0,0,0};
+	int N = last_pc_index - first_pc_index + 1;
+
+	for (int i = 0; i < N; ++i){	
+		center += 1./N * this -> all_registered_pc[i]-> get_center(); 
+	}
+	return center;
+}
 
 
 

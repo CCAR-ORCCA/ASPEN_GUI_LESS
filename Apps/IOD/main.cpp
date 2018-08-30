@@ -23,14 +23,14 @@
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
 // Lidar settings
-#define ROW_RESOLUTION 128 // Goldeneye
-#define COL_RESOLUTION 128 // Goldeneye
+#define ROW_RESOLUTION 32 // Goldeneye
+#define COL_RESOLUTION 32 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0005 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.00025 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
@@ -38,15 +38,15 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 60 // shape reconstruction steps
+#define OBSERVATION_TIMES 30 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 60 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 100 // Number of iterations
+#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
+#define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
+#define IOD_ITERATIONS 50 // Number of iterations
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
@@ -54,10 +54,9 @@
 #define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
-
 // Rigid transform artificial noise
-#define RIGID_TRANSFORM_X_SD 0.1
-#define RIGID_TRANSFORM_SIGMA_SD 0.0
+#define RIGID_TRANSFORM_X_SD 0.001
+#define RIGID_TRANSFORM_SIGMA_SD 0.00
 
 #define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP false // Whether or not the ICP should be used (if not, uses true rigid transforms)
@@ -68,7 +67,7 @@
 #define I 1.4
 #define RAAN 0.2
 #define PERI_OMEGA 0.3
-#define M0 0.
+#define M0 0.1
 ///////////////////////////////////////////
 
 int main() {
@@ -102,6 +101,7 @@ int main() {
 	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape();
+
 
 // Lidar
 	Lidar lidar(&frame_graph,
@@ -148,6 +148,7 @@ int main() {
 	spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
 	args.set_sbgat_harmonics(spherical_harmonics);
 	#endif
+	
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
