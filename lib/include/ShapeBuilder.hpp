@@ -201,7 +201,7 @@ protected:
 	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 	*/
-	OC::KepState run_IOD_finder(arma::vec & state,
+	void run_IOD_finder(arma::vec & state,
 		arma::mat & cov,
 		const arma::vec & times,
 		const int t0 ,

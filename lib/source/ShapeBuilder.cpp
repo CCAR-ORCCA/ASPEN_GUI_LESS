@@ -575,11 +575,11 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	
 
-	int mc_iter = 400;
+	int mc_iter = 1000;
 	arma::mat results(7,mc_iter);
 	boost::progress_display progress(mc_iter);
 	
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for (int i = 0; i < mc_iter; ++i){
 		// std::cout << "\t ## MC iter " << i + 1 << " / " << mc_iter << std::endl;
 
@@ -598,7 +598,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
 		}
 
-		OC::KepState estimated_state = this -> run_IOD_finder(state,
+		this -> run_IOD_finder(state,
 			cov,
 			times,
 			last_ba_call_index ,
@@ -607,9 +607,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			X_pcs_noisy,
 			M_pcs_noisy);
 
-		OC::CartState cart_state = estimated_state.convert_to_cart(0);
-		results.submat(0,i,5,i) = cart_state.get_state();
-		results.submat(6,i,6,i) = cart_state.get_mu();
+		results.submat(0,i,5,i) = state.subvec(0,5);
+		results.submat(6,i,6,i) = state(6);
 		
 		if (i == 0){
 			cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
@@ -654,12 +653,7 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 }
 
 
-
-
-
-
-
-OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
+void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::mat & cov,
 	const arma::vec & times,
 	const int t0 ,
@@ -711,19 +705,10 @@ OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 	// get the center of the collected pcs
 	arma::vec center = this -> get_center_collected_pcs(t0,tf);
-	// std::cout << "- Collected pcs center: \n";
-	// std::cout << center << std::endl;
-
-	// std::cout << "- True center of mass: \n";
-	// std::cout << - this -> LN_t0 * this -> x_t0 << std::endl;
-
+	
 	arma::vec r0_crude = - this -> LN_t0.t() * center;
 	arma::vec r1_crude = rigid_transforms[0].M_k .t() * (r0_crude + rigid_transforms[0].X_k);
 	arma::vec r2_crude = rigid_transforms[1].M_k .t() * (r1_crude + rigid_transforms[1].X_k);
-
-	arma::vec r0_true = this -> x_t0;
-	arma::vec r1_true = rigid_transforms[0].M_k .t() * (r0_true + rigid_transforms[0].X_k);
-	arma::vec r2_true = rigid_transforms[1].M_k .t() * (r1_true + rigid_transforms[1].X_k);
 
 	// 2nd order interpolation
 	arma::mat A = arma::zeros<arma::mat>(9,9) ;
@@ -745,7 +730,6 @@ OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::vec coefs = arma::solve(A,R);
 
 	arma::vec v1_crude = coefs.subvec(3,5) + 2 * rigid_transforms[1].t_k * coefs.subvec(6,8);
-	arma::vec v2_crude = coefs.subvec(3,5) + 2 * rigid_transforms[2].t_k * coefs.subvec(6,8);
 
 	arma::vec h = arma::normalise(arma::cross(r0_crude,r1_crude));
 
@@ -835,32 +819,15 @@ OC::KepState ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 	}
 
-
-
-
-
-
-
 	OC::KepState est_kep_state = iod_finder.get_result();
 
 	arma::vec est_particle(7);
 	est_particle.subvec(0,5) = est_kep_state.get_state();
 	est_particle(6) = est_kep_state.get_mu();
 
-	// std::cout << "Results: " << est_particle.t() << std::endl;
-
-	// std::cout << " Evaluating the cost function at the true state: " << IODFinder::cost_function(true_particle,&rigid_transforms,0) << std::endl;
-	// std::cout << " Evaluating the cost function at the estimated state : " << IODFinder::cost_function(est_particle,&rigid_transforms,0) << std::endl;
-	// std::cout << " True keplerian state at epoch: \n" << this -> true_kep_state_t0.get_state() << " with mu :" << this -> true_kep_state_t0.get_mu() << std::endl;
-	// std::cout << " Estimated keplerian state at epoch: \n" << est_kep_state.get_state() << " with mu :" << est_kep_state.get_mu() << std::endl;
-	
-
 	
 	iod_finder.run_batch(state,cov);
 
-	OC::CartState cart_state(state.subvec(0,5),state(6));
-
-	return cart_state.convert_to_kep(0);
 
 }
 

@@ -61,7 +61,7 @@ public:
 		const arma::mat::fixed<3,3> & LN_km1);
 
 
-	void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
+	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
 
 
 	static void seq_transform_from_epoch_transform(int k, RigidTransform & seq_transform_k,
@@ -80,8 +80,7 @@ protected:
 		arma::vec & residual_vector,
 		const std::vector<RigidTransform> * rigid_transforms,
 		const std::vector<arma::mat> * rigid_transforms_covariances,
-		arma::vec & apriori_state,
-		std::string dynamics_name);
+		arma::vec & apriori_state);
 
 
 
@@ -117,8 +116,9 @@ protected:
 
 
 
-	static void compute_stms(const arma::vec::fixed<7> & X_hat,
+	static void compute_state_stms(const arma::vec::fixed<7> & X_hat,
 		const std::vector<RigidTransform> * rigid_transforms,
+		std::vector<arma::vec> & positions,
 		std::vector<arma::mat> & stms);
 
 

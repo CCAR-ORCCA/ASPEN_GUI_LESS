@@ -375,8 +375,7 @@ void IODFinder::build_normal_equations(
 	arma::vec & residual_vector,
 	const std::vector<RigidTransform> * rigid_transforms,
 	const std::vector<arma::mat> * rigid_transforms_covariances,
-	arma::vec & apriori_state,
-	std::string dynamics_name){
+	arma::vec & apriori_state){
 
 	info_mat.fill(0);
 	normal_mat.fill(0);
@@ -385,19 +384,7 @@ void IODFinder::build_normal_equations(
 	std::vector<arma::vec> positions;
 	std::vector<arma::mat> stms;
 
-	positions.push_back(apriori_state.rows(0,2));
-
-	if (dynamics_name == "keplerian"){
-		OC::CartState cart_state(apriori_state.rows(0,5),apriori_state(6));
-		OC::KepState kep_state = cart_state.convert_to_kep(0);
-
-		IODFinder::compute_stms(apriori_state,rigid_transforms,stms);
-		
-		for (int k = 0; k < rigid_transforms -> size(); ++ k){
-			positions.push_back(kep_state.convert_to_cart(rigid_transforms -> at(k).t_k).get_position_vector());
-		}
-
-	}
+	IODFinder::compute_state_stms(apriori_state,rigid_transforms,positions,stms);
 
 
 	for (int k = 0; k < rigid_transforms -> size(); ++ k){
@@ -405,6 +392,8 @@ void IODFinder::build_normal_equations(
 
 		auto M_kp1_prime_bar = rigid_transforms -> at(k).M_k;
 		auto X_kp1_prime_bar = rigid_transforms -> at(k).X_k;
+
+
 
 		arma::mat::fixed<3,7> H_k = IODFinder::compute_H_k(stms[k],stms[k+1],M_kp1_prime_bar);
 		
@@ -430,12 +419,12 @@ void IODFinder::build_normal_equations(
 
 	}
 
-
 }
 
 
 void IODFinder::run_batch(arma::vec & state,
 	arma::mat & cov){
+
 
 	OC::KepState apriori_kepstate = this -> keplerian_state_at_epoch ;
 	arma::vec apriori_state(7);
@@ -449,49 +438,31 @@ void IODFinder::run_batch(arma::vec & state,
 	arma::vec residual_vector = arma::vec(3 * this -> rigid_transforms -> size());
 
 	for (int i = 0; i < N_iter; ++i){
-		// std::cout << "\t\t Iteration " << i + 1 << std::endl;
-
+		
 		IODFinder::build_normal_equations(
 			info_mat,
 			normal_mat,
 			residual_vector,
 			this -> rigid_transforms,
 			this -> rigid_transforms_covariances,
-			apriori_state,
-			"keplerian");
+			apriori_state);
 
 		arma::vec deviation = arma::solve(info_mat,normal_mat);
 
-		// std::cout << "\t\t Info mat : " << std::endl;
-		// std::cout << info_mat << std::endl;
-
-		// std::cout << "\t\t Normal mat : " << std::endl;
-		// std::cout << normal_mat << std::endl;
-
-
-		// std::cout << "\t\t Deviation : " << std::endl;
-		// std::cout << deviation << std::endl;
-
 		apriori_state += deviation;
-		OC::CartState new_cartstate(apriori_state.rows(0,5),apriori_state(6));
-		OC::KepState new_kepstate = new_cartstate.convert_to_kep(0);
 		
-		// std::cout << "\t\t Keplerian state at epoch : " << std::endl;
-		// std::cout << new_kepstate.get_state() << std::endl;
-
 	}
 
-	residual_vector.save("../output/residual_vector.txt",arma::raw_ascii);
-	
 
 	state = apriori_state;
 	cov = arma::inv(info_mat);
-
+	
 }
 
 
-void IODFinder::compute_stms(const arma::vec::fixed<7> & X_hat,
+void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 	const std::vector<RigidTransform> * rigid_transforms,
+	std::vector<arma::vec> & positions,
 	std::vector<arma::mat> & stms){
 
 	stms.clear();
@@ -530,12 +501,12 @@ void IODFinder::compute_stms(const arma::vec::fixed<7> & X_hat,
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state_no_mrp(augmented_state_history));
 
-	for (int i = 0; i < rigid_transforms -> size()+1; ++i){
+	for (int i = 0; i < times.size(); ++i){
 
 		arma::mat::fixed<7,7> stm = arma::reshape(
 			augmented_state_history[i].rows(N_est,N_est + N_est * N_est - 1),
 			N_est,N_est);
-
+		positions.push_back(augmented_state_history[i].rows(0,2));
 		stms.push_back(stm);
 	}
 	
@@ -650,7 +621,38 @@ void IODFinder::debug_stms(const std::vector<RigidTransform> * rigid_transforms)
 	state_history_0_mat.save("../output/state_history_0.txt",arma::raw_ascii);
 	state_history_1_mat.save("../output/state_history_1.txt",arma::raw_ascii);
 	state_history_lin_mat.save("../output/state_history_lin.txt",arma::raw_ascii);
+	
+	// debug observations
+
+	int k = 10;
+
+	arma::mat Mkp1 = rigid_transforms -> at(k).M_k;
+	arma::mat Xkp1 = rigid_transforms -> at(k).X_k;
+
+
+	arma::vec Gk_nom = state_history_0[k].rows(0,2) - Mkp1 * state_history_0[k + 1].rows(0,2) + rigid_transforms -> at(k).X_k;
+
+	arma::vec Gk_perp = state_history_1[k].rows(0,2) - Mkp1 * state_history_1[k + 1].rows(0,2) + rigid_transforms -> at(k).X_k;
+
+	arma::vec dG_true = Gk_perp - Gk_nom;
+
+	arma::mat H_k = IODFinder::compute_H_k(stms[k], 
+		stms[k+1], 
+		Mkp1);
+
+	arma::vec dG_linear = H_k * dX;
+
+
+
+	std::cout << dG_true.t() << std::endl;
+	std::cout << dG_linear.t() << std::endl;
+
 	throw;
+
+
+
+
+
 
 	
 }
