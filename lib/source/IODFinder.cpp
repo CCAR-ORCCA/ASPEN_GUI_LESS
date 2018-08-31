@@ -481,6 +481,7 @@ void IODFinder::run_batch(arma::vec & state,
 
 	}
 
+	residual_vector.save("../output/residual_vector.txt",arma::raw_ascii);
 	
 
 	state = apriori_state;
