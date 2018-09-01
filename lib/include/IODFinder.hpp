@@ -43,7 +43,7 @@ public:
 	static void debug_rigid_transforms();
 
 
-	arma::mat::fixed<12,12> compute_dIprime_k_dVtilde_k(int k) const;
+	arma::mat::fixed<6,12> compute_dIprime_k_dVtilde_k(int k) const;
 
 
 	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
@@ -54,10 +54,7 @@ public:
 		const RigidTransform & epoch_transform_km1, 
 		const std::vector<arma::vec> & mrps_LN);
 
-
 	arma::mat::fixed<12,12> compute_P_VkVj(int k, int j) const;
-
-
 
 	void compute_W(const std::vector<arma::vec> & positions);
 

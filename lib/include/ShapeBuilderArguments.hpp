@@ -475,7 +475,17 @@ public:
 
 	void set_rigid_transform_noise_sd(std::string component,double value){
 		this -> rigid_transforms_noise_sd[component] = value;
+	}	
+
+	void set_iod_mc_iter(int iter){
+		this -> iod_mc_iter = iter;
+	}	
+
+	int get_iod_mc_iter() const{
+		return this -> iod_mc_iter;
 	}
+
+
 
 
 protected:
@@ -490,10 +500,11 @@ protected:
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
 	int points_retained;
+
 	int iod_rigid_transforms_number;
 	int iod_iterations;
 	int iod_particles;
-
+	int iod_mc_iter;
 
 	unsigned int index_init;
 	unsigned int index_end;
@@ -526,22 +537,6 @@ protected:
 
 
 
-
-	// std::vector<arma::vec> spin_axis_mes_history;
-	// std::vector<arma::vec> omega_mes_history;
-	// std::vector<arma::vec> omega_hat_history;
-	// std::vector<arma::vec> omega_true_history;
-	// std::vector<arma::vec> mrp_mes_history;
-	// std::vector<arma::vec> mrp_true_history;
-
-	// std::vector<arma::vec> relative_pos_true_history;
-	// std::vector<arma::vec> relative_pos_mes_history;
-
-
-	// std::vector<arma::mat > R_omega;
-
-
-	// std::vector<double> time_history;
 
 
 

@@ -38,16 +38,16 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 50 // shape reconstruction steps
+#define OBSERVATION_TIMES 20 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 50 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 20 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 50 // Number of iterations
-
+#define IOD_MC_ITER 300 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
@@ -283,6 +283,7 @@ int main() {
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_rigid_transform_noise_sd("X",RIGID_TRANSFORM_X_SD);
 	shape_filter_args.set_rigid_transform_noise_sd("sigma",RIGID_TRANSFORM_SIGMA_SD);
+	shape_filter_args.set_iod_mc_iter(IOD_MC_ITER);
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 

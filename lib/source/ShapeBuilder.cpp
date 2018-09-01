@@ -566,22 +566,20 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			previous_closure_index,
 			0);
 
-
 		std::cout << " -- Running IOD after correction\n";
 		final_index = previous_closure_index;
-
 
 	}
 
 	
 
-	int mc_iter = 1000;
+	int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
+
 	arma::mat results(7,mc_iter);
 	boost::progress_display progress(mc_iter);
 	
 	#pragma omp parallel for
 	for (int i = 0; i < mc_iter; ++i){
-		// std::cout << "\t ## MC iter " << i + 1 << " / " << mc_iter << std::endl;
 
 
 		std::map<int,arma::vec> X_pcs_noisy;
@@ -814,7 +812,6 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::vec est_particle(7);
 	est_particle.subvec(0,5) = est_kep_state.get_state();
 	est_particle(6) = est_kep_state.get_mu();
-
 
 	iod_finder.run_batch(state,cov);
 
