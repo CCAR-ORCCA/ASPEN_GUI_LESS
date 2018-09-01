@@ -423,10 +423,7 @@ void IODFinder::build_normal_equations(
 	info_mat = H.t() * this -> W * H;
 	normal_mat = H.t() * this -> W * residual_vector;
 
-	arma::vec index_v = arma::randi<arma::vec>(1);
-	double index = index_v(0);
-	residual_vector.save("../output/residual_vector_" +std::to_string(index) + ".txt",arma::raw_ascii);
-
+	
 }
 
 
@@ -472,6 +469,10 @@ void IODFinder::run_batch(arma::vec & state,
 
 	state = apriori_state;
 	cov = arma::inv(info_mat);
+	arma::vec index_v = arma::randi<arma::vec>(1);
+	double index = index_v(0);
+	residual_vector.save("../output/residual_vector_" +std::to_string(index) + ".txt",arma::raw_ascii);
+
 
 }
 
