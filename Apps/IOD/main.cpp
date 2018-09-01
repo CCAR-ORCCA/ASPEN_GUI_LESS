@@ -23,8 +23,8 @@
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
 // Lidar settings
-#define ROW_RESOLUTION 32 // Goldeneye
-#define COL_RESOLUTION 32 // Goldeneye
+#define ROW_RESOLUTION 64 // Goldeneye
+#define COL_RESOLUTION 64 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -38,16 +38,17 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 20 // shape reconstruction steps
+#define OBSERVATION_TIMES 30 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 20 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 50 // Number of iterations
-#define IOD_MC_ITER 300 
+#define IOD_MC_ITER 600
+ 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
