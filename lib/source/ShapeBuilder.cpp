@@ -679,20 +679,10 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 		M_pcs);
 
 
-
-	ShapeBuilder::compute_rigid_transform_covariances(
-		rigid_transforms_covariances,
-		times, 
-		t0,
-		tf,
-		mrps_LN,
-		X_pcs,
-		M_pcs);
-
-
-
 	IODFinder iod_finder(&rigid_transforms, 
-		&rigid_transforms_covariances,
+		mrps_LN,
+		this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
+		this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
 		this -> filter_arguments -> get_iod_iterations(), 
 		this -> filter_arguments -> get_iod_particles());
 
@@ -825,14 +815,11 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	est_particle.subvec(0,5) = est_kep_state.get_state();
 	est_particle(6) = est_kep_state.get_mu();
 
-	
+
 	iod_finder.run_batch(state,cov);
 
 
 }
-
-
-
 
 
 
@@ -869,78 +856,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 
 
 }
-
-
-
-
-void ShapeBuilder::compute_rigid_transform_covariances(
-	std::vector<arma::mat> & rigid_transforms_covariances,
-	const arma::vec & times, 
-	const int t0_index,
-	const int tf_index,
-	const std::vector<arma::vec>  & mrps_LN,
-	const std::map<int,arma::vec> &  X_pcs,
-	const std::map<int,arma::mat> &  M_pcs) const{
-
-	rigid_transforms_covariances.clear();
-
-	for (int k = 1 ; k < X_pcs.size(); ++ k){
-
-		if (k == 1){
-
-			arma::mat P_Vk = arma::zeros<arma::mat>(6,6);
-
-			P_Vk.submat(0,0,2,2) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
-			P_Vk.submat(3,3,5,5) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
-
-
-			arma::mat P_I_prime_k = IODFinder::compute_P_I_prime_k(
-				P_Vk,
-				M_pcs.at(k),
-				X_pcs.at(k),	
-				M_pcs.at(k-1),
-				X_pcs.at(k-1),
-				RBK::mrp_to_dcm(mrps_LN[k]),
-				RBK::mrp_to_dcm(mrps_LN[k-1]));
-
-			rigid_transforms_covariances.push_back(P_I_prime_k);
-
-		}
-		else{
-			arma::mat P_Vk = arma::zeros<arma::mat>(12,12);
-
-
-			P_Vk.submat(0,0,2,2) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
-			P_Vk.submat(3,3,5,5) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("X"),2) * arma::eye<arma::mat>(3,3);
-			P_Vk.submat(6,6,8,8) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
-			P_Vk.submat(9,9,11,11) = std::pow(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),2) * arma::eye<arma::mat>(3,3);
-
-
-			arma::mat P_I_prime_k = IODFinder::compute_P_I_prime_k(
-				P_Vk,
-				M_pcs.at(k),
-				X_pcs.at(k),	
-				M_pcs.at(k-1),
-				X_pcs.at(k-1),
-				RBK::mrp_to_dcm(mrps_LN[k]),
-				RBK::mrp_to_dcm(mrps_LN[k-1]));
-
-			rigid_transforms_covariances.push_back(P_I_prime_k);
-
-		}
-
-
-		
-
-
-	}
-
-
-
-
-
-}
-
 
 
 
