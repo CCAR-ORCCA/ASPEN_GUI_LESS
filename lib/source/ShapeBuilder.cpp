@@ -592,9 +592,18 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		M_pcs_noisy[0] = M_pcs.at(0) ;
 
 		for (int k = 1; k < X_pcs.size(); ++k){
-			X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
-			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
+
+			if(this -> filter_arguments -> get_remove_time_correlations_in_mes()){
+				X_pcs_noisy[k] = X_pcs.at(k);
+				M_pcs_noisy[k] = M_pcs.at(k);
+
+			}
+			else{
+				X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
+				M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
+			}
 		}
+
 
 		this -> run_IOD_finder(state,
 			cov,
@@ -607,7 +616,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 		results.submat(0,i,5,i) = state.subvec(0,5);
 		results.submat(6,i,6,i) = state(6);
-		
+
 		if (i == 0){
 			cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
 		}
@@ -673,7 +682,8 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 		tf,
 		mrps_LN,
 		X_pcs,
-		M_pcs);
+		M_pcs
+		);
 
 
 	IODFinder iod_finder(&rigid_transforms, 
@@ -681,7 +691,8 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 		this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
 		this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
 		this -> filter_arguments -> get_iod_iterations(), 
-		this -> filter_arguments -> get_iod_particles());
+		this -> filter_arguments -> get_iod_particles(),
+		this -> filter_arguments -> get_remove_time_correlations_in_mes());
 
 	arma::vec true_particle(7);
 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
@@ -827,7 +838,7 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const int tf_index,
 	const std::vector<arma::vec>  & mrps_LN,
 	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> & M_pcs){
+	const std::map<int,arma::mat> & M_pcs) const{
 
 	rigid_transforms.clear();
 
@@ -840,6 +851,13 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	// from t_k to t_(k-1)
 			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
 			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * (X_pcs.at(k) - X_pcs.at(k - 1));
+
+
+			if (this -> filter_arguments -> get_remove_time_correlations_in_mes()){
+				X_p_k += this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
+				M_p_k = M_p_k * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
+			}
+
 
 			RigidTransform rigid_transform;
 			rigid_transform.M_k = M_p_k;

@@ -12,7 +12,8 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 	double stdev_Xtilde,
 	double stdev_sigmatilde,
 	int N_iter, 
-	int particles ){
+	int particles,
+	bool remove_time_correlations_in_mes){
 
 	this -> N_iter = N_iter;
 	this -> particles = particles;
@@ -20,6 +21,7 @@ IODFinder::IODFinder(std::vector<RigidTransform> * rigid_transforms,
 	this -> mrps_LN = mrps_LN;
 	this -> stdev_Xtilde = stdev_Xtilde;
 	this -> stdev_sigmatilde = stdev_sigmatilde;
+	this -> remove_time_correlations_in_mes = remove_time_correlations_in_mes;
 
 
 }
@@ -224,10 +226,26 @@ double IODFinder::cost_function_cartesian(arma::vec particle, std::vector<RigidT
 
 arma::mat::fixed<6,6> IODFinder::compute_P_Ik_Ij(int k, int j) const{
 
-	return (IODFinder::compute_dIprime_k_dVtilde_k(k) 
-		* IODFinder::compute_P_VkVj(k,j) 
-		* IODFinder::compute_dIprime_k_dVtilde_k(j).t());
-	
+	if (this -> remove_time_correlations_in_mes){
+
+		arma::mat P_Ik_Ij = arma::zeros<arma::mat>(6,6);
+
+		if (k == j){
+			P_Ik_Ij.submat(0,0,2,2) = std::pow(this -> stdev_Xtilde,2) * arma::eye<arma::mat>(3,3);
+			P_Ik_Ij.submat(3,3,5,5) = std::pow(this -> stdev_sigmatilde,2) * arma::eye<arma::mat>(3,3);
+		}
+
+		return P_Ik_Ij;
+		
+
+	}
+
+
+	else{
+		return (IODFinder::compute_dIprime_k_dVtilde_k(k) 
+			* IODFinder::compute_P_VkVj(k,j) 
+			* IODFinder::compute_dIprime_k_dVtilde_k(j).t());
+	}
 
 }
 

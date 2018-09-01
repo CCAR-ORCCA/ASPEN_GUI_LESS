@@ -24,7 +24,8 @@ public:
 		double stdev_Xtilde,
 		double stdev_sigmatilde,
 		int N_iter, 
-		int particles);
+		int particles,
+		bool remove_time_correlations_in_mes);
 
 	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 	static double cost_function_cartesian(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
@@ -112,6 +113,8 @@ protected:
 	arma::mat W;
 	double stdev_sigmatilde;
 	double stdev_Xtilde;
+
+	bool remove_time_correlations_in_mes;
 
 
 
