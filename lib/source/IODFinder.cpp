@@ -470,7 +470,6 @@ void IODFinder::run_batch(arma::vec & state,
 
 	}
 
-	throw;
 	state = apriori_state;
 	cov = arma::inv(info_mat);
 
