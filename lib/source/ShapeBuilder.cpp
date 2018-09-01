@@ -667,7 +667,6 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	std::vector<RigidTransform> rigid_transforms;
 	std::vector<arma::mat> rigid_transforms_covariances;
 
-
 	ShapeBuilder::assemble_rigid_transforms_IOD(rigid_transforms,
 		times,
 		t0,

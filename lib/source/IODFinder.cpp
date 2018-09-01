@@ -419,13 +419,13 @@ void IODFinder::build_normal_equations(
 			positions[k+1],
 			Mkp1,
 			Xkp1);
-
-
 	}
 
 	info_mat = H.t() * this -> W * H;
 	normal_mat = H.t() * this -> W * residual_vector;
 
+
+	residual_vector.save("../output/residual_vector.txt",arma::raw_ascii);
 
 }
 
@@ -714,7 +714,7 @@ void IODFinder::compute_W(const std::vector<arma::vec> & positions){
 
 	}
 
-
+	R.save("../output/R_mat.txt",arma::raw_ascii);
 	this -> W = arma::inv(R);
 
 
