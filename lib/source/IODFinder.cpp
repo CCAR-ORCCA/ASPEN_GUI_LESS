@@ -224,7 +224,8 @@ double IODFinder::cost_function_cartesian(arma::vec particle, std::vector<RigidT
 
 arma::mat::fixed<6,6> IODFinder::compute_P_Ik_Ij(int k, int j) const{
 
-	return (IODFinder::compute_dIprime_k_dVtilde_k(k) * IODFinder::compute_P_VkVj(k,j) 
+	return (IODFinder::compute_dIprime_k_dVtilde_k(k) 
+		* IODFinder::compute_P_VkVj(k,j) 
 		* IODFinder::compute_dIprime_k_dVtilde_k(j).t());
 	
 
@@ -351,14 +352,14 @@ arma::mat::fixed<12,12> IODFinder::compute_P_VkVj(int k, int j) const{
 		std::vector<int> r_indices = {k,k-1,k,k-1};
 		std::vector<int> c_indices = {j,j-1,j,j-1};
 
-		for (int r = 0; r < 4; ++r){
+		for (int r = 0; r < r_indices.size(); ++r){
 			int r_index = r_indices[r];
 
 			if (r_index < 0){
 				continue;
 			}
 
-			for (int c = 0; c < 4; ++c){
+			for (int c = 0; c < c_indices.size() ; ++c){
 				int c_index = c_indices[c];
 				
 				if (c_index < 0){
@@ -371,7 +372,7 @@ arma::mat::fixed<12,12> IODFinder::compute_P_VkVj(int k, int j) const{
 						P_VkVj.submat(3 * r, 3 * c, 
 							3 * r + 2, 3 * c + 2) = std::pow(this -> stdev_Xtilde,2) * arma::eye<arma::mat>(3,3);
 					}
-					else if (r < 2 && c < 2){
+					else if (r > 2 && c > 2){
 						P_VkVj.submat(3 * r, 3 * c, 
 							3 * r + 2, 3 * c + 2) = std::pow(this -> stdev_sigmatilde,2) * arma::eye<arma::mat>(3,3);
 					}
@@ -399,8 +400,6 @@ void IODFinder::build_normal_equations(
 	const std::vector<arma::vec> & positions,
 	const std::vector<arma::mat> & stms) const{
 
-	info_mat.fill(0);
-	normal_mat.fill(0);
 	residual_vector.fill(0);
 
 	arma::mat H = arma::zeros<arma::mat>(3 * this -> rigid_transforms -> size(), 7);
@@ -408,10 +407,10 @@ void IODFinder::build_normal_equations(
 	// H matrices
 	// y vector
 	// R matrix
-	for (int k = 0; k < rigid_transforms -> size(); ++ k){
+	for (int k = 0; k < this -> rigid_transforms -> size(); ++ k){
 
-		arma::mat Mkp1 = rigid_transforms -> at(k).M_k;
-		arma::vec Xkp1 = rigid_transforms -> at(k).X_k;
+		arma::mat Mkp1 = this -> rigid_transforms -> at(k).M_k;
+		arma::vec Xkp1 = this -> rigid_transforms -> at(k).X_k;
 
 		H.rows(3 * k, 3 * k + 2) = IODFinder::compute_H_k(stms[k],stms[k+1],Mkp1);
 		residual_vector.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(
@@ -424,8 +423,9 @@ void IODFinder::build_normal_equations(
 	info_mat = H.t() * this -> W * H;
 	normal_mat = H.t() * this -> W * residual_vector;
 
-
-	residual_vector.save("../output/residual_vector.txt",arma::raw_ascii);
+	arma::vec index_v = arma::randi<arma::vec>(1);
+	double index = index_v(0);
+	residual_vector.save("../output/residual_vector_" +std::to_string(index) + ".txt",arma::raw_ascii);
 
 }
 
@@ -470,7 +470,7 @@ void IODFinder::run_batch(arma::vec & state,
 
 	}
 
-
+	throw;
 	state = apriori_state;
 	cov = arma::inv(info_mat);
 
@@ -713,7 +713,7 @@ void IODFinder::compute_W(const std::vector<arma::vec> & positions){
 		}
 
 	}
-
+	
 	R.save("../output/R_mat.txt",arma::raw_ascii);
 	this -> W = arma::inv(R);
 
@@ -724,7 +724,8 @@ void IODFinder::compute_W(const std::vector<arma::vec> & positions){
 arma::mat::fixed<3,3> IODFinder::compute_Rkj(int k,int j,const std::vector<arma::vec> & positions) const{
 
 	return (IODFinder::compute_J_k(k,positions) 
-		* IODFinder::compute_P_Ik_Ij(k,j) * IODFinder::compute_J_k(j,positions).t());
+		* IODFinder::compute_P_Ik_Ij(k,j) 
+		* IODFinder::compute_J_k(j,positions).t());
 
 }
 
