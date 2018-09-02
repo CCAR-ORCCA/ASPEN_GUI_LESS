@@ -172,7 +172,8 @@ protected:
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 
 	*/
-	void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
+	void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & sequential_rigid_transforms,
+		std::vector<RigidTransform> & absolute_rigid_transforms,
 		const arma::vec & times, 
 		const int t0_index,
 		const int tf_index,

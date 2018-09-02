@@ -19,7 +19,8 @@ class IODFinder{
 
 public:
 
-	IODFinder(std::vector<RigidTransform> * rigid_transforms, 
+	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms, 
+		std::vector<RigidTransform> *  absolute_rigid_transforms, 
 		std::vector<arma::vec> mrps_LN,
 		double stdev_Xtilde,
 		double stdev_sigmatilde,
@@ -46,6 +47,14 @@ public:
 
 	arma::mat::fixed<6,12> compute_dIprime_k_dVtilde_k(int k) const;
 
+	arma::mat compute_partial_V_partial_T() const;
+	arma::mat compute_partial_I_partial_V() const;
+
+	arma::mat compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const;
+	arma::mat compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const;
+
+
+	void debug_R() const;
 
 	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
 
@@ -55,9 +64,7 @@ public:
 		const RigidTransform & epoch_transform_km1, 
 		const std::vector<arma::vec> & mrps_LN);
 
-	arma::mat::fixed<12,12> compute_P_VkVj(int k, int j) const;
-
-	void compute_W(const std::vector<arma::vec> & positions);
+	void compute_W(const std::vector<arma::vec::fixed<3>> & positions);
 
 
 protected:
@@ -68,7 +75,7 @@ protected:
 		arma::vec & normal_mat,
 		arma::vec & residual_vector,
 		arma::vec & apriori_state,
-		const std::vector<arma::vec> & positions,
+		const std::vector<arma::vec::fixed<3>> & positions,
 		const std::vector<arma::mat> & stms) const;
 
 	static arma::mat::fixed<3,6> compute_dsigmatilde_kdZ_k(
@@ -78,9 +85,7 @@ protected:
 		const arma::mat::fixed<3,3> & LN_km1);
 
 
-	arma::mat::fixed<3,6> compute_J_k(int k,const std::vector<arma::vec> & positions) const;
-	arma::mat::fixed<6,6> compute_P_Ik_Ij(int k, int j) const;
-	arma::mat::fixed<3,3> compute_Rkj(int k,int j,const std::vector<arma::vec> & positions) const;
+	arma::mat::fixed<3,6> compute_J_k(int k,const std::vector<arma::vec::fixed<3>> & positions) const;
 
 
 	static arma::mat::fixed<3,7> compute_H_k(const arma::mat & Phi_k, 
@@ -97,14 +102,14 @@ protected:
 
 
 	void compute_state_stms(const arma::vec::fixed<7> & X_hat,
-		std::vector<arma::vec> & positions,
+		std::vector<arma::vec::fixed<3> > & positions,
 		std::vector<arma::mat> & stms) const;
 
+	void compute_P_T();
 
 
 	int particles;
 	int N_iter;
-	std::vector<RigidTransform> * rigid_transforms;
 	std::vector<arma::vec> mrps_LN;
 
 	std::vector<arma::mat> rigid_transforms_covariances;
@@ -116,6 +121,10 @@ protected:
 
 	bool remove_time_correlations_in_mes;
 
+	arma::mat P_T;
+
+	std::vector<RigidTransform> * absolute_rigid_transforms;
+	std::vector<RigidTransform> * sequential_rigid_transforms;
 
 
 };

@@ -48,7 +48,7 @@
 #define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 50 // Number of iterations
 #define IOD_MC_ITER 600
-#define REMOVE_TIME_CORRELATIONS_IN_MES true
+#define REMOVE_TIME_CORRELATIONS_IN_MES false
 
 
 // Target properties

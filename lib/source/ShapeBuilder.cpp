@@ -573,6 +573,10 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	
 
+
+
+
+
 	int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
 
 	arma::mat results(7,mc_iter);
@@ -673,10 +677,11 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	// std::cout << "- Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
 
 	// The IOD Finder is ran before running bundle adjustment
-	std::vector<RigidTransform> rigid_transforms;
-	std::vector<arma::mat> rigid_transforms_covariances;
+	std::vector<RigidTransform> sequential_rigid_transforms;
+	std::vector<RigidTransform> absolute_rigid_transforms;
 
-	ShapeBuilder::assemble_rigid_transforms_IOD(rigid_transforms,
+	ShapeBuilder::assemble_rigid_transforms_IOD(sequential_rigid_transforms,
+		absolute_rigid_transforms,
 		times,
 		t0,
 		tf,
@@ -686,13 +691,15 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 		);
 
 
-	IODFinder iod_finder(&rigid_transforms, 
+	IODFinder iod_finder(&sequential_rigid_transforms, 
+		&absolute_rigid_transforms,
 		mrps_LN,
 		this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
 		this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
 		this -> filter_arguments -> get_iod_iterations(), 
 		this -> filter_arguments -> get_iod_particles(),
 		this -> filter_arguments -> get_remove_time_correlations_in_mes());
+
 
 	arma::vec true_particle(7);
 	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
@@ -705,8 +712,8 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::vec center = this -> get_center_collected_pcs(t0,tf);
 	
 	arma::vec r0_crude = - this -> LN_t0.t() * center;
-	arma::vec r1_crude = rigid_transforms[0].M_k .t() * (r0_crude + rigid_transforms[0].X_k);
-	arma::vec r2_crude = rigid_transforms[1].M_k .t() * (r1_crude + rigid_transforms[1].X_k);
+	arma::vec r1_crude = sequential_rigid_transforms[0].M_k .t() * (r0_crude + sequential_rigid_transforms[0].X_k);
+	arma::vec r2_crude = sequential_rigid_transforms[1].M_k .t() * (r1_crude + sequential_rigid_transforms[1].X_k);
 
 	// 2nd order interpolation
 	arma::mat A = arma::zeros<arma::mat>(9,9) ;
@@ -714,11 +721,11 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	A.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
 	A.submat(6,0,8,2) = arma::eye<arma::mat>(3,3);
 
-	A.submat(3,3,5,5) = rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
-	A.submat(3,6,5,8) = std::pow(rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
+	A.submat(3,3,5,5) = sequential_rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
+	A.submat(3,6,5,8) = std::pow(sequential_rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
 
-	A.submat(6,3,8,5) = rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
-	A.submat(6,6,8,8) = std::pow(rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
+	A.submat(6,3,8,5) = sequential_rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
+	A.submat(6,6,8,8) = std::pow(sequential_rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
 
 	arma::vec R = arma::vec(9);
 	R.subvec(0,2) = r0_crude;
@@ -727,7 +734,7 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 	arma::vec coefs = arma::solve(A,R);
 
-	arma::vec v1_crude = coefs.subvec(3,5) + 2 * rigid_transforms[1].t_k * coefs.subvec(6,8);
+	arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
 
 	arma::vec h = arma::normalise(arma::cross(r0_crude,r1_crude));
 
@@ -781,7 +788,7 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	else if (type == "cartesian"){
 
 		arma::vec dr =  (r1_crude - r0_crude);
-		double dt = (rigid_transforms[1].t_k - rigid_transforms[0].t_k);
+		double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
 		arma::vec v0_crude = dr / dt;
 
 
@@ -832,7 +839,8 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 
 
-void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & rigid_transforms,
+void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & sequential_rigid_transforms,
+	std::vector<RigidTransform> & absolute_rigid_transforms,
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
@@ -840,8 +848,12 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 	const std::map<int,arma::vec> & X_pcs,
 	const std::map<int,arma::mat> & M_pcs) const{
 
-	rigid_transforms.clear();
+	RigidTransform rt;
+	rt.t_k = times(0);
+	rt.X_k = X_pcs.at(0);
+	rt.M_k = M_pcs.at(0);
 
+	absolute_rigid_transforms.push_back(rt);
 
 	for (int k = t0_index ; k <=  tf_index; ++ k){
 
@@ -863,7 +875,18 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & r
 			rigid_transform.M_k = M_p_k;
 			rigid_transform.X_k = X_p_k;
 			rigid_transform.t_k = times(k - t0_index);
-			rigid_transforms.push_back(rigid_transform);
+			sequential_rigid_transforms.push_back(rigid_transform);
+
+
+			RigidTransform rt;
+			rt.t_k = times(k - t0_index);
+			rt.X_k = X_pcs.at(k);
+			rt.M_k = M_pcs.at(k);
+
+			absolute_rigid_transforms.push_back(rt);
+
+
+
 		}
 
 	}
