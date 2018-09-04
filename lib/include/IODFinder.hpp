@@ -79,6 +79,7 @@ protected:
 		const std::vector<arma::mat> & stms) const;
 
 	static arma::mat::fixed<3,6> compute_dsigmatilde_kdZ_k(
+		const arma::mat::fixed<3,3> & M_k_p,
 		const arma::mat::fixed<3,3> & M_k_tilde_bar,
 		const arma::mat::fixed<3,3> & M_km1_tilde_bar,
 		const arma::mat::fixed<3,3> & LN_k,
@@ -99,6 +100,7 @@ protected:
 		const arma::vec::fixed<3> & X_kp1_prime_bar);
 
 
+	static void compare_rigid_transforms(std::vector<RigidTransform> * s1,std::vector<RigidTransform> * s2);
 
 
 	void compute_state_stms(const arma::vec::fixed<7> & X_hat,
