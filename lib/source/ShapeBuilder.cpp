@@ -582,7 +582,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	arma::mat results(7,mc_iter);
 	boost::progress_display progress(mc_iter);
 	
-	// #pragma omp parallel for
+	#pragma omp parallel for
 	for (int i = 0; i < mc_iter; ++i){
 
 
