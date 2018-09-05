@@ -38,13 +38,13 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 15 // shape reconstruction steps
+#define OBSERVATION_TIMES 30 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 15 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 300 // Number of iterations
 #define IOD_MC_ITER 600
