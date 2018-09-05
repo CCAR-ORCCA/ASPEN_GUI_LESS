@@ -406,8 +406,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	std::cout << "Running the iod filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
-	arma::mat longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
-	arma::mat true_longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
 
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
@@ -462,13 +460,11 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
-			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
 
 			#if IOFLAGS_run_iod
 			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
-			
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
@@ -495,10 +491,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			catch(ICPNoPairsException & e){
 				std::cout << e.what() << std::endl;
 			}
-
-
-
-			
 
 			arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
 			arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
@@ -530,11 +522,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
-
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
 
-			
 		}
 
 	}
@@ -594,14 +584,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		arma::vec state,crude_guess;
 		arma::mat cov;	
 
-		X_pcs_noisy[0] = X_pcs.at(0) ;
-		M_pcs_noisy[0] = M_pcs.at(0) ;
-
-		for (int k = 1; k < X_pcs.size(); ++k){
-			X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
-			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
-		}
-
 		this -> run_IOD_finder(state,
 			cov,
 			crude_guess,
@@ -609,8 +591,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			last_ba_call_index ,
 			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
 			mrps_LN,
-			X_pcs_noisy,
-			M_pcs_noisy);
+			X_pcs,
+			M_pcs);
 
 		results.submat(0,i,5,i) = state.subvec(0,5);
 		results.submat(6,i,6,i) = state(6);
@@ -674,21 +656,20 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	const std::map<int,arma::mat> M_pcs) const{
 
 
-	// std::cout << "- Using all rigid transforms between indices " << t0 << " and " << tf << std::endl;
-
 	// The IOD Finder is ran before running bundle adjustment
 	std::vector<RigidTransform> sequential_rigid_transforms;
 	std::vector<RigidTransform> absolute_rigid_transforms;
+	std::vector<RigidTransform> absolute_true_rigid_transforms;
 
 	ShapeBuilder::assemble_rigid_transforms_IOD(sequential_rigid_transforms,
 		absolute_rigid_transforms,
+		absolute_true_rigid_transforms,
 		times,
 		t0,
 		tf,
 		mrps_LN,
 		X_pcs,
-		M_pcs
-		);
+		M_pcs);
 
 
 	IODFinder iod_finder(&sequential_rigid_transforms, 
@@ -708,11 +689,12 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	// Crude IO
 
 	// get the center of the collected pcs
-	arma::vec center = this -> get_center_collected_pcs(t0,tf);
+	arma::vec center = this -> get_center_collected_pcs(t0,tf,absolute_rigid_transforms,
+		absolute_true_rigid_transforms);
 	
 	arma::vec r0_crude = - this -> LN_t0.t() * center;
-	arma::vec r1_crude = sequential_rigid_transforms[0].M_k .t() * (r0_crude + sequential_rigid_transforms[0].X_k);
-	arma::vec r2_crude = sequential_rigid_transforms[1].M_k .t() * (r1_crude + sequential_rigid_transforms[1].X_k);
+	arma::vec r1_crude = sequential_rigid_transforms[0].M .t() * (r0_crude + sequential_rigid_transforms[0].X);
+	arma::vec r2_crude = sequential_rigid_transforms[1].M .t() * (r1_crude + sequential_rigid_transforms[1].X);
 
 	// 2nd order interpolation
 	arma::mat A = arma::zeros<arma::mat>(9,9) ;
@@ -846,6 +828,7 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & sequential_rigid_transforms,
 	std::vector<RigidTransform> & absolute_rigid_transforms,
+	std::vector<RigidTransform> & absolute_true_rigid_transforms,
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
@@ -855,10 +838,24 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 
 	RigidTransform rt;
 	rt.t_k = times(0);
-	rt.X_k = X_pcs.at(0);
-	rt.M_k = M_pcs.at(0);
+	rt.X = X_pcs.at(0);
+	rt.M = M_pcs.at(0);
 
 	absolute_rigid_transforms.push_back(rt);
+	absolute_true_rigid_transforms.push_back(rt);
+
+
+	std::map<int,arma::vec> X_pcs_noisy;
+	std::map<int,arma::mat> M_pcs_noisy;
+
+
+	X_pcs_noisy[0] = arma::zeros<arma::vec>(3);
+	M_pcs_noisy[0] = arma::eye<arma::mat>(3,3);
+
+	for (int k = 1; k < X_pcs.size(); ++k){
+		X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
+		M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
+	}
 
 	for (int k = t0_index ; k <=  tf_index; ++ k){
 
@@ -866,31 +863,34 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 
 	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 	// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * (X_pcs.at(k) - X_pcs.at(k - 1));
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * M_pcs_noisy.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * (X_pcs_noisy.at(k) - X_pcs_noisy.at(k - 1));
 
 
 			RigidTransform rigid_transform;
-			rigid_transform.M_k = M_p_k;
-			rigid_transform.X_k = X_p_k;
+			rigid_transform.M = M_p_k;
+			rigid_transform.X = X_p_k;
 			rigid_transform.t_k = times(k - t0_index);
 			sequential_rigid_transforms.push_back(rigid_transform);
 
-
 			RigidTransform rt;
 			rt.t_k = times(k - t0_index);
-			rt.X_k = X_pcs.at(k);
-			rt.M_k = M_pcs.at(k);
+			rt.X = X_pcs_noisy[k];
+			rt.M = M_pcs_noisy[k];
 
 			absolute_rigid_transforms.push_back(rt);
+
+			RigidTransform rt_true;
+			rt_true.t_k = times(k - t0_index);
+			rt_true.X = X_pcs.at(k);
+			rt_true.M = M_pcs.at(k);
+
+			absolute_true_rigid_transforms.push_back(rt_true);
 
 
 
 		}
-
 	}
-
-
 }
 
 
@@ -1172,14 +1172,21 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 
 
 
-arma::vec ShapeBuilder::get_center_collected_pcs(int first_pc_index,int last_pc_index) const{
-
+arma::vec ShapeBuilder::get_center_collected_pcs(
+	int first_pc_index,
+	int last_pc_index,
+	const std::vector<RigidTransform> & absolute_rigid_transforms,
+	const std::vector<RigidTransform> & absolute_true_rigid_transforms) const{
 
 	arma::vec center = {0,0,0};
 	int N = last_pc_index - first_pc_index + 1;
 
 	for (int i = 0; i < N; ++i){	
-		center += 1./N * this -> all_registered_pc[i]-> get_center(); 
+
+		arma::vec pc_center = this -> all_registered_pc[i]-> get_center();
+
+		center += 1./N * (absolute_rigid_transforms.at(i).M * (
+		 absolute_true_rigid_transforms.at(i).M.t() * center - absolute_true_rigid_transforms.at(i).X ) + absolute_rigid_transforms.at(i).X); 
 	}
 	return center;
 }

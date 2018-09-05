@@ -125,7 +125,10 @@ protected:
 
 
 
-	arma::vec get_center_collected_pcs(int first_pc_index,int last_pc_index) const;
+	arma::vec get_center_collected_pcs(int first_pc_index,
+		int last_pc_index,
+		const std::vector<RigidTransform> & absolute_rigid_transforms,
+		const std::vector<RigidTransform> & absolute_true_rigid_transforms) const;
 
 
 
@@ -174,6 +177,7 @@ protected:
 	*/
 	void assemble_rigid_transforms_IOD(std::vector<RigidTransform> & sequential_rigid_transforms,
 		std::vector<RigidTransform> & absolute_rigid_transforms,
+		std::vector<RigidTransform> & absolute_true_rigid_transforms,
 		const arma::vec & times, 
 		const int t0_index,
 		const int tf_index,

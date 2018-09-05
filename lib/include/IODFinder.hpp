@@ -6,8 +6,8 @@
 
 struct RigidTransform{
 
-	arma::mat::fixed<3,3> M_k;
-	arma::vec::fixed<3> X_k;
+	arma::mat::fixed<3,3> M;
+	arma::vec::fixed<3> X;
 	double t_k;
 
 };
