@@ -48,7 +48,6 @@
 #define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 50 // Number of iterations
 #define IOD_MC_ITER 600
-#define REMOVE_TIME_CORRELATIONS_IN_MES false
 
 // Target properties
 #define SPIN_RATE 12. // Spin rate (hours)
@@ -259,7 +258,6 @@ int main() {
 	shape_filter_args.set_rigid_transform_noise_sd("X",RIGID_TRANSFORM_X_SD);
 	shape_filter_args.set_rigid_transform_noise_sd("sigma",RIGID_TRANSFORM_SIGMA_SD);
 	shape_filter_args.set_iod_mc_iter(IOD_MC_ITER);
-	shape_filter_args.set_remove_time_correlations_in_mes(REMOVE_TIME_CORRELATIONS_IN_MES);
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
 	std::cout << X_augmented.front() << std::endl;
