@@ -13,8 +13,7 @@ IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 	double stdev_Xtilde,
 	double stdev_sigmatilde,
 	int N_iter, 
-	int particles,
-	bool remove_time_correlations_in_mes){
+	int particles){
 
 	this -> N_iter = N_iter;
 	this -> particles = particles;
@@ -23,7 +22,6 @@ IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 	this -> mrps_LN = mrps_LN;
 	this -> stdev_Xtilde = stdev_Xtilde;
 	this -> stdev_sigmatilde = stdev_sigmatilde;
-	this -> remove_time_correlations_in_mes = remove_time_correlations_in_mes;
 
 
 	// this -> debug_R();
@@ -494,7 +492,6 @@ void IODFinder::run_batch(arma::vec & state,
 	cov = arma::inv(info_mat);
 	arma::vec index_v = arma::randi<arma::vec>(1);
 	double index = index_v(0);
-	residual_vector.save("../output/residual_vector_" +std::to_string(index) + ".txt",arma::raw_ascii);
 
 
 }
@@ -739,7 +736,6 @@ void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 
 	// }
 	
-	R.save("../output/R_mat.txt",arma::raw_ascii);
 
 	this -> W = arma::inv(R);
 
@@ -1025,7 +1021,6 @@ void IODFinder::compute_P_T(){
 		this -> P_T.submat(6 * i + 3, 6 * i + 3, 6 * i + 5, 6 * i + 5) = std::pow(this -> stdev_sigmatilde,2) * arma::eye<arma::mat>(3,3);
 	}
 
-	this -> P_T. save("../output/P_T.txt",arma::raw_ascii);
 
 }
 

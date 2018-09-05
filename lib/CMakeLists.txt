@@ -182,6 +182,7 @@ add_library(${LIB_NAME} SHARED
 	source/ShapeModelBezier.cpp
 	source/ShapeModelImporter.cpp
 	source/ShapeModelTri.cpp
+	source/StatePropagator.cpp
 	external/Gnuplot/source/GNUPlot.cpp
 	)
 

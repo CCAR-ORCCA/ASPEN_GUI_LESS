@@ -10,7 +10,7 @@
 #include <ShapeBuilderArguments.hpp>
 #include <PC.hpp>
 #include "IODFinder.hpp"
-
+#include "StatePropagator.hpp"
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
 
@@ -30,7 +30,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0025 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.001 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
@@ -70,6 +70,11 @@
 #define RAAN 0.2
 #define PERI_OMEGA 0.3
 #define M0 0.1
+
+
+#define LABEL ""
+
+
 ///////////////////////////////////////////
 
 int main() {
@@ -174,7 +179,6 @@ int main() {
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
 	arma::vec omega_0 = {0e-2 * omega,0e-2 * omega,omega};
 
-
 	// - sma : semi-major axis [L]
 	// 	- e : eccentricity [-]
 	// 	- i : inclination in [0,pi] [rad]
@@ -182,17 +186,17 @@ int main() {
 	// 	- omega : longitude of perigee [0,2 pi] [rad] 
 	// 	- M0 : mean anomaly at epoch [rad]
 
-
 	arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
 	OC::KepState kep_state(kep_state_vec,args.get_mu());
 	OC::CartState cart_state = kep_state.convert_to_cart(0);
-
 
 	X0_augmented.rows(0,2) = cart_state.get_position_vector();
 	X0_augmented.rows(3,5) = cart_state.get_velocity_vector();
 
 	X0_augmented.rows(6,8) = mrp_0;
 	X0_augmented.rows(9,11) = omega_0;
+
+	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;
 
 	/******************************************************/
 	/******************************************************/
@@ -206,68 +210,37 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
-	arma::vec times = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES); 
-	arma::vec times_dense = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,  OBSERVATION_TIMES * 10); 
-
-	std::vector<double> T_obs,T_obs_dense;
-
-	for (unsigned int i = 0; i < times.n_rows; ++i){
-		T_obs.push_back(times(i));
-	}
-	for (unsigned int i = 0; i < times_dense.n_rows; ++i){
-		T_obs_dense.push_back(times_dense(i));
-	}
-
-	// Containers
-	std::vector<arma::vec> X_augmented,X_augmented_dense;
-	auto N_true = X0_augmented.n_rows;
-
-	# if USE_HARMONICS
-	System dynamics(args,N_true,Dynamics::harmonics_attitude_dxdt_inertial );
+	std::vector<double> T_obs;
+	std::vector<arma::vec> X_augmented;
+	
+	#if USE_HARMONICS
+	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		Dynamics::harmonics_attitude_dxdt_inertial,args,
+		"../output/traj/","obs_harmonics_" + std::string(LABEL));
+	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
+		Dynamics::harmonics_attitude_dxdt_inertial,args,
+		"../output/traj/","full_orbit_harmonics_" + std::string(LABEL));
 	#else 
-	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_inertial );
+	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		Dynamics::point_mass_attitude_dxdt_inertial,args,
+		"../output/traj/","obs_point_mass_" + std::string(LABEL));
+
+	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
+		Dynamics::point_mass_attitude_dxdt_inertial,args,
+		"../output/traj/","full_orbit_point_mass_" + std::string(LABEL));
 	#endif 
 
-	arma::vec X_augmented_1 = X0_augmented;
 
-	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
-	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-
-	boost::numeric::odeint::integrate_times(stepper, 
-		dynamics, 
-		X_augmented_1,
-		T_obs.begin(), 
-		T_obs.end(),
-		1e-3,
-		Observer::push_back_augmented_state(X_augmented));
-
-	auto stepper_dense = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-
-	arma::vec X_augmented_2 = X0_augmented;
-
-
-	// The orbit is propagated with a finer timestep for visualization purposes
-	boost::numeric::odeint::integrate_times(stepper_dense, 
-		dynamics, 
-		X_augmented_2, 
-		T_obs_dense.begin(), 
-		T_obs_dense.end(),
-		1e-3,
-		Observer::push_back_augmented_state(X_augmented_dense));
-
-	arma::mat X_dense(12,X_augmented_dense.size());
-	arma::vec T_dense_arma(X_augmented_dense.size());
-	for (unsigned int i = 0; i < X_augmented_dense.size(); ++i){
-		X_dense.col(i) = X_augmented_dense[i];
-		T_dense_arma(i) = T_obs_dense[i];
+	arma::vec times(T_obs.size()); 
+	for (int i = 0; i < T_obs.size(); ++i){
+		times(i) = T_obs[i];
 	}
 
-	# if USE_HARMONICS
-	X_dense.save("../output/traj/trajectory_harmo.txt",arma::raw_ascii);
-	#else
-	X_dense.save("../output/traj/trajectory_point_mass.txt",arma::raw_ascii);
-	#endif
-	T_dense_arma.save("../output/traj/T_traj.txt",arma::raw_ascii);
+
 
 	/******************************************************/
 	/******************************************************/
@@ -291,9 +264,11 @@ int main() {
 
 	std::cout << X_augmented.front() << std::endl;
 
-	std::cout << "True mu: " << arma::datum::G * true_shape_model . get_volume() * DENSITY << std::endl;
+	std::cout << "True mu: " << true_mu << std::endl;
+	std::cout << "True period: " << 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu) / (3600) << " hours" << std::endl;
+
 	shape_filter.run_iod(times,X_augmented);
-	
+
 
 	return 0;
 }
