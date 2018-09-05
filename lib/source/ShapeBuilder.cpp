@@ -571,6 +571,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	arma::mat results(7,mc_iter);
 	arma::mat crude_guesses(6,mc_iter);
+	arma::mat all_covs(7 * mc_iter,7);
+
 
 	boost::progress_display progress(mc_iter);
 	
@@ -601,7 +603,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		crude_guesses.col(i) = crude_guess;
 
 
-		cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
+		all_covs.rows(7 * i, 7 * i + 6) = cov;
 		
 		++progress;
 
@@ -609,7 +611,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	results.save("../output/results.txt",arma::raw_ascii);
 	crude_guesses.save("../output/crude_guesses.txt",arma::raw_ascii);
-
+	all_covs.save("../output/all_covs.txt",arma::raw_ascii);
 	arma::vec results_mean = arma::mean(results,1);
 	arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
 
