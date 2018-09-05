@@ -204,6 +204,7 @@ protected:
 	*/
 	void run_IOD_finder(arma::vec & state,
 		arma::mat & cov,
+		arma::vec & crude_guess,
 		const arma::vec & times,
 		const int t0 ,
 		const int tf, 

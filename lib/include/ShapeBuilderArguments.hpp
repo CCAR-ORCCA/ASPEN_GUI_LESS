@@ -486,13 +486,6 @@ public:
 	}
 
 
-	void set_remove_time_correlations_in_mes(bool remove_time_correlations_in_mes){
-		this -> iod_remove_time_correlations_in_mes = remove_time_correlations_in_mes;
-	}
-
-	bool get_remove_time_correlations_in_mes() const{
-		return this -> iod_remove_time_correlations_in_mes;
-	}
 
 protected:
 
@@ -511,7 +504,6 @@ protected:
 	int iod_iterations;
 	int iod_particles;
 	int iod_mc_iter;
-	bool iod_remove_time_correlations_in_mes;
 
 	unsigned int index_init;
 	unsigned int index_end;

@@ -580,6 +580,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
 
 	arma::mat results(7,mc_iter);
+	arma::mat crude_guesses(6,mc_iter);
+
 	boost::progress_display progress(mc_iter);
 	
 	#pragma omp parallel for
@@ -589,22 +591,20 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		std::map<int,arma::vec> X_pcs_noisy;
 		std::map<int,arma::mat> M_pcs_noisy;
 
-		arma::vec state;
-		arma::mat cov;
+		arma::vec state,crude_guess;
+		arma::mat cov;	
 
 		X_pcs_noisy[0] = X_pcs.at(0) ;
 		M_pcs_noisy[0] = M_pcs.at(0) ;
 
 		for (int k = 1; k < X_pcs.size(); ++k){
-
 			X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
 			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
-			
 		}
-
 
 		this -> run_IOD_finder(state,
 			cov,
+			crude_guess,
 			times,
 			last_ba_call_index ,
 			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
@@ -615,6 +615,10 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		results.submat(0,i,5,i) = state.subvec(0,5);
 		results.submat(6,i,6,i) = state(6);
 
+
+		crude_guesses.col(i) = crude_guess;
+
+
 		if (i == 0){
 			cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
 		}
@@ -623,6 +627,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	}
 
 	results.save("../output/results.txt",arma::raw_ascii);
+	crude_guesses.save("../output/crude_guesses.txt",arma::raw_ascii);
 
 	arma::vec results_mean = arma::mean(results,1);
 	arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
@@ -660,6 +665,7 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 
 void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::mat & cov,
+	arma::vec & crude_guess,
 	const arma::vec & times,
 	const int t0 ,
 	const int tf, 
@@ -728,6 +734,12 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	arma::vec coefs = arma::solve(A,R);
 
 	arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
+
+
+	crude_guess = arma::zeros<arma::vec>(6);
+	crude_guess.subvec(0,2) = r0_crude;
+	crude_guess.subvec(3,5) = v1_crude;
+
 
 	arma::vec h = arma::normalise(arma::cross(r0_crude,r1_crude));
 
