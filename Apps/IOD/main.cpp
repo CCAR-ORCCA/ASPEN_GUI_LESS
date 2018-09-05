@@ -45,8 +45,8 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 15 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 500 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 50 // Number of iterations
+#define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
+#define IOD_ITERATIONS 300 // Number of iterations
 #define IOD_MC_ITER 600
 
 // Target properties
@@ -56,8 +56,8 @@
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Rigid transform artificial noise
-#define RIGID_TRANSFORM_X_SD 0.5
-#define RIGID_TRANSFORM_SIGMA_SD 0.0
+#define RIGID_TRANSFORM_X_SD 0.1
+#define RIGID_TRANSFORM_SIGMA_SD 0.001
 
 #define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP false // Whether or not the ICP should be used (if not, uses true rigid transforms)
@@ -69,7 +69,6 @@
 #define RAAN 0.2
 #define PERI_OMEGA 0.3
 #define M0 0.1
-
 
 #define LABEL ""
 

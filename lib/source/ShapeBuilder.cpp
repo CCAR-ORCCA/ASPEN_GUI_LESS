@@ -601,9 +601,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		crude_guesses.col(i) = crude_guess;
 
 
-		if (i == 0){
-			cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
-		}
+		cov.save("../output/cov_" + std::to_string(i) + ".txt",arma::raw_ascii);
+		
 		++progress;
 
 	}
