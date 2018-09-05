@@ -34,7 +34,7 @@ public:
 		std::string type = "keplerian", 
 		int verbose_level = 0,const arma::vec & guess  = {});
 	
-	OC::KepState get_result() const;
+	arma::vec get_result() const;
 
 
 
@@ -73,7 +73,6 @@ protected:
 		arma::mat & info_mat,
 		arma::vec & normal_mat,
 		arma::vec & residual_vector,
-		arma::vec & apriori_state,
 		const std::vector<arma::vec::fixed<3>> & positions,
 		const std::vector<arma::mat> & stms) const;
 
@@ -114,7 +113,7 @@ protected:
 	std::vector<arma::vec> mrps_LN;
 
 	std::vector<arma::mat> rigid_transforms_covariances;
-	OC::KepState keplerian_state_at_epoch;
+	arma::vec state_at_epoch;
 
 	arma::mat W;
 	double stdev_sigmatilde;

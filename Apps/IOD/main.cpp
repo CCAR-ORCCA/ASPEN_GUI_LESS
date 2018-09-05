@@ -56,8 +56,8 @@
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
 
 // Rigid transform artificial noise
-#define RIGID_TRANSFORM_X_SD 0.0001
-#define RIGID_TRANSFORM_SIGMA_SD 0.000
+#define RIGID_TRANSFORM_X_SD 0.5
+#define RIGID_TRANSFORM_SIGMA_SD 0.0
 
 #define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP false // Whether or not the ICP should be used (if not, uses true rigid transforms)

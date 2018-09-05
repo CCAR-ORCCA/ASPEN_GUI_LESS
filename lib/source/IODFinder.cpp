@@ -37,126 +37,22 @@ IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 void IODFinder::run(arma::vec lower_bounds,
 	arma::vec upper_bounds,std::string type,
 	int verbose_level,const arma::vec & guess){
-
-	arma::vec results;
-	if (type == "keplerian"){
-		if (lower_bounds.n_rows == 0){
-			lower_bounds = {A_MIN,E_MIN,I_MIN,RAAN_MIN,OMEGA_MIN,M0_MIN,MU_MIN};
-			upper_bounds = {A_MAX,E_MAX,I_MAX,RAAN_MAX,OMEGA_MAX,M0_MAX,MU_MAX};
-		}
-
-		Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function, 
-			lower_bounds,
-			upper_bounds, 
-			this -> particles,
-			this -> N_iter,
-			this -> sequential_rigid_transforms,
-			guess);
-
-
-		std::map<int,std::string> boundary_conditions = {
-			std::make_pair<int,std::string>(2,"w"),
-			std::make_pair<int,std::string>(3,"w"),
-			std::make_pair<int,std::string>(4,"w"),
-			std::make_pair<int,std::string>(5,"w"),
-		};
-		psopt.run(false,verbose_level,boundary_conditions);
-		results = psopt.get_result();
-		this -> keplerian_state_at_epoch = OC::KepState(results.subvec(0,5),results(6));
-
-	}
-	else if (type == "cartesian"){
-
-		Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function_cartesian, 
-			lower_bounds,
-			upper_bounds, 
-			this -> particles,
-			this -> N_iter,
-			this -> sequential_rigid_transforms,
-			guess);
-		psopt.run(false,verbose_level);
-		results = psopt.get_result();
-
-		OC::CartState cart_state(results.subvec(0,5),results(6));
-		this -> keplerian_state_at_epoch = cart_state.convert_to_kep(0);
-
-	}
-
+	
+	Psopt<std::vector<RigidTransform> *> psopt(IODFinder::cost_function_cartesian, 
+		lower_bounds,
+		upper_bounds, 
+		this -> particles,
+		this -> N_iter,
+		this -> sequential_rigid_transforms,
+		guess);
+	psopt.run(false,verbose_level);
+	this -> state_at_epoch = psopt.get_result();
 
 
 }
 
-OC::KepState IODFinder::get_result() const{
-	return this -> keplerian_state_at_epoch;
-}
-
-double IODFinder::cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level){
-
-	// Particle State ordering:
-	// [a,e,i,Omega,omega,M0_0,mu]
-
-	OC::KepState kep_state(particle.subvec(0,5),particle(6));
-
-	int N =  args -> size();
-	arma::mat positions(3,N + 1);
-
-	// Since the dt at which images are captured is constant, the epoch can be inferred
-	// by subtracting dt to the first rigid transform's t_k
-
-	double dt = args -> at(1).t_k -  args -> at(0).t_k;
-	assert(dt == args -> at(2).t_k -  args -> at(1).t_k);
-	double epoch_time = args -> at(0).t_k - dt;
-
-	if (verbose_level > 1){
-		std::cout << "\n - Epoch time: " << epoch_time;
-		std::cout << "\n - dt: " << dt << std::endl;
-	}
-
-	positions.col(0) = kep_state.convert_to_cart(epoch_time).get_position_vector();
-
-	for (int k = 1; k < N + 1; ++k){
-		double t_k = args -> at(k - 1).t_k;
-		double time_from_epoch = t_k - epoch_time;
-		positions.col(k) = kep_state.convert_to_cart(time_from_epoch).get_position_vector();
-
-		if (verbose_level > 1){
-			std::cout << " - Transform index : " << k << std::endl;
-			std::cout << " - Time from 0 : " << t_k << std::endl;
-			std::cout << " - Time from epoch : " << time_from_epoch << std::endl << std::endl;
-		}
-	}
-
-	arma::vec epsilon = arma::zeros<arma::vec>(3 * N);
-
-	for (int k = 0; k < N; ++k ){
-
-		arma::mat M_k = args -> at(k).M;
-		arma::mat X_k = args -> at(k).X;
-
-		epsilon.subvec( 3 * k, 3 * k + 2) = positions.col(k) - M_k * positions.col(k + 1) + X_k;
-		
-		if (verbose_level > 1){
-			std::cout << "\t Epsilon " << k << " = " << arma::norm(epsilon.subvec( 3 * k, 3 * k + 2)) << std::endl;
-
-		}
-
-
-
-
-
-	}
-
-
-	if (verbose_level > 2){
-		std::cout << positions.col(0).t() << std::endl;
-		std::cout << positions.col(1).t() << std::endl;
-		std::cout << args -> at(0).M << std::endl;
-		std::cout << args -> at(0).X << std::endl;
-	}
-
-
-	return arma::norm(epsilon);
-
+arma::vec IODFinder::get_result() const{
+	return this -> state_at_epoch;
 }
 
 double IODFinder::cost_function_cartesian(arma::vec particle, 
@@ -418,7 +314,6 @@ void IODFinder::build_normal_equations(
 	arma::mat & info_mat,
 	arma::vec & normal_mat,
 	arma::vec & residual_vector,
-	arma::vec & apriori_state,
 	const std::vector<arma::vec::fixed<3>> & positions,
 	const std::vector<arma::mat> & stms) const{
 
@@ -451,14 +346,9 @@ void IODFinder::build_normal_equations(
 }
 
 
-void IODFinder::run_batch(arma::vec & state,
+void IODFinder::run_batch(
+	arma::vec & state,
 	arma::mat & cov){
-
-
-	OC::KepState apriori_kepstate = this -> keplerian_state_at_epoch ;
-	arma::vec apriori_state(7);
-	apriori_state.rows(0,5) = apriori_kepstate.convert_to_cart(0).get_state();
-	apriori_state(6) = apriori_kepstate.get_mu();
 
 	int N_iter = 10;
 
@@ -466,29 +356,26 @@ void IODFinder::run_batch(arma::vec & state,
 	arma::vec normal_mat(7);
 	arma::vec residual_vector = arma::vec(3 * this -> sequential_rigid_transforms -> size());
 
-
 	std::vector<arma::vec::fixed<3> > positions;
 	std::vector<arma::mat> stms;
 
 	for (int i = 0; i < N_iter; ++i){
 
-		this -> compute_state_stms(apriori_state,positions,stms);
+		this -> compute_state_stms(state,positions,stms);
 		this -> compute_W(positions);
 		this -> build_normal_equations(
 			info_mat,
 			normal_mat,
 			residual_vector,
-			apriori_state,
 			positions,
 			stms);
 
 		arma::vec deviation = arma::solve(info_mat,normal_mat);
 
-		apriori_state += deviation;
+		state += deviation;
 
 	}
 
-	state = apriori_state;
 	cov = arma::inv(info_mat);
 	arma::vec index_v = arma::randi<arma::vec>(1);
 	double index = index_v(0);
@@ -774,7 +661,7 @@ void IODFinder::debug_R() const{
 
 	// for (int k = 1 ; k < N_rigid_transforms + 1; ++ k){
 
-		
+
 	// 	I_nom.subvec(6 * (k-1), 6 * (k-1) + 2) = this -> sequential_rigid_transforms -> at(k-1).X;
 	// 	I_nom.subvec(6 * (k-1) + 3, 6 * (k-1) + 5) = RBK::dcm_to_mrp(this -> sequential_rigid_transforms -> at(k-1).M) ;
 

@@ -717,105 +717,48 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 	arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
 
-
 	crude_guess = arma::zeros<arma::vec>(6);
 	crude_guess.subvec(0,2) = r0_crude;
 	crude_guess.subvec(3,5) = v1_crude;
 
 
-	arma::vec h = arma::normalise(arma::cross(r0_crude,r1_crude));
-
-	double i_crude = std::acos(h(2));
-	double RAAN_crude = std::atan2(h(0),-h(1));
-	double m0_min_crude,m0_max_crude;
+	arma::vec dr =  (r1_crude - r0_crude);
+	double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
+	arma::vec v0_crude = dr / dt;
 
 
-	std::string type = "cartesian";
+	arma::vec l_bounds = {
+		r0_crude(0) - 100,
+		r0_crude(1) - 100,
+		r0_crude(2) - 100,
+		v0_crude(0) - 100 / dt,
+		v0_crude(1) - 100 / dt,
+		v0_crude(2) - 100 / dt,
+		MU_MIN
+	};
 
-	if (type == "keplerian"){
-		if (arma::dot(r1_crude,v1_crude) > 0){
-			m0_min_crude = 0;
-			m0_max_crude = arma::datum::pi;
+	arma::vec u_bounds = {
+		r0_crude(0) + 100,
+		r0_crude(1) + 100,
+		r0_crude(2) + 100,
+		v0_crude(0) + 100 / dt,
+		v0_crude(1) + 100 / dt,
+		v0_crude(2) + 100 / dt,
+		MU_MAX
+	};
 
-		}
-		else{
-			m0_min_crude = arma::datum::pi;
-			m0_max_crude = 2 * arma::datum::pi;
-		}
 
-		arma::vec l_bounds = {
-			A_MIN,
-			E_MIN,
-			I_MIN,
-			RAAN_MIN,
-			OMEGA_MIN,
-			m0_min_crude,
-			MU_MIN
-		};
+	arma::vec guess_particle = {
+		r0_crude(0),r0_crude(1),r0_crude(2),
+		v0_crude(0),v0_crude(1),v0_crude(2),
+		NAN
+	};
 
-		arma::vec u_bounds = {
-			A_MAX,
-			E_MAX,
-			I_MAX,
-			RAAN_MAX,
-			OMEGA_MAX,
-			m0_max_crude,
-			MU_MAX
-		};
-
-		
-		arma::vec guess_particle = {NAN,NAN,i_crude,RAAN_crude,NAN,NAN,NAN};
-
-		iod_finder.run(l_bounds,u_bounds,"keplerian",0,guess_particle);
+	iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
 
 
 
-
-	}
-	else if (type == "cartesian"){
-
-		arma::vec dr =  (r1_crude - r0_crude);
-		double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
-		arma::vec v0_crude = dr / dt;
-
-
-		arma::vec l_bounds = {
-			r0_crude(0) - 100,
-			r0_crude(1) - 100,
-			r0_crude(2) - 100,
-			v0_crude(0) - 100 / dt,
-			v0_crude(1) - 100 / dt,
-			v0_crude(2) - 100 / dt,
-			MU_MIN
-		};
-
-		arma::vec u_bounds = {
-			r0_crude(0) + 100,
-			r0_crude(1) + 100,
-			r0_crude(2) + 100,
-			v0_crude(0) + 100 / dt,
-			v0_crude(1) + 100 / dt,
-			v0_crude(2) + 100 / dt,
-			MU_MAX
-		};
-
-		
-		arma::vec guess_particle = {
-			r0_crude(0),r0_crude(1),r0_crude(2),
-			v0_crude(0),v0_crude(1),v0_crude(2),
-			NAN
-		};
-
-		iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
-
-
-	}
-
-	OC::KepState est_kep_state = iod_finder.get_result();
-
-	arma::vec est_particle(7);
-	est_particle.subvec(0,5) = est_kep_state.get_state();
-	est_particle(6) = est_kep_state.get_mu();
+	state = iod_finder.get_result();
 
 	iod_finder.run_batch(state,cov);
 
@@ -1180,13 +1123,13 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 	arma::vec center = {0,0,0};
 	int N = last_pc_index - first_pc_index + 1;
-
+	arma::vec pc_center;
 	for (int i = 0; i < N; ++i){	
 
-		arma::vec pc_center = this -> all_registered_pc[i]-> get_center();
+		pc_center = this -> all_registered_pc[i]-> get_center();
 
 		center += 1./N * (absolute_rigid_transforms.at(i).M * (
-		 absolute_true_rigid_transforms.at(i).M.t() * (pc_center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
+			absolute_true_rigid_transforms.at(i).M.t() * (pc_center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
 	}
 	return center;
 }
