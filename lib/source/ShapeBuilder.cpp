@@ -1186,7 +1186,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 		arma::vec pc_center = this -> all_registered_pc[i]-> get_center();
 
 		center += 1./N * (absolute_rigid_transforms.at(i).M * (
-		 absolute_true_rigid_transforms.at(i).M.t() * center - absolute_true_rigid_transforms.at(i).X ) + absolute_rigid_transforms.at(i).X); 
+		 absolute_true_rigid_transforms.at(i).M.t() * (center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
 	}
 	return center;
 }
