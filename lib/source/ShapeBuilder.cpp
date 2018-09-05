@@ -597,7 +597,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 		for (int k = 1; k < X_pcs.size(); ++k){
 
-			
 			X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
 			M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
 			

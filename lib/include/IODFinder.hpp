@@ -46,11 +46,11 @@ public:
 
 	arma::mat::fixed<6,12> compute_dIprime_k_dVtilde_k(int k) const;
 
-	arma::mat compute_partial_V_partial_T() const;
-	arma::mat compute_partial_I_partial_V() const;
+	arma::sp_mat compute_partial_V_partial_T() const;
+	arma::sp_mat compute_partial_I_partial_V() const;
 
-	arma::mat compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const;
-	arma::mat compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const;
+	arma::sp_mat compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const;
+	arma::sp_mat compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const;
 
 
 	void debug_R() const;

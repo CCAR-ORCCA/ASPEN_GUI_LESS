@@ -337,7 +337,7 @@ arma::vec::fixed<3> IODFinder::compute_y_k(
 }
 
 
-arma::mat IODFinder::compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const{
+arma::sp_mat IODFinder::compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const{
 
 	return (this -> compute_partial_y_partial_I(positions)
 		*  this -> compute_partial_I_partial_V() 
@@ -345,9 +345,9 @@ arma::mat IODFinder::compute_partial_y_partial_T(const std::vector<arma::vec::fi
 
 }
 
-arma::mat IODFinder::compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const{
+arma::sp_mat IODFinder::compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const{
 
-	arma::mat dydI = arma::zeros<arma::mat>(3 * this -> sequential_rigid_transforms -> size(),
+	arma::sp_mat dydI(3 * this -> sequential_rigid_transforms -> size(),
 		6 * this -> sequential_rigid_transforms -> size());
 
 	for (int k = 0; k < this -> sequential_rigid_transforms -> size(); ++k){
@@ -357,9 +357,9 @@ arma::mat IODFinder::compute_partial_y_partial_I(const std::vector<arma::vec::fi
 	return dydI;
 }
 
-arma::mat IODFinder::compute_partial_I_partial_V() const{
+arma::sp_mat IODFinder::compute_partial_I_partial_V() const{
 
-	arma::mat dIdV = arma::zeros<arma::mat>(6 * this -> sequential_rigid_transforms -> size(),
+	arma::sp_mat dIdV(6 * this -> sequential_rigid_transforms -> size(),
 		6 + 12 * this -> sequential_rigid_transforms -> size());
 
 
@@ -384,10 +384,10 @@ arma::mat IODFinder::compute_partial_I_partial_V() const{
 
 }
 
-arma::mat IODFinder::compute_partial_V_partial_T() const{
+arma::sp_mat IODFinder::compute_partial_V_partial_T() const{
 
 
-	arma::mat dVdT = arma::zeros<arma::mat>(6 + 12 * this -> sequential_rigid_transforms -> size() ,
+	arma::sp_mat dVdT(6 + 12 * this -> sequential_rigid_transforms -> size() ,
 		6 * (this -> sequential_rigid_transforms -> size() + 1) );
 
 	// V0 only contains T0
@@ -718,7 +718,7 @@ void IODFinder::seq_transform_from_epoch_transform(int k,
 
 void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 
-	arma::mat dydT = IODFinder::compute_partial_y_partial_T(positions);
+	arma::sp_mat dydT = IODFinder::compute_partial_y_partial_T(positions);
 
 
 	arma::mat R = dydT * this -> P_T * dydT.t();
@@ -750,143 +750,143 @@ void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 
 void IODFinder::debug_R() const{
 
-	arma::vec true_particle = { 6.4514e+02,1.9006e+02,3.3690e+02,-2.7270e-02, 4.0806e-03,5.4598e-02,2.25535};
+	// arma::vec true_particle = { 6.4514e+02,1.9006e+02,3.3690e+02,-2.7270e-02, 4.0806e-03,5.4598e-02,2.25535};
 
-	std::vector<arma::vec::fixed<3> > positions;
-	std::vector<arma::mat> stms;
-	this -> compute_state_stms(true_particle,positions,stms);
+	// std::vector<arma::vec::fixed<3> > positions;
+	// std::vector<arma::mat> stms;
+	// this -> compute_state_stms(true_particle,positions,stms);
 
 
 
-	int N_rigid_transforms = this -> sequential_rigid_transforms -> size();
+	// int N_rigid_transforms = this -> sequential_rigid_transforms -> size();
 
-	std::cout << "Number of sequential transforms: " << this -> sequential_rigid_transforms -> size() << std::endl;
-	std::cout << "Number of absolute transforms: " << this -> absolute_rigid_transforms -> size() << std::endl;
+	// std::cout << "Number of sequential transforms: " << this -> sequential_rigid_transforms -> size() << std::endl;
+	// std::cout << "Number of absolute transforms: " << this -> absolute_rigid_transforms -> size() << std::endl;
 
 	
-	// Nominal sequential transforms
-	arma::vec I_nom(6 * N_rigid_transforms);
-	arma::vec V_nom(12 * N_rigid_transforms + 6);
+	// // Nominal sequential transforms
+	// arma::vec I_nom(6 * N_rigid_transforms);
+	// arma::vec V_nom(12 * N_rigid_transforms + 6);
 
 
-	V_nom.subvec(0,2) = this -> absolute_rigid_transforms -> at(0).X_k;
-	V_nom.subvec(3,5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(0).M_k);
+	// V_nom.subvec(0,2) = this -> absolute_rigid_transforms -> at(0).X_k;
+	// V_nom.subvec(3,5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(0).M_k);
 
-	for (int k = 1 ; k < N_rigid_transforms + 1; ++ k){
+	// for (int k = 1 ; k < N_rigid_transforms + 1; ++ k){
 
 		
-		I_nom.subvec(6 * (k-1), 6 * (k-1) + 2) = this -> sequential_rigid_transforms -> at(k-1).X_k;
-		I_nom.subvec(6 * (k-1) + 3, 6 * (k-1) + 5) = RBK::dcm_to_mrp(this -> sequential_rigid_transforms -> at(k-1).M_k) ;
+	// 	I_nom.subvec(6 * (k-1), 6 * (k-1) + 2) = this -> sequential_rigid_transforms -> at(k-1).X_k;
+	// 	I_nom.subvec(6 * (k-1) + 3, 6 * (k-1) + 5) = RBK::dcm_to_mrp(this -> sequential_rigid_transforms -> at(k-1).M_k) ;
 
-		V_nom.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = this -> absolute_rigid_transforms -> at(k-1).X_k;
-		V_nom.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(k-1).M_k);
+	// 	V_nom.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = this -> absolute_rigid_transforms -> at(k-1).X_k;
+	// 	V_nom.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(k-1).M_k);
 
-		V_nom.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = this -> absolute_rigid_transforms -> at(k).X_k;
-		V_nom.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(k).M_k);
-
-
-	}
-
-	// Nominal y
-	arma::vec y_nom = arma::zeros<arma::vec>(3 * this -> sequential_rigid_transforms -> size());
-
-	for (int k = 0; k < this -> sequential_rigid_transforms -> size(); ++ k){
-
-		arma::mat Mkp1 = this -> sequential_rigid_transforms ->  at(k).M_k;
-		arma::vec Xkp1 = this -> sequential_rigid_transforms ->  at(k).X_k;
-
-		y_nom.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(
-			positions[k],
-			positions[k+1],
-			Mkp1,
-			Xkp1);
-	}
-
-	arma::vec dT = arma::zeros<arma::vec>(6 * this -> sequential_rigid_transforms -> size() + 6);
-	arma::vec dI = arma::zeros<arma::vec>(6 * this -> sequential_rigid_transforms -> size());
+	// 	V_nom.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = this -> absolute_rigid_transforms -> at(k).X_k;
+	// 	V_nom.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(k).M_k);
 
 
-	for (int i = 1; i < this -> sequential_rigid_transforms -> size(); ++i){
-			dT.subvec(6 * i, 6 * i + 2) =  1 * arma::randn<arma::vec>(3);
-			dT.subvec(6 * i + 3, 6 * i + 2 + 3) = 0.001 * arma::randn<arma::vec>(3);
-	}
+	// }
 
-	for (int i = 0; i < this -> sequential_rigid_transforms -> size(); ++i){
+	// // Nominal y
+	// arma::vec y_nom = arma::zeros<arma::vec>(3 * this -> sequential_rigid_transforms -> size());
 
-		dI.subvec(6 * (i), 6 * (i) + 2) = 0.0 * arma::randn<arma::vec>(3);
-		dI.subvec(6 * (i) + 3, 6 * (i) + 2 + 3) = 0.0 * arma::randn<arma::vec>(3);
-	}
+	// for (int k = 0; k < this -> sequential_rigid_transforms -> size(); ++ k){
 
+	// 	arma::mat Mkp1 = this -> sequential_rigid_transforms ->  at(k).M_k;
+	// 	arma::vec Xkp1 = this -> sequential_rigid_transforms ->  at(k).X_k;
 
-	// Perturbed sequential transforms
-	std::vector<RigidTransform> rigid_transforms_seq_p;
-	arma::vec I_p(6 * N_rigid_transforms);
-	arma::vec V_p(12 * N_rigid_transforms + 6);
-	arma::vec dV_non_lin = arma::zeros<arma::vec>(12 * N_rigid_transforms + 6);
-	arma::vec dI_non_lin = arma::zeros<arma::vec>(6 * N_rigid_transforms);
+	// 	y_nom.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(
+	// 		positions[k],
+	// 		positions[k+1],
+	// 		Mkp1,
+	// 		Xkp1);
+	// }
 
-
-	V_p.subvec(0,2) = this -> absolute_rigid_transforms -> at(0).X_k;
-	V_p.subvec(3,5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(0).M_k);
-
-	for (int k = 1 ; k < N_rigid_transforms + 1; ++ k){
-
-		arma::vec X_tilde_km1_p = this -> absolute_rigid_transforms -> at(k-1).X_k + dT.subvec(6 * (k - 1) , 6 * (k - 1) + 2);
-		arma::vec X_tilde_k_p = this -> absolute_rigid_transforms -> at(k).X_k + dT.subvec(6 * k , 6 * k + 2);
-
-		arma::mat M_tilde_km1_p = this -> absolute_rigid_transforms -> at(k-1).M_k * RBK::mrp_to_dcm(dT.subvec(6 *(k - 1) + 3, 6 * (k - 1) + 5));
-		arma::mat M_tilde_k_p = this -> absolute_rigid_transforms -> at(k).M_k * RBK::mrp_to_dcm(dT.subvec(6 * k + 3, 6 * k + 5));
-
-		arma::mat M_p_k = RBK::mrp_to_dcm(this -> mrps_LN[k - 1]).t() * M_tilde_km1_p .t() * M_tilde_k_p * RBK::mrp_to_dcm(this -> mrps_LN[k]);
-		arma::vec X_p_k = RBK::mrp_to_dcm(this -> mrps_LN[k - 1]).t() * M_tilde_km1_p .t() * (X_tilde_k_p - X_tilde_km1_p);
+	// arma::vec dT = arma::zeros<arma::vec>(6 * this -> sequential_rigid_transforms -> size() + 6);
+	// arma::vec dI = arma::zeros<arma::vec>(6 * this -> sequential_rigid_transforms -> size());
 
 
-		X_p_k = X_p_k + dI.subvec(6 * (k - 1) , 6 * (k - 1) + 2 );
-		M_p_k = M_p_k * RBK::mrp_to_dcm(dI.subvec(6 * (k - 1) + 3, 6 * (k - 1) + 2 + 3));
+	// for (int i = 1; i < this -> sequential_rigid_transforms -> size(); ++i){
+	// 		dT.subvec(6 * i, 6 * i + 2) =  1 * arma::randn<arma::vec>(3);
+	// 		dT.subvec(6 * i + 3, 6 * i + 2 + 3) = 0.001 * arma::randn<arma::vec>(3);
+	// }
+
+	// for (int i = 0; i < this -> sequential_rigid_transforms -> size(); ++i){
+
+	// 	dI.subvec(6 * (i), 6 * (i) + 2) = 0.0 * arma::randn<arma::vec>(3);
+	// 	dI.subvec(6 * (i) + 3, 6 * (i) + 2 + 3) = 0.0 * arma::randn<arma::vec>(3);
+	// }
 
 
-		RigidTransform rigid_transform;
-		rigid_transform.M_k = M_p_k;
-		rigid_transform.X_k = X_p_k;
-		rigid_transform.t_k = this -> sequential_rigid_transforms -> at(k - 1).t_k;
-		rigid_transforms_seq_p.push_back(rigid_transform);
-
-		I_p.subvec(6 * (k-1), 6 * (k-1) + 2) = X_p_k;
-		I_p.subvec(6 * (k-1) + 3, 6 * (k-1) + 5) = RBK::dcm_to_mrp(M_p_k) ;
-
-		V_p.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = X_tilde_km1_p;
-		V_p.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(M_tilde_km1_p);
-
-		V_p.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = X_tilde_k_p;
-		V_p.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(M_tilde_k_p);
-
-		dV_non_lin.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = V_p.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) - V_nom.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) ;
-		dV_non_lin.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(V_nom.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5)).t() * RBK::mrp_to_dcm(V_p.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5)));
-
-		dV_non_lin.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = V_p.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) - V_nom.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8);
-		dV_non_lin.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(V_nom.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11)).t() * RBK::mrp_to_dcm(V_p.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11)));
-
-		dI_non_lin.subvec(6 * (k-1), 6 * (k-1) + 2) = I_p.subvec(6 * (k-1), 6 * (k-1) + 2) - I_nom.subvec(6 * (k-1), 6 * (k-1) + 2);
-		dI_non_lin.subvec(6 * (k-1) + 3 , 6 * (k-1) + 5) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(I_nom.subvec(6 * (k-1) + 3, 6 * (k-1) + 5)).t() * RBK::mrp_to_dcm( I_p.subvec(6 * (k-1) + 3, 6 * (k-1) + 5)));
+	// // Perturbed sequential transforms
+	// std::vector<RigidTransform> rigid_transforms_seq_p;
+	// arma::vec I_p(6 * N_rigid_transforms);
+	// arma::vec V_p(12 * N_rigid_transforms + 6);
+	// arma::vec dV_non_lin = arma::zeros<arma::vec>(12 * N_rigid_transforms + 6);
+	// arma::vec dI_non_lin = arma::zeros<arma::vec>(6 * N_rigid_transforms);
 
 
-	}	
+	// V_p.subvec(0,2) = this -> absolute_rigid_transforms -> at(0).X_k;
+	// V_p.subvec(3,5) = RBK::dcm_to_mrp(this -> absolute_rigid_transforms -> at(0).M_k);
+
+	// for (int k = 1 ; k < N_rigid_transforms + 1; ++ k){
+
+	// 	arma::vec X_tilde_km1_p = this -> absolute_rigid_transforms -> at(k-1).X_k + dT.subvec(6 * (k - 1) , 6 * (k - 1) + 2);
+	// 	arma::vec X_tilde_k_p = this -> absolute_rigid_transforms -> at(k).X_k + dT.subvec(6 * k , 6 * k + 2);
+
+	// 	arma::mat M_tilde_km1_p = this -> absolute_rigid_transforms -> at(k-1).M_k * RBK::mrp_to_dcm(dT.subvec(6 *(k - 1) + 3, 6 * (k - 1) + 5));
+	// 	arma::mat M_tilde_k_p = this -> absolute_rigid_transforms -> at(k).M_k * RBK::mrp_to_dcm(dT.subvec(6 * k + 3, 6 * k + 5));
+
+	// 	arma::mat M_p_k = RBK::mrp_to_dcm(this -> mrps_LN[k - 1]).t() * M_tilde_km1_p .t() * M_tilde_k_p * RBK::mrp_to_dcm(this -> mrps_LN[k]);
+	// 	arma::vec X_p_k = RBK::mrp_to_dcm(this -> mrps_LN[k - 1]).t() * M_tilde_km1_p .t() * (X_tilde_k_p - X_tilde_km1_p);
 
 
-	// perturbed y
-	arma::vec y_p = arma::zeros<arma::vec>(3 * rigid_transforms_seq_p. size());
+	// 	X_p_k = X_p_k + dI.subvec(6 * (k - 1) , 6 * (k - 1) + 2 );
+	// 	M_p_k = M_p_k * RBK::mrp_to_dcm(dI.subvec(6 * (k - 1) + 3, 6 * (k - 1) + 2 + 3));
 
-	for (int k = 0; k < rigid_transforms_seq_p. size(); ++ k){
 
-		arma::mat Mkp1 = rigid_transforms_seq_p.at(k).M_k;
-		arma::vec Xkp1 = rigid_transforms_seq_p.at(k).X_k;
+	// 	RigidTransform rigid_transform;
+	// 	rigid_transform.M_k = M_p_k;
+	// 	rigid_transform.X_k = X_p_k;
+	// 	rigid_transform.t_k = this -> sequential_rigid_transforms -> at(k - 1).t_k;
+	// 	rigid_transforms_seq_p.push_back(rigid_transform);
 
-		y_p.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(
-			positions[k],
-			positions[k+1],
-			Mkp1,
-			Xkp1);
-	}
+	// 	I_p.subvec(6 * (k-1), 6 * (k-1) + 2) = X_p_k;
+	// 	I_p.subvec(6 * (k-1) + 3, 6 * (k-1) + 5) = RBK::dcm_to_mrp(M_p_k) ;
+
+	// 	V_p.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = X_tilde_km1_p;
+	// 	V_p.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(M_tilde_km1_p);
+
+	// 	V_p.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = X_tilde_k_p;
+	// 	V_p.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(M_tilde_k_p);
+
+	// 	dV_non_lin.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) = V_p.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) - V_nom.subvec(6 + 12 * (k - 1) , 6 + 12 * (k - 1) + 2) ;
+	// 	dV_non_lin.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(V_nom.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5)).t() * RBK::mrp_to_dcm(V_p.subvec(6 + 12 * (k - 1) + 3, 6 + 12 * (k - 1) + 5)));
+
+	// 	dV_non_lin.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) = V_p.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8) - V_nom.subvec(6 + 12 * (k - 1) + 6, 6 + 12 * (k - 1) + 8);
+	// 	dV_non_lin.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(V_nom.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11)).t() * RBK::mrp_to_dcm(V_p.subvec(6 + 12 * (k - 1) + 9, 6 + 12 * (k - 1) + 11)));
+
+	// 	dI_non_lin.subvec(6 * (k-1), 6 * (k-1) + 2) = I_p.subvec(6 * (k-1), 6 * (k-1) + 2) - I_nom.subvec(6 * (k-1), 6 * (k-1) + 2);
+	// 	dI_non_lin.subvec(6 * (k-1) + 3 , 6 * (k-1) + 5) = RBK::dcm_to_mrp(RBK::mrp_to_dcm(I_nom.subvec(6 * (k-1) + 3, 6 * (k-1) + 5)).t() * RBK::mrp_to_dcm( I_p.subvec(6 * (k-1) + 3, 6 * (k-1) + 5)));
+
+
+	// }	
+
+
+	// // perturbed y
+	// arma::vec y_p = arma::zeros<arma::vec>(3 * rigid_transforms_seq_p. size());
+
+	// for (int k = 0; k < rigid_transforms_seq_p. size(); ++ k){
+
+	// 	arma::mat Mkp1 = rigid_transforms_seq_p.at(k).M_k;
+	// 	arma::vec Xkp1 = rigid_transforms_seq_p.at(k).X_k;
+
+	// 	y_p.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(
+	// 		positions[k],
+	// 		positions[k+1],
+	// 		Mkp1,
+	// 		Xkp1);
+	// }
 
 
 	// arma::vec dV = this -> compute_partial_V_partial_T() * dT;
@@ -924,58 +924,58 @@ void IODFinder::debug_R() const{
 
 
 
-	arma::mat dVdT =  this -> compute_partial_V_partial_T();
+	// arma::mat dVdT =  this -> compute_partial_V_partial_T();
 
 
 
 
-	arma::vec dV_lin = dVdT * dT;
+	// arma::vec dV_lin = dVdT * dT;
 
-	std::cout <<  "\tdV_non_lin" << std::endl << std::endl;
-	std::cout << dV_non_lin << std::endl;
+	// std::cout <<  "\tdV_non_lin" << std::endl << std::endl;
+	// std::cout << dV_non_lin << std::endl;
 
-	std::cout <<  "\tdV_lin" << std::endl << std::endl;
+	// std::cout <<  "\tdV_lin" << std::endl << std::endl;
 
-	std::cout << dV_lin << std::endl;
-	std::cout <<  "\t dV_non_lin - dV_lin = \n";
-	std::cout << dV_non_lin - dV_lin << std::endl;
+	// std::cout << dV_lin << std::endl;
+	// std::cout <<  "\t dV_non_lin - dV_lin = \n";
+	// std::cout << dV_non_lin - dV_lin << std::endl;
 
-	std::cout <<  "\t Max dV_non_lin - dV_lin (%) = " << arma::max(arma::abs((dV_non_lin - dV_lin))/dV_non_lin) * 100 << std::endl;
+	// std::cout <<  "\t Max dV_non_lin - dV_lin (%) = " << arma::max(arma::abs((dV_non_lin - dV_lin))/dV_non_lin) * 100 << std::endl;
 
-	arma::mat dIdT = this -> compute_partial_I_partial_V() * dVdT;
+	// arma::mat dIdT = this -> compute_partial_I_partial_V() * dVdT;
 
-	arma::vec dI_lin = dIdT * dT;
+	// arma::vec dI_lin = dIdT * dT;
 
-	std::cout <<  "\tdI_non_lin" << std::endl << std::endl;
-	std::cout << dI_non_lin << std::endl;
+	// std::cout <<  "\tdI_non_lin" << std::endl << std::endl;
+	// std::cout << dI_non_lin << std::endl;
 
-	std::cout <<  "\tdI_lin" << std::endl << std::endl;
+	// std::cout <<  "\tdI_lin" << std::endl << std::endl;
 
-	std::cout << dI_lin << std::endl;
+	// std::cout << dI_lin << std::endl;
 
-	std::cout <<  "\t dI_non_lin - dI_lin (%) = \n";
-	std::cout << (dI_non_lin - dI_lin)/dI_lin * 100 << std::endl;
+	// std::cout <<  "\t dI_non_lin - dI_lin (%) = \n";
+	// std::cout << (dI_non_lin - dI_lin)/dI_lin * 100 << std::endl;
 
-	std::cout <<  "\t Max dI_non_lin - dI_lin (%) = " << arma::max(arma::abs((dI_non_lin - dI_lin))/dI_lin) * 100 << std::endl;
+	// std::cout <<  "\t Max dI_non_lin - dI_lin (%) = " << arma::max(arma::abs((dI_non_lin - dI_lin))/dI_lin) * 100 << std::endl;
 
-	arma::vec dy_non_lin =  y_p - y_nom;
-	arma::vec dy_lin = this -> compute_partial_y_partial_I(positions) * dI_lin;
-
-
-	std::cout << "dy_non_lin\n ";
-	std::cout << dy_non_lin << std::endl;
+	// arma::vec dy_non_lin =  y_p - y_nom;
+	// arma::vec dy_lin = this -> compute_partial_y_partial_I(positions) * dI_lin;
 
 
-	std::cout << "dy_lin\n ";
-	std::cout << dy_lin << std::endl;
+	// std::cout << "dy_non_lin\n ";
+	// std::cout << dy_non_lin << std::endl;
 
 
-	std::cout <<  "\t dy_non_lin - dy_lin  \n";
-	std::cout << arma::abs(dy_non_lin - dy_lin) << std::endl;
+	// std::cout << "dy_lin\n ";
+	// std::cout << dy_lin << std::endl;
 
 
-	std::cout <<  "\t Max dy_non_lin - dy_lin (%) \n";
-	std::cout << arma::abs(dy_non_lin - dy_lin)/dy_non_lin * 100 << std::endl;
+	// std::cout <<  "\t dy_non_lin - dy_lin  \n";
+	// std::cout << arma::abs(dy_non_lin - dy_lin) << std::endl;
+
+
+	// std::cout <<  "\t Max dy_non_lin - dy_lin (%) \n";
+	// std::cout << arma::abs(dy_non_lin - dy_lin)/dy_non_lin * 100 << std::endl;
 
 
 
