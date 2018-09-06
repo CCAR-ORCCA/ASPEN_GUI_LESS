@@ -562,17 +562,11 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	}
 
 	
-
-
-
-
-
 	int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
 
 	arma::mat results(7,mc_iter);
 	arma::mat crude_guesses(6,mc_iter);
 	arma::mat all_covs(7 * mc_iter,7);
-
 
 	boost::progress_display progress(mc_iter);
 	
@@ -811,6 +805,7 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * (X_pcs_noisy.at(k) - X_pcs_noisy.at(k - 1));
 
 
+
 			RigidTransform rigid_transform;
 			rigid_transform.M = M_p_k;
 			rigid_transform.X = X_p_k;
@@ -830,7 +825,6 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 			rt_true.M = M_pcs.at(k);
 
 			absolute_true_rigid_transforms.push_back(rt_true);
-
 
 
 		}

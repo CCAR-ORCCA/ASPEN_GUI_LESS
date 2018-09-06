@@ -48,12 +48,11 @@ void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::
 	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
 	std::string savefolder ,std::string label ){
 	
-	double tf = t0 + dt * N_times;
 	if (N_times <= 0){
 		throw(std::runtime_error("Cannot have a negative number of steps"));
 	}
 
-	arma::vec times = arma::linspace<arma::vec>(t0, tf,N_times); 
+	arma::vec times = arma::regspace<arma::vec>(t0, dt, t0 + dt * (N_times - 1)); 
 
 	for (unsigned int i = 0; i < times.n_rows; ++i){
 		T.push_back(times(i));
@@ -129,13 +128,12 @@ void StatePropagator::propagateOrbit( const double t0, const double dt, int N_ti
 	std::vector<double> T;
 	std::vector<arma::vec> X_augmented;
 
-	double tf = t0 + dt * N_times;
-
 	if (N_times <= 0){
 		throw(std::runtime_error("Cannot have a negative number of steps"));
 	}
 
-	arma::vec times = arma::linspace<arma::vec>(t0, tf,N_times); 
+	arma::vec times = arma::regspace<arma::vec>(t0, dt, t0 + dt * (N_times - 1)); 
+	
 
 	for (unsigned int i = 0; i < times.n_rows; ++i){
 		T.push_back(times(i));
