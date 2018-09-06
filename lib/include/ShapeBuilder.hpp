@@ -77,7 +77,8 @@ public:
 	to the run
 	*/
 	void run_iod(const arma::vec &times ,
-		const std::vector<arma::vec> & X);
+		const std::vector<arma::vec> & X,
+		std::string dir);
 
 
 

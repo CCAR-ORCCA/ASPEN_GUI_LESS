@@ -11,13 +11,15 @@
 #include <PC.hpp>
 #include "IODFinder.hpp"
 #include "StatePropagator.hpp"
+
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
-
-#include <chrono>
 #include <boost/progress.hpp>
 #include <boost/numeric/odeint.hpp>
+#include <boost/filesystem.hpp>
 #include <vtkOBJReader.h>
+
+#include <sys/stat.h>
 
 // Various constants that set up the scenario
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
@@ -30,7 +32,6 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0004 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
@@ -39,9 +40,15 @@
 // Times
 #define T0 0
 #define OBSERVATION_TIMES 10 // shape reconstruction steps
+#define ORBIT_FRACTION 0.5 // fraction of orbit covered over the full observation arc
+
+
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
+
+
+
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 10 // Number of rigid transforms to be used in each IOD run
@@ -70,14 +77,11 @@
 #define PERI_OMEGA 0.3
 #define M0 0.1
 
-#define LABEL ""
-
 
 ///////////////////////////////////////////
 
 int main() {
 
-	arma::arma_rng::set_seed(0);
 
 
 // Ref frame graph
@@ -107,6 +111,15 @@ int main() {
 	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
 	true_shape_model.construct_kd_tree_shape();
+
+
+	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;
+	double T_orbit = 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu) / (3600);
+	double INSTRUMENT_FREQUENCY_SHAPE = OBSERVATION_TIMES / (ORBIT_FRACTION * T_orbit); // frequency at which point clouds are collected for the shape reconstruction phase
+	
+
+
+
 
 
 // Lidar
@@ -160,6 +173,20 @@ int main() {
 	/******************************************************/
 
 
+
+	std::string dir = "../output/X_SD_" + std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) + "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) + "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) + "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION);
+	arma::arma_rng::set_seed(0);
+
+	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if (-1 == dir_err){
+		printf("Error creating directory!n");
+		exit(1);
+	}
+
+
+
+
+
 	/******************************************************/
 	/******************************************************/
 	/***************( True ) Initial state ****************/
@@ -194,7 +221,6 @@ int main() {
 	X0_augmented.rows(6,8) = mrp_0;
 	X0_augmented.rows(9,11) = omega_0;
 
-	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;
 
 	/******************************************************/
 	/******************************************************/
@@ -216,20 +242,20 @@ int main() {
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		"../output/","obs_harmonics_" + std::string(LABEL));
-	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
+		dir,"obs_harmonics");
+	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		"../output/","full_orbit_harmonics_" + std::string(LABEL));
+		dir,"full_orbit_harmonics");
 	#else 
 	StatePropagator::propagateOrbit(T_obs,X_augmented, 
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		"../output/","obs_point_mass_" + std::string(LABEL));
+		dir,"obs_point_mass");
 
-	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
+	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		"../output/","full_orbit_point_mass_" + std::string(LABEL));
+		dir,"full_orbit_point_mass");
 	#endif 
 
 
@@ -237,7 +263,6 @@ int main() {
 	for (int i = 0; i < T_obs.size(); ++i){
 		times(i) = T_obs[i];
 	}
-
 
 
 	/******************************************************/
@@ -262,9 +287,9 @@ int main() {
 	std::cout << X_augmented.front() << std::endl;
 
 	std::cout << "True mu: " << true_mu << std::endl;
-	std::cout << "True period: " << 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu) / (3600) << " hours" << std::endl;
+	std::cout << "True period: " << T_orbit << " hours" << std::endl;
 
-	shape_filter.run_iod(times,X_augmented);
+	shape_filter.run_iod(times,X_augmented,dir);
 
 
 	return 0;

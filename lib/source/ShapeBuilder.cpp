@@ -400,7 +400,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 void ShapeBuilder::run_iod(const arma::vec &times ,
-	const std::vector<arma::vec> & X) {
+	const std::vector<arma::vec> & X,std::string dir) {
 
 
 	std::cout << "Running the iod filter" << std::endl;
@@ -462,7 +462,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> destination_pc);
 
 			#if IOFLAGS_run_iod
-			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			this -> destination_pc -> save(dir + "/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
@@ -496,11 +496,11 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 			arma::vec X_pc_true = M_pc_true * pos_in_L - this -> LN_t0 * this -> x_t0;
 
-			RBK::dcm_to_mrp(M_pc_true).save("../output/transforms/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			X_pc_true.save("../output/transforms/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			RBK::dcm_to_mrp(M_pc_true).save(dir + "/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			X_pc_true.save(dir + "/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
 			RBK::dcm_to_mrp(M_pc).save("../output/transforms/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			X_pc.save("../output/transforms/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			X_pc.save(dir + "/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
 
 				/****************************************************************************/
@@ -519,7 +519,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> source_pc);
 
 			#if IOFLAGS_run_iod
-			this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			this -> source_pc -> save(dir + "/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 			M_pcs[time_index] = M_pc;
@@ -603,9 +603,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	}
 
-	results.save("../output/results.txt",arma::raw_ascii);
-	crude_guesses.save("../output/crude_guesses.txt",arma::raw_ascii);
-	all_covs.save("../output/all_covs.txt",arma::raw_ascii);
+	results.save(dir + "/results.txt",arma::raw_ascii);
+	crude_guesses.save(dir + "/crude_guesses.txt",arma::raw_ascii);
+	all_covs.save(dir + "/all_covs.txt",arma::raw_ascii);
 	arma::vec results_mean = arma::mean(results,1);
 	arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
 
@@ -614,7 +614,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	}
 
 	cov_mc *= 1./(results.n_cols-1);
-	cov_mc.save("../output/cov_mc.txt",arma::raw_ascii);
+	cov_mc.save(dir + "/cov_mc.txt",arma::raw_ascii);
 
 }
 
