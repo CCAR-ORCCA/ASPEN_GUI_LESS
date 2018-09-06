@@ -499,7 +499,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			RBK::dcm_to_mrp(M_pc_true).save(dir + "/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			X_pc_true.save(dir + "/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
-			RBK::dcm_to_mrp(M_pc).save("../output/transforms/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+			RBK::dcm_to_mrp(M_pc).save(dir + "/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			X_pc.save(dir + "/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
 
