@@ -30,7 +30,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.00025 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0002 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
