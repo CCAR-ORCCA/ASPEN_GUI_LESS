@@ -109,11 +109,9 @@ int main() {
 
 
 	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;
-	double T_orbit = 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu) / (3600);
+	double T_orbit = 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu);
 	double INSTRUMENT_FREQUENCY_SHAPE = OBSERVATION_TIMES / (ORBIT_FRACTION * T_orbit); // frequency at which point clouds are collected for the shape reconstruction phase
 	
-
-
 
 
 
@@ -285,7 +283,7 @@ int main() {
 	std::cout << X_augmented.front() << std::endl;
 
 	std::cout << "True mu: " << true_mu << std::endl;
-	std::cout << "True period: " << T_orbit << " hours" << std::endl;
+	std::cout << "True period: " << T_orbit / 3600 << " hours" << std::endl;
 
 	shape_filter.run_iod(times,X_augmented,dir);
 
