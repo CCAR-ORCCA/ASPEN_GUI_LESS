@@ -225,7 +225,7 @@ int main() {
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		"../output/traj/","" + std::string(LABEL));
+		"../output/traj/","obs_point_mass_" + std::string(LABEL));
 
 	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
