@@ -30,7 +30,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0001 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.00005 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
@@ -38,13 +38,13 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 10 // shape reconstruction steps
+#define OBSERVATION_TIMES 5 // shape reconstruction steps
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 10 // Number of rigid transforms to be used in each IOD run
+#define IOD_RIGID_TRANSFORMS_NUMBER 5 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 300 // Number of iterations
 #define IOD_MC_ITER 600
