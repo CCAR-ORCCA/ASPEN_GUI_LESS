@@ -30,7 +30,7 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0002 // frequency at which point clouds are collected for the shape reconstruction phase
+#define INSTRUMENT_FREQUENCY_SHAPE 0.0004 // frequency at which point clouds are collected for the shape reconstruction phase
 
 // Noise
 #define LOS_NOISE_SD_BASELINE 50e-2
@@ -216,20 +216,20 @@ int main() {
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		"../output/traj/","obs_harmonics_" + std::string(LABEL));
+		"../output/","obs_harmonics_" + std::string(LABEL));
 	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		"../output/traj/","full_orbit_harmonics_" + std::string(LABEL));
+		"../output/","full_orbit_harmonics_" + std::string(LABEL));
 	#else 
 	StatePropagator::propagateOrbit(T_obs,X_augmented, 
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		"../output/traj/","obs_point_mass_" + std::string(LABEL));
+		"../output/","obs_point_mass_" + std::string(LABEL));
 
 	StatePropagator::propagateOrbit(T0, 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu), 10. , X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		"../output/traj/","full_orbit_point_mass_" + std::string(LABEL));
+		"../output/","full_orbit_point_mass_" + std::string(LABEL));
 	#endif 
 
 
