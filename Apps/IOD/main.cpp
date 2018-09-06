@@ -42,13 +42,8 @@
 #define OBSERVATION_TIMES 10 // shape reconstruction steps
 #define ORBIT_FRACTION 0.5 // fraction of orbit covered over the full observation arc
 
-
-
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
-
-
-
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 10 // Number of rigid transforms to be used in each IOD run
@@ -145,6 +140,19 @@ int main() {
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_true_inertia(true_shape_model.get_inertia());
 
+
+	
+
+	std::string dir = "../output/X_SD_" + std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) + "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) + "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) + "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION);
+	arma::arma_rng::set_seed(0);
+
+	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if (-1 == dir_err){
+		printf("Error creating directory!n");
+		exit(1);
+	}
+
+
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/
@@ -164,7 +172,7 @@ int main() {
 	spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-	spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
+	spherical_harmonics -> SaveToJson(dir + "/harmo_" + std::string(TARGET_SHAPE) + ".json");
 	args.set_sbgat_harmonics(spherical_harmonics);
 	#endif
 	
@@ -172,16 +180,6 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
-
-
-	std::string dir = "../output/X_SD_" + std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) + "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) + "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) + "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION);
-	arma::arma_rng::set_seed(0);
-
-	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	if (-1 == dir_err){
-		printf("Error creating directory!n");
-		exit(1);
-	}
 
 
 
