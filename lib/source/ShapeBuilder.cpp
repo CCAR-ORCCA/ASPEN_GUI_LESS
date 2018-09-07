@@ -602,7 +602,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		crude_guesses.col(i) = crude_guess;
 		all_rps(i) = kep_state.get_a() * (1 - kep_state.get_eccentricity());
 		arma::rowvec::fixed<7> drpdstate = IODFinder::partial_rp_partial_state(state);
-		all_rps_sds(i) = std::sqrt(arma::dot(drpdstate.t(),cov * drpdstate ));
+		all_rps_sds(i) = std::sqrt(arma::dot(drpdstate.t(),cov * drpdstate.t() ));
 
 
 		all_covs.rows(7 * i, 7 * i + 6) = cov;
