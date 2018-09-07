@@ -40,7 +40,7 @@
 // Times
 #define T0 0
 #define OBSERVATION_TIMES 10 // shape reconstruction steps
-#define ORBIT_FRACTION 0.25 // fraction of orbit covered over the full observation arc
+#define ORBIT_FRACTION 0.5 // fraction of orbit covered over the full observation arc
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
