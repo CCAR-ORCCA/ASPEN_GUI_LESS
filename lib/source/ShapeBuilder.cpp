@@ -567,6 +567,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	arma::mat results(7,mc_iter);
 	arma::mat crude_guesses(6,mc_iter);
 	arma::mat all_covs(7 * mc_iter,7);
+	arma::vec all_rps(mc_iter);
+	arma::vec all_rps_sds(mc_iter);
+
 
 	boost::progress_display progress(mc_iter);
 	
@@ -593,8 +596,13 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		results.submat(0,i,5,i) = state.subvec(0,5);
 		results.submat(6,i,6,i) = state(6);
 
+		OC::CartState cart_state(state.subvec(0,5),state(6));
+		OC::KepState kep_state = cart_state.convert_to_kep(0);
 
 		crude_guesses.col(i) = crude_guess;
+		all_rps(i) = kep_state.get_a() * (1 - kep_state.get_eccentricity());
+		arma::rowvec::fixed<7> drpdstate = IODFinder::partial_rp_partial_state(state);
+		all_rps_sds(i) = std::sqrt(arma::dot(drpdstate.t(),cov * drpdstate ));
 
 
 		all_covs.rows(7 * i, 7 * i + 6) = cov;
@@ -604,6 +612,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	}
 
 	results.save(dir + "/results.txt",arma::raw_ascii);
+	all_rps.save(dir + "/all_rps.txt",arma::raw_ascii);
+	all_rps_sds.save(dir + "/all_rps_sds.txt",arma::raw_ascii);
 	crude_guesses.save(dir + "/crude_guesses.txt",arma::raw_ascii);
 	all_covs.save(dir + "/all_covs.txt",arma::raw_ascii);
 	arma::vec results_mean = arma::mean(results,1);

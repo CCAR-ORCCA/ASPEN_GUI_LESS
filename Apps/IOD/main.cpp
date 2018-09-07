@@ -77,8 +77,6 @@
 
 int main() {
 
-
-
 // Ref frame graph
 	FrameGraph frame_graph;
 	frame_graph.add_frame("B");
@@ -138,10 +136,22 @@ int main() {
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_true_inertia(true_shape_model.get_inertia());
 
+	# if USE_HARMONICS
+	std::string dir = ("../output/HARMONICS_X_SD_" 
+		+ std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) 
+		+ "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) 
+		+ "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) 
+		+ "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION));
 
+	# else
 
+	std::string dir = ("../output/X_SD_" 
+		+ std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) 
+		+ "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) 
+		+ "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) 
+		+ "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION));
 
-	std::string dir = "../output/X_SD_" + std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) + "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) + "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) + "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION);
+	#endif 
 	arma::arma_rng::set_seed(0);
 
 	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

@@ -54,6 +54,8 @@ public:
 
 
 	void debug_R() const;
+	static void debug_rp_partial();
+
 
 	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
 
@@ -65,7 +67,8 @@ public:
 
 	void compute_W(const std::vector<arma::vec::fixed<3>> & positions);
 
-
+	static arma::rowvec::fixed<7> partial_rp_partial_state(const arma::vec::fixed<7> & state );
+	
 protected:
 
 
@@ -98,7 +101,27 @@ protected:
 		const arma::vec::fixed<3> & X_kp1_prime_bar);
 
 
+
+	static arma::rowvec::fixed<2> partial_rp_partial_ae(const double & a, const double & e);
+	static arma::mat::fixed<2,4> partial_ae_partial_aevec(const double & a, const arma::vec::fixed<3> & e);
+	static arma::rowvec::fixed<3> partial_a_partial_rvec(const double & a, const arma::vec::fixed<3> & r);
+	static arma::rowvec::fixed<3> partial_a_partial_rdotvec(const double & a, const arma::vec::fixed<3> & r_dot, const double & mu);
+
+
+	static arma::mat::fixed<3,3> partial_evec_partial_r(const arma::vec::fixed<7> & state);
+	static arma::mat::fixed<3,3> partial_evec_partial_rdot(const arma::vec::fixed<7> & state);
+	static arma::vec::fixed<3> partial_evec_partial_mu(const arma::vec::fixed<7> & state);
+
+	static arma::mat::fixed<4,7> partial_aevec_partial_state(const double & a,const arma::vec::fixed<7> & state);
+
+	static double partial_a_partial_mu(const double & a, const arma::vec::fixed<3> & r_dot, const double & mu);
+
+	static arma::rowvec::fixed<7> partial_a_partial_state(const double & a,const arma::vec::fixed<7> & state );
+
 	static void compare_rigid_transforms(std::vector<RigidTransform> * s1,std::vector<RigidTransform> * s2);
+
+
+	static arma::mat::fixed<3,7> partial_evec_partial_state(const arma::vec::fixed<7> & state);
 
 
 	void compute_state_stms(const arma::vec::fixed<7> & X_hat,

@@ -694,8 +694,8 @@ void IODFinder::debug_R() const{
 
 
 	for (int i = 1; i < this -> sequential_rigid_transforms -> size(); ++i){
-			dT.subvec(6 * i, 6 * i + 2) =  1 * arma::randn<arma::vec>(3);
-			dT.subvec(6 * i + 3, 6 * i + 2 + 3) = 0.001 * arma::randn<arma::vec>(3);
+		dT.subvec(6 * i, 6 * i + 2) =  1 * arma::randn<arma::vec>(3);
+		dT.subvec(6 * i + 3, 6 * i + 2 + 3) = 0.001 * arma::randn<arma::vec>(3);
 	}
 
 	
@@ -873,13 +873,205 @@ void IODFinder::compare_rigid_transforms(std::vector<RigidTransform> * s1,std::v
 
 	}
 
+}
 
+
+arma::rowvec::fixed<2> IODFinder::partial_rp_partial_ae(const double & a, const double & e){
+	arma::rowvec::fixed<2> drp_dae = {1 - e,- a };
+	return drp_dae;
+}
+
+arma::mat::fixed<2,4> IODFinder::partial_ae_partial_aevec(const double & a, const arma::vec::fixed<3> & e){
+
+	arma::mat::fixed<2,4> partial = arma::zeros<arma::mat>(2,4);
+	partial(0,0) = 1;
+	partial.submat(1,1,1,3) = arma::normalise(e).t();
+
+	return partial;
+}
+
+
+arma::rowvec::fixed<3> IODFinder::partial_a_partial_rvec(const double & a, const arma::vec::fixed<3> & r){
+	return 2 * std::pow(a,2) * r.t() / std::pow(arma::norm(r),3);
+}	
+
+
+arma::rowvec::fixed<3> IODFinder::partial_a_partial_rdotvec(const double & a, const arma::vec::fixed<3> & r_dot, const double & mu){
+
+	return 2 * std::pow(a,2) /  mu * r_dot.t();
+}
+
+double IODFinder::partial_a_partial_mu(const double & a, const arma::vec::fixed<3> & r_dot, const double & mu){
+	return  (- std::pow(a/ ( mu) ,2)  * arma::dot(r_dot,r_dot));
+}
+
+arma::rowvec::fixed<7> IODFinder::partial_a_partial_state(const double & a, const arma::vec::fixed<7> & state ){
+
+
+	arma::rowvec::fixed<7> partial; 
+	partial.subvec(0,2) = IODFinder::partial_a_partial_rvec(a,state.subvec(0,2));
+	partial.subvec(3,5) = IODFinder::partial_a_partial_rdotvec(a,state.subvec(3,5),state(6));
+	partial(6) = IODFinder::partial_a_partial_mu(a,state.subvec(3,5),state(6));
+
+	return partial;
 
 }
 
 
 
+arma::mat::fixed<3,3> IODFinder::partial_evec_partial_r(const arma::vec::fixed<7> & state){
+
+	return (1./state(6) * (arma::dot(state.subvec(3,5),state.subvec(3,5)) * arma::eye<arma::mat>(3,3)
+		- state.subvec(3,5) * state.subvec(3,5).t())
+	+ 1./arma::norm(state.subvec(0,2)) * (state.subvec(0,2) * state.subvec(0,2).t() / arma::dot(state.subvec(0,2),state.subvec(0,2))
+		- arma::eye<arma::mat>(3,3)));
+
+}
+arma::mat::fixed<3,3> IODFinder::partial_evec_partial_rdot(const arma::vec::fixed<7> & state){
+
+
+	return (1./state(6) * (2 * state.subvec(0,2) * state.subvec(3,5).t() - arma::dot(state.subvec(0,2),
+		state.subvec(3,5)) * arma::eye<arma::mat>(3,3) - state.subvec(3,5) * state.subvec(0,2).t()));
+
+}
+arma::vec::fixed<3> IODFinder::partial_evec_partial_mu(const arma::vec::fixed<7> & state){
+
+	return (- arma::cross(state.subvec(3,5),arma::cross(state.subvec(0,2),state.subvec(3,5)))/std::pow(state(6),2));
+
+}
+
+
+arma::rowvec::fixed<7> IODFinder::partial_rp_partial_state(const arma::vec::fixed<7> & state ){
+
+	OC::CartState cart_state(state.subvec(0,5),state(6));
+	OC::KepState kep_state = cart_state.convert_to_kep(0);
+
+	double a = kep_state.get_a();
+	double e = kep_state.get_eccentricity();
+	double mu = kep_state.get_mu();
+
+	arma::vec evec = (arma::cross(state.subvec(3,5),arma::cross(state.subvec(0,2),state.subvec(3,5)))/mu 
+		- arma::normalise(state.subvec(0,2)));
+
+	return (IODFinder::partial_rp_partial_ae(a, e) * IODFinder::partial_ae_partial_aevec(a,evec)
+		* IODFinder::partial_aevec_partial_state(a,state));
+}
+
+
+arma::mat::fixed<4,7> IODFinder::partial_aevec_partial_state(const double & a,const arma::vec::fixed<7> & state){
+
+	arma::mat::fixed<4,7> partial;
+
+	partial.row(0) = IODFinder::partial_a_partial_state(a,state);
+	partial.rows(1,3) = IODFinder::partial_evec_partial_state(state);
+	return partial;
+
+}
+
+arma::mat::fixed<3,7> IODFinder::partial_evec_partial_state(const arma::vec::fixed<7> & state){
+
+	arma::mat::fixed<3,7> partial;
+	partial.cols(0,2) = IODFinder::partial_evec_partial_r(state);
+	partial.cols(3,5) = IODFinder::partial_evec_partial_rdot(state);
+	partial.col(6) = IODFinder::partial_evec_partial_mu(state);
+
+	return partial;
+
+}
+
+
+void IODFinder::debug_rp_partial() {
+
+	arma::vec kep_elements = {1000,0.1,0.2,0.3,0.5,0.1};
+	double mu = 5;
+
+	OC::KepState kep_state_0(kep_elements,mu);
+
+
+	// State 0
+	arma::vec state_0(7);
+	state_0.subvec(0,5) = kep_state_0.convert_to_cart(0).get_state();
+	state_0(6) = mu;
+
+	arma::vec evec_0 = (arma::cross(state_0.subvec(3,5),arma::cross(state_0.subvec(0,2),state_0.subvec(3,5)))/state_0(6) 
+		- arma::normalise(state_0.subvec(0,2)));
+
+	// rp 0
+	double rp_0 = kep_state_0.get_a() * ( 1 - kep_state_0.get_eccentricity());
+
+
+	// dx
+	arma::vec dx(7);
+	dx.subvec(0,2) = 0.001 * state_0.subvec(0,2);
+	dx.subvec(3,5) = 0.001 * state_0.subvec(3,5);
+	dx(6) = 0.001 * state_0(6);
+
+	arma::vec state_1 = state_0 + dx;
+
+	// State 1
+	OC::CartState cart_state_1(state_1.subvec(0,5),state_1(6));
+	OC::KepState kep_state_1 = cart_state_1.convert_to_kep(0);
+
+
+	arma::vec evec_1 = (arma::cross(state_1.subvec(3,5),arma::cross(state_1.subvec(0,2),state_1.subvec(3,5)))/state_1(6) 
+		- arma::normalise(state_1.subvec(0,2)));
+
+	// rp 1
+	double rp_1 = kep_state_1.get_a() * ( 1 - kep_state_1.get_eccentricity());
+
+	
+	// devec
+	arma::vec devec_non_lin = evec_1 - evec_0;
+	arma::vec devec_lin = IODFinder::partial_evec_partial_state(state_0)*dx;
+
+	std::cout << "evec: \n";
+	std::cout << devec_non_lin.t() << std::endl;
+	std::cout << devec_lin.t() << std::endl;
+
+	// de
+	double de_non_lin = kep_state_1.get_eccentricity() -  kep_state_0.get_eccentricity() ;
+	arma::vec dae_lin = (IODFinder::partial_ae_partial_aevec(kep_state_0.get_a(), 
+		evec_0)* IODFinder::partial_aevec_partial_state(kep_state_0.get_a(),state_0) * dx);
+	double de_lin = dae_lin(1);
+
+	std::cout << "e: \n";
+	std::cout << de_non_lin << std::endl;
+	std::cout << de_lin << std::endl;
+
+	// da
+	double da_non_lin = kep_state_1.get_a() -  kep_state_0.get_a() ;
+	double da_lin = dae_lin(0);
+
+	std::cout << "a: \n";
+	std::cout << da_non_lin << std::endl;
+	std::cout << da_lin << std::endl;
+
+
+	// drp
+	double drp_non_lin = rp_1 - rp_0;	
+	double drp_lin = arma::dot(IODFinder::partial_rp_partial_state(state_0).t(), dx);
 
 
 
+	std::cout << "rp: \n";
+	std::cout << drp_non_lin << std::endl;
+	std::cout << drp_lin << std::endl;
+	throw;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
 
