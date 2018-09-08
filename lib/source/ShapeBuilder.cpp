@@ -491,6 +491,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			catch(ICPNoPairsException & e){
 				std::cout << e.what() << std::endl;
 			}
+			catch(std::runtime_error & e){
+				std::cout << e.what() << std::endl;
+			}
 
 			arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
 			arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
