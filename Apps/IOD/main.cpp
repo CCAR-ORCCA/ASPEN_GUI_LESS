@@ -20,6 +20,7 @@
 #include <vtkOBJReader.h>
 
 #include <sys/stat.h>
+#include "json.hpp"
 
 // Various constants that set up the scenario
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
@@ -39,14 +40,14 @@
 
 // Times
 #define T0 0
-#define OBSERVATION_TIMES 5 // shape reconstruction steps
-#define ORBIT_FRACTION 0.5 // fraction of orbit covered over the full observation arc
+// #define OBSERVATION_TIMES 5 // shape reconstruction steps
+// #define ORBIT_FRACTION 0.5 // fraction of orbit covered over the full observation arc
 
 // Shape fitting parameters
 #define N_ITER_BUNDLE_ADJUSTMENT 6 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 5 // Number of rigid transforms to be used in each IOD run
+// #define IOD_RIGID_TRANSFORMS_NUMBER 5 // Number of rigid transforms to be used in each IOD run
 #define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 300 // Number of iterations
 #define IOD_MC_ITER 600
@@ -65,17 +66,39 @@
 #define USE_ICP false // Whether or not the ICP should be used (if not, uses true rigid transforms)
 
 // Initial state
-#define SMA 1000
-#define E 0.25
-#define I 1.4
-#define RAAN 0.2
-#define PERI_OMEGA 0.3
-#define M0 0.1
+// #define SMA 1000
+// #define E 0.25
+// #define I 1.4
+// #define RAAN 0.2
+// #define PERI_OMEGA 0.3
+// #define M0 0.1
 
 
 ///////////////////////////////////////////
 
 int main() {
+
+
+	// Loading case parameters from file
+	arma::arma_rng::set_seed(0);
+
+	std::ifstream i("input_file.json");
+	nlohmann::json input_data;
+	i >> input_data;
+
+	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
+
+	double ORBIT_FRACTION = input_data["ORBIT_FRACTION"]; 
+	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["OBSERVATION_TIMES"];
+
+	double SMA = input_data["SMA"];
+	double E = input_data["E"];
+	double I = input_data["I"];
+	double RAAN = input_data["RAAN"];
+	double PERI_OMEGA = input_data["PERI_OMEGA"];
+	double M0 = input_data["M0"];
+	std::string dir = input_data["dir"];
+
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -136,29 +159,8 @@ int main() {
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
 	args.set_true_inertia(true_shape_model.get_inertia());
 
-	# if USE_HARMONICS
-	std::string dir = ("../output/HARMONICS_X_SD_" 
-		+ std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) 
-		+ "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) 
-		+ "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) 
-		+ "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION));
 
-	# else
 
-	std::string dir = ("../output/X_SD_" 
-		+ std::to_string(std::abs(std::log10(RIGID_TRANSFORM_X_SD))) 
-		+ "_sigma_SD_" + std::to_string(std::abs(std::log10(0.0001))) 
-		+ "_OBS_TIMES_" + std::to_string(OBSERVATION_TIMES) 
-		+ "_ORBIT_FRACTION_" + std::to_string(ORBIT_FRACTION));
-
-	#endif 
-	arma::arma_rng::set_seed(0);
-
-	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	if (-1 == dir_err){
-		printf("Error creating directory!n");
-		exit(1);
-	}
 
 
 	/******************************************************/
@@ -292,6 +294,12 @@ int main() {
 
 	std::cout << "True mu: " << true_mu << std::endl;
 	std::cout << "True period: " << T_orbit / 3600 << " hours" << std::endl;
+	
+	kep_state_vec.save(dir + "/true_keplerian_state.txt",arma::raw_ascii);
+	X0_augmented.save(dir + "/true_state.txt",arma::raw_ascii);
+	arma::vec true_mu_vec = {true_mu};
+	true_mu_vec.save(dir + "/true_mu.txt",arma::raw_ascii);
+
 
 	shape_filter.run_iod(times,X_augmented,dir);
 
