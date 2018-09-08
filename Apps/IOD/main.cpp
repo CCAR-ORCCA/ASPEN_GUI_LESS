@@ -131,7 +131,7 @@ int main() {
 
 	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;
 	double T_orbit = 2 * arma::datum::pi * std::sqrt(std::pow(SMA,3) / true_mu);
-	double INSTRUMENT_FREQUENCY_SHAPE = OBSERVATION_TIMES / (ORBIT_FRACTION * T_orbit); // frequency at which point clouds are collected for the shape reconstruction phase
+	double INSTRUMENT_FREQUENCY_SHAPE = (OBSERVATION_TIMES - 1) / (ORBIT_FRACTION * T_orbit); 
 	
 
 

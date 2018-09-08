@@ -28,7 +28,6 @@ all_data = [{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 5,"SMA" : 1000,"E" : 
 "I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3.,"dir" : "../output/data_11"}]
 
 
-
 for data in all_data:
 	print("\t Case " + data["dir"].split("/")[-1])
 	
