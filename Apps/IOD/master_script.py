@@ -30,20 +30,20 @@ all_data = [{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 5,"SMA" : 1000,"E" : 
 
 
 for data in all_data:
-	print "\t Case " + data["dir"].split("/")[-1]
+	print("\t Case " + data["dir"].split("/")[-1])
 	
 	os.system("mkdir " + data["dir"])
-	print "\t - Making directory"
+	print("\t - Making directory")
 
-	print "\t - Copying input file in build/"
+	print("\t - Copying input file in build/")
 
 	with open('input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
 
-	print "\t - Saving input file in output/"
+	print("\t - Saving input file in output/")
 	with open(data["dir"] + '/input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
-	print "\t - Running "
+	print("\t - Running ")
 
 	os.system("./IOD")
 
