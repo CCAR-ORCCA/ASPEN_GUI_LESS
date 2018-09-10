@@ -99,7 +99,7 @@ int main() {
 	double M0 = input_data["M0"];
 	double LATITUDE_SPIN = input_data["LATITUDE_SPIN"];
 	double LONGITUDE_SPIN = input_data["LONGITUDE_SPIN"];
-	double SPIN_RATE = input_data["SPIN_RATE"];
+	double SPIN_PERIOD = input_data["SPIN_PERIOD"];
 	std::string dir = input_data["dir"];
 
 
@@ -210,7 +210,7 @@ int main() {
 	arma::vec mrp_0 = {0.,0.,0.};
 
 	// Angular velocity in body frame
-	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
+	double omega = 2 * arma::datum::pi / (SPIN_PERIOD * 3600);
 	arma::vec omega_vec = {0,0,omega};
 	arma::vec omega_0 = (RBK::M2(-LATITUDE_SPIN) * RBK::M3(LONGITUDE_SPIN)).t() * omega_vec;
 
