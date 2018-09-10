@@ -54,7 +54,6 @@
 #define IOD_MC_ITER 600
 
 // Target properties
-#define SPIN_RATE 12. // Spin rate (hours)
 #define DENSITY 1900 // Density (kg/m^3)
 #define USE_HARMONICS false // if true, will use the spherical harmonics expansion of the target's gravity field
 #define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
@@ -100,7 +99,7 @@ int main() {
 	double M0 = input_data["M0"];
 	double LATITUDE_SPIN = input_data["LATITUDE_SPIN"];
 	double LONGITUDE_SPIN = input_data["LONGITUDE_SPIN"];
-
+	double SPIN_RATE = input_data["SPIN_RATE"];
 	std::string dir = input_data["dir"];
 
 
