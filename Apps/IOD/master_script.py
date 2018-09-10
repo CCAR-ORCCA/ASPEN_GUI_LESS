@@ -54,12 +54,21 @@ import numpy as np
 # "I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : 0., "dir" : "../output/data_17"}]
 
 
-all_data = [{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 5,"SMA" : 1000,"E" : 0.25,
-"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_18"},
-{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 7,"SMA" : 1000,"E" : 0.25,
-"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_19"},
-{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 10,"SMA" : 1000,"E" : 0.25,
-"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_20"}]
+# all_data = [{"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 5,"SMA" : 1000,"E" : 0.25,
+# "I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_18"},
+# {"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 7,"SMA" : 1000,"E" : 0.25,
+# "I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_19"},
+# {"ORBIT_FRACTION" : 0.25,"OBSERVATION_TIMES" : 10,"SMA" : 1000,"E" : 0.25,
+# "I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_20"}]
+
+
+
+all_data = [{"ORBIT_FRACTION" : 0.5,"OBSERVATION_TIMES" : 5,"SMA" : 1000,"E" : 0.25,
+"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_21"},
+{"ORBIT_FRACTION" : 0.5,"OBSERVATION_TIMES" : 7,"SMA" : 1000,"E" : 0.25,
+"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_22"},
+{"ORBIT_FRACTION" : 0.5,"OBSERVATION_TIMES" : 10,"SMA" : 1000,"E" : 0.25,
+"I" : 1.4,"RAAN" :0.2,"PERI_OMEGA" : 0.3,"M0" : 3., "SPIN_PERIOD" : 1e12, "LONGITUDE_SPIN" : 0., "LATITUDE_SPIN" : np.pi/2, "dir" : "../output/data_23"}]
 
 for data in all_data:
 	print("\t Case " + data["dir"].split("/")[-1])
