@@ -11,6 +11,7 @@
 #include <PC.hpp>
 #include "IODFinder.hpp"
 #include "StatePropagator.hpp"
+#include <RigidBodyKinematics.hpp>
 
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
@@ -97,6 +98,9 @@ int main() {
 	double RAAN = input_data["RAAN"];
 	double PERI_OMEGA = input_data["PERI_OMEGA"];
 	double M0 = input_data["M0"];
+	double LATITUDE_SPIN = input_data["LATITUDE_SPIN"];
+	double LONGITUDE_SPIN = input_data["LONGITUDE_SPIN"];
+
 	std::string dir = input_data["dir"];
 
 
@@ -193,8 +197,6 @@ int main() {
 
 
 
-
-
 	/******************************************************/
 	/******************************************************/
 	/***************( True ) Initial state ****************/
@@ -210,7 +212,8 @@ int main() {
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {0e-2 * omega,0e-2 * omega,omega};
+	arma::vec omega_vec = {0,0,omega};
+	arma::vec omega_0 = (RBK::M2(-LATITUDE_SPIN) * RBK::M3(LONGITUDE_SPIN)).t() * omega_vec;
 
 	// - sma : semi-major axis [L]
 	// 	- e : eccentricity [-]
