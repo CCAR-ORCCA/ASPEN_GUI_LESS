@@ -215,6 +215,8 @@ int main() {
 	arma::vec omega_vec = {0,0,omega};
 	arma::vec omega_0 = (RBK::M2(-LATITUDE_SPIN) * RBK::M3(LONGITUDE_SPIN)).t() * omega_vec;
 
+	std::cout << omega_0 << std::endl;
+
 	// - sma : semi-major axis [L]
 	// 	- e : eccentricity [-]
 	// 	- i : inclination in [0,pi] [rad]
