@@ -75,7 +75,7 @@ for data in all_data:
 	print("\t - Saving input file in output/")
 	with open(data["dir"] + '/input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
-	print("\t - Running ")
+	print("\t - Running case " +  data["dir"].split("/")[-1])
 
 	os.system("./IOD")
 
