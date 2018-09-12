@@ -21,7 +21,7 @@ Enable/Disable the corresponding functionality by setting the flag
 #define USE_OMP_LIDAR 1
 
 // Use OMP in ICP methods
-#define USE_OMP_ICP 1
+#define USE_OMP_ICP 0
 
 // Use OMP in ShapeFitter methods
 #define USE_OMP_SHAPE_FITTER 1

@@ -4,24 +4,30 @@
 #include <boost/progress.hpp>
 
 
-#pragma omp declare reduction (+ : arma::vec : omp_out += omp_in)\
-initializer( omp_priv = omp_orig )
+#pragma omp declare reduction (+ : arma::vec::fixed<3> : omp_out += omp_in) \
+initializer( omp_priv = arma::zeros<arma::vec>(3) )
 
 void ShapeModelTri::update_mass_properties() {
 
 
 
+	std::cout << "Computing mass properties...\n";
+	std::cout << "\t Computing surface_area...\n";
 
 	this -> compute_surface_area();
 
+	std::cout << "\t Computing volume...\n";
+
 	this -> compute_volume();
 	
+	std::cout << "\t Computing center of mass...\n";
 	
 	this -> compute_center_of_mass();
 	
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 	
+	std::cout << "\t Computing inertia...\n";
 
 	this -> compute_inertia();
 	end = std::chrono::system_clock::now();
@@ -292,11 +298,12 @@ this -> volume = volume;
 void ShapeModelTri::compute_center_of_mass() {
 	
 	double volume = this -> get_volume();
-	arma::vec C = arma::zeros<arma::vec>(3);
+	double cx = 0;
+	double cy = 0;
+	double cz = 0;
 
-	#pragma omp parallel for reduction(+:C) if (USE_OMP_SHAPE_MODEL)
+	#pragma omp parallel for reduction (+:cx,cy,cz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
-
 
 		std::vector<std::shared_ptr<ControlPoint > > * vertices = this -> elements[facet_index] -> get_control_points();
 
@@ -307,13 +314,19 @@ void ShapeModelTri::compute_center_of_mass() {
 		
 		double dv = 1. / 6. * arma::dot(r1, arma::cross(r1 - r0, r2 - r0));
 
-		
-		C += (r0 + r1 + r2) / 4 * dv / volume;
+
+		// C += (r0 + r1 + r2) / 4 * dv / volume;
+
+		double coef =  dv / (4 * volume);
+		cx = (r0(0) + r1(0) + r2(0)) * coef;
+		cy = (r0(1) + r1(1) + r2(1)) * coef;
+		cz = (r0(2) + r1(2) + r2(2)) * coef;
+
 
 	}
 
 
-	this -> cm =  C ;
+	this -> cm =  {cx,cy,cz};
 
 
 }
@@ -434,13 +447,12 @@ this -> inertia = I;
 void ShapeModelTri::compute_surface_area() {
 	double surface_area = 0;
 
-	# pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
+	#pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0; facet_index < this -> elements.size(); ++facet_index) {
 
 		Facet * facet = dynamic_cast<Facet *>(this -> elements[facet_index].get());
 
 		surface_area += facet -> get_area();
-
 
 	}
 

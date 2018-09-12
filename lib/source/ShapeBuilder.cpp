@@ -130,7 +130,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the bundle adjustment
 			double longitude,latitude;
 			
-			ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc);
+			ICP icp_pc(this -> destination_pc, this -> source_pc);
+
+			icp_pc.register_pc_mrp_multiplicative_partials(100,1e-8,1e-2,M_pc,X_pc);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -478,7 +480,15 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			// in the bundle adjustment
 			
 			try{
-				ICP icp_pc(this -> destination_pc, this -> source_pc, M_pc, X_pc,false,this -> LN_t0.t(),this -> x_t0);
+
+
+
+				ICP icp_pc(this -> destination_pc, this -> source_pc,false,this -> LN_t0.t(),this -> x_t0);
+				icp_pc.register_pc_mrp_multiplicative_partials(100,1e-8,1e-2,M_pc,X_pc);
+
+
+
+
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0

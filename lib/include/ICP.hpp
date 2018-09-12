@@ -13,8 +13,6 @@ typedef typename std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNo
 class ICP {
 public:
 	ICP(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source,
-		arma::mat dcm_0 = arma::eye<arma::mat>(3, 3),
-		arma::vec X_0 = arma::zeros<arma::vec>(3),
 		bool verbose = true,
 		const arma::mat & M_save = arma::eye<arma::mat>(3,3),
 		const arma::vec & X_save = arma::zeros<arma::vec>(3));
@@ -57,18 +55,22 @@ public:
 		const arma::vec & x_D = arma::zeros<arma::vec>(3));
 
 	static arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
-	
-protected:
-	std::shared_ptr<PC> pc_destination;
-	std::shared_ptr<PC> pc_source;
-
 	void register_pc_mrp_multiplicative_partials(
 		const unsigned int iterations_max,
 		const double rel_tol,
 		const double stol,
-		arma::mat dcm_0 ,
-		arma::vec X_0,
+		arma::mat dcm_0 = arma::eye<arma::mat>(3,3),
+		arma::vec X_0  = arma::zeros<arma::vec>(3),
 		bool verbose = true);
+
+	void set_use_true_pairs(bool use_true_pairs);
+
+
+protected:
+	std::shared_ptr<PC> pc_destination;
+	std::shared_ptr<PC> pc_source;
+
+	
 
 
 	double compute_rms_residuals(
@@ -87,7 +89,7 @@ protected:
 	arma::mat M_save;
 	arma::vec X_save;
 	double J_res;
-
+	bool use_true_pairs = false;
 	std::vector<PointPair> point_pairs;
 
 

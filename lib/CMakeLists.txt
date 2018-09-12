@@ -162,6 +162,7 @@ add_library(${LIB_NAME} SHARED
 	source/Filter.cpp
 	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
+	source/ICPBase.cpp
 	source/ICP.cpp
 	source/IODFinder.cpp
 	source/KDTreePC.cpp
@@ -199,7 +200,7 @@ set(library_dependencies
 	${SBGATCORE_LIBRARY}
 	)
 
-target_link_libraries(${LIB_NAME} ${library_dependencies})
+target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 
 file(GLOB includes include/*.hpp)
 file(GLOB includes_gnuplot external/Gnuplot/include/*.hpp)

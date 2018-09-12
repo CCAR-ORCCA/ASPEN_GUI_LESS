@@ -3,8 +3,6 @@
 
 ICP::ICP(std::shared_ptr<PC> pc_destination, 
 	std::shared_ptr<PC> pc_source,
-	arma::mat dcm_0,
-	arma::vec X_0,
 	bool verbose,
 	const arma::mat & M_save,
 	const arma::vec & X_save) {
@@ -14,26 +12,18 @@ ICP::ICP(std::shared_ptr<PC> pc_destination,
 
 	this -> M_save = M_save;
 	this -> X_save = X_save;
+
 	
-	auto start = std::chrono::system_clock::now();
 
-	this -> register_pc_mrp_multiplicative_partials(100,1e-8,1e-8,dcm_0,X_0);
-	auto end = std::chrono::system_clock::now();
+}
 
-	std::chrono::duration<double> elapsed_seconds = end-start;
-
-	if (verbose){
-		std::cout << "- Time elapsed in ICP: " << elapsed_seconds.count()<< " s"<< std::endl;
-	}
-
-
+void ICP::set_use_true_pairs(bool use_true_pairs){
+	this -> use_true_pairs = use_true_pairs;
 }
 
 
 std::vector<PointPair > * ICP::get_point_pairs() {
-
 	return &this -> point_pairs;
-
 }
 
 
@@ -62,13 +52,9 @@ double ICP::compute_rms_residuals(
 
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-
 		J += std::pow(ICP::compute_normal_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D),2);
-
 	}
-
-	J = std::sqrt(J / point_pairs.size() );
-	return J;
+	return std::sqrt(J / point_pairs.size() );
 
 }
 
@@ -85,11 +71,10 @@ double ICP::compute_mean_residuals(
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-		J += ICP::compute_normal_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D);
+		J += ICP::compute_normal_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
 
 	}
 
-	J = J / point_pairs.size();
 	return J;
 
 }
@@ -135,10 +120,8 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	bool exit = false;
 	bool next_h = true;
 
-
 	arma::mat::fixed<6,6> Info_mat;
 	arma::vec::fixed<6> Normal_mat;
-
 
 	while (h >= 0 && exit == false) {
 
@@ -147,27 +130,13 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 			if ( next_h == true ) {
 				// The pairs are formed only after a change in the hierchical search
-				
 
-				#if USE_OMP_ICP
-				
 				this -> compute_pairs(h,RBK::mrp_to_dcm(mrp),x);
-				
-				#else
-				throw(std::runtime_error("Should deprecate compute_pairs_closest_compatible_minimum_point_to_plane_dist"));
-				this -> compute_pairs_closest_compatible_minimum_point_to_plane_dist(
-					RBK::mrp_to_dcm(mrp),
-					x, h);
-				
-				#endif
-
-
 				
 				next_h = false;
 			}
 
 			if (iter == 0 ) {
-
 
 				// The initial residuals are computed
 				J_0 = this -> compute_rms_residuals(RBK::mrp_to_dcm(mrp),
@@ -188,9 +157,9 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			#endif
 
 
-			#pragma omp parallel for reduction(+:Normal_mat,Info_mat) if (USE_OMP_ICP)
-
+			#pragma omp parallel for reduction(+:Info_mat), reduction(+:Normal_mat) if (USE_OMP_ICP)
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
+				
 				arma::mat::fixed<6,6> Info_mat_temp;
 				arma::vec::fixed<6> Normal_mat_temp;
 				arma::vec::fixed<3> P_i,Q_i,n_i;
@@ -203,31 +172,35 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				// The partial derivative of the observation model is computed
 				H = ICP::dGdSigma_multiplicative(mrp, P_i, n_i);
 
-				Info_mat_temp(arma::span(0,2),arma::span(0,2)) = H.t() * H;
-				Info_mat_temp(arma::span(0,2),arma::span(3,5)) = H.t() * n_i.t();
-				Info_mat_temp(arma::span(3,5),arma::span(0,2)) = n_i * H ;
-				Info_mat_temp(arma::span(3,5),arma::span(3,5)) = n_i * n_i.t();
-
+				Info_mat_temp.submat(0,0,2,2) = H.t() * H;
+				Info_mat_temp.submat(0,3,2,5) = H.t() * n_i.t();
+				Info_mat_temp.submat(3,0,5,2) = n_i * H ;
+				Info_mat_temp.submat(3,3,5,5) = n_i * n_i.t();
 
 				// The prefit residuals are computed
 				double y_i = arma::dot(n_i.t(), Q_i -  RBK::mrp_to_dcm(mrp) * P_i - x );
 
 				// The normal matrix is similarly built
-				Normal_mat_temp.rows(0, 2) = H.t() * y_i;
-				Normal_mat_temp.rows(3, 5) = n_i * y_i;
+				Normal_mat_temp.subvec(0, 2) = H.t() * y_i;
+				Normal_mat_temp.subvec(3, 5) = n_i * y_i;
 
-				
 				Info_mat += Info_mat_temp;
 				Normal_mat += Normal_mat_temp;
 				
 			}
 
 
+			#if ICP_DEBUG
+			std::cout << "\nInfo mat: " << std::endl;
+			std::cout << Info_mat << std::endl;
+			std::cout << "\nNormal mat: " << std::endl;
+			std::cout << Normal_mat << std::endl;
+			#endif
 
 			// The state deviation [dmrp,dx] is solved for
 			arma::vec dX = arma::solve(Info_mat, Normal_mat);
-			arma::vec dmrp = {dX(0), dX(1), dX(2)};
-			arma::vec dx = {dX(3), dX(4), dX(5)};
+			arma::vec dmrp = dX.subvec(0,2);
+			arma::vec dx = dX.subvec(3,5);
 
 			// The state is updated
 			mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(mrp));
@@ -245,10 +218,6 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				x);
 
 			#if ICP_DEBUG
-			std::cout << "\nInfo mat: " << std::endl;
-			std::cout << Info_mat << std::endl;
-			std::cout << "\nNormal mat: " << std::endl;
-			std::cout << Normal_mat << std::endl;
 			std::cout << "\nDeviation : " << std::endl;
 			std::cout << dX << std::endl;
 			std::cout << "\nResiduals: " << J << std::endl;
@@ -259,13 +228,13 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			#endif
 
 
-			if ( J / J_0 < rel_tol ) {
+			if ( J / J_0 <= rel_tol || J == 0) {
 				exit = true;
 
 				break;
 			}
 
-			if ( std::abs(J - J_previous) / J < stol ) {
+			if ( std::abs(J - J_previous) / J <= stol ) {
 				h = h - 1;
 				next_h = true;
 
@@ -316,7 +285,35 @@ arma::rowvec ICP::dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec
 
 void ICP::compute_pairs(int h,const arma::mat & dcm,const arma::vec & x) {
 
-	ICP::compute_pairs(this -> point_pairs,this -> pc_source,this -> pc_destination,h, dcm,x);
+	if (use_true_pairs){
+
+
+		if (this -> pc_source -> get_size() != this -> pc_destination -> get_size()){
+			throw(std::runtime_error("Can't pair point clouds one-to-one since they are of different size"));
+		}
+
+		this -> point_pairs.clear();
+		double p = std::log2(this -> pc_source -> get_size());
+		int N_pairs_max = (int)(std::pow(2, p - h));
+
+		arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, this -> pc_source -> get_size() - 1,this -> pc_source -> get_size());
+		random_source_indices = arma::shuffle(random_source_indices);
+
+		for (int i = 0; i < N_pairs_max; ++i){
+			this -> point_pairs.push_back(std::make_pair(this -> pc_source -> get_point(random_source_indices(i)),
+				this -> pc_destination -> get_point(random_source_indices(i))));
+
+		}
+
+	}
+	else{
+
+		ICP::compute_pairs(this -> point_pairs,this -> pc_source,this -> pc_destination,h, dcm,x);
+	}
+
+
+
+
 }
 
 void ICP::compute_pairs(
@@ -330,6 +327,7 @@ void ICP::compute_pairs(
 	const arma::vec & x_D){
 
 	point_pairs.clear();
+
 
 	std::map<double, PointPair > all_pairs;
 
@@ -401,7 +399,7 @@ void ICP::compute_pairs(
 	std::vector<std::pair<unsigned int , double> > formed_pairs;
 
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-		
+
 		if (destination_source_dist_vector[i].first != nullptr){
 			arma::vec S = dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S;
 			arma::vec n = dcm_D * destination_source_dist_vector[i].first -> get_normal();
@@ -425,18 +423,23 @@ void ICP::compute_pairs(
 	// included in the final pairing
 	double mean = arma::mean(dist_vec);
 	double sd = arma::stddev(dist_vec);
-	
+
+	#if ICP_DEBUG
+	std::cout << "Mean pair distance : " << mean << std::endl;
+	std::cout << "Distance sd : " << sd << std::endl;
+	#endif
+
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
-		if (std::abs(dist_vec(i) - mean) < sd){
+		if (std::abs(dist_vec(i) - mean) <= sd){
 			point_pairs.push_back(
 				std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
 					destination_source_dist_vector[formed_pairs[i].first].first));
 		}
 
 	}
-
-
-
 }
+
+
+
 

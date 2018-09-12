@@ -106,16 +106,11 @@ PC::PC(std::string filename) {
 	std::vector<std::vector<unsigned int> > shape_patch_indices;
 
 	std::cout << " Reading " << filename << std::endl;
-	int degree = -1;
 
 	while (std::getline(ifs, line)) {
 
 		std::stringstream linestream(line);
 
-		if (degree < 0){
-			linestream >> degree;
-			continue;
-		}
 
 		char type;
 		linestream >> type;
@@ -383,26 +378,22 @@ void  PC::save(std::string path,
 		throw (std::runtime_error("save can't be called with those arguments!"));
 	}
 
-	for (unsigned int vertex_index = 0;
-		vertex_index < this -> get_size();
-		++vertex_index) {
-
+	for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
 		arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
 
-	if (format_like_obj) {
-		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
-	}
-	else if (save_normals) {
+		if (format_like_obj) {
+			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		}
 
-		arma::vec n = dcm * this -> get_point_normal(vertex_index);
+		else if (save_normals) {
+			arma::vec n = dcm * this -> get_point_normal(vertex_index);
+			shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+		}
 
-		shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+		else {
+			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+		}
 	}
-	else {
-		shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
-
-	}
-}
 
 
 }
