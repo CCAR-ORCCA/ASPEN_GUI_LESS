@@ -45,3 +45,11 @@ void PointNormal::decrement_inclusion_counter() {
 int PointNormal::get_inclusion_counter() const {
 	return this -> inclusion_counter ;
 }
+
+void PointNormal::set_descriptor(const PointFeatureDescriptor & descriptor) {
+	this -> descriptor = descriptor;
+}
+
+PointFeatureDescriptor PointNormal::get_descriptor() const{
+	return this -> descriptor;
+}

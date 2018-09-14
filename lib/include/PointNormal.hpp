@@ -3,7 +3,7 @@
 
 #include <armadillo>
 #include <memory>
-
+#include "PointFeatureDescriptor.hpp"
 
 class PointNormal {
 
@@ -22,6 +22,8 @@ public:
 
 	void set_normal(arma::vec normal) ;
 	void set_point(arma::vec point) ;
+	void set_descriptor(const PointFeatureDescriptor & descriptor) ;
+	PointFeatureDescriptor get_descriptor() const;
 
 
 	void decrement_inclusion_counter();
@@ -34,6 +36,7 @@ protected:
 	arma::vec normal;
 
 	int inclusion_counter = 0;
+	PointFeatureDescriptor descriptor;
 
 };
 

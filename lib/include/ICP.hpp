@@ -17,8 +17,8 @@ public:
 		const arma::mat & M_save = arma::eye<arma::mat>(3,3),
 		const arma::vec & X_save = arma::zeros<arma::vec>(3));
 
-	arma::vec get_X() const;
-	arma::mat get_M() const;
+	arma::vec get_x() const;
+	arma::mat get_dcm() const;
 	arma::mat get_R() const;
 	double get_J_res() const;
 
@@ -55,15 +55,16 @@ public:
 		const arma::vec & x_D = arma::zeros<arma::vec>(3));
 
 	static arma::rowvec dGdSigma_multiplicative(const arma::vec & mrp, const arma::vec & P, const arma::vec & n);
-	void register_pc_mrp_multiplicative_partials(
-		const unsigned int iterations_max,
-		const double rel_tol,
-		const double stol,
+	void register_pc(const double rel_tol = 1e-8,
+		const double stol = 1e-2,
 		arma::mat dcm_0 = arma::eye<arma::mat>(3,3),
 		arma::vec X_0  = arma::zeros<arma::vec>(3),
 		bool verbose = true);
 
 	void set_use_true_pairs(bool use_true_pairs);
+
+	void set_iterations_max(unsigned int iterations_max);
+
 
 
 protected:
@@ -90,8 +91,9 @@ protected:
 	arma::vec X_save;
 	double J_res;
 	bool use_true_pairs = false;
-	std::vector<PointPair> point_pairs;
 
+	std::vector<PointPair> point_pairs;
+	unsigned int iterations_max = 100;
 
 };
 

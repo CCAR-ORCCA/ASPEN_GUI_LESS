@@ -101,7 +101,6 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 }
 
-
 void KDTreePC::closest_point_search(const arma::vec & test_point,
 	std::shared_ptr<KDTreePC> node,
 	std::shared_ptr<PointNormal> & best_guess,

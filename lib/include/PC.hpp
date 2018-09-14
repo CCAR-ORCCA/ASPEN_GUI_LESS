@@ -9,6 +9,7 @@
 #include "Ray.hpp"
 #include "PointNormal.hpp"
 #include "ShapeModelTri.hpp"
+#include "PointFeatureDescriptor.hpp"
 
 class ShapeModelTri;
 class Ray;
@@ -106,8 +107,13 @@ public:
 	Return the coordinates of the point cloud's geometrical center
 	@return coordinates of geometrical center
 	*/
-	arma::vec get_center() const;
+	arma::vec::fixed<3> get_center() const;
 
+	/**
+	Return the matrix directing the principal axes of the point cloud
+	@return matrix of principal axes directing the point cloud
+	*/
+	arma::mat::fixed<3,3> get_principal_axes() const;
 
 	/**
 	Return the coordinates of the point cloud's bounding box geometrical center
@@ -195,6 +201,12 @@ public:
 
 	std::string get_label() const;
 
+	void compute_point_descriptors();
+	void save_point_descriptors(std::string path) const;
+
+
+	static std::multimap<double,std::pair<int,int> > find_pch_matches(const PC & pc0,const PC & pc1);
+	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
 
 
 protected:

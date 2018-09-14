@@ -164,6 +164,8 @@ add_library(${LIB_NAME} SHARED
 	source/FrameGraph.cpp
 	source/ICPBase.cpp
 	source/ICP.cpp
+	source/IterativeClosestPoint.cpp
+	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
 	source/KDTreePC.cpp
 	source/KDTreeShape.cpp
@@ -172,6 +174,7 @@ add_library(${LIB_NAME} SHARED
 	source/NavigationFilter.cpp
 	source/Observations.cpp
 	source/PC.cpp
+	source/PointFeatureDescriptor.cpp
 	source/PointNormal.cpp
 	source/Psopt.cpp
 	source/Ray.cpp

@@ -90,17 +90,19 @@ double ICP::compute_rms_residuals(
 
 
 
-arma::vec ICP::get_X() const {
+arma::vec ICP::get_x() const {
 	return this -> X;
 }
 
-arma::mat ICP::get_M() const {
+arma::mat ICP::get_dcm() const {
 	return this -> DCM;
 }
 
+void ICP::set_iterations_max(unsigned int iterations_max){
+	this -> iterations_max = iterations_max;
+}
 
-void ICP::register_pc_mrp_multiplicative_partials(
-	const unsigned int iterations_max,
+void ICP::register_pc(
 	const double rel_tol,
 	const double stol,
 	arma::mat dcm_0,
@@ -120,13 +122,13 @@ void ICP::register_pc_mrp_multiplicative_partials(
 	bool exit = false;
 	bool next_h = true;
 
-	arma::mat::fixed<6,6> Info_mat;
-	arma::vec::fixed<6> Normal_mat;
+	arma::mat::fixed<6,6> info_mat;
+	arma::vec::fixed<6> normal_mat;
 
 	while (h >= 0 && exit == false) {
 
 		// The ICP is iterated
-		for (unsigned int iter = 0; iter < iterations_max; ++iter) {
+		for (unsigned int iter = 0; iter < this -> iterations_max; ++iter) {
 
 			if ( next_h == true ) {
 				// The pairs are formed only after a change in the hierchical search
@@ -147,8 +149,8 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 
 			// The matrices of the LS problem are now accumulated
-			Info_mat.fill(0);
-			Normal_mat.fill(0);
+			info_mat.fill(0);
+			normal_mat.fill(0);
 
 
 			#if ICP_DEBUG
@@ -157,11 +159,11 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			#endif
 
 
-			#pragma omp parallel for reduction(+:Info_mat), reduction(+:Normal_mat) if (USE_OMP_ICP)
+			#pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 				
-				arma::mat::fixed<6,6> Info_mat_temp;
-				arma::vec::fixed<6> Normal_mat_temp;
+				arma::mat::fixed<6,6> info_mat_temp;
+				arma::vec::fixed<6> normal_mat_temp;
 				arma::vec::fixed<3> P_i,Q_i,n_i;
 				arma::rowvec::fixed<3> H;
 
@@ -172,33 +174,33 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				// The partial derivative of the observation model is computed
 				H = ICP::dGdSigma_multiplicative(mrp, P_i, n_i);
 
-				Info_mat_temp.submat(0,0,2,2) = H.t() * H;
-				Info_mat_temp.submat(0,3,2,5) = H.t() * n_i.t();
-				Info_mat_temp.submat(3,0,5,2) = n_i * H ;
-				Info_mat_temp.submat(3,3,5,5) = n_i * n_i.t();
+				info_mat_temp.submat(0,0,2,2) = H.t() * H;
+				info_mat_temp.submat(0,3,2,5) = H.t() * n_i.t();
+				info_mat_temp.submat(3,0,5,2) = n_i * H ;
+				info_mat_temp.submat(3,3,5,5) = n_i * n_i.t();
 
 				// The prefit residuals are computed
 				double y_i = arma::dot(n_i.t(), Q_i -  RBK::mrp_to_dcm(mrp) * P_i - x );
 
 				// The normal matrix is similarly built
-				Normal_mat_temp.subvec(0, 2) = H.t() * y_i;
-				Normal_mat_temp.subvec(3, 5) = n_i * y_i;
+				normal_mat_temp.subvec(0, 2) = H.t() * y_i;
+				normal_mat_temp.subvec(3, 5) = n_i * y_i;
 
-				Info_mat += Info_mat_temp;
-				Normal_mat += Normal_mat_temp;
+				info_mat += info_mat_temp;
+				normal_mat += normal_mat_temp;
 				
 			}
 
 
 			#if ICP_DEBUG
 			std::cout << "\nInfo mat: " << std::endl;
-			std::cout << Info_mat << std::endl;
+			std::cout << info_mat << std::endl;
 			std::cout << "\nNormal mat: " << std::endl;
-			std::cout << Normal_mat << std::endl;
+			std::cout << normal_mat << std::endl;
 			#endif
 
 			// The state deviation [dmrp,dx] is solved for
-			arma::vec dX = arma::solve(Info_mat, Normal_mat);
+			arma::vec dX = arma::solve(info_mat, normal_mat);
 			arma::vec dmrp = dX.subvec(0,2);
 			arma::vec dx = dX.subvec(3,5);
 
@@ -224,7 +226,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 			std::cout << "MRP: \n" << mrp << std::endl;
 			std::cout << "x: \n" << x << std::endl;
 			std::cout << "Covariance :\n" << std::endl;
-			std::cout << arma::inv(Info_mat) << std::endl;
+			std::cout << arma::inv(info_mat) << std::endl;
 			#endif
 
 
@@ -243,7 +245,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 				break;
 			}
 
-			else if (iter == iterations_max - 1) {
+			else if (iter + 1== this -> iterations_max ) {
 
 
 				this -> pc_source -> save("../output/pc/crash.obj",this -> M_save * RBK::mrp_to_dcm(mrp),this -> M_save * x + this -> X_save);
@@ -262,7 +264,7 @@ void ICP::register_pc_mrp_multiplicative_partials(
 
 	this -> X = x;
 	this -> DCM = RBK::mrp_to_dcm(mrp);
-	this -> R = arma::inv(Info_mat);
+	this -> R = arma::inv(info_mat);
 	this -> J_res = J ;
 
 }
@@ -287,7 +289,6 @@ void ICP::compute_pairs(int h,const arma::mat & dcm,const arma::vec & x) {
 
 	if (use_true_pairs){
 
-
 		if (this -> pc_source -> get_size() != this -> pc_destination -> get_size()){
 			throw(std::runtime_error("Can't pair point clouds one-to-one since they are of different size"));
 		}
@@ -310,8 +311,6 @@ void ICP::compute_pairs(int h,const arma::mat & dcm,const arma::vec & x) {
 
 		ICP::compute_pairs(this -> point_pairs,this -> pc_source,this -> pc_destination,h, dcm,x);
 	}
-
-
 
 
 }

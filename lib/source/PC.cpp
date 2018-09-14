@@ -159,13 +159,12 @@ void PC::transform(const arma::mat & dcm, const arma::vec & x){
 		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
 
 		pn -> set_point(dcm * pn -> get_point() + x);
+		pn -> set_normal(dcm * pn -> get_normal());
+
 		points_normals.push_back(pn);
 	}
 
-	this -> los = dcm * this -> los;
-
 	this -> construct_kd_tree(points_normals);
-	this -> construct_normals(this -> los);
 
 
 }
@@ -344,28 +343,6 @@ std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 
 }
 
-// void PC::save(std::string path, bool format_like_obj) const {
-
-// 	std::ofstream shape_file;
-// 	shape_file.open(path);
-
-// 	for (unsigned int vertex_index = 0;
-// 	        vertex_index < this -> get_size();
-// 	        ++vertex_index) {
-
-// 		arma::vec p = this -> get_point_coordinates(vertex_index);
-// 		if (format_like_obj) {
-// 			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
-// 		}
-// 		else {
-// 			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
-
-// 		}
-// 	}
-
-// }
-
-
 void  PC::save(std::string path, 
 	arma::mat dcm, arma::vec x, 
 	bool save_normals,
@@ -524,7 +501,7 @@ void PC::construct_normals(arma::vec los_dir) {
 
 
 
-arma::vec PC::get_center() const{
+arma::vec::fixed<3> PC::get_center() const{
 
 	double c_x = 0;
 	double c_y = 0;
@@ -532,8 +509,7 @@ arma::vec PC::get_center() const{
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
-	// #pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_PC)
-	arma::vec C = arma::zeros<arma::vec>(3);
+	#pragma omp parallel for reduction(+:c_x,c_y,c_z) if (USE_OMP_PC)
 	for (unsigned int i = 0; i < size; ++i) {
 
 		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
@@ -542,7 +518,6 @@ arma::vec PC::get_center() const{
 		c_y += point(1) / size;
 		c_z += point(2) / size;
 
-		C += this -> kdt_points  -> get_points_normals() -> at(i) -> get_point()/ size;
 	}
 	arma::vec center = {c_x,c_y,c_z};
 	assert(arma::norm(center - C) == 0);
@@ -550,6 +525,32 @@ arma::vec PC::get_center() const{
 
 	return center;
 }
+
+
+arma::mat::fixed<3,3> PC::get_principal_axes() const{
+
+	arma::mat::fixed<3,3> P,E;
+	P.fill(0);
+
+	int size = (int)(this -> kdt_points  -> get_points_normals() -> size());
+
+	arma::vec::fixed<3> center = this -> get_center();
+
+	for (unsigned int i = 0; i < size; ++i) {
+		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
+		P += 1./(size - 1) * (point - center) * (point - center).t();
+	}
+	
+	arma::vec eigval;
+	arma::eig_sym( eigval, E, P );
+
+	if (arma::det(E) < 0){
+		E.col(0) *= -1;
+	}
+
+	return E;
+}
+
 
 
 arma::vec PC::get_bbox_center() const{
@@ -620,6 +621,91 @@ std::string PC::get_label() const{
 	return this -> label;
 }
 
+
+void PC::compute_point_descriptors(){
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+	unsigned int N = 10;
+
+	for (unsigned int i = 0; i < size; ++i) {
+		
+		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
+		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_closest_N_points(query_point -> get_point(),N);
+		query_point -> set_descriptor(PointFeatureDescriptor(neighbors_inclusive));
+	}
+
+}
+
+
+void PC::save_point_descriptors(std::string path) const{
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+	arma::mat descriptors = arma::zeros<arma::mat>(27,size);
+
+	for (unsigned int i = 0; i < size; ++i) {
+		PointFeatureDescriptor descriptor = this -> kdt_points  -> get_points_normals() -> at(i) -> get_descriptor();
+		for (int j = 0; j < 27 ; ++ j){
+			descriptors(j,i) = descriptor.get_histogram_value(j);
+		}	
+
+	}
+
+	descriptors.save(path,arma::raw_ascii);
+
+}
+
+
+
+std::multimap<double,std::pair<int,int> > PC::find_pch_matches(const PC & pc0,const PC & pc1){
+
+
+	// For each feature point in pc0, the closest feature point in pc1 is found
+	// I guess I could use some granularity here
+	
+	PointFeatureDescriptor descriptor;
+	std::multimap<double,std::pair<int,int> > matches;
+
+	for (unsigned int i = 0; i < pc0.get_size(); ++i)  {
+		
+		descriptor = pc0.get_point(i) -> get_descriptor();
+
+		double distance = descriptor.distance_to(pc1.get_point(0) -> get_descriptor());
+		int index_j_closest_to_i = 0;
+
+		for (unsigned int j = 0; j < pc1.get_size(); ++j)  {
+			
+			double distance_temp = descriptor.distance_to(pc1.get_point(j) -> get_descriptor());
+			
+			if (descriptor.distance_to(pc1.get_point(j) -> get_descriptor()) < distance){
+				index_j_closest_to_i = j;
+				distance = distance_temp;
+
+			}
+		}
+		matches.insert(std::multimap<double,std::pair<int,int> >::value_type(distance, std::make_pair(i,index_j_closest_to_i)));
+
+	}
+
+	return matches;
+
+}
+
+
+void PC::save_pch_matches(const std::multimap<double,std::pair<int,int> > matches,std::string path){
+
+
+	arma::mat matches_mat(matches.size(), 3);
+	int count = 0;
+	for (auto it = matches.begin();it != matches.end(); ++it ){
+
+		matches_mat(count,0)= it -> first;
+		matches_mat(count,1)= it -> second.first;
+		matches_mat(count,2)= it -> second.second;
+
+		++count;
+	}
+
+	matches_mat.save(path,arma::raw_ascii);
+
+}
 
 
 

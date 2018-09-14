@@ -132,12 +132,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			ICP icp_pc(this -> destination_pc, this -> source_pc);
 
-			icp_pc.register_pc_mrp_multiplicative_partials(100,1e-8,1e-2,M_pc,X_pc);
+			icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-			M_pc = icp_pc.get_M();
-			X_pc = icp_pc.get_X();
+			M_pc = icp_pc.get_dcm();
+			X_pc = icp_pc.get_x();
 
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
@@ -484,7 +484,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 
 				ICP icp_pc(this -> destination_pc, this -> source_pc,false,this -> LN_t0.t(),this -> x_t0);
-				icp_pc.register_pc_mrp_multiplicative_partials(100,1e-8,1e-2,M_pc,X_pc);
+				icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
 
 
 
@@ -492,8 +492,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-				M_pc = icp_pc.get_M();
-				X_pc = icp_pc.get_X();	
+				M_pc = icp_pc.get_dcm();
+				X_pc = icp_pc.get_x();	
 			}
 			catch(ICPException & e){
 				std::cout << e.what() << std::endl;
@@ -528,6 +528,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
+			this -> source_pc -> save(dir + "/source_" + std::to_string(time_index) + "_before.obj",this -> LN_t0.t(),this -> x_t0);
+
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
