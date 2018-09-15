@@ -11,13 +11,13 @@ double IterativeClosestPointToPlane::compute_rms_residuals(
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ) {
+	const arma::vec::fixed<3> & x_D )  const{
 
 	double J = 0;
 	double mean = IterativeClosestPointToPlane::compute_mean_residuals(point_pairs,dcm_S ,x_S ,dcm_D , x_D );
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-		J += std::pow(IterativeClosestPointToPlane::compute_normal_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		J += std::pow(IterativeClosestPointToPlane::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
 	}
 	return std::sqrt(J / (point_pairs.size()-1) );
 
@@ -28,14 +28,14 @@ double IterativeClosestPointToPlane::compute_mean_residuals(
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ){
+	const arma::vec::fixed<3> & x_D ) const{
 
 	double J = 0;
 
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-		J += IterativeClosestPointToPlane::compute_normal_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+		J += IterativeClosestPointToPlane::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
 
 	}
 
@@ -43,15 +43,15 @@ double IterativeClosestPointToPlane::compute_mean_residuals(
 
 }
 
-double IterativeClosestPointToPlane::compute_normal_distance(const PointPair & point_pair, 
+double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pair, 
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ){
+	const arma::vec::fixed<3> & x_D ) const{
 
-	return arma::dot(dcm_S * point_pair.first -> get_point() + x_S 
+	return std::abs(arma::dot(dcm_S * point_pair.first -> get_point() + x_S 
 		- dcm_D * point_pair.second -> get_point() - x_D,
-		dcm_D * point_pair.second -> get_normal());
+		dcm_D * point_pair.second -> get_normal()));
 
 }
 
@@ -113,6 +113,15 @@ void IterativeClosestPointToPlane::compute_pairs(
 	// int N_points = (int)(source_pc -> get_size() / std::pow(2, h));
 	double p = std::log2(source_pc -> get_size());
 	int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
+
+	#if ICP_DEBUG
+	std::cout << "\tMaking pairs at h = " << h << "\n";
+	std::cout << "\tUsing a-priori transform:" << std::endl;
+	std::cout << "\t\t X_S: " <<x_S.t();
+	std::cout << "\t\t MRP_S: " << RBK::dcm_to_mrp(dcm_S).t() ;
+	std::cout << "\t\t X_D: " << x_D.t();
+	std::cout << "\t\t MRP_D: " << RBK::dcm_to_mrp(dcm_D).t();
+	#endif
 
 	// a maximum of $N_pairs_max pairs will be formed. $N_points points are extracted from the source point cloud	
 	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> get_size() - 1,source_pc -> get_size());
@@ -188,6 +197,11 @@ void IterativeClosestPointToPlane::compute_pairs(
 		}
 	}	
 
+
+	#if ICP_DEBUG
+	std::cout << "\tFormed " << formed_pairs.size() << " pairs before pruning\n";
+	#endif
+
 	// Pairing error statistics are collected
 	arma::vec dist_vec(formed_pairs.size());
 	if (formed_pairs.size()== 0){
@@ -203,20 +217,27 @@ void IterativeClosestPointToPlane::compute_pairs(
 	double mean = arma::mean(dist_vec);
 	double sd = arma::stddev(dist_vec);
 
-	#if ICP_DEBUG
-	std::cout << "Mean pair distance : " << mean << std::endl;
-	std::cout << "Distance sd : " << sd << std::endl;
-	#endif
+	
 
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
 		if (std::abs(dist_vec(i) - mean) <= sd){
+			
 			point_pairs.push_back(
 				std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
 					destination_source_dist_vector[formed_pairs[i].first].first));
+		
 		}
 
 	}
+
+
+	#if ICP_DEBUG
+	std::cout << "\tMean pair distance : " << mean << std::endl;
+	std::cout << "\tDistance sd : " << sd << std::endl;
+	std::cout << "\tKept " << point_pairs.size() << " pairs\n";
+	#endif
+
 }
 
 

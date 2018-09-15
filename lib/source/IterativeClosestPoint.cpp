@@ -11,7 +11,7 @@ double IterativeClosestPoint::compute_rms_residuals(
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ) {
+	const arma::vec::fixed<3> & x_D ) const {
 
 	double J = 0;
 	double mean = IterativeClosestPoint::compute_mean_residuals(point_pairs,dcm_S ,x_S ,dcm_D , x_D );
@@ -28,7 +28,7 @@ double IterativeClosestPoint::compute_mean_residuals(
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ){
+	const arma::vec::fixed<3> & x_D ) const {
 
 	double J = 0;
 
@@ -47,10 +47,10 @@ double IterativeClosestPoint::compute_distance(const PointPair & point_pair,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ){
+	const arma::vec::fixed<3> & x_D ) const{
 
 	return arma::norm(dcm_S * point_pair.first -> get_point() + x_S 
-		- dcm_D * point_pair.second -> get_point() - x_D);
+		- dcm_D * point_pair.second -> get_point() - x_D) ;
 
 }
 
@@ -65,10 +65,8 @@ double IterativeClosestPoint::compute_rms_residuals(
 
 
 
-void IterativeClosestPoint::compute_pairs(int h,
-	
-	const arma::mat::fixed<3,3> & dcm ,
-	const arma::vec::fixed<3> & x ) {
+void IterativeClosestPoint::compute_pairs(int h,const arma::mat::fixed<3,3> & dcm ,const arma::vec::fixed<3> & x ) {
+
 
 	if (use_true_pairs){
 
@@ -108,17 +106,24 @@ void IterativeClosestPoint::compute_pairs(
 
 	point_pairs.clear();
 
-
 	std::map<double, PointPair > all_pairs;
 
 	// int N_points = (int)(source_pc -> get_size() / std::pow(2, h));
 	double p = std::log2(source_pc -> get_size());
 	int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
 
+	#if ICP_DEBUG
+	std::cout << "\tMaking pairs at h = " << h << "\n";
+	std::cout << "\tUsing a-priori transform:" << std::endl;
+	std::cout << "\t\t X_S: " << x_S.t();
+	std::cout << "\t\t MRP_S: " << RBK::dcm_to_mrp(dcm_S).t() ;
+	std::cout << "\t\t X_D: " << x_D.t();
+	std::cout << "\t\t MRP_D: " << RBK::dcm_to_mrp(dcm_D).t();
+	#endif
+
 	// a maximum of $N_pairs_max pairs will be formed. $N_points points are extracted from the source point cloud	
 	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> get_size() - 1,source_pc -> get_size());
 	random_source_indices = arma::shuffle(random_source_indices);
-
 	std::vector<PointPair> destination_source_dist_vector;
 
 	for (int i = 0; i < N_pairs_max; ++i) {
@@ -130,52 +135,42 @@ void IterativeClosestPoint::compute_pairs(
 	// a-priori transform. Then, the destination pc is queried for the closest destination point
 	// to the mapped source point
 
-
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-
 		arma::vec test_source_point = dcm_D.t() * (dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S - x_D);
-
-
 		std::shared_ptr<PointNormal> closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 		destination_source_dist_vector[i].first = closest_destination_point;
-
 	}
-
 
 	// The destination point is mapped to the source frame using the inverse of the a-priori transform
 	// Then, the source pc is queried for the closest source point
 	// to the mapped destination point
-	// This double mapping process gets rid of edge points
-
+	// This double mapping process gets rid of spurious edge points
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 		if (destination_source_dist_vector[i].first != nullptr){
 			arma::vec test_destination_point = dcm_S.t() * ( dcm_D * destination_source_dist_vector[i].first -> get_point() + x_D - x_S);
-
 			std::shared_ptr<PointNormal> closest_source_point = source_pc -> get_closest_point(test_destination_point);
-
-			
 			destination_source_dist_vector[i].second = closest_source_point;
-			
 		}
-
 	}
 
 
 	// The source/destination pairs are pre-formed
 	std::vector<std::pair<unsigned int , double> > formed_pairs;
-
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-
 		if (destination_source_dist_vector[i].first != nullptr){
 			arma::vec S = dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S;
 			arma::vec D = dcm_D * destination_source_dist_vector[i].first -> get_point() + x_D;
-
 			formed_pairs.push_back(std::make_pair(i,std::pow(arma::norm(S - D),2)));
 		}
 	}	
+
+
+	#if ICP_DEBUG
+	std::cout << "\tFormed " << formed_pairs.size() << " pairs before pruning\n";
+	#endif
 
 	// Pairing error statistics are collected
 	arma::vec dist_vec(formed_pairs.size());
@@ -192,11 +187,7 @@ void IterativeClosestPoint::compute_pairs(
 	double mean = arma::mean(dist_vec);
 	double sd = arma::stddev(dist_vec);
 
-	#if ICP_DEBUG
-	std::cout << "Mean pair distance : " << mean << std::endl;
-	std::cout << "Distance sd : " << sd << std::endl;
-	#endif
-
+	
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
 		if (std::abs(dist_vec(i) - mean) <= sd){
@@ -206,6 +197,12 @@ void IterativeClosestPoint::compute_pairs(
 		}
 
 	}
+
+	#if ICP_DEBUG
+	std::cout << "\tMean pair distance : " << mean << std::endl;
+	std::cout << "\tDistance sd : " << sd << std::endl;
+	std::cout << "\tKept " << point_pairs.size() << " pairs\n";
+	#endif
 
 }
 

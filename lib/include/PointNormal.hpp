@@ -3,7 +3,8 @@
 
 #include <armadillo>
 #include <memory>
-#include "PointFeatureDescriptor.hpp"
+#include "PointDescriptor.hpp"
+#include "SPFH.hpp"
 
 class PointNormal {
 
@@ -22,21 +23,31 @@ public:
 
 	void set_normal(arma::vec normal) ;
 	void set_point(arma::vec point) ;
-	void set_descriptor(const PointFeatureDescriptor & descriptor) ;
-	PointFeatureDescriptor get_descriptor() const;
+	void set_descriptor(const PointDescriptor & descriptor) ;
+	
+	PointDescriptor get_descriptor() const;
+	PointDescriptor * get_descriptor_ptr();
 
+	std::vector<double> get_descriptor_histogram() const;
+	unsigned int get_histogram_size() const;
+	double get_histogram_value(int index) const;
 
 	void decrement_inclusion_counter();
 
 	int get_inclusion_counter() const;
 
+	double descriptor_distance(std::shared_ptr<PointNormal> other_point) const;
+
+	void set_SPFH(SPFH spfh);
+	
 protected:
 
 	arma::vec point;
 	arma::vec normal;
 
 	int inclusion_counter = 0;
-	PointFeatureDescriptor descriptor;
+	PointDescriptor descriptor;
+	SPFH spfh;
 
 };
 

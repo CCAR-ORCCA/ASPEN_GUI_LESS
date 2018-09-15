@@ -6,10 +6,12 @@
 #include <cassert>
 
 #include "KDTreePC.hpp"
+#include "KDTreeDescriptors.hpp"
 #include "Ray.hpp"
 #include "PointNormal.hpp"
 #include "ShapeModelTri.hpp"
-#include "PointFeatureDescriptor.hpp"
+
+typedef typename std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > PointPair ;
 
 class ShapeModelTri;
 class Ray;
@@ -174,6 +176,7 @@ public:
 	std::vector< std::shared_ptr<PointNormal> > get_points() const;
 
 
+	std::shared_ptr<PointNormal> get_best_match_feature_point(std::shared_ptr<PointNormal> other_point) const;
 
 	/**
 	Saves pc to file after applying a rigid transform
@@ -201,13 +204,21 @@ public:
 
 	std::string get_label() const;
 
-	void compute_point_descriptors();
+	void compute_PFH(bool keep_correlations,
+		int N_bins);
+
+
+	void compute_FPFH(bool keep_correlations,
+		int N_bins);
+
 	void save_point_descriptors(std::string path) const;
 
 
-	static std::multimap<double,std::pair<int,int> > find_pch_matches(const PC & pc0,const PC & pc1);
-	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
+	static std::vector<PointPair>  find_pch_matches(const PC & pc0,const PC & pc1);
+	static std::vector<PointPair>  find_pch_matches(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
+	static std::vector<PointPair>  find_pch_matches_kdtree(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
 
+	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
 
 protected:
 
@@ -215,6 +226,8 @@ protected:
 	void construct_normals(arma::vec los);
 
 	std::shared_ptr<KDTreePC> kdt_points;
+	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;
+
 
 	arma::vec los;
 	std::string label;

@@ -46,10 +46,40 @@ int PointNormal::get_inclusion_counter() const {
 	return this -> inclusion_counter ;
 }
 
-void PointNormal::set_descriptor(const PointFeatureDescriptor & descriptor) {
+void PointNormal::set_descriptor(const PointDescriptor & descriptor) {
 	this -> descriptor = descriptor;
 }
 
-PointFeatureDescriptor PointNormal::get_descriptor() const{
+PointDescriptor PointNormal::get_descriptor() const{
 	return this -> descriptor;
 }
+
+
+PointDescriptor * PointNormal::get_descriptor_ptr(){
+	return &this -> descriptor;
+}
+
+std::vector<double> PointNormal::get_descriptor_histogram() const{
+	return this -> descriptor. get_histogram();
+}
+unsigned int PointNormal::get_histogram_size() const{
+	return this -> descriptor. get_histogram_size();
+}
+
+double PointNormal::get_histogram_value(int index) const{
+	return this -> descriptor. get_histogram_value(index);
+}
+
+double PointNormal::descriptor_distance(std::shared_ptr<PointNormal> other_point) const{
+	return this -> descriptor. distance_to(other_point -> get_descriptor());
+}
+
+void PointNormal::set_SPFH(SPFH spfh){
+	this -> spfh = spfh;
+}
+
+
+
+
+
+

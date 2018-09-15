@@ -162,6 +162,8 @@ add_library(${LIB_NAME} SHARED
 	source/Filter.cpp
 	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
+	source/FPFH.cpp
+
 	source/ICPBase.cpp
 	source/ICP.cpp
 	source/IterativeClosestPoint.cpp
@@ -170,11 +172,13 @@ add_library(${LIB_NAME} SHARED
 	source/KDTreePC.cpp
 	source/KDTreeShape.cpp
 	source/KDTreeControlPoints.cpp
+	source/KDTreeDescriptors.cpp
 	source/Lidar.cpp
 	source/NavigationFilter.cpp
 	source/Observations.cpp
+	source/PointDescriptor.cpp
 	source/PC.cpp
-	source/PointFeatureDescriptor.cpp
+	source/PFH.cpp
 	source/PointNormal.cpp
 	source/Psopt.cpp
 	source/Ray.cpp
@@ -186,6 +190,7 @@ add_library(${LIB_NAME} SHARED
 	source/ShapeModelBezier.cpp
 	source/ShapeModelImporter.cpp
 	source/ShapeModelTri.cpp
+	source/SPFH.cpp
 	source/StatePropagator.cpp
 	external/Gnuplot/source/GNUPlot.cpp
 	)

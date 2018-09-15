@@ -1,4 +1,9 @@
 #include "PC.hpp"
+#include "PointDescriptor.hpp"
+#include "SPFH.hpp"
+#include "PFH.hpp"
+#include "FPFH.hpp"
+
 
 PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label_) {
 
@@ -301,7 +306,6 @@ arma::vec PC::get_point_normal(unsigned int index) const {
 void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals) {
 
 	// The KD Tree is now constructed
-
 	this -> kdt_points  = std::make_shared<KDTreePC>(KDTreePC());
 	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0);
 }
@@ -622,27 +626,57 @@ std::string PC::get_label() const{
 }
 
 
-void PC::compute_point_descriptors(){
+void PC::compute_PFH(bool keep_correlations,int N_bins){
+
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	unsigned int N = 10;
+	unsigned int N = 30;
 
 	for (unsigned int i = 0; i < size; ++i) {
-		
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
 		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_closest_N_points(query_point -> get_point(),N);
-		query_point -> set_descriptor(PointFeatureDescriptor(neighbors_inclusive));
+		query_point -> set_descriptor(PFH(neighbors_inclusive,keep_correlations,N_bins));
 	}
+
+	this -> kdt_descriptors  = std::make_shared<KDTreeDescriptors>(KDTreeDescriptors());
+	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(*this -> kdt_points  -> get_points_normals(), 0);
+
+}
+
+
+void PC::compute_FPFH(bool keep_correlations,int N_bins){
+
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+	unsigned int N = 30;
+
+	for (unsigned int i = 0; i < size; ++i) {
+		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
+		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_closest_N_points(query_point -> get_point(),N);
+		
+		query_point -> set_SPFH(SPFH(neighbors_inclusive,keep_correlations,N_bins));
+
+	}
+
+	for (unsigned int i = 0; i < size; ++i) {
+		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
+		
+		query_point -> set_descriptor(FPFH(query_point));
+
+	}
+
+	this -> kdt_descriptors  = std::make_shared<KDTreeDescriptors>(KDTreeDescriptors());
+	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(*this -> kdt_points  -> get_points_normals(), 0);
 
 }
 
 
 void PC::save_point_descriptors(std::string path) const{
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	arma::mat descriptors = arma::zeros<arma::mat>(27,size);
+	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0)-> get_histogram_size();
+	arma::mat descriptors = arma::zeros<arma::mat>(histo_size,size);
 
 	for (unsigned int i = 0; i < size; ++i) {
-		PointFeatureDescriptor descriptor = this -> kdt_points  -> get_points_normals() -> at(i) -> get_descriptor();
-		for (int j = 0; j < 27 ; ++ j){
+		PointDescriptor descriptor = this -> kdt_points  -> get_points_normals() -> at(i) -> get_descriptor();
+		for (int j = 0; j < histo_size ; ++ j){
 			descriptors(j,i) = descriptor.get_histogram_value(j);
 		}	
 
@@ -654,14 +688,15 @@ void PC::save_point_descriptors(std::string path) const{
 
 
 
-std::multimap<double,std::pair<int,int> > PC::find_pch_matches(const PC & pc0,const PC & pc1){
+std::vector<PointPair> PC::find_pch_matches(const PC & pc0,const PC & pc1){
 
 
 	// For each feature point in pc0, the closest feature point in pc1 is found
 	// I guess I could use some granularity here
 	
-	PointFeatureDescriptor descriptor;
+	PointDescriptor descriptor;
 	std::multimap<double,std::pair<int,int> > matches;
+	std::set<unsigned int> pc1_used_indices;
 
 	for (unsigned int i = 0; i < pc0.get_size(); ++i)  {
 		
@@ -682,11 +717,104 @@ std::multimap<double,std::pair<int,int> > PC::find_pch_matches(const PC & pc0,co
 		}
 		matches.insert(std::multimap<double,std::pair<int,int> >::value_type(distance, std::make_pair(i,index_j_closest_to_i)));
 
+
+		if (pc1_used_indices.find(index_j_closest_to_i) == pc1_used_indices.end()){
+			matches.insert(std::multimap<double,std::pair<int,int> >::value_type(distance, std::make_pair(i,index_j_closest_to_i)));
+			pc1_used_indices.insert(index_j_closest_to_i);
+		}
+
 	}
+	throw;
+
+	std::vector<PointPair> pairs;
+
+
+	for (auto it = matches.begin(); it != matches.end(); ++it){
+		pairs.push_back(std::make_pair(pc0.get_point(it -> second.first),pc1.get_point(it -> second.second)));
+	}
+
+
+	return pairs;
+
+}
+
+
+
+std::vector<PointPair> PC::find_pch_matches(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1){
+
+
+	// For each feature point in pc0, the closest feature point in pc1 is found
+	// I guess I could use some granularity here
+	
+	PointDescriptor descriptor;
+	std::multimap<double,std::pair<int,int> > matches;
+	std::set<unsigned int> pc1_used_indices;
+
+	for (unsigned int i = 0; i < pc0 -> get_size(); ++i)  {
+		
+		descriptor = pc0 -> get_point(i) -> get_descriptor();
+
+		double distance = descriptor.distance_to(pc1 -> get_point(0) -> get_descriptor());
+		int index_j_closest_to_i = 0;
+
+		for (unsigned int j = 0; j < pc1 -> get_size(); ++j)  {
+			double distance_temp = descriptor.distance_to(pc1 -> get_point(j) -> get_descriptor());
+			
+			if (descriptor.distance_to(pc1 -> get_point(j) -> get_descriptor()) < distance){
+				index_j_closest_to_i = j;
+				distance = distance_temp;
+			}
+
+		}
+
+		if (pc1_used_indices.find(index_j_closest_to_i) == pc1_used_indices.end()){
+			matches.insert(std::multimap<double,std::pair<int,int> >::value_type(distance, std::make_pair(i,index_j_closest_to_i)));
+			pc1_used_indices.insert(index_j_closest_to_i);
+		}
+		
+	}
+
+
+
+	std::vector<PointPair> pairs;
+
+
+	for (auto it = matches.begin(); it != matches.end(); ++it){
+		pairs.push_back(std::make_pair(pc0 -> get_point(it -> second.first),pc1 -> get_point(it -> second.second)));
+	}
+
+
+	return pairs;
+
+}
+
+std::vector<PointPair>  PC::find_pch_matches_kdtree(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1){
+
+
+	PointDescriptor descriptor;
+	std::vector<PointPair> matches;
+
+	std::set<std::shared_ptr< PointNormal > > used_destination_points;
+	
+	std::set<unsigned int> pc1_used_indices;
+
+	for (unsigned int i = 0; i < pc0 -> get_size(); ++i)  {
+				
+		auto best_match = pc1 -> get_best_match_feature_point(pc0 -> get_point(i));
+
+		if(used_destination_points.find(best_match) == used_destination_points.end()){
+			matches.push_back(std::make_pair(pc0 -> get_point(i),best_match));
+			used_destination_points.insert(best_match);
+		}
+	}
+
 
 	return matches;
 
+
+
 }
+
 
 
 void PC::save_pch_matches(const std::multimap<double,std::pair<int,int> > matches,std::string path){
@@ -706,6 +834,21 @@ void PC::save_pch_matches(const std::multimap<double,std::pair<int,int> > matche
 	matches_mat.save(path,arma::raw_ascii);
 
 }
+
+
+std::shared_ptr<PointNormal> PC::get_best_match_feature_point(std::shared_ptr<PointNormal> other_point) const{
+
+	double distance = std::numeric_limits<double>::infinity();
+	std::shared_ptr<PointNormal> closest_point;
+
+	this -> kdt_descriptors  -> closest_point_search(other_point,
+		this -> kdt_descriptors,
+		closest_point,
+		distance);
+	return closest_point;
+
+}
+
 
 
 

@@ -11,7 +11,6 @@ void KDTreePC::set_depth(int depth) {
 }
 
 
-
 double KDTreePC::get_value() const {
 	return this -> value;
 }
@@ -228,7 +227,6 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 
 	arma::vec min_bounds = start_point;
 	arma::vec max_bounds = start_point;
-
 
 	// Could multithread here
 	for (unsigned int i = 0; i < points_normals.size(); ++i) {
