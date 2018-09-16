@@ -259,16 +259,18 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 	}
 
 	#if ICP_DEBUG
+	auto start = std::chrono::system_clock::now();
+
 	std::cout << "Computing pc_destination descriptors...\n";
 	#endif
 
 	if (this -> use_FPFH){
 		this -> pc_destination -> compute_FPFH(this -> keep_correlations,
-			this -> N_bins);
+			this -> N_bins,this -> neighborhood_radius);
 	}
 	else{
 		this -> pc_destination -> compute_PFH(this -> keep_correlations,
-			this -> N_bins);
+			this -> N_bins,this -> neighborhood_radius);
 	}
 
 	#if ICP_DEBUG
@@ -277,26 +279,29 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 
 	if (this -> use_FPFH){
 		this -> pc_source -> compute_FPFH(this -> keep_correlations,
-			this -> N_bins);
+			this -> N_bins,this -> neighborhood_radius);
 	}
 	else{
 		this -> pc_source -> compute_PFH(this -> keep_correlations,
-			this -> N_bins);
+			this -> N_bins,this -> neighborhood_radius);
 	}
 
 
 	#if ICP_DEBUG
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
+	std::cout << "Time elapsed computing features: " << elapsed_seconds.count()<< " (s)"<< std::endl;
 	this -> pc_source->save_point_descriptors("source_descriptors.txt");
 	this -> pc_destination ->save_point_descriptors("destination_descriptors.txt");
 	std::cout << "Matching descriptors...\n";
-	auto start = std::chrono::system_clock::now();
+	start = std::chrono::system_clock::now();
 	#endif
 
 	auto all_matches = PC::find_pch_matches_kdtree(this -> pc_source,this -> pc_destination);
 
 	#if ICP_DEBUG
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end-start;
+	end = std::chrono::system_clock::now();
+	elapsed_seconds = end-start;
 	std::cout << "Time elapsed matching features: " << elapsed_seconds.count()<< " (s)"<< std::endl;
 	std::cout << "Total number of matches: "+ std::to_string(all_matches.size()) + " \n";
 	ICPBase::save_pairs(all_matches,"all_pairs.txt");
@@ -537,4 +542,11 @@ unsigned int ICPBase::get_N_bins() const{
 }
 void ICPBase::set_N_bins(unsigned int N_bins){
 	this -> N_bins = N_bins;
+}
+
+double ICPBase::get_neighborhood_radius() const{
+	return this -> neighborhood_radius;
+}
+void ICPBase::set_neighborhood_radius(double neighborhood_radius){
+	this -> neighborhood_radius = neighborhood_radius;
 }

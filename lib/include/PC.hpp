@@ -65,29 +65,14 @@ public:
 		std::shared_ptr<PC> source_pc,
 		FrameGraph * frame_graph);
 
-	/**
-	Returns a pointer to the PointNormal whose point is closest to the provided test_point
-	using a brute force approach
-	@param test_point 3-by-1 vector queried
-	@return Pointer to closest point
-	*/
-	std::shared_ptr<PointNormal> get_closest_point_index_brute_force(arma::vec & test_point) const;
-
-	/**
-	Returns a pointer to the N PointNormal-s whose points are closest to the provided test_point
-	using a brute force approach
-	@param test_point 3-by-1 vector queried
-	@return Vector of pointers to closest points
-	*/
-	std::vector<std::shared_ptr<PointNormal> > get_closest_N_points_brute_force(arma::vec & test_point, unsigned int N) const ;
-
+	
 	/**
 	Returns a pointer to the PointNormal whose point is closest to the provided test_point
 	using the KD Tree search
 	@param test_point 3-by-1 vector queried
 	@return Pointer to closest point
 	*/
-	std::shared_ptr<PointNormal> get_closest_point(arma::vec & test_point) const;
+	std::shared_ptr<PointNormal> get_closest_point(const arma::vec & test_point) const;
 
 
 	/**
@@ -205,14 +190,19 @@ public:
 	std::string get_label() const;
 
 	void compute_PFH(bool keep_correlations,
-		int N_bins);
+		int N_bins,double neighborhood_radius);
 
 
 	void compute_FPFH(bool keep_correlations,
-		int N_bins);
+		int N_bins,double neighborhood_radius);
 
 	void save_point_descriptors(std::string path) const;
 
+
+
+	std::vector<std::shared_ptr<PointNormal> > get_points_in_sphere(
+		arma::vec test_point, const double & radius) const;
+	void compute_mean_feature_histogram();
 
 	static std::vector<PointPair>  find_pch_matches(const PC & pc0,const PC & pc1);
 	static std::vector<PointPair>  find_pch_matches(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
@@ -224,10 +214,11 @@ protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec los);
+	std::vector<std::shared_ptr<PointNormal> > prune_features( std::vector<std::shared_ptr<PointNormal> > * all_points) const;
 
 	std::shared_ptr<KDTreePC> kdt_points;
 	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;
-
+	std::vector<double> mean_feature_histogram;
 
 	arma::vec los;
 	std::string label;

@@ -39,7 +39,9 @@ public:
 	double descriptor_distance(std::shared_ptr<PointNormal> other_point) const;
 
 	void set_SPFH(SPFH spfh);
-	
+
+	SPFH * get_SPFH();
+
 protected:
 
 	arma::vec point;

@@ -79,6 +79,11 @@ void PointNormal::set_SPFH(SPFH spfh){
 }
 
 
+SPFH * PointNormal::get_SPFH(){
+	return &this -> spfh;
+}
+
+
 
 
 

@@ -83,6 +83,11 @@ public:
 	unsigned int get_N_bins() const;
 	void set_N_bins(unsigned int N_bins);
 
+	double get_neighborhood_radius() const;
+	void set_neighborhood_radius(double neighborhood_radius);
+	
+
+
 	virtual double compute_distance(const PointPair & point_pair, 
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
@@ -120,11 +125,12 @@ protected:
 	double J_res;
 	double rel_tol = 1e-8;
 	double s_tol = 1e-2;
+	double neighborhood_radius = -1;
+
 	unsigned int iterations_max = 30;
 	unsigned int minimum_h = 0;
 	unsigned int maximum_h = 7;
 	unsigned int N_bins = 3;
-
 	
 	bool use_true_pairs = false;
 	bool use_pca_prealignment = false;

@@ -24,18 +24,21 @@ public:
 
 
 	void closest_point_search(
-	    const arma::vec & test_point,
-	    std::shared_ptr<KDTreePC> node,
-	    std::shared_ptr<PointNormal> & best_guess,
-	    double & distance);
+		const arma::vec & test_point,
+		std::shared_ptr<KDTreePC> node,
+		std::shared_ptr<PointNormal> & best_guess,
+		double & distance);
 
 	void closest_point_search(const arma::vec & test_point,
-	                          std::shared_ptr<KDTreePC> node,
-	                          std::shared_ptr<PointNormal> & best_guess,
-	                          double & distance,
-	                          std::vector< std::shared_ptr<PointNormal> > & closest_points);
+		std::shared_ptr<KDTreePC> node,
+		std::shared_ptr<PointNormal> & best_guess,
+		double & distance,
+		std::vector< std::shared_ptr<PointNormal> > & closest_points);
 
-
+	void radius_point_search(const arma::vec & test_point,
+		std::shared_ptr<KDTreePC> node,
+		const double & distance,
+		std::vector<std::shared_ptr<PointNormal> > & closest_points);
 
 	int get_depth() const;
 	void set_depth(int depth);
@@ -51,12 +54,15 @@ public:
 	void set_axis(unsigned int axis);
 
 
+	void set_is_cluttered(bool cluttered);
+	bool get_is_cluttered() const;
 protected:
 
 	int depth;
 	int max_depth = 1000;
 	double value;
 	unsigned int axis = 0;
+	bool cluttered = false;
 
 };
 

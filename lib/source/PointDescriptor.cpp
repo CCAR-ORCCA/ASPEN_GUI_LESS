@@ -3,7 +3,7 @@
 
 
 PointDescriptor::PointDescriptor(){
-	
+
 }
 
 
@@ -16,9 +16,7 @@ double PointDescriptor::get_histogram_value(int bin_index) const{
 }
 
 double PointDescriptor::distance_to(const PointDescriptor & descriptor) const{
-
 	double distance = 0;
-
 	for (int i = 0; i < this -> histogram.size(); ++i){
 		double pi = this -> get_histogram_value(i);
 		double qi = descriptor.get_histogram_value(i);
@@ -28,9 +26,7 @@ double PointDescriptor::distance_to(const PointDescriptor & descriptor) const{
 		}
 	}
 	return distance;
-
 }
-
 
 double PointDescriptor::distance_to(PointDescriptor * descriptor) const{
 

@@ -310,7 +310,7 @@ void PC::construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_
 	this -> kdt_points  = this -> kdt_points  -> build(points_normals, 0);
 }
 
-std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const {
+std::shared_ptr<PointNormal> PC::get_closest_point(const arma::vec & test_point) const {
 
 	double distance = std::numeric_limits<double>::infinity();
 	std::shared_ptr<PointNormal> closest_point;
@@ -323,6 +323,20 @@ std::shared_ptr<PointNormal> PC::get_closest_point(arma::vec & test_point) const
 	return closest_point;
 
 }
+
+std::vector<std::shared_ptr<PointNormal> > PC::get_points_in_sphere(
+	arma::vec test_point, const double & radius) const {
+
+	std::vector<std::shared_ptr<PointNormal> > closest_points;
+
+	this -> kdt_points  -> radius_point_search(test_point,this -> kdt_points,radius,closest_points);
+
+	
+	return closest_points;
+
+}
+
+
 
 std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points(
 	arma::vec test_point, unsigned int N) const {
@@ -392,76 +406,6 @@ void PC::save(arma::mat & points,std::string path) {
 }
 
 
-
-
-
-
-
-std::shared_ptr<PointNormal> PC::get_closest_point_index_brute_force(arma::vec & test_point) const {
-
-	double distance = std::numeric_limits<double>::infinity();
-
-	unsigned int pc_size = this -> kdt_points  -> get_size();
-	int index_closest = 0;
-
-	for (unsigned int i = 0 ; i < pc_size ; ++i) {
-		double new_distance = arma::norm(test_point - this -> kdt_points  ->
-			get_points_normals() -> at(i) -> get_point());
-
-		if (new_distance < distance) {
-			index_closest = i;
-			distance = new_distance;
-		}
-
-	}
-
-	return this -> kdt_points  -> get_points_normals() -> at(index_closest);
-}
-
-std::vector<std::shared_ptr<PointNormal> > PC::get_closest_N_points_brute_force(arma::vec & test_point, unsigned int N) const {
-
-	unsigned int pc_size = this -> kdt_points  -> get_size();
-
-	if (N > pc_size) {
-		throw "Point cloud has fewer points than requested neighborhood size";
-	}
-
-	if (pc_size == 0) {
-		throw "Empty point cloud";
-	}
-
-	std::map<double, unsigned int> distance_map;
-	distance_map[std::numeric_limits<double>::infinity()] = 0;
-
-	for (unsigned int i = 0 ; i < pc_size ; ++i) {
-
-		double new_distance = arma::norm(test_point - this -> kdt_points  ->
-			get_points_normals() -> at(i) -> get_point());
-
-		if (new_distance > std::prev(distance_map.end()) -> first) {
-			continue;
-		}
-
-		else  {
-
-			distance_map[new_distance] = i;
-
-			if (distance_map.size() > N) {
-				distance_map.erase(std::prev(distance_map.end()));
-			}
-
-		}
-
-	}
-
-	std::vector<std::shared_ptr<PointNormal> > closest_points;
-
-	for (auto it = distance_map.begin(); it != distance_map.end(); ++it ) {
-		closest_points.push_back(this -> kdt_points  -> get_points_normals() -> at(it -> second));
-	}
-
-	return closest_points;
-}
 
 
 void PC::construct_normals(arma::vec los_dir) {
@@ -626,46 +570,58 @@ std::string PC::get_label() const{
 }
 
 
-void PC::compute_PFH(bool keep_correlations,int N_bins){
+void PC::compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radius){
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	unsigned int N = 30;
+
+	if (neighborhood_radius < 0){
+		throw(std::runtime_error("neighborhood_radius is negative"));
+	}
 
 	for (unsigned int i = 0; i < size; ++i) {
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
-		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_closest_N_points(query_point -> get_point(),N);
+		
+		
+		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_points_in_sphere(query_point -> get_point(),neighborhood_radius);
+		
 		query_point -> set_descriptor(PFH(neighbors_inclusive,keep_correlations,N_bins));
-	}
+		
+	}	
+	this -> compute_mean_feature_histogram();
+
+
+	std::vector<std::shared_ptr<PointNormal> > relevant_point_with_descriptors = this -> prune_features(this -> kdt_points  -> get_points_normals());
 
 	this -> kdt_descriptors  = std::make_shared<KDTreeDescriptors>(KDTreeDescriptors());
-	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(*this -> kdt_points  -> get_points_normals(), 0);
-
+	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(relevant_point_with_descriptors, 0);
 }
 
 
-void PC::compute_FPFH(bool keep_correlations,int N_bins){
+void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radius){
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	unsigned int N = 30;
 
-	for (unsigned int i = 0; i < size; ++i) {
-		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
-		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_closest_N_points(query_point -> get_point(),N);
-		
-		query_point -> set_SPFH(SPFH(neighbors_inclusive,keep_correlations,N_bins));
-
+	if (neighborhood_radius < 0){
+		throw(std::runtime_error("neighborhood_radius is negative"));
 	}
 
 	for (unsigned int i = 0; i < size; ++i) {
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
+		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_points_in_sphere(query_point -> get_point(),neighborhood_radius);
 		
+		query_point -> set_SPFH(SPFH(query_point,neighbors_inclusive,keep_correlations,N_bins));
+	}
+
+	for (unsigned int i = 0; i < size; ++i) {
+		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
 		query_point -> set_descriptor(FPFH(query_point));
-
 	}
+	this -> compute_mean_feature_histogram();
+
+	std::vector<std::shared_ptr<PointNormal> > relevant_point_with_descriptors = this -> prune_features(this -> kdt_points  -> get_points_normals());
 
 	this -> kdt_descriptors  = std::make_shared<KDTreeDescriptors>(KDTreeDescriptors());
-	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(*this -> kdt_points  -> get_points_normals(), 0);
-
+	this -> kdt_descriptors  = this -> kdt_descriptors  -> build(relevant_point_with_descriptors, 0);
 }
 
 
@@ -799,7 +755,7 @@ std::vector<PointPair>  PC::find_pch_matches_kdtree(std::shared_ptr<PC> pc0,std:
 	std::set<unsigned int> pc1_used_indices;
 
 	for (unsigned int i = 0; i < pc0 -> get_size(); ++i)  {
-				
+
 		auto best_match = pc1 -> get_best_match_feature_point(pc0 -> get_point(i));
 
 		if(used_destination_points.find(best_match) == used_destination_points.end()){
@@ -850,5 +806,47 @@ std::shared_ptr<PointNormal> PC::get_best_match_feature_point(std::shared_ptr<Po
 }
 
 
+void PC::compute_mean_feature_histogram(){
+
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0) -> get_histogram_size();
+	this -> mean_feature_histogram = std::vector<double>(histo_size,0);
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < histo_size; ++i) {
+		for (unsigned int k = 0; k < size; ++k){
+			this -> mean_feature_histogram[i] += this -> kdt_points  -> get_points_normals() -> at(k) -> get_histogram_value(i) / size;
+		}
+	}
+
+}
+
+std::vector<std::shared_ptr<PointNormal> > PC::prune_features(std::vector<std::shared_ptr<PointNormal> > * all_points) const{
+
+	// The distance between each point histogram and the mean histogram is computed
+	unsigned int size = all_points ->  size();
+	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0) -> get_histogram_size();
+	
+	std::vector<std::shared_ptr<PointNormal> > pruned_points;
+
+	arma::vec distances = arma::zeros<arma::vec>(size);
+	#pragma omp parallel for
+	for (unsigned int k = 0; k < size; ++k){
+		for (int i = 0; i < histo_size; ++i){
+			double mu_i = this -> mean_feature_histogram[i];
+			double p_i = all_points -> at(k) -> get_histogram_value(i);
+			distances(k) += std::pow(mu_i - p_i,2) / (mu_i + p_i);
+		}
+	}
+
+	distances = distances / arma::stddev(distances);
+	for (unsigned int k = 0; k < size; ++k){
+
+		if (distances(k) > 3){
+			pruned_points.push_back(all_points -> at(k));
+		}
+	}
+	return pruned_points;
+}
 
 

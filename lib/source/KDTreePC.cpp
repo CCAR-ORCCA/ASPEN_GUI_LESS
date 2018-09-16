@@ -1,6 +1,7 @@
 #include "KDTreePC.hpp"
 #include "DebugFlags.hpp"
 
+#define KDTTREE_PC_DEBUG 0
 
 KDTreePC::KDTreePC() {
 
@@ -26,6 +27,16 @@ void KDTreePC::set_axis(unsigned int axis) {
 	this -> axis = axis;
 }
 
+
+void KDTreePC::set_is_cluttered(bool cluttered){
+	this -> cluttered = cluttered;
+}
+
+bool KDTreePC::get_is_cluttered() const{
+	return this -> cluttered;
+}
+
+
 void KDTreePC::closest_point_search(const arma::vec & test_point,
 	std::shared_ptr<KDTreePC> node,
 	std::shared_ptr<PointNormal> & best_guess,
@@ -33,7 +44,7 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 
 
-	if (node -> points_normals.size() == 1 ) {
+	if (node -> points_normals.size() == 1 || node -> get_is_cluttered() ) {
 
 		double new_distance = arma::norm(node -> points_normals[0] -> get_point() - test_point);
 
@@ -113,6 +124,7 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 		if (new_distance < distance && std::find(closest_points.begin(), closest_points.end(), node -> points_normals[0]) == closest_points.end()) {
 			distance = new_distance;
+			
 			best_guess = node -> points_normals[0];
 		}
 
@@ -129,7 +141,7 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 		else {
 			search_left_first = false;
 		}
-	
+
 		if (search_left_first) {
 
 
@@ -178,6 +190,110 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 }
 
 
+void KDTreePC::radius_point_search(const arma::vec & test_point,
+	std::shared_ptr<KDTreePC> node,
+	const double & distance,
+	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
+
+
+	#if KDTTREE_PC_DEBUG
+	std::cout << "#############################\n";
+	std::cout << "Depth: " << this -> depth << std::endl; ;
+	std::cout << "Points in node: " << node -> points_normals.size() << std::endl;
+	std::cout << "Points found so far : " << closest_points.size() << std::endl;
+	#endif
+
+
+
+
+	if (node -> points_normals.size() == 1 || node -> get_is_cluttered() ) {
+
+		#if KDTTREE_PC_DEBUG
+		std::cout << "Leaf node\n";
+		#endif
+
+		double new_distance = arma::norm( node -> points_normals[0] -> get_point() - test_point);
+
+		#if KDTTREE_PC_DEBUG
+		std::cout << "Distance to query_point: " << new_distance << std::endl;
+		#endif
+
+		if (new_distance < distance ) {
+			// Takes care of cluttered nodes as well
+			for (int i = 0; i < node -> points_normals.size(); ++i){
+				closest_points.push_back(node -> points_normals[i]);
+			}
+			#if KDTTREE_PC_DEBUG
+			std::cout << "Found closest point " << node -> points_normals[0] << " with distance = " + std::to_string(distance)<< " \n" << std::endl;
+			#endif
+		}
+
+	}
+
+	else {
+
+		bool search_left_first;
+		#if KDTTREE_PC_DEBUG
+		std::cout << "Fork node\n";
+		#endif
+
+		if (test_point(node -> get_axis()) <= node -> get_value()) {
+			search_left_first = true;
+		}
+		else {
+			search_left_first = false;
+		}
+
+		if (search_left_first) {
+
+			#if KDTTREE_PC_DEBUG
+			std::cout << "Searching left first\n";
+			#endif
+
+
+			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> radius_point_search(test_point,
+					node -> left,
+					distance,
+					closest_points);
+			}
+
+			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+				node -> radius_point_search(test_point,
+					node -> right,
+					distance,
+					closest_points);
+			}
+
+		}
+
+		else {
+
+			#if KDTTREE_PC_DEBUG
+			std::cout << "Searching right first\n";
+			#endif
+			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+				node -> radius_point_search(test_point,
+					node -> right,
+					distance,
+					closest_points);
+			}
+
+			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> radius_point_search(test_point,
+					node -> left,
+					distance,
+					closest_points);
+			}
+
+		}
+
+	}
+
+
+}
+
+
 
 std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth) {
 
@@ -191,13 +307,13 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 
 
 	#if KDTTREE_PC_DEBUG
-		std::cout << "Points in node: " << points_normals.size() <<  std::endl;
+	std::cout << "Points in node: " << points_normals.size() <<  std::endl;
 	#endif
 
 	if (points_normals.size() == 0) {
 		#if KDTTREE_PC_DEBUG
-			std::cout << "Empty node" << std::endl;
-			std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Empty node" << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 		return node;
 	}
@@ -214,8 +330,8 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 		node -> right -> points_normals = std::vector<std::shared_ptr<PointNormal> >();
 
 		#if KDTTREE_PC_DEBUG
-			std::cout << "Trivial node" << std::endl;
-			std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Trivial node" << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 
 		return node;
@@ -249,18 +365,19 @@ std::shared_ptr<KDTreePC> KDTreePC::build(std::vector< std::shared_ptr<PointNorm
 	std::vector < std::shared_ptr<PointNormal> > right_points;
 
 	#if KDTTREE_PC_DEBUG
-		std::cout << "Midpoint: " << midpoint.t() << std::endl;
-		std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
+	std::cout << "Midpoint: " << midpoint.t() << std::endl;
+	std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
 	#endif
 
 
 	if (arma::norm(bounding_box_lengths) == 0) {
 		#if KDTTREE_PC_DEBUG
-			std::cout << "Cluttered node" << std::endl;
+		std::cout << "Cluttered node" << std::endl;
 		#endif
 
-		// Erases the last element
-		node -> points_normals . erase(--node -> points_normals.end());
+		node -> set_is_cluttered(true);
+		
+
 		return node;
 	}
 
