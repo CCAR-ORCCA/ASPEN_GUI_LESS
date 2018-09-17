@@ -11,7 +11,6 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 
 	arma::vec::fixed<3> u,v,w,p_i,p_j,n_j;
 
-	int N_features = points.size() - 1;
 	int N_global_bins;
 
 	if (keep_correlations){
@@ -23,14 +22,15 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 
 
 	this -> neighbors_exclusive.clear();
-	this -> histogram = std::vector<double>(N_global_bins,0.);
+	this -> histogram = arma::zeros<arma::vec>(N_global_bins);
 
 	u = query_point ->  get_normal();
 	p_i = query_point -> get_point();
 
 	for (int j = 0; j < points.size(); ++j){
 
-		if (points.at(j) != query_point){
+		if (arma::norm(points.at(j) -> get_point() - query_point -> get_point()) > 0){
+
 			this ->  neighbors_exclusive.push_back(points.at(j));
 
 
@@ -51,19 +51,20 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 
 			if (keep_correlations){
 				int global_bin_index = alpha_bin_index +  phi_bin_index * (N_bins) + theta_bin_index * (N_bins * N_bins);
-				this -> histogram[global_bin_index] += 1./N_features;
+				this -> histogram(global_bin_index) += 1.;
 
 			}
 			else{
 
-				this -> histogram[alpha_bin_index] += 1./N_features;
-				this -> histogram[N_bins + phi_bin_index] += 1./N_features;
-				this -> histogram[2 * N_bins + theta_bin_index] += 1./N_features;
+				this -> histogram(alpha_bin_index) += 1;
+				this -> histogram(N_bins + phi_bin_index) += 1.;
+				this -> histogram(2 * N_bins + theta_bin_index) += 1.;
 			}
 
 		}
 
 	}
+
 
 }
 

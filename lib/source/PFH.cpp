@@ -22,8 +22,7 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 	}
 
 
-	this -> histogram = std::vector<double>(N_global_bins,0.);
-	double max_value = -1;
+	this -> histogram = arma::zeros<arma::vec>(N_global_bins);
 
 	for (int i = 0; i < points.size(); ++i){
 
@@ -50,7 +49,6 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 			if (keep_correlations){
 				int global_bin_index = alpha_bin_index +  phi_bin_index * (N_bins) + theta_bin_index * (N_bins * N_bins);
 				this -> histogram[global_bin_index] += 1./N_features;
-				max_value = std::max(max_value,this -> histogram[global_bin_index]);
 			}
 			else{
 
@@ -58,19 +56,13 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 				this -> histogram[N_bins + phi_bin_index] += 1./N_features;
 				this -> histogram[2 * N_bins + theta_bin_index] += 1./N_features;
 
-				max_value = std::max(max_value,this -> histogram[alpha_bin_index]);
-				max_value = std::max(max_value,this -> histogram[N_bins + phi_bin_index]);
-				max_value = std::max(max_value,this -> histogram[2 * N_bins + theta_bin_index]);
-
 			}
 
 		}
 	}
 
-	
-	for (int i = 0; i < this -> histogram.size(); ++i){
-		this -> histogram[i] = this -> histogram[i]/max_value;
+	if (arma::max(this -> histogram) > 0){
+		this -> histogram = this -> histogram / arma::max(this -> histogram);
 	}
-
 }
 

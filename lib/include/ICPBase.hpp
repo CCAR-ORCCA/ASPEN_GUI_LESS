@@ -42,10 +42,10 @@ public:
 		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
 		arma::vec::fixed<3> X_0  = arma::zeros<arma::vec>(3));
 
-	void register_pc_RANSAC(unsigned int n_samples,
+	void register_pc_RANSAC(double fraction_inliers_used,
+		double fraction_inliers_requested,
 		unsigned int iter_ransac_max,
 		double acceptance_threshold_error, 
-		unsigned int acceptance_threshold_size ,
 		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
 		arma::vec::fixed<3> X_0  = arma::zeros<arma::vec>(3));
 
@@ -112,7 +112,8 @@ protected:
 		arma::vec::fixed<6> & normal_mat_temp) = 0;
 
 	void pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const;
-	static void save_pairs(std::vector<PointPair> best_pairs_RANSAC,std::string path);
+	static void save_pairs(std::vector<PointPair> pairs,std::string path,const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
 
 	arma::vec::fixed<3> x = arma::zeros<arma::vec>(3);
 	arma::vec::fixed<3> mrp = arma::zeros<arma::vec>(3);

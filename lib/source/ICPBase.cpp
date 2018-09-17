@@ -238,10 +238,10 @@ void ICPBase::register_pc(arma::mat::fixed<3,3> dcm_0,arma::vec::fixed<3> X_0){
 
 
 
-void ICPBase::register_pc_RANSAC(unsigned int n_samples,
+void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
+	double fraction_inliers_requested,
 	unsigned int iter_ransac_max,
 	double acceptance_threshold_error, 
-	unsigned int acceptance_threshold_size ,
 	arma::mat::fixed<3,3> dcm_0,
 	arma::vec::fixed<3> X_0 ){
 
@@ -249,10 +249,12 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 
 	arma::mat::fixed<3,3> dcm_best_RANSAC;
 	arma::vec::fixed<3>	x_best_RANSAC ;
-	std::vector<PointPair> best_pairs_RANSAC;
+	std::vector<PointPair> best_pairs_RANSAC,pairs_RANSAC;
 
 	arma::mat::fixed<6,6> info_mat;
 	arma::vec::fixed<6> normal_mat;
+
+
 
 	if (this -> iterations_max == 0 || iter_ransac_max == 0){
 		return;
@@ -265,11 +267,11 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_destination -> compute_FPFH(this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius);
 	}
 	else{
-		this -> pc_destination -> compute_PFH(this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius);
 	}
 
@@ -278,13 +280,16 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_source -> compute_FPFH(this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius);
 	}
 	else{
-		this -> pc_source -> compute_PFH(this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius);
 	}
+
+
+
 
 
 	#if ICP_DEBUG
@@ -298,6 +303,8 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 	#endif
 
 	auto all_matches = PC::find_pch_matches_kdtree(this -> pc_source,this -> pc_destination);
+	
+	int n_samples = (int)(all_matches.size() * fraction_inliers_used);
 
 	#if ICP_DEBUG
 	end = std::chrono::system_clock::now();
@@ -324,10 +331,12 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 
 		// Drawing random pairs from the matches
 		this -> point_pairs.clear();
+		pairs_RANSAC.clear();
 		indices = arma::shuffle(indices);
 
 		for (int k = 0; k < n_samples; ++k){
 			this -> point_pairs.push_back(all_matches[indices[k]]);
+			pairs_RANSAC.push_back(all_matches[indices[k]]);
 		}
 
 		// The ICP is iterated
@@ -411,29 +420,21 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 
 			auto point_pair = all_matches[indices[k]];
 
-
 			if ( this-> compute_distance(point_pair, RBK::mrp_to_dcm(mrp),x_temp) < acceptance_threshold_error){
 				this -> point_pairs.push_back(point_pair);
 				++good_inlier_not_used_count;
-				
-				// Because we don't care about how many inliers are, but only about whether they are enough,
-				// we can stop counting once we hit the acceptance threshold
-				
-				#if !ICP_DEBUG
-				if (good_inlier_not_used_count > acceptance_threshold_size){
-					break;
-				}
-				#endif
-
-
-
 			}
 		}
 
-		
+		double fraction_inliers_found = ((double)(good_inlier_not_used_count) / all_matches.size() + fraction_inliers_used);
+
+
+		#if ICP_DEBUG
+		std::cout << "Model has found " << 100 * fraction_inliers_found << " (%) of inliers total (need " << fraction_inliers_requested * 100 <<  "  (%) to validate) \n";
+		#endif
 
 		// If good_inlier_not_used_count is greater than what is prescribed, we have found a good model
-		if (good_inlier_not_used_count > acceptance_threshold_size){
+		if (fraction_inliers_found > fraction_inliers_requested){
 			
 			arma::mat::fixed<3,3> better_dcm = RBK::mrp_to_dcm(mrp);
 			arma::vec::fixed<3> better_x = x_temp;
@@ -446,20 +447,21 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 				J_best_RANSAC = J_better;
 				dcm_best_RANSAC = better_dcm;
 				x_best_RANSAC = better_x;
-				best_pairs_RANSAC = this -> point_pairs;
+				best_pairs_RANSAC = pairs_RANSAC;
 				
 				#if ICP_DEBUG
-				std::cout << "Found better model with J = " << J_best_RANSAC << " explaining " << best_pairs_RANSAC.size() << " feature pairs using "+ std::to_string(n_samples) +  " data points\n";
+				std::cout << "Found better model with J = " << J_best_RANSAC << " explaining " << this -> point_pairs.size() << " feature pairs using "+ std::to_string(n_samples) +  " data points\n";
 				#endif
-
 			}
 		}
 	}
+
 	#if ICP_DEBUG
 	std::cout << "Leaving RANSAC. Best transform: \n";
 	std::cout << "\tmrp: " << RBK::dcm_to_mrp(dcm_best_RANSAC).t();
 	std::cout << "\tx: " << x_best_RANSAC.t();
 	std::cout << "\tResiduals: " << J_best_RANSAC << std::endl;
+	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs_aligned.txt",dcm_best_RANSAC,x_best_RANSAC);
 	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs.txt");
 	#endif
 
@@ -469,13 +471,13 @@ void ICPBase::register_pc_RANSAC(unsigned int n_samples,
 
 }
 
-void ICPBase::save_pairs(std::vector<PointPair> pairs,std::string path){
+void ICPBase::save_pairs(std::vector<PointPair> pairs,std::string path,const arma::mat::fixed<3,3> & dcm,const arma::vec::fixed<3> & x){
 
 	arma::mat pairs_m(pairs.size(),6);
 
 	for (int i = 0; i < pairs.size(); ++i){
 
-		pairs_m.submat(i,0,i,2) = pairs[i].first -> get_point().t();
+		pairs_m.submat(i,0,i,2) = (dcm * pairs[i].first -> get_point() + x).t();
 		pairs_m.submat(i,3,i,5) = pairs[i].second -> get_point().t();
 
 	}

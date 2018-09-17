@@ -229,7 +229,7 @@ std::shared_ptr<KDTreeDescriptors> KDTreeDescriptors::build(std::vector< std::sh
 	#endif
 
 
-	if (arma::norm(bounding_box_lengths) == 0) {
+	if (arma::norm(bounding_box_lengths) < 1e-15) {
 		
 		#if KDTTREE_DESCRIPTOR_DEBUG
 		std::cout << "Cluttered node" << std::endl;

@@ -43,7 +43,6 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 	double & distance) {
 
 
-
 	if (node -> points_normals.size() == 1 || node -> get_is_cluttered() ) {
 
 		double new_distance = arma::norm(node -> points_normals[0] -> get_point() - test_point);
@@ -111,22 +110,58 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 }
 
-void KDTreePC::closest_point_search(const arma::vec & test_point,
+void KDTreePC::closest_N_point_search(const arma::vec & test_point,
+	const unsigned int & N_points,
 	std::shared_ptr<KDTreePC> node,
-	std::shared_ptr<PointNormal> & best_guess,
 	double & distance,
-	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
+	std::map<double,std::shared_ptr<PointNormal> > & closest_points) {
 
+	#if KDTTREE_PC_DEBUG
+	std::cout << "#############################\n";
+	std::cout << "Depth: " << this -> depth << std::endl; ;
+	std::cout << "Points in node: " << node -> points_normals.size() << std::endl;
+	std::cout << "Points found so far : " << closest_points.size() << std::endl;
+	#endif
 
-	if (node -> points_normals.size() == 1 ) {
+	// DEPRECATED
+	if (node -> points_normals.size() == 1 || node -> get_is_cluttered()) {
 
+		#if KDTTREE_PC_DEBUG
+		std::cout << "Leaf node\n";
+		#endif
+
+		
 		double new_distance = arma::norm( node -> points_normals[0] -> get_point() - test_point);
 
-		if (new_distance < distance && std::find(closest_points.begin(), closest_points.end(), node -> points_normals[0]) == closest_points.end()) {
-			distance = new_distance;
-			
-			best_guess = node -> points_normals[0];
+		#if KDTTREE_PC_DEBUG
+		std::cout << "Distance to query_point: " << new_distance << std::endl;
+		#endif
+
+		if (closest_points.size() < N_points){
+			closest_points[new_distance] = node -> points_normals[0];
 		}
+		else{
+
+			unsigned int size_before = closest_points.size(); // should always be equal to N_points
+
+			closest_points[new_distance] = node -> points_normals[0];
+
+			unsigned int size_after = closest_points.size(); // should always be equal to N_points + 1, unless new_distance was already in the map
+
+			if (size_after == size_before + 1){
+
+				// Remove last element in map
+				closest_points.erase(--closest_points.end());
+
+				// Set the distance to that between the query point and the last element in the map
+				distance = (--closest_points.end()) -> first;
+
+				
+			}
+
+
+		}
+
 
 	}
 
@@ -147,17 +182,17 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
-				node -> closest_point_search(test_point,
+				node -> closest_N_point_search(test_point,
+					N_points,
 					node -> left,
-					best_guess,
 					distance,
 					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
-				node -> closest_point_search(test_point,
+				node -> closest_N_point_search(test_point,
+					N_points,
 					node -> right,
-					best_guess,
 					distance,
 					closest_points);
 			}
@@ -167,17 +202,17 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 		else {
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
-				node -> closest_point_search(test_point,
+				node -> closest_N_point_search(test_point,
+					N_points,
 					node -> right,
-					best_guess,
 					distance,
 					closest_points);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
-				node -> closest_point_search(test_point,
+				node -> closest_N_point_search(test_point,
+					N_points,
 					node -> left,
-					best_guess,
 					distance,
 					closest_points);
 			}
@@ -185,6 +220,15 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 		}
 
 	}
+
+	#if KDTTREE_PC_DEBUG
+	std::cout << "#############################\n";
+	std::cout << " Leaving "<<  std::endl; ;
+	std::cout << "Points found : " << std::endl;
+	for (auto it = closest_points.begin(); it != closest_points.end(); ++it){
+		std::cout << it -> first << " : " << it -> second -> get_point().t();
+	}
+	#endif
 
 
 }

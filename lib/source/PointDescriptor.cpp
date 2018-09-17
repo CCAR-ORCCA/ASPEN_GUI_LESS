@@ -7,12 +7,12 @@ PointDescriptor::PointDescriptor(){
 }
 
 
-std::vector<double> PointDescriptor::get_histogram() const{
+arma::vec PointDescriptor::get_histogram() const{
 	return this -> histogram;
 }
 
 double PointDescriptor::get_histogram_value(int bin_index) const{
-	return this -> histogram[bin_index];
+	return this -> histogram(bin_index);
 }
 
 double PointDescriptor::distance_to(const PointDescriptor & descriptor) const{

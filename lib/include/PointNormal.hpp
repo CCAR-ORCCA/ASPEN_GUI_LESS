@@ -28,7 +28,9 @@ public:
 	PointDescriptor get_descriptor() const;
 	PointDescriptor * get_descriptor_ptr();
 
-	std::vector<double> get_descriptor_histogram() const;
+	arma::vec get_descriptor_histogram() const;
+	arma::vec get_spfh_histogram() const;
+
 	unsigned int get_histogram_size() const;
 	double get_histogram_value(int index) const;
 
@@ -42,6 +44,10 @@ public:
 
 	SPFH * get_SPFH();
 
+	bool get_is_unique_feature() const;
+	void set_is_unique_feature(bool is_unique);
+
+
 protected:
 
 	arma::vec point;
@@ -50,6 +56,7 @@ protected:
 	int inclusion_counter = 0;
 	PointDescriptor descriptor;
 	SPFH spfh;
+	bool is_unique = true;
 
 };
 

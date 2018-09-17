@@ -1,7 +1,7 @@
 #ifndef HEADER_POINTDESCRIPTOR
 #define HEADER_POINTDESCRIPTOR
 
-#include <vector>
+#include <armadillo>
 
 class PointNormal;
 
@@ -11,7 +11,7 @@ public:
 
 	PointDescriptor();
 
-	std::vector<double> get_histogram() const;
+	arma::vec get_histogram() const;
 	unsigned int get_histogram_size() const;
 	double get_histogram_value(int bin_index) const;
 	double distance_to(const PointDescriptor & descriptor) const;
@@ -19,7 +19,7 @@ public:
 
 protected:
 	
-	std::vector<double> histogram;
+	arma::vec histogram;
 };
 
 

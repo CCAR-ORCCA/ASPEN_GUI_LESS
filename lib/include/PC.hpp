@@ -18,6 +18,9 @@ class Ray;
 
 class PC {
 
+
+
+
 public:
 
 	/**
@@ -130,7 +133,8 @@ public:
 	@param test_point 3-by-1 vector queried
 	@return Vector of pointers to closest points
 	*/
-	std::vector<std::shared_ptr<PointNormal> > get_closest_N_points(arma::vec test_point, unsigned int N) const;
+	std::map<double,std::shared_ptr<PointNormal> > get_closest_N_points(const arma::vec & test_point, 
+		const unsigned int & N) const;
 
 
 	/**
@@ -161,7 +165,7 @@ public:
 	std::vector< std::shared_ptr<PointNormal> > get_points() const;
 
 
-	std::shared_ptr<PointNormal> get_best_match_feature_point(std::shared_ptr<PointNormal> other_point) const;
+	std::shared_ptr<PointNormal> get_best_match_feature_point(std::shared_ptr<PointNormal> other_point,double & distance) const;
 
 	/**
 	Saves pc to file after applying a rigid transform
@@ -189,12 +193,7 @@ public:
 
 	std::string get_label() const;
 
-	void compute_PFH(bool keep_correlations,
-		int N_bins,double neighborhood_radius);
-
-
-	void compute_FPFH(bool keep_correlations,
-		int N_bins,double neighborhood_radius);
+	
 
 	void save_point_descriptors(std::string path) const;
 
@@ -209,19 +208,32 @@ public:
 	static std::vector<PointPair>  find_pch_matches_kdtree(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
 
 	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
+	void compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius);
+
+	enum FeatureDescriptor { PFHDescriptor, FPFHDescriptor };
 
 protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec los);
-	std::vector<std::shared_ptr<PointNormal> > prune_features( std::vector<std::shared_ptr<PointNormal> > * all_points) const;
+	void prune_features() ;
+	void save_active_features(int index) const;
+
+	void compute_PFH(bool keep_correlations,
+		int N_bins,double neighborhood_radius);
+
+
+	void compute_FPFH(bool keep_correlations,
+		int N_bins,double neighborhood_radius);
 
 	std::shared_ptr<KDTreePC> kdt_points;
 	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;
-	std::vector<double> mean_feature_histogram;
+	arma::vec mean_feature_histogram;
 
 	arma::vec los;
 	std::string label;
+
+	double average_neighborhood_size;
 
 
 };

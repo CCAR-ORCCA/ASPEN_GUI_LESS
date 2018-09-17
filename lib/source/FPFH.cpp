@@ -5,29 +5,30 @@
 
 FPFH::FPFH(const std::shared_ptr<PointNormal> & query_point) : PointDescriptor(){
 
-	this -> histogram = std::vector<double>(query_point -> get_SPFH() -> get_histogram_size(),0);
 	auto neighbors_exclusive = query_point -> get_SPFH() -> get_exclusive_neighbors();
 
+	this -> histogram = query_point -> get_SPFH() -> get_histogram();
 
-	for (int i = 0; i < this -> histogram.size(); ++i){
-		this -> histogram[i] += query_point -> get_SPFH() -> get_histogram_value(i);
+	if (arma::max(this -> histogram) > 0){
+		this -> histogram = this -> histogram / arma::max(this -> histogram);
 	}
 
-	double max_value = -1;
 	for (unsigned int k = 0 ; k < neighbors_exclusive -> size(); ++k){
 		double distance = arma::norm(query_point -> get_point() - neighbors_exclusive -> at(k) -> get_point());
 		
-		for (int i = 0; i < this -> histogram.size(); ++i){
-			this -> histogram[i] += neighbors_exclusive -> at(k) -> get_SPFH() -> get_histogram_value(i) / (distance * neighbors_exclusive -> size());
-			max_value = std::max(max_value,this -> histogram[i]);
-		}
+		this -> histogram += neighbors_exclusive -> at(k) -> get_SPFH() -> get_histogram() / (distance * neighbors_exclusive -> size());
 	}
 
-	for (int i = 0; i < this -> histogram.size(); ++i){
-		this -> histogram[i] = this -> histogram[i] / max_value;
+	// If the point is isolated in its neighborhood, never consider it
+	if (neighbors_exclusive -> size() == 0){
+		query_point -> set_is_unique_feature(false);
 	}
 
+	if (arma::max(this -> histogram) > 0){
+		this -> histogram = this -> histogram / arma::max(this -> histogram);
+	}
 	
+
 }
 
 FPFH::FPFH() : PointDescriptor(){}

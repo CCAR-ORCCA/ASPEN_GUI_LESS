@@ -59,7 +59,7 @@ PointDescriptor * PointNormal::get_descriptor_ptr(){
 	return &this -> descriptor;
 }
 
-std::vector<double> PointNormal::get_descriptor_histogram() const{
+arma::vec PointNormal::get_descriptor_histogram() const{
 	return this -> descriptor. get_histogram();
 }
 unsigned int PointNormal::get_histogram_size() const{
@@ -68,6 +68,10 @@ unsigned int PointNormal::get_histogram_size() const{
 
 double PointNormal::get_histogram_value(int index) const{
 	return this -> descriptor. get_histogram_value(index);
+}
+
+arma::vec PointNormal::get_spfh_histogram() const{
+	return this -> spfh.get_histogram();
 }
 
 double PointNormal::descriptor_distance(std::shared_ptr<PointNormal> other_point) const{
@@ -81,6 +85,16 @@ void PointNormal::set_SPFH(SPFH spfh){
 
 SPFH * PointNormal::get_SPFH(){
 	return &this -> spfh;
+}
+
+
+bool PointNormal::get_is_unique_feature() const{
+	return this -> is_unique;
+}
+
+
+void PointNormal::set_is_unique_feature(bool is_unique){
+	this -> is_unique = is_unique;
 }
 
 

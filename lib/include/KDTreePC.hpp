@@ -29,11 +29,12 @@ public:
 		std::shared_ptr<PointNormal> & best_guess,
 		double & distance);
 
-	void closest_point_search(const arma::vec & test_point,
+	void closest_N_point_search(const arma::vec & test_point,
+		const unsigned int & N_points,
 		std::shared_ptr<KDTreePC> node,
-		std::shared_ptr<PointNormal> & best_guess,
 		double & distance,
-		std::vector< std::shared_ptr<PointNormal> > & closest_points);
+		std::map<double,std::shared_ptr<PointNormal> > & closest_points);
+
 
 	void radius_point_search(const arma::vec & test_point,
 		std::shared_ptr<KDTreePC> node,
