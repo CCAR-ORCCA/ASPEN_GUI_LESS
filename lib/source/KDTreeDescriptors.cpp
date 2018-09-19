@@ -38,8 +38,135 @@ bool KDTreeDescriptors::get_is_cluttered() const{
 	return this -> cluttered;
 }
 
+std::vector<std::shared_ptr<PointNormal> > * KDTreeDescriptors::get_points_with_descriptors() {
+	return &this -> points_with_descriptors;
+}
 
-void KDTreeDescriptors::closest_point_search(std::shared_ptr<PointNormal> query_point,
+void KDTreeDescriptors::closest_N_point_search(const std::shared_ptr<PointNormal> & query_point,
+	const unsigned int & N_points,
+	std::shared_ptr<KDTreeDescriptors> node,
+	double & distance,
+	std::map<double,std::shared_ptr<PointNormal> > & closest_points) {
+
+	#if KDTTREE_DESCRIPTOR_DEBUG
+	std::cout << "#############################\n";
+	std::cout << "Depth: " << this -> depth << std::endl; ;
+	std::cout << "Points in node: " << node -> points_with_descriptors.size() << std::endl;
+	std::cout << "Points found so far : " << closest_points.size() << std::endl;
+	#endif
+
+	// DEPRECATED
+	if (node -> points_with_descriptors.size() == 1 || node -> get_is_cluttered()) {
+
+		#if KDTTREE_DESCRIPTOR_DEBUG
+		std::cout << "Leaf node\n";
+		#endif
+
+		double new_distance =  node -> points_with_descriptors[0] -> descriptor_distance(query_point);
+
+		
+
+		#if KDTTREE_DESCRIPTOR_DEBUG
+		std::cout << "Distance to query_point: " << new_distance << std::endl;
+		#endif
+
+		if (closest_points.size() < N_points){
+			closest_points[new_distance] = node -> points_with_descriptors[0];
+		}
+		else{
+
+			unsigned int size_before = closest_points.size(); // should always be equal to N_points
+
+			closest_points[new_distance] = node -> points_with_descriptors[0];
+
+			unsigned int size_after = closest_points.size(); // should always be equal to N_points + 1, unless new_distance was already in the map
+
+			if (size_after == size_before + 1){
+
+				// Remove last element in map
+				closest_points.erase(--closest_points.end());
+
+				// Set the distance to that between the query point and the last element in the map
+				distance = (--closest_points.end()) -> first;
+
+				
+			}
+
+
+		}
+
+
+	}
+
+	else {
+
+		bool search_left_first;
+
+
+		if (query_point -> get_histogram_value(node -> get_axis()) <= node -> get_value()) {
+			search_left_first = true;
+		}
+		else {
+			search_left_first = false;
+		}
+
+		if (search_left_first) {
+
+
+
+			if (query_point -> get_histogram_value(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> closest_N_point_search(query_point,
+					N_points,
+					node -> left,
+					distance,
+					closest_points);
+			}
+
+			if (query_point -> get_histogram_value(node -> get_axis()) + distance > node -> get_value()) {
+				node -> closest_N_point_search(query_point,
+					N_points,
+					node -> right,
+					distance,
+					closest_points);
+			}
+
+		}
+
+		else {
+
+			if (query_point -> get_histogram_value(node -> get_axis()) + distance > node -> get_value()) {
+				node -> closest_N_point_search(query_point,
+					N_points,
+					node -> right,
+					distance,
+					closest_points);
+			}
+
+			if (query_point -> get_histogram_value(node -> get_axis()) - distance <= node -> get_value()) {
+				node -> closest_N_point_search(query_point,
+					N_points,
+					node -> left,
+					distance,
+					closest_points);
+			}
+
+		}
+
+	}
+
+	#if KDTTREE_DESCRIPTOR_DEBUG
+	std::cout << "#############################\n";
+	std::cout << " Leaving "<<  std::endl; ;
+	std::cout << "Points found : " << std::endl;
+	for (auto it = closest_points.begin(); it != closest_points.end(); ++it){
+		std::cout << it -> first << " : " << it -> second -> get_point().t();
+	}
+	#endif
+
+
+}
+
+void KDTreeDescriptors::closest_point_search(const std::shared_ptr<PointNormal> & query_point,
 	std::shared_ptr<KDTreeDescriptors> node,
 	std::shared_ptr<PointNormal> & best_guess,
 	double & distance) {

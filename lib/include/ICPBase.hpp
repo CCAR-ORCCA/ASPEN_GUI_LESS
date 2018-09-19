@@ -27,6 +27,7 @@ public:
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
+		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const = 0;
 
@@ -34,6 +35,7 @@ public:
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
+		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const = 0;
 
@@ -45,9 +47,15 @@ public:
 	void register_pc_RANSAC(double fraction_inliers_used,
 		double fraction_inliers_requested,
 		unsigned int iter_ransac_max,
-		double acceptance_threshold_error, 
 		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
 		arma::vec::fixed<3> X_0  = arma::zeros<arma::vec>(3));
+
+
+	void register_pc_bf(unsigned int iter_bf_max,
+		int N_possible_matches,
+		int N_samples,
+		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
+		arma::vec::fixed<3> X_0 = arma::zeros<arma::vec>(3));
 
 	void set_use_true_pairs(bool use_true_pairs);
 	void set_rel_tol(double rel_tol);
@@ -100,7 +108,13 @@ protected:
 
 	virtual double compute_rms_residuals(
 		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x) = 0;
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {}) = 0;
+
+	virtual double compute_mean_residuals(
+		const arma::mat::fixed<3,3> & dcm,
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {}) = 0;
 
 	virtual void compute_pairs(
 		int h,
@@ -109,11 +123,16 @@ protected:
 
 	virtual void build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
 		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,
-		arma::vec::fixed<6> & normal_mat_temp) = 0;
+		arma::vec::fixed<6> & normal_mat_temp,const double & w) = 0;
 
 	void pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const;
 	static void save_pairs(std::vector<PointPair> pairs,std::string path,const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
+
+	arma::vec weigh_ransac_pairs(const std::vector<PointPair> & matched_pairs,double radius);
+
+	double compute_point_weight(const std::shared_ptr<PC> & origin_pc, const std::shared_ptr<PointNormal> origin_point,
+		const double & radius) const;
 
 	arma::vec::fixed<3> x = arma::zeros<arma::vec>(3);
 	arma::vec::fixed<3> mrp = arma::zeros<arma::vec>(3);
@@ -124,11 +143,11 @@ protected:
 	arma::mat::fixed<6,6> R;
 	
 	double J_res;
-	double rel_tol = 1e-8;
+	double rel_tol = 1e-6;
 	double s_tol = 1e-2;
 	double neighborhood_radius = -1;
 
-	unsigned int iterations_max = 30;
+	unsigned int iterations_max = 10;
 	unsigned int minimum_h = 0;
 	unsigned int maximum_h = 7;
 	unsigned int N_bins = 3;

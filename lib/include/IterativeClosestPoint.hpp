@@ -23,6 +23,7 @@ public:
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
+		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
@@ -30,6 +31,7 @@ public:
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
+		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
@@ -43,7 +45,13 @@ protected:
 	
 	virtual double compute_rms_residuals(
 		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x) ;
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {}) ;
+
+	virtual double compute_mean_residuals(
+		const arma::mat::fixed<3,3> & dcm,
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {});
 
 	virtual void compute_pairs(
 		int h,
@@ -52,7 +60,7 @@ protected:
 
 	virtual void build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
 		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,
-		arma::vec::fixed<6> & normal_mat_temp);
+		arma::vec::fixed<6> & normal_mat_temp,const double & w);
 
 
 

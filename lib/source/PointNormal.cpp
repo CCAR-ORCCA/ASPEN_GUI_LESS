@@ -88,17 +88,20 @@ SPFH * PointNormal::get_SPFH(){
 }
 
 
-bool PointNormal::get_is_unique_feature() const{
-	return this -> is_unique;
+bool PointNormal::get_is_valid_feature() const{
+	return this -> is_valid_feature;
+}
+
+void PointNormal::set_is_valid_feature(bool valid_feature){
+	this -> is_valid_feature = valid_feature;
 }
 
 
-void PointNormal::set_is_unique_feature(bool is_unique){
-	this -> is_unique = is_unique;
+PointNormal *  PointNormal::get_match() const{
+	return this -> match;
 }
-
-
-
-
+void PointNormal::set_match(PointNormal * match){
+	this -> match = match;
+}
 
 

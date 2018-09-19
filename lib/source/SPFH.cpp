@@ -24,30 +24,18 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 	this -> neighbors_exclusive.clear();
 	this -> histogram = arma::zeros<arma::vec>(N_global_bins);
 
-	u = query_point ->  get_normal();
-	p_i = query_point -> get_point();
-
+	
 	for (int j = 0; j < points.size(); ++j){
 
 		if (arma::norm(points.at(j) -> get_point() - query_point -> get_point()) > 0){
 
-			this ->  neighbors_exclusive.push_back(points.at(j));
 
+			int alpha_bin_index,phi_bin_index,theta_bin_index;
 
-			p_j = points.at(j) -> get_point();
-			n_j = points.at(j) -> get_normal();
+			this -> neighbors_exclusive.push_back(points.at(j));
+			this -> compute_darboux_frames_local_hist( alpha_bin_index,phi_bin_index,theta_bin_index, N_bins,
+				query_point -> get_point(),query_point -> get_normal(),points.at(j) -> get_point(),points.at(j) -> get_normal());
 
-			v = arma::cross(u,arma::normalise(p_j - p_i));
-			w = arma::cross(u,v);
-
-			// All angles are within [0,pi]
-			double alpha = std::acos(arma::dot(v,n_j));
-			double phi = std::acos(arma::dot(u,arma::normalise(p_j - p_i)));
-			double theta = std::atan(arma::dot(w,n_j)/arma::dot(u,n_j)) + arma::datum::pi/2;
-
-			int alpha_bin_index = (int)(std::floor(alpha/  (arma::datum::pi/N_bins)));
-			int phi_bin_index = (int)(std::floor(phi / (arma::datum::pi/N_bins)));
-			int theta_bin_index = (int)(std::floor(theta / (arma::datum::pi/N_bins)));
 
 			if (keep_correlations){
 				int global_bin_index = alpha_bin_index +  phi_bin_index * (N_bins) + theta_bin_index * (N_bins * N_bins);
@@ -66,8 +54,4 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 	}
 
 
-}
-
-std::vector<std::shared_ptr<PointNormal> > * SPFH::get_exclusive_neighbors(){
-	return &this -> neighbors_exclusive;
 }

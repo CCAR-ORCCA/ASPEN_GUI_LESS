@@ -11,7 +11,10 @@ public:
 		bool keep_correlations = true,int N_bins = 3);
 	PFH();
 
+
 protected:
+
+	
 	
 };
 

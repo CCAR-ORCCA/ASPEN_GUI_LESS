@@ -127,6 +127,10 @@ public:
 	arma::vec get_point_normal(unsigned int index) const;
 
 
+
+
+
+
 	/**
 	Returns a pointer to the N PointNormal-s whose points are closest to the provided test_point
 	using the KD Tree search
@@ -135,6 +139,12 @@ public:
 	*/
 	std::map<double,std::shared_ptr<PointNormal> > get_closest_N_points(const arma::vec & test_point, 
 		const unsigned int & N) const;
+
+
+
+	std::map<double,std::shared_ptr<PointNormal> > get_closest_N_features(const std::shared_ptr<PointNormal> & other_point,
+		const int & N) const;
+
 
 
 	/**
@@ -164,8 +174,11 @@ public:
 	*/
 	std::vector< std::shared_ptr<PointNormal> > get_points() const;
 
+	std::vector< std::shared_ptr<PointNormal> > * get_points_with_features() const;
 
-	std::shared_ptr<PointNormal> get_best_match_feature_point(std::shared_ptr<PointNormal> other_point,double & distance) const;
+
+
+	std::shared_ptr<PointNormal> get_closest_feature(std::shared_ptr<PointNormal> other_point,double & distance) const;
 
 	/**
 	Saves pc to file after applying a rigid transform
@@ -203,9 +216,15 @@ public:
 		arma::vec test_point, const double & radius) const;
 	void compute_mean_feature_histogram();
 
-	static std::vector<PointPair>  find_pch_matches(const PC & pc0,const PC & pc1);
-	static std::vector<PointPair>  find_pch_matches(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
-	static std::vector<PointPair>  find_pch_matches_kdtree(std::shared_ptr<PC> pc0,std::shared_ptr<PC> pc1);
+	static std::vector<PointPair>  find_pch_matches_kdtree(std::shared_ptr<PC> pc_source,std::shared_ptr<PC> pc_destination);
+
+
+
+	static void find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source,
+		const std::shared_ptr<PC> & pc_destination,const int N_closest_matches,std::vector< std::shared_ptr<PointNormal> > & active_source_points,
+		std::map<std::shared_ptr<PointNormal> , std::vector<std::shared_ptr<PointNormal> > > & possible_matches);
+
+
 
 	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
 	void compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius);
@@ -219,8 +238,16 @@ protected:
 	void prune_features() ;
 	void save_active_features(int index) const;
 
+
+	static std::vector<PointPair> generate_random_correspondance_table(const std::vector<std::shared_ptr< PointNormal > > & neighborhood,
+		const std::map<std::shared_ptr< PointNormal >, std::map<double,std::shared_ptr<PointNormal> > > & pc0_to_pc1_potential_matches);
+	static double compute_neighborhood_consensus_ll(const std::vector<PointPair> & correspondance_table);
 	void compute_PFH(bool keep_correlations,
 		int N_bins,double neighborhood_radius);
+
+
+	void compute_PFH(const std::vector<std::shared_ptr<PointNormal> > & region_centers, 
+		bool keep_correlations,int N_bins,double neighborhood_radius);
 
 
 	void compute_FPFH(bool keep_correlations,

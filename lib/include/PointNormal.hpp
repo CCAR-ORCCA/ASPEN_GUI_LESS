@@ -44,9 +44,17 @@ public:
 
 	SPFH * get_SPFH();
 
-	bool get_is_unique_feature() const;
-	void set_is_unique_feature(bool is_unique);
+	
+	bool get_is_valid_feature() const;
+	void set_is_valid_feature(bool valid_feature);
 
+
+	bool get_is_matched() const;
+	void set_is_matched(bool value);
+
+
+	PointNormal * get_match() const;
+	void set_match(PointNormal * match);
 
 protected:
 
@@ -55,8 +63,10 @@ protected:
 
 	int inclusion_counter = 0;
 	PointDescriptor descriptor;
+	PointNormal * match = nullptr;
 	SPFH spfh;
-	bool is_unique = true;
+	bool is_valid_feature = true;
+
 
 };
 

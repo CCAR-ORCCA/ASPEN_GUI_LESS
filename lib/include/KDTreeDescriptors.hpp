@@ -18,13 +18,22 @@ public:
 
 	KDTreeDescriptors();
 
+	std::vector<std::shared_ptr<PointNormal> > * get_points_with_descriptors() ;
+
 	std::shared_ptr<KDTreeDescriptors> build(std::vector< std::shared_ptr<PointNormal> > & points, int depth);
 
 	void closest_point_search(
-	    std::shared_ptr<PointNormal> query_point,
-	    std::shared_ptr<KDTreeDescriptors> node,
-	    std::shared_ptr<PointNormal> & best_guess,
-	    double & distance);
+		const std::shared_ptr<PointNormal> & query_point,
+		std::shared_ptr<KDTreeDescriptors> node,
+		std::shared_ptr<PointNormal> & best_guess,
+		double & distance);
+
+
+	void closest_N_point_search(const std::shared_ptr<PointNormal> & query_point,
+		const unsigned int & N_points,
+		std::shared_ptr<KDTreeDescriptors> node,
+		double & distance,
+		std::map<double,std::shared_ptr<PointNormal> > & closest_points) ;
 
 
 	int get_depth() const;

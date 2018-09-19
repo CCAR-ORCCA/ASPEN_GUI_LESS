@@ -6,18 +6,30 @@ IterativeClosestPoint::IterativeClosestPoint(std::shared_ptr<PC> pc_destination,
 
 }
 
+
+
 double IterativeClosestPoint::compute_rms_residuals(
 	const std::vector<PointPair> & point_pairs,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ) const {
+	const arma::vec::fixed<3> & x_D )  const{
 
 	double J = 0;
-	double mean = IterativeClosestPoint::compute_mean_residuals(point_pairs,dcm_S ,x_S ,dcm_D , x_D );
+	double mean = IterativeClosestPoint::compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
+
+	if (weights.size() == 0){
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-		J += std::pow(IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += std::pow(IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
+	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += weights(pair_index) * std::pow(IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
 	}
 	return std::sqrt(J / (point_pairs.size()-1) );
 
@@ -27,21 +39,36 @@ double IterativeClosestPoint::compute_mean_residuals(
 	const std::vector<PointPair> & point_pairs,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ) const {
+	const arma::vec::fixed<3> & x_D ) const{
 
 	double J = 0;
 
+	if (weights.size() == 0){
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-		J += IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
-
+			J += IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+		}
 	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
+			J += weights(pair_index) * IterativeClosestPoint::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+
+		}
+	}
 	return J;
-
 }
+
+
+
+
+
+
+
 
 double IterativeClosestPoint::compute_distance(const PointPair & point_pair, 
 	const arma::mat::fixed<3,3> & dcm_S ,
@@ -54,13 +81,26 @@ double IterativeClosestPoint::compute_distance(const PointPair & point_pair,
 
 }
 
+	
 double IterativeClosestPoint::compute_rms_residuals(
 	const arma::mat::fixed<3,3> & dcm,
-	const arma::vec::fixed<3> & x) {
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
 
-	return IterativeClosestPoint::compute_rms_residuals(this -> point_pairs,dcm,x);
+	return IterativeClosestPoint::compute_rms_residuals(this -> point_pairs,dcm,x,weights);
 
 }
+
+
+double IterativeClosestPoint::compute_mean_residuals(
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
+
+	return IterativeClosestPoint::compute_mean_residuals(this -> point_pairs,dcm,x,weights);
+
+}
+
 
 
 
@@ -209,7 +249,7 @@ void IterativeClosestPoint::compute_pairs(
 
 void IterativeClosestPoint::build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
 		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,
-		arma::vec::fixed<6> & normal_mat_temp){
+		arma::vec::fixed<6> & normal_mat_temp,const double & w){
 
 
 	arma::vec::fixed<3> S_i = this -> point_pairs[pair_index].first -> get_point();
@@ -221,8 +261,8 @@ void IterativeClosestPoint::build_matrices(const int pair_index,const arma::vec:
 	H.submat(0,0,2,2) = - arma::eye<arma::mat>(3,3);
 	H.submat(0,3,2,5) = - 4 * RBK::tilde(RBK::mrp_to_dcm(mrp) * S_i);
 
-	info_mat_temp = H.t() * H;
+	info_mat_temp = w * H.t() * H;
 
-	normal_mat_temp = H.t() * (RBK::mrp_to_dcm(mrp) * S_i + x - D_i);
+	normal_mat_temp = w * H.t() * (RBK::mrp_to_dcm(mrp) * S_i + x - D_i);
 	
 }
