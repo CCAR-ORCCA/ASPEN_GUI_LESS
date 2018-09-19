@@ -25,8 +25,41 @@ def plot_all_results(path = "",savepath = None):
     plot_attitude_state_inertial(path,savepath)
 
 
+def plot_orbit_planar(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_BF.pdf"):
 
-def plot_orbit(path):
+    X_true = np.loadtxt(path + "trajectory_harmo.txt")
+
+
+
+    plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
+    plt.xlabel("X (m)")
+    plt.ylabel("Y (m)")
+    plt.axis('equal')
+    plt.show()
+
+    plt.clf()
+    plt.plot(X_true[0,:]/1000,X_true[2,:]/1000)
+    plt.xlabel("X (m)")
+    plt.ylabel("Z (m)")
+    plt.axis('equal')
+    plt.show()
+
+    plt.clf()
+    plt.plot(X_true[1,:]/1000,X_true[2,:]/1000)
+    plt.xlabel("Y (m)")
+    plt.ylabel("Z (m)")
+    plt.axis('equal')
+    plt.show()
+
+
+    plt.clf()
+
+
+
+
+
+
+def plot_orbit(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_BF.pdf"):
 
     X_true = np.loadtxt(path + "trajectory_harmo.txt")
 
@@ -66,8 +99,8 @@ def plot_orbit(path):
     ax.plot(X_true_BF[0,:]/1000,X_true_BF[1,:]/1000,X_true_BF[2,:]/1000)
     
 
-    plot_shape("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj",ax = ax,scale_factor = 0.001,
-        show = False)
+    # plot_shape("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj",ax = ax,scale_factor = 0.001,
+    #     show = False)
 
 
     ax.set_xlim3d(-1, 1)
@@ -87,7 +120,12 @@ def plot_orbit(path):
     # plt.show()
     plt.tight_layout()
 
-    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_BF.pdf")
+
+    if savepath is None:
+        plt.show()
+    else:
+        plt.savefig(savepath)
+
     plt.clf()
     plt.cla()
 
@@ -332,11 +370,6 @@ def plot_attitude_state_inertial(path = "",savepath = None):
 
 
 
-
-
-
-
-
     
 
 def plot_cart_state_error_inertial(path = "",savepath = None):
@@ -428,9 +461,10 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
     plt.cla()
 
 
-plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
-    savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures" )
+# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
+#     savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures" )
 
 # plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
 #     savepath = None )
 
+plot_orbit_planar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/IOD/output/traj/",savepath = None)

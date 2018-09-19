@@ -278,33 +278,64 @@ def plot_jacobi(path):
     plt.show()
 
 
-def plot_shape(path,scale_factor = 1,ax = None,show = True):
 
-  # The obj file is read
-  read_obj = np.loadtxt(path,dtype = 'string')
-  verts = []
-  facets = []
-  for line_index in range(len(read_obj)):
-      if read_obj[line_index,0] == 'v':
-          verts += [tuple(scale_factor * np.array(read_obj[line_index,1:],dtype = 'float'))]
-      if read_obj[line_index,0] == 'f':
-          facets += [np.array(read_obj[line_index,1:],dtype = 'int') - 1]
-  facets = np.vstack(facets)
+def load_shape(path,scale_factor = 1):
+    # The obj file is read
+    read_obj = np.loadtxt(path,dtype = 'string')
+    vertices = []
+    facets = []
+    for line_index in range(len(read_obj)):
+        if read_obj[line_index,0] == 'v':
+            vertices += [tuple(scale_factor * np.array(read_obj[line_index,1:],dtype = 'float'))]
+        if read_obj[line_index,0] == 'f':
+            facets += [np.array(read_obj[line_index,1:],dtype = 'int') - 1]
+    if (len(facets) > 0):
+      facets = np.vstack(facets)
 
-  # Creating the 3d axes if need be
-  if ax is None:
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-  
-  # Plotting each facet
-  for i in np.arange(len(facets)):
-      trig = [ verts[facets[i,0]], verts[facets[i,1]], verts[facets[i, 2]] ]
-      face = a3.art3d.Poly3DCollection([trig])
-      face.set_color('grey')
-      face.set_edgecolor('k')
-      face.set_alpha(1.)
-      ax.add_collection3d(face)
+    return vertices,facets
 
-  # Showing the plot
-  if(show):
-      plt.show()
+
+def get_circumscribing_radius(vertices):
+    max_radius = -1
+    for i in range(len(vertices)):
+        max_radius = max(max_radius,np.linalg.norm(vertices[i]))
+    return max_radius
+
+
+
+
+def draw_shape(vertices, facets):
+
+    
+    # Plotting each facet
+    for i in np.arange(len(facets)):
+        trig = [ vertices[facets[i,0]], vertices[facets[i,1]], vertices[facets[i, 2]] ]
+        face = a3.art3d.Poly3DCollection([trig])
+        face.set_color('lightgrey')
+        face.set_edgecolor(None)
+        face.set_alpha(1.)
+        plt.gca().add_collection3d(face)
+
+   
+
+def plot_shape(path,ax = None,show = True):
+
+    vertices, facets = load_shape(path)
+
+    # Creating the 3d axes if need be
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+    # Plotting each facet
+    for i in np.arange(len(facets)):
+        trig = [ verts[facets[i,0]], verts[facets[i,1]], verts[facets[i, 2]] ]
+        face = a3.art3d.Poly3DCollection([trig])
+        face.set_color('grey')
+        face.set_edgecolor('k')
+        face.set_alpha(1.)
+        ax.add_collection3d(face)
+
+    # Showing the plot
+    if(show):
+        plt.show()
