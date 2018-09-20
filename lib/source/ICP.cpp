@@ -159,7 +159,7 @@ void ICP::register_pc(
 			#endif
 
 
-			#pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
+			// #pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 				
 				arma::mat::fixed<6,6> info_mat_temp;
