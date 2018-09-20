@@ -54,6 +54,10 @@ public:
 	PC(ShapeModelTri * shape_model);
 
 
+	void construct_normals(arma::vec los_dir,double radius) ;
+
+
+
 	/**
 	Constructor
 	@param dcm DCM of the ICP rigid transform
@@ -227,31 +231,29 @@ public:
 
 
 	static void save_pch_matches(const std::multimap<double,std::pair<int,int> > matches, std::string path);
-	void compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius);
+	void compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius,std::string pc_name);
 
 	enum FeatureDescriptor { PFHDescriptor, FPFHDescriptor };
+
+	void build_index_table();
+
+
 
 protected:
 
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec los);
 	void prune_features() ;
-	void save_active_features(int index) const;
+	void save_active_features(int index,std::string pc_name) const;
 
 
 	static std::vector<PointPair> generate_random_correspondance_table(const std::vector<std::shared_ptr< PointNormal > > & neighborhood,
 		const std::map<std::shared_ptr< PointNormal >, std::map<double,std::shared_ptr<PointNormal> > > & pc0_to_pc1_potential_matches);
 	static double compute_neighborhood_consensus_ll(const std::vector<PointPair> & correspondance_table);
-	void compute_PFH(bool keep_correlations,
-		int N_bins,double neighborhood_radius);
+	
+	void compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radius);
 
-
-	void compute_PFH(const std::vector<std::shared_ptr<PointNormal> > & region_centers, 
-		bool keep_correlations,int N_bins,double neighborhood_radius);
-
-
-	void compute_FPFH(bool keep_correlations,
-		int N_bins,double neighborhood_radius);
+	void compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radius);
 
 	std::shared_ptr<KDTreePC> kdt_points;
 	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;

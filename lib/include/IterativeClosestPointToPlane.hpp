@@ -18,22 +18,6 @@ public:
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3));
-	
-	virtual  double compute_rms_residuals(
-		const std::vector<PointPair> & point_pairs,
-		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
-		const arma::vec & weights = {},
-		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
-
-	virtual double compute_mean_residuals(
-		const std::vector<PointPair> & point_pairs,
-		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
-		const arma::vec & weights = {},
-		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
 	virtual double compute_distance(const PointPair & point_pair, 
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
@@ -43,15 +27,7 @@ public:
 
 protected:
 	
-	virtual double compute_rms_residuals(
-		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {});
 
-	virtual double compute_mean_residuals(
-		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {});
 
 	virtual void compute_pairs(
 		int h,

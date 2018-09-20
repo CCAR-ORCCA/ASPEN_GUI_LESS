@@ -62,7 +62,7 @@ void KDTreeDescriptors::closest_N_point_search(const std::shared_ptr<PointNormal
 		std::cout << "Leaf node\n";
 		#endif
 
-		double new_distance =  node -> points_with_descriptors[0] -> descriptor_distance(query_point);
+		double new_distance =  node -> points_with_descriptors[0] -> features_similarity_distance(query_point);
 
 		
 
@@ -186,7 +186,7 @@ void KDTreeDescriptors::closest_point_search(const std::shared_ptr<PointNormal> 
 		std::cout << "Leaf node\n";
 		#endif
 
-		double new_distance = node -> points_with_descriptors[0] -> descriptor_distance(query_point);
+		double new_distance = node -> points_with_descriptors[0] -> features_similarity_distance(query_point);
 		
 		#if KDTTREE_DESCRIPTOR_DEBUG
 		std::cout << "Distance to query_point: " << new_distance << std::endl;

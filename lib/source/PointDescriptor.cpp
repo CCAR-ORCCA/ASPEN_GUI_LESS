@@ -7,6 +7,10 @@ PointDescriptor::PointDescriptor(){
 }
 
 
+PointDescriptor::PointDescriptor(arma::vec histogram){
+	this -> histogram = histogram;
+}
+
 arma::vec PointDescriptor::get_histogram() const{
 	return this -> histogram;
 }
@@ -15,20 +19,8 @@ double PointDescriptor::get_histogram_value(int bin_index) const{
 	return this -> histogram(bin_index);
 }
 
-double PointDescriptor::distance_to(const PointDescriptor & descriptor) const{
-	double distance = 0;
-	for (int i = 0; i < this -> histogram.size(); ++i){
-		double pi = this -> get_histogram_value(i);
-		double qi = descriptor.get_histogram_value(i);
 
-		if (pi > 0 || qi > 0){
-			distance += std::pow(pi - qi,2)/(pi + qi);
-		}
-	}
-	return distance;
-}
-
-double PointDescriptor::distance_to(PointDescriptor * descriptor) const{
+double PointDescriptor::distance_to_descriptor(const PointDescriptor * descriptor) const{
 
 	double distance = 0;
 
@@ -50,8 +42,13 @@ unsigned int PointDescriptor::get_histogram_size() const{
 
 
 
-void PointDescriptor::compute_darboux_frames_local_hist( int & alpha_bin_index,int & phi_bin_index,int & theta_bin_index, const int & N_bins,
-	const arma::vec::fixed<3> & p_i,const arma::vec::fixed<3> & n_i,const arma::vec::fixed<3> & p_j,const arma::vec::fixed<3> & n_j) {
+void PointDescriptor::compute_darboux_frames_local_hist( int & alpha_bin_index,
+	int & phi_bin_index,int & theta_bin_index, 
+	const int & N_bins,
+	const arma::vec::fixed<3> & p_i,
+	const arma::vec::fixed<3> & n_i,
+	const arma::vec::fixed<3> & p_j,
+	const arma::vec::fixed<3> & n_j) {
 
 
 	arma::vec::fixed<3> v = arma::cross(n_i,arma::normalise(p_j - p_i));
@@ -78,6 +75,3 @@ int PointDescriptor::get_type() const{
 }
 
 
-std::vector<std::shared_ptr<PointNormal> > * PointDescriptor::get_exclusive_neighbors(){
-	return &this -> neighbors_exclusive;
-}

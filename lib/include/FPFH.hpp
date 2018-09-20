@@ -9,7 +9,7 @@ public:
 
 	FPFH();
 
-	FPFH(const std::shared_ptr<PointNormal> & query_point);
+	FPFH(const std::shared_ptr<PointNormal> & query_point,const std::vector<std::shared_ptr<PointNormal> > & points);
 
 
 protected:

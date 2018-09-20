@@ -28,6 +28,7 @@ PC::PC(std::vector<std::shared_ptr<Ray> > * focal_plane, int label_) {
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(this -> los);
 	this -> label = std::to_string(label_);
+	this -> build_index_table();
 
 }
 
@@ -42,6 +43,8 @@ PC::PC(arma::vec los_dir, arma::mat & points) {
 	this -> construct_kd_tree(points_normals);
 
 	this -> construct_normals(los_dir);
+	this -> build_index_table();
+
 
 }
 
@@ -55,12 +58,16 @@ PC::PC(arma::mat & points,arma::mat & normals) {
 	}
 
 	this -> construct_kd_tree(points_normals);
+	this -> build_index_table();
+
 
 }
 
 PC::PC(std::vector< std::shared_ptr<PointNormal> > points_normals) {
 	
 	this -> construct_kd_tree(points_normals);
+	this -> build_index_table();
+
 
 }
 
@@ -95,6 +102,8 @@ PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 	}
 	
 	this -> construct_kd_tree(points_normals);
+	this -> build_index_table();
+
 
 }
 
@@ -150,6 +159,8 @@ PC::PC(std::string filename) {
 	this -> construct_kd_tree(points_normals);
 
 	this -> construct_normals(los_dir);
+	this -> build_index_table();
+
 
 }
 
@@ -229,6 +240,8 @@ PC::PC(ShapeModelTri * shape_model) {
 	}
 
 	this -> construct_kd_tree(points_normals);
+	this -> build_index_table();
+
 
 }
 
@@ -275,6 +288,7 @@ PC::PC(arma::mat & dcm,
 
 	this -> construct_kd_tree(points_normals);
 	this -> construct_normals(converted_los);
+	this -> build_index_table();
 
 
 
@@ -358,24 +372,44 @@ void  PC::save(std::string path,
 	std::ofstream shape_file;
 	shape_file.open(path);
 
-	if (save_normals == format_like_obj && save_normals == true) {
-		throw (std::runtime_error("save can't be called with those arguments!"));
+	
+
+	if (format_like_obj){
+
+		if (save_normals){
+			for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
+				arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
+				shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+			}
+
+			for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
+				arma::vec n = dcm * this -> get_point(vertex_index) -> get_normal();
+				shape_file << "vn " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+			}
+		}
+
+		else{
+
+			for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
+				arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
+				shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
+			}
+		}
+
 	}
+	else{
 
-	for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
-		arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
+		for (unsigned int vertex_index = 0;vertex_index < this -> get_size();++vertex_index) {
+			arma::vec p = dcm * this -> get_point_coordinates(vertex_index) + x;
 
-		if (format_like_obj) {
-			shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
-		}
+			if (save_normals) {
+				arma::vec n = dcm * this -> get_point_normal(vertex_index);
+				shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
+			}
 
-		else if (save_normals) {
-			arma::vec n = dcm * this -> get_point_normal(vertex_index);
-			shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
-		}
-
-		else {
-			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+			else {
+				shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
+			}
 		}
 	}
 
@@ -399,11 +433,6 @@ void PC::save(arma::mat & points,std::string path) {
 
 void PC::construct_normals(arma::vec los_dir) {
 
-
-	// This stores the average size of the ball enclosing all the neighbors of a given point
-	// during the surface computation phase
-	arma::vec neighborhood_sizes = arma::zeros<arma::vec>(this -> kdt_points  -> get_points_normals() -> size());
-
 	// #pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
@@ -419,15 +448,9 @@ void PC::construct_normals(arma::vec los_dir) {
 
 		unsigned int j = 0;
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-
 			points_augmented.row(j).cols(0, 2) = it -> second -> get_point().t();
-
 			++j;
-
 		}
-
-		neighborhood_sizes(i) = (--closest_points.end()) -> first ;
-
 
 		// The eigenvalue problem is solved
 		arma::vec eigval;
@@ -443,25 +466,53 @@ void PC::construct_normals(arma::vec los_dir) {
 		else {
 			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(-n);
 		}
-
 	}
-
-	// double neighborhood_sizes_mean = arma::mean(neighborhood_sizes);
-	// double neighborhood_sizes_sd = arma::stddev(neighborhood_sizes);
-
-
-	// // Points that are too sparsely surrounded are flagged as irrelevant 
-	// unsigned int discarded_points = 0;
-	// for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
-	// 	if (std::abs(neighborhood_sizes(i) - neighborhood_sizes_mean) > 3. * neighborhood_sizes_sd){
-	// 		++discarded_points;
-	// 		this -> kdt_points  -> get_points_normals() -> at(i) -> set_is_unique_feature(false);
-	// 	}
-	// }
-
-
-
 }
+
+
+
+void PC::construct_normals(arma::vec los_dir, double radius) {
+
+	// #pragma omp parallel for if (USE_OMP_PC)
+	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
+
+		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
+
+		// Get the N nearest neighbors to this point
+		auto closest_points = this -> get_points_in_sphere(pn -> get_point(), radius);
+
+		// This N nearest neighbors are used to get the normal
+		arma::mat points_augmented(closest_points.size(), 4);
+		points_augmented.col(3) = arma::ones<arma::vec>(closest_points.size());
+
+		unsigned int j = 0;
+		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
+			points_augmented.row(j).cols(0, 2) = (*it) -> get_point().t();
+			++j;
+		}
+
+		// The eigenvalue problem is solved
+		arma::vec eigval;
+		arma::mat eigvec;
+
+		arma::eig_sym(eigval, eigvec, points_augmented.t() * points_augmented);
+		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
+
+		// The normal is flipped to make sure it is facing the los
+		if (arma::dot(n, los_dir) < 0) {
+			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(n);
+		}
+		else {
+			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(-n);
+		}
+	}
+}
+
+
+
+
+
+
 
 
 
@@ -588,15 +639,37 @@ std::string PC::get_label() const{
 
 
 
-void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius){
+void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius,std::string pc_name){
 
 
 	std::vector<std::shared_ptr<PointNormal> > relevant_point_with_descriptors;
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	
-	std::vector<double> radii = {neighborhood_radius,1.25 * neighborhood_radius,1.5 *neighborhood_radius,1.75 *  neighborhood_radius};
+	// std::vector<double> radii = {neighborhood_radius,1.25 * neighborhood_radius,1.5 *neighborhood_radius,1.75 *  neighborhood_radius};
 
+
+
+
+	std::vector<double> radii = {neighborhood_radius};
+
+
+
+
+	#if PC_DEBUG_FLAG
+	std::cout << "Building point neighborhoods ... \n";
+	#endif
+	
+	// First, the neighborhood of each point is computed using the largest provided radius
+	#pragma omp parallel for
+	for (int i = 0 ; i < size; ++i){
+		auto p = this -> kdt_points  -> get_point_normal(i);
+		p -> set_neighborhood(this -> get_points_in_sphere(p -> get_point(),radii.back()));
+	}
+
+
+
+	throw(std::runtime_error("Not finished here"));
 
 	for (unsigned int index = 0; index < radii.size(); ++index){
 
@@ -618,7 +691,7 @@ void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,
 
 		#if PC_DEBUG_FLAG
 		std::cout << "Saving active features...\n";
-		this -> save_active_features(index);
+		this -> save_active_features(index,pc_name);
 		#endif
 
 	}
@@ -653,8 +726,7 @@ void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,
 }
 
 
-
-void PC::save_active_features(int index) const{
+void PC::save_active_features(int index,std::string pc_name) const{
 
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
@@ -679,12 +751,12 @@ void PC::save_active_features(int index) const{
 
 	PC active_features_pc(active_features);
 
-	active_features_pc.save("active_features_" + std::to_string(index) + ".obj");
+	active_features_pc.save(pc_name + "_active_features_" + std::to_string(index) + ".obj");
 	
-	this -> mean_feature_histogram.save("mean_histogram_" + std::to_string(index) + ".txt",arma::raw_ascii);
-	active_features_histograms.save("active_features_histograms_"+ std::to_string(index) + ".txt",arma::raw_ascii);
+	this -> mean_feature_histogram.save(pc_name + "_mean_histogram_" + std::to_string(index) + ".txt",arma::raw_ascii);
+	active_features_histograms.save(pc_name + "_active_features_histograms_"+ std::to_string(index) + ".txt",arma::raw_ascii);
 	if (this -> kdt_points -> get_points_normals()-> at(0) -> get_descriptor_ptr() -> get_type() == 1)
-		active_features_histograms_spfh.save("active_features_histograms_spfh_"+ std::to_string(index) + ".txt",arma::raw_ascii);
+		active_features_histograms_spfh.save(pc_name + "_active_features_histograms_spfh_"+ std::to_string(index) + ".txt",arma::raw_ascii);
 
 }
 
@@ -701,29 +773,20 @@ void PC::compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radiu
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < size; ++i) {
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
-		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_points_in_sphere(query_point -> get_point(),neighborhood_radius);
-		query_point -> set_descriptor(PFH(neighbors_inclusive,keep_correlations,N_bins));
+
+		std::vector<std::shared_ptr<PointNormal> > neighborhood;
+		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
+		
+		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
+			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
+		}
+
+		query_point -> set_descriptor(PFH(neighborhood,keep_correlations,N_bins));
 	}	
 
 
 }
 
-
-void PC::compute_PFH(const std::vector<std::shared_ptr<PointNormal> > & region_centers, bool keep_correlations,int N_bins,double neighborhood_radius){
-
-	unsigned int size = region_centers. size();
-
-	#pragma omp parallel for
-	for (unsigned int i = 0; i < size; ++i) {
-
-		std::shared_ptr<PointNormal> query_point = region_centers. at(i);
-		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_points_in_sphere(query_point -> get_point(),neighborhood_radius);
-		query_point -> set_descriptor(PFH(neighbors_inclusive,keep_correlations,N_bins));
-
-	}	
-
-
-}
 
 
 void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radius){
@@ -736,14 +799,34 @@ void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radi
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < size; ++i) {
+		
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
-		std::vector<std::shared_ptr<PointNormal> > neighbors_inclusive = this -> get_points_in_sphere(query_point -> get_point(),neighborhood_radius);
-		query_point -> set_SPFH(SPFH(query_point,neighbors_inclusive,keep_correlations,N_bins));
+
+		std::vector<std::shared_ptr<PointNormal> > neighborhood;
+		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
+		
+		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
+			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
+		}
+
+		query_point -> set_SPFH(SPFH(query_point,neighborhood,keep_correlations,N_bins));
 	}
+
+
+
 
 	for (unsigned int i = 0; i < size; ++i) {
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
-		query_point -> set_descriptor(FPFH(query_point));
+		std::vector<std::shared_ptr<PointNormal> > neighborhood;
+		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
+		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
+			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
+		}
+		query_point -> set_descriptor(FPFH(query_point,neighborhood));
+		if (arma::max(query_point -> get_descriptor_histogram()) == 0){
+			query_point -> set_is_valid_feature(false);
+		}
+
 	}
 
 }
@@ -956,7 +1039,7 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 
 			possible_matches[pc_source -> get_point(i)] = closest_features_points;
 		}	
-	
+
 	}
 
 	
@@ -1111,6 +1194,7 @@ void PC::compute_mean_feature_histogram(){
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0) -> get_histogram_size();
+	
 	this -> mean_feature_histogram = arma::zeros<arma::vec>(histo_size);
 
 	for (unsigned int k = 0; k < size; ++k){
@@ -1125,22 +1209,20 @@ void PC::prune_features() {
 
 	// The distance between each point histogram and the mean histogram is computed
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0) -> get_histogram_size();
 	auto all_points = this -> kdt_points  -> get_points_normals();
 	arma::vec distances = arma::zeros<arma::vec>(size);
+
+
+
 	
 	#pragma omp parallel for
 	for (unsigned int k = 0; k < size; ++k){
 
-		for (int i = 0; i < histo_size; ++i){
-			double mu_i = this -> mean_feature_histogram(i);
-			double p_i = all_points -> at(k) -> get_histogram_value(i);
-			distances(k) += std::pow(mu_i - p_i,2) / (mu_i + p_i);
-		}
+		distances(k) = all_points -> at(k) -> features_similarity_distance(this -> mean_feature_histogram);
 
 	}
 
-	distances = distances / arma::stddev(distances);
+	distances = arma::abs(distances - arma::mean(distances)) / arma::stddev(distances);
 
 	// Points whose feature descriptor is less than 1.25 standard deviations away from the mean are considered as 
 	// inliers, thus irrelevant as discriminative features
@@ -1148,8 +1230,7 @@ void PC::prune_features() {
 	unsigned int relevant_features_count = 0;
 
 	for (unsigned int k = 0; k < size; ++k){
-		
-		if (distances(k) < 1.5){
+		if (distances(k) < 1.75){
 			all_points -> at(k) -> set_is_valid_feature(false);
 		}
 
@@ -1162,5 +1243,18 @@ void PC::prune_features() {
 	std::cout << "Keeping " << relevant_features_count << " non-redundant features from the original " <<all_points -> size() << " ones \n";
 	#endif
 }
+
+
+void PC::build_index_table(){
+
+	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
+	
+	#pragma omp parallel for
+	for (unsigned int k = 0; k < size; ++k){
+		this -> kdt_points  -> get_points_normals() -> at(k) -> set_global_index(k);
+	}
+
+}
+
 
 

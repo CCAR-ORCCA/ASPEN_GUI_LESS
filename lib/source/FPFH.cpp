@@ -3,25 +3,23 @@
 #include <armadillo>
 #include "PointNormal.hpp"
 
-FPFH::FPFH(const std::shared_ptr<PointNormal> & query_point) : PointDescriptor(){
-
-	auto neighbors_exclusive = query_point -> get_SPFH() -> get_exclusive_neighbors();
+FPFH::FPFH(const std::shared_ptr<PointNormal> & query_point,const std::vector<std::shared_ptr<PointNormal> > & points) : PointDescriptor(){
 
 	this -> histogram = query_point -> get_SPFH() -> get_histogram();
 
+	double distance_to_closest_neighbor = query_point -> get_SPFH() -> get_distance_to_closest_neighbor();
+
+	for (unsigned int k = 0 ; k < points. size(); ++k){
+		double distance = arma::norm(query_point -> get_point() - points . at(k) -> get_point());
+		if (distance>0){
+			this -> histogram += distance_to_closest_neighbor * points. at(k) -> get_SPFH() -> get_histogram() / (distance * points.size());
+		}
+	}
+
 	if (arma::max(this -> histogram) > 0){
 		this -> histogram = this -> histogram / arma::max(this -> histogram);
 	}
 
-	for (unsigned int k = 0 ; k < neighbors_exclusive -> size(); ++k){
-		double distance = arma::norm(query_point -> get_point() - neighbors_exclusive -> at(k) -> get_point());
-		this -> histogram += neighbors_exclusive -> at(k) -> get_SPFH() -> get_histogram() / (distance * neighbors_exclusive -> size());
-	}
-
-
-	if (arma::max(this -> histogram) > 0){
-		this -> histogram = this -> histogram / arma::max(this -> histogram);
-	}
 
 	this -> type = 1;
 	

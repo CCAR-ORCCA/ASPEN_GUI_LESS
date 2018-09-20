@@ -22,6 +22,7 @@ public:
 
 	std::shared_ptr<KDTreePC> build(std::vector< std::shared_ptr<PointNormal> > & points_normals, int depth);
 
+	std::shared_ptr<PointNormal> get_point_normal(const int & i) const;
 
 	void closest_point_search(
 		const arma::vec & test_point,

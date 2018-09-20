@@ -23,21 +23,21 @@ public:
 
 	std::vector<PointPair > * get_point_pairs();
 
-	virtual  double compute_rms_residuals(
+	double compute_rms_residuals(
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
 		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const = 0;
+		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
-	virtual double compute_mean_residuals(
+	double compute_mean_residuals(
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
 		const arma::vec & weights = {},
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const = 0;
+		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
 	
 	void register_pc(
@@ -53,7 +53,7 @@ public:
 
 	void register_pc_bf(unsigned int iter_bf_max,
 		int N_possible_matches,
-		int N_samples,
+		int N_tentative_source_points,
 		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
 		arma::vec::fixed<3> X_0 = arma::zeros<arma::vec>(3));
 
@@ -94,8 +94,6 @@ public:
 	double get_neighborhood_radius() const;
 	void set_neighborhood_radius(double neighborhood_radius);
 	
-
-
 	virtual double compute_distance(const PointPair & point_pair, 
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
@@ -106,15 +104,21 @@ protected:
 	std::shared_ptr<PC> pc_destination;
 	std::shared_ptr<PC> pc_source;
 
-	virtual double compute_rms_residuals(
-		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {}) = 0;
+	double static compute_Huber_loss(const arma::vec & y, double threshold);
 
-	virtual double compute_mean_residuals(
+	arma::vec compute_y_vector(const std::vector<PointPair> & point_pairs,
+		const arma::mat::fixed<3,3> & dcm_S ,
+		const arma::vec::fixed<3> & x_S) const ;
+
+	double compute_rms_residuals(
 		const arma::mat::fixed<3,3> & dcm,
 		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {}) = 0;
+		const arma::vec & weights = {});
+
+	double compute_mean_residuals(
+		const arma::mat::fixed<3,3> & dcm,
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {});
 
 	virtual void compute_pairs(
 		int h,
@@ -147,7 +151,7 @@ protected:
 	double s_tol = 1e-2;
 	double neighborhood_radius = -1;
 
-	unsigned int iterations_max = 10;
+	unsigned int iterations_max = 30;
 	unsigned int minimum_h = 0;
 	unsigned int maximum_h = 7;
 	unsigned int N_bins = 3;

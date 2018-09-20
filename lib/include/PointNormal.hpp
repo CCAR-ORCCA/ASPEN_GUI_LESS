@@ -38,16 +38,16 @@ public:
 
 	int get_inclusion_counter() const;
 
-	double descriptor_distance(std::shared_ptr<PointNormal> other_point) const;
+	double features_similarity_distance(std::shared_ptr<PointNormal> other_point) const;
+	double features_similarity_distance(const arma::vec & histogram) const;
+
 
 	void set_SPFH(SPFH spfh);
 
 	SPFH * get_SPFH();
 
-	
 	bool get_is_valid_feature() const;
 	void set_is_valid_feature(bool valid_feature);
-
 
 	bool get_is_matched() const;
 	void set_is_matched(bool value);
@@ -55,6 +55,14 @@ public:
 
 	PointNormal * get_match() const;
 	void set_match(PointNormal * match);
+
+	void set_neighborhood(const std::vector<std::shared_ptr<PointNormal> > & neighborhood);
+
+	int get_global_index() const;
+	void set_global_index (int global_index);
+
+	std::vector<int> get_neighborhood(double radius);
+
 
 protected:
 
@@ -66,7 +74,9 @@ protected:
 	PointNormal * match = nullptr;
 	SPFH spfh;
 	bool is_valid_feature = true;
+	int global_index;
 
+	std::map<double , int > neighborhood;
 
 };
 

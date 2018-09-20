@@ -26,7 +26,6 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 
 	for (int i = 0; i < points.size(); ++i){
 
-		
 		for (int j = 0; j < i; ++j){
 
 			int alpha_bin_index,phi_bin_index,theta_bin_index;

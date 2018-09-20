@@ -469,6 +469,10 @@ std::vector<std::shared_ptr<PointNormal> > * KDTreePC::get_points_normals() {
 	return &this -> points_normals;
 }
 
+std::shared_ptr<PointNormal> KDTreePC::get_point_normal(const int & i) const{
+	return this -> points_normals.at(i);
+}
+
 unsigned int KDTreePC::get_size() const {
 	return this -> points_normals.size();
 }

@@ -269,11 +269,11 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 
 	if (this -> use_FPFH){
 		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 	else{
 		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 
 	#if ICP_DEBUG
@@ -282,11 +282,11 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 
 	if (this -> use_FPFH){
 		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 	else{
 		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 
 	#if ICP_DEBUG
@@ -301,7 +301,7 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 
 	auto all_matches = PC::find_pch_matches_kdtree(this -> pc_source,this -> pc_destination);
 	
-	int n_samples = (int)(all_matches.size() * fraction_inliers_used);
+	int N_tentative_source_points = (int)(all_matches.size() * fraction_inliers_used);
 
 	#if ICP_DEBUG
 	end = std::chrono::system_clock::now();
@@ -340,14 +340,14 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 		this -> point_pairs.clear();
 		pairs_RANSAC.clear();
 		indices = arma::shuffle(indices);
-		arma::vec active_weights = weights(indices.subvec(0,n_samples - 1));
+		arma::vec active_weights = weights(indices.subvec(0,N_tentative_source_points - 1));
 
 		#if ICP_DEBUG
 		std::cout << "Active consensus-based weights of the feature pairs:\n";
 		std::cout  <<  std::endl << active_weights << std::endl;
 		#endif
 
-		for (int k = 0; k < n_samples; ++k){
+		for (int k = 0; k < N_tentative_source_points; ++k){
 			this -> point_pairs.push_back(all_matches[indices[k]]);
 			pairs_RANSAC.push_back(all_matches[indices[k]]);
 		}
@@ -433,7 +433,7 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 		#endif
 		int good_inlier_not_used_count = 0;
 
-		for (int k = n_samples; k < all_matches.size();  ++k){	
+		for (int k = N_tentative_source_points; k < all_matches.size();  ++k){	
 
 			auto point_pair = all_matches[indices[k]];
 			double distance_to_potential_inlier = this -> compute_distance(point_pair, RBK::mrp_to_dcm(mrp),x_temp);
@@ -466,7 +466,7 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 
 		}
 
-		double fraction_inliers_found = ((double)(good_inlier_not_used_count + n_samples) / all_matches.size());
+		double fraction_inliers_found = ((double)(good_inlier_not_used_count + N_tentative_source_points) / all_matches.size());
 
 		#if ICP_DEBUG
 		std::cout << "Model has found " << 100 * fraction_inliers_found << " (%) of inliers total (need " << fraction_inliers_requested * 100 <<  " (%) to validate) \n";
@@ -492,7 +492,7 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 				best_pairs_RANSAC_weights = active_weights; 
 
 				#if ICP_DEBUG
-				std::cout << "Found better model with J = " << J_best_RANSAC << " explaining " << this -> point_pairs.size() << " feature pairs using "+ std::to_string(n_samples) +  " data points\n";
+				std::cout << "Found better model with J = " << J_best_RANSAC << " explaining " << this -> point_pairs.size() << " feature pairs using "+ std::to_string(N_tentative_source_points) +  " data points\n";
 				#endif
 			}
 		}
@@ -516,9 +516,8 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 }
 
 
-
 void ICPBase::register_pc_bf(unsigned int iter_bf_max,
-	int N_possible_matches,int N_samples,
+	int N_possible_matches,int N_tentative_source_points,
 	arma::mat::fixed<3,3> dcm_0,
 	arma::vec::fixed<3> X_0 ){
 
@@ -543,11 +542,11 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 
 	if (this -> use_FPFH){
 		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 	else{
 		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 
 	#if ICP_DEBUG
@@ -556,11 +555,11 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 
 	if (this -> use_FPFH){
 		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 	else{
 		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
-			this -> N_bins,this -> neighborhood_radius);
+			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 
 	#if ICP_DEBUG
@@ -604,23 +603,28 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 
 		std::vector<std::shared_ptr<PointNormal > > tentative_source_points;
 
-
 		// The following draws N_sample source points sufficiently separated from 
 		// one another
-		while (tentative_source_points.size() < N_samples){
+
+		arma::ivec random_indices = arma::shuffle(arma::regspace<arma::ivec>(0,active_source_points.size() - 1));
+
+		#if ICP_DEBUG
+		std::cout << "\tDrawing " << N_tentative_source_points << " source points from the "  << active_source_points.size() <<  " active source points\n";
+		#endif
+
+		for (int i = 0; i < random_indices.size(); ++i){
 			
-			arma::ivec random_index = arma::randi<arma::ivec>(1,arma::distr_param(0,active_source_points.size() - 1));
-			auto p_source = active_source_points[random_index(0)];
+			auto p_source = active_source_points[random_indices(i)];
+
 			if(tentative_source_points.size() == 0){
 				tentative_source_points.push_back(p_source);
 			}
 			else{
 				bool insert = true;
+
 				for (int k = 0; k < tentative_source_points.size(); ++k){
-					if (arma::norm(p_source -> get_point() - tentative_source_points.at(k) -> get_point()) < 7 * this -> neighborhood_radius){
-						#if ICP_DEBUG
-						std::cout << "Cluttered. \n";
-						#endif
+					if (arma::norm(p_source -> get_point() - tentative_source_points.at(k) -> get_point()) < 3 * this -> neighborhood_radius){
+						
 						insert = false;
 
 						break;
@@ -631,11 +635,21 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 					tentative_source_points.push_back(p_source);
 				}
 			}
+
+			if (tentative_source_points.size() == N_tentative_source_points){
+				break;
+			}
 		}
+
+			#if ICP_DEBUG
+		std::cout << "\tFound " << tentative_source_points.size() << " tentative source points\n";
+			#endif
+
 
 		// These points are then randomly matched with a destination points amongst 
 		// those they are the closest to
-		for (int k =0; k < N_samples; ++k){
+		for (int k =0; k < tentative_source_points.size(); ++k){
+			
 			arma::ivec random_index = arma::randi<arma::ivec>(1,arma::distr_param(0,N_possible_matches -1));
 			auto p_source = tentative_source_points[k];
 			auto p_destination = possible_matches[p_source][random_index(0)];
@@ -671,9 +685,7 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 				arma::mat::fixed<6,6> info_mat_temp;
 				arma::vec::fixed<6> normal_mat_temp;
 
-				#if ICP_DEBUG
-				std::cout << "Building matrix " << pair_index + 1 << " / " << this -> point_pairs.size() << std::endl;
-				#endif
+				
 
 				this -> build_matrices(pair_index, mrp,x_temp,info_mat_temp,normal_mat_temp,1.);
 
@@ -719,11 +731,11 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 		}
 
 
-		double J_better = this -> compute_rms_residuals(this -> point_pairs,RBK::mrp_to_dcm(mrp),x_temp);
+		arma::vec epsilon = this -> compute_y_vector(this -> point_pairs,RBK::mrp_to_dcm(mrp),x_temp);
+		double J_better = this -> compute_Huber_loss(epsilon,10 * this -> neighborhood_radius);
 
-			// If the good model we found surpasses the previous one, we keep it
+		// If the good model we found surpasses the previous one, we keep it
 		if (J_better < J_best){
-
 			J_best = J_better;
 			dcm_best = RBK::mrp_to_dcm(mrp);
 			x_best = x_temp;
@@ -789,7 +801,7 @@ void ICPBase::save_pairs(std::vector<PointPair> pairs,std::string path,const arm
 
 		pairs_m.submat(i,0,i,2) = (dcm * pairs[i].first -> get_point() + x).t();
 		pairs_m.submat(i,3,i,5) = pairs[i].second -> get_point().t();
-		pairs_m(i,6) = pairs[i].first -> descriptor_distance(pairs[i].second);
+		pairs_m(i,6) = pairs[i].first -> features_similarity_distance(pairs[i].second);
 
 	}
 
@@ -960,6 +972,131 @@ double ICPBase::compute_point_weight(const std::shared_ptr<PC> & origin_pc, cons
 
 
 }
+
+
+
+
+
+double ICPBase::compute_rms_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D )  const{
+
+	double J = 0;
+	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
+
+	if (weights.size() == 0){
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
+	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += weights(pair_index) * std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
+	}
+	return std::sqrt(J / (point_pairs.size()-1) );
+
+}
+
+double ICPBase::compute_mean_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D ) const{
+
+	double J = 0;
+
+	if (weights.size() == 0){
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+
+			J += this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+		}
+	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+
+			J += weights(pair_index) * this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+
+		}
+	}
+	return J;
+}
+
+
+
+
+arma::vec ICPBase::compute_y_vector(const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S) const {
+
+	arma::vec y(point_pairs.size());
+
+	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+		y(pair_index) = this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S);
+	}
+
+	return y;
+
+}
+
+
+double ICPBase::compute_rms_residuals(
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
+
+	return this -> compute_rms_residuals(this -> point_pairs,dcm,x,weights);
+
+}
+
+
+double ICPBase::compute_mean_residuals(
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
+	return this -> compute_mean_residuals(this -> point_pairs,dcm,x,weights);
+
+}
+
+
+double ICPBase::compute_Huber_loss(const arma::vec & y, double threshold){
+
+	double hl = 0;
+
+	for (int i = 0; i < y.size(); ++i){
+
+		if (std::abs(y(i)) < threshold){
+			hl += 0.5 * std::pow(y(i),2);
+
+		}
+		else{
+			hl += threshold * (2 * std::abs(y(i))  - threshold);
+		}
+
+	}
+	return std::sqrt(hl / y.size());
+
+
+
+
+
+
+}
+
+
+
+
+
 
 
 
