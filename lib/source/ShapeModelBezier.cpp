@@ -338,7 +338,7 @@ void ShapeModelBezier::compute_inertia(){
 	// double factor = 1./std::pow(norm_length,5);
 	double factor = 1.;
 
-	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
+	// #pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -374,7 +374,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::compute_inertia_omp(const arma::vec & de
 
 	arma::mat::fixed<3,3> inertia = arma::zeros<arma::mat>(3,3);
 
-	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
+	// #pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -624,7 +624,7 @@ void ShapeModelBezier::compute_cm_cov(){
 	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
 
 
-	#pragma omp parallel for reduction (+:cm_cov_temp)
+	// #pragma omp parallel for reduction (+:cm_cov_temp)
 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
@@ -2008,7 +2008,7 @@ void ShapeModelBezier::compute_P_I(){
 	boost::progress_display progress(this -> inertia_stats_1_indices_coefs_table.size()) ;
 
 
-	#pragma omp parallel for reduction (+:P_I)
+	// #pragma omp parallel for reduction (+:P_I)
 
 	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
 
@@ -2204,7 +2204,7 @@ void ShapeModelBezier::compute_P_MI(){
 	boost::progress_display progress(this -> inertia_stats_2_indices_coefs_table.size()) ;
 
 
-	#pragma omp parallel for reduction (+:P_MI)
+	// #pragma omp parallel for reduction (+:P_MI)
 
 	for (int index = 0 ; index <  this -> inertia_stats_2_indices_coefs_table.size(); ++index) {
 
