@@ -8,6 +8,7 @@
 #include <ShapeModelImporter.hpp>
 #include <ShapeModelBezier.hpp>
 #include <ShapeModelTri.hpp>
+#include <chrono>
 
 #include <iostream>
 // #include <pcl/io/pcd_io.h>
@@ -25,12 +26,26 @@ int main() {
 	// PC source_pc("../bunny090.obj");
 
 	arma::vec los = {0,-1,0};
+
+
 	std::cout << "Constructing normals...\n";
+	auto start = std::chrono::steady_clock::now();
 	destination_pc.construct_normals(los,7e-3);
+	auto end = std::chrono::steady_clock::now();
+	double elapsed_seconds = std::chrono::duration_cast<
+	std::chrono::duration<double> >(finish - start).count();
+	std::cout << "Normals were computed in " << elapsed_seconds << " seconds\n";
+
 	std::cout << "Computing neighborhoods...\n";
+
+	start = std::chrono::steady_clock::now();
 
 	destination_pc.compute_neighborhoods(14e-3);
 
+	end = std::chrono::steady_clock::now();
+
+	elapsed_seconds = std::chrono::duration_cast<
+	std::cout << "Neighborhoods were computed in " << elapsed_seconds << " seconds\n";
 
 
 	std::cout << "Computing FPFH...\n";
