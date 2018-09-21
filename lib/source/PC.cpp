@@ -474,7 +474,7 @@ void PC::construct_normals(arma::vec los_dir, double radius) {
 	unsigned int size = this -> get_size();
 
 	std::vector<std::shared_ptr<PointNormal> > closest_points;
-	// #pragma omp parallel for if (USE_OMP_PC)
+	#pragma omp parallel for 
 	for (unsigned int i = 0; i < size; ++i) {
 
 		// Get the N nearest neighbors to this point
