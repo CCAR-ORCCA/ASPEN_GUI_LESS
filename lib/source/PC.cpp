@@ -434,7 +434,7 @@ void PC::save(arma::mat & points,std::string path) {
 void PC::construct_normals(arma::vec los_dir) {
 	unsigned int N = 5;
 
-	// #pragma omp parallel for if (USE_OMP_PC)
+	#pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
 		// Get the N nearest neighbors to this point
@@ -473,7 +473,7 @@ void PC::construct_normals(arma::vec los_dir) {
 
 void PC::construct_normals(arma::vec los_dir, double radius) {
 
-	// #pragma omp parallel for if (USE_OMP_PC)
+	#pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
 		// Get the N nearest neighbors to this point
