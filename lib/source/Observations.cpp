@@ -139,7 +139,7 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
 
 			if (bezier == nullptr){
-				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+				n = focal_plane -> at(i) -> get_hit_element() -> get_normal_coordinates();
 			}			
 			else{
 
@@ -147,7 +147,7 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 				
-				n = bezier -> get_normal(u_t,v_t);
+				n = bezier -> get_normal_coordinates(u_t,v_t);
 
 				auto P = bezier -> covariance_surface_point(u_t,v_t,u);
 
@@ -201,7 +201,7 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
 
 			if (bezier == nullptr){
-				n = focal_plane -> at(i) -> get_hit_element() -> get_normal();
+				n = focal_plane -> at(i) -> get_hit_element() -> get_normal_coordinates();
 			}			
 			else{
 
@@ -210,7 +210,7 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 			
 
-				n = bezier -> get_normal(u_t,v_t);
+				n = bezier -> get_normal_coordinates(u_t,v_t);
 
 				P = bezier -> covariance_surface_point(u_t,v_t,u);
 

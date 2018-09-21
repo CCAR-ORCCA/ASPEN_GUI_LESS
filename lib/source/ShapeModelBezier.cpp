@@ -1425,7 +1425,7 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 
-		arma::vec ni = this -> get_control_points() -> at(i) -> get_normal(true);
+		arma::vec ni = this -> get_control_points() -> at(i) -> get_normal_coordinates(true);
 
 		arma::vec u_2 = arma::randn<arma::vec>(3);
 		u_2 = arma::normalise(arma::cross(ni,u_2));
@@ -1439,7 +1439,7 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 		for (unsigned int j = i + 1; j < this -> get_NControlPoints(); ++j){
 
-			arma::vec nj = this -> get_control_points() -> at(j) -> get_normal(true);
+			arma::vec nj = this -> get_control_points() -> at(j) -> get_normal_coordinates(true);
 
 			double distance = arma::norm(this -> get_control_points() -> at(i) -> get_coordinates()
 				- this -> get_control_points() -> at(j) -> get_coordinates());

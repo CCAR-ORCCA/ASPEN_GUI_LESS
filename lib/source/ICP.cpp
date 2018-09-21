@@ -36,7 +36,7 @@ double ICP::compute_normal_distance(const PointPair & point_pair,
 
 	return arma::dot(dcm_S * point_pair.first -> get_point() + x_S 
 		- dcm_D * point_pair.second -> get_point() - x_D,
-		dcm_D * point_pair.second -> get_normal());
+		dcm_D * point_pair.second -> get_normal_coordinates());
 
 }
 
@@ -169,7 +169,7 @@ void ICP::register_pc(
 
 				P_i = this -> point_pairs[pair_index].first -> get_point();
 				Q_i = this -> point_pairs[pair_index].second -> get_point();
-				n_i = this -> point_pairs[pair_index].second -> get_normal();
+				n_i = this -> point_pairs[pair_index].second -> get_normal_coordinates();
 
 				// The partial derivative of the observation model is computed
 				H = ICP::dGdSigma_multiplicative(mrp, P_i, n_i);
@@ -358,8 +358,8 @@ void ICP::compute_pairs(
 
 		std::shared_ptr<PointNormal> closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 
-		arma::vec n_dest = dcm_D * closest_destination_point -> get_normal();
-		arma::vec n_source = dcm_S * destination_source_dist_vector[i].second -> get_normal();
+		arma::vec n_dest = dcm_D * closest_destination_point -> get_normal_coordinates();
+		arma::vec n_source = dcm_S * destination_source_dist_vector[i].second -> get_normal_coordinates();
 
 		// If the two normals are compatible, the points are matched
 		if (arma::dot(n_dest,n_source) > std::sqrt(2) / 2 ) {
@@ -382,8 +382,8 @@ void ICP::compute_pairs(
 
 			std::shared_ptr<PointNormal> closest_source_point = source_pc -> get_closest_point(test_destination_point);
 
-			arma::vec n_source = dcm_S * closest_source_point -> get_normal();
-			arma::vec n_destination = dcm_D * destination_source_dist_vector[i].first -> get_normal();
+			arma::vec n_source = dcm_S * closest_source_point -> get_normal_coordinates();
+			arma::vec n_destination = dcm_D * destination_source_dist_vector[i].first -> get_normal_coordinates();
 
 		// If the two normals are compatible, the points are matched
 			if (arma::dot(n_source,n_destination) > std::sqrt(2) / 2 ) {
@@ -401,7 +401,7 @@ void ICP::compute_pairs(
 
 		if (destination_source_dist_vector[i].first != nullptr){
 			arma::vec S = dcm_S * destination_source_dist_vector[i].second -> get_point() + x_S;
-			arma::vec n = dcm_D * destination_source_dist_vector[i].first -> get_normal();
+			arma::vec n = dcm_D * destination_source_dist_vector[i].first -> get_normal_coordinates();
 			arma::vec D = dcm_D * destination_source_dist_vector[i].first -> get_point() + x_D;
 
 			formed_pairs.push_back(std::make_pair(i,std::pow(arma::dot(n,S - D),2)));

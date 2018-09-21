@@ -21,9 +21,10 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 	}
 
 	this -> histogram = arma::zeros<arma::vec>(N_global_bins);
-
 	this -> distance_to_closest_neighbor = std::numeric_limits<double>::infinity();
 	
+
+	int non_trivial_neighbors_count = 0;
 	for (int j = 0; j < points.size(); ++j){
 		double distance = arma::norm(points.at(j) -> get_point() - query_point -> get_point());
 
@@ -34,29 +35,29 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 			this -> distance_to_closest_neighbor = std::min(this-> distance_to_closest_neighbor,distance);
 
 			this -> compute_darboux_frames_local_hist( alpha_bin_index,phi_bin_index,theta_bin_index, N_bins,
-				query_point -> get_point(),query_point -> get_normal(),points.at(j) -> get_point(),points.at(j) -> get_normal());
+				query_point -> get_point(),query_point -> get_normal_coordinates(),points.at(j) -> get_point(),points.at(j) -> get_normal_coordinates());
 
 
 			if (keep_correlations){
-				int global_bin_index = alpha_bin_index +  phi_bin_index * (N_bins) + theta_bin_index * (N_bins * N_bins);
+				int global_bin_index = theta_bin_index +  alpha_bin_index * (N_bins) + phi_bin_index * (N_bins * N_bins);
 				this -> histogram(global_bin_index) += 1.;
 
 			}
 			else{
 
-				this -> histogram(alpha_bin_index) += 1.;
-				this -> histogram(N_bins + phi_bin_index) += 1.;
-				this -> histogram(2 * N_bins + theta_bin_index) += 1.;
+				this -> histogram(theta_bin_index) += 1.;
+				this -> histogram(N_bins + alpha_bin_index) += 1.;
+				this -> histogram(2 * N_bins + phi_bin_index) += 1.;
 			}
+
+			++non_trivial_neighbors_count;
 
 		}
 
 	}
 
-	if (arma::max(this -> histogram) > 0 ){
-		this -> histogram = this -> histogram / arma::max(this -> histogram);
-	}
-
+	this -> histogram *= 100./non_trivial_neighbors_count;
+	
 }
 
 double SPFH::get_distance_to_closest_neighbor() const{

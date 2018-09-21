@@ -255,7 +255,7 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 
 		std::shared_ptr<Element> facet = this -> elements[facet_index];
 
-		surface_sum += facet -> get_area() * facet -> get_normal();
+		surface_sum += facet -> get_area() * facet -> get_normal_coordinates();
 		facet_area_average += facet -> get_area();
 
 	}

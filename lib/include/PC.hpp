@@ -123,6 +123,10 @@ public:
 	*/
 	arma::vec get_point_coordinates(unsigned int index) const;
 
+
+
+
+
 	/**
 	Returns normal of the queried point
 	@param index Index of the queried point
@@ -237,6 +241,11 @@ public:
 
 	void build_index_table();
 
+	void compute_neighborhoods(double radius);
+	void compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radius);
+	void compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radius);
+	void save_active_features(int index,std::string pc_name) const;
+
 
 
 protected:
@@ -244,17 +253,13 @@ protected:
 	void construct_kd_tree(std::vector< std::shared_ptr<PointNormal> > & points_normals);
 	void construct_normals(arma::vec los);
 	void prune_features() ;
-	void save_active_features(int index,std::string pc_name) const;
 
 
 	static std::vector<PointPair> generate_random_correspondance_table(const std::vector<std::shared_ptr< PointNormal > > & neighborhood,
 		const std::map<std::shared_ptr< PointNormal >, std::map<double,std::shared_ptr<PointNormal> > > & pc0_to_pc1_potential_matches);
 	static double compute_neighborhood_consensus_ll(const std::vector<PointPair> & correspondance_table);
 	
-	void compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radius);
-
-	void compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radius);
-
+	
 	std::shared_ptr<KDTreePC> kdt_points;
 	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;
 	arma::vec mean_feature_histogram;

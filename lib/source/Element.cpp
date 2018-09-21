@@ -23,7 +23,7 @@ arma::vec Element::get_center()  const{
 
 }
 
-arma::vec  Element::get_normal() const  {
+arma::vec  Element::get_normal_coordinates() const  {
 	return  this -> normal;
 }
 

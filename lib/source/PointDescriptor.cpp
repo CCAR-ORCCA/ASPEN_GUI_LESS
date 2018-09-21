@@ -1,6 +1,7 @@
 #include "PointDescriptor.hpp"
 #include "PointNormal.hpp"
 
+#define POINTDESCRIPTOR_DEBUG 0
 
 PointDescriptor::PointDescriptor(){
 
@@ -51,17 +52,24 @@ void PointDescriptor::compute_darboux_frames_local_hist( int & alpha_bin_index,
 	const arma::vec::fixed<3> & n_j) {
 
 
-	arma::vec::fixed<3> v = arma::cross(n_i,arma::normalise(p_j - p_i));
+	arma::vec::fixed<3> v = arma::cross(arma::normalise(p_j - p_i),n_i);
 	arma::vec::fixed<3> w = arma::cross(n_i,v);
 
-	// All angles are within [0,pi]
-	double alpha = std::acos(arma::dot(v,n_j));
-	double phi = std::acos(arma::dot(n_i,arma::normalise(p_j - p_i)));
-	double theta = std::atan(arma::dot(w,n_j)/arma::dot(n_i,n_j)) + arma::datum::pi/2;
 
-	alpha_bin_index = (int)(std::floor(alpha/  (arma::datum::pi/N_bins)));
-	phi_bin_index = (int)(std::floor(phi / (arma::datum::pi/N_bins)));
-	theta_bin_index = (int)(std::floor(theta / (arma::datum::pi/N_bins)));
+	// All values are within [0,1]
+	double alpha = arma::dot(v,n_j);
+	double phi = arma::dot(n_i,arma::normalise(p_j - p_i));
+	double theta = std::atan2(arma::dot(w,n_j),arma::dot(n_i,n_j));
+
+	// All values are wrapped within [0,1]
+	alpha = 0.5 * ( 1. + alpha);
+	phi = 0.5 * ( 1. + phi);
+	theta = (theta + arma::datum::pi) * 1.0 / (2.0 * arma::datum::pi);
+
+
+	alpha_bin_index = (int)(std::floor(alpha * N_bins));
+	phi_bin_index = (int)(std::floor(phi  * N_bins));
+	theta_bin_index = (int)(std::floor(theta  * N_bins));
 
 }
 

@@ -111,7 +111,7 @@ public:
 	@param v second barycentric coordinate
 	@return point at the surface of the bezier patch
 	*/
-	arma::vec get_normal(const double u, const double v) const;
+	arma::vec get_normal_coordinates(const double u, const double v) const;
 
 
 	/**

@@ -20,7 +20,7 @@ arma::vec PointNormal::get_point() const {
 	return this -> point;
 }
 
-arma::vec PointNormal::get_normal() const {
+arma::vec PointNormal::get_normal_coordinates() const {
 	return this -> normal;
 }
 

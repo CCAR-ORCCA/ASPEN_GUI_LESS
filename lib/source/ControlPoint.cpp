@@ -125,7 +125,7 @@ unsigned int ControlPoint::get_number_of_owning_elements() const {
 
 
 
-arma::vec ControlPoint::get_normal(bool bezier) const{
+arma::vec ControlPoint::get_normal_coordinates(bool bezier) const{
 
 	arma::vec n = {0,0,0};
 
@@ -133,11 +133,11 @@ arma::vec ControlPoint::get_normal(bool bezier) const{
 		it != this -> owning_elements.end(); ++it) {
 
 		if (bezier){
-			n += static_cast<Bezier *>((*it)) -> get_normal(1./3,1./3);
+			n += static_cast<Bezier *>((*it)) -> get_normal_coordinates(1./3,1./3);
 
 		}
 		else{
-			n += static_cast<Facet *>((*it)) -> get_normal();
+			n += static_cast<Facet *>((*it)) -> get_normal_coordinates();
 		}
 
 	}

@@ -16,29 +16,32 @@
 // #include <pcl/registration/icp.h>
 // #include <pcl/registration/gicp.h>
 #include <RigidBodyKinematics.hpp>
+#include <PointDescriptor.hpp>
 
 int main() {
 
-
-	
 	// Perturbed source pc
 	PC destination_pc("../bunny000.obj");
 	// PC source_pc("../bunny090.obj");
 
 	arma::vec los = {0,-1,0};
-	
+	std::cout << "Constructing normals...\n";
 	destination_pc.construct_normals(los,7e-3);
+	std::cout << "Computing neighborhoods...\n";
+
+	destination_pc.compute_neighborhoods(14e-3);
 
 
-	// destination_pc.save("bunny_with_normals.obj", 
-	// arma::eye<arma::mat>(3,3), arma::zeros<arma::vec>(3), 
-	// true,
-	// false);
 
+	std::cout << "Computing FPFH...\n";
 
-	destination_pc.compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,
-		false,
-		11,14e-3,"bunny");
+	destination_pc.compute_FPFH(false,11,14e-3);
+
+	std::cout << "Saving features...\n";
+
+	destination_pc.save_active_features(0,"bunny");
+
+	// destination_pc.compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,false,11,14e-3,"bunny");
 
 	throw;
 

@@ -44,7 +44,7 @@ public:
 
 	
 
-	arma::vec get_normal(bool bezier) const;
+	arma::vec get_normal_coordinates(bool bezier) const;
 
 
 

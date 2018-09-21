@@ -24,6 +24,7 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 
 	this -> histogram = arma::zeros<arma::vec>(N_global_bins);
 
+	
 	for (int i = 0; i < points.size(); ++i){
 
 		for (int j = 0; j < i; ++j){
@@ -31,17 +32,17 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 			int alpha_bin_index,phi_bin_index,theta_bin_index;
 			
 			this -> compute_darboux_frames_local_hist( alpha_bin_index,phi_bin_index,theta_bin_index, N_bins,
-				points.at(i) -> get_point(),points.at(i) -> get_normal(),points.at(j) -> get_point(),points.at(j) -> get_normal());
+				points.at(i) -> get_point(),points.at(i) -> get_normal_coordinates(),points.at(j) -> get_point(),points.at(j) -> get_normal_coordinates());
 
 			if (keep_correlations){
-				int global_bin_index = alpha_bin_index +  phi_bin_index * (N_bins) + theta_bin_index * (N_bins * N_bins);
+				int global_bin_index = theta_bin_index +  alpha_bin_index * (N_bins) + phi_bin_index * (N_bins * N_bins);
 				this -> histogram[global_bin_index] += 1.;
 			}
 			else{
 
-				this -> histogram[alpha_bin_index] += 1.;
-				this -> histogram[N_bins + phi_bin_index] += 1.;
-				this -> histogram[2 * N_bins + theta_bin_index] += 1.;
+				this -> histogram[theta_bin_index] += 1.;
+				this -> histogram[N_bins + alpha_bin_index] += 1.;
+				this -> histogram[2 * N_bins + phi_bin_index] += 1.;
 
 			}
 
@@ -49,7 +50,7 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 	}
 
 	if (arma::max(this -> histogram) > 0){
-		this -> histogram = this -> histogram / arma::max(this -> histogram);
+		this -> histogram = this -> histogram / arma::max(this -> histogram) * 100;
 	}
 
 }

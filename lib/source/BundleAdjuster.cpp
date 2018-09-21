@@ -346,7 +346,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 
 		double y_ki = ICP::compute_normal_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
-		arma::mat n = point_pairs[i].second -> get_normal();
+		arma::mat n = point_pairs[i].second -> get_normal_coordinates();
 
 		if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
 

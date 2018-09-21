@@ -19,7 +19,7 @@ public:
 
 	arma::vec get_point() const;
 
-	arma::vec get_normal() const;
+	arma::vec get_normal_coordinates() const;
 
 	void set_normal(arma::vec normal) ;
 	void set_point(arma::vec point) ;

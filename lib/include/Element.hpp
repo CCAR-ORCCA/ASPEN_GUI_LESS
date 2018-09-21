@@ -38,7 +38,7 @@ public:
 	- the normal evaluated at the center of the element if the element is a Bezier patch
 	@return element normal. 
 	*/
-	arma::vec get_normal() const;
+	arma::vec get_normal_coordinates() const;
 
 	/**
 	Get element center. 

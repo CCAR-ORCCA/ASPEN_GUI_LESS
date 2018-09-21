@@ -139,7 +139,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 		double u = double(i) / double(patch -> get_degree());
 		double v = double(j) / double(patch -> get_degree());
 
-		arma::vec n = patch -> get_normal(u, v);
+		arma::vec n = patch -> get_normal_coordinates(u, v);
 		arma::mat proj = double(N_measurements) / double( this -> shape_model -> get_NElements()) * (arma::eye<arma::mat>(3,3) - n * n.t());
 
 		// unsigned int index = this -> shape_model -> get_control_point_index(*point);
@@ -434,7 +434,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 			return ;
 		}	
 
-		double error = arma::norm(arma::cross(patch -> get_normal(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
+		double error = arma::norm(arma::cross(patch -> get_normal_coordinates(chi(0),chi(1)),arma::normalise(Pbar - footpoint.Ptilde)));
 		
 		if (error < 1e-5){
 
@@ -452,7 +452,7 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 			footpoint . Pbar = Pbar;
 			footpoint . u = chi(0);
 			footpoint . v = chi(1);
-			footpoint . n = patch -> get_normal(chi(0),chi(1));
+			footpoint . n = patch -> get_normal_coordinates(chi(0),chi(1));
 			footpoint . element = patch;
 
 		}

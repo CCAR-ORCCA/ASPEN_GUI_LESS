@@ -658,7 +658,7 @@ arma::vec Bezier::evaluate_omp(const double u, const double v,const arma::vec & 
 	return P;
 }
 
-arma::vec Bezier::get_normal(const double u, const double v) const{
+arma::vec Bezier::get_normal_coordinates(const double u, const double v) const{
 	arma::mat partials = this -> partial_bezier(u,v);
 	return arma::normalise(arma::cross(partials.col(0),partials.col(1)));
 }
@@ -1140,7 +1140,7 @@ void Bezier::compute_range_biases(){
 
 double Bezier::get_range_bias(const double & u, const double & v,const arma::vec & dir) const{
 
-	return  this -> fitting_residuals_mean * std::abs(arma::dot(this -> get_normal(u,v),dir));
+	return  this -> fitting_residuals_mean * std::abs(arma::dot(this -> get_normal_coordinates(u,v),dir));
 
 }
 

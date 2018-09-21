@@ -187,7 +187,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
 	// be valid, t must be positive
-	arma::vec n = facet -> get_normal();
+	arma::vec n = facet -> get_normal_coordinates();
 	arma::vec p = facet -> get_center();
 
 	double t = arma::dot(n, p - *this -> origin_target_frame) / arma::dot(n, *this -> direction_target_frame);
@@ -298,7 +298,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 			std::cout << "Converged." << std::endl;
 			#endif
 
-			if (arma::dot(patch -> get_normal(u_t,v_t),dir) > 0){
+			if (arma::dot(patch -> get_normal_coordinates(u_t,v_t),dir) > 0){
 				#if RAY_DEBUG
 				std::cout << "Spurious normal. rejected" << std::endl;
 
@@ -322,7 +322,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 
 			if (this -> true_range > arma::norm(S - impact)){
 
-				double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,patch -> get_normal(u_t,v_t))));
+				double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,patch -> get_normal_coordinates(u_t,v_t))));
 
 				this -> true_range = arma::norm(S - impact);
 				u = u_t;
