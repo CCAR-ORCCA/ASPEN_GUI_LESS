@@ -221,7 +221,7 @@ public:
 
 
 	std::vector<std::shared_ptr<PointNormal> > get_points_in_sphere(
-		arma::vec test_point, const double & radius) const;
+		const arma::vec & test_point, const double & radius) const;
 	void compute_mean_feature_histogram();
 
 	static std::vector<PointPair>  find_pch_matches_kdtree(std::shared_ptr<PC> pc_source,std::shared_ptr<PC> pc_destination);

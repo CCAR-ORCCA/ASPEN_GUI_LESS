@@ -339,7 +339,7 @@ std::shared_ptr<PointNormal> PC::get_closest_point(const arma::vec & test_point)
 }
 
 std::vector<std::shared_ptr<PointNormal> > PC::get_points_in_sphere(
-	arma::vec test_point, const double & radius) const {
+	const arma::vec & test_point, const double & radius) const {
 
 	std::vector<std::shared_ptr<PointNormal> > closest_points;
 
