@@ -239,9 +239,6 @@ void KDTreePC::radius_point_search(const arma::vec & test_point,
 	const double & distance,
 	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
 
-	if (this -> depth == 0){
-		closest_points.clear();
-	}
 
 	#if KDTTREE_PC_DEBUG
 	std::cout << "#############################\n";
