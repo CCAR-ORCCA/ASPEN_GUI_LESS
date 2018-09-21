@@ -432,31 +432,31 @@ void PC::save(arma::mat & points,std::string path) {
 
 
 void PC::construct_normals(arma::vec los_dir) {
+	unsigned int N = 5;
 
 	// #pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
-		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
-
 		// Get the N nearest neighbors to this point
-		unsigned int N = 5;
-		std::map<double,std::shared_ptr<PointNormal> > closest_points = this -> get_closest_N_points(pn -> get_point(), N);
+		std::map<double,std::shared_ptr<PointNormal> > closest_points = this -> get_closest_N_points(this -> kdt_points  -> get_point_normal(i) -> get_point(), N);
 
-		// This N nearest neighbors are used to get the normal
-		arma::mat points_augmented(N, 4);
-		points_augmented.col(3) = arma::ones<arma::vec>(N);
-
-		unsigned int j = 0;
+		arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
+		arma::vec::fixed<3> centroid = {0,0,0};
+		
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-			points_augmented.row(j).cols(0, 2) = it -> second -> get_point().t();
-			++j;
+			centroid += it -> second ->  get_point()/closest_points.size();
+		}
+
+		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
+			auto p = it -> second ->  get_point();
+			covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
 		}
 
 		// The eigenvalue problem is solved
 		arma::vec eigval;
 		arma::mat eigvec;
 
-		arma::eig_sym(eigval, eigvec, points_augmented.t() * points_augmented);
+		arma::eig_sym(eigval, eigvec, covariance);
 		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
 
 		// The normal is flipped to make sure it is facing the los
@@ -476,26 +476,26 @@ void PC::construct_normals(arma::vec los_dir, double radius) {
 	// #pragma omp parallel for if (USE_OMP_PC)
 	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
 
-		std::shared_ptr<PointNormal> pn = this -> kdt_points  -> get_points_normals() -> at(i);
-
 		// Get the N nearest neighbors to this point
-		auto closest_points = this -> get_points_in_sphere(pn -> get_point(), radius);
+		auto closest_points = this -> get_points_in_sphere(this -> kdt_points  -> get_point_normal(i) -> get_point(), radius);
 
-		// This N nearest neighbors are used to get the normal
-		arma::mat points_augmented(closest_points.size(), 4);
-		points_augmented.col(3) = arma::ones<arma::vec>(closest_points.size());
+		arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
+		arma::vec::fixed<3> centroid = {0,0,0};
 
-		unsigned int j = 0;
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-			points_augmented.row(j).cols(0, 2) = (*it) -> get_point().t();
-			++j;
+			centroid += (*it) -> get_point()/closest_points.size();
+		}
+
+		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
+			auto p = (*it) -> get_point();
+			covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
 		}
 
 		// The eigenvalue problem is solved
 		arma::vec eigval;
 		arma::mat eigvec;
 
-		arma::eig_sym(eigval, eigvec, points_augmented.t() * points_augmented);
+		arma::eig_sym(eigval, eigvec, covariance);
 		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
 
 		// The normal is flipped to make sure it is facing the los
@@ -556,7 +556,7 @@ arma::mat::fixed<3,3> PC::get_principal_axes() const{
 		arma::vec point = this -> kdt_points  -> get_points_normals() -> at(i) -> get_point();
 		P += 1./(size - 1) * (point - center) * (point - center).t();
 	}
-	
+
 	arma::vec eigval;
 	arma::eig_sym( eigval, E, P );
 
@@ -571,7 +571,7 @@ arma::mat::fixed<3,3> PC::get_principal_axes() const{
 
 arma::vec PC::get_bbox_center() const{
 
-	
+
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	arma::vec bbox_min = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
@@ -584,16 +584,16 @@ arma::vec PC::get_bbox_center() const{
 		bbox_min = arma::min(bbox_min,point);
 
 	}
-	
+
 	arma::vec C = 0.5 * (bbox_max + bbox_min);
-	
+
 
 	return C;
 }
 
 arma::vec PC::get_bbox_dim() const{
 
-	
+
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
 	arma::vec bbox_max = this -> kdt_points  -> get_points_normals() -> at(0) -> get_point();
@@ -608,7 +608,7 @@ arma::vec PC::get_bbox_dim() const{
 		bbox_min = arma::min(bbox_min,point);
 
 	}
-	
+
 
 	return 0.5 *(bbox_max - bbox_min);
 }
@@ -645,7 +645,7 @@ void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,
 	std::vector<std::shared_ptr<PointNormal> > relevant_point_with_descriptors;
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 
-	
+
 	// std::vector<double> radii = {neighborhood_radius,1.25 * neighborhood_radius,1.5 *neighborhood_radius,1.75 *  neighborhood_radius};
 
 	std::vector<double> radii = {neighborhood_radius};
@@ -699,8 +699,8 @@ void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,
 
 
 
-	
-	
+
+
 
 
 
@@ -726,7 +726,7 @@ void PC::save_active_features(int index,std::string pc_name) const{
 			active_features_histograms.col(k) = this -> kdt_points  -> get_points_normals() -> at(k) -> get_descriptor_histogram();
 			if (this -> kdt_points -> get_points_normals()-> at(0) -> get_descriptor_ptr() -> get_type() == 1)
 				active_features_histograms_spfh.col(k) = this -> kdt_points  -> get_points_normals() -> at(k) -> get_spfh_histogram();
-			
+
 		};
 
 	}
@@ -734,7 +734,7 @@ void PC::save_active_features(int index,std::string pc_name) const{
 	PC active_features_pc(active_features);
 
 	active_features_pc.save(pc_name + "_active_features_" + std::to_string(index) + ".obj");
-	
+
 	this -> mean_feature_histogram.save(pc_name + "_mean_histogram_" + std::to_string(index) + ".txt",arma::raw_ascii);
 	active_features_histograms.save(pc_name + "_active_features_histograms_"+ std::to_string(index) + ".txt",arma::raw_ascii);
 	if (this -> kdt_points -> get_points_normals()-> at(0) -> get_descriptor_ptr() -> get_type() == 1)
@@ -758,7 +758,7 @@ void PC::compute_PFH(bool keep_correlations,int N_bins,double neighborhood_radiu
 
 		std::vector<std::shared_ptr<PointNormal> > neighborhood;
 		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
-		
+
 		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
 			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
 		}
@@ -781,12 +781,12 @@ void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radi
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < size; ++i) {
-		
+
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
 
 		std::vector<std::shared_ptr<PointNormal> > neighborhood;
 		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
-		
+
 		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
 			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
 		}
@@ -801,7 +801,7 @@ void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radi
 		std::shared_ptr<PointNormal> query_point = this -> kdt_points  -> get_points_normals() -> at(i);
 		std::vector<std::shared_ptr<PointNormal> > neighborhood;
 		auto query_point_neighborhood = query_point -> get_neighborhood(neighborhood_radius);
-		
+
 		for (int k = 0; k < query_point_neighborhood.size(); ++k ){
 			neighborhood.push_back(this -> get_point(query_point_neighborhood[k]));
 		}
@@ -819,12 +819,12 @@ void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radi
 void PC::save_point_descriptors(std::string path) const{
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 	unsigned int histo_size = this -> kdt_points  -> get_points_normals() -> at(0)-> get_histogram_size();
-	
+
 
 	std::vector<arma::vec> active_features_histograms_arma;
 
 	for (unsigned int i = 0; i < size; ++i) {
-		
+
 		// active_features_histograms.col(i) = this -> kdt_points  -> get_points_normals() -> at(i) -> get_descriptor_histogram();
 		auto histogram = this -> kdt_points  -> get_points_normals() -> at(i) -> get_descriptor_histogram();
 
@@ -926,14 +926,14 @@ std::vector<PointPair>  PC::find_pch_matches_kdtree(std::shared_ptr<PC> pc_sourc
 
 			std::map<double,std::shared_ptr<PointNormal> > potential_matches = pc0_to_pc1_potential_matches[point_in_neighborhood];
 			best_correspondance_table.push_back(std::make_pair(point_in_neighborhood,potential_matches.begin() -> second));
-			
-			
+
+
 		}
 
 		#if PC_DEBUG_FLAG
 		std::cout << "Optimizing geometry in neighborhood " << std::distance(neighborhood_center_to_points.begin(),it) << " / " << neighborhood_center_to_points.size() << std::endl;
 		#endif
-		
+
 
 		double best_log_likelihood = PC::compute_neighborhood_consensus_ll(best_correspondance_table);
 
@@ -1014,7 +1014,7 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 			active_source_points.push_back(pc_source -> get_point(i));
 			auto closest_features = pc_destination -> get_closest_N_features(pc_source -> get_point(i),
 				N_closest_matches);
-			
+
 			std::vector<std::shared_ptr<PointNormal> > closest_features_points;
 
 			for (auto it = closest_features.begin(); it != closest_features.end(); ++it){
@@ -1026,7 +1026,7 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 
 	}
 
-	
+
 
 }
 
@@ -1048,7 +1048,7 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 
 double PC::compute_neighborhood_consensus_ll(const std::vector<PointPair> & correspondance_table){
 
-	
+
 	arma::vec::fixed<2> mean_angles = {0,0};
 	arma::mat::fixed<2,2> covariance = arma::zeros<arma::mat>(2,2);
 	std::vector<arma::vec> angles_distribution;
@@ -1097,10 +1097,10 @@ std::vector<PointPair> PC::generate_random_correspondance_table(const std::vecto
 
 		arma::ivec random_integer = arma::randi(1,arma::distr_param(0,potential_matches.size() - 1));
 		int random_index = random_integer(0);
-		
+
 		pairs.push_back(std::make_pair(point_in_neighborhood,
 			std::next(potential_matches.begin(),random_index) -> second));
-		
+
 	}
 
 
@@ -1178,7 +1178,7 @@ void PC::compute_mean_feature_histogram(){
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
 	unsigned int histo_size = this -> kdt_points  -> get_point_normal(0)-> get_histogram_size();
-	
+
 	this -> mean_feature_histogram = arma::zeros<arma::vec>(histo_size);
 
 	for (unsigned int k = 0; k < size; ++k){
@@ -1198,7 +1198,7 @@ void PC::prune_features() {
 
 
 
-	
+
 	#pragma omp parallel for
 	for (unsigned int k = 0; k < size; ++k){
 
@@ -1210,7 +1210,7 @@ void PC::prune_features() {
 
 	// Points whose feature descriptor is less than 1.25 standard deviations away from the mean are considered as 
 	// inliers, thus irrelevant as discriminative features
-	
+
 	unsigned int relevant_features_count = 0;
 
 	for (unsigned int k = 0; k < size; ++k){
@@ -1232,7 +1232,7 @@ void PC::prune_features() {
 void PC::build_index_table(){
 
 	unsigned int size = this -> kdt_points  -> get_points_normals() -> size();
-	
+
 	#pragma omp parallel for
 	for (unsigned int k = 0; k < size; ++k){
 		this -> kdt_points  -> get_points_normals() -> at(k) -> set_global_index(k);
