@@ -38,7 +38,7 @@ bool KDTreePC::get_is_cluttered() const{
 
 
 void KDTreePC::closest_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTreePC> node,
+	const std::shared_ptr<KDTreePC> & node,
 	std::shared_ptr<PointNormal> & best_guess,
 	double & distance) {
 
@@ -112,7 +112,7 @@ void KDTreePC::closest_point_search(const arma::vec & test_point,
 
 void KDTreePC::closest_N_point_search(const arma::vec & test_point,
 	const unsigned int & N_points,
-	std::shared_ptr<KDTreePC> node,
+	const std::shared_ptr<KDTreePC> & node,
 	double & distance,
 	std::map<double,std::shared_ptr<PointNormal> > & closest_points) {
 
@@ -235,10 +235,13 @@ void KDTreePC::closest_N_point_search(const arma::vec & test_point,
 
 
 void KDTreePC::radius_point_search(const arma::vec & test_point,
-	std::shared_ptr<KDTreePC> node,
+	const std::shared_ptr<KDTreePC> & node,
 	const double & distance,
 	std::vector<std::shared_ptr<PointNormal> > & closest_points) {
 
+	if (this -> depth == 0){
+		closest_points.clear();
+	}
 
 	#if KDTTREE_PC_DEBUG
 	std::cout << "#############################\n";
@@ -246,8 +249,6 @@ void KDTreePC::radius_point_search(const arma::vec & test_point,
 	std::cout << "Points in node: " << node -> points_normals.size() << std::endl;
 	std::cout << "Points found so far : " << closest_points.size() << std::endl;
 	#endif
-
-
 
 
 	if (node -> points_normals.size() == 1 || node -> get_is_cluttered() ) {
