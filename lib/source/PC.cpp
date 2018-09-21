@@ -471,11 +471,15 @@ void PC::construct_normals(arma::vec los_dir) {
 
 void PC::construct_normals(arma::vec los_dir, double radius) {
 
-	#pragma omp parallel for if (USE_OMP_PC)
-	for (unsigned int i = 0; i < this -> kdt_points  -> get_points_normals() -> size(); ++i) {
+	unsigned int size = this -> get_size();
+
+
+	std::vector<std::shared_ptr<PointNormal> > closest_points;
+	// #pragma omp parallel for if (USE_OMP_PC)
+	for (unsigned int i = 0; i < size; ++i) {
 
 		// Get the N nearest neighbors to this point
-		auto closest_points = this -> get_points_in_sphere(this -> kdt_points  -> get_point_normal(i) -> get_point(), radius);
+		closest_points = this -> get_points_in_sphere(this -> kdt_points  -> get_point_normal(i) -> get_point(), radius);
 
 		// arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
 		// arma::vec::fixed<3> centroid = {0,0,0};
