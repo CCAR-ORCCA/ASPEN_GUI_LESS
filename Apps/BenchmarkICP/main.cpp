@@ -32,7 +32,7 @@ int main() {
 	auto start = std::chrono::steady_clock::now();
 	destination_pc.construct_normals(los,7e-3);
 	auto end = std::chrono::steady_clock::now();
-	double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
+	double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(end - start).count();
 	std::cout << "Normals were computed in " << elapsed_seconds << " seconds\n";
 
 	std::cout << "Computing neighborhoods...\n";
@@ -43,7 +43,7 @@ int main() {
 
 	end = std::chrono::steady_clock::now();
 
-	elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
+	elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(end - start).count();
 	
 	std::cout << "Neighborhoods were computed in " << elapsed_seconds << " seconds\n";
 
