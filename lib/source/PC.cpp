@@ -158,13 +158,11 @@ PC::PC(std::string filename) {
 	}
 	this -> construct_kd_tree(points_normals);
 
-	this -> construct_normals(los_dir);
+	// this -> construct_normals(los_dir);
 	this -> build_index_table();
 
 
 }
-
-
 
 
 void PC::transform(const arma::mat & dcm, const arma::vec & x){
@@ -479,32 +477,32 @@ void PC::construct_normals(arma::vec los_dir, double radius) {
 		// Get the N nearest neighbors to this point
 		auto closest_points = this -> get_points_in_sphere(this -> kdt_points  -> get_point_normal(i) -> get_point(), radius);
 
-		arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
-		arma::vec::fixed<3> centroid = {0,0,0};
+		// arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
+		// arma::vec::fixed<3> centroid = {0,0,0};
 
-		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-			centroid += (*it) -> get_point()/closest_points.size();
-		}
+		// for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
+		// 	centroid += (*it) -> get_point()/closest_points.size();
+		// }
 
-		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-			auto p = (*it) -> get_point();
-			covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
-		}
+		// for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
+		// 	auto p = (*it) -> get_point();
+		// 	covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
+		// }
 
 		// The eigenvalue problem is solved
-		arma::vec eigval;
-		arma::mat eigvec;
+		// arma::vec eigval;
+		// arma::mat eigvec;
 
-		arma::eig_sym(eigval, eigvec, covariance);
-		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
+		// arma::eig_sym(eigval, eigvec, covariance);
+		// arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
 
-		// The normal is flipped to make sure it is facing the los
-		if (arma::dot(n, los_dir) < 0) {
-			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(n);
-		}
-		else {
-			this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(-n);
-		}
+		// // The normal is flipped to make sure it is facing the los
+		// if (arma::dot(n, los_dir) < 0) {
+		// 	this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(n);
+		// }
+		// else {
+		// 	this -> kdt_points  -> get_points_normals() -> at(i) -> set_normal(-n);
+		// }
 	}
 }
 
