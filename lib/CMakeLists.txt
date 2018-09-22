@@ -138,7 +138,6 @@ if(OPENMP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-message("${CMAKE_CXX_FLAGS} ")
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 # if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
 # 	find_library(GFORTRAN_LIBRARY gfortran
@@ -210,9 +209,9 @@ set(library_dependencies
 
 
 if (UNIX AND NOT APPLE)
-target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
-else()
 target_link_libraries(${LIB_NAME} ${library_dependencies})
+else()
+target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 endif()
 
 file(GLOB includes include/*.hpp)
