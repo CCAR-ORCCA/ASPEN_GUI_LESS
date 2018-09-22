@@ -14,8 +14,6 @@
 
 int main() {
 
-	std::cout << omp_get_max_threads() << std::endl;
-	throw;
 	arma::vec p = {0.05,0.01,-0.1};
 
 
