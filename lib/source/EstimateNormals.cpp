@@ -9,7 +9,6 @@ EstimateNormals<T>::EstimateNormals(T & pc) : pc(pc){
 
 template <>
 void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(int N_neighbors,const arma::vec::fixed<3> & los_dir){
-
 	// #pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> pc .  size(); ++i) {
 
