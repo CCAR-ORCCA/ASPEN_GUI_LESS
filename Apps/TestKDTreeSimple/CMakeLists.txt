@@ -164,6 +164,9 @@ ${ASPEN_LIBRARY}
 ${PCL_LIBRARIES})
 
 
-
+if (UNIX AND NOT APPLE)
+target_link_libraries(${EXE_NAME} ${library_dependencies})
+else()
 target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 
+endif()
