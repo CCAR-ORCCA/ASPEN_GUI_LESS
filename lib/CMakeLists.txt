@@ -208,7 +208,12 @@ set(library_dependencies
 	${SBGATCORE_LIBRARY}
 	)
 
+
+if (UNIX AND NOT APPLE)
 target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+else()
+target_link_libraries(${LIB_NAME} ${library_dependencies})
+endif()
 
 file(GLOB includes include/*.hpp)
 file(GLOB includes_gnuplot external/Gnuplot/include/*.hpp)
