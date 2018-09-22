@@ -12,11 +12,27 @@ double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pa
 	const arma::mat::fixed<3,3> & dcm_D ,
 	const arma::vec::fixed<3> & x_D ) const{
 
-	return std::abs(arma::dot(dcm_S * this -> pc_source -> get_point_coordinates(point_pair.first)  + x_S 
-		- dcm_D * this -> pc_destination -> get_point_coordinates(point_pair.second)  - x_D,
-		dcm_D * this -> pc_destination -> get_normal_coordinates(point_pair.second) ));
 
+	return IterativeClosestPointToPlane::compute_distance(point_pair, dcm_S ,x_S ,dcm_D ,x_D,
+		this -> pc_source,this -> pc_destination) ;
 }
+
+
+double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pair, 
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D,
+	const std::shared_ptr<PC> & pc_S,
+	const std::shared_ptr<PC> & pc_D){
+
+	return std::abs(arma::dot(dcm_S * pc_S -> get_point_coordinates(point_pair.first)  + x_S 
+		- dcm_D * pc_D -> get_point_coordinates(point_pair.second)  - x_D,
+		dcm_D * pc_D -> get_normal_coordinates(point_pair.second) ));
+}
+
+
+
 
 
 
@@ -219,11 +235,51 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,const arm
 
 	normal_mat_temp = w * H.t() * (arma::dot(n_i.t(),RBK::mrp_to_dcm(mrp) * S_i + x - D_i));
 	
-
-
-
-
-
-
-	
 }
+
+
+
+double IterativeClosestPointToPlane::compute_mean_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D,
+	const std::shared_ptr<PC> & pc_S,
+	const std::shared_ptr<PC> & pc_D ){
+
+	double J = 0;
+
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+
+		J += IterativeClosestPointToPlane::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D,pc_S,pc_D)/ point_pairs.size();
+	}
+	
+	return J;
+}
+
+
+
+double IterativeClosestPointToPlane::compute_rms_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D,
+	const std::shared_ptr<PC> & pc_S,
+	const std::shared_ptr<PC> & pc_D ) {
+
+	double J = 0;
+	double mean = IterativeClosestPointToPlane::compute_mean_residuals(point_pairs,dcm_S ,x_S ,dcm_D , x_D,pc_S,pc_D );
+
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+		J += std::pow(IterativeClosestPointToPlane::compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D,pc_S,pc_D) - mean,2);
+	}
+	
+	return std::sqrt(J / (point_pairs.size()-1) );
+
+}
+
+

@@ -26,6 +26,15 @@ public:
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
+	
+	static double compute_distance(const PointPair & point_pair, 
+		const arma::mat::fixed<3,3> & dcm_S ,
+		const arma::vec::fixed<3> & x_S ,
+		const arma::mat::fixed<3,3> & dcm_D ,
+		const arma::vec::fixed<3> & x_D,
+		const PC * pc_S,
+		const PC * pc_D);
+
 protected:
 	
 	virtual void compute_pairs(

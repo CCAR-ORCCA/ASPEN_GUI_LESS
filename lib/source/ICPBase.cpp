@@ -1045,7 +1045,6 @@ double ICPBase::compute_mean_residuals(
 
 
 
-
 arma::vec ICPBase::compute_y_vector(const std::vector<PointPair> & point_pairs,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S) const {

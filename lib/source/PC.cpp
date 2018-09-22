@@ -847,11 +847,36 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 
 
 
+PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
+	this -> points_normals.clear();
+	double downsampling_factor = 1;
+	int N_points_total = 0;
+	for (unsigned int i = 0; i < pcs.size();++i){
 
+		N_points_total += pcs[i] -> size();
+	}
 
+	if (points_retained > 0){
+		downsampling_factor = double(points_retained) / N_points_total;
+	}
 
+	for (unsigned int i = 0; i < pcs.size();++i){
 
+		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> size() - 1);		
+		random_order = arma::shuffle(random_order);	
+
+		int points_to_keep = (int)	(downsampling_factor *  pcs[i] -> size());
+
+		for (unsigned int p = 0; p < points_to_keep; ++p){
+			this -> points_normals.push_back(pcs[i] -> get_point(random_order(p)));
+			this -> points_normals.back().set_global_index((int)(this -> points_normals.size()) - 1);
+		}
+
+	}
+	
+
+}
 
 
 

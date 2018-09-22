@@ -40,8 +40,6 @@ public:
 
 	PC(const std::vector<PointNormal> & point_normals);
 
-	PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained = -1);
-
 
 	/**
 	Constructor
@@ -53,6 +51,10 @@ public:
 	@param shape_model pointer to shape model
 	*/
 	PC(ShapeModelTri * shape_model);
+
+
+	PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained);
+
 
 	/**
 	Computes point cloud surface normals using the provided los and neighborhood query radius
