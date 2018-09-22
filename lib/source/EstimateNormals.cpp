@@ -14,15 +14,9 @@ void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(int N_neighbors
 
 
 
-
-
-
-
-
-
 	#pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> pc .  size(); ++i) {
-		std::cout << omp_get_num_threads() << std::endl;
+
 		// Get the N nearest neighbors to this point
 		auto closest_points = this -> pc.get_closest_N_points(this -> pc.get_point_coordinates(i), N_neighbors);
 
