@@ -36,7 +36,7 @@ int main() {
 	arma::vec::fixed<3> los = {0,-1,0};
 	start = std::chrono::steady_clock::now();
 
-	normal_estimator.estimate_normals(5,los);
+	normal_estimator.estimate_normals(7e-3,los);
 	end = std::chrono::steady_clock::now();
 
 	elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(end - start).count();
