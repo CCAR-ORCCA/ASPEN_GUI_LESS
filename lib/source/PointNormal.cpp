@@ -161,4 +161,6 @@ void PointNormal::set_global_index (int global_index){
 
 
 
-
+const arma::vec & PointNormal::get_point_coordinates_ref() const{
+	return this -> point;
+}

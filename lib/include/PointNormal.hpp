@@ -18,6 +18,8 @@ public:
 	double distance(PointNormal * other_point) const ;
 
 	arma::vec get_point_coordinates() const;
+	const arma::vec & get_point_coordinates_ref() const;
+
 	arma::vec get_normal_coordinates() const;
 
 	void set_normal_coordinates(arma::vec normal) ;
@@ -62,6 +64,7 @@ public:
 	void set_global_index (int global_index);
 
 	std::vector<int> get_neighborhood(double radius);
+
 
 
 protected:

@@ -1,44 +1,36 @@
-#ifndef HEADER_KDTreePC_simple
-#define HEADER_KDTreePC_simple
+#ifndef HEADER_KDTree
+#define HEADER_KDTree
 
 #include <memory>
 #include <vector>
 #include <armadillo>
-class PC;
 
-// Implementation of a KDTree based on the
-// very informative post found at
-// http://andrewd.ces.clemson.edu/courses/cpsc805/references/nearest_search.pdf
-
-class KDTreePC {
+template <class T> class KDTree {
 
 public:
-	std::shared_ptr<KDTreePC> left;
-	std::shared_ptr<KDTreePC> right;
+	std::shared_ptr<KDTree> left;
+	std::shared_ptr<KDTree> right;
 	std::vector<int> indices;
 
-	KDTreePC(PC * owning_pc);
+	KDTree(T * owner);
 
-	std::shared_ptr<KDTreePC> build(const std::vector< int > & indices, int depth);
-
-	void build_alt(const std::vector< int > & indices, int depth) ;
+	void build(const std::vector< int > & indices, int depth) ;
 
 	void closest_point_search(const arma::vec & test_point,
-	const std::shared_ptr<KDTreePC> & node,
+	const std::shared_ptr<KDTree> & node,
 	int & best_guess_index,
 	double & distance) const;
 
 	void closest_N_point_search(const arma::vec & test_point,
 		const unsigned int & N_points,
-		const std::shared_ptr<KDTreePC> & node,
+		const std::shared_ptr<KDTree> & node,
 		double & distance,
 		std::map<double, int > & closest_points) const;
 
 	void radius_point_search(const arma::vec & test_point,
-		const std::shared_ptr<KDTreePC> & node,
+		const std::shared_ptr<KDTree> & node,
 		const double & distance,
 		std::vector< int > & closest_points);
-
 
 	int get_depth() const;
 	void set_depth(int depth);
@@ -63,7 +55,7 @@ protected:
 	unsigned int axis = 0;
 	bool cluttered = false;
 
-	PC * owning_pc;
+	T * owner;
 
 };
 

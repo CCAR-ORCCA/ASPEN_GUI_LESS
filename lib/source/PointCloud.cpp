@@ -1,0 +1,187 @@
+#include "PointCloud.hpp"
+#include "PointNormal.hpp"
+
+#define PC_DEBUG_FLAG 1
+
+
+
+template <class T> PointCloud<T>::PointCloud(const std::vector< T > & points) {
+
+this -> points.clear();
+	// The valid measurements used to form the point cloud are extracted
+for (unsigned int i = 0; i < points.size(); ++i) {
+
+	this -> points[i].set_global_index(i);
+	this -> points.push_back(points[i]);
+
+}
+
+}
+
+template <class T> int PointCloud<T>::get_closest_point(const arma::vec & test_point) const {
+
+double distance = std::numeric_limits<double>::infinity();
+int closest_point_index = -1;
+
+this -> kdt  -> closest_point_search(test_point,
+	this -> kdt,
+	closest_point_index,
+	distance);
+
+return closest_point_index;
+
+}
+
+
+
+template <class T> std::map<double,int > PointCloud<T>::get_closest_N_points(const arma::vec & test_point, 
+const unsigned int & N) const {
+
+	std::map<double,int > closest_points;
+	double distance = std::numeric_limits<double>::infinity();
+
+	this -> kdt -> closest_N_point_search(test_point,N,this -> kdt,distance,closest_points);
+
+	return closest_points;
+
+}
+
+template <class T> std::string PointCloud<T>::get_label() const{
+return this -> label;
+}
+
+
+template <class T> PointCloud<T>::PointCloud(std::vector< std::shared_ptr<PointCloud< T > > > & pcs,int points_retained){
+
+this -> points.clear();
+double downsampling_factor = 1;
+int N_points_total = 0;
+for (unsigned int i = 0; i < pcs.size();++i){
+
+	N_points_total += pcs[i] -> size();
+}
+
+if (points_retained > 0){
+	downsampling_factor = double(points_retained) / N_points_total;
+}
+
+for (unsigned int i = 0; i < pcs.size();++i){
+
+	arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> size() - 1);		
+	random_order = arma::shuffle(random_order);	
+
+	int points_to_keep = (int)	(downsampling_factor *  pcs[i] -> size());
+
+	for (unsigned int p = 0; p < points_to_keep; ++p){
+		this -> points.push_back(pcs[i] -> get_point(random_order(p)));
+		this -> points.back().set_global_index((int)(this -> points.size()) - 1);
+	}
+
+}
+
+
+}
+
+
+template <class T> const T & PointCloud<T>::get_point(unsigned int index) const{
+return this -> points[index];
+}
+
+template <class T>  T & PointCloud<T>::get_point(unsigned int index) {
+return this -> points[index];
+}
+
+
+template <class T>  unsigned int PointCloud<T>::size() const{
+return this -> points.size();
+}
+
+
+template <class T> std::vector<int> PointCloud<T>::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
+std::vector< int > neighbors_indices;
+this -> kdt -> radius_point_search(test_point,this -> kdt,radius,neighbors_indices);
+return neighbors_indices;
+}
+
+
+template <class T> void PointCloud<T>::push_back(const T & point){
+this -> points.push_back(point);
+}
+
+template <class T> const arma::vec & PointCloud<T>::get_point_coordinates(int i) const{
+return this -> points[i].get_point_coordinates_ref();
+}
+
+
+
+template <> 
+PointCloud<PointNormal>::PointCloud(std::string filename){
+
+	std::cout << "Reading " << filename << std::endl;
+
+	std::ifstream ifs(filename);
+
+	if (!ifs.is_open()) {
+		std::cout << "There was a problem opening the input file!\n";
+		throw;
+	}
+
+	std::string line;
+	std::vector<arma::vec> points;
+	std::vector<std::vector<unsigned int> > shape_patch_indices;
+
+
+	while (std::getline(ifs, line)) {
+
+		std::stringstream linestream(line);
+
+
+		char type;
+		linestream >> type;
+
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+			continue;
+		}
+
+		else if (type == 'v') {
+			double vx, vy, vz;
+			linestream >> vx >> vy >> vz;
+			arma::vec vertex = {vx, vy, vz};
+			points.push_back(vertex);
+
+		}
+
+		else {
+			throw(std::runtime_error(" unrecognized character in input file : "  + std::to_string(type)));
+		}
+
+	}
+
+	this -> points.clear();
+	for (unsigned int index = 0; index < points.size(); ++index) {
+		this -> points.push_back(PointNormal(points[index],index));
+	}
+
+
+}
+
+
+template <class T> void PointCloud<T>::build_kdtree(){
+	std::vector<int> indices;
+	for (int i =0; i < this -> size(); ++i){
+		indices.push_back(i);
+	}
+
+	this -> kdt = std::make_shared<KDTree<PointCloud<T>>>(KDTree<PointCloud<T>>(this));
+	this -> kdt -> build(indices,0);
+}
+
+
+
+
+
+
+
+
+template class PointCloud<PointNormal>;
+

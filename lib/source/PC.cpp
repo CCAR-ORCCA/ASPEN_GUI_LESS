@@ -1094,11 +1094,6 @@ arma::vec PC::get_point_coordinates(unsigned int index) const{
 }
 
 
-	/**
-	Returns queried point normal coordinates
-	@param index Index of the queried point
-	@return queried point normal coordinates
-	*/
 arma::vec PC::get_normal_coordinates(unsigned int index) const{
 	return this -> points_normals[index].get_normal_coordinates();
 }
@@ -1108,22 +1103,17 @@ unsigned int PC::size() const{
 }
 
 void PC::build_kd_tree_points(){
-
 	std::vector<int> indices;
 	for (int i =0; i < this -> size(); ++i){
 		indices.push_back(i);
 	}
 
-	this -> kdt_points = std::make_shared<KDTreePC>(KDTreePC(this));
-	this -> kdt_points -> build_alt(indices,0);
-
-	std::cout << "kd tree has " << this -> kdt_points -> size() << " indices stored\n";
-
+	this -> kdt_points = std::make_shared<KDTree<PC>>(KDTree<PC>(this));
+	this -> kdt_points -> build(indices,0);
 }
 
 
 std::vector<int> PC::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
-
 	std::vector< int > neighbors_indices;
 	this -> kdt_points -> radius_point_search(test_point,this -> kdt_points,radius,neighbors_indices);
 	return neighbors_indices;

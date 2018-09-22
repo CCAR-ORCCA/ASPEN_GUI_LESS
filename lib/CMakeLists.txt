@@ -156,6 +156,7 @@ add_library(${LIB_NAME} SHARED
 	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
 	source/Element.cpp
+	source/EstimateNormals.cpp
 	source/EventFunction.cpp
 	source/ExtendedKalmanFilter.cpp
 	source/Facet.cpp
@@ -167,13 +168,14 @@ add_library(${LIB_NAME} SHARED
 	source/IterativeClosestPoint.cpp
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
-	source/KDTreePC.cpp
+	source/KDTree.cpp
 	source/KDTreeShape.cpp
 	source/KDTreeControlPoints.cpp
 	source/KDTreeDescriptors.cpp
 	source/Lidar.cpp
 	source/NavigationFilter.cpp
 	source/Observations.cpp
+	source/PointCloud.cpp
 	source/PointDescriptor.cpp
 	source/PC.cpp
 	source/PFH.cpp

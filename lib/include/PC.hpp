@@ -4,8 +4,8 @@
 #include <armadillo>
 #include <memory>
 #include <cassert>
-
-#include "KDTreePC.hpp"
+	
+#include "KDTree.hpp"
 #include "KDTreeDescriptors.hpp"
 #include "Ray.hpp"
 #include "PointNormal.hpp"
@@ -278,14 +278,13 @@ protected:
 
 	void prune_features() ;
 
-
 	// static std::vector<PointPair> generate_random_correspondance_table(const std::vector<std::shared_ptr< PointNormal > > & neighborhood,
 	// 	const std::map<std::shared_ptr< PointNormal >, std::map<double,PointNormal * > > & pc0_to_pc1_potential_matches);
 	// static double compute_neighborhood_consensus_ll(const std::vector<PointPair> & correspondance_table);
 	
 	std::vector<PointNormal> points_normals;
 
-	std::shared_ptr<KDTreePC> kdt_points;
+	std::shared_ptr<KDTree<PC> > kdt_points;
 	std::shared_ptr<KDTreeDescriptors> kdt_descriptors;
 
 	arma::vec mean_feature_histogram;
@@ -293,7 +292,6 @@ protected:
 	std::string label;
 
 	// double average_neighborhood_size;
-
 
 };
 
