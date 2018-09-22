@@ -10,6 +10,24 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 }
 
+
+
+void ICPBase::register_pc(
+	const double rel_tol,
+	const double stol,
+	const arma::mat::fixed<3,3> & dcm_0,
+	const arma::vec::fixed<3> & X_0){
+
+	this -> rel_tol = rel_tol;
+	this -> s_tol = stol;
+
+
+	this -> register_pc(dcm_0,X_0);
+
+
+}
+
+
 arma::vec::fixed<3> ICPBase::get_x() const{
 	return this -> x;
 }
@@ -70,7 +88,7 @@ void ICPBase::set_save_rigid_transform(const arma::vec::fixed<3> & x_save,
 
 
 
-void ICPBase::register_pc(arma::mat::fixed<3,3> dcm_0,arma::vec::fixed<3> X_0){
+void ICPBase::register_pc(const arma::mat::fixed<3,3> & dcm_0,const arma::vec::fixed<3> & X_0){
 
 	double J  = std::numeric_limits<double>::infinity();
 	double J_0  = std::numeric_limits<double>::infinity();
@@ -119,7 +137,7 @@ void ICPBase::register_pc(arma::mat::fixed<3,3> dcm_0,arma::vec::fixed<3> X_0){
 
 				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
 				#if ICP_DEBUG
-				ICPBase::save_pairs(this -> point_pairs,"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt");
+				ICPBase::save_pairs(this -> point_pairs,"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",this -> pc_source,this -> pc_destination);
 				#endif 
 
 				next_h = false;
@@ -222,7 +240,7 @@ void ICPBase::register_pc(arma::mat::fixed<3,3> dcm_0,arma::vec::fixed<3> X_0){
 	std::cout << "\tmrp: " << this -> mrp.t();
 	std::cout << "\tx: " << this -> x.t();
 	std::cout << "\tResiduals: " << J << std::endl;
-	ICPBase::save_pairs(this -> point_pairs,"icp_pairs.txt",RBK::mrp_to_dcm(this -> mrp),this -> x);
+	ICPBase::save_pairs(this -> point_pairs,"icp_pairs.txt",this -> pc_source, this -> pc_destination,RBK::mrp_to_dcm(this -> mrp),this -> x);
 
 	#endif
 
@@ -243,8 +261,8 @@ void ICPBase::register_pc(arma::mat::fixed<3,3> dcm_0,arma::vec::fixed<3> X_0){
 void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 	double fraction_inliers_requested,
 	unsigned int iter_ransac_max,
-	arma::mat::fixed<3,3> dcm_0,
-	arma::vec::fixed<3> X_0 ){
+	const arma::mat::fixed<3,3> &  dcm_0,
+	const arma::vec::fixed<3> &  X_0 ){
 
 	double J_best_RANSAC = std::numeric_limits<double>::infinity();
 
@@ -268,11 +286,11 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PointDescriptor::Type::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 	else{
-		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PointDescriptor::Type::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 
@@ -281,11 +299,11 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PointDescriptor::Type::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 	else{
-		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PointDescriptor::Type::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 
@@ -308,7 +326,7 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 	elapsed_seconds = end-start;
 	std::cout << "Time elapsed matching features: " << elapsed_seconds.count()<< " (s)"<< std::endl;
 	std::cout << "Total number of matches: "+ std::to_string(all_matches.size()) + " \n";
-	ICPBase::save_pairs(all_matches,"all_pairs.txt");
+	ICPBase::save_pairs(all_matches,"all_pairs.txt",this -> pc_source,this -> pc_destination);
 	std::cout << "Weighing the " << all_matches.size() << " pairs...\n";
 	#endif
 
@@ -504,8 +522,8 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 	std::cout << "\tx: " << x_best_RANSAC.t();
 	std::cout << "\tResiduals: " << J_best_RANSAC << std::endl;
 	std::cout << "\tUsing a total of " << best_pairs_RANSAC.size() << " pairs\n";
-	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs_aligned.txt",dcm_best_RANSAC,x_best_RANSAC);
-	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs.txt");
+	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs_aligned.txt",this -> pc_source,this -> pc_destination,dcm_best_RANSAC,x_best_RANSAC);
+	ICPBase::save_pairs(best_pairs_RANSAC,"ransac_pairs.txt",this -> pc_source,this -> pc_destination);
 	best_pairs_RANSAC_weights.save("best_pairs_RANSAC_weights.txt",arma::raw_ascii);
 	#endif
 
@@ -518,8 +536,8 @@ void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
 
 void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 	int N_possible_matches,int N_tentative_source_points,
-	arma::mat::fixed<3,3> dcm_0,
-	arma::vec::fixed<3> X_0 ){
+	const arma::mat::fixed<3,3>  & dcm_0,
+	const arma::vec::fixed<3> &  X_0 ){
 
 	double J_best = std::numeric_limits<double>::infinity();
 	arma::mat::fixed<3,3> dcm_best;
@@ -541,11 +559,11 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PointDescriptor::Type::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 	else{
-		this -> pc_destination -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
+		this -> pc_destination -> compute_feature_descriptors(PointDescriptor::Type::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_destination");
 	}
 
@@ -554,11 +572,11 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 	#endif
 
 	if (this -> use_FPFH){
-		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PointDescriptor::Type::FPFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 	else{
-		this -> pc_source -> compute_feature_descriptors(PC::FeatureDescriptor::PFHDescriptor,this -> keep_correlations,
+		this -> pc_source -> compute_feature_descriptors(PointDescriptor::Type::PFHDescriptor,this -> keep_correlations,
 			this -> N_bins,this -> neighborhood_radius,"pc_source");
 	}
 
@@ -572,8 +590,8 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 	start = std::chrono::system_clock::now();
 	#endif
 
-	std::vector< std::shared_ptr<PointNormal> > active_source_points;
-	std::map<std::shared_ptr<PointNormal> , std::vector<std::shared_ptr<PointNormal> > > possible_matches;
+	std::vector< int > active_source_points;
+	std::map<int , std::vector<int > > possible_matches;
 
 	PC::find_N_closest_pch_matches_kdtree(this -> pc_source,this -> pc_destination,N_possible_matches,
 		active_source_points,possible_matches);
@@ -601,7 +619,7 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 		// Drawing random pairs from the matches
 		this -> point_pairs.clear();
 
-		std::vector<std::shared_ptr<PointNormal > > tentative_source_points;
+		std::vector<int > tentative_source_points;
 
 		// The following draws N_sample source points sufficiently separated from 
 		// one another
@@ -623,7 +641,7 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 				bool insert = true;
 
 				for (int k = 0; k < tentative_source_points.size(); ++k){
-					if (arma::norm(p_source -> get_point() - tentative_source_points.at(k) -> get_point()) < 3 * this -> neighborhood_radius){
+					if (arma::norm( this -> pc_source -> get_point_coordinates(p_source) - this -> pc_source -> get_point_coordinates(tentative_source_points.at(k))) < 3 * this -> neighborhood_radius){
 						
 						insert = false;
 
@@ -654,7 +672,7 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 			auto p_source = tentative_source_points[k];
 			auto p_destination = possible_matches[p_source][random_index(0)];
 
-			PointPair formed_pair = std::make_pair(p_source,p_destination);
+			PointPair formed_pair = std::make_pair(k,p_destination);
 			this -> point_pairs.push_back(formed_pair);
 		}
 
@@ -752,8 +770,8 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 	std::cout << "\tx: " << x_best.t();
 	std::cout << "\tResiduals: " << J_best << std::endl;
 	std::cout << "\tUsing a total of " << best_pairs.size() << " pairs\n";
-	ICPBase::save_pairs(best_pairs,"ransac_pairs_aligned.txt",dcm_best,x_best);
-	ICPBase::save_pairs(best_pairs,"ransac_pairs.txt");
+	ICPBase::save_pairs(best_pairs,"ransac_pairs_aligned.txt",this -> pc_source,this -> pc_destination,dcm_best,x_best);
+	ICPBase::save_pairs(best_pairs,"ransac_pairs.txt",this -> pc_source,this -> pc_destination);
 	#endif
 
 	this -> x = x_best;
@@ -773,35 +791,20 @@ void ICPBase::register_pc_bf(unsigned int iter_bf_max,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ICPBase::save_pairs(std::vector<PointPair> pairs,std::string path,const arma::mat::fixed<3,3> & dcm,const arma::vec::fixed<3> & x){
+void ICPBase::save_pairs(const std::vector<PointPair> & pairs,
+	std::string path,
+	std::shared_ptr<PC> pc_source,
+	std::shared_ptr<PC> pc_destination,
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x){
 
 	arma::mat pairs_m(pairs.size(),7);
 
 	for (int i = 0; i < pairs.size(); ++i){
 
-		pairs_m.submat(i,0,i,2) = (dcm * pairs[i].first -> get_point() + x).t();
-		pairs_m.submat(i,3,i,5) = pairs[i].second -> get_point().t();
-		pairs_m(i,6) = pairs[i].first -> features_similarity_distance(pairs[i].second);
+		pairs_m.submat(i,0,i,2) = (dcm * pc_source -> get_point_coordinates( pairs[i].first)  + x).t();
+		pairs_m.submat(i,3,i,5) = pc_destination -> get_point_coordinates( pairs[i].second) .t();
+		pairs_m(i,6) = -1;
 
 	}
 
@@ -882,8 +885,10 @@ arma::vec ICPBase::weigh_ransac_pairs(const std::vector<PointPair> & matched_pai
 
 	for (int i = 0; i < matched_pairs.size(); ++i){
 
-		double likelihood = this -> compute_point_weight(this -> pc_source, matched_pairs[i].first,3 * radius)
-		* this -> compute_point_weight(this -> pc_destination, matched_pairs[i].second,3 * radius);
+		double likelihood = this -> compute_point_weight(this -> pc_source,matched_pairs[i].first,
+			this -> pc_destination,3 * radius)
+		* this -> compute_point_weight(this -> pc_destination, matched_pairs[i].second,
+			this -> pc_source,3 * radius);
 
 		if (likelihood > 0){
 			// weights(i) = std::max(std::log(likelihood),0.);
@@ -905,16 +910,21 @@ arma::vec ICPBase::weigh_ransac_pairs(const std::vector<PointPair> & matched_pai
 
 }
 
-double ICPBase::compute_point_weight(const std::shared_ptr<PC> & origin_pc, const std::shared_ptr<PointNormal> origin_point,
+double ICPBase::compute_point_weight(const std::shared_ptr<PC> & origin_pc, const int & origin_point,
+	const std::shared_ptr<PC> & target_pc,
 	const double & radius) const{
 
-	auto origin_point_neighborhood = origin_pc -> get_points_in_sphere(origin_point -> get_point(), radius);
+
+
+	const PointNormal p = origin_pc -> get_point(origin_point);
+
+	auto origin_point_neighborhood = origin_pc -> get_nearest_neighbors_radius(p.get_point_coordinates(), radius);
 	arma::vec::fixed<2> mean_angles = {0,0};
 	arma::mat::fixed<2,2> covariance = arma::zeros<arma::mat>(2,2);
 	std::vector<arma::vec> angles_distribution;
 
-	PointNormal * self_match = origin_point -> get_match() ;
-	arma::vec self_pair_direction = arma::normalise(self_match -> get_point() - origin_point -> get_point() );
+	int self_match = p.get_match() ;
+	arma::vec self_pair_direction = arma::normalise(target_pc -> get_point_coordinates(self_match) - p.get_point_coordinates() );
 
 	double self_alpha = std::atan2(self_pair_direction(1),self_pair_direction(0));
 	double self_beta = std::atan2(self_pair_direction(2),arma::norm(self_pair_direction.subvec(0,1)));
@@ -923,9 +933,10 @@ double ICPBase::compute_point_weight(const std::shared_ptr<PC> & origin_pc, cons
 
 	for (int j = 0; j < origin_point_neighborhood.size(); ++j){
 
-		if (origin_point_neighborhood[j] -> get_match() != nullptr){
-			PointNormal * match = origin_point_neighborhood[j] -> get_match() ;
-			arma::vec pair_direction = arma::normalise(match -> get_point() - origin_point_neighborhood[j] -> get_point() );
+		int match = origin_pc -> get_point(origin_point_neighborhood[j]).get_match();
+		
+		if (match < 0){
+			arma::vec pair_direction = arma::normalise(target_pc -> get_point_coordinates(match) - origin_pc -> get_point_coordinates(origin_point_neighborhood[j] ) );
 
 			double alpha = std::atan2(pair_direction(1),pair_direction(0));
 			double beta = std::atan2(pair_direction(2),arma::norm(pair_direction.subvec(0,1)));

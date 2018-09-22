@@ -10,7 +10,7 @@ FPFH::FPFH(const std::shared_ptr<PointNormal> & query_point,const std::vector<st
 	double distance_to_closest_neighbor = query_point -> get_SPFH() -> get_distance_to_closest_neighbor();
 	
 	for (unsigned int k = 0 ; k < points. size(); ++k){
-		double distance = arma::norm(query_point -> get_point() - points . at(k) -> get_point());
+		double distance = arma::norm(query_point -> get_point_coordinates() - points . at(k) -> get_point_coordinates());
 		
 		if (distance>0){
 			// this -> histogram += 1. * points. at(k) -> get_SPFH() -> get_histogram() / (distance * points.size());	

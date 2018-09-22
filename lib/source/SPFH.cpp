@@ -26,7 +26,7 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 
 	int non_trivial_neighbors_count = 0;
 	for (int j = 0; j < points.size(); ++j){
-		double distance = arma::norm(points.at(j) -> get_point() - query_point -> get_point());
+		double distance = arma::norm(points.at(j) -> get_point_coordinates() - query_point -> get_point_coordinates());
 
 		if (distance > 0){
 
@@ -35,7 +35,7 @@ SPFH::SPFH(std::shared_ptr<PointNormal> & query_point,
 			this -> distance_to_closest_neighbor = std::min(this-> distance_to_closest_neighbor,distance);
 
 			this -> compute_darboux_frames_local_hist( alpha_bin_index,phi_bin_index,theta_bin_index, N_bins,
-				query_point -> get_point(),query_point -> get_normal_coordinates(),points.at(j) -> get_point(),points.at(j) -> get_normal_coordinates());
+				query_point -> get_point_coordinates(),query_point -> get_normal_coordinates(),points.at(j) -> get_point_coordinates(),points.at(j) -> get_normal_coordinates());
 
 
 			if (keep_correlations){

@@ -1,11 +1,9 @@
 #include "BundleAdjuster.hpp"
 #include <armadillo>
-#include "ICP.hpp"
+#include "IterativeClosestPointToPlane.hpp"
 #include "boost/progress.hpp"
 #include "DebugFlags.hpp"
 #include "FlyOverMap.hpp"
-
-
 
 
 
@@ -193,12 +191,12 @@ void BundleAdjuster::create_pairs( int & previous_closure_index){
 	for (int tf = local_pc_index_to_global_pc_index.size() - 1 ; tf > ground_index ; --tf){
 		
 		try{
-			ICP::compute_pairs(point_pairs,
+			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]),
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]),
 				this -> h);
 
-			double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> get_size());
+			double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> size());
 
 			int N_pairs = (int)(std::pow(2, p - this -> h));
 
@@ -266,12 +264,12 @@ void BundleAdjuster::create_pairs( int & previous_closure_index){
 
 		std::vector<PointPair> point_pairs;
 
-		ICP::compute_pairs(point_pairs,
+		IterativeClosestPointToPlane::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),this -> h);				
-		double error = ICP::compute_rms_residuals(point_pairs);
+		double error = IterativeClosestPointToPlane::compute_rms_residuals(point_pairs);
 
-		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> get_size());
+		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> size());
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		BundleAdjuster::PointCloudPair pair;
@@ -310,7 +308,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
 	}
 	
-	ICP::compute_pairs(point_pairs,
+	IterativeClosestPointToPlane::compute_pairs(point_pairs,
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
 		this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
 		0,
@@ -323,7 +321,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	#if BUNDLE_ADJUSTER_DEBUG
 	std::cout << " - Subproblem : " << point_cloud_pair.S_k << " / " << point_cloud_pair.D_k << std::endl;
 	std::cout << " - Number of pairs: " << point_pairs.size() << std::endl;
-	std::cout << " - Residuals: " << ICP::compute_rms_residuals(point_pairs,dcm_S,x_S,dcm_D,x_D) << std::endl;
+	std::cout << " - Residuals: " << IterativeClosestPointToPlane::compute_rms_residuals(point_pairs,dcm_S,x_S,dcm_D,x_D) << std::endl;
 	#endif
 
 	arma::rowvec H_ki;
@@ -345,7 +343,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
 
-		double y_ki = ICP::compute_normal_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
+		double y_ki = IterativeClosestPointToPlane::compute_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D);
 		arma::mat n = point_pairs[i].second -> get_normal_coordinates();
 
 		if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
@@ -419,7 +417,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
 		}
 
-		ICP::compute_pairs(point_pairs,
+		IterativeClosestPointToPlane::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
 			this -> h,
@@ -428,21 +426,21 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			dcm_D ,
 			x_D );
 
-		double rms_error = ICP::compute_rms_residuals(point_pairs,
+		double rms_error = IterativeClosestPointToPlane::compute_rms_residuals(point_pairs,
 			dcm_S ,
 			x_S,
 			dcm_D ,
 			x_D);
 
 
-		double mean_error = std::abs(ICP::compute_mean_residuals(point_pairs,
+		double mean_error = std::abs(IterativeClosestPointToPlane::compute_mean_residuals(point_pairs,
 			dcm_S ,
 			x_S,
 			dcm_D ,
 			x_D));
 
 
-		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[this -> point_cloud_pairs[k].S_k]) -> get_size());
+		double p = std::log2(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[this -> point_cloud_pairs[k].S_k]) -> size());
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 		
@@ -463,7 +461,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			worst_Sk_mean = this -> point_cloud_pairs[k].S_k;
 		}
 
-		mean_rms_error += rms_error / this -> point_cloud_pairs.size();
+		mean_rms_error += rms_error / this -> point_cloud_pairs.size(); 
 
 		
 		std::cout << " -- (" << label_S_k << " , " << label_D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << " point pairs" << std::endl;
@@ -629,8 +627,6 @@ void BundleAdjuster::save_connectivity() const{
 
 	for (int k = 0; k < M; ++k){
 		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
-
-
 
 		connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
 		connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;

@@ -163,9 +163,7 @@ add_library(${LIB_NAME} SHARED
 	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
 	source/FPFH.cpp
-
 	source/ICPBase.cpp
-	source/ICP.cpp
 	source/IterativeClosestPoint.cpp
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp

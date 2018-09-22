@@ -349,20 +349,20 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 	std::cout << "Finding footpoints ...";
 
 
-	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		Footpoint footpoint;
 		footpoint.Ptilde = this -> pc -> get_point_coordinates(i);
 		pc_to_footpoint.push_back(footpoint);
 	}
-	boost::progress_display progress(this -> pc -> get_size());
+	boost::progress_display progress(this -> pc -> size());
 	
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		this -> find_footpoint_omp(pc_to_footpoint[i]);
 		++progress;
 	}
 
-	for (unsigned int i = 0; i < this -> pc -> get_size(); ++i){
+	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		if (pc_to_footpoint[i].element != nullptr){
 			footpoints.push_back(pc_to_footpoint[i]);
 		}

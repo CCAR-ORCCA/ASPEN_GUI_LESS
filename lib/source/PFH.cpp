@@ -32,7 +32,7 @@ PFH::PFH(std::vector<std::shared_ptr<PointNormal> > & points,
 			int alpha_bin_index,phi_bin_index,theta_bin_index;
 			
 			this -> compute_darboux_frames_local_hist( alpha_bin_index,phi_bin_index,theta_bin_index, N_bins,
-				points.at(i) -> get_point(),points.at(i) -> get_normal_coordinates(),points.at(j) -> get_point(),points.at(j) -> get_normal_coordinates());
+				points.at(i) -> get_point_coordinates(),points.at(i) -> get_normal_coordinates(),points.at(j) -> get_point_coordinates(),points.at(j) -> get_normal_coordinates());
 
 			if (keep_correlations){
 				int global_bin_index = theta_bin_index +  alpha_bin_index * (N_bins) + phi_bin_index * (N_bins * N_bins);

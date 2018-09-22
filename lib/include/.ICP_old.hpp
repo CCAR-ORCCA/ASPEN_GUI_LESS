@@ -7,8 +7,6 @@
 #include "OMP_flags.hpp"
 #include "DebugFlags.hpp"
 
-typedef typename std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > PointPair ;
-
 
 class ICP {
 public:

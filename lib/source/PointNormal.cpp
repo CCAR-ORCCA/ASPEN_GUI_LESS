@@ -1,22 +1,20 @@
 #include "PointNormal.hpp"
 
 
-PointNormal::PointNormal(arma::vec point) {
+PointNormal::PointNormal(arma::vec point,int index) {
+	this -> global_index = index;
 	this -> point = point;
 }
 
-PointNormal::PointNormal(arma::vec point, arma::vec normal) {
+PointNormal::PointNormal(arma::vec point, arma::vec normal,int index) {
 	this -> point = point;
 	this -> normal = normal;
-}
-
-PointNormal::PointNormal(arma::vec point, int inclusion_counter) {
-	this -> point = point;
-	this -> inclusion_counter = inclusion_counter;
+	this -> global_index = index;
 }
 
 
-arma::vec PointNormal::get_point() const {
+
+arma::vec PointNormal::get_point_coordinates() const {
 	return this -> point;
 }
 
@@ -25,18 +23,24 @@ arma::vec PointNormal::get_normal_coordinates() const {
 }
 
 
-void PointNormal::set_normal(arma::vec normal) {
+void PointNormal::set_normal_coordinates(arma::vec normal) {
 	this -> normal = normal;
 }
 
 
-void PointNormal::set_point(arma::vec point) {
+void PointNormal::set_point_coordinates(arma::vec point) {
 	this -> point = point;
 }
 
-double PointNormal::distance(std::shared_ptr<PointNormal> other_point) const {
-	return arma::norm(this -> point - other_point -> get_point());
+double PointNormal::distance(const std::shared_ptr<PointNormal> & other_point) const {
+	return arma::norm(this -> point - other_point -> get_point_coordinates());
 }
+
+
+double PointNormal::distance(PointNormal * other_point) const {
+	return arma::norm(this -> point - other_point -> get_point_coordinates());
+}
+
 
 void PointNormal::decrement_inclusion_counter() {
 	this -> inclusion_counter = this -> inclusion_counter - 1;
@@ -55,7 +59,7 @@ PointDescriptor PointNormal::get_descriptor() const{
 }
 
 
-PointDescriptor * PointNormal::get_descriptor_ptr(){
+const PointDescriptor * PointNormal::get_descriptor_ptr() const{
 	return &this -> descriptor;
 }
 
@@ -105,11 +109,11 @@ void PointNormal::set_is_valid_feature(bool valid_feature){
 }
 
 
-PointNormal *  PointNormal::get_match() const{
+int  PointNormal::get_match() const{
 	return this -> match;
 }
 
-void PointNormal::set_match(PointNormal * match){
+void PointNormal::set_match(int match){
 	this -> match = match;
 }
 
@@ -124,6 +128,19 @@ void PointNormal::set_neighborhood(const std::vector<std::shared_ptr<PointNormal
 	}
 
 }
+
+
+void PointNormal::set_neighborhood(const std::vector<PointNormal * > & neighborhood){
+	
+	this -> neighborhood.clear();
+
+	for (auto it = neighborhood.begin(); it != neighborhood.end(); ++it){
+		double distance_to_point = this -> distance(*it);
+		this -> neighborhood[distance_to_point] = (*it) -> get_global_index();
+	}
+
+}
+
 
 std::vector<int> PointNormal::get_neighborhood(double radius){
 	std::vector<int> neighborhood;

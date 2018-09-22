@@ -6,7 +6,8 @@
 #include "FrameGraph.hpp"
 #include "ShapeBuilderArguments.hpp"
 #include "PC.hpp"
-#include "ICP.hpp"
+#include "ICPBase.hpp"
+#include "IterativeClosestPointToPlane.hpp"
 #include "BundleAdjuster.hpp"
 #include "CustomException.hpp"
 #include "ControlPoint.hpp"
@@ -130,7 +131,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the bundle adjustment
 			double longitude,latitude;
 			
-			ICP icp_pc(this -> destination_pc, this -> source_pc);
+			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 
 			icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
 
@@ -483,7 +484,8 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 
 
-				ICP icp_pc(this -> destination_pc, this -> source_pc,false,this -> LN_t0.t(),this -> x_t0);
+				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
+				icp_pc.set_save_rigid_transform(this -> LN_t0.t(),this -> x_t0);
 				icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
 
 

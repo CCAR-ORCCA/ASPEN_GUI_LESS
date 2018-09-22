@@ -10,23 +10,22 @@ class PointNormal {
 
 public:
 
-	PointNormal(arma::vec point);
-	PointNormal(arma::vec point, int inclusion_counter) ;
-	PointNormal(arma::vec point, arma::vec normal);
+	PointNormal(arma::vec point,int index = 0);
+	PointNormal(arma::vec point, arma::vec normal,int index = 0);
 
 
-	double distance(std::shared_ptr<PointNormal> other_point) const;
+	double distance(const std::shared_ptr<PointNormal> & other_point) const;
+	double distance(PointNormal * other_point) const ;
 
-	arma::vec get_point() const;
-
+	arma::vec get_point_coordinates() const;
 	arma::vec get_normal_coordinates() const;
 
-	void set_normal(arma::vec normal) ;
-	void set_point(arma::vec point) ;
+	void set_normal_coordinates(arma::vec normal) ;
+	void set_point_coordinates(arma::vec point) ;
 	void set_descriptor(const PointDescriptor & descriptor) ;
 	
 	PointDescriptor get_descriptor() const;
-	PointDescriptor * get_descriptor_ptr();
+	const PointDescriptor * get_descriptor_ptr() const;
 
 	arma::vec get_descriptor_histogram() const;
 	arma::vec get_spfh_histogram() const;
@@ -53,10 +52,11 @@ public:
 	void set_is_matched(bool value);
 
 
-	PointNormal * get_match() const;
-	void set_match(PointNormal * match);
+	int get_match() const;
+	void set_match(int match);
 
 	void set_neighborhood(const std::vector<std::shared_ptr<PointNormal> > & neighborhood);
+	void set_neighborhood(const std::vector<PointNormal * > & neighborhood);
 
 	int get_global_index() const;
 	void set_global_index (int global_index);
@@ -70,8 +70,8 @@ protected:
 	arma::vec normal;
 
 	int inclusion_counter = 0;
+	int match = -1;
 	PointDescriptor descriptor;
-	PointNormal * match = nullptr;
 	SPFH spfh;
 	bool is_valid_feature = true;
 	int global_index;

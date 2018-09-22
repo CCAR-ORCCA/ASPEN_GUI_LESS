@@ -8,12 +8,14 @@
 #include "DebugFlags.hpp"
 #include <RigidBodyKinematics.hpp>
 
-typedef typename std::pair<std::shared_ptr<PointNormal>, std::shared_ptr<PointNormal> > PointPair ;
-
 class ICPBase {
 public:
 
 	ICPBase(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source);
+
+
+
+
 
 	arma::vec::fixed<3> get_x() const;
 	arma::mat::fixed<3,3> get_dcm() const;
@@ -39,23 +41,29 @@ public:
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
+
+	void register_pc(
+		const double rel_tol,
+		const double stol,
+		const arma::mat::fixed<3,3>  & dcm_0,
+		const arma::vec::fixed<3> &  X_0);
 	
 	void register_pc(
-		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
-		arma::vec::fixed<3> X_0  = arma::zeros<arma::vec>(3));
+		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3> & X_0  = arma::zeros<arma::vec>(3));
 
 	void register_pc_RANSAC(double fraction_inliers_used,
 		double fraction_inliers_requested,
 		unsigned int iter_ransac_max,
-		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
-		arma::vec::fixed<3> X_0  = arma::zeros<arma::vec>(3));
+		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3> & X_0  = arma::zeros<arma::vec>(3));
 
 
 	void register_pc_bf(unsigned int iter_bf_max,
 		int N_possible_matches,
 		int N_tentative_source_points,
-		arma::mat::fixed<3,3> dcm_0 = arma::eye<arma::mat>(3,3),
-		arma::vec::fixed<3> X_0 = arma::zeros<arma::vec>(3));
+		const arma::mat::fixed<3,3>  & dcm_0 = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3>  & X_0 = arma::zeros<arma::vec>(3));
 
 	void set_use_true_pairs(bool use_true_pairs);
 	void set_rel_tol(double rel_tol);
@@ -130,12 +138,19 @@ protected:
 		arma::vec::fixed<6> & normal_mat_temp,const double & w) = 0;
 
 	void pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const;
-	static void save_pairs(std::vector<PointPair> pairs,std::string path,const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
+	
+	static void save_pairs(const std::vector<PointPair> & pairs,
+		std::string path,
+		std::shared_ptr<PC> pc_source, 
+		std::shared_ptr<PC> pc_destination,
+		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
+
 
 	arma::vec weigh_ransac_pairs(const std::vector<PointPair> & matched_pairs,double radius);
 
-	double compute_point_weight(const std::shared_ptr<PC> & origin_pc, const std::shared_ptr<PointNormal> origin_point,
+	double compute_point_weight(const std::shared_ptr<PC> & origin_pc, const int & origin_point,
+		const std::shared_ptr<PC> & target_pc,
 		const double & radius) const;
 
 	arma::vec::fixed<3> x = arma::zeros<arma::vec>(3);
