@@ -8,8 +8,9 @@
 
 class PointNormal {
 
-public:
+public:	
 
+	PointNormal();
 	PointNormal(arma::vec point,int index = 0);
 	PointNormal(arma::vec point, arma::vec normal,int index = 0);
 
@@ -17,10 +18,8 @@ public:
 	double distance(const std::shared_ptr<PointNormal> & other_point) const;
 	double distance(PointNormal * other_point) const ;
 
-	arma::vec get_point_coordinates() const;
-	const arma::vec & get_point_coordinates_ref() const;
-
-	arma::vec get_normal_coordinates() const;
+	const arma::vec & get_point_coordinates() const;
+	const arma::vec & get_normal_coordinates() const;
 
 	void set_normal_coordinates(arma::vec normal) ;
 	void set_point_coordinates(arma::vec point) ;
@@ -63,7 +62,7 @@ public:
 	int get_global_index() const;
 	void set_global_index (int global_index);
 
-	std::vector<int> get_neighborhood(double radius);
+	std::vector<int> get_neighborhood(double radius) const;
 
 
 

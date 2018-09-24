@@ -1,14 +1,14 @@
-#include <EstimateNormals.hpp>
+#include <EstimationNormals.hpp>
 #include <PointNormal.hpp>
 
 template <class T>
-EstimateNormals<T>::EstimateNormals(T & pc) : pc(pc){
+EstimationNormals<T>::EstimationNormals(T & pc) : pc(pc){
 	this -> pc = pc;
 }
 
 
 template <>
-void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(int N_neighbors,const arma::vec::fixed<3> & los_dir){
+void EstimationNormals<PointCloud<PointNormal> >::estimate_normals(int N_neighbors,const arma::vec::fixed<3> & los_dir){
 	
 	#pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> pc .  size(); ++i) {
@@ -49,24 +49,26 @@ void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(int N_neighbors
 
 
 template <>
-void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(double radius,const arma::vec::fixed<3> & los_dir){
+void EstimationNormals<PointCloud<PointNormal> >::estimate_normals(double radius,const arma::vec::fixed<3> & los_dir){
 	
 	#pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> pc .  size(); ++i) {
 
 		// Get the N nearest neighbors to this point
+
 		auto closest_points = this -> pc.get_nearest_neighbors_radius(this -> pc.get_point_coordinates(i), radius);
 
 		arma::mat::fixed<3,3> covariance = arma::zeros<arma::mat>(3,3);
 		arma::vec::fixed<3> centroid = {0,0,0};
 
+		int size = closest_points.size();
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
-			centroid += this -> pc.get_point_coordinates(*it)/closest_points.size();
+			centroid += this -> pc.get_point_coordinates(*it)/size;
 		}
 
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
 			const arma::vec & p = this -> pc.get_point_coordinates(*it);
-			covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
+			covariance += 1./(size - 1) * (p - centroid) * (p - centroid).t();
 		}
 
 		// The eigenvalue problem is solved
@@ -94,4 +96,4 @@ void EstimateNormals<PointCloud<PointNormal> >::estimate_normals(double radius,c
 
 
 
-template class EstimateNormals<PointCloud<PointNormal>>;
+template class EstimationNormals<PointCloud<PointNormal>>;

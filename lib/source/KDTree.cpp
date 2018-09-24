@@ -1,6 +1,8 @@
 #include "KDTree.hpp"
 #include "PC.hpp"
 #include "PointCloud.hpp"
+#include "PointDescriptor.hpp"
+
 
 #define KDTTREE_DEBUG_FLAG 0
 
@@ -231,10 +233,16 @@ std::map<double,int > & closest_points) const{
 }
 
 
-template <class T>  void KDTree<T>::radius_point_search(const arma::vec & test_point,
-const std::shared_ptr<KDTree> & node,
-const double & distance,
-std::vector< int > & closest_points_indices) {
+template <class T>  
+void KDTree<T>::radius_point_search(const arma::vec & test_point,
+	const std::shared_ptr<KDTree> & node,
+	const double & distance,
+	std::vector< int > & closest_points_indices) {
+
+
+
+	double node_value = node -> get_value();
+	double test_value = test_point(node -> get_axis());
 
 
 	#if KDTTREE_DEBUG_FLAG
@@ -243,7 +251,6 @@ std::vector< int > & closest_points_indices) {
 	std::cout << "Points in node: " << node -> indices.size() << std::endl;
 	std::cout << "Points found so far : " << closest_points_indices.size() << std::endl;
 	#endif
-
 
 	if (node -> indices.size() == 1 || node -> get_is_cluttered() ) {
 
@@ -258,7 +265,6 @@ std::vector< int > & closest_points_indices) {
 		#endif
 
 		if (new_distance < distance ) {
-			// Takes care of cluttered nodes as well
 			for (int i = 0; i < node -> indices.size(); ++i){
 				closest_points_indices.push_back(node -> indices[i]);
 			}
@@ -271,33 +277,27 @@ std::vector< int > & closest_points_indices) {
 
 	else {
 
-		bool search_left_first;
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Fork node\n";
 		#endif
 
-		if (test_point(node -> get_axis()) <= node -> get_value()) {
-			search_left_first = true;
-		}
-		else {
-			search_left_first = false;
-		}
+		
 
-		if (search_left_first) {
+		if (test_value <= node_value) {
 
 			#if KDTTREE_DEBUG_FLAG
 			std::cout << "Searching left first\n";
 			#endif
 
 
-			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+			if (test_value - distance <= node_value) {
 				node -> radius_point_search(test_point,
 					node -> left,
 					distance,
 					closest_points_indices);
 			}
 
-			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+			if (test_value + distance >= node_value) {
 				node -> radius_point_search(test_point,
 					node -> right,
 					distance,
@@ -311,14 +311,14 @@ std::vector< int > & closest_points_indices) {
 			#if KDTTREE_DEBUG_FLAG
 			std::cout << "Searching right first\n";
 			#endif
-			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
+			if (test_value + distance >= node_value) {
 				node -> radius_point_search(test_point,
 					node -> right,
 					distance,
 					closest_points_indices);
 			}
 
-			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
+			if (test_value - distance <= node_value) {
 				node -> radius_point_search(test_point,
 					node -> left,
 					distance,
@@ -331,119 +331,119 @@ std::vector< int > & closest_points_indices) {
 
 }
 
-template <class T> void KDTree<T>::build(const std::vector< int > & indices, int depth) {
+template <class T> 
+void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 
-this -> indices = indices;
-this -> left = nullptr;
-this -> right = nullptr;
-this -> set_depth(depth);
+	this -> indices = indices;
+	this -> left = nullptr;
+	this -> right = nullptr;
+	this -> set_depth(depth);
 
 	#if KDTTREE_PC_DEBUG
-std::cout << "Points in node: " << indices.size() <<  std::endl;
+	std::cout << "Points in node: " << indices.size() <<  std::endl;
 	#endif
 
-if (this -> indices.size() == 0) {
+	if (this -> indices.size() == 0) {
 		#if KDTTREE_PC_DEBUG
-	std::cout << "Empty node" << std::endl;
-	std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Empty node" << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
-	return;
-}
-else if (this -> indices.size() == 1){
-
+		return;
+	}
+	else if (this -> indices.size() == 1){
 		#if KDTTREE_PC_DEBUG
-	std::cout << "Trivial node" << std::endl;
-	std::cout << "Leaf depth: " << depth << std::endl;
+		std::cout << "Trivial node" << std::endl;
+		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
-	return;
-}
-
-else {
-
-	this -> left = std::make_shared<KDTree<T>>( KDTree<T>(this -> owner) );
-	this -> right = std::make_shared<KDTree<T>>( KDTree<T>(this -> owner) );
-
-	this -> left -> indices = std::vector<int >();
-	this -> right -> indices = std::vector<int >();
-
-}
-
-arma::vec midpoint = arma::zeros<arma::vec>(3);
-arma::vec start_point = this -> owner -> get_point_coordinates(indices[0]);
-
-arma::vec min_bounds = start_point;
-arma::vec max_bounds = start_point;
-
-	// Could multithread here
-for (unsigned int i = 0; i < indices.size(); ++i) {
-
-	arma::vec point = this -> owner -> get_point_coordinates(indices[i]);
-
-	max_bounds = arma::max(max_bounds,point);
-	min_bounds = arma::min(min_bounds,point);
-
-		// The midpoint of all the facets is found
-	midpoint += (point / indices.size());
-}
-
-
-
-arma::vec bounding_box_lengths = max_bounds - min_bounds;
-
-	// Facets to be assigned to the left and right nodes
-std::vector < int > left_points;
-std::vector < int > right_points;
-
-	#if KDTTREE_DEBUG_FLAG
-std::cout << "Midpoint: " << midpoint.t() << std::endl;
-std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
-	#endif
-
-
-if (arma::norm(bounding_box_lengths) == 0) {
-		#if KDTTREE_DEBUG_FLAG
-	std::cout << "Cluttered node" << std::endl;
-		#endif
-
-	this -> set_is_cluttered(true);
-
-	return;
-}
-
-int longest_axis = bounding_box_lengths.index_max();
-
-if (longest_axis < 0 || longest_axis > 2){
-	throw(std::runtime_error("overflow in longest_axis"));
-}
-
-for (unsigned int i = 0; i < indices.size() ; ++i) {
-
-	if (midpoint(longest_axis) >= this -> owner -> get_point_coordinates(indices[i]).at(longest_axis)) {
-		left_points.push_back(indices[i]);
+		return;
 	}
 
 	else {
-		right_points.push_back(indices[i]);
+
+		this -> left = std::make_shared<KDTree<T>>( KDTree<T>(this -> owner) );
+		this -> right = std::make_shared<KDTree<T>>( KDTree<T>(this -> owner) );
+
+		this -> left -> indices = std::vector<int >();
+		this -> right -> indices = std::vector<int >();
+
 	}
 
-}
+	arma::vec midpoint = arma::zeros<arma::vec>(3);
+	const arma::vec & start_point = this -> owner -> get_point_coordinates(indices[0]);
 
-this -> set_axis(longest_axis);
-this -> set_value(midpoint(longest_axis));
+	arma::vec min_bounds = start_point;
+	arma::vec max_bounds = start_point;
+
+	// Could multithread here
+	for (unsigned int i = 0; i < indices.size(); ++i) {
+
+		arma::vec point = this -> owner -> get_point_coordinates(indices[i]);
+
+		max_bounds = arma::max(max_bounds,point);
+		min_bounds = arma::min(min_bounds,point);
+
+		// The midpoint of all the facets is found
+		midpoint += (point / indices.size());
+	}
+
+
+
+	arma::vec bounding_box_lengths = max_bounds - min_bounds;
+
+	// Facets to be assigned to the left and right nodes
+	std::vector < int > left_points;
+	std::vector < int > right_points;
+
+	#if KDTTREE_DEBUG_FLAG
+	std::cout << "Midpoint: " << midpoint.t() << std::endl;
+	std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
+	#endif
+
+
+	if (arma::norm(bounding_box_lengths) == 0) {
+		#if KDTTREE_DEBUG_FLAG
+		std::cout << "Cluttered node" << std::endl;
+		#endif
+
+		this -> set_is_cluttered(true);
+
+		return;
+	}
+
+	int longest_axis = bounding_box_lengths.index_max();
+
+	if (longest_axis < 0 || longest_axis > 2){
+		throw(std::runtime_error("overflow in longest_axis"));
+	}
+
+	for (unsigned int i = 0; i < indices.size() ; ++i) {
+
+		if (midpoint(longest_axis) >= this -> owner -> get_point_coordinates(indices[i]).at(longest_axis)) {
+			left_points.push_back(indices[i]);
+		}
+
+		else {
+			right_points.push_back(indices[i]);
+		}
+
+	}
+
+	this -> set_axis(longest_axis);
+	this -> set_value(midpoint(longest_axis));
 
 	// I guess this could be avoided
-if (left_points.size() == 0 && right_points.size() > 0) {
-	left_points = right_points;
-}
+	if (left_points.size() == 0 && right_points.size() > 0) {
+		left_points = right_points;
+	}
 
-if (right_points.size() == 0 && left_points.size() > 0) {
-	right_points = left_points;
-}
+	if (right_points.size() == 0 && left_points.size() > 0) {
+		right_points = left_points;
+	}
 
 
 	// Recursion continues
-this -> left -> build(left_points, depth + 1);
-this -> right -> build(right_points, depth + 1);
+	this -> left -> build(left_points, depth + 1);
+	this -> right -> build(right_points, depth + 1);
 
 }
 
@@ -457,6 +457,8 @@ return this -> indices.size();
 template class KDTree<PC>;
 template class PointCloud<PointNormal>;
 template class KDTree<PointCloud<PointNormal> >;
+template class KDTree<PointCloud<PointDescriptor> >;
+
 
 
 

@@ -155,12 +155,14 @@ add_library(${LIB_NAME} SHARED
 	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
 	source/Element.cpp
-	source/EstimateNormals.cpp
+	source/EstimationFeature.cpp
+	source/EstimationFPFH.cpp
+	source/EstimationNormals.cpp
+	source/EstimationPFH.cpp
 	source/EventFunction.cpp
 	source/ExtendedKalmanFilter.cpp
 	source/Facet.cpp
 	source/Filter.cpp
-	source/FlyOverMap.cpp
 	source/FrameGraph.cpp
 	source/FPFH.cpp
 	source/ICPBase.cpp
@@ -176,6 +178,7 @@ add_library(${LIB_NAME} SHARED
 	source/Observations.cpp
 	source/PointCloud.cpp
 	source/PointDescriptor.cpp
+	source/PointCloudIO.cpp
 	source/PC.cpp
 	source/PFH.cpp
 	source/PointNormal.cpp

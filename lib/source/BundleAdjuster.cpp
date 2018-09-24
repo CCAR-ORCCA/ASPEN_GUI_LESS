@@ -3,7 +3,6 @@
 #include "IterativeClosestPointToPlane.hpp"
 #include "boost/progress.hpp"
 #include "DebugFlags.hpp"
-#include "FlyOverMap.hpp"
 
 
 

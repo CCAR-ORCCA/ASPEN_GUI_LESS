@@ -13,7 +13,7 @@ typedef typename std::pair<int, int > PointPair ;
 template <class T> class PointCloud {
 
 public:
-
+	PointCloud(int size);
 	PointCloud(const std::vector<T> & points);
 	PointCloud(std::vector< std::shared_ptr< PointCloud < T> > > & pcs,int points_retained);
 
@@ -86,6 +86,12 @@ public:
 	Builds KD Tree
 	*/
 	void build_kdtree();
+
+	/**
+	Subscript operator accessing the underlying point vector
+	*/
+	T & operator[] (const int index);
+
 
 
 

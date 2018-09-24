@@ -1,5 +1,9 @@
 #include "PointNormal.hpp"
 
+PointNormal::PointNormal(){
+
+}
+
 
 PointNormal::PointNormal(arma::vec point,int index) {
 	this -> global_index = index;
@@ -14,11 +18,11 @@ PointNormal::PointNormal(arma::vec point, arma::vec normal,int index) {
 
 
 
-arma::vec PointNormal::get_point_coordinates() const {
+const arma::vec & PointNormal::get_point_coordinates() const {
 	return this -> point;
 }
 
-arma::vec PointNormal::get_normal_coordinates() const {
+const arma::vec & PointNormal::get_normal_coordinates() const {
 	return this -> normal;
 }
 
@@ -142,7 +146,7 @@ void PointNormal::set_neighborhood(const std::vector<PointNormal * > & neighborh
 }
 
 
-std::vector<int> PointNormal::get_neighborhood(double radius){
+std::vector<int> PointNormal::get_neighborhood(double radius) const{
 	std::vector<int> neighborhood;
 	auto iter_neighborhood_end = this -> neighborhood.lower_bound(radius);
 
@@ -160,7 +164,3 @@ void PointNormal::set_global_index (int global_index){
 }
 
 
-
-const arma::vec & PointNormal::get_point_coordinates_ref() const{
-	return this -> point;
-}

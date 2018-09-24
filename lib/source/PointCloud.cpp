@@ -4,6 +4,10 @@
 #define PC_DEBUG_FLAG 1
 
 
+template <class T> PointCloud<T>::PointCloud(int size){
+	this -> points.resize(size);
+}
+
 
 template <class T> PointCloud<T>::PointCloud(const std::vector< T > & points) {
 
@@ -108,9 +112,15 @@ template <class T> void PointCloud<T>::push_back(const T & point){
 this -> points.push_back(point);
 }
 
-template <class T> const arma::vec & PointCloud<T>::get_point_coordinates(int i) const{
-return this -> points[i].get_point_coordinates_ref();
+template <> const arma::vec & PointCloud<PointNormal>::get_point_coordinates(int i) const{
+return this -> points[i].get_point_coordinates();
 }
+
+
+template <> const arma::vec & PointCloud<PointDescriptor>::get_point_coordinates(int i) const{
+return this -> points[i].get_histogram();
+}
+
 
 
 
@@ -167,21 +177,25 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 
 
 template <class T> void PointCloud<T>::build_kdtree(){
-	std::vector<int> indices;
-	for (int i =0; i < this -> size(); ++i){
-		indices.push_back(i);
-	}
+std::vector<int> indices;
+for (int i =0; i < this -> size(); ++i){
+	indices.push_back(i);
+}
 
-	this -> kdt = std::make_shared<KDTree<PointCloud<T>>>(KDTree<PointCloud<T>>(this));
-	this -> kdt -> build(indices,0);
+this -> kdt = std::make_shared<KDTree<PointCloud<T>>>(KDTree<PointCloud<T>>(this));
+this -> kdt -> build(indices,0);
+}
+
+
+
+ template <class T> T & PointCloud<T>::operator[] (const int index){
+return this -> points[index];
 }
 
 
 
 
-
-
-
-
 template class PointCloud<PointNormal>;
+template class PointCloud<PointDescriptor>;
+
 

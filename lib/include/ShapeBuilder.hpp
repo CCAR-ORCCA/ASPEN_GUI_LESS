@@ -6,7 +6,6 @@
 #include <set>
 #include <string>
 #include <OrbitConversions.hpp>
-#include "FlyOverMap.hpp"
 
 class Lidar;
 class PC;

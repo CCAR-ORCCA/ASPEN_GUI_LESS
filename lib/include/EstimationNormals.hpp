@@ -3,11 +3,11 @@
 
 #include <PointCloud.hpp>
 
-template <class T> class EstimateNormals{
+template <class T> class EstimationNormals{
 
 public:
 
-	EstimateNormals(T & pc);
+	EstimationNormals(T & pc);
 	
 	void estimate_normals(int N_neighbors,const arma::vec::fixed<3> & los_dir);
 	void estimate_normals(double radius_neighbors,const arma::vec::fixed<3> & los_dir);

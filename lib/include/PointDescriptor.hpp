@@ -17,7 +17,8 @@ public:
 
 
 
-	arma::vec get_histogram() const;
+	const arma::vec & get_histogram() const;
+
 	unsigned int get_histogram_size() const;
 	double get_histogram_value(int bin_index) const;
 
@@ -27,10 +28,10 @@ public:
 		const arma::vec::fixed<3> & p_i,const arma::vec::fixed<3> & n_i,const arma::vec::fixed<3> & p_j,const arma::vec::fixed<3> & n_j);
 
 	int get_type() const;
-
-
-
 	enum Type{PFHDescriptor,FPFHDescriptor};
+
+	int get_global_index() const;
+	void set_global_index(int index);
 	
 
 protected:
@@ -38,6 +39,7 @@ protected:
 	arma::vec histogram;
 
 	int type;
+	int global_index;
 
 };
 

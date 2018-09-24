@@ -200,7 +200,6 @@ void  PC::save(std::string path,
 	std::ofstream shape_file;
 	shape_file.open(path);
 
-
 	if (format_like_obj){
 
 		if (save_normals){

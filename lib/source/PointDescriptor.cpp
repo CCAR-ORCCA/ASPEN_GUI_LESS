@@ -12,9 +12,11 @@ PointDescriptor::PointDescriptor(arma::vec histogram){
 	this -> histogram = histogram;
 }
 
-arma::vec PointDescriptor::get_histogram() const{
+const arma::vec & PointDescriptor::get_histogram() const{
 	return this -> histogram;
 }
+
+
 
 double PointDescriptor::get_histogram_value(int bin_index) const{
 	return this -> histogram(bin_index);
@@ -52,24 +54,45 @@ void PointDescriptor::compute_darboux_frames_local_hist( int & alpha_bin_index,
 	const arma::vec::fixed<3> & n_j) {
 
 
-	arma::vec::fixed<3> v = arma::cross(arma::normalise(p_j - p_i),n_i);
-	arma::vec::fixed<3> w = arma::cross(n_i,v);
+
+	arma::vec::fixed<3> d = arma::normalise(p_j - p_i);
+	arma::vec::fixed<3> n1(n_i);
+	arma::vec::fixed<3> n2(n_j);
 
 
-	// All values are within [0,1]
-	double alpha = arma::dot(v,n_j);
-	double phi = arma::dot(n_i,arma::normalise(p_j - p_i));
-	double theta = std::atan2(arma::dot(w,n_j),arma::dot(n_i,n_j));
+	double angle_1 = arma::dot(n_i,d);
+	double angle_2 = arma::dot(n_j,d);
+	double phi;
+
+	// Ensures consistency of pair orientations
+	if (std::acos(std::abs(angle_1)) > std::acos(std::abs(angle_2))){
+		n1 = n_j;
+		n2 = n_i;
+		d *= -1.;
+		phi = - angle_2;
+	}
+	else{
+		phi = angle_1;
+	}
+
+
+	arma::vec::fixed<3> v = arma::normalise(arma::cross(d,n1));
+	arma::vec::fixed<3> w = arma::cross(n1,v);
+
+	double alpha = arma::dot(v,n2);
+	double theta = std::atan2(arma::dot(w,n2),arma::dot(n1,n2));
+
 
 	// All values are wrapped within [0,1]
 	alpha = 0.5 * ( 1. + alpha);
 	phi = 0.5 * ( 1. + phi);
 	theta = (theta + arma::datum::pi) * 1.0 / (2.0 * arma::datum::pi);
 
+	alpha_bin_index = static_cast<int>(std::floor(alpha * N_bins));
+	phi_bin_index = static_cast<int>(std::floor(phi  * N_bins));
+	theta_bin_index = static_cast<int>(std::floor(theta  * N_bins));
 
-	alpha_bin_index = (int)(std::floor(alpha * N_bins));
-	phi_bin_index = (int)(std::floor(phi  * N_bins));
-	theta_bin_index = (int)(std::floor(theta  * N_bins));
+
 
 }
 
@@ -82,4 +105,12 @@ int PointDescriptor::get_type() const{
 	return this -> type;
 }
 
+
+
+int PointDescriptor::get_global_index() const{
+	return this -> global_index; 
+}
+void PointDescriptor::set_global_index(int index){
+	this -> global_index = index;
+}
 
