@@ -1,20 +1,22 @@
 #ifndef HEADER_NORMALESTIMATOR
 #define HEADER_NORMALESTIMATOR
 
-#include <PointCloud.hpp>
+#include <EstimationFeature.hpp>
 
-template <class T> class EstimationNormals{
+template <class T,class U> class EstimationNormals : public EstimationFeature<T,U>{
 
 public:
 
-	EstimationNormals(T & pc);
-	
-	void estimate_normals(int N_neighbors,const arma::vec::fixed<3> & los_dir);
-	void estimate_normals(double radius_neighbors,const arma::vec::fixed<3> & los_dir);
+	EstimationNormals(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
+	virtual	void estimate(double radius_neighbors);
+	virtual	void estimate(int N_neighbors);
+
+	void set_los_dir(const arma::vec::fixed<3> & los_dir);
 
 
 protected:
-	T & pc;
+	arma::vec::fixed<3> los_dir = {0,0,0};
+	
 };
 
 

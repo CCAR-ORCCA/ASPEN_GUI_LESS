@@ -46,8 +46,6 @@ public:
 
 	SPFH * get_SPFH();
 
-	bool get_is_valid_feature() const;
-	void set_is_valid_feature(bool valid_feature);
 
 	bool get_is_matched() const;
 	void set_is_matched(bool value);
@@ -75,7 +73,6 @@ protected:
 	int match = -1;
 	PointDescriptor descriptor;
 	SPFH spfh;
-	bool is_valid_feature = true;
 	int global_index;
 
 	std::map<double , int > neighborhood;

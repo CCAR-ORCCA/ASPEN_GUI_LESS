@@ -5,18 +5,19 @@
 #include <memory>
 #include <cassert>
 
-#include "KDTree.hpp"
 
+template <class T> class KDTree;
 
 typedef typename std::pair<int, int > PointPair ;
 
 template <class T> class PointCloud {
 
 public:
+
+	PointCloud();
 	PointCloud(int size);
 	PointCloud(const std::vector<T> & points);
 	PointCloud(std::vector< std::shared_ptr< PointCloud < T> > > & pcs,int points_retained);
-
 	PointCloud(std::string filename);
 
 	/**
@@ -43,11 +44,18 @@ public:
 
 
 	/**
-	Returns point cloud size
-	@return point cloud size
+	Returns size of point cloud
+	@return size of point cloud
 	*/
 	unsigned int size() const;
 
+	/**
+	Applies rigid transform to point cloud
+	@param dcm dcm directing the rotational component of the rigid transform the rigid transform
+	@param x translational component of the rigid transform
+	*/
+	void transform(const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
+	
 	/**
 	Returns a map to the closest N T-s whose coordinates are closest to the provided test_point
 	using the KD Tree search
@@ -67,6 +75,14 @@ public:
 	@return vector of coordinates
 	*/
 	const arma::vec & get_point_coordinates(int i) const;
+
+	/**
+	Returns a constant reference to the coordinates of the queried point's normal at the provided index
+	Only defined for PointCloud<PointNormal>
+	@param index
+	@return vector of coordinates
+	*/
+	const arma::vec & get_normal_coordinates(int i) const;
 
 	/**
 	Returns the points of $this that are within the sphere of specified radius centered at $test_point
@@ -92,13 +108,21 @@ public:
 	*/
 	T & operator[] (const int index);
 
+	/**
+	Checks if indexed point has been deemed value. 
+	@param i point index
+	@return validity. If the point cloud type is PointCloud<PointNormal>, validity == true always
+	*/
+	bool check_if_point_valid(int i) const;
+
+
 
 
 
 protected:
 
 	std::vector<T> points;
-	std::shared_ptr< KDTree< PointCloud<T> > > kdt;
+	std::shared_ptr< KDTree< T> > kdt;
 	arma::vec mean_feature_histogram;
 	std::string label;
 

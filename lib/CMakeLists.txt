@@ -126,10 +126,6 @@ include( ${EIGEN3_USE_FILE} )
 find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
 include_directories(${OC_INCLUDE_DIR})
 
-# Find SbgatCore 
-find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
-include_directories(${SBGATCORE_INCLUDE_HEADER})
-
 
 # Find OpenMP
 find_package(OpenMP)
@@ -137,6 +133,11 @@ if(OPENMP_FOUND)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
+# Find SbgatCore 
+find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
+include_directories(${SBGATCORE_INCLUDE_HEADER})
+
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 # if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
@@ -147,10 +148,10 @@ endif()
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
-	source/BatchFilter.cpp
+	# source/BatchFilter.cpp
 	source/BBox.cpp
 	source/Bezier.cpp
-	source/BundleAdjuster.cpp
+	# source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
 	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
@@ -159,42 +160,42 @@ add_library(${LIB_NAME} SHARED
 	source/EstimationFPFH.cpp
 	source/EstimationNormals.cpp
 	source/EstimationPFH.cpp
-	source/EventFunction.cpp
-	source/ExtendedKalmanFilter.cpp
+	# source/EventFunction.cpp
+	# source/ExtendedKalmanFilter.cpp
 	source/Facet.cpp
-	source/Filter.cpp
-	source/FrameGraph.cpp
+	source/FeatureMatching.cpp
+	# source/Filter.cpp
+	# source/FrameGraph.cpp
 	source/FPFH.cpp
 	source/ICPBase.cpp
 	source/IterativeClosestPoint.cpp
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
 	source/KDTree.cpp
-	source/KDTreeShape.cpp
-	source/KDTreeControlPoints.cpp
-	source/KDTreeDescriptors.cpp
-	source/Lidar.cpp
-	source/NavigationFilter.cpp
-	source/Observations.cpp
+	# source/KDTreeShape.cpp
+	# source/KDTreeControlPoints.cpp
+	# source/Lidar.cpp
+	# source/NavigationFilter.cpp
+	# source/Observations.cpp
 	source/PointCloud.cpp
 	source/PointDescriptor.cpp
 	source/PointCloudIO.cpp
-	source/PC.cpp
+	# source/PC.cpp
 	source/PFH.cpp
 	source/PointNormal.cpp
 	source/Psopt.cpp
-	source/Ray.cpp
-	source/RefFrame.cpp
-	source/SequentialFilter.cpp
-	source/ShapeBuilder.cpp
-	source/ShapeFitterBezier.cpp
-	source/ShapeModel.cpp
-	source/ShapeModelBezier.cpp
-	source/ShapeModelImporter.cpp
-	source/ShapeModelTri.cpp
+	# source/Ray.cpp
+	# source/RefFrame.cpp
+	# source/SequentialFilter.cpp
+	# source/ShapeBuilder.cpp
+	# source/ShapeFitterBezier.cpp
+	# source/ShapeModel.cpp
+	# source/ShapeModelBezier.cpp
+	# source/ShapeModelImporter.cpp
+	# source/ShapeModelTri.cpp
 	source/SPFH.cpp
-	source/StatePropagator.cpp
-	external/Gnuplot/source/GNUPlot.cpp
+	# source/StatePropagator.cpp
+	# external/Gnuplot/source/GNUPlot.cpp
 	)
 
 # Linking

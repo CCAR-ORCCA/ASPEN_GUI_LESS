@@ -1,12 +1,14 @@
-#include "KDTree.hpp"
-#include "PC.hpp"
-#include "PointCloud.hpp"
-#include "PointDescriptor.hpp"
+#include <KDTree.hpp>
+#include <PointDescriptor.hpp>
+#include <PointCloud.hpp>
+#include <PointNormal.hpp>
+
 
 
 #define KDTTREE_DEBUG_FLAG 0
+#define KDTREE_BUILD_DEBUG 0
 
-template <class T> KDTree<T>::KDTree(T * owner) {
+template <class T> KDTree<T>::KDTree(PointCloud<T> * owner) {
 this -> owner = owner;
 }
 
@@ -46,7 +48,8 @@ double & distance) const {
 
 	if (node -> indices.size() == 1 || node -> get_is_cluttered() ) {
 
-		double new_distance = arma::norm(this -> owner -> get_point_coordinates(node -> indices[0]) - test_point);
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
+
 
 		if (new_distance < distance) {
 			distance = new_distance;
@@ -130,7 +133,8 @@ std::map<double,int > & closest_points) const{
 		#endif
 
 
-		double new_distance = arma::norm( this -> owner -> get_point_coordinates(node -> indices[0]) - test_point);
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
+		
 
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Distance to query_point: " << new_distance << std::endl;
@@ -258,7 +262,8 @@ void KDTree<T>::radius_point_search(const arma::vec & test_point,
 		std::cout << "Leaf node\n";
 		#endif
 
-		double new_distance = arma::norm(this -> owner -> get_point_coordinates(node -> indices[0]) - test_point);
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
+		
 
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Distance to query_point: " << new_distance << std::endl;
@@ -339,19 +344,19 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 	this -> right = nullptr;
 	this -> set_depth(depth);
 
-	#if KDTTREE_PC_DEBUG
+	#if KDTREE_BUILD_DEBUG
 	std::cout << "Points in node: " << indices.size() <<  std::endl;
 	#endif
 
 	if (this -> indices.size() == 0) {
-		#if KDTTREE_PC_DEBUG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Empty node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 		return;
 	}
 	else if (this -> indices.size() == 1){
-		#if KDTTREE_PC_DEBUG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Trivial node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
@@ -368,7 +373,7 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 
 	}
 
-	arma::vec midpoint = arma::zeros<arma::vec>(3);
+	arma::vec midpoint = arma::zeros<arma::vec>(this -> owner -> get_point_coordinates(indices[0]).size());
 	const arma::vec & start_point = this -> owner -> get_point_coordinates(indices[0]);
 
 	arma::vec min_bounds = start_point;
@@ -394,14 +399,14 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 	std::vector < int > left_points;
 	std::vector < int > right_points;
 
-	#if KDTTREE_DEBUG_FLAG
+	#if KDTREE_BUILD_DEBUG
 	std::cout << "Midpoint: " << midpoint.t() << std::endl;
 	std::cout << "Bounding box lengths: " << bounding_box_lengths.t();
 	#endif
 
 
 	if (arma::norm(bounding_box_lengths) == 0) {
-		#if KDTTREE_DEBUG_FLAG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Cluttered node" << std::endl;
 		#endif
 
@@ -411,10 +416,6 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 	}
 
 	int longest_axis = bounding_box_lengths.index_max();
-
-	if (longest_axis < 0 || longest_axis > 2){
-		throw(std::runtime_error("overflow in longest_axis"));
-	}
 
 	for (unsigned int i = 0; i < indices.size() ; ++i) {
 
@@ -452,12 +453,29 @@ return this -> indices.size();
 }
 
 
+template <>
+double KDTree<PointNormal>::distance(const PointNormal & point_in_pc,
+	const arma::vec & point) const{
+
+	return arma::norm(point_in_pc.get_point_coordinates() - point);
+
+}
+
+
+
+template <>
+double KDTree<PointDescriptor>::distance(const PointDescriptor & point_in_pc,
+	const arma::vec & point) const{
+
+	return point_in_pc.distance_to_descriptor(point);
+
+}
+
+
 
 // Explicit instantiations
-template class KDTree<PC>;
-template class PointCloud<PointNormal>;
-template class KDTree<PointCloud<PointNormal> >;
-template class KDTree<PointCloud<PointDescriptor> >;
+template class KDTree<PointNormal> ;
+template class KDTree<PointDescriptor> ;
 
 
 

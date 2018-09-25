@@ -16,20 +16,28 @@ const arma::vec & PointDescriptor::get_histogram() const{
 	return this -> histogram;
 }
 
-
-
 double PointDescriptor::get_histogram_value(int bin_index) const{
 	return this -> histogram(bin_index);
 }
 
 
-double PointDescriptor::distance_to_descriptor(const PointDescriptor * descriptor) const{
+
+
+double PointDescriptor::distance_to_descriptor(const PointDescriptor & descriptor) const{
+
+	return this -> distance_to_descriptor(descriptor.get_histogram());
+}
+
+
+
+
+double PointDescriptor::distance_to_descriptor(const arma::vec & histogram) const{
 
 	double distance = 0;
 
 	for (int i = 0; i < this -> histogram.size(); ++i){
 		double pi = this -> get_histogram_value(i);
-		double qi = descriptor -> get_histogram_value(i);
+		double qi = histogram(i);
 
 		if (pi > 0 || qi > 0){
 			distance += std::pow(pi - qi,2)/(pi + qi);
@@ -92,13 +100,7 @@ void PointDescriptor::compute_darboux_frames_local_hist( int & alpha_bin_index,
 	phi_bin_index = static_cast<int>(std::floor(phi  * N_bins));
 	theta_bin_index = static_cast<int>(std::floor(theta  * N_bins));
 
-
-
 }
-
-
-
-
 
 
 int PointDescriptor::get_type() const{
@@ -112,5 +114,14 @@ int PointDescriptor::get_global_index() const{
 }
 void PointDescriptor::set_global_index(int index){
 	this -> global_index = index;
+}
+
+
+bool PointDescriptor::get_is_valid_feature() const{
+	return this -> is_valid_feature;
+}
+
+void PointDescriptor::set_is_valid_feature(bool active_feature){
+	this -> is_valid_feature = active_feature;
 }
 

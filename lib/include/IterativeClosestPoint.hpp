@@ -3,11 +3,13 @@
 
 #include "ICPBase.hpp"
 
+
 class IterativeClosestPoint : public ICPBase {
 
 public:
 
-	IterativeClosestPoint(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) ;
+	IterativeClosestPoint(std::shared_ptr<PC> pc_destination, 
+		std::shared_ptr<PC> pc_source) ;
 
 	static void compute_pairs(
 		std::vector<PointPair> & point_pairs,
@@ -42,9 +44,12 @@ protected:
 		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
 
-	virtual void build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
-		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,
-		arma::vec::fixed<6> & normal_mat_temp,const double & w);
+	virtual void build_matrices(const int pair_index,
+		const arma::vec::fixed<3> & mrp, 
+		const arma::vec::fixed<3> & x,
+		arma::mat::fixed<6,6> & info_mat_temp,
+		arma::vec::fixed<6> & normal_mat_temp,
+		const double & w);
 
 
 

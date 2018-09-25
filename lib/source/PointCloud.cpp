@@ -1,11 +1,15 @@
-#include "PointCloud.hpp"
-#include "PointNormal.hpp"
+#include <PointCloud.hpp>
+#include <PointNormal.hpp>
+#include <KDTree.hpp>
 
 #define PC_DEBUG_FLAG 1
 
 
+template <class T> PointCloud<T>::PointCloud(){
+}
+
 template <class T> PointCloud<T>::PointCloud(int size){
-	this -> points.resize(size);
+this -> points.resize(size);
 }
 
 
@@ -35,7 +39,6 @@ this -> kdt  -> closest_point_search(test_point,
 return closest_point_index;
 
 }
-
 
 
 template <class T> std::map<double,int > PointCloud<T>::get_closest_N_points(const arma::vec & test_point, 
@@ -122,6 +125,18 @@ return this -> points[i].get_histogram();
 }
 
 
+template <> const arma::vec & PointCloud<PointNormal>::get_normal_coordinates(int i) const{
+return this -> points[i].get_normal_coordinates();
+}
+
+
+template <> 
+const arma::vec & PointCloud<PointDescriptor>::get_normal_coordinates(int i) const{
+	throw(std::runtime_error("PointCloud<PointDescriptor>::get_normal_coordinates(int i) is not defined"));
+	return arma::zeros<arma::vec>(3);
+}
+
+
 
 
 template <> 
@@ -176,23 +191,53 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 }
 
 
-template <class T> void PointCloud<T>::build_kdtree(){
-std::vector<int> indices;
-for (int i =0; i < this -> size(); ++i){
-	indices.push_back(i);
+template <class T> 
+void PointCloud<T>::build_kdtree(){
+
+	std::vector<int> indices;
+	for (int i =0; i < this -> size(); ++i){
+		if (this -> check_if_point_valid(i)){
+			indices.push_back(i);
+		}
+	}
+
+	this -> kdt = std::make_shared< KDTree<T> >(KDTree< T> (this));
+	this -> kdt -> build(indices,0);
 }
 
-this -> kdt = std::make_shared<KDTree<PointCloud<T>>>(KDTree<PointCloud<T>>(this));
-this -> kdt -> build(indices,0);
+
+
+template <class T> 
+T & PointCloud<T>::operator[] (const int index){
+	return this -> points[index];
+}
+
+template <>
+void PointCloud<PointNormal>::transform(const arma::mat::fixed<3,3> & dcm,const arma::vec::fixed<3> & x){
+
+	// The valid measurements used to form the point cloud are extracted
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < this -> size(); ++i) {
+		PointNormal & p = this -> points.at(i);
+		p.set_point_coordinates(dcm * p. get_point_coordinates() + x);
+		p.set_normal_coordinates(dcm * p. get_normal_coordinates());
+	}
+
+	std::cout << "warning, the kd tree of the transformed point cloud was not recomputed\n";
+
 }
 
 
-
- template <class T> T & PointCloud<T>::operator[] (const int index){
-return this -> points[index];
+template <>
+bool PointCloud<PointNormal>::check_if_point_valid(int i) const{
+	return true;
 }
 
 
+template <>
+bool PointCloud<PointDescriptor>::check_if_point_valid(int i) const{
+	return this -> points[i].get_is_valid_feature();
+}
 
 
 template class PointCloud<PointNormal>;

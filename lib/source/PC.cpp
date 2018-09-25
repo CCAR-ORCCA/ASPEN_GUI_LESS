@@ -462,55 +462,55 @@ std::string PC::get_label() const{
 void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,double neighborhood_radius,std::string pc_name){
 
 
-	std::vector<int> relevant_point_with_descriptors;
-	unsigned int size = this -> points_normals .  size();
+	// std::vector<int> relevant_point_with_descriptors;
+	// unsigned int size = this -> points_normals .  size();
 
 
-	// std::vector<double> radii = {neighborhood_radius,1.25 * neighborhood_radius,1.5 *neighborhood_radius,1.75 *  neighborhood_radius};
+	// // std::vector<double> radii = {neighborhood_radius,1.25 * neighborhood_radius,1.5 *neighborhood_radius,1.75 *  neighborhood_radius};
 
-	std::vector<double> radii = {neighborhood_radius};
-
-
-	throw(std::runtime_error("Not finished here"));
-
-	for (unsigned int index = 0; index < radii.size(); ++index){
-
-		double test_radius = radii[index];
-
-		#if PC_DEBUG_FLAG
-		std::cout << "Computing surface descriptors at r_" << index << " = " << test_radius << " ... \n";
-		#endif
-
-		if (type == 0){
-			this -> compute_PFH(keep_correlations,N_bins,test_radius);
-		}
-		else{
-			this -> compute_FPFH(keep_correlations,N_bins,test_radius);
-		}
-
-		this -> compute_mean_feature_histogram();
-		this -> prune_features();
-
-		#if PC_DEBUG_FLAG
-		std::cout << "Saving active features...\n";
-		this -> save_active_features(index,pc_name);
-		#endif
-
-	}
-
-	// Only the unique features are kept
-	for (int i = 0 ; i < size; ++i){
-		const PointNormal & query_point = this -> points_normals.at(i);
-		if (query_point . get_is_valid_feature()) {
-			relevant_point_with_descriptors.push_back(i);
-		}
-	}
+	// std::vector<double> radii = {neighborhood_radius};
 
 
+	// throw(std::runtime_error("Not finished here"));
 
-		#if PC_DEBUG_FLAG
-	std::cout << "Creating KDTree with active features...\n";
-	#endif
+	// for (unsigned int index = 0; index < radii.size(); ++index){
+
+	// 	double test_radius = radii[index];
+
+	// 	#if PC_DEBUG_FLAG
+	// 	std::cout << "Computing surface descriptors at r_" << index << " = " << test_radius << " ... \n";
+	// 	#endif
+
+	// 	if (type == 0){
+	// 		this -> compute_PFH(keep_correlations,N_bins,test_radius);
+	// 	}
+	// 	else{
+	// 		this -> compute_FPFH(keep_correlations,N_bins,test_radius);
+	// 	}
+
+	// 	this -> compute_mean_feature_histogram();
+	// 	this -> prune_features();
+
+	// 	#if PC_DEBUG_FLAG
+	// 	std::cout << "Saving active features...\n";
+	// 	this -> save_active_features(index,pc_name);
+	// 	#endif
+
+	// }
+
+	// // Only the unique features are kept
+	// for (int i = 0 ; i < size; ++i){
+	// 	const PointNormal & query_point = this -> points_normals.at(i);
+	// 	if (query_point . get_is_valid_feature()) {
+	// 		relevant_point_with_descriptors.push_back(i);
+	// 	}
+	// }
+
+
+
+	// 	#if PC_DEBUG_FLAG
+	// std::cout << "Creating KDTree with active features...\n";
+	// #endif
 
 	// this -> kdt_descriptors = std::make_shared<KDTreeDescriptors>(KDTreeDescriptors());
 	// this -> kdt_descriptors = this -> kdt_descriptors  -> build(relevant_point_with_descriptors, 0);
@@ -522,35 +522,35 @@ void PC::compute_feature_descriptors(int type,bool keep_correlations,int N_bins,
 
 void PC::save_active_features(int index,std::string pc_name) const{
 
-	unsigned int size = this -> points_normals .  size();
-	unsigned int histo_size = this -> points_normals .  at(0) . get_histogram_size();
+	// unsigned int size = this -> points_normals .  size();
+	// unsigned int histo_size = this -> points_normals .  at(0) . get_histogram_size();
 	
-	std::vector<PointNormal > active_features;
+	// std::vector<PointNormal > active_features;
 
-	arma::mat active_features_histograms = arma::zeros<arma::mat>(histo_size,size);
+	// arma::mat active_features_histograms = arma::zeros<arma::mat>(histo_size,size);
 
-	arma::mat active_features_histograms_spfh = arma::zeros<arma::mat>(histo_size,size);
+	// arma::mat active_features_histograms_spfh = arma::zeros<arma::mat>(histo_size,size);
 
-	for (unsigned int k  = 0; k < size; ++k){
+	// for (unsigned int k  = 0; k < size; ++k){
 
-		if(this -> points_normals .  at(k) .get_is_valid_feature()){
-			active_features.push_back(this -> get_point(k));
-			active_features_histograms.col(k) = this -> points_normals .  at(k) . get_descriptor_histogram();
-			if (this -> get_point(0).get_descriptor_ptr() -> get_type() == 1)
-				active_features_histograms_spfh.col(k) = this -> points_normals .  at(k).get_spfh_histogram();
-		};
+	// 	if(this -> points_normals .  at(k) .get_is_valid_feature()){
+	// 		active_features.push_back(this -> get_point(k));
+	// 		active_features_histograms.col(k) = this -> points_normals .  at(k) . get_descriptor_histogram();
+	// 		if (this -> get_point(0).get_descriptor_ptr() -> get_type() == 1)
+	// 			active_features_histograms_spfh.col(k) = this -> points_normals .  at(k).get_spfh_histogram();
+	// 	};
 
-	}
+	// }
 
-	PC active_features_pc(active_features);
+	// PC active_features_pc(active_features);
 
-	active_features_pc.save(pc_name + "_active_features_" + std::to_string(index) + ".obj");
+	// active_features_pc.save(pc_name + "_active_features_" + std::to_string(index) + ".obj");
 
-	this -> mean_feature_histogram.save(pc_name + "_mean_histogram_" + std::to_string(index) + ".txt",arma::raw_ascii);
-	active_features_histograms.save(pc_name + "_active_features_histograms_"+ std::to_string(index) + ".txt",arma::raw_ascii);
+	// this -> mean_feature_histogram.save(pc_name + "_mean_histogram_" + std::to_string(index) + ".txt",arma::raw_ascii);
+	// active_features_histograms.save(pc_name + "_active_features_histograms_"+ std::to_string(index) + ".txt",arma::raw_ascii);
 	
-	if (this -> get_point(0).get_descriptor_ptr() -> get_type() == 1)
-		active_features_histograms_spfh.save(pc_name + "_active_features_histograms_spfh_"+ std::to_string(index) + ".txt",arma::raw_ascii);
+	// if (this -> get_point(0).get_descriptor_ptr() -> get_type() == 1)
+	// 	active_features_histograms_spfh.save(pc_name + "_active_features_histograms_spfh_"+ std::to_string(index) + ".txt",arma::raw_ascii);
 
 }
 
@@ -629,36 +629,6 @@ void PC::compute_FPFH(bool keep_correlations,int N_bins,double neighborhood_radi
 }
 
 
-void PC::save_point_descriptors(std::string path) const{
-	unsigned int size = this -> size();
-	unsigned int histo_size = this -> points_normals .  at(0).get_histogram_size();
-
-
-	std::vector<arma::vec> active_features_histograms_arma;
-
-	for (unsigned int i = 0; i < size; ++i) {
-
-		// active_features_histograms.col(i) = this -> points_normals .  at(i) -> get_descriptor_histogram();
-		auto histogram = this -> points_normals.at(i).get_descriptor_histogram();
-
-		if (this -> points_normals.at(i).get_is_valid_feature()){
-			active_features_histograms_arma.push_back(histogram);
-		}
-
-	}
-
-	arma::mat active_features_histograms = arma::zeros<arma::mat>(histo_size,active_features_histograms_arma.size());
-
-	std::cout << active_features_histograms_arma.size() << " features found to be unique in " << path << std::endl;
-
-	for (unsigned int i = 0; i < active_features_histograms_arma.size(); ++i) {
-		active_features_histograms.col(i) = active_features_histograms_arma[i];
-
-	}
-
-	active_features_histograms.save(path,arma::raw_ascii);
-
-}
 
 
 
@@ -819,22 +789,22 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 	std::vector< int > & active_source_points,
 	std::map<int , std::vector<int > > & possible_matches){
 
-	for (unsigned int i = 0; i < pc_source -> size(); ++i)  {	
+	// for (unsigned int i = 0; i < pc_source -> size(); ++i)  {	
 
-		if (pc_source -> get_point(i).get_is_valid_feature()){
-			active_source_points.push_back(static_cast<int>(i));
-			auto closest_features = pc_destination -> get_closest_N_features(pc_source -> get_point_coordinates(i),N_closest_matches);
+	// 	if (pc_source -> get_point(i).get_is_valid_feature()){
+	// 		active_source_points.push_back(static_cast<int>(i));
+	// 		auto closest_features = pc_destination -> get_closest_N_features(pc_source -> get_point_coordinates(i),N_closest_matches);
 
-			std::vector<int> closest_features_points;
+	// 		std::vector<int> closest_features_points;
 
-			for (auto it = closest_features.begin(); it != closest_features.end(); ++it){
-				closest_features_points.push_back(it -> second);
-			}
+	// 		for (auto it = closest_features.begin(); it != closest_features.end(); ++it){
+	// 			closest_features_points.push_back(it -> second);
+	// 		}
 
-			possible_matches[i] = closest_features_points;
-		}	
+	// 		possible_matches[i] = closest_features_points;
+	// 	}	
 
-	}
+	// }
 
 
 
@@ -848,31 +818,31 @@ void PC::find_N_closest_pch_matches_kdtree(const std::shared_ptr<PC> & pc_source
 
 PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
-	this -> points_normals.clear();
-	double downsampling_factor = 1;
-	int N_points_total = 0;
-	for (unsigned int i = 0; i < pcs.size();++i){
+	// this -> points_normals.clear();
+	// double downsampling_factor = 1;
+	// int N_points_total = 0;
+	// for (unsigned int i = 0; i < pcs.size();++i){
 
-		N_points_total += pcs[i] -> size();
-	}
+	// 	N_points_total += pcs[i] -> size();
+	// }
 
-	if (points_retained > 0){
-		downsampling_factor = double(points_retained) / N_points_total;
-	}
+	// if (points_retained > 0){
+	// 	downsampling_factor = double(points_retained) / N_points_total;
+	// }
 
-	for (unsigned int i = 0; i < pcs.size();++i){
+	// for (unsigned int i = 0; i < pcs.size();++i){
 
-		arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> size() - 1);		
-		random_order = arma::shuffle(random_order);	
+	// 	arma::uvec random_order =  arma::regspace< arma::uvec>(0,  pcs[i] -> size() - 1);		
+	// 	random_order = arma::shuffle(random_order);	
 
-		int points_to_keep = (int)	(downsampling_factor *  pcs[i] -> size());
+	// 	int points_to_keep = (int)	(downsampling_factor *  pcs[i] -> size());
 
-		for (unsigned int p = 0; p < points_to_keep; ++p){
-			this -> points_normals.push_back(pcs[i] -> get_point(random_order(p)));
-			this -> points_normals.back().set_global_index((int)(this -> points_normals.size()) - 1);
-		}
+	// 	for (unsigned int p = 0; p < points_to_keep; ++p){
+	// 		this -> points_normals.push_back(pcs[i] -> get_point(random_order(p)));
+	// 		this -> points_normals.back().set_global_index((int)(this -> points_normals.size()) - 1);
+	// 	}
 
-	}
+	// }
 	
 
 }
@@ -945,6 +915,9 @@ PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
 
 
+void PC::save_point_descriptors(std::string path) const{
+	
+}
 
 
 
@@ -993,7 +966,7 @@ PC::PC(std::vector< std::shared_ptr<PC> > & pcs,int points_retained){
 
 std::map<double,int > PC::get_closest_N_features(const arma::vec & histogram,const int & N) const{
 
-	double distance = std::numeric_limits<double>::infinity();
+	// double distance = std::numeric_limits<double>::infinity();
 	std::map<double,int > closest_points_with_features;
 
 	// this -> kdt_descriptors  -> closest_N_point_search(other_point,
@@ -1009,16 +982,16 @@ std::map<double,int > PC::get_closest_N_features(const arma::vec & histogram,con
 
 void PC::compute_mean_feature_histogram(){
 
-	unsigned int size = this -> points_normals .  size();
-	unsigned int histo_size = this -> get_point(0). get_histogram_size();
+	// unsigned int size = this -> points_normals .  size();
+	// unsigned int histo_size = this -> get_point(0). get_histogram_size();
 
-	this -> mean_feature_histogram = arma::zeros<arma::vec>(histo_size);
+	// this -> mean_feature_histogram = arma::zeros<arma::vec>(histo_size);
 
-	for (unsigned int k = 0; k < size; ++k){
-		this -> mean_feature_histogram += this -> get_point(k).get_descriptor_histogram();
-	}
+	// for (unsigned int k = 0; k < size; ++k){
+	// 	this -> mean_feature_histogram += this -> get_point(k).get_descriptor_histogram();
+	// }
 
-	this -> mean_feature_histogram = this -> mean_feature_histogram / arma::max(this -> mean_feature_histogram) * 100;
+	// this -> mean_feature_histogram = this -> mean_feature_histogram / arma::max(this -> mean_feature_histogram) * 100;
 
 }
 
@@ -1102,19 +1075,19 @@ unsigned int PC::size() const{
 }
 
 void PC::build_kd_tree_points(){
-	std::vector<int> indices;
-	for (int i =0; i < this -> size(); ++i){
-		indices.push_back(i);
-	}
+	// std::vector<int> indices;
+	// for (int i =0; i < this -> size(); ++i){
+	// 	indices.push_back(i);
+	// }
 
-	this -> kdt_points = std::make_shared<KDTree<PC>>(KDTree<PC>(this));
-	this -> kdt_points -> build(indices,0);
+	// this -> kdt_points = std::make_shared<KDTree<PC>>(KDTree<PC>(this));
+	// this -> kdt_points -> build(indices,0);
 }
 
 
 std::vector<int> PC::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
 	std::vector< int > neighbors_indices;
-	this -> kdt_points -> radius_point_search(test_point,this -> kdt_points,radius,neighbors_indices);
+	// this -> kdt_points -> radius_point_search(test_point,this -> kdt_points,radius,neighbors_indices);
 	return neighbors_indices;
 }
 

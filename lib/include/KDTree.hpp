@@ -5,6 +5,8 @@
 #include <vector>
 #include <armadillo>
 
+template <class T> class PointCloud;
+
 template <class T> class KDTree {
 
 public:
@@ -12,14 +14,14 @@ public:
 	std::shared_ptr<KDTree> right;
 	std::vector<int> indices;
 
-	KDTree(T * owner);
+	KDTree(PointCloud<T> * owner);
 
 	void build(const std::vector< int > & indices, int depth) ;
 
 	void closest_point_search(const arma::vec & test_point,
-	const std::shared_ptr<KDTree> & node,
-	int & best_guess_index,
-	double & distance) const;
+		const std::shared_ptr<KDTree> & node,
+		int & best_guess_index,
+		double & distance) const;
 
 	void closest_N_point_search(const arma::vec & test_point,
 		const unsigned int & N_points,
@@ -47,6 +49,9 @@ public:
 	void set_is_cluttered(bool cluttered);
 	bool get_is_cluttered() const;
 
+
+	double distance(const T & point_in_pc, const arma::vec & point) const;
+
 protected:
 
 	int depth;
@@ -55,7 +60,7 @@ protected:
 	unsigned int axis = 0;
 	bool cluttered = false;
 
-	T * owner;
+	PointCloud<T> * owner;
 
 };
 

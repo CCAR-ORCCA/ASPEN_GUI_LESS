@@ -10,8 +10,6 @@ public:
 
 	FPFH();
 
-	FPFH(const std::shared_ptr<PointNormal> & query_point,const std::vector<std::shared_ptr<PointNormal> > & points);
-
 	FPFH(const int & query_point,
 		const std::vector<std::vector<int> >  & points,
 		const std::vector<SPFH> & spfhs,

@@ -9,12 +9,31 @@ template <class T,class U> class EstimationFPFH : public EstimationFeature<T,U>{
 
 public:
 
-	EstimationFPFH(const T & pc);
-	virtual void estimate(double radius_neighbors,int N_bins,U & output_pc);
+	EstimationFPFH(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
+	virtual void estimate(double radius_neighbors);
+	virtual	void estimate(int N_neighbors);
 
+	/**
+	Toggles normalization of spfh
+	@param scale_distance If true, will use normalized weights L/w_k where L is the smallest non-zero distance between a query point and its 
+	neighbors 
+	*/
 	void set_scale_distance(bool scale_distance);
+
+	/**
+	Sets number of bins
+	@param N_bins number of bins
+	*/
+	void set_N_bins(int N_bins);
+
+	
+
+
+
 protected:
 	bool scale_distance = false;
+	int N_bins = 11;
+	double beta = 1.5;
 
 };
 
