@@ -13,16 +13,17 @@ this -> points.resize(size);
 }
 
 
-template <class T> PointCloud<T>::PointCloud(const std::vector< T > & points) {
+template <class T> 
+PointCloud<T>::PointCloud(const std::vector< T > & points) {
 
-this -> points.clear();
+	this -> points.clear();
 	// The valid measurements used to form the point cloud are extracted
-for (unsigned int i = 0; i < points.size(); ++i) {
+	for (unsigned int i = 0; i < points.size(); ++i) {
 
-	this -> points[i].set_global_index(i);
-	this -> points.push_back(points[i]);
+		this -> points[i].set_global_index(i);
+		this -> points.push_back(points[i]);
 
-}
+	}
 
 }
 
