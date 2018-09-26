@@ -7,7 +7,7 @@
 class IterativeClosestPoint : public ICPBase {
 
 public:
-
+	IterativeClosestPoint();
 	IterativeClosestPoint(std::shared_ptr<PC> pc_destination, 
 		std::shared_ptr<PC> pc_source) ;
 
@@ -36,6 +36,15 @@ public:
 		const arma::vec::fixed<3> & x_D,
 		const PC * pc_S,
 		const PC * pc_D);
+
+	static void ransac(
+		const std::vector<PointPair> & all_pairs,
+		int N_feature_pairs,
+		int minimum_N_icp_pairs,
+		double residuals_threshold,
+		int N_iter_ransac,
+		std::shared_ptr<PC> pc_source,
+		std::shared_ptr<PC> pc_destination);
 
 protected:
 	

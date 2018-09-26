@@ -20,7 +20,9 @@ public:
 	void match(std::vector< PointPair > & matches,const int & N);
 	static void save_matches(std::string path,const std::vector<PointPair> & matches,
 		const PointCloud<T> & input_pc1,
-		const PointCloud<T> & input_pc2) ;
+		const PointCloud<T> & input_pc2,
+		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3)) ;
 
 protected:
 	const PointCloud<T> & pc1;

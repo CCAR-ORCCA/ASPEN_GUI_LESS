@@ -21,6 +21,8 @@ public:
 
 	void compute_center();
 	static arma::vec compute_center(const PointCloud<U> & pc);
+	static arma::mat compute_principal_axes(const PointCloud<U> & pc,const arma::vec & center);
+
 
 	void prune(double deadband);
 

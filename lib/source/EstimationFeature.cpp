@@ -26,6 +26,33 @@ arma::vec EstimationFeature<T,U>::compute_center(const PointCloud<U> & pc){
 	return center;
 }
 
+template<class T,class U>
+arma::mat EstimationFeature<T,U>::compute_principal_axes(const PointCloud<U> & pc,const arma::vec & center){
+	
+	arma::mat cov = arma::zeros<arma::vec>(pc.get_point_coordinates(0).size(),
+		pc.get_point_coordinates(0).size());
+
+	// #pragma omp parallel for
+	for (unsigned int i = 0; i < pc.size(); ++i) {
+		cov += (pc.get_point_coordinates(i) - center) * (pc.get_point_coordinates(i) - center).t();
+	}
+
+	cov *= 1./(pc.size() - 1);
+	arma::vec eigval;
+	arma::mat eigvec;
+
+	if(!arma::eig_sym( eigval, eigvec, cov )){
+		throw(std::runtime_error("Principal axes computation failed in EstimationFeature<T,U>::compute_principal_axes"));
+	}
+
+	// Enforcing determinant of eigvec to be positive
+	if (arma::det(eigvec) < 0){
+		eigvec.col(0) *= -1;
+	}
+
+	return eigvec;
+}
+
 
 
 template<>
@@ -49,8 +76,6 @@ template<>
 arma::vec EstimationFeature<PointNormal,PointDescriptor>::compute_distances_to_center(){
 	return EstimationFeature<PointNormal,PointDescriptor>::compute_distances_to_center(this -> center,this -> output_pc);
 }
-
-
 
 
 template<>

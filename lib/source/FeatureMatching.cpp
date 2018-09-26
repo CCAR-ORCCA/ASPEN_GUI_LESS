@@ -92,12 +92,14 @@ template <>
 void FeatureMatching<PointNormal>::save_matches(std::string path,
 	const std::vector<PointPair> & matches,
 	const PointCloud<PointNormal> & input_pc1,
-	const PointCloud<PointNormal> & input_pc2){
+	const PointCloud<PointNormal> & input_pc2,
+	const arma::mat::fixed<3,3> & dcm, 
+	const arma::vec::fixed<3> & x){
 
 	arma::mat matches_arma = arma::zeros<arma::mat>(matches.size(),6);
 
 	for (unsigned int k  = 0; k < matches.size(); ++k){
-		matches_arma.submat(k,0,k,2) = input_pc1.get_point_coordinates(matches[k].first).t();
+		matches_arma.submat(k,0,k,2) = (dcm * input_pc1.get_point_coordinates(matches[k].first) + x).t();
 		matches_arma.submat(k,3,k,5) = input_pc2.get_point_coordinates(matches[k].second).t();
 	}
 

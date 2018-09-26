@@ -134,7 +134,8 @@ return this -> points[i].get_normal_coordinates();
 template <> 
 const arma::vec & PointCloud<PointDescriptor>::get_normal_coordinates(int i) const{
 	throw(std::runtime_error("PointCloud<PointDescriptor>::get_normal_coordinates(int i) is not defined"));
-	return arma::zeros<arma::vec>(3);
+	// The following will never be returned, it's merely to silence a compiler warning
+	return this -> points[i].get_histogram();
 }
 
 

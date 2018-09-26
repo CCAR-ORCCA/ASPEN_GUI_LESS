@@ -1,8 +1,16 @@
-#include "ICPBase.hpp"
+#include <ICPBase.hpp>
+#include <FeatureMatching.hpp>
+#include <EstimationFeature.hpp>
+#include <PointCloudIO.hpp>
 
 #define ICP_DEBUG 1
 
-ICPBase::ICPBase(std::shared_ptr<PC> pc_destination, 
+ICPBase::ICPBase(){
+
+}
+
+ICPBase::ICPBase(
+	std::shared_ptr<PC> pc_destination, 
 	std::shared_ptr<PC> pc_source){
 	
 	this -> pc_destination = pc_destination;
@@ -10,252 +18,322 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 }
 
+void ICPBase::register_pc(
+	const double r_tol,
+	const double s_tol,
+	const arma::mat::fixed<3,3> & dcm_0,
+	const arma::vec::fixed<3> & X_0){
+
+	this -> r_tol = r_tol;
+	this -> s_tol = s_tol;
 
 
-// void ICPBase::register_pc(
-// 	const double rel_tol,
-// 	const double stol,
-// 	const arma::mat::fixed<3,3> & dcm_0,
-// 	const arma::vec::fixed<3> & X_0){
+	this -> register_pc(dcm_0,X_0);
 
-// 	this -> rel_tol = rel_tol;
-// 	this -> s_tol = stol;
+}
 
 
-// 	this -> register_pc(dcm_0,X_0);
+arma::vec::fixed<3> ICPBase::get_x() const{
+	return this -> x;
+}
+
+arma::mat::fixed<3,3> ICPBase::get_dcm() const{
+	return RBK::mrp_to_dcm(this -> mrp);
+}
+
+arma::mat::fixed<6,6> ICPBase::get_R() const{
+	return this -> R;
+}
+
+double ICPBase::get_J_res() const{
+	return this -> J_res;
+}
 
 
-// }
+const std::vector<PointPair > & ICPBase::get_point_pairs() {
+	return this -> point_pairs;
+}
+
+void ICPBase::set_use_true_pairs(bool use_true_pairs){
+	this -> use_true_pairs= use_true_pairs;
+}
+void ICPBase::set_r_tol(double r_tol){
+	this -> r_tol= r_tol;
+}
+void ICPBase::set_s_tol(double s_tol){
+	this ->s_tol = s_tol;
+}
+void ICPBase::set_iterations_max(unsigned int iterations_max){
+	this -> iterations_max = iterations_max;
+}
 
 
-// arma::vec::fixed<3> ICPBase::get_x() const{
-// 	return this -> x;
-// }
+bool ICPBase::get_use_true_pairs() const{
+	return this -> use_true_pairs;
+}
+double ICPBase::get_r_tol() const{
+	return this -> r_tol;
+}
+double ICPBase::get_s_tol() const{
+	return this -> s_tol;
+}
+unsigned int ICPBase::get_iterations_max() const{
+	return this -> iterations_max;
+}
 
-// arma::mat::fixed<3,3> ICPBase::get_dcm() const{
-// 	return RBK::mrp_to_dcm(this -> mrp);
-// }
-
-// arma::mat::fixed<6,6> ICPBase::get_R() const{
-// 	return this -> R;
-// }
-
-// double ICPBase::get_J_res() const{
-// 	return this -> J_res;
-// }
-
-
-// std::vector<PointPair > * ICPBase::get_point_pairs() {
-// 	return &this -> point_pairs;
-// }
-
-// void ICPBase::set_use_true_pairs(bool use_true_pairs){
-// 	this -> use_true_pairs= use_true_pairs;
-// }
-// void ICPBase::set_rel_tol(double rel_tol){
-// 	this -> rel_tol= rel_tol;
-// }
-// void ICPBase::set_s_tol(double s_tol){
-// 	this ->s_tol = s_tol;
-// }
-
-// void ICPBase::set_iterations_max(unsigned int iterations_max){
-// 	this -> iterations_max = iterations_max;
-// }
+void ICPBase::set_save_rigid_transform(const arma::vec::fixed<3> & x_save,
+	const arma::mat::fixed<3,3> & dcm_save){
+	this -> x_save = x_save;
+	this -> dcm_save = dcm_save;
+}
 
 
+void ICPBase::set_pc_source(std::shared_ptr<PC> pc_source){
+	this -> pc_source = pc_source;
+}
 
-// bool ICPBase::get_use_true_pairs() const{
-// 	return this -> use_true_pairs;
-// }
-// double ICPBase::get_rel_tol() const{
-// 	return this -> rel_tol;
-// }
-// double ICPBase::get_s_tol() const{
-// 	return this -> s_tol;
-// }
-// unsigned int ICPBase::get_iterations_max() const{
-// 	return this -> iterations_max;
-// }
-
-// void ICPBase::set_save_rigid_transform(const arma::vec::fixed<3> & x_save,
-// 	const arma::mat::fixed<3,3> & dcm_save){
-// 	this -> x_save = x_save;
-// 	this -> dcm_save = dcm_save;
-// }
+void ICPBase::set_pc_destination(std::shared_ptr<PC> pc_destination){
+	this -> pc_destination = pc_destination;
+}
 
 
 
 
 
-// void ICPBase::register_pc(const arma::mat::fixed<3,3> & dcm_0,const arma::vec::fixed<3> & X_0){
 
-// 	double J  = std::numeric_limits<double>::infinity();
-// 	double J_0  = std::numeric_limits<double>::infinity();
-// 	double J_previous = std::numeric_limits<double>::infinity();
 
+
+void ICPBase::register_pc(
+	const arma::mat::fixed<3,3> & dcm_0,
+	const arma::vec::fixed<3> & X_0){
+
+	double J  = std::numeric_limits<double>::infinity();
+	double J_0  = std::numeric_limits<double>::infinity();
+	double J_previous = std::numeric_limits<double>::infinity();
+
+
+	int h = this -> maximum_h;
+
+	bool next_h = false;
+
+	arma::mat::fixed<6,6> info_mat;
+	arma::vec::fixed<6> normal_mat;
+
+
+	// The batch estimator is initialized
+	this -> mrp = RBK::dcm_to_mrp(dcm_0);
+	this -> x = X_0;
+
+	if (this -> use_pca_prealignment){
+		this -> pca_prealignment(this -> mrp ,this -> x);
+	}
+
+	if (this -> iterations_max == 0){
+		return;
+	}
+
+	// If no pairs have been provided, they are recomputed
+	if(this -> point_pairs.size() == 0){
+		this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
+		FeatureMatching<PointNormal>::save_matches(
+			"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(0) + ".txt",
+			this -> point_pairs,
+			*this -> pc_source,
+			*this -> pc_destination);
+		this -> hierarchical = true;
+		
+	}
+	else{
+		this -> hierarchical = false;
+	}
+
+	J_0 = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+	J = J_0;
+
+
+	#if ICP_DEBUG
+	std::cout << "\nStarting ICP with a-priori rigid transform : " << std::endl;
+	std::cout << "\tMRP: \n" << this -> mrp.t();
+	std::cout << "\tx: \n" << this -> x.t();
+	std::cout << "\nInitial residuals : " << std::endl;
+	std::cout << J_0 << std::endl;
+
+	#endif
+
+		// The ICP is iterated
+	for (unsigned int iter = 0; iter < this -> iterations_max; ++iter) {
+
+		/***************************************
+		Going down to the lower hierarchical level
+		****************************************/
+
+		if ( next_h == true && this -> hierarchical) {
+				// The pairs are formed only after a change in the hierchical search
+			this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
+			next_h = false;
+
+				#if ICP_DEBUG
+			FeatureMatching<PointNormal>::save_matches(
+				"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",
+				this -> point_pairs,
+				*this -> pc_source,
+				*this -> pc_destination);
+				#endif
+		}
+		/**************************************
+		***************************************
+		**************************************/
+
+
+		#if ICP_DEBUG
+		std::cout << "ICP iteration " << iter + 1 << " / " << this -> iterations_max  << std::endl;
+		if (this -> hierarchical)
+			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
+		std::cout << "Pairs: " << this -> point_pairs.size() << std::endl << std::endl;
+		#endif
+
+
+		/**************************************
+		Minimizing the chosen ICP cost function
+		***************************************/
+
+			// The matrices of the LS problem are now accumulated
+		info_mat.fill(0);
+		normal_mat.fill(0);
+
+			// #pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
+			arma::mat::fixed<6,6> info_mat_temp;
+			arma::vec::fixed<6> normal_mat_temp;
+			this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
+			info_mat += info_mat_temp;
+			normal_mat += normal_mat_temp;
+		}
+
+
+			#if ICP_DEBUG
+		std::cout << "\nInfo mat: " << std::endl;
+		std::cout << info_mat << std::endl;
+		std::cout << "\nNormal mat: " << std::endl;
+		std::cout << normal_mat << std::endl;
+			#endif
+
+			// The state deviation [dmrp,dx] is solved for
+		arma::vec dX = arma::solve(info_mat, normal_mat);
+		arma::vec dx = dX.subvec(0,2);
+		arma::vec dmrp = dX.subvec(3,5);
+
+			// The state is updated
+		this -> mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(this -> mrp));
+		this -> x +=  dx;
+
+			// the mrp is switched to its shadow if need be
+		this -> mrp = RBK::shadow_mrp(this -> mrp);
+
+			// The postfit residuals are computed
+		J = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+
+			#if ICP_DEBUG
+		std::cout << "\nDeviation : " << std::endl;
+		std::cout << dX << std::endl;
+		std::cout << "\nResiduals: " << J << std::endl;
+		std::cout << "MRP: \n" << this -> mrp << std::endl;
+		std::cout << "x: \n" << this -> x << std::endl;
+		std::cout << "Covariance :\n" << std::endl;
+		std::cout << arma::inv(info_mat) << std::endl;
+			#endif
+
+
+		/************************
+		************************
+		************************/
+
+		if(this -> check_convergence(iter,J,J_0,J_previous,h,next_h)){
+			break;
+		}
+
+	}
 	
-// 	int h = this -> maximum_h;
 
-// 	bool exit = false;
-// 	bool next_h = true;
+	#if ICP_DEBUG
+	std::cout << "Leaving ICPBase. Best transform: \n";
+	std::cout << "\tmrp: " << this -> mrp.t();
+	std::cout << "\tx: " << this -> x.t();
+	std::cout << "\tResiduals: " << J << std::endl;
+	FeatureMatching<PointNormal>::save_matches(
+		"icp_pairs.txt",
+		this -> point_pairs,
+		*this -> pc_source,
+		*this -> pc_destination,
+		RBK::mrp_to_dcm(this -> mrp),
+		this -> x);
 
-// 	arma::mat::fixed<6,6> info_mat;
-// 	arma::vec::fixed<6> normal_mat;
+	#endif
 
-	
-// 	// The batch estimator is initialized
-// 	this -> mrp = RBK::dcm_to_mrp(dcm_0);
-// 	this -> x = X_0;
 
-// 	if (this -> use_pca_prealignment){
-// 		this -> pca_prealignment(this -> mrp ,this -> x);
-// 	}
-	
-// 	if (this -> iterations_max == 0){
-// 		exit = true;
-// 	}
 
-// 	#if ICP_DEBUG
-// 	std::cout << "\nStarting ICP with a-priori rigid transform : " << std::endl;
-// 	std::cout << "\tMRP: \n" << this -> mrp.t();
-// 	std::cout << "\tx: \n" << this -> x.t();
-// 	#endif
+	try{
+		this -> R = arma::inv(info_mat);
+	}
+	catch(std::runtime_error & e){
+		std::cout << e.what();
+	}
+	this -> J_res = J ;
 
-// 	while (h >= this -> minimum_h && exit == false) {
+}
 
-// 		// The ICP is iterated
-// 		for (unsigned int iter = 0; iter < this -> iterations_max; ++iter) {
+bool ICPBase::check_convergence(const int & iter,const double & J,const double & J_0, double & J_previous,int & h,bool & next_h){
+
+	// Has converged
+	if ( J / J_0 <= this -> r_tol || J == 0 ) {
+		#if ICP_DEBUG
+		std::cout << "Has converged\n";
+		#endif
+		return true;
+	}
+	// Has stalled
+	else if ( (std::abs(J - J_previous) / J <= this -> s_tol && h > this -> minimum_h) && iter + 1 < this -> iterations_max) {
+		h = h - 1;
+		next_h = true;
+		std::cout << "Has stalled, going to the next level\n";
+		if (this -> hierarchical){
+			J_previous = std::numeric_limits<double>::infinity();
+		#if ICP_DEBUG
 			
-// 			#if ICP_DEBUG
-// 			std::cout << "ICP iteration " << iter + 1 << " / " << this -> iterations_max  << std::endl;
-// 			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
-// 			#endif
+		#endif
+		}
+		else{
+			return true;
+		}
 
-// 			if ( next_h == true ) {
-// 				// The pairs are formed only after a change in the hierchical search
+	}
+	// Has not converged after all iterations have been used
+	else if ((iter + 1 == this -> iterations_max || std::abs(J - J_previous) / J <= this -> s_tol ) && h == this -> minimum_h  ) {
+		PointCloudIO<PointNormal>::save_to_obj(*this -> pc_source,
+			"max_iter.obj",
+			this -> dcm_save * RBK::mrp_to_dcm(this -> mrp),
+			this -> dcm_save * this -> x + this -> x_save);
+		#if ICP_DEBUG
+		std::cout << "Has not converged\n";
+		#endif
+		return true;
+	}
+	// Has neither converged, stalled or used all iterations
+	// The postfit residuals become the prefit residuals of the next iteration
+	else {
+		J_previous = J;
+		#if ICP_DEBUG
+		std::cout << "Next iteration\n";
+		#endif
+	}
+	return false;
 
-// 				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
-// 				#if ICP_DEBUG
-// 				ICPBase::save_pairs(this -> point_pairs,"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",this -> pc_source,this -> pc_destination);
-// 				#endif 
-
-// 				next_h = false;
-// 			}
-
-// 			if (iter == 0 ) {
-// 				// The initial residuals are computed
-// 				J_0 = this -> compute_rms_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
-// 				J = J_0;
-// 			}
-
-
-// 			// The matrices of the LS problem are now accumulated
-// 			info_mat.fill(0);
-// 			normal_mat.fill(0);
-
-			
-// 			// #pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
-// 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
-				
-// 				arma::mat::fixed<6,6> info_mat_temp;
-// 				arma::vec::fixed<6> normal_mat_temp;
-
-// 				#if ICP_DEBUG
-// 				std::cout << "Building matrix " << pair_index + 1 << " / " << this -> point_pairs.size() << std::endl;
-// 				#endif
-
-// 				this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
-
-// 				info_mat += info_mat_temp;
-// 				normal_mat += normal_mat_temp;
-
-// 			}
+}
 
 
-// 			#if ICP_DEBUG
-// 			std::cout << "\nInfo mat: " << std::endl;
-// 			std::cout << info_mat << std::endl;
-// 			std::cout << "\nNormal mat: " << std::endl;
-// 			std::cout << normal_mat << std::endl;
-// 			#endif
-
-// 			// The state deviation [dmrp,dx] is solved for
-// 			arma::vec dX = arma::solve(info_mat, normal_mat);
-// 			arma::vec dx = dX.subvec(0,2);
-
-// 			arma::vec dmrp = dX.subvec(3,5);
-
-// 			// The state is updated
-// 			this -> mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(this -> mrp));
-
-// 			this -> x +=  dx;
-
-// 			// the mrp is switched to its shadow if need be
-// 			this -> mrp = RBK::shadow_mrp(this -> mrp);
-			
-// 			// The postfit residuals are computed
-// 			J = this -> compute_rms_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
-
-// 			#if ICP_DEBUG
-// 			std::cout << "\nDeviation : " << std::endl;
-// 			std::cout << dX << std::endl;
-// 			std::cout << "\nResiduals: " << J << std::endl;
-// 			std::cout << "MRP: \n" << this -> mrp << std::endl;
-// 			std::cout << "x: \n" << this -> x << std::endl;
-// 			std::cout << "Covariance :\n" << std::endl;
-// 			std::cout << arma::inv(info_mat) << std::endl;
-// 			#endif
-
-
-// 			if ( J / J_0 <= this -> rel_tol || J == 0 || h == 0) {
-// 				exit = true;
-
-// 				break;
-// 			}
-
-// 			if ( (std::abs(J - J_previous) / J <= this -> s_tol && h > this -> minimum_h) || iter + 1 < this -> iterations_max) {
-// 				h = h - 1;
-// 				next_h = true;
-
-// 				J_previous = std::numeric_limits<double>::infinity();
-
-// 				break;
-// 			}
-
-// 			else if (iter + 1 == this -> iterations_max && h == this -> minimum_h) {
-// 				this -> pc_source -> save("max_iter.obj",this -> dcm_save * RBK::mrp_to_dcm(this -> mrp),this -> dcm_save * this -> x + this -> x_save);
-// 				exit = true;
-// 				break;
-// 			}
-
-// 			// The postfit residuals become the prefit residuals of the next iteration
-// 			J_previous = J;
-
-// 		}
-// 	}
-
-// 	#if ICP_DEBUG
-// 	std::cout << "Leaving ICPBase. Best transform: \n";
-// 	std::cout << "\tmrp: " << this -> mrp.t();
-// 	std::cout << "\tx: " << this -> x.t();
-// 	std::cout << "\tResiduals: " << J << std::endl;
-// 	ICPBase::save_pairs(this -> point_pairs,"icp_pairs.txt",this -> pc_source, this -> pc_destination,RBK::mrp_to_dcm(this -> mrp),this -> x);
-
-// 	#endif
-
-	
-	
-// 	try{
-// 		this -> R = arma::inv(info_mat);
-// 	}
-// 	catch(std::runtime_error & e){
-// 		std::cout << e.what();
-// 	}
-// 	this -> J_res = J ;
-
-// }
-
+void ICPBase::set_pairs(const std::vector<PointPair> & point_pairs){
+	this -> point_pairs = point_pairs;
+}
 
 
 // void ICPBase::register_pc_RANSAC(double fraction_inliers_used,
@@ -318,7 +396,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 	#endif
 
 // 	auto all_matches = PC::find_pch_matches_kdtree(this -> pc_source,this -> pc_destination);
-	
+
 // 	int N_tentative_source_points = (int)(all_matches.size() * fraction_inliers_used);
 
 // 	#if ICP_DEBUG
@@ -340,7 +418,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 	std::cout  <<  std::endl << weights << std::endl;
 // 	weights.save("all_pairs_weights.txt",arma::raw_ascii);
 // 	#endif
-	
+
 // 	for (unsigned int iter_ransac = 0; iter_ransac < iter_ransac_max; ++iter_ransac){
 
 // 		#if ICP_DEBUG
@@ -349,7 +427,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 // 		double J  = std::numeric_limits<double>::infinity();
 // 		double J_0  = std::numeric_limits<double>::infinity();
-		
+
 // 		// The batch estimator is initialized
 // 		arma::vec::fixed<3> mrp = RBK::dcm_to_mrp(dcm_0);
 // 		arma::vec::fixed<3> x_temp = X_0;
@@ -546,7 +624,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 	arma::mat::fixed<6,6> info_mat;
 // 	arma::vec::fixed<6> normal_mat;
 
-	
+
 
 // 	if (this -> iterations_max == 0|| iter_bf_max == 0){
 // 		return;
@@ -595,7 +673,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 // 	PC::find_N_closest_pch_matches_kdtree(this -> pc_source,this -> pc_destination,N_possible_matches,
 // 		active_source_points,possible_matches);
-	
+
 // 	#if ICP_DEBUG
 // 	end = std::chrono::system_clock::now();
 // 	elapsed_seconds = end-start;
@@ -611,7 +689,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 // 		double J = std::numeric_limits<double>::infinity();
 // 		double J_0 = std::numeric_limits<double>::infinity();
-		
+
 // 		// The batch estimator is initialized
 // 		arma::vec::fixed<3> mrp = RBK::dcm_to_mrp(dcm_0);
 // 		arma::vec::fixed<3> x_temp = X_0;
@@ -631,7 +709,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 		#endif
 
 // 		for (int i = 0; i < random_indices.size(); ++i){
-			
+
 // 			auto p_source = active_source_points[random_indices(i)];
 
 // 			if(tentative_source_points.size() == 0){
@@ -642,7 +720,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 // 				for (int k = 0; k < tentative_source_points.size(); ++k){
 // 					if (arma::norm( this -> pc_source -> get_point_coordinates(p_source) - this -> pc_source -> get_point_coordinates(tentative_source_points.at(k))) < 3 * this -> neighborhood_radius){
-						
+
 // 						insert = false;
 
 // 						break;
@@ -667,7 +745,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 		// These points are then randomly matched with a destination points amongst 
 // 		// those they are the closest to
 // 		for (int k =0; k < tentative_source_points.size(); ++k){
-			
+
 // 			arma::ivec random_index = arma::randi<arma::ivec>(1,arma::distr_param(0,N_possible_matches -1));
 // 			auto p_source = tentative_source_points[k];
 // 			auto p_destination = possible_matches[p_source][random_index(0)];
@@ -703,7 +781,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 				arma::mat::fixed<6,6> info_mat_temp;
 // 				arma::vec::fixed<6> normal_mat_temp;
 
-				
+
 
 // 				this -> build_matrices(pair_index, mrp,x_temp,info_mat_temp,normal_mat_temp,1.);
 
@@ -811,65 +889,48 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 	pairs_m.save(path,arma::raw_ascii);
 // }
 
-// void ICPBase::pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const{
+void ICPBase::pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const{
+
+	arma::vec::fixed<3> center_destination = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> pc_destination);
+	arma::vec::fixed<3> center_source = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> pc_source);
+
+	arma::mat::fixed<3,3> E_source = EstimationFeature<PointNormal,PointNormal>::compute_principal_axes(*this -> pc_destination ,center_destination);
+	arma::mat::fixed<3,3> E_destination = EstimationFeature<PointNormal,PointNormal>::compute_principal_axes(*this -> pc_source ,center_source);
 
 
-// 	arma::mat::fixed<3,3> E_source = this -> pc_source -> get_principal_axes();
-// 	arma::mat::fixed<3,3> E_destination = this -> pc_destination -> get_principal_axes();
+	// The center of the source point cloud is aligned with that of the destination point cloud
+	x = (center_destination- E_destination * E_source.t() * center_source);
+	mrp = RBK::dcm_to_mrp(E_destination * E_source.t());
 
-// 	// The center of the source point cloud is aligned with that of the destination point cloud
-// 	x = this -> pc_destination -> get_center() - E_destination * E_source.t() * this -> pc_source -> get_center();
-// 	mrp = RBK::dcm_to_mrp(E_destination * E_source.t());
-
-// }	
-
-
-
-// bool ICPBase::get_use_pca_prealignment() const{
-// 	return this -> use_pca_prealignment;
-// }
-// void ICPBase::set_use_pca_prealignment(bool use_pca_prealignment){
-// 	this -> use_pca_prealignment = use_pca_prealignment;
-// }
+}	
 
 
 
-// bool ICPBase::get_use_FPFH() const{
-// 	return this -> use_pca_prealignment;
-// }
-// void ICPBase::set_use_FPFH(bool use_FPFH){
-// 	this -> use_FPFH = use_FPFH;
-// }
+bool ICPBase::get_use_pca_prealignment() const{
+	return this -> use_pca_prealignment;
+}
+void ICPBase::set_use_pca_prealignment(bool use_pca_prealignment){
+	this -> use_pca_prealignment = use_pca_prealignment;
+}
 
 
-// void ICPBase::set_minimum_h(unsigned int min_h){
-// 	this -> minimum_h = min_h;
-// }
-// unsigned int ICPBase::get_minimum_h() const{
-// 	return this -> minimum_h;
-// }
 
 
-// void ICPBase::set_maximum_h(unsigned int  max_h){
-// 	this -> maximum_h = max_h;
-// }
-// unsigned int ICPBase::get_maximum_h() const{
-// 	return this -> maximum_h;
-// }
 
-// void ICPBase::set_keep_correlations( bool keep_correlations){
-// 	this -> keep_correlations = keep_correlations;
-// }
-// bool ICPBase::get_keep_correlation()  const{
-// 	return this -> keep_correlations;
-// }
+void ICPBase::set_minimum_h(unsigned int min_h){
+	this -> minimum_h = min_h;
+}
+unsigned int ICPBase::get_minimum_h() const{
+	return this -> minimum_h;
+}
 
-// unsigned int ICPBase::get_N_bins() const{
-// 	return this -> N_bins;
-// }
-// void ICPBase::set_N_bins(unsigned int N_bins){
-// 	this -> N_bins = N_bins;
-// }
+
+void ICPBase::set_maximum_h(unsigned int  max_h){
+	this -> maximum_h = max_h;
+}
+unsigned int ICPBase::get_maximum_h() const{
+	return this -> maximum_h;
+}
 
 // double ICPBase::get_neighborhood_radius() const{
 // 	return this -> neighborhood_radius;
@@ -934,7 +995,7 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 // 	for (int j = 0; j < origin_point_neighborhood.size(); ++j){
 
 // 		int match = origin_pc -> get_point(origin_point_neighborhood[j]).get_match();
-		
+
 // 		if (match < 0){
 // 			arma::vec pair_direction = arma::normalise(target_pc -> get_point_coordinates(match) - origin_pc -> get_point_coordinates(origin_point_neighborhood[j] ) );
 
@@ -988,95 +1049,99 @@ ICPBase::ICPBase(std::shared_ptr<PC> pc_destination,
 
 
 
-// double ICPBase::compute_rms_residuals(
-// 	const std::vector<PointPair> & point_pairs,
-// 	const arma::mat::fixed<3,3> & dcm_S ,
-// 	const arma::vec::fixed<3> & x_S ,
-// 	const arma::vec & weights,
-// 	const arma::mat::fixed<3,3> & dcm_D ,
-// 	const arma::vec::fixed<3> & x_D )  const{
+double ICPBase::compute_rms_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D )  const{
 
-// 	double J = 0;
-// 	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
+	double J = 0;
+	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
 
-// 	if (weights.size() == 0){
-// 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-// 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-// 			J += std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
-// 		}
-// 	}
-// 	else{
-// 		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-// 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-// 			J += weights(pair_index) * std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
-// 		}
-// 	}
-// 	return std::sqrt(J / (point_pairs.size()-1) );
+	#if ICP_DEBUG
+	std::cout << "\tMean residuals : " << mean << std::endl;
+	#endif 
 
-// }
+	if (weights.size() == 0){
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
+	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+			J += weights(pair_index) * std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
+		}
+	}
+	return std::sqrt(J / (point_pairs.size()-1) );
 
-// double ICPBase::compute_mean_residuals(
-// 	const std::vector<PointPair> & point_pairs,
-// 	const arma::mat::fixed<3,3> & dcm_S ,
-// 	const arma::vec::fixed<3> & x_S ,
-// 	const arma::vec & weights,
-// 	const arma::mat::fixed<3,3> & dcm_D ,
-// 	const arma::vec::fixed<3> & x_D ) const{
+}
 
-// 	double J = 0;
+double ICPBase::compute_mean_residuals(
+	const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S ,
+	const arma::vec & weights,
+	const arma::mat::fixed<3,3> & dcm_D ,
+	const arma::vec::fixed<3> & x_D ) const{
 
-// 	if (weights.size() == 0){
-// 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-// 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+	double J = 0;
 
-// 			J += this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
-// 		}
-// 	}
-// 	else{
-// 		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-// 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+	if (weights.size() == 0){
+	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-// 			J += weights(pair_index) * this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+			J += this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+		}
+	}
+	else{
+		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
+		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-// 		}
-// 	}
-// 	return J;
-// }
+			J += weights(pair_index) * this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
 
-
-
-// arma::vec ICPBase::compute_y_vector(const std::vector<PointPair> & point_pairs,
-// 	const arma::mat::fixed<3,3> & dcm_S ,
-// 	const arma::vec::fixed<3> & x_S) const {
-
-// 	arma::vec y(point_pairs.size());
-
-// 	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-// 		y(pair_index) = this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S);
-// 	}
-
-// 	return y;
-
-// }
+		}
+	}
+	return J;
+}
 
 
-// double ICPBase::compute_rms_residuals(
-// 	const arma::mat::fixed<3,3> & dcm,
-// 	const arma::vec::fixed<3> & x,
-// 	const arma::vec & weights) {
 
-// 	return this -> compute_rms_residuals(this -> point_pairs,dcm,x,weights);
+arma::vec ICPBase::compute_y_vector(const std::vector<PointPair> & point_pairs,
+	const arma::mat::fixed<3,3> & dcm_S ,
+	const arma::vec::fixed<3> & x_S) const {
 
-// }
+	arma::vec y(point_pairs.size());
+
+	for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
+		y(pair_index) = this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S);
+	}
+
+	return y;
+
+}
 
 
-// double ICPBase::compute_mean_residuals(
-// 	const arma::mat::fixed<3,3> & dcm,
-// 	const arma::vec::fixed<3> & x,
-// 	const arma::vec & weights) {
-// 	return this -> compute_mean_residuals(this -> point_pairs,dcm,x,weights);
+double ICPBase::compute_rms_residuals(
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
 
-// }
+	return this -> compute_rms_residuals(this -> point_pairs,dcm,x,weights);
+
+}
+
+
+double ICPBase::compute_mean_residuals(
+	const arma::mat::fixed<3,3> & dcm,
+	const arma::vec::fixed<3> & x,
+	const arma::vec & weights) {
+	return this -> compute_mean_residuals(this -> point_pairs,dcm,x,weights);
+
+}
 
 
 // double ICPBase::compute_Huber_loss(const arma::vec & y, double threshold){
