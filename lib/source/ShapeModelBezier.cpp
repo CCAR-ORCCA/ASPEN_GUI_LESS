@@ -322,7 +322,6 @@ void ShapeModelBezier::compute_inertia(){
 
 	arma::mat::fixed<3,3> inertia = arma::zeros<arma::mat>(3,3);
 
-	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -344,7 +343,6 @@ void ShapeModelBezier::compute_inertia(){
 				* RBK::tilde(patch -> get_control_point_coordinates(i,j)) 
 				* RBK::tilde(patch -> get_control_point_coordinates(k,l))
 				* patch -> triple_product(m,p,q,r,s,t));
-
 		}
 
 	}
@@ -483,7 +481,6 @@ void ShapeModelBezier::compute_volume_sd(){
 	#pragma omp parallel for reduction(+:vol_sd)
 
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		
 		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 
 		auto neighbors = this -> correlated_elements[e];
