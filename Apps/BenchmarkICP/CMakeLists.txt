@@ -73,9 +73,9 @@ add_definitions(-Wall -O2 )
 
 # Enable C++17 
 if (EXISTS /home/bebe0705/.am_fortuna)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
 else()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
 
 # Find ASPEN
@@ -151,19 +151,22 @@ add_executable(${EXE_NAME} main.cpp)
 
 # Linking
 set(library_dependencies
-${ARMADILLO_LIBRARIES}
-${Boost_LIBRARIES}
-${RBK_LIBRARY}
-${OC_LIBRARY}
-${CGAL_LIBRARIES} 
-${CGAL_3RD_PARTY_LIBRARIES}
-${VTK_LIBRARIES}
-${SBGATCORE_LIBRARY}
-${CGAL_interface_LIBRARY}
-${ASPEN_LIBRARY}
-${PCL_LIBRARIES})
+	${ARMADILLO_LIBRARIES}
+	${Boost_LIBRARIES}
+	${RBK_LIBRARY}
+	${OC_LIBRARY}
+	${CGAL_LIBRARIES} 
+	${CGAL_3RD_PARTY_LIBRARIES}
+	${VTK_LIBRARIES}
+	${SBGATCORE_LIBRARY}
+	${CGAL_interface_LIBRARY}
+	${ASPEN_LIBRARY}
+	${PCL_LIBRARIES})
 
 
-
-target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+if(UNIX AND NOT APPLE)
+	target_link_libraries(${EXE_NAME} ${library_dependencies} )
+else()
+	target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+endif()
 
