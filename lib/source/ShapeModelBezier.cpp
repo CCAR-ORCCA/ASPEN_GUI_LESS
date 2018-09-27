@@ -591,8 +591,10 @@ void ShapeModelBezier::compute_cm_cov(){
 
 	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
 
-	#if !__APPLE__
+	#if __APPLE__
+	#elif __linux__
 	#pragma omp parallel for reduction (+:cm_cov_temp)
+	#endif
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
 		std::cout << omp_get_num_threads() << std::endl;
