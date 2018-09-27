@@ -572,17 +572,6 @@ double ShapeModelBezier::increment_volume_variance(const arma::vec::fixed<9> & l
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 void ShapeModelBezier::compute_cm_cov(){
 
 	std::cout << "\n- Computing cm covariance ...\n";
@@ -602,11 +591,11 @@ void ShapeModelBezier::compute_cm_cov(){
 
 	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
 
-
-	// #pragma omp parallel for reduction (+:cm_cov_temp)
-
+	#if !__APPLE__
+	#pragma omp parallel for reduction (+:cm_cov_temp)
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
+		std::cout << omp_get_num_threads() << std::endl;
 		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
 				// i
@@ -654,7 +643,6 @@ void ShapeModelBezier::compute_cm_cov(){
 			k_g = patch_e -> get_control_point_global_index(m,p);
 			l_g = patch_e -> get_control_point_global_index(q,r);
 			
-
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
 
 			auto neighbors = this -> correlated_elements[e];
@@ -3230,55 +3218,56 @@ arma::mat::fixed<9,9> ShapeModelBezier::P_R_lambda_R_mu(const double lambda,
 
 arma::mat::fixed<9,9> ShapeModelBezier::P_E_lambda_E_mu() const {
 
-	arma::mat::fixed<9,9> mat;
+	throw(std::runtime_error("Implementation is incomplete\n"));
+	// arma::mat::fixed<9,9> mat;
 
-	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
+	// arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
-	double T = arma::trace(I_C);
-	double d = arma::det (I_C);
+	// double T = arma::trace(I_C);
+	// double d = arma::det (I_C);
 
-	double I_xx = I_C(0,0);
-	double I_yy = I_C(1,1);
-	double I_zz = I_C(2,2);
-	double I_xy = I_C(0,1);
-	double I_xz = I_C(0,2);
-	double I_yz = I_C(1,2);
+	// double I_xx = I_C(0,0);
+	// double I_yy = I_C(1,1);
+	// double I_zz = I_C(2,2);
+	// double I_xy = I_C(0,1);
+	// double I_xz = I_C(0,2);
+	// double I_yz = I_C(1,2);
 
-	arma::vec moments = arma::eig_sym(I_C);
-
-
-	arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
-
-	arma::mat::fixed<6,6> Q = {
-		{0,1./2.,1./2,0,0,0},
-		{1./2.,0,1./2,0,0,0},
-		{1./2,1./2.,0,0,0,0},
-		{0,0,0,-1,0,0},
-		{0,0,0,0,-1,0},
-		{0,0,0,0,0,-1}
-	};
-
-	double Pi = arma::dot(I, Q * I);
-	double U = std::sqrt(T * T - 3 * Pi)/3;
-	double Theta = (-2 * std::pow(T,3) + 9 * T * Pi - 27 * d)/(54 * std::pow(U,3));
-	double theta = std::acos(Theta);
+	// arma::vec moments = arma::eig_sym(I_C);
 
 
-	for (int a = 0; a < 3 ; ++ a){
+	// arma::vec I = {I_xx,I_yy,I_zz,I_xy,I_xz,I_yz};
 
-		double lambda = moments(a);
+	// arma::mat::fixed<6,6> Q = {
+	// 	{0,1./2.,1./2,0,0,0},
+	// 	{1./2.,0,1./2,0,0,0},
+	// 	{1./2,1./2.,0,0,0,0},
+	// 	{0,0,0,-1,0,0},
+	// 	{0,0,0,0,-1,0},
+	// 	{0,0,0,0,0,-1}
+	// };
 
-		for (int b = 0; b < 3 ; ++ b){
+	// double Pi = arma::dot(I, Q * I);
+	// double U = std::sqrt(T * T - 3 * Pi)/3;
+	// double Theta = (-2 * std::pow(T,3) + 9 * T * Pi - 27 * d)/(54 * std::pow(U,3));
+	// double theta = std::acos(Theta);
 
-			double mu = moments(b);
 
-			mat.submat(3 * a, 3 * b, 3 * a + 2, 3 * b + 2) = (
-				ShapeModelBezier::partial_E_partial_R(lambda)
-				* P_R_lambda_R_mu(lambda, mu,a,b,theta,U) 
-				* ShapeModelBezier::partial_E_partial_R(mu).t());
+	// for (int a = 0; a < 3 ; ++ a){
 
-		}
-	}
+	// 	double lambda = moments(a);
+
+	// 	for (int b = 0; b < 3 ; ++ b){
+
+	// 		double mu = moments(b);
+
+	// 		mat.submat(3 * a, 3 * b, 3 * a + 2, 3 * b + 2) = (
+	// 			ShapeModelBezier::partial_E_partial_R(lambda)
+	// 			* P_R_lambda_R_mu(lambda, mu,a,b,theta,U) 
+	// 			* ShapeModelBezier::partial_E_partial_R(mu).t());
+
+	// 	}
+	// }
 
 
 }
