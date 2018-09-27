@@ -1,86 +1,126 @@
 
-#include "PC.hpp"
-#include "ICP.hpp"
-#include "IterativeClosestPointToPlane.hpp"
-#include "IterativeClosestPoint.hpp"
-#include <armadillo>
+
 #include "boost/progress.hpp"
-#include <ShapeModelImporter.hpp>
-#include <ShapeModelBezier.hpp>
-#include <ShapeModelTri.hpp>
-#include <chrono>
 
 #include <iostream>
-// #include <pcl/io/pcd_io.h>
-// #include <pcl/io/obj_io.h>
+#include <armadillo>
+#include <chrono>
+#include <PointCloud.hpp>
+#include <PointCloudIO.hpp>
 
-// #include <pcl/registration/icp.h>
-// #include <pcl/registration/gicp.h>
-#include <RigidBodyKinematics.hpp>
-#include <PointDescriptor.hpp>
+#include <PointNormal.hpp>
+#include <EstimationNormals.hpp>
+#include <EstimationPFH.hpp>
+#include <EstimationFPFH.hpp>
+#include <FeatureMatching.hpp>
+
+#include <IterativeClosestPoint.hpp>
+#include <IterativeClosestPointToPlane.hpp>
 
 int main() {
 
-	// Perturbed source pc
-	PC destination_pc("../bunny000.obj");
-	// PC source_pc("../bunny090.obj");
+	// loading
+	PointCloud<PointNormal> point_pc_1("../bunny000.obj");
+	// PointCloud<PointNormal> point_pc_2("../bunny000.obj");
 
-	arma::vec los = {0,-1,0};
+	PointCloud<PointNormal> point_pc_2("../bunny090.obj");
+
+	arma::vec::fixed<3> x = {5e-1,0.0,0.0};
+	arma::vec::fixed<3> mrp = {-0.1,0.2,-0.3};
+
+	// kdtree
+	point_pc_1.build_kdtree();
+	point_pc_2.build_kdtree();
+
+	//  Normal estimation
+	arma::vec::fixed<3> los_1 = {0,1,0};
+	// arma::vec::fixed<3> los_2 = {0,1,0};
+	arma::vec::fixed<3> los_2 = {0,0,1};
 
 
-	std::cout << "Constructing normals...\n";
-	auto start = std::chrono::steady_clock::now();
-	destination_pc.construct_normals(los,7e-3);
-	auto end = std::chrono::steady_clock::now();
-	double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(end - start).count();
-	std::cout << "Normals were computed in " << elapsed_seconds << " seconds\n";
 
-	std::cout << "Computing neighborhoods...\n";
+	EstimationNormals<PointNormal, PointNormal> normal_estimator_1(point_pc_1,point_pc_1);
+	EstimationNormals<PointNormal, PointNormal> normal_estimator_2(point_pc_2,point_pc_2);
+	normal_estimator_1.set_los_dir(los_1);
+	normal_estimator_2.set_los_dir(los_2);
 
-	start = std::chrono::steady_clock::now();
-
-	destination_pc.compute_neighborhoods(14e-3);
-
-	end = std::chrono::steady_clock::now();
-
-	elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double> >(end - start).count();
+	normal_estimator_1.estimate(8);
+	normal_estimator_2.estimate(8);
 	
-	std::cout << "Neighborhoods were computed in " << elapsed_seconds << " seconds\n";
+	// point_pc_2.transform(RBK::mrp_to_dcm(mrp),x);
+	// point_pc_2.build_kdtree();
+
+	std::cout << "computing features\n";
+
+	//  FPFH estimation
+	PointCloud<PointDescriptor> descriptor_pc_1(point_pc_1.size());
+	PointCloud<PointDescriptor> descriptor_pc_2(point_pc_2.size());
+
+	EstimationFPFH<PointNormal,PointDescriptor > fpfh_estimator_1(point_pc_1,descriptor_pc_1);
+	fpfh_estimator_1.set_scale_distance(true);
+
+	EstimationFPFH<PointNormal,PointDescriptor > fpfh_estimator_2(point_pc_2,descriptor_pc_2);
+	fpfh_estimator_2.set_scale_distance(true);
+
+	fpfh_estimator_1.estimate(5e-3);
+	fpfh_estimator_2.estimate(5e-3);
+	fpfh_estimator_1.prune(1.75);
+	fpfh_estimator_2.prune(1.75);
+
+	fpfh_estimator_1.estimate(7.5e-3);
+	fpfh_estimator_2.estimate(7.5e-3);
+	fpfh_estimator_1.prune(1.75);
+	fpfh_estimator_2.prune(1.75);
+
+	fpfh_estimator_1.estimate(1e-2);
+	fpfh_estimator_2.estimate(1e-2);
+	fpfh_estimator_1.prune(1.75);
+	fpfh_estimator_2.prune(1.75);
+
+	PointCloudIO<PointNormal>::save_active_features_positions(point_pc_1,descriptor_pc_1, 
+		"active_features_pc_1.obj");
+	PointCloudIO<PointNormal>::save_active_features_positions(point_pc_2,descriptor_pc_2, 
+		"active_features_pc_2.obj");
 
 
-	std::cout << "Computing FPFH...\n";
+	PointCloudIO<PointDescriptor>::save_to_txt(descriptor_pc_1,"fpfh_1.txt");
+	PointCloudIO<PointDescriptor>::save_to_txt(descriptor_pc_2,"fpfh_2.txt");
 
-	destination_pc.compute_FPFH(false,11,14e-3);
-
-	std::cout << "Saving features...\n";
-
-	destination_pc.save_active_features(0,"bunny");
-
-	// destination_pc.compute_feature_descriptors(PC::FeatureDescriptor::FPFHDescriptor,false,11,14e-3,"bunny");
-
-	throw;
+	std::cout << "matching features\n";
 
 
+	PointCloudIO<PointNormal>::save_to_obj(point_pc_1,"point_pc_1.obj");
+	PointCloudIO<PointNormal>::save_to_obj(point_pc_2,"point_pc_2.obj");
 
 
-	// // ASPEN ICP
-	// std::shared_ptr<PC> destination_pc_ptr = std::make_shared<PC>(destination_pc);
-	// std::shared_ptr<PC> source_pc_ptr = std::make_shared<PC>(source_pc);
+	std::vector< PointPair > matches;
+	FeatureMatching<PointDescriptor>::greedy_pairing(5, 
+	point_pc_1,
+	point_pc_2,
+	descriptor_pc_1,
+	descriptor_pc_2,
+	matches);
 
-	// IterativeClosestPoint icp_ransac(destination_pc_ptr, source_pc_ptr);
-	// icp_ransac.set_keep_correlations(false);
-	// icp_ransac.set_N_bins(11);
-	// icp_ransac.set_neighborhood_radius(3e-3);
-	// icp_ransac.set_use_FPFH(true);
+	FeatureMatching<PointNormal>::save_matches("all_matches",matches,point_pc_1,point_pc_2);
 
+	std::shared_ptr<PointCloud<PointNormal > > point_pc_1_ptr = std::make_shared<PointCloud<PointNormal > >(point_pc_1);
+	std::shared_ptr<PointCloud<PointNormal > > point_pc_2_ptr = std::make_shared<PointCloud<PointNormal > >(point_pc_2);
 
-	// icp_ransac.register_pc_bf(1000,3,30);
+	std::cout << "Running ICP\n";
+	IterativeClosestPoint icp;
+	icp.set_pc_source(point_pc_1_ptr);
+	icp.set_pc_destination(point_pc_2_ptr);
+	icp.set_pairs(matches);
+	icp.register_pc();
 
-	// source_pc_ptr -> save("../source_solution_aspen_ransac.obj",icp_ransac.get_dcm(),icp_ransac.get_x());
-	// IterativeClosestPointToPlane icp(destination_pc_ptr, source_pc_ptr);
-	// icp.register_pc(icp_ransac.get_dcm(),icp_ransac.get_x());
-	// source_pc_ptr -> save("../source_solution_aspen_final.obj",icp.get_dcm(),icp.get_x());
-	
+	IterativeClosestPointToPlane icp2p;
+	icp2p.set_pc_source(point_pc_1_ptr);
+	icp2p.set_pc_destination(point_pc_2_ptr);
+	icp2p.set_pairs(std::vector<PointPair>());
+	icp2p.register_pc(icp.get_dcm(), icp.get_x());
+
+	PointCloudIO<PointNormal>::save_to_obj(point_pc_1,"registered_pc_1.obj",icp2p.get_dcm(),icp2p.get_x());
+
 	return (0);
 }
 

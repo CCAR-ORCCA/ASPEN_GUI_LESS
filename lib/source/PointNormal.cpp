@@ -1,5 +1,8 @@
 #include "PointNormal.hpp"
 
+
+
+
 PointNormal::PointNormal(){
 
 }

@@ -23,8 +23,8 @@ SPFH::SPFH(const int & query_point,
 
 	
 	for (int j = 0; j < points.size(); ++j){
-		double distance = arma::norm(pc.get_point_coordinates(j) - pc.get_point_coordinates(query_point));
-
+		double distance = arma::norm(pc.get_point_coordinates(points[j]) - pc.get_point_coordinates(query_point));
+		
 		if (distance > 0){
 
 			int alpha_bin_index,phi_bin_index,theta_bin_index;
@@ -46,17 +46,24 @@ SPFH::SPFH(const int & query_point,
 			this -> histogram(2 * N_bins + phi_bin_index) += 1.;
 			
 
-
-
 			++non_trivial_neighbors_count;
 
 		}
 
 	}
+	
+	
 
 	assert(non_trivial_neighbors_count + 1 == static_cast<int>(points.size()));
+	if (this -> histogram.has_nan()){
+		throw(std::runtime_error("SPFH for point " + std::to_string(query_point) 
+			+ " has nans. Distance to closest neighbor was " + std::to_string(this -> distance_to_closest_neighbor) 
+			+ " and point had " + std::to_string(points.size()) + " neighbors"));
+	}
+	if (non_trivial_neighbors_count > 0){
+		this -> histogram *= 100./non_trivial_neighbors_count;
+	}
 
-	this -> histogram *= 100./non_trivial_neighbors_count;
 
 }
 

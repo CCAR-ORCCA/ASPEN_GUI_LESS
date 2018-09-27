@@ -43,12 +43,6 @@ elseif (UNIX AND NOT APPLE)
 	
 endif()
 
-if (${USE_GCC})
-	include(cmake/FindOmpGcc.cmake)
-else()
-	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-endif()
 
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
@@ -68,30 +62,26 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 # Compiler flags
 add_definitions(-Wall -O2)
 
-# Enable C++17 
 if (EXISTS /home/bebe0705/.am_fortuna)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fext-numeric-literals")
 else()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 endif()
+
 # Set path to include and source folders
 if (${IS_FORTUNA})
 	set(INCLUDES_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/include)
-	set(EXTERNAL_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/external)
 	set(SOURCE_PATH /home/bebe0705/libs/ASPEN_gui_less/lib/source)
 elseif (UNIX AND NOT APPLE)
 	set(INCLUDES_PATH /home/ben/Work/ASPEN_gui_less/lib/include)
-	set(EXTERNAL_PATH /home/ben/Work/ASPEN_gui_less/lib/external)
 	set(SOURCE_PATH /home/ben/Work/ASPEN_gui_less/lib/source)
 else()
 	set(INCLUDES_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/include)
-	set(EXTERNAL_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/external)
 	set(SOURCE_PATH /Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/lib/source)
 endif()
 
 # Include directories
 include_directories(include)
-include_directories(external/Gnuplot/include)
 
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
@@ -106,13 +96,13 @@ find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
 include_directories(${RBK_INCLUDE_DIR} )
 
 # Find CGAL
-find_package(CGAL REQUIRED)
-include( ${CGAL_USE_FILE} )
-include( CGAL_CreateSingleSourceCGALProgram )
+# find_package(CGAL REQUIRED)
+# include( ${CGAL_USE_FILE} )
+# include( CGAL_CreateSingleSourceCGALProgram )
 
-# Find CGAL_interface
-find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
-include_directories(${CGAL_interface_INCLUDE_DIR})
+# # Find CGAL_interface
+# find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
+# include_directories(${CGAL_interface_INCLUDE_DIR})
 
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})
@@ -139,12 +129,6 @@ find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
 include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 
-# Fortran compiler, required by Armadillo on Linux/Ubuntu
-# if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
-# 	find_library(GFORTRAN_LIBRARY gfortran
-# 		PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
-# 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
-# endif()
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
@@ -195,7 +179,6 @@ add_library(${LIB_NAME} SHARED
 	# source/ShapeModelTri.cpp
 	source/SPFH.cpp
 	# source/StatePropagator.cpp
-	# external/Gnuplot/source/GNUPlot.cpp
 	)
 
 # Linking
@@ -213,31 +196,25 @@ set(library_dependencies
 
 
 if (UNIX AND NOT APPLE)
-target_link_libraries(${LIB_NAME} ${library_dependencies})
+	target_link_libraries(${LIB_NAME} ${library_dependencies})
 else()
-target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+	target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 endif()
 
 file(GLOB includes include/*.hpp)
-file(GLOB includes_gnuplot external/Gnuplot/include/*.hpp)
 
 # Installing
 if(${IS_FORTUNA})
 
 	install (TARGETS ${LIB_NAME} DESTINATION /home/bebe0705/libs/local/lib)
 	install(FILES ${includes} DESTINATION /home/bebe0705/libs/local/include/ASPEN/)
-	install(FILES ${includes_gnuplot} DESTINATION /home/bebe0705/libs/local/include/ASPEN/external/Gnuplot/)
 	install (FILES ${PROJECT_SOURCE_DIR}/cmake/ASPENConfig.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
-	install (FILES ${PROJECT_SOURCE_DIR}/cmake/FindOmpGcc.cmake DESTINATION /home/bebe0705/libs/local/lib/cmake/ASPEN/)
-
 
 else()
 	
 	install (TARGETS ${LIB_NAME} DESTINATION /usr/local/lib)
 	install(FILES ${includes} DESTINATION /usr/local/include/ASPEN/)
-	install(FILES ${includes_gnuplot} DESTINATION /usr/local/include/ASPEN/external/Gnuplot/)
 	install (FILES ${PROJECT_SOURCE_DIR}/cmake/ASPENConfig.cmake DESTINATION /usr/local/share/ASPEN/)
-	install (FILES ${PROJECT_SOURCE_DIR}/cmake/FindOmpGcc.cmake DESTINATION /usr/local/share/ASPEN/)
 
 
 endif()

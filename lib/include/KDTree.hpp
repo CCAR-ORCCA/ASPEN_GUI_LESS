@@ -45,20 +45,41 @@ public:
 	void set_value(double value) ;
 	void set_axis(unsigned int axis);
 
+	void set_max_depth(int max_depth);
+	int get_max_depth() const;
 
-	void set_is_cluttered(bool cluttered);
-	bool get_is_cluttered() const;
+
+	void set_min_indices_per_node(int min_indices_per_node);
+	int get_min_indices_per_node() const;
 
 
-	double distance(const T & point_in_pc, const arma::vec & point) const;
 
 protected:
 
+	double distance(const T & point_in_pc, const arma::vec & point) const;
+
+	void search_node(const arma::vec & test_point,
+		const unsigned int & N_points,
+		const std::shared_ptr<KDTree> & node,
+		double & distance,
+		std::map<double,int > & closest_points) const;
+
+	void search_node(const arma::vec & test_point,
+		const std::shared_ptr<KDTree> & node,
+		const double & distance,
+		std::vector< int > & closest_points_indices) const;
+
+	void search_node(const arma::vec & test_point,
+		const std::shared_ptr<KDTree> & node,
+		int & best_guess_index,
+		double & distance) const;
+
 	int depth;
 	int max_depth = 1000;
+	int min_indices_per_node = -1;
+
 	double value;
 	unsigned int axis = 0;
-	bool cluttered = false;
 
 	PointCloud<T> * owner;
 

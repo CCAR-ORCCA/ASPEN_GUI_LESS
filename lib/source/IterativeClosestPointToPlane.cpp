@@ -1,5 +1,5 @@
 #include "IterativeClosestPointToPlane.hpp"
-#define ICP2P_DEBUG 0
+#define ICP2P_DEBUG 1
 #define RANSAC_DEBUG 1
 #include <chrono>
 
@@ -43,12 +43,10 @@ double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pa
 
 
 void IterativeClosestPointToPlane::compute_pairs(int h,
-	
 	const arma::mat::fixed<3,3> & dcm ,
 	const arma::vec::fixed<3> & x ) {
 
 	if (use_true_pairs){
-
 		if (this -> pc_source -> size() != this -> pc_destination -> size()){
 			throw(std::runtime_error("Can't pair point clouds one-to-one since they are of different size"));
 		}
@@ -83,8 +81,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 	const arma::vec::fixed<3> & x_D ){
 
 
-
-
 	point_pairs.clear();
 
 
@@ -95,7 +91,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 	int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
 
 	#if ICP2P_DEBUG
-	std::cout << "\tMaking pairs at h = " << h << "\n";
+	std::cout << "\tMaking " << N_pairs_max << " pairs at h = " << h << "\n";
 	std::cout << "\tUsing a-priori transform:" << std::endl;
 	std::cout << "\t\t X_S: " <<x_S.t();
 	std::cout << "\t\t MRP_S: " << RBK::dcm_to_mrp(dcm_S).t() ;
@@ -333,7 +329,7 @@ void IterativeClosestPointToPlane::ransac(
 			double J = icp.compute_mean_residuals(icp_pairs,dcm,x);
 
 			#if RANSAC_DEBUG
-			std::cout << "\tRANSAC: Residuals:  " << J << std::endl;
+			std::cout << "\tRANSAC: Residuals:  " << J << " , previous best residuals: " << J_best << std::endl;
 			#endif
 
 			if (J < residuals_threshold){

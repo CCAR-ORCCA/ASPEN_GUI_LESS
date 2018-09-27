@@ -33,29 +33,15 @@ this -> axis = axis;
 }
 
 
-template <class T>  void KDTree<T>::set_is_cluttered(bool cluttered){
-this -> cluttered = cluttered;
-}
-
-template <class T>  bool KDTree<T>::get_is_cluttered() const{
-return this -> cluttered;
-}
-
 template <class T>  void KDTree<T>::closest_point_search(const arma::vec & test_point,
 const std::shared_ptr<KDTree> & node,
 int & best_guess_index,
 double & distance) const {
 
-	if (node -> indices.size() == 1 || node -> get_is_cluttered() ) {
-
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
-
-
-		if (new_distance < distance) {
-			distance = new_distance;
-			best_guess_index = node -> indices[0];
-		}
-
+	// If the left child of this node is nullptr, so is the right
+	// and we have a leaf node
+	if (node -> left == nullptr) {
+		KDTree<T>::search_node(test_point,node,best_guess_index,distance);
 	}
 
 	else {
@@ -112,11 +98,12 @@ double & distance) const {
 
 }
 
-template <class T>  void KDTree<T>::closest_N_point_search(const arma::vec & test_point,
-const unsigned int & N_points,
-const std::shared_ptr<KDTree> & node,
-double & distance,
-std::map<double,int > & closest_points) const{
+template <class T>  
+void KDTree<T>::closest_N_point_search(const arma::vec & test_point,
+	const unsigned int & N_points,
+	const std::shared_ptr<KDTree> & node,
+	double & distance,
+	std::map<double,int > & closest_points) const{
 
 	#if KDTTREE_DEBUG_FLAG
 	std::cout << "#############################\n";
@@ -126,45 +113,13 @@ std::map<double,int > & closest_points) const{
 	#endif
 
 	// DEPRECATED
-	if (node -> indices.size() == 1 || node -> get_is_cluttered()) {
+	if (node -> left == nullptr) {
 
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Leaf node\n";
 		#endif
 
-
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
-		
-
-		#if KDTTREE_DEBUG_FLAG
-		std::cout << "Distance to query_point: " << new_distance << std::endl;
-		#endif
-
-		if (closest_points.size() < N_points){
-			closest_points[new_distance] = node -> indices[0];
-		}
-		else{
-
-			unsigned int size_before = closest_points.size(); // should always be equal to N_points
-
-			closest_points[new_distance] = node -> indices[0];
-
-			unsigned int size_after = closest_points.size(); // should always be equal to N_points + 1, unless new_distance was already in the map
-
-			if (size_after == size_before + 1){
-
-				// Remove last element in map
-				closest_points.erase(--closest_points.end());
-
-				// Set the distance to that between the query point and the last element in the map
-				distance = (--closest_points.end()) -> first;
-
-
-			}
-
-
-		}
-
+		KDTree<T>::search_node(test_point,N_points,node,distance,closest_points);
 
 	}
 
@@ -256,27 +211,13 @@ void KDTree<T>::radius_point_search(const arma::vec & test_point,
 	std::cout << "Points found so far : " << closest_points_indices.size() << std::endl;
 	#endif
 
-	if (node -> indices.size() == 1 || node -> get_is_cluttered() ) {
+	if (node -> left == nullptr ) {
 
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Leaf node\n";
 		#endif
 
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[0]),test_point);
-		
-
-		#if KDTTREE_DEBUG_FLAG
-		std::cout << "Distance to query_point: " << new_distance << std::endl;
-		#endif
-
-		if (new_distance < distance ) {
-			for (int i = 0; i < node -> indices.size(); ++i){
-				closest_points_indices.push_back(node -> indices[i]);
-			}
-			#if KDTTREE_DEBUG_FLAG
-			std::cout << "Found closest point " << node -> indices[0] << " with distance = " + std::to_string(distance)<< " \n" << std::endl;
-			#endif
-		}
+		KDTree<T>::search_node(test_point,node,distance,closest_points_indices);
 
 	}
 
@@ -348,19 +289,36 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 	std::cout << "Points in node: " << indices.size() <<  std::endl;
 	#endif
 
-	if (this -> indices.size() == 0) {
+	if (static_cast<int>(this -> indices.size()) == 0) {
 		#if KDTREE_BUILD_DEBUG
 		std::cout << "Empty node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 		return;
 	}
-	else if (this -> indices.size() == 1){
+	else if (static_cast<int>(this -> indices.size()) == 1){
 		#if KDTREE_BUILD_DEBUG
 		std::cout << "Trivial node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
 		#endif
 		return;
+	}
+	else if (static_cast<int>(this -> indices.size()) < this -> get_min_indices_per_node()){
+		#if KDTREE_BUILD_DEBUG
+		std::cout << "Node contains less indices ("  <<static_cast<int>(this -> indices.size()) << ") than the prescribed number ";
+		std::cout << this -> min_indices_per_node << " . Node depth was " << depth << std::endl;
+		#endif
+		return ;
+	}
+	else if (this -> depth == this -> get_max_depth()){
+		
+		#if KDTREE_BUILD_DEBUG
+		std::cout << "Max depth (" << this -> get_max_depth()  << ") reached\n";
+		std::cout << "Node contains "  <<static_cast<int>(this -> indices.size()) << " indices \n";
+
+		#endif
+		return ;
+
 	}
 
 	else {
@@ -382,13 +340,14 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 	// Could multithread here
 	for (unsigned int i = 0; i < indices.size(); ++i) {
 
-		arma::vec point = this -> owner -> get_point_coordinates(indices[i]);
+		const arma::vec & point = this -> owner -> get_point_coordinates(indices[i]);
 
 		max_bounds = arma::max(max_bounds,point);
 		min_bounds = arma::min(min_bounds,point);
 
 		// The midpoint of all the facets is found
 		midpoint += (point / indices.size());
+		
 	}
 
 
@@ -410,7 +369,8 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 		std::cout << "Cluttered node" << std::endl;
 		#endif
 
-		this -> set_is_cluttered(true);
+		this -> left = nullptr;
+		this -> right = nullptr;
 
 		return;
 	}
@@ -449,7 +409,7 @@ void KDTree<T>::build(const std::vector< int > & indices, int depth) {
 }
 
 template <class T> unsigned int KDTree<T>::size() const {
-return this -> indices.size();
+return static_cast<int>(this -> indices.size());
 }
 
 
@@ -471,6 +431,114 @@ double KDTree<PointDescriptor>::distance(const PointDescriptor & point_in_pc,
 
 }
 
+
+template <class T>  
+void KDTree<T>::search_node(const arma::vec & test_point,
+	const std::shared_ptr<KDTree> & node,
+	int & best_guess_index,
+	double & distance) const{
+
+	for (int i = 0; i < node -> indices.size(); ++i){
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+		if (new_distance < distance) {
+			distance = new_distance;
+			best_guess_index = node -> indices[i];
+		}
+	}
+
+}
+
+template <class T>  
+void KDTree<T>::search_node(const arma::vec & test_point,
+	const std::shared_ptr<KDTree> & node,
+	const double & distance,
+	std::vector< int > & closest_points_indices) const{
+
+
+	for (int i = 0; i < node -> indices.size(); ++i){
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+
+		#if KDTTREE_DEBUG_FLAG
+		std::cout << "Distance to query_point: " << new_distance << std::endl;
+		#endif
+
+		if (new_distance < distance ) {
+			closest_points_indices.push_back(node -> indices[i]);
+			#if KDTTREE_DEBUG_FLAG
+			std::cout << "Found closest point " << node -> indices[i] << " with distance = " + std::to_string(distance)<< " \n" << std::endl;
+			#endif
+		}
+
+	}
+
+
+}
+
+template <class T> 
+void KDTree<T>::search_node(const arma::vec & test_point,
+	const unsigned int & N_points,
+	const std::shared_ptr<KDTree> & node,
+	double & distance,
+	std::map<double,int > & closest_points) const{
+
+	for (int i =0 ; i < node -> indices.size(); ++i){
+		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+
+
+		#if KDTTREE_DEBUG_FLAG
+		std::cout << "Distance to query_point: " << new_distance << std::endl;
+		#endif
+
+		if (closest_points.size() < N_points){
+			closest_points[new_distance] = node -> indices[i];
+		}
+		else{
+
+			unsigned int size_before = closest_points.size(); // should always be equal to N_points
+
+			closest_points[new_distance] = node -> indices[i];
+
+			unsigned int size_after = closest_points.size(); // should always be equal to N_points + 1, unless new_distance was already in the map
+
+			if (size_after == size_before + 1){
+
+				// Remove last element in map
+				closest_points.erase(--closest_points.end());
+
+				// Set the distance to that between the query point and the last element in the map
+				distance = (--closest_points.end()) -> first;
+
+			}
+
+
+		}
+
+	}
+
+
+}
+
+
+
+template <class T>
+void KDTree<T>::set_max_depth(int max_depth){
+	this -> max_depth = max_depth;
+}
+
+template <class T>
+int KDTree<T>::get_max_depth() const{
+	return this -> max_depth;
+}
+
+template <class T>
+void KDTree<T>::set_min_indices_per_node(int min_indices_per_node){
+	this -> min_indices_per_node = min_indices_per_node;
+}
+
+template <class T>
+int KDTree<T>::get_min_indices_per_node() const{
+	return this -> min_indices_per_node;
+}
 
 
 // Explicit instantiations

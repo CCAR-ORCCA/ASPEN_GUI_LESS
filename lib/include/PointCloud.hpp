@@ -5,7 +5,6 @@
 #include <memory>
 #include <cassert>
 
-
 template <class T> class KDTree;
 
 typedef typename std::pair<int, int > PointPair ;

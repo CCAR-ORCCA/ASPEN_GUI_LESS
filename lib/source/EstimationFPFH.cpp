@@ -37,7 +37,8 @@ void EstimationFPFH<T,U>::estimate(double radius_neighbors){
 			all_points_neighborhoods,
 			all_point_spfhs,
 			this -> input_pc,
-			this -> scale_distance);
+			this -> scale_distance,
+			this -> output_pc[i].get_is_valid_feature());
 	}
 
 }

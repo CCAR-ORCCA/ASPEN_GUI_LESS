@@ -73,9 +73,9 @@ add_definitions(-Wall -O2 )
 
 # Enable C++17 
 if (EXISTS /home/bebe0705/.am_fortuna)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fext-numeric-literals")
 else()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 endif()
 
 # Find ASPEN
@@ -86,7 +86,6 @@ include_directories(${ASPEN_INCLUDE_GNUPLOT})
 # Find Boost
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
 include_directories(${Boost_INCLUDE_DIRS}) 
-
 
 # Find Armadillo 
 find_package(Armadillo REQUIRED )
@@ -102,15 +101,6 @@ find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
 include_directories(${OC_INCLUDE_DIR})
 
 
-# Find VTK Package
-find_package(VTK REQUIRED PATHS ${VTK_PATH})
-include(${VTK_USE_FILE})
-
-# Find CGAL
-find_package(CGAL REQUIRED)
-include( ${CGAL_USE_FILE} )
-include( CGAL_CreateSingleSourceCGALProgram )
-
 # Find CGAL interface
 find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
 include_directories( ${CGAL_interface_INCLUDE_DIR} )
@@ -119,24 +109,6 @@ include_directories( ${CGAL_interface_INCLUDE_DIR} )
 find_package(SbgatCore REQUIRED PATHS ${SBGAT_LOC})
 include_directories(${SBGATCORE_INCLUDE_HEADER})
 
-
-# Find Eigen3
-find_package(Eigen3 3.1.0 REQUIRED)
-include( ${EIGEN3_USE_FILE} )
-
-# Find OpenMP
-find_package(OpenMP)
-if(OPENMP_FOUND)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
-
-# Find PCL
-# find_package(PCL 1.2 REQUIRED)
-
-# include_directories(${PCL_INCLUDE_DIRS})
-# link_directories(${PCL_LIBRARY_DIRS})
-# add_definitions(${PCL_DEFINITIONS})
 
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
@@ -148,6 +120,7 @@ endif()
 
 # Add source files in root directory
 add_executable(${EXE_NAME} main.cpp)
+message("${CMAKE_CXX_FLAGS}")
 
 # Linking
 set(library_dependencies
@@ -164,9 +137,5 @@ ${ASPEN_LIBRARY}
 ${PCL_LIBRARIES})
 
 
-if (UNIX AND NOT APPLE)
 target_link_libraries(${EXE_NAME} ${library_dependencies})
-else()
-target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 
-endif()

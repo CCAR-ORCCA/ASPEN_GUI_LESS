@@ -49,15 +49,17 @@ public:
 		arma::vec::fixed<3> & x_ransac,
 		std::vector< PointPair > & matches_ransac);
 
+	
+	virtual void compute_pairs(
+		int h,
+		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
+		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
+
 
 protected:
 	
 
 
-	virtual void compute_pairs(
-		int h,
-		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
-		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
 
 	virtual void build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
 		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,

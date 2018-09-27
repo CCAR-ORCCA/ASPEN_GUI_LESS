@@ -14,7 +14,8 @@ public:
 		const std::vector<std::vector<int> >  & points,
 		const std::vector<SPFH> & spfhs,
 		const PointCloud<PointNormal> & pc,
-		bool scale_distance);
+		bool scale_distance,
+		bool is_valid_feature);
 
 protected:
 	

@@ -1,6 +1,7 @@
 #ifndef HEADER_POINTNORMAL
 #define HEADER_POINTNORMAL
 
+
 #include <armadillo>
 #include <memory>
 #include "PointDescriptor.hpp"

@@ -46,12 +46,14 @@ public:
 		std::shared_ptr<PC> pc_source,
 		std::shared_ptr<PC> pc_destination);
 
-protected:
 	
 	virtual void compute_pairs(
 		int h,
 		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
+
+protected:
+	
 
 	virtual void build_matrices(const int pair_index,
 		const arma::vec::fixed<3> & mrp, 

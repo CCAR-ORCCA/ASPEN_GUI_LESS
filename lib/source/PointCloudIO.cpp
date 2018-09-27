@@ -60,8 +60,6 @@ template<>
 void PointCloudIO<PointDescriptor>::save_to_txt(const PointCloud<PointDescriptor> & pc, 
 	std::string savepath,const arma::mat::fixed<3,3> & dcm, const arma::vec::fixed<3> & x){
 
-
-
 	std::ofstream feature_file;
 	feature_file.open(savepath);
 
@@ -79,6 +77,27 @@ void PointCloudIO<PointDescriptor>::save_to_txt(const PointCloud<PointDescriptor
 		}
 	}
 
+
+}
+
+
+template <class T>
+void PointCloudIO<T>::save_active_features_positions(
+	const PointCloud<PointNormal> & pc_points,
+	const PointCloud<PointDescriptor> & pc_features, 
+	std::string savepath,
+	const arma::mat::fixed<3,3> & dcm, 
+	const arma::vec::fixed<3> & x){
+
+	assert(pc_points.size() == pc_features.size());
+	PointCloud<PointNormal> active_points_pc;
+	for (int i = 0; i < pc_features.size(); ++i){
+		if (pc_features.get_point(i).get_is_valid_feature()){
+			active_points_pc.push_back(pc_points.get_point(i));
+		}
+	}
+	
+	PointCloudIO<PointNormal>::save_to_obj(active_points_pc,savepath,dcm,x);
 
 }
 
