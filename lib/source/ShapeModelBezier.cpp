@@ -597,7 +597,6 @@ void ShapeModelBezier::compute_cm_cov(){
 	#endif
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
-		std::cout << omp_get_num_threads() << std::endl;
 		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
 				// i
