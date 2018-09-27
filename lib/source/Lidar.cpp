@@ -1,7 +1,5 @@
 #include "Lidar.hpp"
-#include "GNUPlot.hpp"
 #include "Ray.hpp"
-#include "PC.hpp"
 #include "FrameGraph.hpp"
 #include "ShapeModel.hpp"
 #include "Facet.hpp"
@@ -210,30 +208,6 @@ void Lidar::save_range_residuals_per_facet(std::string path, std::map<Facet * , 
 
 }
 
-void Lidar::plot_range_residuals_per_facet(std::string path) {
-
-	std::vector<std::string> script;
-	script.push_back("set terminal png");
-	script.push_back("set output '" + path + ".png'");
-
-	script.push_back("set title ''");
-	script.push_back("set view map");
-
-	script.push_back("stats '" + path + ".txt' using 1");
-	script.push_back("set xrange [STATS_min - 1:STATS_max + 1]");
-	script.push_back("plot '" + path + ".txt' with points notitle");
-
-	script.push_back("replot");
-
-	GNUPlot plotter;
-	plotter.open();
-	plotter.execute(script);
-	plotter.write("exit");
-	plotter.flush();
-	plotter.close();
-
-
-}
 
 
 void Lidar::save(std::string path,bool conserve_format) {

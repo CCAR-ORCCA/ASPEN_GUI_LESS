@@ -149,16 +149,16 @@ add_library(${LIB_NAME} SHARED
 	source/Facet.cpp
 	source/FeatureMatching.cpp
 	# source/Filter.cpp
-	# source/FrameGraph.cpp
+	source/FrameGraph.cpp
 	source/FPFH.cpp
 	source/ICPBase.cpp
 	source/IterativeClosestPoint.cpp
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
 	source/KDTree.cpp
-	# source/KDTreeShape.cpp
-	# source/KDTreeControlPoints.cpp
-	# source/Lidar.cpp
+	source/KDTreeShape.cpp
+	source/KDTreeControlPoints.cpp
+	source/Lidar.cpp
 	# source/NavigationFilter.cpp
 	# source/Observations.cpp
 	source/PointCloud.cpp
@@ -168,15 +168,15 @@ add_library(${LIB_NAME} SHARED
 	source/PFH.cpp
 	source/PointNormal.cpp
 	source/Psopt.cpp
-	# source/Ray.cpp
-	# source/RefFrame.cpp
+	source/Ray.cpp
+	source/RefFrame.cpp
 	# source/SequentialFilter.cpp
 	# source/ShapeBuilder.cpp
 	# source/ShapeFitterBezier.cpp
-	# source/ShapeModel.cpp
-	# source/ShapeModelBezier.cpp
-	# source/ShapeModelImporter.cpp
-	# source/ShapeModelTri.cpp
+	source/ShapeModel.cpp
+	source/ShapeModelBezier.cpp
+	source/ShapeModelImporter.cpp
+	source/ShapeModelTri.cpp
 	source/SPFH.cpp
 	# source/StatePropagator.cpp
 	)

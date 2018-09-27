@@ -119,25 +119,21 @@ public:
 	Computes the volume of the shape model
 	*/
 	virtual void compute_volume();
-
-	double compute_volume_omp(const arma::vec & deviation) const;
+	double compute_volume(const arma::vec & deviation) const;
 
 
 	/**
 	Computes the center of mass of the shape model
 	*/
 	virtual void compute_center_of_mass();
-
-	arma::vec::fixed<3> compute_center_of_mass_omp(const double & volume, const arma::vec & deviation) const;
-
+	arma::vec::fixed<3> compute_center_of_mass(const double & volume, const arma::vec & deviation) const;
 
 
 	/**
 	Computes the inertia tensor of the shape model
 	*/
 	virtual void compute_inertia();
-
-	arma::mat::fixed<3,3> compute_inertia_omp(const arma::vec & deviation) const;
+	arma::mat::fixed<3,3> compute_inertia(const arma::vec & deviation) const;
 
 
 	/**
@@ -257,7 +253,8 @@ public:
 
 	arma::vec d_I() const;
 
-	void take_and_save_slice(int axis, std::string path, const double & c) const;
+	void take_and_save_slice(int axis, std::string path, const double & c,
+		const arma::vec & deviation = {}) const;
 
 	void compute_point_covariances(double sigma_sq,double correl_distance) ;
 	void compute_shape_covariance_sqrt();
@@ -273,7 +270,8 @@ protected:
 
 
 	
-	void take_slice(int axis, std::vector<std::vector<arma::vec> > & lines, const double & c) const;
+	void take_slice(int axis, std::vector<std::vector<arma::vec> > & lines, const double & c,
+		const arma::vec & deviation = {}) const;
 	void save_slice(int axis, std::string path, const std::vector<std::vector<arma::vec> > & lines) const;
 
 

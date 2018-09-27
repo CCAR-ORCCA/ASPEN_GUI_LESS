@@ -238,13 +238,28 @@ void FeatureMatching<T>::greedy_pairing(
 	std::cout <<"Time elapsed building E2 vector: " << diff.count() << " s\n";
 
 	// Filling out the map
+	double mean_error = 0;
 	start = std::chrono::system_clock::now();
 	for (int global_index = 0; global_index < combinations; ++global_index){
 		E2[errors[global_index]] = p_q_indices[global_index];
+		mean_error+=errors[global_index]/combinations;
 	}
 	end = std::chrono::system_clock::now();
 	diff = end-start;
 	std::cout << "Time elapsed building E2 map: " << diff.count() << " s\n";
+
+
+	std::cout << "Smallest error in pairs: " << E2.begin()->first << std::endl;
+	std::cout << "Largest error in pairs: " << (--E2.end())->first << std::endl;
+	std::cout << "Mean error in pairs: "<< mean_error << std::endl;
+
+	// int old_size = static_cast<int>(E2.size());
+	// E2.erase(E2.upper_bound(mean_error),E2.end());
+	// int new_size = static_cast<int>(E2.size());
+	// std::cout << "Got rid of " << old_size - new_size << " elements\n";
+
+
+
 
 
 	// The sets are merged 
@@ -391,7 +406,7 @@ void  FeatureMatching<T>::merge_set(Eset & old_set,
 		// The old set is now purged from correspondances whose endpoints union give best_q_indices
 		// For each entry in the old set
 		#if FEATURE_MATCHING_DEBUG
-		std::cout << "Purging old_set: " << old_set.size() << "\n";
+		std::cout << "Purging old_set: " << old_set.size() << " elements remain\n";
 		#endif
 
 		for (auto it = old_set.begin(); it != old_set.end(); ){

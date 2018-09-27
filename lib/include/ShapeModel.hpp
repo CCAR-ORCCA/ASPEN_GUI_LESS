@@ -210,6 +210,7 @@ public:
 	Computes the volume of the shape model
 	*/
 	virtual void compute_volume() = 0;
+
 	/**
 	Computes the center of mass of the shape model
 	*/

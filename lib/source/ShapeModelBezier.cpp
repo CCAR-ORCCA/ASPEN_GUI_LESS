@@ -197,11 +197,10 @@ void ShapeModelBezier::compute_volume(){
 
 
 
-double ShapeModelBezier::compute_volume_omp(const arma::vec & deviation) const{
+double ShapeModelBezier::compute_volume(const arma::vec & deviation) const{
 	
 	double volume = 0;
 
-	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -275,7 +274,7 @@ void ShapeModelBezier::compute_center_of_mass(){
 }
 
 
-arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass_omp(const double & volume, const arma::vec & deviation) const{
+arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass(const double & volume,const arma::vec & deviation) const{
 
 	double cx = 0;
 	double cy = 0;
@@ -283,7 +282,6 @@ arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass_omp(const double & 
 
 	int n = this -> get_degree();
 
-	#pragma omp parallel for reduction(+:cx,cy,cz)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
 		Bezier * patch = dynamic_cast<Bezier * >(this -> elements[el_index].get());		
@@ -315,30 +313,16 @@ arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass_omp(const double & 
 
 	}
 
-
-
 	arma::vec cm = {cx,cy,cz};
 
 	return ( cm / volume);
 }
 
-
-
-
-
-
-
-
-
 void ShapeModelBezier::compute_inertia(){
 
 	arma::mat::fixed<3,3> inertia = arma::zeros<arma::mat>(3,3);
 
-	double norm_length = std::cbrt(this -> volume);
-	// double factor = 1./std::pow(norm_length,5);
-	double factor = 1.;
-
-	// #pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
+	#pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -356,7 +340,7 @@ void ShapeModelBezier::compute_inertia(){
 			int s =  int(this -> inertia_indices_coefs_table[index][8]);
 			int t =  int(this -> inertia_indices_coefs_table[index][9]);
 			
-			inertia += factor * (this -> inertia_indices_coefs_table[index][10]  
+			inertia += (this -> inertia_indices_coefs_table[index][10]  
 				* RBK::tilde(patch -> get_control_point_coordinates(i,j)) 
 				* RBK::tilde(patch -> get_control_point_coordinates(k,l))
 				* patch -> triple_product(m,p,q,r,s,t));
@@ -369,12 +353,10 @@ void ShapeModelBezier::compute_inertia(){
 }
 
 
-
-arma::mat::fixed<3,3> ShapeModelBezier::compute_inertia_omp(const arma::vec & deviation) const{
+arma::mat::fixed<3,3> ShapeModelBezier::compute_inertia(const arma::vec & deviation) const{
 
 	arma::mat::fixed<3,3> inertia = arma::zeros<arma::mat>(3,3);
 
-	// #pragma omp parallel for reduction(+:inertia) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 		
 		Bezier * patch = static_cast<Bezier * >(this -> elements[el_index].get());		
@@ -794,11 +776,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	arma::arma_rng::set_seed(0);
 
-	// Setting the means
-	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> set_mean_coordinates();
-	}
-
 	boost::progress_display progress(N) ;
 	results_volume = arma::zeros<arma::vec>(N);
 	results_cm = arma::zeros<arma::mat>(3,N);
@@ -819,35 +796,32 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	this -> save_to_obj("../output/iter_baseline.obj");
 
-
+	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
 
 		++progress;
 
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
 
-		for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-			
-			this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates()
-				+ deviation.rows(3 * i, 3 * i + 2) );
+		// Should be able to provide deviation in control points 
+		// here
+		const double volume = this -> compute_volume(deviation);
+		const arma::vec::fixed<3> center_of_mass = this -> compute_center_of_mass(volume,deviation);
+		const arma::mat::fixed<3,3> inertia  = this -> compute_inertia(deviation);
 
-		}
-
-		this -> compute_volume();
-		this -> compute_center_of_mass();
-		this -> compute_inertia();
-
-		arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
+		arma::mat I_C = inertia - volume * RBK::tilde(center_of_mass) * RBK::tilde(center_of_mass).t() ;
 		arma::vec I = {I_C(0,0),I_C(1,1),I_C(2,2),I_C(0,1),I_C(0,2),I_C(1,2)};
 
 		arma::vec moments_col(4);
 		arma::vec eig_val = arma::eig_sym(I_C);
 		arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
 		moments_col.rows(0,2) = eig_val;
-		moments_col(3) = this -> get_volume();
 
-		results_volume(iter) = this -> get_volume();
-		results_cm.col(iter) = this -> get_center_of_mass();
+
+		moments_col(3) = volume;
+		results_volume(iter) = volume;
+		results_cm.col(iter) = center_of_mass;
+
 		results_inertia.col(iter) = I;
 		results_moments.col(iter) = moments_col;
 		results_mrp.col(iter) = RBK::dcm_to_mrp(eig_vec);
@@ -859,11 +833,11 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		results_eigenvectors.col(iter).rows(3,5) = eig_vec.col(1);
 		results_eigenvectors.col(iter).rows(6,8) = eig_vec.col(2);
 		results_Evectors.col(iter) = ShapeModelBezier::get_E_vectors(I_C);
-		results_Y.col(iter) = ShapeModelBezier::get_Y(this -> get_volume(),I_C);
+		results_Y.col(iter) = ShapeModelBezier::get_Y(volume,I_C);
 		results_MI.col(iter).rows(0,5) = I;
-		results_MI.col(iter)(6) = this -> volume;
+		results_MI.col(iter)(6) = volume;
 
-		results_dims.col(iter) = ShapeModelBezier::get_dims(this -> volume,I_C);
+		results_dims.col(iter) = ShapeModelBezier::get_dims(volume,I_C);
 
 		// saving shape model
 
@@ -878,10 +852,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		
 	}
 
-	// Cleaning up
-	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> set_coordinates(this -> control_points[i] -> get_mean_coordinates());
-	}
 
 
 }
@@ -2764,10 +2734,10 @@ arma::mat::fixed<4,4>  ShapeModelBezier::partial_M_partial_Y() const{
 
 }
 
-void ShapeModelBezier::take_and_save_slice(int axis,std::string path, const double & c) const {
+void ShapeModelBezier::take_and_save_slice(int axis,std::string path, const double & c,const arma::vec & deviation) const {
 
 	std::vector<std::vector<arma::vec> > lines;
-	this -> take_slice(axis,lines,c);
+	this -> take_slice(axis,lines,c,deviation);
 	this -> save_slice(axis,path,lines);
 
 }
@@ -2824,7 +2794,8 @@ void ShapeModelBezier::save_slice(int axis,
 
 void ShapeModelBezier::take_slice(int axis,
 	std::vector<std::vector<arma::vec> > & lines,
-	const double & c) const{
+	const double & c,
+	const arma::vec & deviation) const{
 
 
 	arma::vec n_plane = {0,0,0};
@@ -2847,9 +2818,27 @@ void ShapeModelBezier::take_slice(int axis,
 	// Each surface element is "sliced"
 	for (auto el = this -> elements.begin(); el != this -> elements.end(); ++el){
 
-		C.col(0) = static_cast<Bezier * >((*el).get()) -> get_control_point(1,0) -> get_coordinates();
-		C.col(1) = static_cast<Bezier * >((*el).get()) -> get_control_point(0,1) -> get_coordinates();
-		C.col(2) = static_cast<Bezier * >((*el).get()) -> get_control_point(0,0) -> get_coordinates();
+
+		std::shared_ptr<ControlPoint> P0 = static_cast<Bezier * >((*el).get()) -> get_control_point(1,0);
+		std::shared_ptr<ControlPoint> P1 = static_cast<Bezier * >((*el).get()) -> get_control_point(0,1);
+		std::shared_ptr<ControlPoint> P2 = static_cast<Bezier * >((*el).get()) -> get_control_point(0,0);
+
+		C.col(0) = P0 -> get_coordinates();
+		C.col(1) = P1 -> get_coordinates();
+		C.col(2) = P2 -> get_coordinates();
+
+		if (deviation.size() > 0){
+
+			int global_index = P0 -> get_global_index();
+			C.col(0) += deviation(3 * global_index, 3 * global_index + 2);
+
+			global_index = P1 -> get_global_index();
+			C.col(1) += deviation(3 * global_index, 3 * global_index + 2);
+			
+			global_index = P2 -> get_global_index();
+			C.col(2) += deviation(3 * global_index, 3 * global_index + 2);
+			
+		}
 
 		arma::rowvec M = n_plane.t() * C * T;
 		double e = c - arma::dot(n_plane,C * e3);
