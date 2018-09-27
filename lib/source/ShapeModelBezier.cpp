@@ -1197,8 +1197,9 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	std::cout << "- CM cov coefficients : " << this -> cm_cov_1_indices_coefs_table.size() + this -> cm_cov_2_indices_coefs_table.size() << std::endl;
 
 
-	// Inertia
+	
 
+	// Inertia
 	index_vectors.clear();
 	ShapeModelBezier::build_bezier_index_vectors(5,
 		base_vector,
@@ -1287,6 +1288,18 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 			this -> inertia_stats_1_indices_coefs_table.push_back(index_vector);
 		}
 	}
+
+	arma::vec cm_cov_coefs_arma(this -> cm_cov_1_indices_coefs_table.size());
+	for (int i =0; i < this -> cm_cov_1_indices_coefs_table.size(); ++i){
+		cm_cov_coefs_arma(i) =  this -> cm_cov_1_indices_coefs_table[i].back();
+	}
+	cm_cov_coefs_arma.save("cm_cov_coefs_arma.txt",arma::raw_ascii);
+
+	arma::vec inertia_cov_coefs_arma(this -> inertia_stats_1_indices_coefs_table.size());
+	for (int i =0; i < this -> inertia_stats_1_indices_coefs_table.size(); ++i){
+		inertia_cov_coefs_arma(i) =  this -> inertia_stats_1_indices_coefs_table[i].back();
+	}
+	inertia_cov_coefs_arma.save("inertia_cov_coefs_arma.txt",arma::raw_ascii);
 
 
 	// Inertia statistics 2
@@ -1963,9 +1976,10 @@ void ShapeModelBezier::compute_P_I(){
 
 	boost::progress_display progress(this -> inertia_stats_1_indices_coefs_table.size()) ;
 
-
-	// #pragma omp parallel for reduction (+:P_I)
-
+	#if __APPLE__
+	#elif __linux__
+	#pragma omp parallel for reduction (+:P_I)
+	#endif
 	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
 
 		auto coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
@@ -2357,6 +2371,8 @@ arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(const arma::mat::fixed<
 	P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, p);
 	P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, q);
 	P_CC.submat(9,9,11,11) = this -> get_point_covariance(l, r);
+
+	
 
 	return left_mat.t() * P_CC * right_mat;
 }
