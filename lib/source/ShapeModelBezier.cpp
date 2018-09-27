@@ -237,8 +237,6 @@ void ShapeModelBezier::compute_center_of_mass(){
 	double cy = 0;
 	double cz = 0;
 
-	int n = this -> get_degree();
-
 	#pragma omp parallel for reduction(+:cx,cy,cz)
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
@@ -279,8 +277,6 @@ arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass(const double & volu
 	double cx = 0;
 	double cy = 0;
 	double cz = 0;
-
-	int n = this -> get_degree();
 
 	for (unsigned int el_index = 0; el_index < this -> elements.size(); ++el_index) {
 
@@ -731,6 +727,7 @@ arma::mat::fixed<6,6> ShapeModelBezier::compute_patch_pair_PI_contribution(Bezie
 			p_g,q_g,r_g,s_g,t_g);
 
 	}
+	return d_P_I;
 }
 
 
@@ -781,9 +778,6 @@ arma::vec::fixed<6> ShapeModelBezier::compute_patch_pair_P_MI_contribution(Bezie
 
 
 
-		int i_g,j_g,k_g,l_g,m_g;
-
-
 		i_g = patch_e -> get_control_point_global_index(i,j);
 		j_g = patch_e -> get_control_point_global_index(k,l);
 		k_g = patch_e -> get_control_point_global_index(m,p);
@@ -791,10 +785,6 @@ arma::vec::fixed<6> ShapeModelBezier::compute_patch_pair_P_MI_contribution(Bezie
 		m_g = patch_e -> get_control_point_global_index(s,t);	
 
 		this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
-
-
-
-
 
 		p_g = patch_f -> get_control_point_global_index(u,v);
 		q_g = patch_f -> get_control_point_global_index(w,x);
@@ -809,95 +799,6 @@ arma::vec::fixed<6> ShapeModelBezier::compute_patch_pair_P_MI_contribution(Bezie
 	}
 
 	return d_P_MI;
-}
-
-
-
-void ShapeModelBezier::compute_volume_sd(){
-
-	double vol_sd = 0;
-
-	// The list of connected facets should be formed somewhere here
-
-	// a vector storing sets of vector pointers? where the index of the vector
-	// refers to the index of the surface element
-
-	std::vector<std::set < Element * > > connected_elements;
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	std::cout << "\n- Computing volume sd...\n";
-	boost::progress_display progress(this -> elements.size()) ;
-
-	#pragma omp parallel for reduction(+:vol_sd)
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-
-		auto neighbors = this -> correlated_elements[e];
-
-		for (auto f : neighbors) {
-
-			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
-			for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
-
-				// i
-				int i =  int(this -> volume_sd_indices_coefs_table[index][0]);
-				int j =  int(this -> volume_sd_indices_coefs_table[index][1]);
-
-				// j
-				int k =  int(this -> volume_sd_indices_coefs_table[index][2]);
-				int l =  int(this -> volume_sd_indices_coefs_table[index][3]);
-
-				// k
-				int m =  int(this -> volume_sd_indices_coefs_table[index][4]);
-				int p =  int(this -> volume_sd_indices_coefs_table[index][5]);
-
-				// l
-				int q =  int(this -> volume_sd_indices_coefs_table[index][6]);
-				int r =  int(this -> volume_sd_indices_coefs_table[index][7]);
-
-				// m
-				int s =  int(this -> volume_sd_indices_coefs_table[index][8]);
-				int t =  int(this -> volume_sd_indices_coefs_table[index][9]);
-
-				// p
-				int u =  int(this -> volume_sd_indices_coefs_table[index][10]);
-				int v =  int(this -> volume_sd_indices_coefs_table[index][11]);
-
-
-				int i_g = patch_e -> get_control_point_global_index(i,j);
-				int j_g = patch_e -> get_control_point_global_index(k,l);
-				int k_g = patch_e -> get_control_point_global_index(m,p);
-
-				int l_g = patch_f -> get_control_point_global_index(q,r);
-				int m_g = patch_f -> get_control_point_global_index(s,t);
-				int p_g = patch_f -> get_control_point_global_index(u,v);
-
-
-				arma::vec::fixed<9> left_vec = patch_e -> get_cross_products(i,j,k,l,m,p);
-				arma::vec::fixed<9> right_vec = patch_f -> get_cross_products(q,r,s,t,u,v);
-
-				vol_sd += this -> volume_sd_indices_coefs_table[index][12] * this -> increment_volume_variance(left_vec,
-					right_vec, 
-					i_g, j_g, k_g, 
-					l_g,  m_g, p_g);
-
-			}
-
-
-		}
-		++progress;
-
-	}
-
-	this -> volume_sd = std::sqrt(vol_sd);
-
 }
 
 
@@ -924,110 +825,6 @@ double ShapeModelBezier::increment_volume_variance(const arma::vec::fixed<9> & l
 	return arma::dot(left_vec, P_CC * right_vec);
 }
 
-
-
-void ShapeModelBezier::compute_cm_cov(){
-
-	std::cout << "\n- Computing cm covariance ...\n";
-
-	arma::mat::fixed<3,3> cm_cov_temp;
-
-
-	cm_cov_temp = this -> cm * this -> cm.t() * std::pow(this -> volume_sd,2);
-
-	std::vector<std::set < Element * > > connected_elements;
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	boost::progress_display progress(this -> cm_cov_1_indices_coefs_table.size()) ;
-
-	#if __APPLE__
-	#elif __linux__
-	#pragma omp parallel for reduction (+:cm_cov_temp)
-	#endif
-	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
-
-		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
-
-				// i
-		int i =  int(coefs_row[0]);
-		int j =  int(coefs_row[1]);
-
-				// j
-		int k =  int(coefs_row[2]);
-		int l =  int(coefs_row[3]);
-
-				// k
-		int m =  int(coefs_row[4]);
-		int p =  int(coefs_row[5]);
-
-				// l
-		int q =  int(coefs_row[6]);
-		int r =  int(coefs_row[7]);
-
-				// m
-		int s =  int(coefs_row[8]);
-		int t =  int(coefs_row[9]);
-
-				// p
-		int u =  int(coefs_row[10]);
-		int v =  int(coefs_row[11]);
-
-				// q
-		int w =  int(coefs_row[12]);
-		int x =  int(coefs_row[13]);
-
-				// r
-		int y =  int(coefs_row[14]);
-		int z =  int(coefs_row[15]);
-
-		arma::mat::fixed<12,3> left_mat;
-		arma::mat::fixed<12,3> right_mat;
-
-		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-			int i_g,j_g,k_g,l_g;
-
-			i_g = patch_e -> get_control_point_global_index(i,j);
-			j_g = patch_e -> get_control_point_global_index(k,l);
-			k_g = patch_e -> get_control_point_global_index(m,p);
-			l_g = patch_e -> get_control_point_global_index(q,r);
-
-			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
-
-			auto neighbors = this -> correlated_elements[e];
-
-			for (auto f : neighbors) {
-
-				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
-				int m_g,p_g,q_g,r_g;
-
-				m_g = patch_f -> get_control_point_global_index(s,t);
-				p_g = patch_f -> get_control_point_global_index(u,v);
-				q_g = patch_f -> get_control_point_global_index(w,x);
-				r_g = patch_f -> get_control_point_global_index(y,z);	
-
-				this -> construct_cm_mapping_mat(right_mat,m_g,p_g,q_g,r_g);
-
-				cm_cov_temp += coefs_row[16] * this -> increment_cm_cov(left_mat,
-					right_mat, 
-					i_g,j_g,k_g,l_g, 
-					m_g,p_g,q_g,r_g);
-			}
-		}
-
-		++progress;
-	}
-
-	this -> cm_cov = cm_cov_temp / std::pow(this -> volume,2);
-
-}
 
 
 void ShapeModelBezier::construct_cm_mapping_mat(arma::mat::fixed<12,3> & mat,
@@ -2296,151 +2093,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::get_principal_axes_stable(const arma::ma
 }
 
 
-
-void ShapeModelBezier::compute_inertia_statistics() {
-	std::cout << "\n- Computing inertia statistics ...\n";
-
-	this -> compute_P_I();
-	this -> compute_P_MI();
-	this -> compute_P_MX();
-	this -> compute_P_Y();
-	this -> compute_P_moments();
-	this -> compute_P_dims();
-
-
-	this -> compute_P_Evectors();
-	this -> compute_P_eigenvectors();
-	this -> compute_P_sigma();
-
-
-}
-
-
-void ShapeModelBezier::compute_P_I(){
-
-
-	arma::mat::fixed<6,6> P_I = arma::zeros<arma::mat>(6,6);
-
-	std::vector<std::set < Element * > > connected_elements;
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	boost::progress_display progress(this -> inertia_stats_1_indices_coefs_table.size()) ;
-
-	#if __APPLE__
-	#elif __linux__
-	#pragma omp parallel for reduction (+:P_I)
-	#endif
-	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
-
-		auto coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
-
-				// i
-		int i =  int(coefs_row[0]);
-		int j =  int(coefs_row[1]);
-
-				// j
-		int k =  int(coefs_row[2]);
-		int l =  int(coefs_row[3]);
-
-				// k
-		int m =  int(coefs_row[4]);
-		int p =  int(coefs_row[5]);
-
-				// l
-		int q =  int(coefs_row[6]);
-		int r =  int(coefs_row[7]);
-
-				// m
-		int s =  int(coefs_row[8]);
-		int t =  int(coefs_row[9]);
-
-				// p
-		int u =  int(coefs_row[10]);
-		int v =  int(coefs_row[11]);
-
-				// q
-		int w =  int(coefs_row[12]);
-		int x =  int(coefs_row[13]);
-
-				// r
-		int y =  int(coefs_row[14]);
-		int z =  int(coefs_row[15]);
-
-				// s
-		int a =  int(coefs_row[16]);
-		int b =  int(coefs_row[17]);
-
-				// t
-		int c =  int(coefs_row[18]);
-		int d =  int(coefs_row[19]);
-
-
-		arma::mat::fixed<6,15> left_mat;
-		arma::mat::fixed<6,15> right_mat;
-
-		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-
-
-			int i_g,j_g,k_g,l_g,m_g;
-
-			i_g = patch_e -> get_control_point_global_index(i,j);
-			j_g = patch_e -> get_control_point_global_index(k,l);
-			k_g = patch_e -> get_control_point_global_index(m,p);
-			l_g = patch_e -> get_control_point_global_index(q,r);
-			m_g = patch_e -> get_control_point_global_index(s,t);
-
-
-			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
-
-
-			auto neighbors = this -> correlated_elements[e];
-
-			for (auto f : neighbors) {
-
-				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
-				int p_g,q_g,r_g,s_g,t_g;
-
-				p_g = patch_f -> get_control_point_global_index(u,v);
-				q_g = patch_f -> get_control_point_global_index(w,x);
-				r_g = patch_f -> get_control_point_global_index(y,z);
-				s_g = patch_f -> get_control_point_global_index(a,b);
-				t_g = patch_f -> get_control_point_global_index(c,d);	
-
-				this -> construct_inertia_mapping_mat(right_mat,p_g,q_g,r_g,s_g,t_g);
-
-
-				P_I += coefs_row[20] * this -> increment_P_I(left_mat,
-					right_mat, 
-					i_g,j_g,k_g,l_g,m_g, 
-					p_g,q_g,r_g,s_g,t_g);
-
-
-			}
-		}
-
-		++progress;
-	}
-
-	this -> P_I = P_I;
-
-}
-
-
-
-
-
-
-
-
 arma::vec ShapeModelBezier::d_I() const{
-
 
 	std::vector<std::set < Element * > > connected_elements;
 
@@ -2509,108 +2162,6 @@ arma::vec ShapeModelBezier::d_I() const{
 	}
 
 	return dI;
-
-}
-
-
-void ShapeModelBezier::compute_P_MI(){
-
-	arma::vec::fixed<6> P_MI = arma::zeros<arma::vec>(6);
-
-	std::vector<std::set < Element * > > connected_elements;
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	boost::progress_display progress(this -> inertia_stats_2_indices_coefs_table.size()) ;
-
-
-	// #pragma omp parallel for reduction (+:P_MI)
-
-	for (int index = 0 ; index <  this -> inertia_stats_2_indices_coefs_table.size(); ++index) {
-
-		auto coefs_row = this -> inertia_stats_2_indices_coefs_table[index];
-
-				// i
-		int i =  int(coefs_row[0]);
-		int j =  int(coefs_row[1]);
-
-				// j
-		int k =  int(coefs_row[2]);
-		int l =  int(coefs_row[3]);
-
-				// k
-		int m =  int(coefs_row[4]);
-		int p =  int(coefs_row[5]);
-
-				// l
-		int q =  int(coefs_row[6]);
-		int r =  int(coefs_row[7]);
-
-				// m
-		int s =  int(coefs_row[8]);
-		int t =  int(coefs_row[9]);
-
-				// p
-		int u =  int(coefs_row[10]);
-		int v =  int(coefs_row[11]);
-
-				// q
-		int w =  int(coefs_row[12]);
-		int x =  int(coefs_row[13]);
-
-				// r
-		int y =  int(coefs_row[14]);
-		int z =  int(coefs_row[15]);
-
-		arma::mat::fixed<6,15> left_mat;
-		arma::vec::fixed<9> right_vec;
-
-		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-			int i_g,j_g,k_g,l_g,m_g;
-
-
-			i_g = patch_e -> get_control_point_global_index(i,j);
-			j_g = patch_e -> get_control_point_global_index(k,l);
-			k_g = patch_e -> get_control_point_global_index(m,p);
-			l_g = patch_e -> get_control_point_global_index(q,r);
-			m_g = patch_e -> get_control_point_global_index(s,t);	
-
-			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
-
-
-			auto neighbors = this -> correlated_elements[e];
-
-			for (auto f : neighbors) {
-
-				Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
-
-
-				int p_g,q_g,r_g;
-
-				p_g = patch_f -> get_control_point_global_index(u,v);
-				q_g = patch_f -> get_control_point_global_index(w,x);
-				r_g = patch_f -> get_control_point_global_index(y,z);
-
-				right_vec = patch_f -> get_cross_products(u,v,w,x,y,z);
-
-				P_MI += coefs_row[16] *  this -> increment_P_MI(left_mat,
-					right_vec, 
-					i_g,j_g,k_g,l_g,m_g, 
-					p_g,q_g,r_g);
-			}
-		}
-
-		++progress;
-	}
-
-	this -> P_MI = P_MI;
 
 }
 
@@ -2903,9 +2454,6 @@ arma::rowvec::fixed<6> ShapeModelBezier::partial_d_partial_I() const {
 
 	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
-	double T = arma::trace(I_C);
-	double d = arma::det (I_C);
-
 	double I_xx = I_C(0,0);
 	double I_yy = I_C(1,1);
 	double I_zz = I_C(2,2);
@@ -2942,7 +2490,6 @@ arma::rowvec::fixed<2> ShapeModelBezier::partial_U_partial_Z() const{
 	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
 	double T = arma::trace(I_C);
-	double d = arma::det (I_C);
 
 	double I_xx = I_C(0,0);
 	double I_yy = I_C(1,1);
@@ -2984,9 +2531,6 @@ arma::mat::fixed<2,6> ShapeModelBezier::partial_Z_partial_I() const {
 arma::rowvec::fixed<6> ShapeModelBezier::partial_Pi_partial_I() const {
 
 	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
-
-	double T = arma::trace(I_C);
-	double d = arma::det (I_C);
 
 	double I_xx = I_C(0,0);
 	double I_yy = I_C(1,1);
@@ -3648,15 +3192,6 @@ arma::mat::fixed<3,9> ShapeModelBezier::partial_E_partial_R(const double lambda)
 
 	arma::mat I_C = this -> inertia - this -> get_volume() * RBK::tilde(this -> get_center_of_mass()) * RBK::tilde(this -> get_center_of_mass()).t() ;
 
-	double T = arma::trace(I_C);
-	double d = arma::det (I_C);
-
-	double I_xx = I_C(0,0);
-	double I_yy = I_C(1,1);
-	double I_zz = I_C(2,2);
-	double I_xy = I_C(0,1);
-	double I_xz = I_C(0,2);
-	double I_yz = I_C(1,2);
 
 	arma::vec moments = arma::eig_sym(I_C);
 

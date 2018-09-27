@@ -144,22 +144,11 @@ public:
 
 	void save_both(std::string partial_path);
 
-
 	/**
 	Assembles the tables used to compute the mass properties of the shape
 	*/
 	void populate_mass_properties_coefs();
 
-
-	/**
-	Compute the standard deviation in the volume
-	*/
-	void compute_volume_sd();
-
-	/**
-	Compute the covariance in the center of mass
-	*/
-	void compute_cm_cov();
 
 	/**
 	Runs a Monte Carlo on volume, cm
@@ -178,34 +167,6 @@ public:
 		arma::mat & results_Y,
 		arma::mat & results_MI,
 		arma::mat & results_dims);
-
-	/**
-	Runs a Monte Carlo on volume, cm
-	@param N number of runs
-	@return results
-	*/
-	void run_monte_carlo_omp(int N,
-		arma::vec & results_volume,
-		arma::mat & results_cm,
-		arma::mat & results_inertia,
-		arma::mat & results_moments,
-		arma::mat & results_mrp,
-		arma::mat & results_lambda_I,
-		arma::mat & results_eigenvectors,
-		arma::mat & results_Evectors,
-		arma::mat & results_Y,
-		arma::mat & results_MI,
-		arma::mat & results_dims) const;
-
-	/**
-	Runs a Monte Carlo on volume
-	@param N number of runs
-	@return results
-	*/
-	arma::mat run_monte_carlo_cm(int N);
-
-
-
 
 
 	/**
@@ -232,8 +193,6 @@ public:
 
 
 	void build_structure() ;
-
-	void compute_inertia_statistics() ;
 
 
 	arma::mat get_P_moments() const{return this -> P_moments;}
@@ -306,9 +265,6 @@ protected:
 
 	
 
-
-	void compute_P_I();
-	void compute_P_MI();
 	void compute_P_Y();
 	void compute_P_MX();
 
