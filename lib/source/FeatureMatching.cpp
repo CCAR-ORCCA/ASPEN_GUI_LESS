@@ -121,7 +121,9 @@ void FeatureMatching<PointNormal>::save_matches(std::string path,
 
 
 template <class T>
-void FeatureMatching<T>::greedy_pairing(int N, 
+void FeatureMatching<T>::greedy_pairing(
+	int N_potential_correspondances, 
+	int N_matches,
 	const PointCloud<PointNormal> & point_pc1,
 	const PointCloud<PointNormal> & point_pc2,
 	const PointCloud<T> & descriptor_pc1,
@@ -147,15 +149,12 @@ void FeatureMatching<T>::greedy_pairing(int N,
 			continue;
 		}
 
-		auto closest_N_points = descriptor_pc2.get_closest_N_points(descriptor_pc1.get_point(i).get_histogram(),N);
+		auto closest_N_points = descriptor_pc2.get_closest_N_points(descriptor_pc1.get_point(i).get_histogram(),N_potential_correspondances);
 		for (auto it = closest_N_points.begin(); it != closest_N_points.end(); ++it){
 			matches_temp[i].first = i;
 			matches_temp[i].second.push_back(it -> second);
 		}
 	}
-
-	// Only working with N matches
-	int N_matches = 200;
 
 	arma::ivec random_indices = arma::shuffle(arma::regspace<arma::ivec>(0,matches_temp.size() - 1));
 

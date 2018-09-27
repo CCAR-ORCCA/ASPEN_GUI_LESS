@@ -94,7 +94,8 @@ int main() {
 
 
 	std::vector< PointPair > matches;
-	FeatureMatching<PointDescriptor>::greedy_pairing(5, 
+	FeatureMatching<PointDescriptor>::greedy_pairing(5,
+	500, 
 	point_pc_1,
 	point_pc_2,
 	descriptor_pc_1,

@@ -27,12 +27,13 @@ public:
 
 
 	static void greedy_pairing(
-		int N, 
+		int N_potential_correspondances, 
+		int N_matches,
 		const PointCloud<PointNormal> & point_pc1,
 		const PointCloud<PointNormal> & point_pc2,
 		const PointCloud<T> & descriptor_pc1,
 		PointCloud<T> & descriptor_pc2,
-		std::vector< PointPair >  & matches);
+		std::vector< PointPair > & matches);
 
 
 
