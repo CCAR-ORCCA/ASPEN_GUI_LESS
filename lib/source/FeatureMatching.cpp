@@ -249,7 +249,7 @@ void FeatureMatching<T>::greedy_pairing(int N,
 
 
 	// The sets are merged 
-	for (int n = 0; n < 4; ++n){
+	for (int n = 0; n < 5; ++n){
 		#if FEATURE_MATCHING_DEBUG
 		std::cout << "Current level : " << n << "\n";
 		#endif

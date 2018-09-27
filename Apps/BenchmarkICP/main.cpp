@@ -20,10 +20,10 @@
 int main() {
 
 	// loading
-	PointCloud<PointNormal> point_pc_1("../bunny000.obj");
+	PointCloud<PointNormal> point_pc_1("../bunny270.obj");
 	// PointCloud<PointNormal> point_pc_2("../bunny000.obj");
 
-	PointCloud<PointNormal> point_pc_2("../bunny090.obj");
+	PointCloud<PointNormal> point_pc_2("../bunny180.obj");
 
 	arma::vec::fixed<3> x = {5e-1,0.0,0.0};
 	arma::vec::fixed<3> mrp = {-0.1,0.2,-0.3};
@@ -33,7 +33,7 @@ int main() {
 	point_pc_2.build_kdtree();
 
 	//  Normal estimation
-	arma::vec::fixed<3> los_1 = {0,1,0};
+	arma::vec::fixed<3> los_1 = {0,0,1};
 	// arma::vec::fixed<3> los_2 = {0,1,0};
 	arma::vec::fixed<3> los_2 = {0,0,1};
 
@@ -62,20 +62,20 @@ int main() {
 	EstimationFPFH<PointNormal,PointDescriptor > fpfh_estimator_2(point_pc_2,descriptor_pc_2);
 	fpfh_estimator_2.set_scale_distance(true);
 
-	fpfh_estimator_1.estimate(5e-3);
-	fpfh_estimator_2.estimate(5e-3);
-	fpfh_estimator_1.prune(1.75);
-	fpfh_estimator_2.prune(1.75);
-
-	fpfh_estimator_1.estimate(7.5e-3);
-	fpfh_estimator_2.estimate(7.5e-3);
-	fpfh_estimator_1.prune(1.75);
-	fpfh_estimator_2.prune(1.75);
+	fpfh_estimator_1.estimate(2.5e-3);
+	fpfh_estimator_2.estimate(2.5e-3);
+	fpfh_estimator_1.prune(1);
+	fpfh_estimator_2.prune(1);
 
 	fpfh_estimator_1.estimate(1e-2);
 	fpfh_estimator_2.estimate(1e-2);
-	fpfh_estimator_1.prune(1.75);
-	fpfh_estimator_2.prune(1.75);
+	fpfh_estimator_1.prune(1.);
+	fpfh_estimator_2.prune(1.);
+
+	// fpfh_estimator_1.estimate(7.5e-3);
+	// fpfh_estimator_2.estimate(7.5e-3);
+	// fpfh_estimator_1.prune(1.);
+	// fpfh_estimator_2.prune(1.);
 
 	PointCloudIO<PointNormal>::save_active_features_positions(point_pc_1,descriptor_pc_1, 
 		"active_features_pc_1.obj");
@@ -112,6 +112,7 @@ int main() {
 	icp.set_pc_destination(point_pc_2_ptr);
 	icp.set_pairs(matches);
 	icp.register_pc();
+	PointCloudIO<PointNormal>::save_to_obj(point_pc_1,"apriori_registered_pc_1.obj",icp.get_dcm(),icp.get_x());
 
 	IterativeClosestPointToPlane icp2p;
 	icp2p.set_pc_source(point_pc_1_ptr);

@@ -25,9 +25,10 @@ void EstimationNormals<PointNormal,PointNormal>::estimate(int N_neighbors){
 
 		for (auto it = closest_points.begin(); it != closest_points.end(); ++it) {
 			const arma::vec & p = this -> input_pc.get_point_coordinates(it -> second);
-			covariance += 1./(closest_points.size() - 1) * (p - centroid) * (p - centroid).t();
+			covariance += (p - centroid) * (p - centroid).t();
 		}
-
+		covariance *= 1./(closest_points.size() - 1) ;
+		
 		// The eigenvalue problem is solved
 		arma::vec eigval;
 		arma::mat eigvec;
