@@ -455,12 +455,367 @@ arma::mat ShapeModelBezier::get_cm_cov() const{
 }
 
 
+void ShapeModelBezier::compute_all_statistics(){
+
+	double vol_sd_temp = 0;
+	arma::mat::fixed<3,3> cm_cov_temp = arma::zeros<arma::mat>(3,3);
+	arma::mat::fixed<6,6> P_I_temp = arma::zeros<arma::mat>(6,6);
+	arma::vec::fixed<6> P_M_I_temp = arma::zeros<arma::vec>(6);
+
+
+	std::vector<std::set < Element * > > connected_elements;
+
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+		auto elements = this -> elements[e] -> get_neighbors(true);
+		connected_elements.push_back(elements);
+	}
+
+	std::cout << "\n- Computing all statistics ...\n";
+	boost::progress_display progress(this -> elements.size()) ;
+
+	#pragma omp parallel for reduction(+:vol_sd_temp), reduction(+:cm_cov_temp), reduction(+:P_I_temp), reduction(+:P_M_I_temp)
+	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
+		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
+
+		auto neighbors = this -> correlated_elements[e];
+
+		for (auto f : neighbors) {
+
+			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
+
+			double d_vol_sd = this -> compute_patch_pair_vol_sd_contribution(patch_e,patch_f) ;
+			arma::mat::fixed<3,3> d_cm_cov = this -> compute_patch_pair_cm_cov_contribution(patch_e,patch_f) ;
+			arma::mat::fixed<6,6> d_P_I = this -> compute_patch_pair_PI_contribution(patch_e,patch_f);
+			arma::vec::fixed<6> d_MP_I = this -> compute_patch_pair_P_MI_contribution(patch_e,patch_f);
+
+			vol_sd_temp += d_vol_sd;
+			cm_cov_temp += d_cm_cov;
+			P_I_temp += d_P_I;
+			P_M_I_temp += d_MP_I;
+
+
+		}
+		++progress;
+
+
+	}
+
+	this -> volume_sd = std::sqrt(vol_sd_temp);
+	this -> cm_cov = cm_cov_temp / std::pow(this -> volume,2);
+	this -> P_MI = P_M_I_temp;
+	this -> P_I = P_I_temp;
+
+
+	this -> compute_P_MX();
+	this -> compute_P_Y();
+	this -> compute_P_moments();
+	this -> compute_P_dims();
+
+
+	this -> compute_P_Evectors();
+	this -> compute_P_eigenvectors();
+	this -> compute_P_sigma();
+
+
+
+
+}
+
+
+double ShapeModelBezier::compute_patch_pair_vol_sd_contribution(Bezier * patch_e,Bezier * patch_f) const{
+
+	double d_vol_sd = 0;
+
+	for (int index = 0 ; index <  this -> volume_sd_indices_coefs_table.size(); ++index) {
+
+				// i
+		int i =  int(this -> volume_sd_indices_coefs_table[index][0]);
+		int j =  int(this -> volume_sd_indices_coefs_table[index][1]);
+
+				// j
+		int k =  int(this -> volume_sd_indices_coefs_table[index][2]);
+		int l =  int(this -> volume_sd_indices_coefs_table[index][3]);
+
+				// k
+		int m =  int(this -> volume_sd_indices_coefs_table[index][4]);
+		int p =  int(this -> volume_sd_indices_coefs_table[index][5]);
+
+				// l
+		int q =  int(this -> volume_sd_indices_coefs_table[index][6]);
+		int r =  int(this -> volume_sd_indices_coefs_table[index][7]);
+
+				// m
+		int s =  int(this -> volume_sd_indices_coefs_table[index][8]);
+		int t =  int(this -> volume_sd_indices_coefs_table[index][9]);
+
+				// p
+		int u =  int(this -> volume_sd_indices_coefs_table[index][10]);
+		int v =  int(this -> volume_sd_indices_coefs_table[index][11]);
+
+
+		int i_g = patch_e -> get_control_point_global_index(i,j);
+		int j_g = patch_e -> get_control_point_global_index(k,l);
+		int k_g = patch_e -> get_control_point_global_index(m,p);
+
+		int l_g = patch_f -> get_control_point_global_index(q,r);
+		int m_g = patch_f -> get_control_point_global_index(s,t);
+		int p_g = patch_f -> get_control_point_global_index(u,v);
+
+
+		arma::vec::fixed<9> left_vec = patch_e -> get_cross_products(i,j,k,l,m,p);
+		arma::vec::fixed<9> right_vec = patch_f -> get_cross_products(q,r,s,t,u,v);
+
+		d_vol_sd += this -> volume_sd_indices_coefs_table[index][12] * this -> increment_volume_variance(left_vec,
+			right_vec, 
+			i_g, j_g, k_g, 
+			l_g,  m_g, p_g);
+
+	}
+	return d_vol_sd;
+
+}
+
+
+arma::mat::fixed<3,3> ShapeModelBezier::compute_patch_pair_cm_cov_contribution(Bezier * patch_e,Bezier * patch_f)  const{
+
+	int i_g,j_g,k_g,l_g;
+	int m_g,p_g,q_g,r_g;
+
+	arma::mat::fixed<12,3> left_mat;
+	arma::mat::fixed<12,3> right_mat;
+
+	arma::mat::fixed<3,3> d_cm_cov = arma::zeros<arma::mat>(3,3);
+
+	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
+
+		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
+
+				// i
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
+
+				// j
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
+
+				// k
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
+
+				// l
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
+
+				// m
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
+
+				// p
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
+
+				// q
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
+
+				// r
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
+
+
+		i_g = patch_e -> get_control_point_global_index(i,j);
+		j_g = patch_e -> get_control_point_global_index(k,l);
+		k_g = patch_e -> get_control_point_global_index(m,p);
+		l_g = patch_e -> get_control_point_global_index(q,r);
+
+		this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
+
+		m_g = patch_f -> get_control_point_global_index(s,t);
+		p_g = patch_f -> get_control_point_global_index(u,v);
+		q_g = patch_f -> get_control_point_global_index(w,x);
+		r_g = patch_f -> get_control_point_global_index(y,z);	
+
+		this -> construct_cm_mapping_mat(right_mat,m_g,p_g,q_g,r_g);
+
+		d_cm_cov += coefs_row[16] * this -> increment_cm_cov(left_mat,
+			right_mat, 
+			i_g,j_g,k_g,l_g, 
+			m_g,p_g,q_g,r_g);
+	}
+	return d_cm_cov;
+
+}
+
+
+
+
+
+
+arma::mat::fixed<6,6> ShapeModelBezier::compute_patch_pair_PI_contribution(Bezier * patch_e,Bezier * patch_f) const{
+
+	int i_g,j_g,k_g,l_g,m_g;
+	int p_g,q_g,r_g,s_g,t_g;
+
+	arma::mat::fixed<6,15> left_mat;
+	arma::mat::fixed<6,15> right_mat;
+
+	arma::mat::fixed<6,6> d_P_I = arma::zeros<arma::mat>(6,6);
+
+	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
+
+		auto coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
+
+				// i
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
+
+				// j
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
+
+				// k
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
+
+				// l
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
+
+				// m
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
+
+				// p
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
+
+				// q
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
+
+				// r
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
+
+				// s
+		int a =  int(coefs_row[16]);
+		int b =  int(coefs_row[17]);
+
+				// t
+		int c =  int(coefs_row[18]);
+		int d =  int(coefs_row[19]);
+
+
+
+		i_g = patch_e -> get_control_point_global_index(i,j);
+		j_g = patch_e -> get_control_point_global_index(k,l);
+		k_g = patch_e -> get_control_point_global_index(m,p);
+		l_g = patch_e -> get_control_point_global_index(q,r);
+		m_g = patch_e -> get_control_point_global_index(s,t);
+
+
+		this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
+
+		p_g = patch_f -> get_control_point_global_index(u,v);
+		q_g = patch_f -> get_control_point_global_index(w,x);
+		r_g = patch_f -> get_control_point_global_index(y,z);
+		s_g = patch_f -> get_control_point_global_index(a,b);
+		t_g = patch_f -> get_control_point_global_index(c,d);	
+
+		this -> construct_inertia_mapping_mat(right_mat,p_g,q_g,r_g,s_g,t_g);
+
+
+		d_P_I += coefs_row[20] * this -> increment_P_I(left_mat,
+			right_mat, 
+			i_g,j_g,k_g,l_g,m_g, 
+			p_g,q_g,r_g,s_g,t_g);
+
+	}
+}
+
+
+arma::vec::fixed<6> ShapeModelBezier::compute_patch_pair_P_MI_contribution(Bezier * patch_e,Bezier * patch_f) const{
+
+	arma::mat::fixed<6,15> left_mat;
+	arma::vec::fixed<9> right_vec;
+	int i_g,j_g,k_g,l_g,m_g;
+	int p_g,q_g,r_g;
+
+	arma::vec::fixed<6> d_P_MI = arma::zeros<arma::vec>(6);
+
+	for (int index = 0 ; index <  this -> inertia_stats_2_indices_coefs_table.size(); ++index) {
+
+		auto coefs_row = this -> inertia_stats_2_indices_coefs_table[index];
+
+				// i
+		int i =  int(coefs_row[0]);
+		int j =  int(coefs_row[1]);
+
+				// j
+		int k =  int(coefs_row[2]);
+		int l =  int(coefs_row[3]);
+
+				// k
+		int m =  int(coefs_row[4]);
+		int p =  int(coefs_row[5]);
+
+				// l
+		int q =  int(coefs_row[6]);
+		int r =  int(coefs_row[7]);
+
+				// m
+		int s =  int(coefs_row[8]);
+		int t =  int(coefs_row[9]);
+
+				// p
+		int u =  int(coefs_row[10]);
+		int v =  int(coefs_row[11]);
+
+				// q
+		int w =  int(coefs_row[12]);
+		int x =  int(coefs_row[13]);
+
+				// r
+		int y =  int(coefs_row[14]);
+		int z =  int(coefs_row[15]);
+
+
+
+		int i_g,j_g,k_g,l_g,m_g;
+
+
+		i_g = patch_e -> get_control_point_global_index(i,j);
+		j_g = patch_e -> get_control_point_global_index(k,l);
+		k_g = patch_e -> get_control_point_global_index(m,p);
+		l_g = patch_e -> get_control_point_global_index(q,r);
+		m_g = patch_e -> get_control_point_global_index(s,t);	
+
+		this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
+
+
+
+
+
+		p_g = patch_f -> get_control_point_global_index(u,v);
+		q_g = patch_f -> get_control_point_global_index(w,x);
+		r_g = patch_f -> get_control_point_global_index(y,z);
+
+		right_vec = patch_f -> get_cross_products(u,v,w,x,y,z);
+
+		d_P_MI += coefs_row[16] *  this -> increment_P_MI(left_mat,
+			right_vec, 
+			i_g,j_g,k_g,l_g,m_g, 
+			p_g,q_g,r_g);
+	}
+
+	return d_P_MI;
+}
+
+
+
 void ShapeModelBezier::compute_volume_sd(){
 
-
 	double vol_sd = 0;
-
-
 
 	// The list of connected facets should be formed somewhere here
 
@@ -498,7 +853,7 @@ void ShapeModelBezier::compute_volume_sd(){
 				// j
 				int k =  int(this -> volume_sd_indices_coefs_table[index][2]);
 				int l =  int(this -> volume_sd_indices_coefs_table[index][3]);
-				
+
 				// k
 				int m =  int(this -> volume_sd_indices_coefs_table[index][4]);
 				int p =  int(this -> volume_sd_indices_coefs_table[index][5]);
@@ -539,7 +894,6 @@ void ShapeModelBezier::compute_volume_sd(){
 		}
 		++progress;
 
-
 	}
 
 	this -> volume_sd = std::sqrt(vol_sd);
@@ -551,7 +905,7 @@ void ShapeModelBezier::compute_volume_sd(){
 double ShapeModelBezier::increment_volume_variance(const arma::vec::fixed<9> & left_vec,
 	const arma::vec::fixed<9> & right_vec, 
 	int i,int j,int k, 
-	int l, int m, int p){
+	int l, int m, int p) const {
 
 	arma::mat::fixed<9,9> P_CC = arma::zeros<arma::mat>(9,9);
 
@@ -578,7 +932,7 @@ void ShapeModelBezier::compute_cm_cov(){
 
 	arma::mat::fixed<3,3> cm_cov_temp;
 
-	
+
 	cm_cov_temp = this -> cm * this -> cm.t() * std::pow(this -> volume_sd,2);
 
 	std::vector<std::set < Element * > > connected_elements;
@@ -633,9 +987,9 @@ void ShapeModelBezier::compute_cm_cov(){
 
 		arma::mat::fixed<12,3> left_mat;
 		arma::mat::fixed<12,3> right_mat;
-		
+
 		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-			
+
 			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
 			int i_g,j_g,k_g,l_g;
 
@@ -643,7 +997,7 @@ void ShapeModelBezier::compute_cm_cov(){
 			j_g = patch_e -> get_control_point_global_index(k,l);
 			k_g = patch_e -> get_control_point_global_index(m,p);
 			l_g = patch_e -> get_control_point_global_index(q,r);
-			
+
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
 
 			auto neighbors = this -> correlated_elements[e];
@@ -677,7 +1031,7 @@ void ShapeModelBezier::compute_cm_cov(){
 
 
 void ShapeModelBezier::construct_cm_mapping_mat(arma::mat::fixed<12,3> & mat,
-	int i,int j,int k,int l) {
+	int i,int j,int k,int l) const {
 
 	arma::vec * Ci = this -> control_points.at(i) -> get_coordinates_pointer_arma();
 	arma::vec * Cj = this -> control_points.at(j) -> get_coordinates_pointer_arma();
@@ -835,7 +1189,7 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 			this -> save_to_obj("../output/iter_" + std::to_string(iter) + ".obj");
 		}
-		
+
 	}
 
 
@@ -1197,7 +1551,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	std::cout << "- CM cov coefficients : " << this -> cm_cov_1_indices_coefs_table.size() + this -> cm_cov_2_indices_coefs_table.size() << std::endl;
 
 
-	
+
 
 	// Inertia
 	index_vectors.clear();
@@ -1331,7 +1685,7 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 
 		double alpha_kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n) * Bezier::alpha_ijk(u, v, w, x, y, z, n);
-		
+
 		if (std::abs(alpha_kappa) > 0){
 			std::vector<double> index_vector = {
 				double(i),double(j),
@@ -1412,7 +1766,7 @@ void ShapeModelBezier::compute_point_covariances(double sigma_sq,double correl_d
 
 			double distance = arma::norm(this -> get_control_points() -> at(i) -> get_coordinates()
 				- this -> get_control_points() -> at(j) -> get_coordinates());
-			
+
 			if ( distance < 3 * correl_distance){
 
 
@@ -1453,7 +1807,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::get_point_covariance(int i, int j) const
 	}
 
 	if (major_indices_it == major_indices.end()){
-		
+
 		return arma::zeros<arma::mat>(3,3);
 	}
 
@@ -1474,7 +1828,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::get_point_covariance(int i, int j) const
 
 void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
-	
+
 	this -> shape_covariance_sqrt = arma::zeros<arma::mat>(3 * this -> get_NControlPoints(),
 		3 * this -> get_NControlPoints());
 
@@ -2312,27 +2666,27 @@ arma::mat::fixed<6,6> ShapeModelBezier::increment_P_I(const arma::mat::fixed<6,1
 arma::vec::fixed<6> ShapeModelBezier::increment_P_MI(const arma::mat::fixed<6,15> & left_mat,
 	const arma::vec::fixed<9>  & right_vec, 
 	int i,int j,int k,int l,int m,
-	int p, int q, int r){
+	int p, int q, int r) const{
 
 	arma::mat::fixed<15,9> P_CC = arma::zeros<arma::mat>(15,9);
 
 	P_CC.submat(0,0,2,2) = this -> get_point_covariance(i, p);
 	P_CC.submat(0,3,2,5) = this -> get_point_covariance(i, q);
 	P_CC.submat(0,6,2,8) = this -> get_point_covariance(i, r);
-	
+
 	P_CC.submat(3,0,5,2) = this -> get_point_covariance(j, p);
 	P_CC.submat(3,3,5,5) = this -> get_point_covariance(j, q);
 	P_CC.submat(3,6,5,8) = this -> get_point_covariance(j, r);
-	
+
 	P_CC.submat(6,0,8,2) = this -> get_point_covariance(k, p);
 	P_CC.submat(6,3,8,5) = this -> get_point_covariance(k, q);
 	P_CC.submat(6,6,8,8) = this -> get_point_covariance(k, r);
-	
+
 
 	P_CC.submat(9,0,11,2) = this -> get_point_covariance(l, p);
 	P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, q);
 	P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, r);
-	
+
 	P_CC.submat(12,0,14,2) = this -> get_point_covariance(m, p);
 	P_CC.submat(12,3,14,5) = this -> get_point_covariance(m, q);
 	P_CC.submat(12,6,14,8) = this -> get_point_covariance(m, r);
@@ -2345,7 +2699,7 @@ arma::vec::fixed<6> ShapeModelBezier::increment_P_MI(const arma::mat::fixed<6,15
 arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(const arma::mat::fixed<12,3> & left_mat,
 	const arma::mat::fixed<12,3>  & right_mat, 
 	int i,int j,int k,int l, 
-	int m, int p, int q, int r){
+	int m, int p, int q, int r) const{
 
 	arma::mat::fixed<12,12> P_CC = arma::zeros<arma::mat>(12,12);
 
@@ -2372,7 +2726,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(const arma::mat::fixed<
 	P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, q);
 	P_CC.submat(9,9,11,11) = this -> get_point_covariance(l, r);
 
-	
+
 
 	return left_mat.t() * P_CC * right_mat;
 }
@@ -2836,10 +3190,10 @@ void ShapeModelBezier::take_slice(int axis,
 
 			global_index = P1 -> get_global_index();
 			C.col(1) += deviation(3 * global_index, 3 * global_index + 2);
-			
+
 			global_index = P2 -> get_global_index();
 			C.col(2) += deviation(3 * global_index, 3 * global_index + 2);
-			
+
 		}
 
 		arma::rowvec M = n_plane.t() * C * T;

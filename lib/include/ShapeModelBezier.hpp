@@ -260,14 +260,17 @@ public:
 	void compute_shape_covariance_sqrt();
 
 	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
-
-
+	void compute_all_statistics();
 
 
 protected:
 
 	void find_correlated_elements();
 
+	double compute_patch_pair_vol_sd_contribution(Bezier * patch_e,Bezier * patch_f) const;
+	arma::mat::fixed<3,3>  compute_patch_pair_cm_cov_contribution(Bezier * patch_e,Bezier * patch_f) const;
+	arma::mat::fixed<6,6>  compute_patch_pair_PI_contribution(Bezier * patch_e,Bezier * patch_f) const;
+	arma::vec::fixed<6> compute_patch_pair_P_MI_contribution(Bezier * patch_e,Bezier * patch_f) const;
 
 	
 	void take_slice(int axis, std::vector<std::vector<arma::vec> > & lines, const double & c,
@@ -322,12 +325,12 @@ protected:
 	double increment_volume_variance(const arma::vec::fixed<9> & left_vec,
 		const arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k, 
-		int l, int m, int p);
+		int l, int m, int p) const;
 
 	arma::mat::fixed<3,3> increment_cm_cov(const arma::mat::fixed<12,3> & left_mat,
 		const arma::mat::fixed<12,3>  & right_mat, 
 		int i,int j,int k,int l, 
-		int m, int p, int q, int r);
+		int m, int p, int q, int r) const;
 
 
 	arma::mat::fixed<6,6> increment_P_I(const arma::mat::fixed<6,15> & left_mat,
@@ -339,10 +342,10 @@ protected:
 	arma::vec::fixed<6> increment_P_MI(const arma::mat::fixed<6,15> & left_mat,
 		const arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k,int l,int m,
-		int p, int q, int r);
+		int p, int q, int r) const;
 
 	void construct_cm_mapping_mat(arma::mat::fixed<12,3> & mat,
-		int i,int j,int k,int l);
+		int i,int j,int k,int l) const;
 
 
 	void construct_inertia_mapping_mat(arma::mat::fixed<6,15> & mat,
