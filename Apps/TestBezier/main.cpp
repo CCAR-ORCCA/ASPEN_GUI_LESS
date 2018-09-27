@@ -22,45 +22,44 @@ int main(){
 	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
 
 
-	std::cout << "\nVolume: \n";
+	std::cout << "\nVolume error: (%) \n";
 
-	std::cout << bezier_shape.get_volume() << std::endl;
-	std::cout << tri_shape.get_volume() << std::endl;
+	std::cout << std::abs(bezier_shape.get_volume() - tri_shape.get_volume())/bezier_shape.get_volume() * 100 << std::endl;
 
-	std::cout << "\nCenter of mass: \n";
 	
-	std::cout << bezier_shape.get_center_of_mass() << std::endl;
-	std::cout << tri_shape.get_center_of_mass() << std::endl;
+	std::cout << "\nCenter of mass error: (absolute) \n";
+	std::cout << arma::abs(bezier_shape.get_center_of_mass() - tri_shape.get_center_of_mass())<< std::endl;
 
-	std::cout << "\nInertia: \n";
-	
-	std::cout << bezier_shape.get_inertia() << std::endl;
-	std::cout << tri_shape.get_inertia() << std::endl;
+	std::cout << "\nCenter of mass error: (%) \n";
+	std::cout << arma::abs(bezier_shape.get_center_of_mass() - tri_shape.get_center_of_mass())/arma::abs(bezier_shape.get_center_of_mass()) * 100<< std::endl;
+
+
+	std::cout << "\nInertia error:  (absolute) \n";
+	std::cout << arma::abs(bezier_shape.get_inertia() - tri_shape.get_inertia()) << std::endl;
+
+
+	std::cout << "\nInertia error:  (%) \n";
+	std::cout << arma::abs(bezier_shape.get_inertia() - tri_shape.get_inertia())/arma::abs(bezier_shape.get_inertia()) * 100 << std::endl;
+
 
 	double sigmas_sq = std::pow(5e-3,2)  ;
 	
 	std::cout << "SD on point coordinates : " << std::sqrt(sigmas_sq) << std::endl;
 
 	bezier_shape.compute_point_covariances(sigmas_sq,5e-2);
-
 	bezier_shape.compute_shape_covariance_sqrt();
 
-	bezier_shape.compute_volume_sd();
-
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-
 	start = std::chrono::system_clock::now();
-	bezier_shape.compute_cm_cov();
+	bezier_shape.compute_all_statistics();
 	end = std::chrono::system_clock::now();
-	bezier_shape.compute_inertia_statistics();
-
-
 	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "\n Elapsed time computing all covariances : " << elapsed_seconds.count() << "s\n\n";
 
-	std::cout << "\n Elapsed time computing the covariance : " << elapsed_seconds.count() << "s\n\n";
+	
+
 
 	double volume_sd = bezier_shape.get_volume_sd();
-
 	auto cm_mean = bezier_shape.get_center_of_mass();
 	auto cm_cov = bezier_shape.get_cm_cov();
 	auto inertia_cov = bezier_shape.get_inertia_cov();
@@ -75,7 +74,6 @@ int main(){
 
 
 
-
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
 	int N = 10000;
@@ -85,9 +83,7 @@ int main(){
 	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
 	results_dims;
 	
-
 	start = std::chrono::system_clock::now();
-
 
 	bezier_shape.run_monte_carlo(N,
 		results_volume,
@@ -137,6 +133,7 @@ int main(){
 
 	
 	for (unsigned int i = 0; i < results_cm.n_cols; ++i){
+		
 		cov_cm_mc +=  (results_cm.col(i) - results_cm_mean) * (results_cm.col(i) - results_cm_mean).t();
 		cov_inertia_mc +=  (results_inertia.col(i) - results_inertia_mean) * (results_inertia.col(i) - results_inertia_mean).t();
 		cov_moments_mc +=  (results_moments.col(i) - results_moments_mean) * (results_moments.col(i) - results_moments_mean).t();
