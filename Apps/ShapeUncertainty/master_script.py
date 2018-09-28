@@ -91,6 +91,6 @@ for data in all_data:
 		json.dump(data, outfile)
 	print("\t - Running case " +  data["dir"].split("/")[-1])
 
-	os.system("./ShapeUncertainty > " + data["dir"] + "/log.txt" )
+	os.system("./ShapeUncertainty | tee " + data["dir"] + "/log.txt" )
 
 
