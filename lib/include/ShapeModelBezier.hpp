@@ -166,7 +166,8 @@ public:
 		arma::mat & results_Evectors,
 		arma::mat & results_Y,
 		arma::mat & results_MI,
-		arma::mat & results_dims);
+		arma::mat & results_dims,
+		std::string output_path);
 
 
 	/**
@@ -210,7 +211,6 @@ public:
 
 	void apply_deviation();
 
-	arma::vec d_I() const;
 
 	void take_and_save_slice(int axis, std::string path, const double & c,
 		const arma::vec & deviation = {}) const;
@@ -220,10 +220,17 @@ public:
 
 	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
 	void compute_all_statistics();
+	static arma::mat::fixed<3,3> get_principal_axes_stable(const arma::mat::fixed<3,3> & inertia);
+	
+	static arma::vec::fixed<4> get_Y(const double & volume, 
+		const arma::mat::fixed<3,3> & I_C);
+
+	static arma::vec::fixed<3> get_dims(const double & volume,
+		const arma::mat::fixed<3,3> & I_C);
 
 
 protected:
-
+	void save_connectivity(const std::vector< std::pair<int,int> > & connected_elements) const;
 	void find_correlated_elements();
 
 	double compute_patch_pair_vol_sd_contribution(Bezier * patch_e,Bezier * patch_f) const;
@@ -330,7 +337,6 @@ protected:
 	arma::mat::fixed<3,3> P_XX() const ;
 	arma::mat::fixed<3,6> partial_X_partial_I() const;
 	arma::mat::fixed<4,4> partial_M_partial_Y() const;
-	static arma::mat::fixed<3,3> get_principal_axes_stable(const arma::mat::fixed<3,3> & inertia);
 
 
 
@@ -349,13 +355,6 @@ protected:
 		const double U) const ;
 
 	arma::mat::fixed<3,9> partial_E_partial_R(const double lambda) const;
-
-	static arma::vec::fixed<4> get_Y(const double & volume, 
-		const arma::mat::fixed<3,3> & I_C
-		);
-
-	static arma::vec::fixed<3> get_dims(const double & volume,
-		const arma::mat::fixed<3,3> & I_C);
 
 
 

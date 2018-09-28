@@ -459,42 +459,39 @@ void ShapeModelBezier::compute_all_statistics(){
 	arma::vec::fixed<6> P_M_I_temp = arma::zeros<arma::vec>(6);
 
 
-	std::vector<std::set < Element * > > connected_elements;
-
+	std::vector<std::pair<int ,int > > connected_elements;
 	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	std::cout << "\n- Computing all statistics ...\n";
-	boost::progress_display progress(this -> elements.size()) ;
-
-	#pragma omp parallel for reduction(+:vol_sd_temp), reduction(+:cm_cov_temp), reduction(+:P_I_temp), reduction(+:P_M_I_temp)
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-		Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-
-		auto neighbors = this -> correlated_elements[e];
-
-		for (auto f : neighbors) {
-
-			Bezier * patch_f = static_cast<Bezier * >(this -> elements[f].get());
-
-			double d_vol_sd = this -> compute_patch_pair_vol_sd_contribution(patch_e,patch_f) ;
-			arma::mat::fixed<3,3> d_cm_cov = this -> compute_patch_pair_cm_cov_contribution(patch_e,patch_f) ;
-			arma::mat::fixed<6,6> d_P_I = this -> compute_patch_pair_PI_contribution(patch_e,patch_f);
-			arma::vec::fixed<6> d_MP_I = this -> compute_patch_pair_P_MI_contribution(patch_e,patch_f);
-
-			vol_sd_temp += d_vol_sd;
-			cm_cov_temp += d_cm_cov;
-			P_I_temp += d_P_I;
-			P_M_I_temp += d_MP_I;
-
-
+		for (const auto el : this -> correlated_elements[e]){
+			connected_elements.push_back(std::make_pair(e,el));
 		}
-		++progress;
-
-
 	}
+
+	this -> save_connectivity(connected_elements);
+
+
+	std::cout << "\n- Computing all statistics over the " << connected_elements.size() << " surface element combinations ...\n";
+	boost::progress_display progress(connected_elements.size()) ;
+	
+	#pragma omp parallel for reduction(+:vol_sd_temp), reduction(+:cm_cov_temp), reduction(+:P_I_temp), reduction(+:P_M_I_temp)
+	for (unsigned int k = 0; k < connected_elements.size(); ++k) {
+		
+		Bezier * patch_e = static_cast<Bezier * >(this -> elements[connected_elements[k].first].get());
+		Bezier * patch_f = static_cast<Bezier * >(this -> elements[connected_elements[k].second].get());
+
+		double d_vol_sd = this -> compute_patch_pair_vol_sd_contribution(patch_e,patch_f) ;
+
+		arma::mat::fixed<3,3> d_cm_cov = this -> compute_patch_pair_cm_cov_contribution(patch_e,patch_f) ;
+		arma::mat::fixed<6,6> d_P_I = this -> compute_patch_pair_PI_contribution(patch_e,patch_f);
+		arma::vec::fixed<6> d_MP_I = this -> compute_patch_pair_P_MI_contribution(patch_e,patch_f);
+
+		vol_sd_temp += d_vol_sd;
+		cm_cov_temp += d_cm_cov;
+		P_I_temp += d_P_I;
+		P_M_I_temp += d_MP_I;
+
+		++progress;
+	}
+
 
 	this -> volume_sd = std::sqrt(vol_sd_temp);
 	this -> cm_cov = cm_cov_temp / std::pow(this -> volume,2);
@@ -513,9 +510,43 @@ void ShapeModelBezier::compute_all_statistics(){
 	this -> compute_P_sigma();
 
 
+	this -> save_connectivity(connected_elements);
+
 
 
 }
+
+
+void ShapeModelBezier::save_connectivity(const std::vector< std::pair<int,int> > & connected_elements) const{
+
+
+	arma::mat connectivity_mat(this -> elements.size(),this -> elements.size());
+	connectivity_mat.fill(arma::datum::nan);
+
+	for (int k = 0; k < connected_elements.size(); ++k){
+		auto pair = connected_elements[k];
+
+		connectivity_mat(pair.first,pair.second) = arma::norm(
+			this -> elements[pair.first]-> get_center()
+			- this -> elements[pair.second]-> get_center()
+			);
+
+
+	}
+
+
+	connectivity_mat.save("connectivity_mat.txt",arma::raw_ascii);
+
+}
+
+
+
+
+
+
+
+
+
 
 
 double ShapeModelBezier::compute_patch_pair_vol_sd_contribution(Bezier * patch_e,Bezier * patch_f) const{
@@ -584,7 +615,7 @@ arma::mat::fixed<3,3> ShapeModelBezier::compute_patch_pair_cm_cov_contribution(B
 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
-		auto coefs_row = this -> cm_cov_1_indices_coefs_table[index];
+		const std::vector<double> & coefs_row = this -> cm_cov_1_indices_coefs_table[index];
 
 				// i
 		int i =  int(coefs_row[0]);
@@ -659,7 +690,7 @@ arma::mat::fixed<6,6> ShapeModelBezier::compute_patch_pair_PI_contribution(Bezie
 
 	for (int index = 0 ; index <  this -> inertia_stats_1_indices_coefs_table.size(); ++index) {
 
-		auto coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
+		const std::vector<double> & coefs_row = this -> inertia_stats_1_indices_coefs_table[index];
 
 				// i
 		int i =  int(coefs_row[0]);
@@ -742,7 +773,7 @@ arma::vec::fixed<6> ShapeModelBezier::compute_patch_pair_P_MI_contribution(Bezie
 
 	for (int index = 0 ; index <  this -> inertia_stats_2_indices_coefs_table.size(); ++index) {
 
-		auto coefs_row = this -> inertia_stats_2_indices_coefs_table[index];
+		const std::vector<double> & coefs_row = this -> inertia_stats_2_indices_coefs_table[index];
 
 				// i
 		int i =  int(coefs_row[0]);
@@ -909,7 +940,8 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	arma::mat & results_Evectors,
 	arma::mat & results_Y,
 	arma::mat & results_MI,
-	arma::mat & results_dims){
+	arma::mat & results_dims,
+	std::string output_path){
 
 	arma::arma_rng::set_seed(0);
 
@@ -926,12 +958,12 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	results_MI = arma::zeros<arma::mat>(7,N);
 	results_dims = arma::zeros<arma::mat>(3,N);
 
-	this -> take_and_save_slice(2,"../output/slice_z_baseline.txt",0);
-	this -> take_and_save_slice(1,"../output/slice_y_baseline.txt",0);
-	this -> take_and_save_slice(0,"../output/slice_x_baseline.txt",0);
+	this -> take_and_save_slice(2,output_path + "/slice_z_baseline.txt",0);
+	this -> take_and_save_slice(1,output_path + "/slice_y_baseline.txt",0);
+	this -> take_and_save_slice(0,output_path + "/slice_x_baseline.txt",0);
 
 
-	this -> save_to_obj("../output/iter_baseline.obj");
+	this -> save_to_obj(output_path + "/iter_baseline.obj");
 
 	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
@@ -979,12 +1011,12 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		// saving shape model
 
 		if (iter < 20){
-			this -> take_and_save_slice(2,"../output/slice_z_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(1,"../output/slice_y_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(0,"../output/slice_x_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(2,output_path + "/slice_z_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(1,output_path + "/slice_y_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(0,output_path + "/slice_x_" + std::to_string(iter) + ".txt",0);
 
 
-			this -> save_to_obj("../output/iter_" + std::to_string(iter) + ".obj");
+			this -> save_to_obj(output_path + "/iter_" + std::to_string(iter) + ".obj");
 		}
 
 	}
@@ -1144,13 +1176,11 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int p = vector[2][1];
 
 		double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
-		std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
-		this -> volume_indices_coefs_table.push_back(index_vector);
-
+		if(std::abs(alpha) > 0){
+			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
+			this -> volume_indices_coefs_table.push_back(index_vector);
+		}
 	}
-
-
-
 
 	std::cout << "- Volume coefficients: " << this -> volume_indices_coefs_table.size() << std::endl;
 
@@ -1179,19 +1209,19 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		double alpha_1 = Bezier::alpha_ijk(i, j, k, l, m, p, n);
 		double alpha_2 = Bezier::alpha_ijk(q, r, s, t, u, v, n);
 		double aa = alpha_1 * alpha_2;
+		if (std::abs(aa) > 0){
+			std::vector<double> index_vector = {
+				double(i),double(j),
+				double(k),double(l),
+				double(m),double(p),
+				double(q),double(r),
+				double(s),double(t),
+				double(u),double(v),
+				aa
+			};
+			this -> volume_sd_indices_coefs_table.push_back(index_vector);
 
-		std::vector<double> index_vector = {
-			double(i),double(j),
-			double(k),double(l),
-			double(m),double(p),
-			double(q),double(r),
-			double(s),double(t),
-			double(u),double(v),
-			aa
-		};
-		this -> volume_sd_indices_coefs_table.push_back(index_vector);
-
-
+		}
 
 	}
 
@@ -1219,19 +1249,20 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 		int r = vector[3][1];
 
 		double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
-
-		std::vector<double> index_vector = {
-			double(i),
-			double(j),
-			double(k),
-			double(l),
-			double(m),
-			double(p),
-			double(q),
-			double(r),
-			gamma
-		} ;
-		this -> cm_gamma_indices_coefs_table.push_back(index_vector);
+		if (std::abs(gamma) > 0){
+			std::vector<double> index_vector = {
+				double(i),
+				double(j),
+				double(k),
+				double(l),
+				double(m),
+				double(p),
+				double(q),
+				double(r),
+				gamma
+			} ;
+			this -> cm_gamma_indices_coefs_table.push_back(index_vector);
+		}
 
 	}
 
@@ -1277,18 +1308,21 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 
 		double gamma = gamma_1 * gamma_2;
 
-		std::vector<double> index_vector = {
-			double(i),double(j),
-			double(k),double(l),
-			double(m),double(p),
-			double(q),double(r),
-			double(s),double(t),
-			double(u),double(v),
-			double(w),double(x),
-			double(y),double(z),
-			gamma
-		};
-		this -> cm_cov_1_indices_coefs_table.push_back(index_vector);
+		if (std::abs(gamma) > 0){
+
+			std::vector<double> index_vector = {
+				double(i),double(j),
+				double(k),double(l),
+				double(m),double(p),
+				double(q),double(r),
+				double(s),double(t),
+				double(u),double(v),
+				double(w),double(x),
+				double(y),double(z),
+				gamma
+			};
+			this -> cm_cov_1_indices_coefs_table.push_back(index_vector);
+		}
 
 	}
 
@@ -1386,10 +1420,6 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() << std::endl;
 
 
-
-
-
-
 	// Inertia statistics 1
 
 	index_vectors.clear();
@@ -1441,13 +1471,14 @@ void ShapeModelBezier::populate_mass_properties_coefs(){
 	}
 
 	arma::vec cm_cov_coefs_arma(this -> cm_cov_1_indices_coefs_table.size());
-	for (int i =0; i < this -> cm_cov_1_indices_coefs_table.size(); ++i){
+	for (int i = 0; i < this -> cm_cov_1_indices_coefs_table.size(); ++i){
 		cm_cov_coefs_arma(i) =  this -> cm_cov_1_indices_coefs_table[i].back();
 	}
 	cm_cov_coefs_arma.save("cm_cov_coefs_arma.txt",arma::raw_ascii);
 
 	arma::vec inertia_cov_coefs_arma(this -> inertia_stats_1_indices_coefs_table.size());
-	for (int i =0; i < this -> inertia_stats_1_indices_coefs_table.size(); ++i){
+	
+	for (int i = 0; i < this -> inertia_stats_1_indices_coefs_table.size(); ++i){
 		inertia_cov_coefs_arma(i) =  this -> inertia_stats_1_indices_coefs_table[i].back();
 	}
 	inertia_cov_coefs_arma.save("inertia_cov_coefs_arma.txt",arma::raw_ascii);
@@ -2093,78 +2124,6 @@ arma::mat::fixed<3,3> ShapeModelBezier::get_principal_axes_stable(const arma::ma
 }
 
 
-arma::vec ShapeModelBezier::d_I() const{
-
-	std::vector<std::set < Element * > > connected_elements;
-
-	for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-		auto elements = this -> elements[e] -> get_neighbors(true);
-		connected_elements.push_back(elements);
-	}
-
-	arma::vec::fixed<6> dI = arma::zeros<arma::vec>(6);
-	boost::progress_display progress(this -> inertia_indices_coefs_table.size()) ;
-
-
-	for (int index = 0 ; index <  this -> inertia_indices_coefs_table.size(); ++index) {
-
-		auto coefs_row = this -> inertia_indices_coefs_table[index];
-
-				// i
-		int i =  int(coefs_row[0]);
-		int j =  int(coefs_row[1]);
-
-				// j
-		int k =  int(coefs_row[2]);
-		int l =  int(coefs_row[3]);
-
-				// k
-		int m =  int(coefs_row[4]);
-		int p =  int(coefs_row[5]);
-
-				// l
-		int q =  int(coefs_row[6]);
-		int r =  int(coefs_row[7]);
-
-				// m
-		int s =  int(coefs_row[8]);
-		int t =  int(coefs_row[9]);
-
-		arma::mat::fixed<6,15> left_mat;
-
-		for (unsigned int e = 0; e < this -> elements.size(); ++e) {
-
-			Bezier * patch_e = static_cast<Bezier * >(this -> elements[e].get());
-			int i_g,j_g,k_g,l_g,m_g;
-
-			arma::vec dev(15);
-
-			i_g = patch_e -> get_control_point_global_index(i,j);
-			j_g = patch_e -> get_control_point_global_index(k,l);
-			k_g = patch_e -> get_control_point_global_index(m,p);
-			l_g = patch_e -> get_control_point_global_index(q,r);
-			m_g = patch_e -> get_control_point_global_index(s,t);
-
-			dev.rows(0,2) = this -> control_points[i_g] -> get_deviation();
-			dev.rows(3,5) = this -> control_points[j_g] -> get_deviation();
-			dev.rows(6,8) = this -> control_points[k_g] -> get_deviation();
-			dev.rows(9,11) = this -> control_points[l_g] -> get_deviation();
-			dev.rows(12,14) = this -> control_points[m_g] -> get_deviation();
-
-			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
-
-
-			dI += coefs_row[10] * left_mat * dev;
-		}
-
-		++progress;
-	}
-
-	return dI;
-
-}
-
 
 arma::mat::fixed<6,6> ShapeModelBezier::increment_P_I(const arma::mat::fixed<6,15> & left_mat,
 	const arma::mat::fixed<6,15>  & right_mat, 
@@ -2644,8 +2603,6 @@ void ShapeModelBezier::take_and_save_slice(int axis,std::string path, const doub
 
 
 
-
-
 void ShapeModelBezier::save_slice(int axis, 
 	std::string path, const std::vector<std::vector<arma::vec> > & lines) const{
 
@@ -2663,6 +2620,10 @@ void ShapeModelBezier::save_slice(int axis,
 	else if (axis == 2 ){
 		a_1 = 0;
 		a_2 = 1;	
+	}
+	else{
+		a_1 = a_2 = 0;
+		throw(std::runtime_error("Specified incorrect axis: " + std::to_string(axis)));
 	}
 
 
