@@ -127,12 +127,12 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 find_package(Eigen3 3.1.0 REQUIRED)
 include( ${EIGEN3_USE_FILE} )
 
-# Find OpenMP
-# find_package(OpenMP)
-# if(OPENMP_FOUND)
-# 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-# 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-# endif()
+Find OpenMP
+find_package(OpenMP)
+if(OPENMP_FOUND)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
