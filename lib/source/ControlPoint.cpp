@@ -1,26 +1,29 @@
-#include "../include/ControlPoint.hpp"
+#include "ControlPoint.hpp"
 #include "Bezier.hpp"
 #include "Facet.hpp"
+#include "ShapeModel.hpp"
 
-void ControlPoint::set_coordinates(arma::vec coordinates) {
+ControlPoint::ControlPoint(ShapeModel * owning_shape){
+	this -> owning_shape = owning_shape;
+}
+
+
+void ControlPoint::set_point_coordinates(arma::vec::fixed<3> & coordinates) {
 	this -> coordinates = coordinates;
 }
 
 
-
-
-void ControlPoint::add_ownership(Element *  el) {
+void ControlPoint::add_ownership(int el) {
 
 	this -> owning_elements.insert(el);
 
 }
 
-void ControlPoint::set_mean_coordinates() {
-	this -> mean_coordinates = this -> coordinates;
+void ControlPoint::set_owning_elements(std::set< int  > & owning_elements){
+	this -> owning_elements = owning_elements;
 }
 
-
-void ControlPoint::remove_ownership(Element *  el) {
+void ControlPoint::remove_ownership(int el) {
 
 	this -> owning_elements.erase(el);
 
@@ -31,25 +34,15 @@ void ControlPoint::reset_ownership(){
 }
 
 
-std::set< Element *  > ControlPoint::get_owning_elements() const {
+std::set< int  > ControlPoint::get_owning_elements() const {
 	return this -> owning_elements;
 }
 
-double * ControlPoint::get_coordinates_pointer(){
-	return this -> coordinates.colptr(0);
-}
-
-arma::vec * ControlPoint::get_coordinates_pointer_arma(){
-	return &this -> coordinates;
-
-}
 
 
 void ControlPoint::set_covariance(arma::mat P){
 	this -> covariance = P;
 }
-
-
 
 
 arma::mat ControlPoint::get_covariance() const{
@@ -58,9 +51,9 @@ arma::mat ControlPoint::get_covariance() const{
 
 
 
-std::set< Element * >  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
+std::set< int >  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
 
-	std::set< Element *> common_facets;
+	std::set< int> common_facets;
 
 	for (auto it = this -> owning_elements.begin();
 		it != this -> owning_elements.end(); ++it) {
@@ -76,19 +69,19 @@ std::set< Element * >  ControlPoint::common_facets(std::shared_ptr<ControlPoint>
 }
 
 
-void ControlPoint::add_local_numbering(Element * element,const arma::uvec & local_indices){
+void ControlPoint::add_local_numbering(int element,const arma::uvec & local_indices){
 	this -> local_numbering[element] = local_indices;
 }
 
 
 
-arma::uvec ControlPoint::get_local_numbering(Element * element) const{
+arma::uvec ControlPoint::get_local_numbering(int element) const{
 	return this -> local_numbering.at(element);
 }
 
 
 
-bool ControlPoint::is_owned_by(Element * facet) const {
+bool ControlPoint::is_owned_by(int facet) const {
 	if (this -> owning_elements.find(facet) == this -> owning_elements.end()) {
 		return false;
 
@@ -104,20 +97,14 @@ int  ControlPoint::get_global_index() const{
 	return this -> global_index;
 }
 
-
 void ControlPoint::set_global_index(int index){
 	this -> global_index = index;
 }
 
-
-arma::vec ControlPoint::get_coordinates()  const {
+const arma::vec::fixed<3> & ControlPoint::get_point_coordinates()  const {
 	return this -> coordinates;
 }
 
-
-arma::vec ControlPoint::get_mean_coordinates()  const {
-	return this -> mean_coordinates;
-}
 
 unsigned int ControlPoint::get_number_of_owning_elements() const {
 	return this -> owning_elements.size();
@@ -125,25 +112,21 @@ unsigned int ControlPoint::get_number_of_owning_elements() const {
 
 
 
-arma::vec ControlPoint::get_normal_coordinates(bool bezier) const{
+arma::vec::fixed<3> ControlPoint::get_normal_coordinates(bool bezier) const{
 
 	arma::vec n = {0,0,0};
 
-	for (auto it = this -> owning_elements.begin();
-		it != this -> owning_elements.end(); ++it) {
+	for (auto it = this -> owning_elements.begin(); it != this -> owning_elements.end(); ++it) {
 
 		if (bezier){
-			n += static_cast<Bezier *>((*it)) -> get_normal_coordinates(1./3,1./3);
+			n += static_cast<Bezier *>(this -> owning_shape -> get_element((*it))).get_normal_coordinates(1./3,1./3);
 
 		}
 		else{
-			n += static_cast<Facet *>((*it)) -> get_normal_coordinates();
+			n += static_cast<Facet *>(this -> owning_shape -> get_element((*it))).get_normal_coordinates();
 		}
-
 	}
-
 	return arma::normalise(n);
-
 
 }
 

@@ -6,7 +6,6 @@
 #include "Adjacency_List.hpp"
 
 
-
 class FrameGraph {
 
 public:

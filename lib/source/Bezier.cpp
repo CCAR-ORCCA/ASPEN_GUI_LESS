@@ -301,14 +301,7 @@ void Bezier::get_augmented_cross_products(arma::mat::fixed<12,3> & mat,const int
 
 
 
-
-
-
-
-
 void Bezier::elevate_degree(){
-
-
 
 	// A vector storing the new coordinates is created
 	std::vector<std::shared_ptr<ControlPoint > > new_control_points;
@@ -342,6 +335,7 @@ void Bezier::elevate_degree(){
 
 	// The edge control points that have already been created during the elevation of a neighboring patch are found
 	std::set<unsigned int> new_points_to_add_index;
+	
 	for (unsigned int i =0; i < N;++i){
 		new_points_to_add_index.insert(i);
 	}

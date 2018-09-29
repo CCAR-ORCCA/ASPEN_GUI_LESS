@@ -507,6 +507,26 @@ public:
 	void get_augmented_cross_products(arma::mat::fixed<12,3> & mat,const int i, const int j, const int k, const int l, const int m,const int p,
 		const int q, const int r) const;
 
+	/**
+	Generates the forward table associating a local index l to the corrsponding triplet (i,j,k) 
+	@param n degree
+	@return forward look up table
+	*/
+	static std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forward_table(unsigned int n);
+
+
+
+	/**
+	Generates the reverse table associating a local index triplet (i,j,k) to the corresponding
+	global index l
+	@param n degree
+	@return reverse look up table
+	*/
+	static std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> reverse_table(unsigned int n);
+
+
+
+
 protected:
 
 	virtual void compute_normal();
@@ -562,25 +582,7 @@ protected:
 	*/
 	static int combinations(int k, int n);
 
-	/**
-	Generates the forward table associating a local index l to the corrsponding triplet (i,j,k) 
-	@param n degree
-	@return forward look up table
-	*/
-	static std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forward_table(unsigned int n);
-
-
-
-	/**
-	Generates the reverse table associating a local index triplet (i,j,k) to the corresponding
-	global index l
-	@param n degree
-	@return reverse look up table
-	*/
-	static std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> reverse_table(unsigned int n);
-
-
-
+	
 	arma::mat partial_bernstein_dv( 
 		const double u, 
 		const double v,

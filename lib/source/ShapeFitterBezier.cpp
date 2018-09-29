@@ -447,8 +447,6 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 			}
 
 			
-
-			
 			footpoint . Pbar = Pbar;
 			footpoint . u = chi(0);
 			footpoint . v = chi(1);
@@ -458,8 +456,6 @@ void ShapeFitterBezier::find_footpoint_in_patch_omp(Bezier * patch,Footpoint & f
 		}
 
 	}
-
-	
 
 }
 

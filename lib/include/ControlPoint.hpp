@@ -7,36 +7,35 @@
 #include <set>
 
 class Element;
+class ShapeModel;
 class ControlPoint {
 
 public:
+
+
+	ControlPoint(ShapeModel * owning_shape);
+
 
 	/**
 	Getter to the vertex's coordinates
 	@return coordinates vertex coordinates
 	*/
-	arma::vec get_coordinates() const;
+	const arma::vec::fixed<3> & get_point_coordinates() const;
 
-
-	/**
-	Getter to the vertex's mean coordinates
-	@return coordinates vertex mean coordinates
-	*/
-	arma::vec get_mean_coordinates() const;
 
 	/**
 	Setter to the vertex's coordinates
 	@param coordinates vertex coordinates
 	*/
-	void set_coordinates(arma::vec coordinates);
+	void set_point_coordinates(arma::vec::fixed<3> & coordinates);
 
 
 	/**
 	Adds $facet to the vector of std::shared_ptr<Element>  that own this vertex.
 	Nothing happens if the facet is already listed
-	@param facet Pointer to the facet owning this vertex
+	@param facet index to the element owning this vertex
 	*/
-	void add_ownership(Element *  el);
+	void add_ownership(int el_index);
 
 
 
@@ -44,34 +43,19 @@ public:
 
 	
 
-	arma::vec get_normal_coordinates(bool bezier) const;
+	arma::vec::fixed<3> get_normal_coordinates(bool bezier) const;
 
 
 
-	/**
-	Finds the facets owming both $this and $vertex
-	@return commons_facets Vector of Facet * owning the two vertices
-	*/
-	std::set< Element * >  common_facets(std::shared_ptr<ControlPoint> vertex) const;
+	std::set< int >  common_facets(std::shared_ptr<ControlPoint> vertex) const;
 
 	/**
 	Determines if $this is owned by $facet
 	@param facet Facet whose relationship with the facet is to be tested
 	@return true is $this is owned by $facet, false otherwise
 	*/
-	bool is_owned_by( Element *  el) const;
+	bool is_owned_by( int el_index) const;
 
-	/**
-	Returns pointer to coordinates
-	@return pointer to coordinates
-	*/
-	double * get_coordinates_pointer();
-
-	/**
-	Returns pointer to coordinates
-	@return pointer to coordinates
-	*/
-	arma::vec * get_coordinates_pointer_arma();
 
 
 	/**
@@ -79,7 +63,7 @@ public:
 	Nothing happens if the facet was not listed (maybe throw a warning)>
 	@param facet Pointer to the facet owning this vertex
 	*/
-	void remove_ownership(Element *  el);
+	void remove_ownership(int el_index);
 
 	/**
 	Removes all ownership relationships 
@@ -88,17 +72,16 @@ public:
 
 
 	/**
-	Returns the owning facets
-	@return Owning facets
+	Returns the owning elements
+	@return Owning elements
 	*/
-	std::set< Element *  > get_owning_elements() const;
-
+	std::set< int  > get_owning_elements() const;
 
 	/**
-	Copies the current coordinates into a vector of mean coordinates. To be called before running
-	Monte Carlo simulations
+	Sets the owning elements
+	@param Owning elements
 	*/
-	void set_mean_coordinates();
+	void set_owning_elements(std::set< int  > & owning_elements);
 
 	/**
 	Returns point covariance
@@ -110,13 +93,13 @@ public:
 	@param element owning element
 	@param local_indices triplet of indices numbering this control point within the owning element
 	*/
-	void add_local_numbering(Element * element,const arma::uvec & local_indices);
+	void add_local_numbering(int element,const arma::uvec & local_indices);
 
 	/**
 	Returns the local numbering of this control point within the specified element
 	@param element pointer to element to consider
 	*/
-	arma::uvec get_local_numbering(Element * element) const;
+	arma::uvec get_local_numbering(int element) const;
 
 	/**
 	Sets the control point covariance
@@ -150,12 +133,13 @@ protected:
 	arma::vec coordinates;
 	arma::vec mean_coordinates;
 
-	std::set<Element * > owning_elements;
-	std::map<Element *,arma::uvec> local_numbering;
+	std::set<int> owning_elements;
+	std::map<int,arma::uvec> local_numbering;
 	arma::mat covariance = arma::zeros<arma::mat>(3,3);
 	arma::vec deviation = arma::zeros<arma::vec>(3);
 
 	int global_index;
+	ShapeModel * owning_shape;
 
 };
 

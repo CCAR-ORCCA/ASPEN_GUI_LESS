@@ -5,31 +5,31 @@
 #include <iostream>
 #include <memory>
 #include <set>
-#include "ControlPoint.hpp"
 
+class ShapeModel;
 class ControlPoint;
 class Element {
-
 
 public:
 
 	/**
 	Constructor
-	@param control_points pointer to vector storing the control_points owned by this element
 	*/
-	Element(std::vector<std::shared_ptr<ControlPoint > > control_points);
+	Element(std::vector<int> & control_points,ShapeModel * owning_shape);
 
 	/**
 	Get neighbors
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbors
 	@return Pointer to neighboring elements, plus the calling element
 	*/
-	virtual std::set < Element *> get_neighbors(bool all_neighbors) const = 0;
+	virtual std::set < int > get_neighbors(bool all_neighbors) const = 0;
 
 	/**
 	Recomputes element-specific values
 	*/
 	void update() ;
+
+	const arma::vec::fixed<3> & get_control_point_coordinates(int point_index) const;
 
 	/**
 	Get element normal. 
@@ -38,7 +38,7 @@ public:
 	- the normal evaluated at the center of the element if the element is a Bezier patch
 	@return element normal. 
 	*/
-	arma::vec get_normal_coordinates() const;
+	arma::vec::fixed<3> get_normal_coordinates() const;
 
 	/**
 	Get element center. 
@@ -47,27 +47,27 @@ public:
 	- Bezier patch evaluated at u == v == w == 1./3 if the element is a Bezier patch
 	@return element center
 	*/
-	arma::vec get_center() const;
+	arma::vec::fixed<3> get_center() const;
 
 
 	/**
 	Return the control points owned by this element
 	@return owned control points
 	*/	
-	std::vector<std::shared_ptr<ControlPoint > >  * get_control_points();
+	const std::vector<int > & get_control_points() const;
 
 	
 	/**
 	Gets an eventual super element corresponding to the present element
 	@return super element
 	*/
-	Element * get_super_element() const;
+	int get_super_element() const;
 
 	/**
 	Sets an eventual super element corresponding to the present element
 	@param super_element super element to assign
 	*/
-	void set_super_element(Element * super_element);
+	void set_super_element(int super_element);
 
 	/**
 	Return surface area of element
@@ -87,16 +87,18 @@ protected:
 	virtual void compute_area() = 0;
 
 
-	std::vector<std::shared_ptr<ControlPoint > >  control_points ;
-	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
+	std::vector<int>  control_points;
 
-	Element * super_element = nullptr;
-	arma::vec normal;
-	arma::vec center;
+	// Element * super_element = nullptr;
+	int super_element = -1;
+
+	arma::vec::fixed<3> normal;
+	arma::vec::fixed<3> center;
 
 	double area;
 	int global_index;
 
+	ShapeModel * owning_shape;
 };
 
 

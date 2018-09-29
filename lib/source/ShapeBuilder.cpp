@@ -1100,17 +1100,16 @@ void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longit
 	}
 
 
-
-
 	std::cout << "-- Running PSR...\n";
 	CGALINTERFACE::CGAL_interface(pc_path.c_str(),a_priori_path.c_str(),this -> filter_arguments -> get_N_edges());
 
 
-	ShapeModelImporter shape_io_guess(a_priori_path, 1, true);
 
 	ShapeModelTri a_priori_obj("", nullptr);
+	ShapeModelImporter::load_obj_shape_model(a_priori_path, 1, true,a_priori_obj);
 
-	shape_io_guess.load_obj_shape_model(&a_priori_obj);
+
+
 
 	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
 

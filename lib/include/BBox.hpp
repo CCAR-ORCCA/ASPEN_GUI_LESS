@@ -1,10 +1,10 @@
 #ifndef HEADER_BBOX
 #define HEADER_BBOX
 
-#include "FrameGraph.hpp"
-#include "Element.hpp"
 #include <time.h>
+#include <vector>
 
+class ShapeModel;
 /**
 Declaration of the BBox class, representing
 the bounding box of a KDTree node
@@ -13,14 +13,14 @@ class BBox {
 
 public:
 
-	BBox();
+	BBox(ShapeModel * owning_shape);
 
 	/**
 	Computes the bounding box boundaries
 	using provided geometric data
 	@param elements Facets bounded by this box
 	*/
-	void update(std::vector<std::shared_ptr<Element> > elements);
+	void update(std::vector<int> & element_indices);
 
 
 	/**
@@ -28,7 +28,7 @@ public:
 	using provided geometric data
 	@param element Element bounded by this box
 	*/
-	void update(std::shared_ptr<Element> element);
+	void update(int element_index);
 
 	void print() const;
 
@@ -43,12 +43,15 @@ public:
 	double get_zmax() const;
 
 	void save_to_file(std::string path) const;
-
+	void reset_bbox();
 
 protected:
+
 	double xmin, xmax;
 	double ymin, ymax;
 	double zmin, zmax;
+
+	ShapeModel * owning_shape;
 
 
 

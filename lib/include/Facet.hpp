@@ -19,14 +19,14 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Facet( std::vector<std::shared_ptr<ControlPoint > > vertices);
+	Facet( std::vector<int> & vertices);
 
 	/**
 	Get neighbors
 	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
 	@return Pointer to neighboring facets, plus the calling facet
 	*/
-	virtual std::set < Element * > get_neighbors(bool all_neighbors) const;
+	virtual std::set< int > get_neighbors(bool all_neighbors) const;
 
 
 	/**
@@ -38,8 +38,8 @@ public:
 	@param v1 Pointer to first vertex to exclude
 	@return Pointer to the first vertex of $this that is neither $v0 and $v1
 	*/
-	std::shared_ptr<ControlPoint> vertex_not_on_edge(std::shared_ptr<ControlPoint> v0,
-	        std::shared_ptr<ControlPoint>v1) const ;
+	int vertex_not_on_edge(int v0,
+	        int v1) const ;
 
 
 protected:

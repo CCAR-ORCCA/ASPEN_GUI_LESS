@@ -230,6 +230,10 @@ public:
 
 
 protected:
+
+	virtual void build_edges();
+
+
 	void save_connectivity(const std::vector< std::pair<int,int> > & connected_elements) const;
 	void find_correlated_elements();
 

@@ -4,7 +4,7 @@
 
 
 
-ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
+ShapeModelBezier::ShapeModelBezier(ShapeModelTri & shape_model,
 	std::string ref_frame_name,
 	FrameGraph * frame_graph): ShapeModel(ref_frame_name,frame_graph){
 
@@ -13,17 +13,17 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 
 	// The control point of this shape model are the same as that
 	// of the provided shape
-	this -> control_points = (*shape_model -> get_control_points());
+	this -> control_points = *shape_model.get_control_points();
 
 	// The ownership relationships are reset
-	for (unsigned int i = 0; i < shape_model -> get_NControlPoints(); ++i){
-		this -> control_points[i] -> reset_ownership();
+	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
+		this -> control_points[i].reset_ownership();
 	}
 
 	// The surface elements are almost the same, expect that they are 
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
-		auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
+		Bezier patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
 		patch -> set_global_index(i);
 
 		this -> elements.push_back(patch);
@@ -33,6 +33,7 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 		patch -> get_control_points() -> at(2) -> add_ownership(patch.get());
 
 	}
+	this -> build_edges();
 	this -> build_structure();
 
 	this -> construct_kd_tree_control_points();
@@ -72,6 +73,8 @@ ShapeModelBezier::ShapeModelBezier(ShapeModelTri * shape_model,
 		patch -> set_P_X(surface_noise * surface_noise * arma::eye<arma::mat>(9,9));
 
 	}
+	this -> build_edges();
+
 	this -> build_structure();
 
 	this -> construct_kd_tree_control_points();
@@ -141,6 +144,8 @@ ShapeModelBezier::ShapeModelBezier(Bezier patch){
 		this -> control_points[i] -> reset_ownership();
 		this -> control_points[i] -> add_ownership(this -> elements[0].get());
 	}
+	this -> build_edges();
+
 }
 
 void ShapeModelBezier::compute_surface_area(){
@@ -1069,8 +1074,6 @@ void ShapeModelBezier::elevate_degree(bool update){
 	std::vector<std::shared_ptr<ControlPoint> > new_control_points;
 	std::set<std::shared_ptr<ControlPoint> > new_control_points_set;
 
-
-
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
 		auto points = this -> get_elements() -> at(i) -> get_control_points();
@@ -1117,25 +1120,17 @@ void ShapeModelBezier::build_structure() {
 
 	// The surface elements are almost the same, expect that they are 
 	// Bezier patches and not facets
-	for (auto patch = this -> elements.begin(); patch != this -> elements.end(); ++patch){
+	for (int patch_index = 0; patch_index < this -> elements.size(); ++patch_index){
 
-		auto points = (*patch) -> get_control_points();
+		auto points = this -> get_element(patch_index);
 
 		for (auto point = points -> begin(); point != points -> end(); ++point){
-
-			(*point) -> add_ownership(patch -> get());
-
+			this -> control_points[(*point)].add_ownership(patch_index);
 		}
-
 
 	}
 
-
-
 }
-
-
-
 
 
 void ShapeModelBezier::populate_mass_properties_coefs(){
@@ -1717,10 +1712,9 @@ void ShapeModelBezier::save_both(std::string partial_path){
 
 	this -> save(partial_path + ".b");
 
-	ShapeModelImporter shape_bezier(partial_path + ".b", 1, true);
 	ShapeModelBezier self("",nullptr);
+	ShapeModelImporter::load_bezier_shape_model(partial_path + ".b",1,true,self);
 
-	shape_bezier.load_bezier_shape_model(&self);
 	self.elevate_degree(false);
 	self.elevate_degree(false);
 	self.elevate_degree(false);
@@ -3189,3 +3183,117 @@ arma::mat::fixed<3,9> ShapeModelBezier::partial_E_partial_R(const double lambda)
 	return dEdR;
 
 }
+
+
+void ShapeModelBezier::build_edges(){
+
+	std::set<std::set<int>> all_edges;
+	// For each element
+	for (int e = 0; e < this -> get_NElements(); ++i){
+
+		// For each pair of control points
+		// forming the Bezier triangle 
+		const Element & element = this -> element[e];
+
+		int n = element.get_degree();
+		int first = element.get_control_point(n, 0);
+		int second = element.get_control_point(0, n);
+		int third = element.get_control_point(0,0);
+
+		// Create the three unordered pairs of edges 
+		std::set<int> first_edge = {first,second};
+		std::set<int> second_edge = {first,third};
+		std::set<int> third_edge = {third,second};
+
+		// Only pairs that have not been already formed will remain in the set
+		all_edges.insert(first_edge);
+		all_edges.insert(second_edge);
+		all_edges.insert(third_edge);
+
+	}
+
+	this -> edges.clear();
+	for (auto edge : all_edges){
+		this -> edges.push_back(edge);
+	}
+
+
+}
+
+void ShapeModelBezier::elevate_degree(){
+
+	// Containers for the new elements/control points
+	std::vector<Bezier> new_element(this -> elements.size());
+	std::vector<std::map<int,ControlPoint > > new_control_points(this -> elements.size());
+
+	int n = this -> get_degree();
+
+	// The forward table is constructed
+	auto forw_before_elevation = Bezier::forward_table(n);
+	auto forw_after_elevation = Bezier::forward_table(n + 1);
+
+	// The reverse table is constructed
+	auto rev_before_elevation = Bezier::reverse_table(n);
+	auto rev_after_elevation = Bezier::reverse_table(n + 1);
+
+
+
+	// For each element, the new (not-on-edge) 
+	// control points are computed
+	for (int e = 0; e < this -> elements.size(); ++e ){
+
+		const std::vector<int> & element_control_points = this -> elements[e].get_control_points();
+
+		for (int i =0; i < forw_after_elevation.size(); ++i){
+
+		// The coordinates of the new control points are computed
+			arma::vec new_C = arma::zeros<arma::vec>(3);
+
+			for (unsigned int l = 0; l < forw_before_elevation.size(); ++l){
+
+				double coef = double(
+					combinations(std::get<0>(forw_before_elevation[l]),std::get<0>(forw_after_elevation[i])) 
+					* combinations(std::get<1>(forw_before_elevation[l]),std::get<1>(forw_after_elevation[i])) 
+					* combinations(std::get<2>(forw_before_elevation[l]),std::get<2>(forw_after_elevation[i])));
+
+				new_C += this -> control_points[element_control_points[l]] -> get_coordinates() * coef/(n + 1);
+
+			}
+
+
+			ControlPoint new_control_point;
+			std::set<int> ownership;
+
+			new_control_point.set_point_coordinates(new_C);
+
+			// This is where the ownership of new_C must be dealt with
+			auto tuple_local_indices = forw_after_elevation[i];
+			if (std::get<0>(tuple_local_indices) == 0 || std::get<1>(tuple_local_indices) == 0 ||std::get<2>(tuple_local_indices) == 0 ){
+
+				// We're on an edge, things get complicated
+				// Two cases: "midpoint" or end point
+				// The latter are (n,0,0), (0,n,0) or (0,0,n)
+
+
+			}
+			else{
+				ownership.insert(e);
+			}
+
+
+			new_control_point.set_point_coordinates(new_C);
+			new_control_points[e][i] = new_control_point;
+			new_control_point.set_owning_elements(ownership);
+
+
+		}
+	}
+
+	// The control points now need to be properly assigned to their elements
+	// 
+
+
+
+
+}
+

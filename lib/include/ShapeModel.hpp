@@ -54,13 +54,13 @@ public:
 	Translates the shape model by x
 	@param x translation vector applied to the coordinates of each control point
 	*/
-	void translate(arma::vec x);
+	void translate(const arma::vec::fixed<3> &);
 
 	/**
 	Rotates the shape model by 
 	@param M rotation matrix
 	*/
-	void rotate(arma::mat M);
+	void rotate(const arma::mat::fixed<3,3> & M);
 
 	
 	/**
@@ -122,20 +122,15 @@ public:
 	std::string get_ref_frame_name() const;
 
 
-	/**
-	Returns pointer to prescribed control point
-	@param i index of control point . must be between 0 and Nc - 1
-	*/
-	std::shared_ptr< ControlPoint>  get_control_point(unsigned int i) const ;
+	ControlPoint & get_control_point(unsigned int i) ;
+	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i) const;
 
 
 	/**
 	Pointer to the shape model's control points
 	@return vertices pointer to the control points
 	*/
-	std::vector<std::shared_ptr< ControlPoint> > * get_control_points();
-
-
+	std::vector<ControlPoint> & get_control_points();
 
 	unsigned int get_control_point_index(std::shared_ptr<ControlPoint> point) const;
 
@@ -143,11 +138,9 @@ public:
 	Pointer to the shape model's element
 	@return pointer to the elements
 	*/
-	std::vector<std::shared_ptr<Element> >  * get_elements();
+	std::vector<Element> & get_elements();
 
-
-
-	std::shared_ptr<Element>  get_element(int i) const {return this -> elements[i];}
+	Element & get_element(int i) {return this -> elements[i];}
 
 
 	/**
@@ -155,25 +148,22 @@ public:
 	one
 	@param facet pointer to the new element to be inserted
 	*/
-	void add_element(std::shared_ptr<Element> el);
-
+	void add_element(Element & el);
 
 	/**
 	Returns the geometrical center of the shape
 	@return geometrical center
 	*/
-	arma::vec get_center() const;
+	arma::vec::fixed<3> get_center() const;
 	
 	
-
 	/**
 	Augment the internal container storing vertices with a new (and not already inserted)
 	one
 	@param control_point pointer to the new control point to be inserted
 	*/
-	void add_control_point(std::shared_ptr<ControlPoint> control_point);
+	void add_control_point(ControlPoint & control_point);
 
-	
 
 	/**
 	Returns number of elements
@@ -200,7 +190,6 @@ public:
 	@return pointer to KDTreeControlPoints
 	*/
 	std::shared_ptr<KDTreeControlPoints> get_KDTreeControlPoints() const ;
-
 
 	/**
 	Computes the surface area of the shape model
@@ -239,7 +228,7 @@ public:
 	principal axes. (rho == 1, l = (volume)^(1/3))
 	@return principal inertia tensor
 	*/
-	arma::mat get_inertia() const;
+	const arma::mat::fixed<3,3> & get_inertia() const;
 
 	/**
 	Updates shape geometric and mass properties
@@ -257,7 +246,7 @@ public:
 	Returns the location of the center of mass
 	@return pointer to center of mass
 	*/
-	arma::vec get_center_of_mass() const;
+	const arma::vec::fixed<3> & get_center_of_mass() const;
 
 	/**
 	Builds the covariance of the provided control points
@@ -270,14 +259,12 @@ public:
 	@param Cp pointer to sixth point
 	*/
 	static void assemble_covariance(arma::mat & P,
-		std::shared_ptr<ControlPoint> Ci,
-		std::shared_ptr<ControlPoint> Cj,
-		std::shared_ptr<ControlPoint> Ck,
-		std::shared_ptr<ControlPoint> Cl,
-		std::shared_ptr<ControlPoint> Cm,
-		std::shared_ptr<ControlPoint> Cp);
-
-
+		const ControlPoint & Ci,
+		const ControlPoint & Cj,
+		const ControlPoint & Ck,
+		const ControlPoint & Cl,
+		const ControlPoint & Cm,
+		const ControlPoint & Cp);
 
 	/**
 	Builds the covariance of the provided control points
@@ -291,13 +278,13 @@ public:
 	@param Cq pointer to seventh point
 	*/
 	static void assemble_covariance(arma::mat & P,
-		std::shared_ptr<ControlPoint> Ci,
-		std::shared_ptr<ControlPoint> Cj,
-		std::shared_ptr<ControlPoint> Ck,
-		std::shared_ptr<ControlPoint> Cl,
-		std::shared_ptr<ControlPoint> Cm,
-		std::shared_ptr<ControlPoint> Cp,
-		std::shared_ptr<ControlPoint> Cq);
+		const ControlPoint & Ci,
+		const ControlPoint & Cj,
+		const ControlPoint & Ck,
+		const ControlPoint & Cl,
+		const ControlPoint & Cm,
+		const ControlPoint & Cp,
+		const ControlPoint & Cq);
 
 
 	/**
@@ -312,14 +299,15 @@ public:
 	@param Cq pointer to seventh point
 	@param Cq pointer to eigth point
 	*/
-	static void assemble_covariance(arma::mat & P,std::shared_ptr<ControlPoint> Ci,
-		std::shared_ptr<ControlPoint> Cj,
-		std::shared_ptr<ControlPoint> Ck,
-		std::shared_ptr<ControlPoint> Cl,
-		std::shared_ptr<ControlPoint> Cm,
-		std::shared_ptr<ControlPoint> Cp,
-		std::shared_ptr<ControlPoint> Cq,
-		std::shared_ptr<ControlPoint> Cr);
+	static void assemble_covariance(arma::mat & P,
+		const ControlPoint & Ci,
+		const ControlPoint & Cj,
+		const ControlPoint & Ck,
+		const ControlPoint & Cl,
+		const ControlPoint & Cm,
+		const ControlPoint & Cp,
+		const ControlPoint & Cq,
+		const ControlPoint & Cr);
 
 
 	/**
@@ -332,11 +320,14 @@ public:
 
 	arma::vec get_inertia_param() const;
 
+	virtual void build_edges() = 0;
+
 
 protected:
 
-	std::vector<std::shared_ptr<Element  > > elements;
-	std::vector<std::shared_ptr< ControlPoint> >  control_points;
+	std::vector<Element> elements;
+	std::vector<std::set<int> > edges;
+	std::vector<ControlPoint> control_points;
 	std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;
 	std::shared_ptr<KDTreeShape> kdt_facet = nullptr;
 
@@ -346,11 +337,10 @@ protected:
 	std::string ref_frame_name;
 
 	arma::mat::fixed<3,3> inertia;
-
+	arma::vec::fixed<3> cm;
 	double volume;
 	double surface_area;
 
-	arma::vec::fixed<3> cm;
 
 
 

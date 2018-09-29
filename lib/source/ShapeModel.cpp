@@ -12,13 +12,12 @@ ShapeModel::ShapeModel(std::string ref_frame_name,
 	this -> ref_frame_name = ref_frame_name;
 }
 
-
 std::string ShapeModel::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
 
-arma::mat ShapeModel::get_inertia() const {
+const arma::mat::fixed<3,3> & ShapeModel::get_inertia() const {
 	return this -> inertia;
 
 }
@@ -48,26 +47,16 @@ double ShapeModel::get_surface_area() const {
 }
 
 
-arma::vec ShapeModel::get_center_of_mass() const{
+const arma::vec::fixed<3> & ShapeModel::get_center_of_mass() const{
 	return this -> cm;
 }
-
 
 void ShapeModel::shift_to_barycenter() {
 
 	arma::vec x = - this -> get_center_of_mass();
-
-	// The vertices are shifted
-	#pragma omp parallel for if(USE_OMP_SHAPE_MODEL)
-	for (unsigned int vertex_index = 0;
-		vertex_index < this -> get_NControlPoints();
-		++vertex_index) {
-
-		this -> control_points[vertex_index] -> set_coordinates(this -> control_points[vertex_index] -> get_coordinates() + x);
-
-}
-
-this -> cm = 0 * this -> cm;
+	this -> translate(x);
+	this -> compute_center_of_mass();
+	assert(arma::norm(this -> cm) < 1e-10);
 
 }
 
@@ -79,8 +68,8 @@ void ShapeModel:: align_with_principal_axes() {
 	std::cout << "Non-dimensional inertia: " << std::endl;
 	std::cout << this -> inertia << std::endl;
 
-	arma::vec moments;
-	arma::mat axes;
+	arma::vec::fixed<3> moments;
+	arma::mat::fixed<3,3> axes;
 
 	this -> get_principal_inertias(axes,moments);
 
@@ -92,22 +81,19 @@ void ShapeModel:: align_with_principal_axes() {
 
 
 
-
-
-
 void ShapeModel::construct_kd_tree_control_points() {
 
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
+	// std::chrono::time_point<std::chrono::system_clock> start, end;
+	// start = std::chrono::system_clock::now();
 
-	this -> kdt_control_points = std::make_shared<KDTreeControlPoints>(KDTreeControlPoints());
-	this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0);
+	// this -> kdt_control_points = std::make_shared<KDTreeControlPoints>(KDTreeControlPoints());
+	// this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0);
 
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
+	// end = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_seconds = end - start;
 
 
-	std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	// std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }
 
@@ -117,14 +103,19 @@ void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
 }
 
 
-std::vector<std::shared_ptr< ControlPoint> > * ShapeModel::get_control_points() {
-	return &this -> control_points;
+std::vector<ControlPoint> & ShapeModel::get_control_points() {
+	return this -> control_points;
 }
 
 
-std::shared_ptr< ControlPoint>  ShapeModel::get_control_point(unsigned int i) const {
-	return this -> control_points.at(i);
+ControlPoint & ShapeModel::get_control_point(unsigned int i) {
+	return this -> control_points[i];
 }
+
+const arma::vec::fixed<3> & ShapeModel::get_control_point_coordinates(unsigned int i) const{
+	return this -> control_points[i].get_point_coordinates();
+}
+
 
 
 std::shared_ptr<KDTreeControlPoints> ShapeModel::get_KDTreeControlPoints() const {
@@ -140,63 +131,50 @@ unsigned int ShapeModel::get_NControlPoints() const {
 	return this -> control_points . size();
 }
 
-void ShapeModel::initialize_index_table(){
-
-	this -> pointer_to_global_index.clear();
-
-	// The forward look up table is created
-	for (auto iter = this -> control_points.begin(); iter != this -> control_points.end(); ++iter){
-		
-		unsigned int index = this -> pointer_to_global_index.size();
-		
-		this -> pointer_to_global_index[*iter] = index;
-	
-	}
-
-
-}
-
 
 std::shared_ptr<KDTreeShape> ShapeModel::get_KDTreeShape() const {
 	return this -> kdt_facet;
 }
 
 
-arma::vec ShapeModel::get_center() const{
+arma::vec::fixed<3> ShapeModel::get_center() const{
 	arma::vec center = {0,0,0};
 	unsigned int N = this -> get_NControlPoints();
 
-	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
-		center += (*point) -> get_coordinates() / N;
+	for (int i  = 0; i < N; ++i){
+		center += this -> get_control_point_coordinates(i) / N;
 	}
 	return center;
 }
 
-void ShapeModel::translate(arma::vec x){
-
-	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
-		arma::vec coords = (*point) -> get_coordinates();
-		(*point) -> set_coordinates(coords + x) ;
+void ShapeModel::translate( const arma::vec::fixed<3> & x){
+	unsigned int N = this -> get_NControlPoints();
+	for (int i  = 0; i < N; ++i){
+		arma::vec::fixed<3> coords = this -> get_control_point_coordinates(i);
+		coords += x;
+		this -> control_points[i].set_point_coordinates(coords) ;
 	}
 }
 
-void ShapeModel::rotate(arma::mat M){
+void ShapeModel::rotate(const arma::mat::fixed<3,3> & M){
 
-	for (auto point = this -> control_points.begin(); point != this -> control_points.end(); ++point){
-		arma::vec coords = (*point) -> get_coordinates();
-		(*point) -> set_coordinates(M*coords) ;
+	unsigned int N = this -> get_NControlPoints();
+
+	for (int i  = 0; i < N; ++i){
+		arma::vec::fixed<3> coords = M*this -> get_control_point_coordinates(i);
+		this -> control_points[i].set_point_coordinates(coords) ;
 	}
 }
 
 
 void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 
-	arma::vec bbox_min = M * this -> control_points[0] -> get_coordinates();
-	arma::vec bbox_max = M * this -> control_points[0] -> get_coordinates();
+	arma::vec bbox_min = M * this -> control_points[0]. get_point_coordinates();
+	arma::vec bbox_max = M * this -> control_points[0]. get_point_coordinates();
 
 	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
-		bbox_min = arma::min(bbox_min,M * this -> control_points[vertex_index] -> get_coordinates());
-		bbox_max = arma::max(bbox_max,M * this -> control_points[vertex_index] -> get_coordinates());
+		bbox_min = arma::min(bbox_min,M * this -> control_points[vertex_index].get_point_coordinates());
+		bbox_max = arma::max(bbox_max,M * this -> control_points[vertex_index].get_point_coordinates());
 
 	}
 
@@ -293,79 +271,70 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 
 
 
-unsigned int ShapeModel::get_control_point_index(std::shared_ptr<ControlPoint> point) const{
-	return this -> pointer_to_global_index.at(point);
+std::vector<Element> & ShapeModel::get_elements(){
+	return this -> elements;
 }
 
-
-std::vector<std::shared_ptr<Element> > * ShapeModel::get_elements() {
-	return &this -> elements;
-}
-
-
-void ShapeModel::add_element(std::shared_ptr<Element> el) {
+void ShapeModel::add_element(Element & el) {
 	this -> elements.push_back(el);
 }
 
 
-void ShapeModel::add_control_point(std::shared_ptr<ControlPoint> vertex) {
+void ShapeModel::add_control_point(ControlPoint & vertex) {
 	this -> control_points.push_back(vertex);
 }
 
 
 
-
-
-
 void ShapeModel::assemble_covariance(arma::mat & P,
-	std::shared_ptr<ControlPoint> Ci,
-	std::shared_ptr<ControlPoint> Cj,
-	std::shared_ptr<ControlPoint> Ck,
-	std::shared_ptr<ControlPoint> Cl,
-	std::shared_ptr<ControlPoint> Cm,
-	std::shared_ptr<ControlPoint> Cp){
+	const ControlPoint & Ci,
+	const ControlPoint & Cj,
+	const ControlPoint & Ck,
+	const ControlPoint & Cl,
+	const ControlPoint & Cm,
+	const ControlPoint & Cp){
 
 
 	P = arma::zeros<arma::mat>(9,9);
 
 	// First row
-	if (Ci == Cl){
-		P.submat(0,0,2,2) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cl.get_global_index()){
+		P.submat(0,0,2,2) = Ci .get_covariance();
 	}
 
-	if (Ci == Cm){
-		P.submat(0,3,2,5) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cm.get_global_index()){
+		P.submat(0,3,2,5) = Ci .get_covariance();
 	}
 
-	if (Ci == Cp){
-		P.submat(0,6,2,8) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cp.get_global_index()){
+		P.submat(0,6,2,8) = Ci .get_covariance();
 	}
 
 	// Second row
-	if (Cj == Cl){
-		P.submat(3,0,5,2) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cl.get_global_index()){
+		P.submat(3,0,5,2) = Cj .get_covariance();
 	}
 
-	if (Cj == Cm){
-		P.submat(3,3,5,5) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cm.get_global_index()){
+		P.submat(3,3,5,5) = Cj .get_covariance();
 	}
 
-	if (Cj == Cp){
-		P.submat(3,6,5,8) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cp.get_global_index()){
+		P.submat(3,6,5,8) = Cj .get_covariance();
 	}
 
 
 	// Third row
-	if (Ck == Cl){
-		P.submat(6,0,8,2) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cl.get_global_index()){
+		P.submat(6,0,8,2) = Ck .get_covariance();
 	}
 
-	if (Ck == Cm){
-		P.submat(6,3,8,5) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cm.get_global_index()){
+		P.submat(6,3,8,5) = Ck .get_covariance();
 	}
 
-	if (Ck == Cp){
-		P.submat(6,6,8,8) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cp.get_global_index()){
+		P.submat(6,6,8,8) = Ck .get_covariance();
 	}
 
 }
@@ -373,155 +342,155 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 
 void ShapeModel::assemble_covariance(arma::mat & P,
-	std::shared_ptr<ControlPoint> Ci,
-	std::shared_ptr<ControlPoint> Cj,
-	std::shared_ptr<ControlPoint> Ck,
-	std::shared_ptr<ControlPoint> Cl,
-	std::shared_ptr<ControlPoint> Cm,
-	std::shared_ptr<ControlPoint> Cp,
-	std::shared_ptr<ControlPoint> Cq){
+		const ControlPoint & Ci,
+		const ControlPoint & Cj,
+		const ControlPoint & Ck,
+		const ControlPoint & Cl,
+		const ControlPoint & Cm,
+		const ControlPoint & Cp,
+		const ControlPoint & Cq){
 
 
 	P = arma::zeros<arma::mat>(12,9);
 
 	// First row
-	if (Ci == Cm){
-		P.submat(0,0,2,2) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cm.get_global_index()){
+		P.submat(0,0,2,2) = Ci .get_covariance();
 	}
 
-	if (Ci == Cp){
-		P.submat(0,3,2,5) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cp.get_global_index()){
+		P.submat(0,3,2,5) = Ci .get_covariance();
 	}
 
-	if (Ci == Cq){
-		P.submat(0,6,2,8) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cq.get_global_index()){
+		P.submat(0,6,2,8) = Ci .get_covariance();
 	}
 
 	// Second row
-	if (Cj == Cm){
-		P.submat(3,0,5,2) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cm.get_global_index()){
+		P.submat(3,0,5,2) = Cj .get_covariance();
 	}
 
-	if (Cj == Cp){
-		P.submat(3,3,5,5) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cp.get_global_index()){
+		P.submat(3,3,5,5) = Cj .get_covariance();
 	}
 
-	if (Cj == Cq){
-		P.submat(3,6,5,8) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cq.get_global_index()){
+		P.submat(3,6,5,8) = Cj .get_covariance();
 	}
 
 
 	// Third row
-	if (Ck == Cm){
-		P.submat(6,0,8,2) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cm.get_global_index()){
+		P.submat(6,0,8,2) = Ck .get_covariance();
 	}
 
-	if (Ck == Cp){
-		P.submat(6,3,8,5) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cp.get_global_index()){
+		P.submat(6,3,8,5) = Ck .get_covariance();
 	}
 
-	if (Ck == Cq){
-		P.submat(6,6,8,8) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cq.get_global_index()){
+		P.submat(6,6,8,8) = Ck .get_covariance();
 	}
 
 	// Fourth row
-	if (Cl == Cm){
-		P.submat(9,0,11,2) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cm.get_global_index()){
+		P.submat(9,0,11,2) = Cl .get_covariance();
 	}
 
-	if (Cl == Cp){
-		P.submat(9,3,11,5) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cp.get_global_index()){
+		P.submat(9,3,11,5) = Cl .get_covariance();
 	}
 
-	if (Cl == Cq){
-		P.submat(9,6,11,8) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cq.get_global_index()){
+		P.submat(9,6,11,8) = Cl .get_covariance();
 	}
 
 }
 
 
 void ShapeModel::assemble_covariance(arma::mat & P,
-	std::shared_ptr<ControlPoint> Ci,
-	std::shared_ptr<ControlPoint> Cj,
-	std::shared_ptr<ControlPoint> Ck,
-	std::shared_ptr<ControlPoint> Cl,
-	std::shared_ptr<ControlPoint> Cm,
-	std::shared_ptr<ControlPoint> Cp,
-	std::shared_ptr<ControlPoint> Cq,
-	std::shared_ptr<ControlPoint> Cr){
+		const ControlPoint & Ci,
+		const ControlPoint & Cj,
+		const ControlPoint & Ck,
+		const ControlPoint & Cl,
+		const ControlPoint & Cm,
+		const ControlPoint & Cp,
+		const ControlPoint & Cq,
+		const ControlPoint & Cr){
 
 
 	P = arma::zeros<arma::mat>(12,12);
 
 	// First row
-	if (Ci == Cm){
-		P.submat(0,0,2,2) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cm.get_global_index()){
+		P.submat(0,0,2,2) = Ci .get_covariance();
 	}
 
-	if (Ci == Cp){
-		P.submat(0,3,2,5) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cp.get_global_index()){
+		P.submat(0,3,2,5) = Ci .get_covariance();
 	}
 
-	if (Ci == Cq){
-		P.submat(0,6,2,8) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cq.get_global_index()){
+		P.submat(0,6,2,8) = Ci .get_covariance();
 	}
 
-	if (Ci == Cr){
-		P.submat(0,9,2,11) = Ci -> get_covariance();
+	if (Ci.get_global_index() == Cr.get_global_index()){
+		P.submat(0,9,2,11) = Ci .get_covariance();
 	}
 
 	// Second row
-	if (Cj == Cm){
-		P.submat(3,0,5,2) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cm.get_global_index()){
+		P.submat(3,0,5,2) = Cj .get_covariance();
 	}
 
-	if (Cj == Cp){
-		P.submat(3,3,5,5) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cp.get_global_index()){
+		P.submat(3,3,5,5) = Cj .get_covariance();
 	}
 
-	if (Cj == Cq){
-		P.submat(3,6,5,8) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cq.get_global_index()){
+		P.submat(3,6,5,8) = Cj .get_covariance();
 	}
 
-	if (Cj == Cr){
-		P.submat(3,9,5,11) = Cj -> get_covariance();
+	if (Cj.get_global_index() == Cr.get_global_index()){
+		P.submat(3,9,5,11) = Cj .get_covariance();
 	}
 
 
 	// Third row
-	if (Ck == Cm){
-		P.submat(6,0,8,2) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cm.get_global_index()){
+		P.submat(6,0,8,2) = Ck .get_covariance();
 	}
 
-	if (Ck == Cp){
-		P.submat(6,3,8,5) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cp.get_global_index()){
+		P.submat(6,3,8,5) = Ck .get_covariance();
 	}
 
-	if (Ck == Cq){
-		P.submat(6,6,8,8) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cq.get_global_index()){
+		P.submat(6,6,8,8) = Ck .get_covariance();
 	}
 
 
-	if (Ck == Cr){
-		P.submat(6,9,8,11) = Ck -> get_covariance();
+	if (Ck.get_global_index() == Cr.get_global_index()){
+		P.submat(6,9,8,11) = Ck .get_covariance();
 	}
 
 	// Fourth row
-	if (Cl == Cm){
-		P.submat(9,0,11,2) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cm.get_global_index()){
+		P.submat(9,0,11,2) = Cl .get_covariance();
 	}
 
-	if (Cl == Cp){
-		P.submat(9,3,11,5) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cp.get_global_index()){
+		P.submat(9,3,11,5) = Cl .get_covariance();
 	}
 
-	if (Cl == Cq){
-		P.submat(9,6,11,8) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cq.get_global_index()){
+		P.submat(9,6,11,8) = Cl .get_covariance();
 	}
 
 
-	if (Cl == Cr){
-		P.submat(9,9,11,11) = Cl -> get_covariance();
+	if (Cl.get_global_index() == Cr.get_global_index()){
+		P.submat(9,9,11,11) = Cl .get_covariance();
 	}
 
 
@@ -530,29 +499,15 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 double ShapeModel::get_circumscribing_radius() const{
 
-	double radius  = arma::norm(this -> control_points[0] -> get_coordinates() - this -> cm );
+	double radius  = arma::norm(this -> control_points[0].get_point_coordinates() - this -> cm );
 
-	for ( unsigned int vertex_index = 0; vertex_index < this -> get_NControlPoints(); ++ vertex_index) {
-		radius = std::max(arma::norm(this -> control_points[vertex_index] -> get_coordinates() - this -> cm),radius);
+	for ( unsigned int i = 0; i < this -> get_NControlPoints(); ++ i) {
+		radius = std::max(arma::norm(this -> control_points[i].get_point_coordinates() - this -> cm),radius);
 	}
 
 	return radius;
 
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
