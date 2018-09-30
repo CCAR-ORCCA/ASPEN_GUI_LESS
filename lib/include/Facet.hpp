@@ -19,7 +19,7 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Facet( std::vector<int> & vertices);
+	Facet( std::vector<int> & vertices,ShapeModel * owning_shape);
 
 	/**
 	Get neighbors
@@ -28,6 +28,7 @@ public:
 	*/
 	virtual std::set< int > get_neighbors(bool all_neighbors) const;
 
+	const arma::vec & get_normal_coordinates() const;
 
 	/**
 	Returns pointer to the first vertex owned by $this that is
@@ -39,7 +40,7 @@ public:
 	@return Pointer to the first vertex of $this that is neither $v0 and $v1
 	*/
 	int vertex_not_on_edge(int v0,
-	        int v1) const ;
+		int v1) const ;
 
 
 protected:

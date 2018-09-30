@@ -56,6 +56,10 @@ public:
 	*/	
 	const std::vector<int > & get_control_points() const;
 
+	void set_control_points(std::vector<int > & control_points);
+
+
+
 	
 	/**
 	Gets an eventual super element corresponding to the present element

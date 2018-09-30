@@ -13,26 +13,6 @@
 
 #include <set>
 #include <map>
-#include <DebugFlags.hpp>
-
-struct NewPoint{
-	NewPoint(std::shared_ptr<ControlPoint> point ,
-		std::shared_ptr<ControlPoint> end_point ,
-		std::tuple<unsigned int, unsigned int, unsigned int> indices_newpoint,
-		std::tuple<unsigned int, unsigned int, unsigned int> indices_endpoint){
-
-		this -> point = point;
-		this -> end_point= end_point;
-		this -> indices_newpoint = indices_newpoint;
-		this -> indices_endpoint = indices_endpoint;
-	} 
-
-	std::shared_ptr<ControlPoint> point;
-	std::shared_ptr<ControlPoint> end_point;
-	std::tuple<unsigned int, unsigned int, unsigned int> indices_newpoint;
-	std::tuple<unsigned int, unsigned int, unsigned int> indices_endpoint;
-
-};
 
 
 class ControlPoint;
@@ -45,18 +25,17 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Bezier( std::vector<std::shared_ptr<ControlPoint > > vertices);
+	Bezier(std::vector<int> & vertices,ShapeModel * owning_shape);
 
 	/**
 	Get neighbors
-	@param if false, only return neighbors sharing an edge. Else, returns all neighbors
+	@param if false, only return neighbors sharing an edge. Else, returns all neighbords
 	@return Pointer to neighboring facets, plus the calling facet
 	*/
-	virtual std::set < Element * > get_neighbors(bool all_neighbors) const;
+	virtual std::set< int > get_neighbors(bool all_neighbors) const;
 
 
-
-	std::set < Element * > get_neighbors(double u, double v) const;
+	std::set < int > get_neighbors(double u, double v) const;
 
 
 	/**
@@ -68,8 +47,9 @@ public:
 	@param v1 Pointer to first vertex to exclude
 	@return Pointer to the first vertex of $this that is neither $v0 and $v1
 	*/
-	std::shared_ptr<ControlPoint> vertex_not_on_edge(std::shared_ptr<ControlPoint> v0,
-		std::shared_ptr<ControlPoint>v1) const ;
+	int vertex_not_on_edge(
+		int v0,
+		int v1) const ;
 
 	/**
 	Returns patch degree
@@ -77,10 +57,6 @@ public:
 	*/
 	unsigned int get_degree() const;
 
-	/**
-	Elevates patch degree by one
-	*/
-	void elevate_degree();
 
 	
 	/**
@@ -90,10 +66,8 @@ public:
 	@param v second barycentric coordinate
 	@return point at the surface of the bezier patch
 	*/
-	arma::vec evaluate(const double u, const double v) const;
+	arma::vec::fixed<3> evaluate(const double u, const double v) const;
 
-
-	arma::vec evaluate_omp(const double u, const double v,const arma::vec & deviation) const;
 
 
 	/**
@@ -122,46 +96,27 @@ public:
 
 
 	/**
-	Adds a new control point to this element from one of its neighbords
-	@param element pointer to neighboring element
-	@new_point structure storing all the information required to add the provided
-	point to this Bezier element
-	*/
-	void add_point_from_neighbor(Element * element, NewPoint & new_point);
-
-
-	/**
 	Get global index of the queried point
 	@param i first index
 	@param j second index
 	@return global index to control point
 	*/
-	int get_control_point_global_index(unsigned int i, unsigned int j) const;
+	int get_control_point_local_index(unsigned int i, unsigned int j) const;
 
 	/**
 	Returns the control point given its i and j indices (k = n - i - j)
 	@param i first index
 	@param j second index
-	@return pointer to control point
+	@return global index of control point
 	*/	
-	std::shared_ptr<ControlPoint> get_control_point(unsigned int i, unsigned int j) const;
+	int get_control_point(unsigned int i, unsigned int j) const;
 
 	/**
 	Returns the tuple of local indices (i,j,k) of a control point within a bezier patch
-	@param point pointer to query point
+	@param local_index local index of considered point
 	@return local_indices (i,j,k) 
 	*/
-	std::tuple<unsigned int, unsigned int,unsigned int> get_local_indices(std::shared_ptr<ControlPoint> point) const;
-
-
-	/**
-	Returns the local index of a point within a Bezier patch
-	@param point pointer to query point
-	@return local index (between 0 and N_C - 1)
-	*/
-	unsigned int get_local_index(std::shared_ptr<ControlPoint> point) const;
-
-
+	std::tuple<int,int,int> get_local_indices(int local_index) const;
 
 
 	/**
@@ -170,7 +125,7 @@ public:
 	@param j second index
 	@return coordinats of contorl point
 	*/	
-	arma::vec get_control_point_coordinates(unsigned int i, unsigned int j) const;
+	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i, unsigned int j) const;
 
 
 	/**
@@ -512,7 +467,7 @@ public:
 	@param n degree
 	@return forward look up table
 	*/
-	static std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forward_table(unsigned int n);
+	static std::vector<std::tuple< int,  int,  int> > forward_table( int n);
 
 
 
@@ -522,10 +477,18 @@ public:
 	@param n degree
 	@return reverse look up table
 	*/
-	static std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> reverse_table(unsigned int n);
+	static std::map< std::tuple< int,  int,  int> , int> reverse_table( int n);
 
 
-
+	
+	/**
+	Returns the number of combinations of k items among n.
+	Returns 0 if k < 0 or k > n
+	@param k subset size
+	@param n set size
+	@return number of combinations
+	*/
+	static int combinations(int k, int n);
 
 protected:
 
@@ -573,14 +536,6 @@ protected:
 
 
 
-	/**
-	Returns the number of combinations of k items among n.
-	Returns 0 if k < 0 or k > n
-	@param k subset size
-	@param n set size
-	@return number of combinations
-	*/
-	static int combinations(int k, int n);
 
 	
 	arma::mat partial_bernstein_dv( 
@@ -599,16 +554,14 @@ protected:
 		const int n) ;
 
 
-	unsigned int n;
+	int n;
 	double fitting_residuals = 0;
 	double fitting_residuals_mean = 0;
 
-	std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > forw_table;
-	std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> rev_table;
+	std::vector<std::tuple< int,  int,  int> > forw_table;
+	std::map< std::tuple< int,  int,  int> , int> rev_table;
 
 
-
-	std::map< Element * , std::vector<NewPoint> > new_points;
 	arma::mat P_X;
 	std::vector<Footpoint> footpoints;
 

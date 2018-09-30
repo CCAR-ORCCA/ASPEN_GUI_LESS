@@ -134,26 +134,26 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 add_library(${LIB_NAME} SHARED
 	# source/BatchFilter.cpp
 	source/BBox.cpp
-	# source/Bezier.cpp
+	source/Bezier.cpp
 	# source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
 	# source/DynamicAnalyses.cpp
 	# source/Dynamics.cpp
 	source/Element.cpp
-	source/EstimationFeature.cpp
-	source/EstimationFPFH.cpp
-	source/EstimationNormals.cpp
-	source/EstimationPFH.cpp
+	# source/EstimationFeature.cpp
+	# source/EstimationFPFH.cpp
+	# source/EstimationNormals.cpp
+	# source/EstimationPFH.cpp
 	# source/EventFunction.cpp
 	# source/ExtendedKalmanFilter.cpp
 	# source/Facet.cpp
-	source/FeatureMatching.cpp
+	# source/FeatureMatching.cpp
 	# source/Filter.cpp
 	source/FrameGraph.cpp
-	source/FPFH.cpp
-	source/ICPBase.cpp
-	source/IterativeClosestPoint.cpp
-	source/IterativeClosestPointToPlane.cpp
+	# source/FPFH.cpp
+	# source/ICPBase.cpp
+	# source/IterativeClosestPoint.cpp
+	# source/IterativeClosestPointToPlane.cpp
 	# source/IODFinder.cpp
 	source/KDTree.cpp
 	# source/KDTreeShape.cpp
@@ -174,9 +174,9 @@ add_library(${LIB_NAME} SHARED
 	# source/ShapeBuilder.cpp
 	# source/ShapeFitterBezier.cpp
 	source/ShapeModel.cpp
-	# source/ShapeModelBezier.cpp
+	source/ShapeModelBezier.cpp
 	# source/ShapeModelImporter.cpp
-	# source/ShapeModelTri.cpp
+	source/ShapeModelTri.cpp
 	source/SPFH.cpp
 	# source/StatePropagator.cpp
 	)

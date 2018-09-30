@@ -1,7 +1,7 @@
 #include "../include/Facet.hpp"
 #include <memory>
 
-Facet::Facet(std::vector<ControlPoint> control_points) : Element(control_points){
+Facet::Facet(std::vector<ControlPoint> control_points,ShapeModel * owning_shape) : Element(control_points,owning_shape){
 
 	if (control_points.size()!= 3){
 		throw(std::runtime_error("This facet was provided with " + std::to_string(control_points.size()) + " vertices"));
@@ -89,6 +89,9 @@ int Facet::vertex_not_on_edge(int v0,int v1) const {
 
 }
 
+const arma::vec & Facet::get_normal_coordinates() const{
+	return this -> normal;
+}
 
 void Facet::compute_center() {
 

@@ -1,11 +1,12 @@
-#include "Bezier.hpp"
-#include "Psopt.hpp"
+#include <Bezier.hpp>
+#include <Psopt.hpp>
+#include <ShapeModel.hpp>
+
 #include <vtkMath.h>
-
 #include <cassert>
-Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : Element(control_points){
+Bezier::Bezier( std::vector<int> & vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
 
-	double n = (-3 + std::sqrt(9 - 8 * (1 - control_points.size() )))/2;
+	double n = (-3 + std::sqrt(9 - 8 * (1 - vertices.size() )))/2;
 	double intpart;
 	this -> P_X = 1e10 * arma::eye<arma::mat>(3 * this -> control_points.size(),3 * this -> control_points.size());
 
@@ -24,50 +25,22 @@ Bezier::Bezier(std::vector<std::shared_ptr<ControlPoint > > control_points) : El
 
 }
 
-std::shared_ptr<ControlPoint> Bezier::get_control_point(unsigned int i, unsigned int j) const{
-
+int Bezier::get_control_point(unsigned int i, unsigned int j) const{
 	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
 	return this -> control_points[this -> rev_table.at(indices)];
 }
 
 
-int Bezier::get_control_point_global_index(unsigned int i, unsigned int j) const{
-	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
-	return this -> control_points[this -> rev_table.at(indices)] -> get_global_index();
+const arma::vec::fixed<3> & Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) const{
+	return this -> owning_shape -> get_control_point_coordinates(this -> get_control_point(i, j)) ;
 }
 
 
-arma::vec Bezier::get_control_point_coordinates(unsigned int i, unsigned int j) const{
-	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
-
-	return this -> control_points[this -> rev_table.at(indices)] -> get_coordinates();
+std::tuple<int, int,int> Bezier::get_local_indices(int i) const{
+	return this -> forw_table.at(i);
 }
 
 
-std::tuple<unsigned int, unsigned int,unsigned int> Bezier::get_local_indices(std::shared_ptr<ControlPoint> point) const{
-	
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		if (this -> control_points.at(i) == point){
-			return this -> forw_table.at(i);
-		}
-	}
-
-	throw(std::runtime_error("The provided point should belong to this patch"));
-	
-}
-
-
-unsigned int Bezier::get_local_index(std::shared_ptr<ControlPoint> point) const{
-	
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		if (this -> control_points.at(i) == point){
-			return i;
-		}
-	}
-
-	throw(std::runtime_error("The provided point should belong to this patch"));
-	
-}
 
 
 void Bezier::construct_index_tables(){
@@ -99,9 +72,9 @@ double Bezier::triple_product(const int i ,const int j ,const int k ,const int l
 	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
 	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
 	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
-	double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
-	double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
-	double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
+	double const * Ci =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(i_)]).colptr(0);
+	double const * Cj =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(j_)]).colptr(0);
+	double const * Ck =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(k_)]).colptr(0);
 
 	return vtkMath::Determinant3x3(Ci,Cj,Ck);
 
@@ -114,17 +87,17 @@ double Bezier::triple_product(const int i ,const int j ,const int k ,const int l
 	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
 	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
 	
-	auto Ci =  this -> control_points[this -> rev_table.at(i_)];
-	auto Cj =  this -> control_points[this -> rev_table.at(j_)];
-	auto Ck =  this -> control_points[this -> rev_table.at(k_)];
+	const ControlPoint & Ci =  this -> owning_shape -> get_control_point(this -> control_points[this -> rev_table.at(i_)]);
+	const ControlPoint & Cj =  this -> owning_shape -> get_control_point(this -> control_points[this -> rev_table.at(j_)]);
+	const ControlPoint & Ck =  this -> owning_shape -> get_control_point(this -> control_points[this -> rev_table.at(k_)]);
 
-	int i_g = Ci -> get_global_index();
-	int j_g = Cj -> get_global_index();
-	int k_g = Ck -> get_global_index();
+	int i_g = Ci.get_global_index();
+	int j_g = Cj.get_global_index();
+	int k_g = Ck.get_global_index();
 
-	return arma::dot(Ci -> get_coordinates() + deviation.rows(3 * i_g,3 * i_g + 2),
-		arma::cross(Cj -> get_coordinates() + deviation.rows(3 * j_g,3 * j_g + 2),
-			Ck -> get_coordinates() + deviation.rows(3 * k_g,3 * k_g + 2)));
+	return arma::dot(Ci.get_point_coordinates() + deviation.rows(3 * i_g,3 * i_g + 2),
+		arma::cross(Cj.get_point_coordinates() + deviation.rows(3 * j_g,3 * j_g + 2),
+			Ck.get_point_coordinates() + deviation.rows(3 * k_g,3 * k_g + 2)));
 
 }
 
@@ -137,10 +110,10 @@ void Bezier::quadruple_product(double * result,const int i ,const int j ,const i
 	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
 	std::tuple<unsigned int, unsigned int,unsigned int> l_ = std::make_tuple(q,r,this -> n - q - r);
 
-	double * Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates_pointer();
-	double * Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates_pointer();
-	double * Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates_pointer();
-	double * Cl =  this -> control_points[this -> rev_table.at(l_)] -> get_coordinates_pointer();
+	double const * Ci =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(i_)]).colptr(0);
+	double const * Cj =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(j_)]).colptr(0);
+	double const * Ck =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(k_)]).colptr(0);
+	double const * Cl =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(l_)]).colptr(0);
 
 
 	double cp[3];
@@ -154,11 +127,6 @@ void Bezier::quadruple_product(double * result,const int i ,const int j ,const i
 
 
 }
-
-
-
-
-
 
 
 
@@ -193,7 +161,6 @@ double Bezier::alpha_ijk(const int i, const int j, const int k, const int l, con
 
 
 double Bezier::gamma_ijkl(const int i, const int j, const int k, const int l, const int m, const int p,const int q, const int r, const int n){
-
 
 	int sum_indices = i + j + k + l + m + p + q + r;
 
@@ -248,8 +215,6 @@ double Bezier::beta_ijkl(const int i, const int j, const int k, const int l, con
 }
 
 
-
-
 arma::vec Bezier::get_cross_products(const int i, const int j, const int k, const int l, const int m,const int p) const{
 
 	arma::vec stacked_cp(9);
@@ -258,9 +223,9 @@ arma::vec Bezier::get_cross_products(const int i, const int j, const int k, cons
 	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
 	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
 
-	arma::vec Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates();
-	arma::vec Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates();
-	arma::vec Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates();
+	const arma::vec::fixed<3> & Ci =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(i_)]);
+	const arma::vec::fixed<3> & Cj =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(j_)]);
+	const arma::vec::fixed<3> & Ck =  this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(k_)]);
 
 	stacked_cp.subvec(0,2) = arma::cross(Cj,Ck);
 	stacked_cp.subvec(3,5) = arma::cross(Ck,Ci);
@@ -273,257 +238,25 @@ arma::vec Bezier::get_cross_products(const int i, const int j, const int k, cons
 void Bezier::get_augmented_cross_products(arma::mat::fixed<12,3> & mat,const int i, const int j, const int k, const int l, const int m,const int p,
 	const int q, const int r) const{
 
-
-
-
 	std::tuple<unsigned int, unsigned int,unsigned int> i_ = std::make_tuple(i,j,this -> n - i - j);
 	std::tuple<unsigned int, unsigned int,unsigned int> j_ = std::make_tuple(k,l,this -> n - k - l);
 	std::tuple<unsigned int, unsigned int,unsigned int> k_ = std::make_tuple(m,p,this -> n - m - p);
 	std::tuple<unsigned int, unsigned int,unsigned int> l_ = std::make_tuple(q,r,this -> n - q - r);
 
 
-	arma::vec Ci =  this -> control_points[this -> rev_table.at(i_)] -> get_coordinates();
-	arma::vec Cj =  this -> control_points[this -> rev_table.at(j_)] -> get_coordinates();
-	arma::vec Ck =  this -> control_points[this -> rev_table.at(k_)] -> get_coordinates();
-	arma::vec Cl =  this -> control_points[this -> rev_table.at(l_)] -> get_coordinates();
+	const arma::vec::fixed<3> & Ci = this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(i_)]);
+	const arma::vec::fixed<3> & Cj = this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(j_)]);
+	const arma::vec::fixed<3> & Ck = this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(k_)]);
+	const arma::vec::fixed<3> & Cl = this -> owning_shape -> get_control_point_coordinates(this -> control_points[this -> rev_table.at(l_)]);
 
-	arma::vec v_kl = arma::cross(Ck,Cl);
-	arma::vec v_lj = arma::cross(Cl,Cj);
-	arma::vec v_jk = arma::cross(Cj,Ck);
+	arma::vec::fixed<3> v_kl = arma::cross(Ck,Cl);
+	arma::vec::fixed<3> v_lj = arma::cross(Cl,Cj);
+	arma::vec::fixed<3> v_jk = arma::cross(Cj,Ck);
 
 	mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(Cj,v_kl);
 	mat.submat(3,0,5,2) = v_kl * Ci.t();
 	mat.submat(6,0,8,2) = v_lj * Ci.t();
 	mat.submat(9,0,11,2) = v_jk * Ci.t();
-
-
-}
-
-
-
-void Bezier::elevate_degree(){
-
-	// A vector storing the new coordinates is created
-	std::vector<std::shared_ptr<ControlPoint > > new_control_points;
-
-	// Number of control points after degree elevation by one
-	unsigned int N = (this -> n + 2) * (this -> n + 3) / 2;
-
-	
-	// The forward table is constructed
-	auto forw_post_el = forward_table(this -> n + 1);
-
-	// The reverse table is constructed
-	auto rev_post_el = reverse_table(this -> n + 1);
-
-	// Not all new control points need to be computed. Some 
-	// are invariants and others may be owned by neighboring patches
-	std::map<unsigned int,std::shared_ptr<ControlPoint> > sorted_control_points;
-
-	// The invariant control points are extracted
-	int l_n00_before_elevation = 0;
-	int l_0n0_before_elevation = (unsigned int)((this -> n) * (this -> n + 1) / 2);
-	int l_00n_before_elevation = this -> control_points.size() - 1;
-
-	int i_n00_after_elevation = 0;
-	int i_0n0_after_elevation = (unsigned int)((this -> n + 1) * (this -> n + 1 + 1) / 2);
-	int i_00n_after_elevation = (unsigned int)((this -> n + 1 + 1) * (this -> n + 2 + 1) / 2) - 1;
-
-	sorted_control_points[i_n00_after_elevation] = this -> control_points[l_n00_before_elevation];
-	sorted_control_points[i_0n0_after_elevation] = this -> control_points[l_0n0_before_elevation];
-	sorted_control_points[i_00n_after_elevation] = this -> control_points[l_00n_before_elevation];
-
-	// The edge control points that have already been created during the elevation of a neighboring patch are found
-	std::set<unsigned int> new_points_to_add_index;
-	
-	for (unsigned int i =0; i < N;++i){
-		new_points_to_add_index.insert(i);
-	}
-	new_points_to_add_index.erase(i_n00_after_elevation);
-	new_points_to_add_index.erase(i_0n0_after_elevation);
-	new_points_to_add_index.erase(i_00n_after_elevation);
-
-
-	for (auto neighbor =  this -> new_points.begin(); neighbor != this -> new_points.end(); ++ neighbor){
-
-		for (unsigned int k = 0; k < neighbor -> second.size(); ++ k){
-
-			// The local index of the invariant control point is found
-			NewPoint new_point = neighbor -> second[k];
-			std::shared_ptr<ControlPoint> invariant = new_point.end_point;
-
-			auto local_index_endpoint_neighbor = new_point.indices_endpoint;
-			auto local_index_newpoint_neighbor = new_point.indices_newpoint;
-
-			std::tuple<unsigned int, unsigned int, unsigned int> local_index_endpoint_current,local_index_newpoint_current;
-			unsigned int global_index;
-
-			if (invariant == this -> control_points[l_n00_before_elevation]){
-				global_index = i_n00_after_elevation;
-			}
-			else if (invariant == this -> control_points[l_0n0_before_elevation]){
-				global_index = i_0n0_after_elevation;
-			}
-			else if (invariant == this -> control_points[l_00n_before_elevation]){
-				global_index = i_00n_after_elevation;
-			}
-			else {
-				throw(std::runtime_error("Can't find invariant"));
-			}
-
-			local_index_endpoint_current = forw_post_el[global_index];
-
-
-			// Now, the local indices of the inserted point are found
-
-			arma::vec local_index_endpoint_neighbor_arma = {
-				double(std::get<0>(local_index_endpoint_neighbor)),
-				double(std::get<1>(local_index_endpoint_neighbor)),
-				double(std::get<2>(local_index_endpoint_neighbor))
-			};
-
-			arma::vec local_index_newpoint_neighbor_arma = {
-				double(std::get<0>(local_index_newpoint_neighbor)),
-				double(std::get<1>(local_index_newpoint_neighbor)),
-				double(std::get<2>(local_index_newpoint_neighbor))
-			};
-
-			int distance_to_endpoint = arma::max(local_index_endpoint_neighbor_arma - local_index_newpoint_neighbor_arma);
-
-			if (distance_to_endpoint <= 0){
-				throw(std::runtime_error("Negative or zero distance to endpoint for one new point: " + std::to_string(distance_to_endpoint)));
-			}
-
-
-			if (std::get<0>(local_index_endpoint_current) != 0){
-
-				// On the xy0 edge
-				local_index_newpoint_current = std::make_tuple(std::get<0>(local_index_endpoint_current) - distance_to_endpoint,distance_to_endpoint,0);
-
-			}
-			else if(std::get<1>(local_index_endpoint_current) != 0){
-				// On the 0xy edge
-
-				local_index_newpoint_current = std::make_tuple(0,std::get<1>(local_index_endpoint_current) - distance_to_endpoint,distance_to_endpoint);
-
-			}
-
-			else if(std::get<2>(local_index_endpoint_current) != 0){
-				// On the y0x edge
-
-				local_index_newpoint_current = std::make_tuple(distance_to_endpoint,0,std::get<2>(local_index_endpoint_current) - distance_to_endpoint);
-
-			}
-
-			else {
-				throw(std::runtime_error("All indices are zero"));
-			}
-
-			sorted_control_points[rev_post_el[local_index_newpoint_current]] = new_point.point;
-			new_points_to_add_index.erase(rev_post_el[local_index_newpoint_current]);
-		}
-
-
-	}
-
-
-	// The new coordinates are calculated
-	for (auto iter = new_points_to_add_index.begin(); iter != new_points_to_add_index.end(); ++iter){
-
-		int i = (*iter);
-
-		// The coordinates of the inner control points are computed
-		arma::vec new_C = arma::zeros<arma::vec>(3);
-
-		for (unsigned int l = 0; l < this -> forw_table.size(); ++l){
-
-			double coef = double(
-				combinations(std::get<0>(this -> forw_table[l]),std::get<0>(forw_post_el[i])) 
-				* combinations(std::get<1>(this -> forw_table[l]),std::get<1>(forw_post_el[i])) 
-				* combinations(std::get<2>(this -> forw_table[l]),std::get<2>(forw_post_el[i])));
-
-			new_C += this -> control_points[l] -> get_coordinates() * coef/(this -> n + 1);
-
-		}
-
-		std::shared_ptr<ControlPoint> new_control_point = std::make_shared<ControlPoint>(ControlPoint());
-		new_control_point -> set_coordinates(new_C);
-
-		new_control_point -> add_ownership(this);
-
-
-
-		sorted_control_points[i] = new_control_point;
-
-
-		// I need to store this newly created control point in a structure that keeps track of the 
-		// patch where it needs to be added ---- would be great to have the index as well!
-
-		// Such a point lives along an edge	
-
-		// The other facet can be determined by finding which side the 
-		// point is on, and by using the fact that the endpoints are invariant!
-		std::set<Element *> shared_elements;
-
-
-
-		int i_end_point_after;
-
-		if (std::get<0>(forw_post_el[i]) == 0){
-			shared_elements = sorted_control_points[i_0n0_after_elevation] -> common_facets(sorted_control_points[i_00n_after_elevation]);
-			shared_elements.erase(this);
-
-
-			i_end_point_after = i_00n_after_elevation;
-
-
-		}
-		else if (std::get<1>(forw_post_el[i]) == 0){
-			shared_elements = sorted_control_points[i_n00_after_elevation] -> common_facets(sorted_control_points[i_00n_after_elevation]);
-			shared_elements.erase(this);
-			i_end_point_after = i_n00_after_elevation;
-
-		}
-
-		else if(std::get<2>(forw_post_el[i]) == 0){
-			shared_elements = sorted_control_points[i_0n0_after_elevation] -> common_facets(sorted_control_points[i_n00_after_elevation]);
-			shared_elements.erase(this);
-			i_end_point_after = i_0n0_after_elevation;
-
-		}
-
-		// This new point should be shared with a neighboring facet
-		if (shared_elements.size() == 1){
-
-			std::shared_ptr<ControlPoint> end_point = sorted_control_points[i_end_point_after];
-
-			auto indices_endpoint = forw_post_el[i_end_point_after];
-			auto indices_newpoint = forw_post_el[i];
-
-			NewPoint new_point(new_control_point,end_point,indices_newpoint,indices_endpoint);
-
-			new_control_point -> add_ownership(*shared_elements.begin());
-
-			dynamic_cast<Bezier *>(*shared_elements.begin()) -> add_point_from_neighbor(this,new_point);
-		}
-
-	}
-
-	// The control points are brought together in an array
-	for (int i = 0; i < sorted_control_points.size(); ++i){
-		new_control_points.push_back(sorted_control_points[i]);
-	}
-
-
-	this -> n = this -> n + 1;
-	this -> control_points = new_control_points;
-	this -> construct_index_tables();
-
-	this -> new_points.clear();
-
-
-	this -> P_X = 1e10 * arma::eye<arma::mat>(3 * this -> control_points.size(),
-		3 * this -> control_points.size());
 
 
 }
@@ -536,25 +269,25 @@ unsigned int Bezier::get_degree() const{
 
 
 
-std::set < Element * > Bezier::get_neighbors(double u, double v) const{
+std::set < int > Bezier::get_neighbors(double u, double v) const{
 
 
-	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
-	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
-	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
+	const ControlPoint & V0 = this -> owning_shape -> get_control_point(this -> get_control_point(this -> get_degree(),0));
+	const ControlPoint & V1 = this -> owning_shape -> get_control_point(this -> get_control_point(0,this -> get_degree()));
+	const ControlPoint & V2 = this -> owning_shape -> get_control_point(this -> get_control_point(0,0));
 
 
 	if ( v < 0){
-		return V0 -> common_facets(V2);
+		return V0.common_elements(this -> get_control_point(0,0));
 	}
 
 	if (1 - u - v < 0){
-		return V0 -> common_facets(V1);
+		return V0.common_elements(this -> get_control_point(0,this -> get_degree()));
 	}
 
 
 	if (u < 0){
-		return V1 -> common_facets(V2);
+		return V1.common_elements(this -> get_control_point(0,0));
 	}
 
 	else{
@@ -565,28 +298,36 @@ std::set < Element * > Bezier::get_neighbors(double u, double v) const{
 }
 
 
+std::set < int > Bezier::get_neighbors(bool all_neighbors) const{
 
-std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
+	std::set<int > neighbors;
+	const std::tuple<int,int,int> V0_tuple = std::make_tuple(this -> n,0,0);
+	const std::tuple<int,int,int> V1_tuple = std::make_tuple(0,this -> n,0);
+	const std::tuple<int,int,int> V2_tuple = std::make_tuple(0,0,this -> n);
 
-	std::set< Element * > neighbors;
+	int V0_index = this -> control_points[this -> rev_table.at(V0_tuple)];
+	int V1_index = this -> control_points[this -> rev_table.at(V1_tuple)];
+	int V2_index = this -> control_points[this -> rev_table.at(V2_tuple)];
 
-	std::shared_ptr<ControlPoint> V0 = this -> get_control_point(this -> get_degree(),0);
-	std::shared_ptr<ControlPoint> V1 = this -> get_control_point(0,this -> get_degree());
-	std::shared_ptr<ControlPoint> V2 = this -> get_control_point(0,0);
 
-		// Returns all facets sharing control_points with $this
+	const ControlPoint & V0 = this -> owning_shape -> get_control_point(V0_index);
+	const ControlPoint & V1 = this -> owning_shape -> get_control_point(V1_index);
+	const ControlPoint & V2 = this -> owning_shape -> get_control_point(V2_index);
+
 
 	if (all_neighbors == true) {
+		// Returns all facets sharing control_points with $this
 
-		auto V0_owners  = V0 -> get_owning_elements();
-		auto V1_owners  = V1 -> get_owning_elements();
-		auto V2_owners  = V2 -> get_owning_elements();
+		std::set<int> V0_owners = V0.get_owning_elements();
+		std::set<int> V1_owners = V1.get_owning_elements();
+		std::set<int> V2_owners = V2.get_owning_elements();
 
-		for (auto facet_it = V0_owners.begin(); facet_it != V0_owners.end(); ++facet_it) {
+
+		for (auto facet_it = V0_owners.begin();facet_it != V0_owners.end(); ++facet_it) {
 			neighbors.insert(*facet_it);
 		}
 
-		for (auto facet_it =V1_owners.begin();facet_it != V1_owners.end(); ++facet_it) {
+		for (auto facet_it = V1_owners.begin();facet_it != V1_owners.end(); ++facet_it) {
 			neighbors.insert(*facet_it);
 		}
 
@@ -594,47 +335,32 @@ std::set < Element * > Bezier::get_neighbors(bool all_neighbors) const{
 			neighbors.insert(*facet_it);
 		}
 
+
 	}
 
 	else {
 		// Returns facets sharing edges with $this
-		// std::set<Element * > neighboring_facets_e0 = V0 -> common_facets(V1);
-		// std::set<Element * > neighboring_facets_e1 = V1 -> common_facets(V2);
-		// std::set<Element * > neighboring_facets_e2 = V2 -> common_facets(V0);
+		std::set<int > neighboring_facets_e0 = V0.common_elements(V1_index);
+		std::set<int > neighboring_facets_e1 = V1.common_elements(V2_index);
+		std::set<int > neighboring_facets_e2 = V2.common_elements(V0_index);
 
-		// for (auto it = neighboring_facets_e0.begin(); it != neighboring_facets_e0.end(); ++it) {
-		// 	neighbors.insert(*it);
-		// }
+		for (auto it = neighboring_facets_e0.begin(); it != neighboring_facets_e0.end(); ++it) {
+			neighbors.insert(*it);
+		}
 
-		// for (auto it = neighboring_facets_e1.begin(); it != neighboring_facets_e1.end(); ++it) {
-		// 	neighbors.insert(*it);
-		// }
+		for (auto it = neighboring_facets_e1.begin(); it != neighboring_facets_e1.end(); ++it) {
+			neighbors.insert(*it);
+		}
 
-		// for (auto it = neighboring_facets_e2.begin(); it != neighboring_facets_e2.end(); ++it) {
-		// 	neighbors.insert(*it);
-		// }
+		for (auto it = neighboring_facets_e2.begin(); it != neighboring_facets_e2.end(); ++it) {
+			neighbors.insert(*it);
+		}
 	}
 	return neighbors;
 
 }
 
-
-arma::vec Bezier::evaluate(const double u, const double v) const{
-
-	arma::vec P = arma::zeros<arma::vec>(3);
-	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		
-		int i = std::get<0>(this -> forw_table[l]);
-		int j = std::get<1>(this -> forw_table[l]);
-
-		P += this -> bernstein(u,v,i,j,this -> n) * this -> control_points[l] -> get_coordinates();
-
-	}
-	return P;
-}
-
-
-arma::vec Bezier::evaluate_omp(const double u, const double v,const arma::vec & deviation) const{
+arma::vec::fixed<3> Bezier::evaluate(const double u, const double v) const{
 
 	arma::vec P = arma::zeros<arma::vec>(3);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
@@ -642,15 +368,13 @@ arma::vec Bezier::evaluate_omp(const double u, const double v,const arma::vec & 
 		int i = std::get<0>(this -> forw_table[l]);
 		int j = std::get<1>(this -> forw_table[l]);
 
-		int l_g = this -> control_points[l] -> get_global_index();
-
-
-		P += this -> bernstein(u,v,i,j,this -> n) * (this -> control_points[l] -> get_coordinates()
-			+ deviation.rows(3 * l_g,3 * l_g + 2));
+		P += this -> bernstein(u,v,i,j,this -> n) * this -> owning_shape -> get_control_point_coordinates(this -> control_points[l]);
 
 	}
 	return P;
 }
+
+
 
 arma::vec Bezier::get_normal_coordinates(const double u, const double v) const{
 	arma::mat partials = this -> partial_bezier(u,v);
@@ -733,7 +457,7 @@ arma::mat Bezier::partial_bezier_du(
 		
 		int j = std::get<1>(this -> forw_table[l]);
 
-		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
+		partials += this -> owning_shape -> get_control_point_coordinates(this -> control_points[l]) * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
 	}
 	return partials;
 
@@ -750,7 +474,7 @@ arma::mat Bezier::partial_bezier_dv(
 		
 		int j = std::get<1>(this -> forw_table[l]);
 
-		partials += this -> control_points[l] -> get_coordinates() * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
+		partials += this -> owning_shape -> get_control_point_coordinates(this -> control_points[l]) * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
 	}
 	return partials;
 
@@ -771,114 +495,9 @@ arma::mat Bezier::partial_bezier(
 		int i = std::get<0>(this -> forw_table.at(l));
 		int j = std::get<1>(this -> forw_table.at(l));
 
-		partials += this -> control_points.at(l) -> get_coordinates() * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
+		partials += this -> owning_shape -> get_control_point_coordinates(this -> control_points.at(l)) * Bezier::partial_bernstein(u,v,i,j,this -> n) ;
 	}
 	return partials;
-
-}
-
-arma::mat Bezier::covariance_surface_point_deprecated(
-	const double u,
-	const double v,
-	const arma::vec & dir,
-	const arma::mat & P_X){
-
-
-	arma::mat P = arma::zeros<arma::mat>(3,3);
-
-	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
-	arma::mat AAA = A * arma::inv(A .t() * A);
-
-
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
-
-			P += (
-				bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
-				* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
-				* P_X.submat( 3 * i, 3 * k, 3 * i + 2, 3 * k + 2 )
-				);
-		}
-	}
-
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
-			for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-
-				P += (
-					bernstein(u, v,std::get<0>(this -> forw_table[i]),std::get<1>(this -> forw_table[i]),n) 
-					* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
-					* P_X.submat( 3 * i, 3 * l, 3 * i + 2, 3 * l + 2 )
-					* RBK::tilde(dir)
-					* AAA
-					* partial_bernstein(
-						u, 
-						v,
-						std::get<0>(this -> forw_table[k]) ,  
-						std::get<1>(this -> forw_table[k]), 
-						n).t()
-					* this -> control_points[k] -> get_coordinates().t() );
-			}
-		}
-	}
-
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		for (unsigned int j = 0; j < this -> control_points.size(); ++j){
-			for (unsigned int k = 0; k < this -> control_points.size(); ++k){
-
-				P -= (
-					this -> control_points[i] -> get_coordinates()
-					* partial_bernstein(
-						u, 
-						v,
-						std::get<0>(this -> forw_table[i]) ,  
-						std::get<1>(this -> forw_table[i]), 
-						n)
-					* AAA.t()
-					* RBK::tilde(dir)
-
-					* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
-					* bernstein(u, v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]),n) 
-					* P_X.submat( 3 * j, 3 * k, 3 * j + 2, 3 * k + 2 ) );
-			}
-		}
-	}
-
-	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
-		for (unsigned int k = 0; k < this -> control_points.size(); ++k){
-			for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-				for (unsigned int j = 0; j < this -> control_points.size(); ++j){
-
-					P -= (
-						this -> control_points[i] -> get_coordinates()
-						* partial_bernstein(
-							u, 
-							v,
-							std::get<0>(this -> forw_table[i]) ,  
-							std::get<1>(this -> forw_table[i]), 
-							n)
-						* AAA.t()
-						* RBK::tilde(dir)
-						* bernstein(u, v,std::get<0>(this -> forw_table[l]),std::get<1>(this -> forw_table[l]),n) 
-						* bernstein(u, v,std::get<0>(this -> forw_table[j]),std::get<1>(this -> forw_table[j]),n) 
-						* P_X.submat( 3 * l, 3 * j, 3 * l + 2, 3 * j + 2 ) 
-						* RBK::tilde(dir)
-						* AAA
-						* partial_bernstein(
-							u, 
-							v,
-							std::get<0>(this -> forw_table[k]) ,  
-							std::get<1>(this -> forw_table[k]), 
-							n).t() * this -> control_points[k] -> get_coordinates().t() );
-				}
-			}
-		}
-	}
-
-	return P;
-
-
-
 
 }
 
@@ -932,7 +551,7 @@ double Bezier::initialize_covariance(){
 
 		for (unsigned int k = 0; k < N_C; ++k){
 			auto indices = this -> forw_table[k];
-			Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(footpoint.u, footpoint.v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+			Ck_dBkdchi += this -> owning_shape -> get_control_point_coordinates(this -> control_points[k])  * partial_bernstein(footpoint.u, footpoint.v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
 			M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(footpoint.u, footpoint.v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
 		}
 
@@ -1167,88 +786,6 @@ double Bezier::get_range_bias(const double & u, const double & v) const{
 }
 
 
-// void Bezier::train_patch_covariance(const std::vector<Footpoint> & footpoints){
-
-// 	std::vector<arma::vec> v;
-// 	std::vector<arma::vec> W;
-// 	std::vector<arma::vec> v_i_norm;
-// 	std::vector<double> epsilon;
-
-// 	unsigned int N_C = this -> control_points.size();
-// 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-// 	unsigned int N_iter = 30 ;
-
-
-// 	// The initial guess for the covariance is computed.
-// 	double alpha = initialize_covariance(footpoints,v,W,v_i_norm,epsilon);
-
-// 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
-// 	arma::vec lower_bounds =  L - 1;
-// 	arma::vec upper_bounds = L + 3;	
-
-// 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,this);
-
-// 	// The covariance is refined by a particle-in-swarm optimizer
-// 	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
-// 		lower_bounds,
-// 		upper_bounds, 
-// 		200,
-// 		N_iter,
-// 		args);
-
-// 	psopt.run( true,true);
-// 	L = psopt.get_result();
-
-// 	this -> P_X = arma::diagmat(arma::exp(L));
-
-// }
-
-
-// void Bezier::train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints,bool diag){
-
-
-// 	std::vector<arma::vec> v;
-// 	std::vector<arma::vec> W;
-// 	std::vector<arma::vec> v_i_norm;
-// 	std::vector<double> epsilon;
-
-// 	unsigned int N_C = this -> control_points.size();
-// 	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
-// 	unsigned int N_iter = 30 ;
-// 	this -> P_X = arma::mat(3 * N_C,3 * N_C);
-
-
-// 	// The initial guess for the covariance is computed.
-// 	double alpha = initialize_covariance(footpoints,v,W,v_i_norm,epsilon);
-
-// 	if (diag){
-// 		P_X = alpha * arma::eye<arma::mat>(3 * N_C,3 * N_C) ;
-// 		return;
-// 	}
-
-
-// 	arma::vec L = arma::ones<arma::vec>(3 * N_C) * std::log(alpha);	
-// 	arma::vec lower_bounds =  L - 1;
-// 	arma::vec upper_bounds = L + 3;	
-
-// 	std::pair< const std::vector<Footpoint> * ,Bezier * > args = std::make_pair(&footpoints,
-// 		this);
-
-// 	Psopt<std::pair< const std::vector<Footpoint> * ,Bezier * > > psopt(Bezier::compute_log_likelihood_full_diagonal, 
-// 		lower_bounds,
-// 		upper_bounds, 
-// 		200,
-// 		N_iter,
-// 		args);
-
-// 	psopt.run( true,true);
-// 	L = psopt.get_result();
-
-// 	P_X = arma::diagmat(arma::exp(L));
-
-// }
-
-
 void Bezier::add_footpoint(Footpoint footpoint){
 	this -> footpoints.push_back(footpoint);
 }
@@ -1289,8 +826,6 @@ double Bezier::compute_log_likelihood_full_diagonal(arma::vec L,
 
 }
 
-
-
 double Bezier::compute_log_likelihood_block_diagonal(arma::vec L,
 	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,int verbose_level){
 
@@ -1317,11 +852,6 @@ double Bezier::compute_log_likelihood_block_diagonal(arma::vec L,
 }
 
 
-
-
-
-
-
 arma::mat Bezier::covariance_surface_point(
 	const double u,
 	const double v,
@@ -1344,7 +874,7 @@ arma::mat Bezier::covariance_surface_point(
 
 		auto indices = this -> forw_table[k];
 
-		Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+		Ck_dBkdchi += this -> owning_shape -> get_control_point_coordinates(this -> control_points[k])  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
 		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
 	}
 
@@ -1382,7 +912,7 @@ arma::mat Bezier::covariance_surface_point(
 	for (unsigned int k = 0; k < this -> control_points.size(); ++k){
 		auto indices = this -> forw_table[k];
 
-		Ck_dBkdchi += this -> control_points[k] -> get_coordinates()  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
+		Ck_dBkdchi += this -> owning_shape -> get_control_point_coordinates(this -> control_points[k])  * partial_bernstein(u, v,std::get<0>(indices) ,  std::get<1>(indices), this -> n);
 		M.submat( 3 * k ,0, 3 * k + 2,2) = bernstein(u, v,std::get<0>(indices),std::get<1>(indices),n)  * arma::eye<arma::mat>(3,3);
 	}
 
@@ -1404,7 +934,6 @@ void Bezier::compute_normal(){
 
 void Bezier::compute_area(){
 
-
 	// The area is computed by quadrature
 	// arma::vec weights = {-27./96.,25./96,25./96,25./96};
 	// arma::vec u = {1./3.,1./5.,1./5,3./5};
@@ -1415,8 +944,6 @@ void Bezier::compute_area(){
 	// 	this -> area += weights(i) * g(u(i),v(i));
 	// }
 
-
-
 }
 
 void Bezier::compute_center(){
@@ -1424,9 +951,7 @@ void Bezier::compute_center(){
 
 }
 
-
 double Bezier::g(double u, double v) const{
-
 
 	arma::vec V = arma::zeros<arma::vec>(3);
 
@@ -1440,8 +965,8 @@ double Bezier::g(double u, double v) const{
 			double bk0 = bernstein(u,v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k])-1, this -> n - 1);
 			double bk1 = bernstein(u,v,std::get<0>(this -> forw_table[k]),std::get<1>(this -> forw_table[k]), this -> n - 1);
 
-			V = V + (bl0 - bl1) * (bk0 - bk1) * arma::cross(this -> control_points[l] -> get_coordinates(),
-				this -> control_points[k] -> get_coordinates());
+			V = V + (bl0 - bl1) * (bk0 - bk1) * arma::cross(this -> owning_shape -> get_control_point_coordinates(this -> control_points[l]),
+				this -> owning_shape -> get_control_point_coordinates(this -> control_points[k]));
 
 		}
 
@@ -1463,19 +988,15 @@ int Bezier::combinations(int k, int n){
 }
 
 
-void Bezier::add_point_from_neighbor(Element * element, NewPoint & new_point){
-	this -> new_points[element].push_back(new_point);
-}
 
+std::map< std::tuple< int,  int,  int> , int> Bezier::reverse_table( int n){
 
-std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> Bezier::reverse_table(unsigned int n){
-
-	std::map< std::tuple<unsigned int, unsigned int, unsigned int>,unsigned int> map;
+	std::map< std::tuple< int,  int,  int>, int> map;
 	unsigned int l = 0;
 
 	for (int i = n; i > -1 ; -- i){
 
-		for (unsigned int k = 0 ; k < n + 1 - i; ++k){
+		for ( int k = 0 ; k < n + 1 - i; ++k){
 			
 			int j = n - i - k;
 			auto indices = std::make_tuple(i,j,k);
@@ -1489,14 +1010,14 @@ std::map< std::tuple<unsigned int, unsigned int, unsigned int> ,unsigned int> Be
 
 }
 
-std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > Bezier::forward_table(unsigned int n){
+std::vector<std::tuple< int,  int,  int> > Bezier::forward_table( int n){
 
-	std::vector<std::tuple<unsigned int, unsigned int, unsigned int> > table;
+	std::vector<std::tuple< int,  int,  int> > table;
 
 
 	for (int i = n; i > -1 ; -- i){
 
-		for (unsigned int k = 0 ; k < n + 1 - i; ++k){
+		for ( int k = 0 ; k < n + 1 - i; ++k){
 			int j = n - i - k;
 			auto indices = std::make_tuple(i,j,k);
 

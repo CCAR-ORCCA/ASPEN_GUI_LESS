@@ -55,12 +55,6 @@ public:
 	ShapeModelBezier(std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
-	/**
-	Constructor.
-	Takes a single patch as argument
-	@param patch pointer to patch the shape model will be comprised off
-	*/
-	ShapeModelBezier(Bezier patch);
 
 	std::shared_ptr<arma::mat> get_info_mat_ptr() const;
 	std::shared_ptr<arma::vec> get_dX_bar_ptr() const;
@@ -90,12 +84,6 @@ public:
 
 
 	/**
-	Saves the shape model to an obj file as a polyhedron
-	*/
-	void save_to_obj_omp(std::string path,const arma::vec & deviation) const;
-
-
-	/**
 	Saves the shape model as a collection of Bezier patches
 	*/
 	void save(std::string path) ;
@@ -104,7 +92,7 @@ public:
 	Elevates the degree of all Bezier patches in the shape model by one
 	@param update true if the mass properties/kd tree of the shape model should be updated , false otherwise
 	*/
-	void elevate_degree(bool update = true);
+	void elevate_degree();
 
 	/**
 	Gets the shape model degree
@@ -193,9 +181,6 @@ public:
 	arma::mat get_mrp_cov() const{return this -> P_sigma;}
 
 
-	void build_structure() ;
-
-
 	arma::mat get_P_moments() const{return this -> P_moments;}
 	arma::mat get_P_Y() const{return this -> P_Y;}
 
@@ -208,8 +193,6 @@ public:
 	static arma::vec::fixed<9> get_E_vectors(const arma::mat::fixed<3,3> & inertia);
 
 	arma::mat::fixed<3,3> get_P_dims() const{return this -> P_dims;}
-
-	void apply_deviation();
 
 
 	void take_and_save_slice(int axis, std::string path, const double & c,
@@ -229,18 +212,42 @@ public:
 		const arma::mat::fixed<3,3> & I_C);
 
 
+	/**
+	Pointer to the shape model's element
+	@return pointer to the elements
+	*/
+	std::vector<Bezier> & get_elements();
+
+	Bezier & get_element(int i) {return this -> elements[i];}
+
+
+	/**
+	Augment the internal container storing elements with a new (and not already inserted)
+	one
+	@param facet pointer to the new element to be inserted
+	*/
+	void add_element(Bezier & el);
+
+	virtual const std::vector<int> & get_element_control_points(int e) const;
+
+
+	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const;
+
+	virtual unsigned int get_NElements() const;
+	
+
 protected:
 
-	virtual void build_edges();
+	std::vector<Bezier> elements;
 
 
 	void save_connectivity(const std::vector< std::pair<int,int> > & connected_elements) const;
 	void find_correlated_elements();
 
-	double compute_patch_pair_vol_sd_contribution(Bezier * patch_e,Bezier * patch_f) const;
-	arma::mat::fixed<3,3>  compute_patch_pair_cm_cov_contribution(Bezier * patch_e,Bezier * patch_f) const;
-	arma::mat::fixed<6,6>  compute_patch_pair_PI_contribution(Bezier * patch_e,Bezier * patch_f) const;
-	arma::vec::fixed<6> compute_patch_pair_P_MI_contribution(Bezier * patch_e,Bezier * patch_f) const;
+	double compute_patch_pair_vol_sd_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
+	arma::mat::fixed<3,3>  compute_patch_pair_cm_cov_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
+	arma::mat::fixed<6,6>  compute_patch_pair_PI_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
+	arma::vec::fixed<6> compute_patch_pair_P_MI_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
 
 	
 	void take_slice(int axis, std::vector<std::vector<arma::vec> > & lines, const double & c,
@@ -286,7 +293,12 @@ protected:
 	void compute_P_eigenvectors();
 	void compute_P_Evectors();
 
-	static arma::rowvec::fixed<15> L_row(int q, int r, const arma::vec * Ci,const arma::vec * Cj,const arma::vec * Ck,const arma::vec * Cl,const arma::vec * Cm);
+	static arma::rowvec::fixed<15> L_row(int q, int r, 
+		const arma::vec::fixed<3> & Ci,
+		const arma::vec::fixed<3> & Cj,
+		const arma::vec::fixed<3> & Ck,
+		const arma::vec::fixed<3> & Cl,
+		const arma::vec::fixed<3> & Cm);
 
 
 	double increment_volume_variance(const arma::vec::fixed<9> & left_vec,

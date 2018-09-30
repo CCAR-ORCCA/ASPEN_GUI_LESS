@@ -34,8 +34,10 @@ void BBox::print() const {
 
 void BBox::update(int element_index) {
 
-	const arma::vec::fixed<3> & first_coordinates = this -> owning_shape -> get_element(element_index).get_control_point_coordinates(0);
+	const std::vector<int> & control_points = this -> owning_shape -> get_element_control_points(element_index);
 
+	const arma::vec::fixed<3> & first_coordinates = this -> owning_shape -> get_control_point_coordinates(control_points[0]);
+	
 	this -> xmin = std::min(first_coordinates(0),this -> xmin);
 	this -> ymin = std::min(first_coordinates(1),this -> ymin);
 	this -> zmin = std::min(first_coordinates(2),this -> zmin);
@@ -43,8 +45,6 @@ void BBox::update(int element_index) {
 	this -> xmax = std::max(first_coordinates(0),this -> xmax);
 	this -> ymax = std::max(first_coordinates(1),this -> ymax);
 	this -> zmax = std::max(first_coordinates(2),this -> zmax);
-
-	const std::vector<int> & control_points = this -> owning_shape -> get_element(element_index).get_control_points();
 
 	for (unsigned int i = 1; i <  control_points.size() ; ++i) {
 
@@ -79,7 +79,11 @@ void BBox::update(int element_index) {
 
 void BBox::update(std::vector<int> & element_indices) {
 
-	const arma::vec::fixed<3> & first_coordinates = this -> owning_shape -> get_element(element_indices[0]).get_control_point_coordinates(0);
+
+	const std::vector<int> & first_element_control_points = this -> owning_shape -> get_element_control_points(element_indices[0]);
+
+
+	const arma::vec::fixed<3> & first_coordinates = this -> owning_shape -> get_control_point_coordinates(first_element_control_points[0]);
 
 	this -> xmin = first_coordinates(0);
 	this -> ymin = first_coordinates(1);

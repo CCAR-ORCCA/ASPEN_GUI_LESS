@@ -51,15 +51,14 @@ arma::mat ControlPoint::get_covariance() const{
 
 
 
-std::set< int >  ControlPoint::common_facets(std::shared_ptr<ControlPoint> vertex) const {
+std::set< int >  ControlPoint::common_elements(int control_point_index) const {
 
 	std::set< int> common_facets;
 
-	for (auto it = this -> owning_elements.begin();
-		it != this -> owning_elements.end(); ++it) {
+	for (auto owning_element : this -> owning_elements) {
 
-		if (vertex -> is_owned_by(*it)) {
-			common_facets.insert(*it);
+		if (this -> owning_shape -> get_control_point(control_point_index).is_owned_by(owning_element)) {
+			common_facets.insert(owning_element);
 		}
 
 	}
@@ -114,19 +113,9 @@ unsigned int ControlPoint::get_number_of_owning_elements() const {
 
 arma::vec::fixed<3> ControlPoint::get_normal_coordinates(bool bezier) const{
 
-	arma::vec n = {0,0,0};
-
-	for (auto it = this -> owning_elements.begin(); it != this -> owning_elements.end(); ++it) {
-
-		if (bezier){
-			n += static_cast<Bezier *>(this -> owning_shape -> get_element((*it))).get_normal_coordinates(1./3,1./3);
-
-		}
-		else{
-			n += static_cast<Facet *>(this -> owning_shape -> get_element((*it))).get_normal_coordinates();
-		}
-	}
-	return arma::normalise(n);
+	arma::vec::fixed<3> n = this -> owning_shape -> get_control_point_normal_coordinates(this -> get_global_index());
+		
+	return n;
 
 }
 

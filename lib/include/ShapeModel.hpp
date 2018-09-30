@@ -125,6 +125,7 @@ public:
 	ControlPoint & get_control_point(unsigned int i) ;
 	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i) const;
 
+	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const = 0;
 
 	/**
 	Pointer to the shape model's control points
@@ -134,21 +135,7 @@ public:
 
 	unsigned int get_control_point_index(std::shared_ptr<ControlPoint> point) const;
 
-	/**
-	Pointer to the shape model's element
-	@return pointer to the elements
-	*/
-	std::vector<Element> & get_elements();
-
-	Element & get_element(int i) {return this -> elements[i];}
-
-
-	/**
-	Augment the internal container storing elements with a new (and not already inserted)
-	one
-	@param facet pointer to the new element to be inserted
-	*/
-	void add_element(Element & el);
+	
 
 	/**
 	Returns the geometrical center of the shape
@@ -169,7 +156,7 @@ public:
 	Returns number of elements
 	@return number of elements
 	*/
-	unsigned int get_NElements() const  ;
+	virtual unsigned int get_NElements() const  = 0;
 
 	/**
 	Returns number of control points
@@ -320,12 +307,12 @@ public:
 
 	arma::vec get_inertia_param() const;
 
-	virtual void build_edges() = 0;
+	virtual const std::vector<int> & get_element_control_points(int e) const = 0;
+
 
 
 protected:
 
-	std::vector<Element> elements;
 	std::vector<std::set<int> > edges;
 	std::vector<ControlPoint> control_points;
 	std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;

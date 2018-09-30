@@ -38,16 +38,10 @@ public:
 	void add_ownership(int el_index);
 
 
-
-
-
-	
-
 	arma::vec::fixed<3> get_normal_coordinates(bool bezier) const;
 
 
-
-	std::set< int >  common_facets(std::shared_ptr<ControlPoint> vertex) const;
+	std::set< int >  common_elements(int control_point_index) const;
 
 	/**
 	Determines if $this is owned by $facet
@@ -130,7 +124,7 @@ public:
 	void set_global_index(int index);
 
 protected:
-	arma::vec coordinates;
+	arma::vec::fixed<3> coordinates;
 	arma::vec mean_coordinates;
 
 	std::set<int> owning_elements;

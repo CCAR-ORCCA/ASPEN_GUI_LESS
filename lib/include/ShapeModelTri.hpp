@@ -81,61 +81,7 @@ public:
 	*/
 	void random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const;
 
-	
-	/**
-	Splits the provided facets in four facets.
-				V4 --------------V0--------------V3
-				 \  \	  F7    /  \   F1    /   /
-				  \	   \	  /	    \      /    /
-				   \	  \  /   F0   \  /     /
-				    \	F6  V8-------V7  F2   /
-				     \	   /  \	 F5  / \     /
-				      \   /    \    /   \   /
-	                   \ /  F4  \  /  F3 \ /
-						V1-------V6-------V2
-						 \        |       /
-						  \   F9  | F8   /
-						   \      |     /
-							\     |    /
-							 \    |   /
-							  \   |  /
-							   \  | /
-	                            \ |/
-	                             V5
-	Adds
-		- 10 facets
-		- 3 vertices
-		- 6 edges
-	Removes
-		- 3 facets
-		- 3 edges
-	@param facet Pointer to facet to be split. THIS POINTER
-	WILL BECOME INVALID AFTER THE FACET IS SPLIT
-	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
-	This set will be edited to ensure that the facets that remain are all valid
-	*/
-	void split_facet(Facet * facet, std::set<Facet *> & seen_facets);
-
-
-
-
-	/**
-	Removes this facet from the shape model by merging together the two vertices
-	on the edge facing the smallest angle in the facet
-	@param minimum_angle If the smallest angle protacted by 2 of the facet's 
-	@param facet Pointer to the facet to recycle. THIS POINTER
-	WILL BECOME INVALID AFTER THE FACET IS SPLIT
-	@param seen_facets set containing the facets that were in view of the filter before recycling took place.
-	This set will be edited to ensure that the facets that remain are all valid
-	@param spurious_facets set containing facets that must be removed from the shape model
-	because they are flipped
-	@return true if the facet was recycled, false otherwise
-	*/
-	bool merge_shrunk_facet(double minimum_angle,
-		Facet * facet,
-		std::set<Facet *> * seen_facets,
-		std::set<Facet *> * spurious_facets = nullptr);
-
+	virtual unsigned int get_NElements() const;
 
 	/**
 	Updates the values of the center of mass, volume, surface area
@@ -185,8 +131,15 @@ public:
 	virtual bool ray_trace(Ray * ray);
 
 
+	virtual const std::vector<int> & get_element_control_points(int e) const;
+	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const;
+
+
+
+
 protected:
 	
+	std::vector<Facet> elements;
 
 
 

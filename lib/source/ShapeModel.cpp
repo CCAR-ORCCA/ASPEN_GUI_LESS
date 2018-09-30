@@ -16,7 +16,6 @@ std::string ShapeModel::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
 
-
 const arma::mat::fixed<3,3> & ShapeModel::get_inertia() const {
 	return this -> inertia;
 
@@ -122,10 +121,6 @@ std::shared_ptr<KDTreeControlPoints> ShapeModel::get_KDTreeControlPoints() const
 	return this -> kdt_control_points;
 }
 
-
-unsigned int ShapeModel::get_NElements() const {
-	return this -> elements . size();
-}
 
 unsigned int ShapeModel::get_NControlPoints() const {
 	return this -> control_points . size();
@@ -269,15 +264,6 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 
 }
 
-
-
-std::vector<Element> & ShapeModel::get_elements(){
-	return this -> elements;
-}
-
-void ShapeModel::add_element(Element & el) {
-	this -> elements.push_back(el);
-}
 
 
 void ShapeModel::add_control_point(ControlPoint & vertex) {

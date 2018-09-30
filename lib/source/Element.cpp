@@ -41,6 +41,10 @@ void Element::update() {
 
 }
 
+void Element::set_control_points(std::vector<int > & control_points){
+	this -> control_points = control_points;
+}
+
 
 int Element::get_super_element() const{
 	return this -> super_element;
