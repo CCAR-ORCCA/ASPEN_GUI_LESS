@@ -3,7 +3,7 @@
 
 #include <time.h>
 #include <vector>
-
+#include <string>
 class ShapeModel;
 /**
 Declaration of the BBox class, representing
