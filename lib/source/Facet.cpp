@@ -1,10 +1,11 @@
-#include "../include/Facet.hpp"
 #include <memory>
+#include <ShapeModel.hpp>
+#include <Facet.hpp>
 
-Facet::Facet(std::vector<ControlPoint> control_points,ShapeModel * owning_shape) : Element(control_points,owning_shape){
+Facet::Facet(std::vector<int> & vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
 
 	if (control_points.size()!= 3){
-		throw(std::runtime_error("This facet was provided with " + std::to_string(control_points.size()) + " vertices"));
+		throw(std::runtime_error("This facet was provided with " + std::to_string(vertices.size()) + " vertices"));
 	}
 
 	this -> update();
@@ -15,9 +16,13 @@ std::set < int  > Facet::get_neighbors(bool all_neighbors) const {
 
 	std::set<int > neighbors;
 
-	const ControlPoint & V0 = this -> control_points[0];
-	const ControlPoint & V1 = this -> control_points[1];
-	const ControlPoint & V2 = this -> control_points[2];
+	const ControlPoint & V0 = this -> owning_shape -> get_control_point(this -> control_points[0]);
+	const ControlPoint & V1 = this -> owning_shape -> get_control_point(this -> control_points[1]);
+	const ControlPoint & V2 = this -> owning_shape -> get_control_point(this -> control_points[2]);
+
+	int v0_index = this -> control_points[0];
+	int v1_index = this -> control_points[1];
+	int v2_index = this -> control_points[2];
 
 
 	if (all_neighbors == true) {
@@ -45,9 +50,9 @@ std::set < int  > Facet::get_neighbors(bool all_neighbors) const {
 
 	else {
 		// Returns facets sharing edges with $this
-		std::set<int > neighboring_facets_e0 = V0.common_facets(V1);
-		std::set<int > neighboring_facets_e1 = V1.common_facets(V2);
-		std::set<int > neighboring_facets_e2 = V2.common_facets(V0);
+		std::set<int > neighboring_facets_e0 = V0.common_elements(v1_index);
+		std::set<int > neighboring_facets_e1 = V1.common_elements(v2_index);
+		std::set<int > neighboring_facets_e2 = V2.common_elements(v0_index);
 
 		for (auto it = neighboring_facets_e0.begin(); it != neighboring_facets_e0.end(); ++it) {
 			neighbors.insert(*it);
@@ -68,9 +73,9 @@ std::set < int  > Facet::get_neighbors(bool all_neighbors) const {
 
 void Facet::compute_normal() {
 
-	arma::vec P0 = this -> control_points[0].get_coordinates();
-	arma::vec P1 = this -> control_points[1].get_coordinates();
-	arma::vec P2 = this -> control_points[2].get_coordinates();
+	const arma::vec::fixed<3> & P0 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[0]);
+	const arma::vec::fixed<3> & P1 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[1]);
+	const arma::vec::fixed<3> & P2 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[2]);
 	this -> normal = arma::normalise(arma::cross(P1 - P0, P2 - P0));
 }
 
@@ -79,7 +84,7 @@ int Facet::vertex_not_on_edge(int v0,int v1) const {
 
 	for (unsigned int i = 0; i < 3; ++i) {
 
-		int global_index = this -> control_points [i].get_global_index();
+		int global_index = this -> control_points[i];
 
 		if (global_index != v0 && global_index != v1 ) {
 			return global_index;
@@ -89,23 +94,23 @@ int Facet::vertex_not_on_edge(int v0,int v1) const {
 
 }
 
-const arma::vec & Facet::get_normal_coordinates() const{
+const arma::vec::fixed<3> & Facet::get_normal_coordinates() const{
 	return this -> normal;
 }
 
 void Facet::compute_center() {
 
-	arma::vec center = arma::zeros(3);
+	arma::vec::fixed<3> center = arma::zeros(3);
 	for (unsigned int vertex_index = 0; vertex_index < this -> control_points . size(); ++vertex_index) {
-		center += this -> control_points[vertex_index].get_coordinates();
+		center += this -> owning_shape -> get_control_point_coordinates(this -> control_points[vertex_index]);
 	}
 	this -> center = center / this -> control_points . size();
 
 }
 
 void Facet::compute_area() {
-	arma::vec P0 = this -> control_points[0].get_coordinates() ;
-	arma::vec P1 = this -> control_points[1].get_coordinates() ;
-	arma::vec P2 = this -> control_points[2].get_coordinates() ;
+	const arma::vec::fixed<3> & P0 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[0]) ;
+	const arma::vec::fixed<3> & P1 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[1]) ;
+	const arma::vec::fixed<3> & P2 = this -> owning_shape -> get_control_point_coordinates(this -> control_points[2]) ;
 	this -> area = arma::norm( arma::cross(P1 - P0, P2 - P0)) / 2;
 }

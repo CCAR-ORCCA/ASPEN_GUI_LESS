@@ -4,7 +4,7 @@
 
 #include <vtkMath.h>
 #include <cassert>
-Bezier::Bezier( std::vector<int> & vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
+Bezier::Bezier( std::vector<int> vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
 
 	double n = (-3 + std::sqrt(9 - 8 * (1 - vertices.size() )))/2;
 	double intpart;
@@ -24,6 +24,22 @@ Bezier::Bezier( std::vector<int> & vertices,ShapeModel * owning_shape) : Element
 
 
 }
+
+int Bezier::get_control_point_local_index(unsigned int i, unsigned int j) const{
+
+	std::tuple<int,int,int> indices = std::make_tuple(i,j,this -> n - i - j);
+
+	return this -> rev_table.at(indices) ;
+}
+
+int Bezier::get_control_point_global_index(unsigned int i, unsigned int j) const{
+
+	std::tuple<int,int,int> indices = std::make_tuple(i,j,this -> n - i - j);
+
+	return this -> control_points[this -> rev_table.at(indices)] ;
+}
+
+
 
 int Bezier::get_control_point(unsigned int i, unsigned int j) const{
 	std::tuple<unsigned int, unsigned int,unsigned int> indices = std::make_tuple(i,j,this -> get_degree() - i - j);
@@ -49,8 +65,6 @@ void Bezier::construct_index_tables(){
 	this -> forw_table =  forward_table(this -> n);
 
 }
-
-
 
 
 double Bezier::Sa_b(const int a, const int b){

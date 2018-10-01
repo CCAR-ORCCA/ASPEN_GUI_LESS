@@ -28,13 +28,13 @@ public:
 	@param origin ray origin
 	@param direction ray direction (unit vector)
 	*/
-	Ray(arma::vec origin, arma::vec direction);
+	Ray(arma::vec::fixed<3> origin, arma::vec::fixed<3> direction);
 
 	/**
 	Pointer to hit element on the target
 	@return pointer to hit facet (set to nullptr if no facet was hit)
 	*/
-	Element * get_hit_element() ;
+	int get_hit_element() ;
 
 	/**
 	Value of true range measurement (from pixel to facet)
@@ -46,7 +46,7 @@ public:
 	Set hit element
 	@param hit_element hit element
 	*/
-	void set_hit_element(Element * element) ;
+	void set_hit_element(int element) ;
 
 
 	/**
@@ -69,28 +69,28 @@ public:
 	expressed in the lidar's reference plane
 	@return pointer to ray direction
 	*/
-	arma::vec * get_direction();
+	const	arma::vec::fixed<3> & get_direction() const;
 
 	/**
 	Return pointer to the origin of the ray
 	expressed in the lidar's reference plane
 	@return pointer to ray origin
 	*/
-	arma::vec * get_origin();
+	const	arma::vec::fixed<3> & get_origin() const;
 
 	/**
 	Return pointer to the unit vector directing the ray,
 	expressed in the target's frame
 	@return pointer to ray direction
 	*/
-	arma::vec * get_direction_target_frame();
+	const	arma::vec::fixed<3> & get_direction_target_frame() const;
 
 	/**
 	Return pointer to the origin of the ray
 	expressed in the target's frame
 	@return pointer to ray origin
 	*/
-	arma::vec * get_origin_target_frame();
+	const	arma::vec::fixed<3> & get_origin_target_frame() const;
 
 	/**
 	Returns the coordinates of the impacted point
@@ -98,7 +98,7 @@ public:
 	Throws an exception if this ray has not impacted the target
 	@return Coordinates of the impacted point expressed in the instrument framme
 	*/
-	arma::vec get_impact_point() const;
+	arma::vec::fixed<3> get_impact_point() const;
 
 	/**
 	Returns the coordinates of the impacted point
@@ -106,7 +106,7 @@ public:
 	Throws an exception if this ray has not impacted the target
 	@return Coordinates of the impacted point expressed in the instrument framme
 	*/
-	arma::vec get_impact_point_target_frame() const ;
+	arma::vec::fixed<3> get_impact_point_target_frame() const ;
 
 
 
@@ -120,7 +120,7 @@ public:
 	@param store sets the internal state of the ray to reflect the impacted surface if true
 	@param outside if true, will only accept the ray if it is cast from the outside of the shape
 	*/
-	bool single_facet_ray_casting(Facet * facet,bool store = true,bool outside = true) ;
+	bool single_facet_ray_casting(const Facet & facet,bool store = true,bool outside = true) ;
 
 
 	/*
@@ -135,14 +135,14 @@ public:
 	@param use_KD_impact true if the ray casting must be initialized at the point from the overlaying kd tree
 	*/
 	
-	bool single_patch_ray_casting(Bezier * patch,double & u, double & v,bool use_KD_impact = true) ;
+	bool single_patch_ray_casting(const Bezier & patch,double & u, double & v,bool use_KD_impact = true) ;
 
-	Element * get_guess() const;
-	Element * get_super_element() const;
+	int get_guess() const;
+	int get_super_element() const;
 
-	void set_guess (Element * guess);
+	void set_guess (int guess);
 
-	arma::vec get_KD_impact() const;
+	arma::vec::fixed<3> get_KD_impact() const;
 
 	/**
 	Accessor to lidar
@@ -164,30 +164,30 @@ protected:
 
 	Lidar * lidar;
 
-	std::shared_ptr<arma::vec> origin;
-	std::shared_ptr<arma::vec> direction;
+	arma::vec::fixed<3> origin;
+	arma::vec::fixed<3> direction;
 
-	std::shared_ptr<arma::vec> origin_target_frame;
-	std::shared_ptr<arma::vec> direction_target_frame;
+	arma::vec::fixed<3> origin_target_frame;
+	arma::vec::fixed<3> direction_target_frame;
 
 	unsigned int row_index;
 	unsigned int col_index;
 
-	Element * hit_element = nullptr;
-	Element * super_element = nullptr;
-	Element * guess;
+	int hit_element = -1;
+	int super_element = -1;
+	int guess;
 
 	double incidence_angle;
 	double u;
 	double v;
 	double true_range =  std::numeric_limits<double>::infinity();
 
-	arma::vec KD_impact;
+	arma::vec::fixed<3> KD_impact;
 
 
 
 
-	bool intersection_inside(arma::vec & H, Facet * facet, double tol = 1e-7) ;
+	bool intersection_inside(const arma::vec::fixed<3> & H, const Facet & facet, double tol = 1e-7) ;
 
 
 };

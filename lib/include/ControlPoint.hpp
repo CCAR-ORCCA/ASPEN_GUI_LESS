@@ -27,7 +27,7 @@ public:
 	Setter to the vertex's coordinates
 	@param coordinates vertex coordinates
 	*/
-	void set_point_coordinates(arma::vec::fixed<3> & coordinates);
+	void set_point_coordinates(arma::vec::fixed<3> coordinates);
 
 
 	/**

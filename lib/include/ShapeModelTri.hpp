@@ -93,6 +93,13 @@ public:
 	*/
 	void update_facets() ;
 
+	void add_element(Facet & el);
+	void set_elements(std::vector<Facet> elements);
+
+
+	virtual void clear();
+
+
 
 
 	/**
@@ -122,6 +129,9 @@ public:
 	Computes the inertia tensor of the shape model
 	*/
 	virtual void compute_inertia();
+
+
+	const Facet & get_element(int e) const;
 
 
 	/**

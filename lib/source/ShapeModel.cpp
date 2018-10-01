@@ -26,7 +26,6 @@ double ShapeModel::get_volume() const{
 }
 
 
-
 arma::vec ShapeModel::get_inertia_param() const{
 
 	double I_xx = this -> inertia(0,0);
@@ -102,8 +101,9 @@ void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
 }
 
 
-std::vector<ControlPoint> & ShapeModel::get_control_points() {
+const std::vector<ControlPoint> & ShapeModel::get_control_points() const{
 	return this -> control_points;
+
 }
 
 
@@ -328,13 +328,13 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 
 void ShapeModel::assemble_covariance(arma::mat & P,
-		const ControlPoint & Ci,
-		const ControlPoint & Cj,
-		const ControlPoint & Ck,
-		const ControlPoint & Cl,
-		const ControlPoint & Cm,
-		const ControlPoint & Cp,
-		const ControlPoint & Cq){
+	const ControlPoint & Ci,
+	const ControlPoint & Cj,
+	const ControlPoint & Ck,
+	const ControlPoint & Cl,
+	const ControlPoint & Cm,
+	const ControlPoint & Cp,
+	const ControlPoint & Cq){
 
 
 	P = arma::zeros<arma::mat>(12,9);
@@ -396,14 +396,14 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 
 void ShapeModel::assemble_covariance(arma::mat & P,
-		const ControlPoint & Ci,
-		const ControlPoint & Cj,
-		const ControlPoint & Ck,
-		const ControlPoint & Cl,
-		const ControlPoint & Cm,
-		const ControlPoint & Cp,
-		const ControlPoint & Cq,
-		const ControlPoint & Cr){
+	const ControlPoint & Ci,
+	const ControlPoint & Cj,
+	const ControlPoint & Ck,
+	const ControlPoint & Cl,
+	const ControlPoint & Cm,
+	const ControlPoint & Cp,
+	const ControlPoint & Cq,
+	const ControlPoint & Cr){
 
 
 	P = arma::zeros<arma::mat>(12,12);

@@ -5,7 +5,6 @@
 #include "Lidar.hpp"
 #include "FrameGraph.hpp"
 #include "ShapeBuilderArguments.hpp"
-#include "PC.hpp"
 #include "ICPBase.hpp"
 #include "IterativeClosestPointToPlane.hpp"
 #include "BundleAdjuster.hpp"

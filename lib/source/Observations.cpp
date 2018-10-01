@@ -12,13 +12,13 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	const Args & args){
 
 	// Position of spacecraft relative to small body in inertial frame
-	arma::vec lidar_pos = x.rows(0,2);
-	arma::vec lidar_vel = args.get_true_vel();
+	arma::vec::fixed<3> lidar_pos = x.rows(0,2);
+	arma::vec::fixed<3> lidar_vel = args.get_true_vel();
 
 	// Attitude of spacecraft relative to inertial
-	arma::vec e_r = - arma::normalise(lidar_pos);
-	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
-	arma::vec e_t = arma::cross(e_h,e_r);
+	arma::vec::fixed<3> e_r = - arma::normalise(lidar_pos);
+	arma::vec::fixed<3> e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
+	arma::vec::fixed<3> e_t = arma::cross(e_h,e_r);
 
 	arma::mat dcm_LN(3,3);
 	dcm_LN.row(0) = e_r.t();
@@ -68,18 +68,18 @@ arma::vec Observations::obs_lidar_range_computed(
 	const Args & args){
 
 	// Position of spacecraft relative to small body in inertial frame
-	arma::vec lidar_pos = x.rows(0,2);
+	arma::vec::fixed<3> lidar_pos = x.rows(0,2);
 
 	// Attitude of spacecraft relative to inertial
-	arma::vec e_r = - arma::normalise(args.get_true_pos());
-	arma::vec e_h = arma::normalise(arma::cross(e_r,-args.get_true_vel()));
-	arma::vec e_t = arma::cross(e_h,e_r);
+	arma::vec::fixed<3> e_r = - arma::normalise(args.get_true_pos());
+	arma::vec::fixed<3> e_h = arma::normalise(arma::cross(e_r,-args.get_true_vel()));
+	arma::vec::fixed<3> e_t = arma::cross(e_h,e_r);
 
-	arma::mat dcm_LN(3,3);
+	arma::mat::fixed<3,3> dcm_LN(3,3);
 	dcm_LN.row(0) = e_r.t();
 	dcm_LN.row(1) = e_t.t();
 	dcm_LN.row(2) = e_h.t();
-	arma::vec mrp_LN = RBK::dcm_to_mrp(dcm_LN);
+	arma::vec::fixed<3> mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	// Setting the Lidar frame to its new state
 	auto lidar = args.get_lidar();

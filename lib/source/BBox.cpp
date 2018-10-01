@@ -3,6 +3,7 @@
 #include "Element.hpp"
 #include "ShapeModel.hpp"
 
+BBox::BBox(){};
 
 BBox::BBox(ShapeModel * owning_shape) {
 	this -> owning_shape = owning_shape;
@@ -77,7 +78,13 @@ void BBox::update(int element_index) {
 
 }
 
-void BBox::update(std::vector<int> & element_indices) {
+
+
+void BBox::set_owning_shape(ShapeModel * owning_shape){
+	this -> owning_shape = owning_shape;
+}
+
+void BBox::update(const std::vector<int> & element_indices) {
 
 
 	const std::vector<int> & first_element_control_points = this -> owning_shape -> get_element_control_points(element_indices[0]);

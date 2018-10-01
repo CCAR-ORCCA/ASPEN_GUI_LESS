@@ -25,7 +25,7 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Bezier(std::vector<int> & vertices,ShapeModel * owning_shape);
+	Bezier(std::vector<int> vertices,ShapeModel * owning_shape);
 
 	/**
 	Get neighbors
@@ -96,12 +96,16 @@ public:
 
 
 	/**
-	Get global index of the queried point
+	Get index of the queried point
 	@param i first index
 	@param j second index
-	@return global index to control point
+	@return local index to control point
 	*/
 	int get_control_point_local_index(unsigned int i, unsigned int j) const;
+
+	int get_control_point_global_index(unsigned int i, unsigned int j) const;
+
+
 
 	/**
 	Returns the control point given its i and j indices (k = n - i - j)

@@ -54,6 +54,20 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 }
 
 
+void ShapeModelTri::set_elements(std::vector<Facet> elements){
+	this -> elements = elements;
+}
+
+void ShapeModelTri::clear(){
+	this -> control_points.clear();
+	this -> elements.clear();
+
+}
+
+
+
+
+
 const std::vector<int> & ShapeModelTri::get_element_control_points(int e) const{
 	return this -> elements[e].get_control_points();
 }
@@ -61,7 +75,7 @@ const std::vector<int> & ShapeModelTri::get_element_control_points(int e) const{
 
 bool ShapeModelTri::ray_trace(Ray * ray){
 
-	return this -> kdt_facet -> hit(this -> get_KDTreeShape().get(),ray);
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
 }
 
 
@@ -72,16 +86,21 @@ unsigned int ShapeModelTri::get_NElements() const {
 
 void ShapeModelTri::construct_kd_tree_shape() {
 
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 
-	// this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape());
-	// this -> kdt_facet = this -> kdt_facet -> build(this -> elements, 0);
+	std::vector<int> element_indices;
+	for (int i = 0; i < this -> elements.size(); ++i){
+		element_indices.push_back(i);
+	}
 
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
+	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this));
+	this -> kdt_facet -> build(element_indices, 0);
 
-	// std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+	std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }
 
@@ -100,6 +119,9 @@ arma::vec::fixed<3> ShapeModelTri::get_control_point_normal_coordinates(unsigned
 }
 
 
+const Facet & ShapeModelTri::get_element(int e) const{
+	return this -> elements[e];
+}
 
 
 

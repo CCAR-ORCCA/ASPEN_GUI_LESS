@@ -14,13 +14,15 @@ class BBox {
 public:
 
 	BBox(ShapeModel * owning_shape);
+	BBox();
+	void set_owning_shape(ShapeModel * owning_shape);
 
 	/**
 	Computes the bounding box boundaries
 	using provided geometric data
 	@param elements Facets bounded by this box
 	*/
-	void update(std::vector<int> & element_indices);
+	void update(const std::vector<int> & element_indices);
 
 
 	/**

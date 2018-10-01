@@ -28,7 +28,7 @@ public:
 	*/
 	virtual std::set< int > get_neighbors(bool all_neighbors) const;
 
-	const arma::vec & get_normal_coordinates() const;
+	const arma::vec::fixed<3> & get_normal_coordinates() const;
 
 	/**
 	Returns pointer to the first vertex owned by $this that is

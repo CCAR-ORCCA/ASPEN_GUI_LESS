@@ -131,7 +131,7 @@ public:
 	Pointer to the shape model's control points
 	@return vertices pointer to the control points
 	*/
-	std::vector<ControlPoint> & get_control_points();
+	const std::vector<ControlPoint> & get_control_points() const;
 
 	unsigned int get_control_point_index(std::shared_ptr<ControlPoint> point) const;
 
@@ -151,6 +151,7 @@ public:
 	*/
 	void add_control_point(ControlPoint & control_point);
 
+	virtual void clear() = 0;
 
 	/**
 	Returns number of elements

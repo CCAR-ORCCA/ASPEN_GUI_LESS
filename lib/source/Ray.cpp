@@ -48,31 +48,31 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	// Origin and direction
 	arma::vec origin = {x, z, y};
-	this -> direction = std::make_shared<arma::vec>(arma::normalise( origin));
-	this -> origin = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+	this -> direction = arma::normalise( origin);
+	this -> origin = arma::zeros<arma::vec>(3);
 
 
-	this -> origin_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
-	this -> direction_target_frame = std::make_shared<arma::vec>(arma::zeros<arma::vec>(3));
+	this -> origin_target_frame = arma::zeros<arma::vec>(3);
+	this -> direction_target_frame = arma::zeros<arma::vec>(3);
 }
 
 
 
-Ray::Ray(arma::vec origin, arma::vec direction){
-	this -> origin = std::make_shared<arma::vec>(origin);
-	this -> direction = std::make_shared<arma::vec>(direction);
+Ray::Ray(arma::vec::fixed<3> origin, arma::vec::fixed<3> direction){
+	this -> origin = origin;
+	this -> direction = direction;
 
-	this -> origin_target_frame = std::make_shared<arma::vec>(origin);
-	this -> direction_target_frame = std::make_shared<arma::vec>(direction);
+	this -> origin_target_frame = origin;
+	this -> direction_target_frame = direction;
 }
 
 
-Element * Ray::get_hit_element() {
+int Ray::get_hit_element() {
 	return this -> hit_element;
 }
 
 
-void Ray::set_hit_element(Element * element) {
+void Ray::set_hit_element(int element) {
 	this -> hit_element = element;
 }
 
@@ -91,54 +91,54 @@ Lidar * Ray::get_lidar() {
 	return this -> lidar;
 }
 
-arma::vec * Ray::get_direction() {
-	return this -> direction.get();
+const arma::vec::fixed<3> & Ray::get_direction() const{
+	return this -> direction;
 }
 
 
-arma::vec * Ray::get_origin() {
-	return this -> origin.get();
+const arma::vec::fixed<3> & Ray::get_origin() const{
+	return this -> origin;
 }
 
 
-arma::vec * Ray::get_direction_target_frame() {
-	return this -> direction_target_frame.get();
+const arma::vec::fixed<3> & Ray::get_direction_target_frame() const{
+	return this -> direction_target_frame;
 }
 
 
-arma::vec * Ray::get_origin_target_frame() {
-	return this -> origin_target_frame.get();
+const arma::vec::fixed<3> & Ray::get_origin_target_frame() const {
+	return this -> origin_target_frame;
 }
 
-Element * Ray::get_guess() const{
+int Ray::get_guess() const{
 	return this -> guess;
 }
-void Ray::set_guess (Element * guess){
+void Ray::set_guess (int guess){
 	this -> guess = guess;
 }
 
 void Ray::reset(ShapeModel * shape_model) {
 
 	this -> true_range = std::numeric_limits<double>::infinity();
-	this -> hit_element = nullptr;
+	this -> hit_element = -1;
 	
 	FrameGraph * frame_graph = this -> get_lidar() -> get_frame_graph();
 
-	(*this -> direction_target_frame) = frame_graph -> convert(*this -> get_direction(), "L", shape_model -> get_ref_frame_name(), true);
-	(*this -> origin_target_frame) = frame_graph -> convert(*this -> get_origin(), "L", shape_model -> get_ref_frame_name(), false);
+	this -> direction_target_frame = frame_graph -> convert(this -> get_direction(), "L", shape_model -> get_ref_frame_name(), true);
+	this -> origin_target_frame = frame_graph -> convert(this -> get_origin(), "L", shape_model -> get_ref_frame_name(), false);
 
 	this -> incidence_angle = std::numeric_limits<double>::infinity();
 
 
 }
 
-bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
+bool Ray::intersection_inside(const arma::vec::fixed<3> & H, const Facet & facet, double tol) {
 
-	arma::vec P0 = facet -> get_control_points() -> at(0) -> get_coordinates() ;
-	arma::vec P1 = facet -> get_control_points() -> at(1) -> get_coordinates() ;
-	arma::vec P2 = facet -> get_control_points() -> at(2) -> get_coordinates() ;
+	const arma::vec::fixed<3> P0 = facet.get_control_point_coordinates(0);
+	const arma::vec::fixed<3> P1 = facet.get_control_point_coordinates(1);
+	const arma::vec::fixed<3> P2 = facet.get_control_point_coordinates(2);
 
-	double epsilon = (facet -> get_area()
+	double epsilon = (facet.get_area()
 		- 0.5 * (
 			arma::norm(arma::cross(H - P0, H - P1))
 			+ arma::norm(arma::cross(H - P1, H - P2))
@@ -152,11 +152,11 @@ bool Ray::intersection_inside(arma::vec & H, Facet * facet, double tol) {
 }
 
 
-arma::vec Ray::get_impact_point() const {
+arma::vec::fixed<3> Ray::get_impact_point() const {
 
 	if (this -> true_range < std::numeric_limits<double>::infinity()) {
 		
-		return (*this -> direction) * this -> true_range + (*this -> origin);
+		return (this -> direction * this -> true_range + this -> origin);
 	}
 	else {
 		throw std::runtime_error("Invalid ray");
@@ -165,11 +165,11 @@ arma::vec Ray::get_impact_point() const {
 }
 
 
-arma::vec Ray::get_impact_point_target_frame() const {
+arma::vec::fixed<3> Ray::get_impact_point_target_frame() const {
 
 	if (this -> true_range < std::numeric_limits<double>::infinity()) {
 		
-		return (*this -> direction_target_frame) * this -> true_range + (*this -> origin_target_frame);
+		return (this -> direction_target_frame * this -> true_range + this -> origin_target_frame);
 	}
 	else {
 		throw std::runtime_error("Invalid ray");
@@ -177,30 +177,30 @@ arma::vec Ray::get_impact_point_target_frame() const {
 
 }
 
-Element * Ray::get_super_element() const{
+int Ray::get_super_element() const{
 	return this -> super_element;
 }
 
 
-bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
+bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) {
 
 	// The ray is parametrized as R = At + B where (A,B) are respectively
 	// the direction and the origin of the ray. For an intersection to
 	// be valid, t must be positive
-	arma::vec n = facet -> get_normal_coordinates();
-	arma::vec p = facet -> get_center();
+	const arma::vec::fixed<3> & n = facet.get_normal_coordinates();
+	const arma::vec::fixed<3> & p = facet.get_center();
 
-	double t = arma::dot(n, p - *this -> origin_target_frame) / arma::dot(n, *this -> direction_target_frame);
+	double t = arma::dot(n, p - this -> origin_target_frame) / arma::dot(n, this -> direction_target_frame);
 
 	// The normal is facing the opposite way
-	if (arma::dot(n,*this -> direction_target_frame) > 0 && outside){
+	if (arma::dot(n,this -> direction_target_frame) > 0 && outside){
 		return false;
 	}
 
 	// If the range is positive, this is further tested for
 	// potential intersection with this facet
 	if (t > 0) {
-		arma::vec H = *this -> direction_target_frame * t + *this -> origin_target_frame;
+		arma::vec::fixed<3> H = this -> direction_target_frame * t + this -> origin_target_frame;
 
 
 
@@ -212,7 +212,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 			double b = 1800.; // max range
 			double a = (900. - b) / (60.);
 
-			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,n)));
+			double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(this -> direction_target_frame,n)));
 			double max_range = a * incidence_angle  + b;
 
 
@@ -220,7 +220,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 			if (store){
 				if (this -> true_range > t ) {
 					this -> true_range = t;
-					this -> hit_element = facet;
+					this -> hit_element = facet.get_global_index();
 					this -> incidence_angle = incidence_angle;
 				}
 			}
@@ -229,7 +229,7 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 				if (this -> true_range < t){
 					return false;
 				}
-				this -> super_element = facet -> get_super_element();
+				this -> super_element = facet.get_super_element();
 				this -> KD_impact = H;
 			}
 
@@ -244,15 +244,15 @@ bool Ray::single_facet_ray_casting(Facet * facet,bool store,bool outside) {
 
 }
 
-arma::vec Ray::get_KD_impact() const{
+arma::vec::fixed<3> Ray::get_KD_impact() const{
 	return this -> KD_impact;
 }
 
 
-bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use_KD_impact) {
+bool Ray::single_patch_ray_casting(const Bezier & patch,double & u,double & v,bool use_KD_impact) {
 
-	arma::vec S = *this -> origin_target_frame;
-	arma::vec dir = *this -> direction_target_frame;
+	const arma::vec::fixed<3> & S = this -> origin_target_frame;
+	const arma::vec::fixed<3> & dir = this -> direction_target_frame;
 
 
 	arma::mat u_tilde = RBK::tilde(dir);
@@ -262,12 +262,12 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 
 	// The barycentric coordinates are initialized at a planar guess
 	arma::mat E(3,2);
-	E.col(0) = patch -> get_control_point_coordinates(patch -> get_degree(),0) - patch -> get_control_point_coordinates(0,0);
-	E.col(1) = patch -> get_control_point_coordinates(0,patch -> get_degree()) - patch -> get_control_point_coordinates(0,0);
+	E.col(0) = patch.get_control_point_coordinates(patch.get_degree(),0) - patch.get_control_point_coordinates(0,0);
+	E.col(1) = patch.get_control_point_coordinates(0,patch.get_degree()) - patch.get_control_point_coordinates(0,0);
 
 	arma::vec::fixed<2> chi;
 	if (use_KD_impact){
-		chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch -> get_control_point_coordinates(0,0)));
+		chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch.get_control_point_coordinates(0,0)));
 	} 
 	else{
 		chi(0) = 1./3;
@@ -275,7 +275,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 	}
 
 
-	arma::vec dchi = arma::zeros<arma::vec>(2);
+	arma::vec::fixed<2> dchi = arma::zeros<arma::vec>(2);
 
 	arma::mat::fixed<3,2> H = arma::zeros<arma::mat>(3,2);
 	arma::vec::fixed<3> Y = arma::zeros<arma::vec>(3);
@@ -285,7 +285,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 		double u_t = chi(0);
 		double v_t = chi(1);
 
-		impact = patch -> evaluate(u_t,v_t);
+		impact = patch.evaluate(u_t,v_t);
 		double distance = arma::norm(u_tilde*(S - impact));
 
 		#if RAY_DEBUG
@@ -298,7 +298,7 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 			std::cout << "Converged." << std::endl;
 			#endif
 
-			if (arma::dot(patch -> get_normal_coordinates(u_t,v_t),dir) > 0){
+			if (arma::dot(patch.get_normal_coordinates(u_t,v_t),dir) > 0){
 				#if RAY_DEBUG
 				std::cout << "Spurious normal. rejected" << std::endl;
 
@@ -322,13 +322,13 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 
 			if (this -> true_range > arma::norm(S - impact)){
 
-				double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(*this -> direction_target_frame,patch -> get_normal_coordinates(u_t,v_t))));
+				double incidence_angle = 180. / arma::datum::pi * std::acos(std::abs(arma::dot(this -> direction_target_frame,patch.get_normal_coordinates(u_t,v_t))));
 
 				this -> true_range = arma::norm(S - impact);
 				u = u_t;
 				v = v_t;
 				this -> set_impact_coords(u,v);
-				this -> hit_element = patch;
+				this -> hit_element = patch.get_global_index();
 				this -> incidence_angle = incidence_angle;
 				
 				return true;
@@ -345,8 +345,8 @@ bool Ray::single_patch_ray_casting(Bezier * patch,double & u,double & v,bool use
 			}
 		}
 		
-		H = u_tilde * patch -> partial_bezier( u_t, v_t);
-		Y = u_tilde * (S - patch -> evaluate(u_t,v_t));
+		H = u_tilde * patch.partial_bezier( u_t, v_t);
+		Y = u_tilde * (S - patch.evaluate(u_t,v_t));
 
 		dchi = arma::solve(H.t() * H,H.t() * Y);
 

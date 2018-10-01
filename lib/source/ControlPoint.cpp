@@ -8,7 +8,7 @@ ControlPoint::ControlPoint(ShapeModel * owning_shape){
 }
 
 
-void ControlPoint::set_point_coordinates(arma::vec::fixed<3> & coordinates) {
+void ControlPoint::set_point_coordinates(arma::vec::fixed<3> coordinates) {
 	this -> coordinates = coordinates;
 }
 

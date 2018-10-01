@@ -9,9 +9,8 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Dense>
-
+#include <array>
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
-
 
 class ShapeModelTri;
 
@@ -29,7 +28,7 @@ public:
 	reference frame relationships
 	@param frame_graph Pointer to the reference frame graph
 	*/
-	ShapeModelBezier(ShapeModelTri * shape_model,
+	ShapeModelBezier(const ShapeModelTri & shape_model,
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
@@ -42,7 +41,7 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	@param surface_noise use in patch covariance setting
 	*/
-	ShapeModelBezier(ShapeModelTri * shape_model,
+	ShapeModelBezier(ShapeModelTri & shape_model,
 		std::string ref_frame_name,
 		FrameGraph * frame_graph,double surface_noise);
 
@@ -94,6 +93,10 @@ public:
 	*/
 	void elevate_degree();
 
+
+	virtual void clear();
+
+
 	/**
 	Gets the shape model degree
 	*/
@@ -132,10 +135,6 @@ public:
 
 	void save_both(std::string partial_path);
 
-	/**
-	Assembles the tables used to compute the mass properties of the shape
-	*/
-	void populate_mass_properties_coefs();
 
 
 	/**
@@ -201,7 +200,7 @@ public:
 	void compute_point_covariances(double sigma_sq,double correl_distance) ;
 	void compute_shape_covariance_sqrt();
 
-	arma::mat::fixed<3,3> get_point_covariance(int i, int j) const ;
+	const arma::mat::fixed<3,3> & get_point_covariance(int i, int j) const ;
 	void compute_all_statistics();
 	static arma::mat::fixed<3,3> get_principal_axes_stable(const arma::mat::fixed<3,3> & inertia);
 	
@@ -220,12 +219,6 @@ public:
 
 	Bezier & get_element(int i) {return this -> elements[i];}
 
-
-	/**
-	Augment the internal container storing elements with a new (and not already inserted)
-	one
-	@param facet pointer to the new element to be inserted
-	*/
 	void add_element(Bezier & el);
 
 	virtual const std::vector<int> & get_element_control_points(int e) const;
@@ -235,6 +228,10 @@ public:
 
 	virtual unsigned int get_NElements() const;
 	
+	void set_elements(std::vector<Bezier> elements);
+
+	void assemble_mapping_matrices();
+	void populate_mass_properties_coefs();
 
 protected:
 
@@ -243,6 +240,8 @@ protected:
 
 	void save_connectivity(const std::vector< std::pair<int,int> > & connected_elements) const;
 	void find_correlated_elements();
+
+
 
 	double compute_patch_pair_vol_sd_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
 	arma::mat::fixed<3,3>  compute_patch_pair_cm_cov_contribution(const Bezier & patch_e,const Bezier & patch_f) const;
@@ -301,24 +300,24 @@ protected:
 		const arma::vec::fixed<3> & Cm);
 
 
-	double increment_volume_variance(const arma::vec::fixed<9> & left_vec,
+	double increment_volume_variance(arma::mat::fixed<9,9> & P_CC,const arma::vec::fixed<9> & left_vec,
 		const arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k, 
 		int l, int m, int p) const;
 
-	arma::mat::fixed<3,3> increment_cm_cov(const arma::mat::fixed<12,3> & left_mat,
+	arma::mat::fixed<3,3> increment_cm_cov(arma::mat::fixed<12,12> & P_CC,const arma::mat::fixed<12,3> & left_mat,
 		const arma::mat::fixed<12,3>  & right_mat, 
 		int i,int j,int k,int l, 
 		int m, int p, int q, int r) const;
 
 
-	arma::mat::fixed<6,6> increment_P_I(const arma::mat::fixed<6,15> & left_mat,
+	arma::mat::fixed<6,6> increment_P_I(arma::mat::fixed<15,15> & P_CC,const arma::mat::fixed<6,15> & left_mat,
 		const arma::mat::fixed<6,15>  & right_mat, 
 		int i,int j,int k,int l,int m,
 		int p, int q, int r, int s, int t) const;
 
 
-	arma::vec::fixed<6> increment_P_MI(const arma::mat::fixed<6,15> & left_mat,
+	arma::vec::fixed<6> increment_P_MI(arma::mat::fixed<15,9> & P_CC,const arma::mat::fixed<6,15> & left_mat,
 		const arma::vec::fixed<9>  & right_vec, 
 		int i,int j,int k,int l,int m,
 		int p, int q, int r) const;
@@ -386,11 +385,12 @@ protected:
 
 
 	std::vector<std::vector<double> > volume_sd_indices_coefs_table;
+	
 	std::vector<std::vector<double> > cm_cov_1_indices_coefs_table;
 	std::vector<std::vector<double> > cm_cov_2_indices_coefs_table;
 
-	std::vector<std::vector<double> > inertia_stats_1_indices_coefs_table;
-	std::vector<std::vector<double> > inertia_stats_2_indices_coefs_table;
+	std::vector<std::vector<double> > P_I_indices_coefs_table;
+	std::vector<std::vector<double> > P_MI_indices_coefs_table;
 
 
 	double volume_sd;
@@ -409,10 +409,21 @@ protected:
 
 	arma::mat shape_covariance_sqrt;
 
-	std::vector < std::vector<int>>  point_covariances_indices;
-	std::vector < std::vector<arma::mat::fixed<3,3> >>  point_covariances;
+	std::vector < std::vector< arma::mat::fixed<3,3> > >  point_covariances;
 
 	std::vector<std::vector < int > > correlated_elements;
+
+
+	std::vector<std::map<  std::array<int, 6>,arma::vec::fixed<9> > > elements_to_volume_mapping_matrices;
+	std::vector<std::map<  std::array<int, 8>,arma::mat::fixed<12,3> > > elements_to_cm_mapping_matrices;
+	std::vector<std::map<  std::array<int, 10>,arma::mat::fixed<6,15> > > elements_to_inertia_mapping_matrices;
+
+
+
+
+
+
+
 
 };
 

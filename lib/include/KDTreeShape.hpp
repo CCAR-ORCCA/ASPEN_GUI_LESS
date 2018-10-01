@@ -15,7 +15,10 @@
 // https://blog.frogslayer.com/kd-trees-for-faster-ray-tracing-with-triangles/
 //
 class Ray;
+class ShapeModel;
+class ShapeModelTri;
 class ShapeModelBezier;
+
 
 class KDTreeShape {
 
@@ -23,13 +26,13 @@ public:
 	BBox bbox;
 	std::shared_ptr<KDTreeShape> left;
 	std::shared_ptr<KDTreeShape> right;
-	std::vector<std::shared_ptr<Element> > elements;
+	std::vector<int > elements;
 
-	KDTreeShape();
+	KDTreeShape(ShapeModelTri * owning_shape);
 
-	std::shared_ptr<KDTreeShape> build(std::vector<std::shared_ptr<Element >> & elements, int depth);
+	void build(const std::vector<int> & elements, int depth);
 	bool hit_bbox(Ray * ray) const;	
-	bool hit(KDTreeShape * node, Ray * ray, ShapeModelBezier * shape_model_bezier = nullptr) const;
+	bool hit(const std::shared_ptr<KDTreeShape> & node, Ray * ray, ShapeModelBezier * shape_model_bezier = nullptr) const;
 
 	int get_depth() const;
 	void set_depth(int depth);
@@ -39,8 +42,7 @@ protected:
 	int depth;
 	int max_depth = 1000;
 
-
-
+	ShapeModelTri * owning_shape;
 
 };
 

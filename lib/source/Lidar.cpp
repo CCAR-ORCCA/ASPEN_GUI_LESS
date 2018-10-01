@@ -243,8 +243,8 @@ void Lidar::save(std::string path,bool conserve_format) {
 		for (unsigned int i = 0;i < this -> focal_plane.size();++i) {
 			Ray  * ray = this -> get_ray(i);
 
-			if (ray-> get_hit_element() != nullptr){
-				arma::vec p = (*ray-> get_direction_target_frame()) * ray-> get_true_range() + *ray-> get_origin_target_frame();
+			if (ray-> get_hit_element() != -1){
+				arma::vec::fixed<3> p = (ray-> get_direction_target_frame()) * ray-> get_true_range() + ray-> get_origin_target_frame();
 				file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
 			}
 
