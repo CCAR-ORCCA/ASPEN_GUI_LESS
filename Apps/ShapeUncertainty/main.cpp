@@ -9,16 +9,18 @@
 
 #include <chrono>
 
+#include <armadillo>
+
 
 int main(){
-
 
 	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
 	i >> input_data;
 
 	std::string path_shape = input_data["PATH_SHAPE"];
-	double correlation_distance = input_data["CORRELATION_DISTANCE"];
+	double correlation_distance =  input_data["CORRELATION_DISTANCE"];
+
 	double error_standard_dev  = input_data["ERROR_STANDARD_DEV"];
 	int N_monte_carlo = input_data["N_MONTE_CARLO"];
 	std::string output_dir = input_data["dir"];
@@ -31,10 +33,15 @@ int main(){
 
 	FrameGraph frame_graph;
 	ShapeModelTri tri_shape("", &frame_graph);
-	ShapeModelImporter shape_io_true(path_shape, 1, false);
-	shape_io_true.load_obj_shape_model(&tri_shape);
-	ShapeModelBezier bezier_shape(&tri_shape,"", &frame_graph);
 
+	ShapeModelImporter::load_obj_shape_model(path_shape, 1, false,tri_shape);
+	ShapeModelBezier bezier_shape(tri_shape,"", &frame_graph);
+
+	std::cout << "\nVolume (km^3): \n";
+	std::cout << tri_shape.get_volume() << " / " << bezier_shape.get_volume() << std::endl;
+
+	std::cout << "\nCenter-of-mass (km): \n";
+	std::cout << tri_shape.get_center_of_mass().t() << " / " << bezier_shape.get_center_of_mass().t() << std::endl;
 
 	std::cout << "\nVolume error: (%) \n";
 	std::cout << std::abs(bezier_shape.get_volume() - tri_shape.get_volume())/bezier_shape.get_volume() * 100 << std::endl;
@@ -205,7 +212,7 @@ int main(){
 
 	
 	for (unsigned int i = 0; i < results_cm.n_cols; ++i){
-		
+
 		cov_cm_mc +=  (results_cm.col(i) - results_cm_mean) * (results_cm.col(i) - results_cm_mean).t();
 		cov_inertia_mc +=  (results_inertia.col(i) - results_inertia_mean) * (results_inertia.col(i) - results_inertia_mean).t();
 		cov_moments_mc +=  (results_moments.col(i) - results_moments_mean) * (results_moments.col(i) - results_moments_mean).t();
