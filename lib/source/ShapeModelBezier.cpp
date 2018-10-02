@@ -1700,7 +1700,7 @@ void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
 	for (int i = 0; i < this -> get_NControlPoints(); ++i){
 		for (int j = 0; j < this -> get_NControlPoints(); ++j){
-				shape_covariance_arma.submat(3 * i,3 * j,3 * i + 2, 3 * j + 2)  = this -> get_point_covariance(i,j);
+			shape_covariance_arma.submat(3 * i,3 * j,3 * i + 2, 3 * j + 2)  = this -> get_point_covariance(i,j);
 		}
 	}
 
@@ -1929,7 +1929,9 @@ void ShapeModelBezier::save_to_obj(std::string path) const{
 	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
 		const Bezier & patch = this -> elements[i];
+
 		const std::vector<int> & control_points = patch.get_control_points();
+
 
 		for (unsigned int index = 0; index < control_points. size(); ++index){
 
@@ -1938,12 +1940,12 @@ void ShapeModelBezier::save_to_obj(std::string path) const{
 				unsigned int size =  pointer_to_global_indices.size();
 
 				pointer_to_global_indices[control_points[index]] = size;
-
 				auto local_indices = patch.get_local_indices(index);
 				double u =  double(std::get<0>(local_indices)) / patch.get_degree();
 				double v =  double(std::get<1>(local_indices)) / patch.get_degree();
 
 				arma::vec::fixed<3>  surface_point = patch.evaluate(u,v);
+
 				vertices.push_back(surface_point);
 			}
 
@@ -2107,26 +2109,26 @@ arma::vec::fixed<6> ShapeModelBezier::increment_P_MI(arma::mat::fixed<15,9> & P_
 	int i,int j,int k,int l,int m,
 	int p, int q, int r) const{
 
-	// P_CC.submat(0,0,2,2) = this -> get_point_covariance(i, p);
-	// P_CC.submat(0,3,2,5) = this -> get_point_covariance(i, q);
-	// P_CC.submat(0,6,2,8) = this -> get_point_covariance(i, r);
+	P_CC.submat(0,0,2,2) = this -> get_point_covariance(i, p);
+	P_CC.submat(0,3,2,5) = this -> get_point_covariance(i, q);
+	P_CC.submat(0,6,2,8) = this -> get_point_covariance(i, r);
 
-	// P_CC.submat(3,0,5,2) = this -> get_point_covariance(j, p);
-	// P_CC.submat(3,3,5,5) = this -> get_point_covariance(j, q);
-	// P_CC.submat(3,6,5,8) = this -> get_point_covariance(j, r);
+	P_CC.submat(3,0,5,2) = this -> get_point_covariance(j, p);
+	P_CC.submat(3,3,5,5) = this -> get_point_covariance(j, q);
+	P_CC.submat(3,6,5,8) = this -> get_point_covariance(j, r);
 
-	// P_CC.submat(6,0,8,2) = this -> get_point_covariance(k, p);
-	// P_CC.submat(6,3,8,5) = this -> get_point_covariance(k, q);
-	// P_CC.submat(6,6,8,8) = this -> get_point_covariance(k, r);
+	P_CC.submat(6,0,8,2) = this -> get_point_covariance(k, p);
+	P_CC.submat(6,3,8,5) = this -> get_point_covariance(k, q);
+	P_CC.submat(6,6,8,8) = this -> get_point_covariance(k, r);
 
 
-	// P_CC.submat(9,0,11,2) = this -> get_point_covariance(l, p);
-	// P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, q);
-	// P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, r);
+	P_CC.submat(9,0,11,2) = this -> get_point_covariance(l, p);
+	P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, q);
+	P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, r);
 
-	// P_CC.submat(12,0,14,2) = this -> get_point_covariance(m, p);
-	// P_CC.submat(12,3,14,5) = this -> get_point_covariance(m, q);
-	// P_CC.submat(12,6,14,8) = this -> get_point_covariance(m, r);
+	P_CC.submat(12,0,14,2) = this -> get_point_covariance(m, p);
+	P_CC.submat(12,3,14,5) = this -> get_point_covariance(m, q);
+	P_CC.submat(12,6,14,8) = this -> get_point_covariance(m, r);
 
 	return left_mat * P_CC * right_vec;
 
@@ -2140,27 +2142,27 @@ arma::mat::fixed<3,3> ShapeModelBezier::increment_cm_cov(arma::mat::fixed<12,12>
 	int m, int p, int q, int r) const{
 
 
-	// P_CC.submat(0,0,2,2) = this -> get_point_covariance(i, m);
-	// P_CC.submat(0,3,2,5) = this -> get_point_covariance(i, p);
-	// P_CC.submat(0,6,2,8) = this -> get_point_covariance(i, q);
-	// P_CC.submat(0,9,2,11) = this -> get_point_covariance(i, r);
+	P_CC.submat(0,0,2,2) = this -> get_point_covariance(i, m);
+	P_CC.submat(0,3,2,5) = this -> get_point_covariance(i, p);
+	P_CC.submat(0,6,2,8) = this -> get_point_covariance(i, q);
+	P_CC.submat(0,9,2,11) = this -> get_point_covariance(i, r);
 
-	// P_CC.submat(3,0,5,2) = this -> get_point_covariance(j, m);
-	// P_CC.submat(3,3,5,5) = this -> get_point_covariance(j, p);
-	// P_CC.submat(3,6,5,8) = this -> get_point_covariance(j, q);
-	// P_CC.submat(3,9,5,11) = this -> get_point_covariance(j, r);
-
-
-	// P_CC.submat(6,0,8,2) = this -> get_point_covariance(k, m);
-	// P_CC.submat(6,3,8,5) = this -> get_point_covariance(k, p);
-	// P_CC.submat(6,6,8,8) = this -> get_point_covariance(k, q);
-	// P_CC.submat(6,9,8,11) = this -> get_point_covariance(k, r);
+	P_CC.submat(3,0,5,2) = this -> get_point_covariance(j, m);
+	P_CC.submat(3,3,5,5) = this -> get_point_covariance(j, p);
+	P_CC.submat(3,6,5,8) = this -> get_point_covariance(j, q);
+	P_CC.submat(3,9,5,11) = this -> get_point_covariance(j, r);
 
 
-	// P_CC.submat(9,0,11,2) = this -> get_point_covariance(l, m);
-	// P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, p);
-	// P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, q);
-	// P_CC.submat(9,9,11,11) = this -> get_point_covariance(l, r);
+	P_CC.submat(6,0,8,2) = this -> get_point_covariance(k, m);
+	P_CC.submat(6,3,8,5) = this -> get_point_covariance(k, p);
+	P_CC.submat(6,6,8,8) = this -> get_point_covariance(k, q);
+	P_CC.submat(6,9,8,11) = this -> get_point_covariance(k, r);
+
+
+	P_CC.submat(9,0,11,2) = this -> get_point_covariance(l, m);
+	P_CC.submat(9,3,11,5) = this -> get_point_covariance(l, p);
+	P_CC.submat(9,6,11,8) = this -> get_point_covariance(l, q);
+	P_CC.submat(9,9,11,11) = this -> get_point_covariance(l, r);
 
 
 
@@ -3148,19 +3150,28 @@ void ShapeModelBezier::elevate_degree(){
 		
 		for (int i = 0; i < forw_after_elevation.size(); ++i){
 
+			
+
 			if (elements_to_control_points[e][i] == -1){
+				auto mu = forw_after_elevation[i];
 
 			// The coordinates of the new control points are computed
 				arma::vec::fixed<3> new_C = arma::zeros<arma::vec>(3);
 
+
+
 				for (unsigned int l = 0; l < forw_before_elevation.size(); ++l){
 
-					double coef = double(
-						Bezier::combinations(std::get<0>(forw_before_elevation[l]),std::get<0>(forw_after_elevation[i])) 
-						* Bezier::combinations(std::get<1>(forw_before_elevation[l]),std::get<1>(forw_after_elevation[i])) 
-						* Bezier::combinations(std::get<2>(forw_before_elevation[l]),std::get<2>(forw_after_elevation[i])));
 
-					new_C += this -> control_points[element_control_points[l]].get_point_coordinates() * coef/(n + 1);
+					auto lambda = forw_before_elevation[l];
+
+					double coef = 
+					double(Bezier::combinations(std::get<0>(lambda),std::get<0>(mu))) 
+					* double(Bezier::combinations(std::get<1>(lambda),std::get<1>(mu))) 
+					* double(Bezier::combinations(std::get<2>(lambda),std::get<2>(mu)))
+					/ double(Bezier::combinations(n,n + 1));
+
+					new_C += coef * this -> control_points[element_control_points[l]].get_point_coordinates();
 				}
 
 				ControlPoint new_control_point(this);
@@ -3168,24 +3179,23 @@ void ShapeModelBezier::elevate_degree(){
 				std::set<int> ownership;
 				std::tuple<int,int,int> inserted_point_tuple_original_element = forw_after_elevation[i];
 
+								
 
 				if (std::get<0>(forw_after_elevation[i]) == 0 || std::get<1>(forw_after_elevation[i]) == 0 || std::get<2>(forw_after_elevation[i]) == 0 ){
-
 					// edge point, things get complicated
-
 
 					// This is a corner point
 					if (std::get<0>(forw_after_elevation[i]) == n + 1 || std::get<1>(forw_after_elevation[i]) == n + 1 || std::get<2>(forw_after_elevation[i]) == n + 1){
 						
+
 						std::tuple<int,int,int> old_indices,new_indices;
-						int global_index_of_old_control_point;
+						
 						
 						if(	std::get<0>(forw_after_elevation[i]) == n + 1){
 					// corner vertex
 							old_indices = std::make_tuple (n,0,0);
 							new_indices = std::make_tuple (n + 1 ,0,0);
 
-							global_index_of_old_control_point = element_control_points[rev_before_elevation[old_indices]];
 							
 
 						}
@@ -3194,7 +3204,6 @@ void ShapeModelBezier::elevate_degree(){
 							old_indices = std::make_tuple (0,n,0);
 							new_indices = std::make_tuple (0,n + 1,0);
 
-							global_index_of_old_control_point = element_control_points[rev_before_elevation[old_indices]];
 							
 
 						}
@@ -3204,9 +3213,10 @@ void ShapeModelBezier::elevate_degree(){
 							old_indices = std::make_tuple (0,0,n);
 							new_indices = std::make_tuple (0,0,n + 1);
 
-							global_index_of_old_control_point = element_control_points[rev_before_elevation[old_indices]];
 
 						}
+
+						int global_index_of_old_control_point = element_control_points[rev_before_elevation[old_indices]];
 
 						ownership = this -> control_points[element_control_points[rev_before_elevation[old_indices]]].get_owning_elements();
 
@@ -3232,10 +3242,10 @@ void ShapeModelBezier::elevate_degree(){
 										std::get<2>(old_indices_in_element) += 1;
 									}
 									else{
-										throw(std::runtime_error("impossible"));
+										throw(std::runtime_error("impossible, we should be able to find a corner vertex"));
 									}
 
-									elements_to_control_points[e][rev_after_elevation[old_indices_in_element]] = new_control_points.size();
+									elements_to_control_points[element][rev_after_elevation[old_indices_in_element]] = new_control_points.size();
 									break;
 								}
 							}
@@ -3290,7 +3300,7 @@ void ShapeModelBezier::elevate_degree(){
 
 						}
 						else {
-							throw(std::runtime_error("impossible"));
+							throw(std::runtime_error("impossible, this point should belong on an edge"));
 						}
 
 						int corner_point_before_global_index = element_control_points[rev_before_elevation[corner_point_before_indices]];
@@ -3322,9 +3332,10 @@ void ShapeModelBezier::elevate_degree(){
 						// To be fair, we only need one of the two corner points: the one after the inserted point
 						// (which happens to be before the inserted point in the other element)
 
-						int local_index_corner_point_before_other_element = *std::find(other_element_control_points.begin(),
-							other_element_control_points.end(),
-							corner_point_after_global_index);
+						int local_index_corner_point_before_other_element = std::distance(other_element_control_points.begin(),
+							std::find(other_element_control_points.begin(),
+								other_element_control_points.end(),
+								corner_point_after_global_index));
 
 						// local_index_corner_point_before_other_element now holds the local index of the control point immediately
 						// before the inserted point in the other element
@@ -3381,7 +3392,7 @@ void ShapeModelBezier::elevate_degree(){
 
 	this -> control_points = new_control_points;
 	for (int e = 0; e < this -> elements.size(); ++e){
-		this -> elements[e].set_control_points(elements_to_control_points[e]);
+		this -> elements[e] = Bezier(elements_to_control_points[e],this);
 	}
 
 }

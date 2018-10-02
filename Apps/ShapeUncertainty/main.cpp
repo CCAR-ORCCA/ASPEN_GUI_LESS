@@ -34,7 +34,7 @@ int main(){
 	FrameGraph frame_graph;
 	ShapeModelTri tri_shape("", &frame_graph);
 
-	ShapeModelImporter::load_obj_shape_model(path_shape, 1, false,tri_shape);
+	ShapeModelImporter::load_obj_shape_model(path_shape, 1, true,tri_shape);
 	ShapeModelBezier bezier_shape(tri_shape,"", &frame_graph);
 
 	std::cout << "\nVolume (km^3): \n";
