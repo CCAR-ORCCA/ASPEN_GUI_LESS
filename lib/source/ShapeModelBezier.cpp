@@ -1719,14 +1719,14 @@ void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
 	this -> shape_covariance_sqrt = eig_vec * arma::diagmat(arma::sqrt(eig_val)) * eig_vec.t();
 
-	// std::ofstream file("cov_mat.txt");
-	// std::ofstream file_sqrt("sqrt.txt");
+	std::ofstream file("cov_mat.txt");
+	std::ofstream file_sqrt("sqrt.txt");
 
-	// file.precision(15);
-	// file_sqrt.precision(15);
+	file.precision(15);
+	file_sqrt.precision(15);
 
-	// shape_covariance_arma.raw_print(file);
-	// this -> shape_covariance_sqrt.raw_print(file_sqrt);
+	shape_covariance_arma.raw_print(file);
+	this -> shape_covariance_sqrt.raw_print(file_sqrt);
 
 }
 
