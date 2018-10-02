@@ -2622,13 +2622,13 @@ void ShapeModelBezier::take_slice(int axis,
 		if (deviation.size() > 0){
 
 			int global_index = P0.get_global_index();
-			C.col(0) += deviation(3 * global_index, 3 * global_index + 2);
+			C.col(0) += deviation.rows(3 * global_index, 3 * global_index + 2);
 
 			global_index = P1.get_global_index();
-			C.col(1) += deviation(3 * global_index, 3 * global_index + 2);
+			C.col(1) += deviation.rows(3 * global_index, 3 * global_index + 2);
 
 			global_index = P2.get_global_index();
-			C.col(2) += deviation(3 * global_index, 3 * global_index + 2);
+			C.col(2) += deviation.rows(3 * global_index, 3 * global_index + 2);
 
 		}
 
