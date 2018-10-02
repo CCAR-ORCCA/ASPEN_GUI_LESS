@@ -1002,7 +1002,7 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
-		all_deviations.col(iter) = deviation;
+		// all_deviations.col(iter) = deviation;
 
 		// Should be able to provide deviation in control points 
 		// here
