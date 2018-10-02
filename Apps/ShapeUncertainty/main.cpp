@@ -30,7 +30,6 @@ int main(){
 	std::cout << "Correlation distance (km) : " << correlation_distance << std::endl;
 	std::cout << "Monte Carlo Draws : " << N_monte_carlo << std::endl;
 
-
 	FrameGraph frame_graph;
 	ShapeModelTri tri_shape("", &frame_graph);
 
@@ -60,6 +59,60 @@ int main(){
 	
 	bezier_shape.compute_point_covariances(std::pow(error_standard_dev,2),correlation_distance);
 	bezier_shape.compute_shape_covariance_sqrt();
+
+
+	
+
+	std::cout << "\nRunning Monte Carlo: " << std::endl;
+
+	int N = N_monte_carlo;
+
+	arma::vec results_volume;
+	arma::mat results_cm,results_inertia,results_moments,
+	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
+	results_dims;
+	
+	start = std::chrono::system_clock::now();
+
+	bezier_shape.run_monte_carlo(N,
+		results_volume,
+		results_cm,
+		results_inertia,
+		results_moments,
+		results_mrp,
+		results_lambda_I,
+		results_eigenvectors,
+		results_Evectors,
+		results_Y,
+		results_MI,
+		results_dims,
+		output_dir);
+
+	end = std::chrono::system_clock::now();
+
+	elapsed_seconds = end - start;
+	
+	std::cout << "\nDone running Monte Carlo in " << elapsed_seconds.count() << " s\n";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
@@ -149,39 +202,6 @@ int main(){
 
 
 
-
-
-
-	std::cout << "\nRunning Monte Carlo: " << std::endl;
-
-	int N = N_monte_carlo;
-
-	arma::vec results_volume;
-	arma::mat results_cm,results_inertia,results_moments,
-	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
-	results_dims;
-	
-	start = std::chrono::system_clock::now();
-
-	bezier_shape.run_monte_carlo(N,
-		results_volume,
-		results_cm,
-		results_inertia,
-		results_moments,
-		results_mrp,
-		results_lambda_I,
-		results_eigenvectors,
-		results_Evectors,
-		results_Y,
-		results_MI,
-		results_dims,
-		output_dir);
-
-	end = std::chrono::system_clock::now();
-
-	elapsed_seconds = end - start;
-	
-	std::cout << "\nDone running Monte Carlo in " << elapsed_seconds.count() << " s\n";
 
 
 	
