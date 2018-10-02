@@ -988,7 +988,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 	results_MI = arma::zeros<arma::mat>(7,N);
 	results_dims = arma::zeros<arma::mat>(3,N);
 
-	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
 
 	this -> take_and_save_slice(2,output_path + "/slice_z_baseline.txt",0);
 	this -> take_and_save_slice(1,output_path + "/slice_y_baseline.txt",0);
@@ -1002,7 +1001,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
-		all_deviations.col(iter) = deviation;
 
 		// Should be able to provide deviation in control points 
 		// here
@@ -1051,10 +1049,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		++progress;
 
 	}
-
-
-	all_deviations.save(output_path + "/all_deviations.txt",arma::raw_ascii);
-
 
 }
 
@@ -1724,14 +1718,14 @@ void ShapeModelBezier::compute_shape_covariance_sqrt(){
 
 	this -> shape_covariance_sqrt = eig_vec * arma::diagmat(arma::sqrt(eig_val)) * eig_vec.t();
 
-	std::ofstream file("cov_mat.txt");
-	std::ofstream file_sqrt("sqrt.txt");
+	// std::ofstream file("cov_mat.txt");
+	// std::ofstream file_sqrt("sqrt.txt");
 
-	file.precision(15);
-	file_sqrt.precision(15);
+	// file.precision(15);
+	// file_sqrt.precision(15);
 
-	shape_covariance_arma.raw_print(file);
-	this -> shape_covariance_sqrt.raw_print(file_sqrt);
+	// shape_covariance_arma.raw_print(file);
+	// this -> shape_covariance_sqrt.raw_print(file_sqrt);
 
 }
 
