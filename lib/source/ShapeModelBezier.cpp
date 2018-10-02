@@ -513,7 +513,6 @@ void ShapeModelBezier::compute_all_statistics(){
 
 	this -> save_connectivity(connected_elements);
 
-
 	std::cout << "\n- Computing all statistics over the " << connected_elements.size() << " surface element combinations ...\n";
 
 	boost::progress_display progress(connected_elements.size()) ;
@@ -1041,9 +1040,9 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		// saving shape model
 
 		if (iter < 20){
-			this -> take_and_save_slice(2,output_path + "/slice_z_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(1,output_path + "/slice_y_" + std::to_string(iter) + ".txt",0);
-			this -> take_and_save_slice(0,output_path + "/slice_x_" + std::to_string(iter) + ".txt",0);
+			this -> take_and_save_slice(2,output_path + "/slice_z_" + std::to_string(iter) + ".txt",0,deviation);
+			this -> take_and_save_slice(1,output_path + "/slice_y_" + std::to_string(iter) + ".txt",0,deviation);
+			this -> take_and_save_slice(0,output_path + "/slice_x_" + std::to_string(iter) + ".txt",0,deviation);
 			this -> save_to_obj(output_path + "/iter_" + std::to_string(iter) + ".obj");
 		}
 		++progress;
