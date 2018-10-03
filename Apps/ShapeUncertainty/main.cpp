@@ -98,20 +98,6 @@ int main(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	
 	start = std::chrono::system_clock::now();
 	bezier_shape.compute_all_statistics();

@@ -1059,8 +1059,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	}
 	
-	all_deviations.save("all_deviations.txt",arma::raw_ascii);
-
 }
 
 

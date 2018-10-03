@@ -7,11 +7,12 @@
 #include <set>
 #include <map>
 #include <limits>
-#include "OMP_flags.hpp"
-#include "FrameGraph.hpp"
-#include "ControlPoint.hpp"
-#include "KDTreeControlPoints.hpp"
-#include "KDTreeShape.hpp"
+#include <OMP_flags.hpp>
+#include <FrameGraph.hpp>
+#include <ControlPoint.hpp>
+#include <KDTreeControlPoints.hpp>
+#include <KDTreeShape.hpp>
+#include <PointCloud.hpp>
 
 class Ray ;
 class Element;

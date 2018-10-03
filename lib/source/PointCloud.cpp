@@ -5,16 +5,16 @@
 #define PC_DEBUG_FLAG 1
 
 
-template <class T> PointCloud<T>::PointCloud(){
+template <class PointType> PointCloud<PointType>::PointCloud(){
 }
 
-template <class T> PointCloud<T>::PointCloud(int size){
+template <class PointType> PointCloud<PointType>::PointCloud(int size){
 this -> points.resize(size);
 }
 
 
-template <class T> 
-PointCloud<T>::PointCloud(const std::vector< T > & points) {
+template <class PointType> 
+PointCloud<PointType>::PointCloud(const std::vector< PointType > & points) {
 
 	this -> points.clear();
 	// The valid measurements used to form the point cloud are extracted
@@ -27,7 +27,7 @@ PointCloud<T>::PointCloud(const std::vector< T > & points) {
 
 }
 
-template <class T> int PointCloud<T>::get_closest_point(const arma::vec & test_point) const {
+template <class PointType> int PointCloud<PointType>::get_closest_point(const arma::vec & test_point) const {
 
 double distance = std::numeric_limits<double>::infinity();
 int closest_point_index = -1;
@@ -42,7 +42,7 @@ return closest_point_index;
 }
 
 
-template <class T> std::map<double,int > PointCloud<T>::get_closest_N_points(const arma::vec & test_point, 
+template <class PointType> std::map<double,int > PointCloud<PointType>::get_closest_N_points(const arma::vec & test_point, 
 const unsigned int & N) const {
 
 	std::map<double,int > closest_points;
@@ -54,12 +54,12 @@ const unsigned int & N) const {
 
 }
 
-template <class T> std::string PointCloud<T>::get_label() const{
+template <class PointType> std::string PointCloud<PointType>::get_label() const{
 return this -> label;
 }
 
 
-template <class T> PointCloud<T>::PointCloud(std::vector< std::shared_ptr<PointCloud< T > > > & pcs,int points_retained){
+template <class PointType> PointCloud<PointType>::PointCloud(std::vector< std::shared_ptr<PointCloud< PointType > > > & pcs,int points_retained){
 
 this -> points.clear();
 double downsampling_factor = 1;
@@ -91,28 +91,28 @@ for (unsigned int i = 0; i < pcs.size();++i){
 }
 
 
-template <class T> const T & PointCloud<T>::get_point(unsigned int index) const{
+template <class PointType> const PointType & PointCloud<PointType>::get_point(unsigned int index) const{
 return this -> points[index];
 }
 
-template <class T>  T & PointCloud<T>::get_point(unsigned int index) {
+template <class PointType>  PointType & PointCloud<PointType>::get_point(unsigned int index) {
 return this -> points[index];
 }
 
 
-template <class T>  unsigned int PointCloud<T>::size() const{
+template <class PointType>  unsigned int PointCloud<PointType>::size() const{
 return this -> points.size();
 }
 
 
-template <class T> std::vector<int> PointCloud<T>::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
+template <class PointType> std::vector<int> PointCloud<PointType>::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
 std::vector< int > neighbors_indices;
 this -> kdt -> radius_point_search(test_point,this -> kdt,radius,neighbors_indices);
 return neighbors_indices;
 }
 
 
-template <class T> void PointCloud<T>::push_back(const T & point){
+template <class PointType> void PointCloud<PointType>::push_back(const PointType & point){
 this -> points.push_back(point);
 }
 
@@ -193,8 +193,8 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 }
 
 
-template <class T> 
-void PointCloud<T>::build_kdtree(){
+template <class PointType> 
+void PointCloud<PointType>::build_kdtree(){
 
 	std::vector<int> indices;
 	for (int i =0; i < this -> size(); ++i){
@@ -203,14 +203,14 @@ void PointCloud<T>::build_kdtree(){
 		}
 	}
 
-	this -> kdt = std::make_shared< KDTree<T> >(KDTree< T> (this));
+	this -> kdt = std::make_shared< KDTree<PointType> >(KDTree< PointType> (this));
 	this -> kdt -> build(indices,0);
 }
 
 
 
-template <class T> 
-T & PointCloud<T>::operator[] (const int index){
+template <class PointType> 
+PointType & PointCloud<PointType>::operator[] (const int index){
 	return this -> points[index];
 }
 
