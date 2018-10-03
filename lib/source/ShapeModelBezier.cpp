@@ -433,7 +433,6 @@ const std::vector<int> & ShapeModelBezier::get_element_control_points(int e) con
 
 void ShapeModelBezier::find_correlated_elements(){
 
-
 	this -> correlated_elements.clear();
 	this -> correlated_elements.resize(this -> get_NElements());
 
@@ -448,7 +447,6 @@ void ShapeModelBezier::find_correlated_elements(){
 
 			const Bezier & patch_f = this -> elements[f];
 			const std::vector<int> & patch_f_control_points = patch_f.get_control_points();
-
 
 			for (unsigned int i = 0; i < patch_e_control_points.size(); ++i){
 				int i_g = patch_e_control_points[i];
@@ -997,16 +995,21 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	this -> save_to_obj(output_path + "/iter_baseline.obj");
 
-
 	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
-	
-	// #pragma omp parallel for
+
 	for (int iter = 0; iter < N; ++iter){
-
-
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
 
 		all_deviations.col(iter) = deviation;
+	}
+
+	
+	#pragma omp parallel for
+	for (int iter = 0; iter < N; ++iter){
+
+
+		const arma::vec & deviation = all_deviations.col(iter);
+
 		// Should be able to provide deviation in control points 
 		// here
 		const double volume = this -> compute_volume(deviation);
@@ -3184,7 +3187,7 @@ void ShapeModelBezier::elevate_degree(){
 				std::set<int> ownership;
 				std::tuple<int,int,int> inserted_point_tuple_original_element = forw_after_elevation[i];
 
-								
+
 
 				if (std::get<0>(forw_after_elevation[i]) == 0 || std::get<1>(forw_after_elevation[i]) == 0 || std::get<2>(forw_after_elevation[i]) == 0 ){
 					// edge point, things get complicated
