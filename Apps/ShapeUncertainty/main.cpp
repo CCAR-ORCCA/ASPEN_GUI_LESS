@@ -93,11 +93,6 @@ int main(){
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	
 	std::cout << "\nDone running Monte Carlo in " << elapsed_seconds.count() << " s\n";
-
-	results_volume.save("volume_1.txt",arma::raw_ascii);
-
-
-
 	
 	start = std::chrono::system_clock::now();
 	bezier_shape.compute_all_statistics();
@@ -120,7 +115,6 @@ int main(){
 	auto MI_cov = bezier_shape.get_P_MI();
 	auto dims_cov = bezier_shape.get_P_dims();
 
-	results_volume.save("volume_2.txt",arma::raw_ascii);
 
 
 	// Saving shape results
@@ -150,7 +144,6 @@ int main(){
 	moments.rows(0,2) = eig_val;
 	moments(3) = volume;
 
-	results_volume.save("volume_3.txt",arma::raw_ascii);
 
 	
 	mrp = RBK::dcm_to_mrp(eig_vec);
@@ -189,7 +182,6 @@ int main(){
 	mrp_cov.save(output_dir + "/mrp_cov.txt",arma::raw_ascii);
 
 
-	results_volume.save("volume_4.txt",arma::raw_ascii);
 
 
 
@@ -249,7 +241,6 @@ int main(){
 	cov_MI_mc *= 1./(results_MI.n_cols-1);
 	cov_dims_mc *= 1./(results_dims.n_cols-1);
 
-	results_volume.save("volume_5.txt",arma::raw_ascii);
 
 
 	std::cout << "######***** Volume *****######"<< std::endl;
@@ -336,7 +327,6 @@ int main(){
 	std::cout << "Deviation : " << std::endl << (cov_mrp_mc - mrp_cov)/cov_mrp_mc * 100 << " %" << std::endl << std::endl;
 
 
-	results_volume.save("volume_6.txt",arma::raw_ascii);
 
 	
 	arma::vec sd_volume_mc = {arma::stddev(results_volume,1)};
@@ -380,7 +370,6 @@ int main(){
 
 
 
-	results_volume.save("volume_6.txt",arma::raw_ascii);
 
 
 
