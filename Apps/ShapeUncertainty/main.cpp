@@ -61,7 +61,7 @@ int main(){
 	bezier_shape.compute_shape_covariance_sqrt();
 
 
-	
+
 
 	std::cout << "\nRunning Monte Carlo: " << std::endl;
 
@@ -71,7 +71,7 @@ int main(){
 	arma::mat results_cm,results_inertia,results_moments,
 	results_mrp,results_lambda_I,results_eigenvectors,results_Evectors,results_Y,results_MI,
 	results_dims;
-	
+	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
 	bezier_shape.run_monte_carlo(N,
@@ -90,7 +90,7 @@ int main(){
 
 	end = std::chrono::system_clock::now();
 
-	elapsed_seconds = end - start;
+	std::chrono::duration<double> elapsed_seconds = end - start;
 	
 	std::cout << "\nDone running Monte Carlo in " << elapsed_seconds.count() << " s\n";
 
@@ -112,13 +112,11 @@ int main(){
 
 
 
-
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
+	
 	start = std::chrono::system_clock::now();
 	bezier_shape.compute_all_statistics();
 	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
+	elapsed_seconds = end - start;
 	std::cout << "\n Elapsed time computing all covariances : " << elapsed_seconds.count() << "s\n\n";
 
 	
@@ -162,6 +160,7 @@ int main(){
 	arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
 	moments.rows(0,2) = eig_val;
 	moments(3) = volume;
+
 
 	
 	mrp = RBK::dcm_to_mrp(eig_vec);

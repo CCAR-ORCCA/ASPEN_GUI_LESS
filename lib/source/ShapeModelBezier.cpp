@@ -289,9 +289,10 @@ arma::vec::fixed<3> ShapeModelBezier::compute_center_of_mass(const double & volu
 			int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
 			int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
 
-			const ControlPoint & Ci = this -> control_points[patch.get_control_point(i,j)];
-			
 			int i_g = patch.get_control_point(i,j);
+
+			const ControlPoint & Ci = this -> control_points[i_g];
+			
 			
 			arma::vec result = (Ci . get_point_coordinates() 
 				+ deviation.rows(3 * i_g,3 * i_g + 2)) * patch . triple_product(k,l,m,p,q,r,deviation);
@@ -996,12 +997,16 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	this -> save_to_obj(output_path + "/iter_baseline.obj");
 
+	arma::mat all_deviations (3 * this -> get_NControlPoints(),N);
+
+
+
 	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
 
 
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
-
+		all_deviations.col(iter) = deviation;
 		// Should be able to provide deviation in control points 
 		// here
 		const double volume = this -> compute_volume(deviation);
@@ -1049,6 +1054,9 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		++progress;
 
 	}
+
+
+	all_deviations.save(output_path + "/all_deviations.txt",arma::raw_ascii);
 
 }
 
