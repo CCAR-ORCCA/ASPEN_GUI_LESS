@@ -996,7 +996,7 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
 
-	std::cout << "Drawing random deviations..."
+	std::cout << "Drawing random deviations...\n";
 	boost::progress_display_deviations progress(N) ;
 
 	for (int iter = 0; iter < N; ++iter){
