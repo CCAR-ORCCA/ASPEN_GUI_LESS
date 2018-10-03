@@ -974,7 +974,6 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	arma::arma_rng::set_seed(0);
 
-	boost::progress_display progress(N) ;
 	results_volume = arma::zeros<arma::vec>(N);
 	results_cm = arma::zeros<arma::mat>(3,N);
 	results_inertia = arma::zeros<arma::mat>(6,N);
@@ -997,16 +996,18 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
 
-	for (int iter = 0; iter < N; ++iter){
-		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
+	std::cout << "Drawing random deviations..."
+	boost::progress_display_deviations progress(N) ;
 
+	for (int iter = 0; iter < N; ++iter){
+		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());	
 		all_deviations.col(iter) = deviation;
+		++progress_display_deviations;
 	}
 
-	
+	boost::progress_display progress(N) ;
 	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
-
 
 		const arma::vec & deviation = all_deviations.col(iter);
 
