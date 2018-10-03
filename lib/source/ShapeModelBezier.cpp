@@ -999,7 +999,8 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 
 	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
-	#pragma omp parallel for
+	
+	// #pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
 
 
