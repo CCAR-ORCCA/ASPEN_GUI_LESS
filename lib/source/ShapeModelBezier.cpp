@@ -997,15 +997,14 @@ void ShapeModelBezier::run_monte_carlo(int N,
 
 	this -> save_to_obj(output_path + "/iter_baseline.obj");
 
-	arma::mat all_deviations (3 * this -> get_NControlPoints(),N);
 
-
-
+	arma::mat all_deviations(3 * this -> get_NControlPoints(),N);
 	#pragma omp parallel for
 	for (int iter = 0; iter < N; ++iter){
 
 
 		arma::vec deviation = this -> shape_covariance_sqrt * arma::randn<arma::vec>(3 * this -> get_NControlPoints());
+
 		all_deviations.col(iter) = deviation;
 		// Should be able to provide deviation in control points 
 		// here
@@ -1054,9 +1053,8 @@ void ShapeModelBezier::run_monte_carlo(int N,
 		++progress;
 
 	}
-
-
-	all_deviations.save(output_path + "/all_deviations.txt",arma::raw_ascii);
+	
+	all_deviations.save("all_deviations.txt",arma::raw_ascii);
 
 }
 
