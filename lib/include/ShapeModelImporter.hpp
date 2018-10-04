@@ -6,9 +6,9 @@
 #include <armadillo>
 #include "omp.h"
 #include <boost/progress.hpp>
-
-class ShapeModelTri;
-class ShapeModelBezier;
+#include <ShapeModelTri.hpp>
+#include <ShapeModelBezier.hpp>
+#include <ControlPoint.hpp>
 
 
 
@@ -18,7 +18,7 @@ public:
 
 	static void load_obj_shape_model(std::string filename, 
 		double scaling_factor, bool as_is,
-		ShapeModelTri & shape_model);
+		ShapeModelTri<ControlPoint> & shape_model);
 
 	/**
 	Reads-in an .b file storing the bezier shape model info and sets the field of
@@ -27,7 +27,7 @@ public:
 	*/
 	static void load_bezier_shape_model(std::string filename, 
 		double scaling_factor, bool as_is,
-		ShapeModelBezier & shape_model);
+		ShapeModelBezier<ControlPoint> & shape_model);
 
 
 

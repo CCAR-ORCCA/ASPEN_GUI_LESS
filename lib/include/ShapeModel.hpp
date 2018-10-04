@@ -8,11 +8,12 @@
 #include <map>
 #include <limits>
 #include <OMP_flags.hpp>
+
 #include <FrameGraph.hpp>
-#include <ControlPoint.hpp>
-#include <KDTreeControlPoints.hpp>
-#include <KDTreeShape.hpp>
+// #include <KDTreeControlPoints.hpp>
+// #include <KDTreeShape.hpp>
 #include <PointCloud.hpp>
+
 
 class Ray ;
 class Element;
@@ -22,6 +23,7 @@ class KDTreeShape;
 Declaration of the ShapeModel class. Base class for 
 the implementation of shape model
 */
+template <class PointType>
 class ShapeModel {
 
 public:
@@ -123,7 +125,7 @@ public:
 	std::string get_ref_frame_name() const;
 
 
-	ControlPoint & get_control_point(unsigned int i) ;
+	PointType & get_control_point(unsigned int i) ;
 	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i) const;
 
 	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const = 0;
@@ -132,9 +134,9 @@ public:
 	Pointer to the shape model's control points
 	@return vertices pointer to the control points
 	*/
-	const std::vector<ControlPoint> & get_control_points() const;
+	const std::vector<PointType> & get_control_points() const;
 
-	unsigned int get_control_point_index(std::shared_ptr<ControlPoint> point) const;
+	unsigned int get_control_point_index(std::shared_ptr<PointType> point) const;
 
 	
 
@@ -150,7 +152,7 @@ public:
 	one
 	@param control_point pointer to the new control point to be inserted
 	*/
-	void add_control_point(ControlPoint & control_point);
+	void add_control_point(PointType & control_point);
 
 	virtual void clear() = 0;
 
@@ -173,12 +175,6 @@ public:
 	kd tree construction details
 	*/
 	void construct_kd_tree_control_points();
-
-	/**
-	Returns pointer to KDTreeControlPoints member.
-	@return pointer to KDTreeControlPoints
-	*/
-	std::shared_ptr<KDTreeControlPoints> get_KDTreeControlPoints() const ;
 
 	/**
 	Computes the surface area of the shape model
@@ -248,12 +244,12 @@ public:
 	@param Cp pointer to sixth point
 	*/
 	static void assemble_covariance(arma::mat & P,
-		const ControlPoint & Ci,
-		const ControlPoint & Cj,
-		const ControlPoint & Ck,
-		const ControlPoint & Cl,
-		const ControlPoint & Cm,
-		const ControlPoint & Cp);
+		const PointType & Ci,
+		const PointType & Cj,
+		const PointType & Ck,
+		const PointType & Cl,
+		const PointType & Cm,
+		const PointType & Cp);
 
 	/**
 	Builds the covariance of the provided control points
@@ -267,13 +263,13 @@ public:
 	@param Cq pointer to seventh point
 	*/
 	static void assemble_covariance(arma::mat & P,
-		const ControlPoint & Ci,
-		const ControlPoint & Cj,
-		const ControlPoint & Ck,
-		const ControlPoint & Cl,
-		const ControlPoint & Cm,
-		const ControlPoint & Cp,
-		const ControlPoint & Cq);
+		const PointType & Ci,
+		const PointType & Cj,
+		const PointType & Ck,
+		const PointType & Cl,
+		const PointType & Cm,
+		const PointType & Cp,
+		const PointType & Cq);
 
 
 	/**
@@ -289,14 +285,14 @@ public:
 	@param Cq pointer to eigth point
 	*/
 	static void assemble_covariance(arma::mat & P,
-		const ControlPoint & Ci,
-		const ControlPoint & Cj,
-		const ControlPoint & Ck,
-		const ControlPoint & Cl,
-		const ControlPoint & Cm,
-		const ControlPoint & Cp,
-		const ControlPoint & Cq,
-		const ControlPoint & Cr);
+		const PointType & Ci,
+		const PointType & Cj,
+		const PointType & Ck,
+		const PointType & Cl,
+		const PointType & Cm,
+		const PointType & Cp,
+		const PointType & Cq,
+		const PointType & Cr);
 
 
 	/**
@@ -311,16 +307,14 @@ public:
 
 	virtual const std::vector<int> & get_element_control_points(int e) const = 0;
 
-
-
 protected:
 
 	std::vector<std::set<int> > edges;
-	std::vector<ControlPoint> control_points;
-	std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;
+	std::vector<PointType> control_points;
+	// std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;
 	std::shared_ptr<KDTreeShape> kdt_facet = nullptr;
 
-	std::map<std::shared_ptr<ControlPoint> ,unsigned int> pointer_to_global_index;
+	std::map<std::shared_ptr<PointType> ,unsigned int> pointer_to_global_index;
 
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;

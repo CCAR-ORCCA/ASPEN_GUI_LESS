@@ -15,7 +15,8 @@
 
 
 class Ray;
-class ShapeModel;
+class ControlPoint;
+template<class PointType> class ShapeModel;
 class FrameGraph;
 class PC;
 class Facet;
@@ -151,7 +152,7 @@ public:
 	default is skip_factor == 1 (all pixels are used)
 	*/
 
-	void send_flash(ShapeModel * shape_model,bool add_noise,double skip_factor = 1) ;
+	void send_flash(ShapeModel<ControlPoint> * shape_model,bool add_noise,double skip_factor = 1) ;
 
 
 	/**
@@ -181,7 +182,7 @@ public:
 	Accessor to the shape model currently observed
 	@return pointer to shape model currently observed
 	*/
-	ShapeModel * get_shape_model();
+	ShapeModel<ControlPoint> * get_shape_model();
 
 	FrameGraph * get_frame_graph();
 
@@ -208,7 +209,7 @@ protected:
 	FrameGraph * frame_graph;
 	std::string ref_frame_name;
 
-	ShapeModel * shape_model = nullptr;
+	ShapeModel<ControlPoint> * shape_model = nullptr;
 	std::vector<std::shared_ptr<Ray> > focal_plane;
 
 	std::vector<arma::vec> surface_measurements;

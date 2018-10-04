@@ -1,9 +1,9 @@
-#include "Lidar.hpp"
-#include "Ray.hpp"
-#include "FrameGraph.hpp"
-#include "ShapeModel.hpp"
-#include "Facet.hpp"
-
+#include <Lidar.hpp>
+#include <Ray.hpp>
+#include <FrameGraph.hpp>
+#include <ShapeModel.hpp>
+#include <Facet.hpp>
+#include <ControlPoint.hpp>
 
 
 
@@ -92,7 +92,7 @@ double Lidar::get_size_y() const {
 }
 
 
-void Lidar::send_flash(ShapeModel * shape_model,bool add_noise,double skipping_factor) {
+void Lidar::send_flash(ShapeModel<ControlPoint> * shape_model,bool add_noise,double skipping_factor) {
 
 	unsigned int resolution = this -> y_res * this -> z_res;
 
@@ -146,7 +146,7 @@ void Lidar::send_flash(ShapeModel * shape_model,bool add_noise,double skipping_f
 
 
 
-ShapeModel * Lidar::get_shape_model() {
+ShapeModel<ControlPoint> * Lidar::get_shape_model() {
 	return this -> shape_model;
 }
 

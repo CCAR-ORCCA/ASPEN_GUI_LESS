@@ -10,10 +10,9 @@
 #include <map>
 #include <limits>
 #include <cassert>
+#include <ShapeModel.hpp>
+#include <Facet.hpp>
 
-#include "ShapeModel.hpp"
-
-class Facet;
 class Ray;
 
 
@@ -21,7 +20,8 @@ class Ray;
 Declaration of the ShapeModelTri class. Specialized
 implementation storing an explicit facet/vertex shape model
 */
-class ShapeModelTri : public ShapeModel {
+template <class PointType>
+class ShapeModelTri : public ShapeModel<PointType> {
 
 public:
 
@@ -33,7 +33,7 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	*/
 	ShapeModelTri(std::string ref_frame_name,
-		FrameGraph * frame_graph) : ShapeModel(ref_frame_name,frame_graph){};
+		FrameGraph * frame_graph) : ShapeModel<PointType>(ref_frame_name,frame_graph){};
 
 
 	/**

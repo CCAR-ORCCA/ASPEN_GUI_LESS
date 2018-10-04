@@ -3,7 +3,7 @@
 #include "ShapeModel.hpp"
 
 
-Element::Element(std::vector<int> & control_points,ShapeModel * owning_shape) {
+Element::Element(std::vector<int> & control_points,ShapeModel<ControlPoint> * owning_shape) {
 	this -> control_points = control_points;
 	this -> owning_shape = owning_shape;
 

@@ -4,7 +4,8 @@
 
 #include <vtkMath.h>
 #include <cassert>
-Bezier::Bezier( std::vector<int> vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
+
+Bezier::Bezier( std::vector<int> vertices,ShapeModel<ControlPoint> * owning_shape) : Element(vertices,owning_shape){
 
 	double n = (-3 + std::sqrt(9 - 8 * (1 - vertices.size() )))/2;
 	double intpart;

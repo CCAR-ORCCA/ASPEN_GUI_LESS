@@ -6,7 +6,9 @@
 #include <memory>
 #include <set>
 
+template <class PointType> 
 class ShapeModel;
+
 class ControlPoint;
 class Element {
 
@@ -15,7 +17,7 @@ public:
 	/**
 	Constructor
 	*/
-	Element(std::vector<int> & control_points,ShapeModel * owning_shape);
+	Element(std::vector<int> & control_points,ShapeModel<ControlPoint> * owning_shape);
 
 	/**
 	Get neighbors
@@ -102,7 +104,7 @@ protected:
 	double area;
 	int global_index;
 
-	ShapeModel * owning_shape;
+	ShapeModel<ControlPoint> * owning_shape;
 };
 
 

@@ -7,7 +7,9 @@
 #pragma omp declare reduction (+ : arma::vec::fixed<3> : omp_out += omp_in) \
 initializer( omp_priv = arma::zeros<arma::vec>(3) )
 
-void ShapeModelTri::update_mass_properties() {
+
+template <class PointType>
+void ShapeModelTri<PointType>::update_mass_properties() {
 
 
 
@@ -32,12 +34,13 @@ void ShapeModelTri::update_mass_properties() {
 	this -> compute_inertia();
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "elapsed time in ShapeModelTri::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
+	std::cout << "elapsed time in ShapeModelTri<PointType>::update_mass_properties: " << elapsed_seconds.count() << " s"<< std::endl;
 	
 
 }
 
-void ShapeModelTri::update_facets() {
+template <class PointType>
+void ShapeModelTri<PointType>::update_facets() {
 
 	for (auto & facet : this -> elements) {
 		facet.update();
@@ -45,7 +48,8 @@ void ShapeModelTri::update_facets() {
 
 }
 
-void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
+template <class PointType>
+void ShapeModelTri<PointType>::update_facets(std::set<Facet *> & elements) {
 
 	for (auto & facet : elements) {
 		facet -> update();
@@ -53,12 +57,14 @@ void ShapeModelTri::update_facets(std::set<Facet *> & elements) {
 
 }
 
-
-void ShapeModelTri::set_elements(std::vector<Facet> elements){
+template <class PointType>
+void ShapeModelTri<PointType>::set_elements(std::vector<Facet> elements){
 	this -> elements = elements;
 }
 
-void ShapeModelTri::clear(){
+
+template <class PointType>
+void ShapeModelTri<PointType>::clear(){
 	this -> control_points.clear();
 	this -> elements.clear();
 
@@ -67,45 +73,52 @@ void ShapeModelTri::clear(){
 
 
 
-
-const std::vector<int> & ShapeModelTri::get_element_control_points(int e) const{
+template <class PointType>
+const std::vector<int> & ShapeModelTri<PointType>::get_element_control_points(int e) const{
 	return this -> elements[e].get_control_points();
 }
 
 
-bool ShapeModelTri::ray_trace(Ray * ray){
+template <class PointType>
+bool ShapeModelTri<PointType>::ray_trace(Ray * ray){
 
-	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
+	throw(std::runtime_error("To implement !"));
+
+	return false;
+	// return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
 }
 
-
-unsigned int ShapeModelTri::get_NElements() const {
+template <class PointType>
+unsigned int ShapeModelTri<PointType>::get_NElements() const {
 	return this -> elements . size();
 }
 
+template <class PointType>
+void ShapeModelTri<PointType>::construct_kd_tree_shape() {
 
-void ShapeModelTri::construct_kd_tree_shape() {
 
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
+	throw(std::runtime_error("To implement !"));
+	// std::chrono::time_point<std::chrono::system_clock> start, end;
+	// start = std::chrono::system_clock::now();
 
-	std::vector<int> element_indices;
-	for (int i = 0; i < this -> elements.size(); ++i){
-		element_indices.push_back(i);
-	}
+	// std::vector<int> element_indices;
+	// for (int i = 0; i < this -> elements.size(); ++i){
+	// 	element_indices.push_back(i);
+	// }
 
-	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this));
-	this -> kdt_facet -> build(element_indices, 0);
+	// this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this));
+	// this -> kdt_facet -> build(element_indices, 0);
 
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
+	// end = std::chrono::system_clock::now();
+	// std::chrono::duration<double> elapsed_seconds = end - start;
 
-	std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	// std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }
 
 
-arma::vec::fixed<3> ShapeModelTri::get_control_point_normal_coordinates(unsigned int i) const{
+template <class PointType>
+arma::vec::fixed<3> ShapeModelTri<PointType>::get_control_point_normal_coordinates(unsigned int i) const{
 
 	auto owning_elements = this -> control_points[i].get_owning_elements();
 	arma::vec::fixed<3> n = {0,0,0};
@@ -118,14 +131,14 @@ arma::vec::fixed<3> ShapeModelTri::get_control_point_normal_coordinates(unsigned
 
 }
 
-
-const Facet & ShapeModelTri::get_element(int e) const{
+template <class PointType>
+const Facet & ShapeModelTri<PointType>::get_element(int e) const{
 	return this -> elements[e];
 }
 
 
-
-bool ShapeModelTri::contains(double * point, double tol ) {
+template <class PointType>
+bool ShapeModelTri<PointType>::contains(double * point, double tol ) {
 
 	double lagrangian = 0;
 
@@ -196,8 +209,8 @@ bool ShapeModelTri::contains(double * point, double tol ) {
 
 }
 
-
-void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const{
+template <class PointType>
+void ShapeModelTri<PointType>::random_sampling(unsigned int N,arma::mat & points, arma::mat & normals) const{
 
 	std::cout << " - Sampling surface points from the true shape model ...\n";
 
@@ -241,8 +254,8 @@ void ShapeModelTri::random_sampling(unsigned int N,arma::mat & points, arma::mat
 
 
 
-
-void ShapeModelTri::save(std::string path,const arma::vec & X,const arma::mat & M) const {
+template <class PointType>
+void ShapeModelTri<PointType>::save(std::string path,const arma::vec & X,const arma::mat & M) const {
 	std::ofstream shape_file;
 	shape_file.open(path);
 
@@ -282,8 +295,8 @@ void ShapeModelTri::save(std::string path,const arma::vec & X,const arma::mat & 
 
 
 
-
-void ShapeModelTri::check_normals_consistency(double tol) const {
+template <class PointType>
+void ShapeModelTri<PointType>::check_normals_consistency(double tol) const {
 	double facet_area_average = 0;
 
 	arma::vec surface_sum= arma::zeros<arma::vec>(3);
@@ -306,8 +319,8 @@ void ShapeModelTri::check_normals_consistency(double tol) const {
 }
 
 
-
-void ShapeModelTri::compute_volume() {
+template <class PointType>
+void ShapeModelTri<PointType>::compute_volume() {
 	double volume = 0;
 
 	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
@@ -329,8 +342,8 @@ void ShapeModelTri::compute_volume() {
 
 
 
-
-void ShapeModelTri::compute_center_of_mass() {
+template <class PointType>
+void ShapeModelTri<PointType>::compute_center_of_mass() {
 	
 	double volume = this -> get_volume();
 	double cx = 0;
@@ -365,8 +378,8 @@ void ShapeModelTri::compute_center_of_mass() {
 
 }
 
-
-void ShapeModelTri::compute_inertia() {
+template <class PointType>
+void ShapeModelTri<PointType>::compute_inertia() {
 
 
 	double P_xx = 0;
@@ -472,8 +485,8 @@ void ShapeModelTri::compute_inertia() {
 
 
 
-
-void ShapeModelTri::compute_surface_area() {
+template <class PointType>
+void ShapeModelTri<PointType>::compute_surface_area() {
 	double surface_area = 0;
 
 	#pragma omp parallel for reduction(+:surface_area) if (USE_OMP_SHAPE_MODEL)
@@ -493,6 +506,7 @@ void ShapeModelTri::compute_surface_area() {
 
 
 
+template class ShapeModelTri<ControlPoint>;
 
 
 

@@ -6,6 +6,8 @@
 #include "Lidar.hpp"
 #include "Facet.hpp"
 #include "Element.hpp"
+#include "ControlPoint.hpp"
+
 
 
 Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
@@ -117,7 +119,7 @@ void Ray::set_guess (int guess){
 	this -> guess = guess;
 }
 
-void Ray::reset(ShapeModel * shape_model) {
+void Ray::reset(ShapeModel<ControlPoint> * shape_model) {
 
 	this -> true_range = std::numeric_limits<double>::infinity();
 	this -> hit_element = -1;

@@ -1,11 +1,11 @@
 #include "BBox.hpp"
 #include <armadillo>
-#include "Element.hpp"
 #include "ShapeModel.hpp"
+#include "Element.hpp"
 
 BBox::BBox(){};
 
-BBox::BBox(ShapeModel * owning_shape) {
+BBox::BBox(ShapeModel<ControlPoint> * owning_shape) {
 	this -> owning_shape = owning_shape;
 }
 
@@ -80,7 +80,7 @@ void BBox::update(int element_index) {
 
 
 
-void BBox::set_owning_shape(ShapeModel * owning_shape){
+void BBox::set_owning_shape(ShapeModel<ControlPoint>  * owning_shape){
 	this -> owning_shape = owning_shape;
 }
 

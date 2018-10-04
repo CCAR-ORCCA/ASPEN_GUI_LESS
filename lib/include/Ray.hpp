@@ -7,7 +7,8 @@
 class Lidar;
 class Facet;
 class Element;
-class ShapeModel;
+template <class PointType> class ShapeModel;
+class ControlPoint;
 class Bezier;
 class Lidar;
 
@@ -61,7 +62,7 @@ public:
 	to a default state, accounting for the attitude of the target
 	@param shape_model pointer to shape model about to be flashed by this ray
 	*/
-	void reset(ShapeModel * shape_model) ;
+	void reset(ShapeModel<ControlPoint> * shape_model) ;
 
 
 	/**

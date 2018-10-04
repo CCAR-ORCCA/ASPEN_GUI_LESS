@@ -3,7 +3,7 @@
 #include "Facet.hpp"
 #include "ShapeModel.hpp"
 
-ControlPoint::ControlPoint(ShapeModel * owning_shape){
+ControlPoint::ControlPoint(ShapeModel<ControlPoint> * owning_shape){
 	this -> owning_shape = owning_shape;
 }
 

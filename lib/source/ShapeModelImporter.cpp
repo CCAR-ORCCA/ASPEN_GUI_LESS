@@ -1,15 +1,14 @@
-#include "ShapeModelImporter.hpp"
-
-#include "ShapeModelTri.hpp"
-#include "ShapeModelBezier.hpp"
+#include <ShapeModelImporter.hpp>
+#include <ShapeModelTri.hpp>
+#include <ShapeModelBezier.hpp>
+#include <Facet.hpp>
+#include <Bezier.hpp>
 
 
 
 void ShapeModelImporter::load_bezier_shape_model(std::string filename, 
 	double scaling_factor, bool as_is,
-	ShapeModelBezier & shape_model) {
-
-	shape_model.clear();
+	ShapeModelBezier<ControlPoint> & shape_model) {
 
 	std::ifstream ifs( filename);
 
@@ -145,7 +144,7 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 
 
 void ShapeModelImporter::load_obj_shape_model(std::string filename, double scaling_factor, bool as_is,
-	ShapeModelTri & shape_model) {
+	ShapeModelTri<ControlPoint> & shape_model) {
 
 	std::ifstream ifs( filename);
 

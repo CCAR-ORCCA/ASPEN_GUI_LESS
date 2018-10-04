@@ -1,12 +1,20 @@
 #ifndef HEADER_DYNAMICANALYSES
 #define HEADER_DYNAMICANALYSES
 
-#include "ShapeModelTri.hpp"
 #include <armadillo>
 #include <boost/progress.hpp>
 #include "omp.h"
 #include "OMP_flags.hpp"
 
+
+template <class PointType> 
+class ShapeModel;
+
+
+template <class PointType> 
+class ShapeModelTri;
+
+class ControlPoint;
 class DynamicAnalyses {
 
 public:
@@ -15,7 +23,7 @@ public:
 	Creates an instance of a DynamicalAnalyses object
 	@param shape_model Pointer to shape model for which analysis must be conducted
 	*/
-	DynamicAnalyses(ShapeModelTri * shape_model);
+	DynamicAnalyses(ShapeModelTri<ControlPoint> * shape_model);
 
 	/**
 	Evaluates the acceleration due to gravity at the provided point using a point mass model
@@ -77,7 +85,7 @@ public:
 
 protected:
 
-	ShapeModelTri * shape_model;
+	ShapeModelTri<ControlPoint> * shape_model;
 
 	void GetBnmNormalizedExterior(int n_degree,
 		arma::mat & b_bar_real,

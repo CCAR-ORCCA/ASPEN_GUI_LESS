@@ -2,10 +2,18 @@
 #define HEADER_ARGS
 
 #include "FrameGraph.hpp"
-#include "ShapeModelTri.hpp"
 #include "DynamicAnalyses.hpp"
 #include "Lidar.hpp"
 #include <SBGATSphericalHarmo.hpp>
+
+
+
+template <class PointType> 
+class ShapeModel;
+
+template <class PointType> 
+class ShapeModelTri;
+
 
 class Args {
 
@@ -15,11 +23,13 @@ public:
 		this -> frame_graph = frame_graph;
 	}
 
-	void set_estimated_shape_model(ShapeModelTri * shape_model) {
+
+
+	void set_estimated_shape_model(ShapeModel<ControlPoint> * shape_model) {
 		this -> estimated_shape_model = shape_model;
 	}
 
-	void set_true_shape_model(ShapeModelTri * shape_model) {
+	void set_true_shape_model(ShapeModelTri<ControlPoint> * shape_model) {
 		this -> true_shape_model = shape_model;
 	}
 
@@ -31,15 +41,12 @@ public:
 		return this -> P_hat;
 	}
 
-	void set_estimated_shape_model(ShapeModel * shape_model) {
-		this -> estimated_shape_model = shape_model;
-	}
 
-	ShapeModelTri * get_true_shape_model() const {
+	ShapeModelTri<ControlPoint> * get_true_shape_model() const {
 		return this -> true_shape_model;
 	}
 
-	ShapeModel * get_estimated_shape_model() const {
+	ShapeModel<ControlPoint> * get_estimated_shape_model() const {
 		return this -> estimated_shape_model;
 	}
 
@@ -395,8 +402,8 @@ protected:
 	bool use_consistency_test = false;
 
 	FrameGraph * frame_graph;
-	ShapeModel * estimated_shape_model;
-	ShapeModelTri * true_shape_model;
+	ShapeModel<ControlPoint> * estimated_shape_model;
+	ShapeModelTri<ControlPoint> * true_shape_model;
 
 	DynamicAnalyses * dyn_analyses;
 	Lidar * lidar;

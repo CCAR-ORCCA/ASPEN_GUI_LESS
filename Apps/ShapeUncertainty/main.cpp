@@ -8,7 +8,6 @@
 
 
 #include <chrono>
-
 #include <armadillo>
 
 
@@ -31,10 +30,10 @@ int main(){
 	std::cout << "Monte Carlo Draws : " << N_monte_carlo << std::endl;
 
 	FrameGraph frame_graph;
-	ShapeModelTri tri_shape("", &frame_graph);
+	ShapeModelTri<ControlPoint> tri_shape("", &frame_graph);
 
 	ShapeModelImporter::load_obj_shape_model(path_shape, 1, false,tri_shape);
-	ShapeModelBezier bezier_shape(tri_shape,"", &frame_graph);
+	ShapeModelBezier<ControlPoint> bezier_shape(tri_shape,"", &frame_graph);
 
 	std::cout << "\nVolume (km^3): \n";
 	std::cout << tri_shape.get_volume() << " / " << bezier_shape.get_volume() << std::endl;
@@ -140,7 +139,7 @@ int main(){
 	I = {I_C(0,0),I_C(1,1),I_C(2,2),I_C(0,1),I_C(0,2),I_C(1,2)};
 
 	arma::vec eig_val = arma::eig_sym(I_C);
-	arma::mat eig_vec =  ShapeModelBezier::get_principal_axes_stable(I_C);
+	arma::mat eig_vec =  ShapeModelBezier<ControlPoint>::get_principal_axes_stable(I_C);
 	moments.rows(0,2) = eig_val;
 	moments(3) = volume;
 
@@ -153,11 +152,11 @@ int main(){
 	eigenvectors.rows(6,8) = eig_vec.col(2);
 	
 
-	Evectors = ShapeModelBezier::get_E_vectors(I_C);
-	Y = ShapeModelBezier::get_Y(volume,I_C);
+	Evectors = ShapeModelBezier<ControlPoint>::get_E_vectors(I_C);
+	Y = ShapeModelBezier<ControlPoint>::get_Y(volume,I_C);
 	MI.rows(0,5) = I;
 	MI(6) = volume;
-	dims = ShapeModelBezier::get_dims(volume,I_C);
+	dims = ShapeModelBezier<ControlPoint>::get_dims(volume,I_C);
 
 
 	volume_vec.save(output_dir + "/volume.txt",arma::raw_ascii);

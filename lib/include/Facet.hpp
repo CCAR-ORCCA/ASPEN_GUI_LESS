@@ -10,6 +10,7 @@
 #include <set>
 
 class ControlPoint;
+template <class PointType> class ShapeModel;
 
 class Facet : public Element{
 
@@ -19,7 +20,7 @@ public:
 	Constructor
 	@param vertices pointer to vector storing the vertices owned by this facet
 	*/
-	Facet( std::vector<int> & vertices,ShapeModel * owning_shape);
+	Facet( std::vector<int> & vertices,ShapeModel<ControlPoint> * owning_shape);
 
 	/**
 	Get neighbors

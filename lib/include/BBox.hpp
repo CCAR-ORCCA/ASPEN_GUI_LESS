@@ -4,7 +4,10 @@
 #include <time.h>
 #include <vector>
 #include <string>
-class ShapeModel;
+#include <ShapeModel.hpp>
+
+class ControlPoint;
+
 /**
 Declaration of the BBox class, representing
 the bounding box of a KDTree node
@@ -13,9 +16,9 @@ class BBox {
 
 public:
 
-	BBox(ShapeModel * owning_shape);
+	BBox(ShapeModel<ControlPoint> * owning_shape);
 	BBox();
-	void set_owning_shape(ShapeModel * owning_shape);
+	void set_owning_shape(ShapeModel<ControlPoint> * owning_shape);
 
 	/**
 	Computes the bounding box boundaries
@@ -53,7 +56,7 @@ protected:
 	double ymin, ymax;
 	double zmin, zmax;
 
-	ShapeModel * owning_shape;
+	ShapeModel<ControlPoint> * owning_shape;
 
 
 

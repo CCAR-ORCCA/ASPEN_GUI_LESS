@@ -2,7 +2,7 @@
 #include <ShapeModel.hpp>
 #include <Facet.hpp>
 
-Facet::Facet(std::vector<int> & vertices,ShapeModel * owning_shape) : Element(vertices,owning_shape){
+Facet::Facet(std::vector<int> & vertices,ShapeModel<ControlPoint> * owning_shape) : Element(vertices,owning_shape){
 
 	if (control_points.size()!= 3){
 		throw(std::runtime_error("This facet was provided with " + std::to_string(vertices.size()) + " vertices"));

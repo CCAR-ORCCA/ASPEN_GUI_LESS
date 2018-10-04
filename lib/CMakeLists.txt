@@ -156,7 +156,7 @@ add_library(${LIB_NAME} SHARED
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
 	source/KDTree.cpp
-	source/KDTreeShape.cpp
+	# source/KDTreeShape.cpp
 	# source/KDTreeControlPoints.cpp
 	source/Lidar.cpp
 	# source/NavigationFilter.cpp

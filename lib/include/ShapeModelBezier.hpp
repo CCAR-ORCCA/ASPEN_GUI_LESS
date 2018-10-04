@@ -6,16 +6,14 @@
 
 #include "CustomReductions.hpp"
 
-
 #include <Eigen/Cholesky>
 #include <Eigen/Dense>
 #include <array>
+#include <ShapeModelTri.hpp>
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 
-class ShapeModelTri;
-
-
-class ShapeModelBezier : public ShapeModel{
+template <class PointType>
+class ShapeModelBezier : public ShapeModel<PointType>{
 
 
 public:
@@ -28,7 +26,7 @@ public:
 	reference frame relationships
 	@param frame_graph Pointer to the reference frame graph
 	*/
-	ShapeModelBezier(const ShapeModelTri & shape_model,
+	ShapeModelBezier(const ShapeModelTri<PointType> & shape_model,
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
@@ -41,7 +39,7 @@ public:
 	@param frame_graph Pointer to the reference frame graph
 	@param surface_noise use in patch covariance setting
 	*/
-	ShapeModelBezier(ShapeModelTri & shape_model,
+	ShapeModelBezier(ShapeModelTri<PointType> & shape_model,
 		std::string ref_frame_name,
 		FrameGraph * frame_graph,double surface_noise);
 

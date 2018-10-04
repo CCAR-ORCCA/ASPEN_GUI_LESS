@@ -1,6 +1,7 @@
 #include "DynamicAnalyses.hpp"
+#include <RigidBodyKinematics.hpp>
 
-DynamicAnalyses::DynamicAnalyses(ShapeModelTri * shape_model) {
+DynamicAnalyses::DynamicAnalyses(ShapeModelTri<ControlPoint> * shape_model) {
 	this -> shape_model = shape_model;
 }
 

@@ -7,13 +7,15 @@
 #include <set>
 
 class Element;
-class ShapeModel;
+class ControlPoint;
+template <class PointType> class ShapeModel;
+
 class ControlPoint {
 
 public:
 
 
-	ControlPoint(ShapeModel * owning_shape);
+	ControlPoint(ShapeModel<ControlPoint> * owning_shape);
 
 
 	/**
@@ -133,7 +135,7 @@ protected:
 	arma::vec deviation = arma::zeros<arma::vec>(3);
 
 	int global_index;
-	ShapeModel * owning_shape;
+	ShapeModel<ControlPoint> * owning_shape;
 
 };
 

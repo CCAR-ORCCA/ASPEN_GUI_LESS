@@ -1,32 +1,36 @@
 #include "ShapeModel.hpp"
 #include <chrono>
 #include <assert.h>
+#include <ControlPoint.hpp>
 
-ShapeModel::ShapeModel() {
+template <class PointType>
+ShapeModel<PointType>::ShapeModel() {
 
 }
 
-ShapeModel::ShapeModel(std::string ref_frame_name,
+
+template <class PointType>
+ShapeModel<PointType>::ShapeModel(std::string ref_frame_name,
 	FrameGraph * frame_graph) {
 	this -> frame_graph = frame_graph;
 	this -> ref_frame_name = ref_frame_name;
 }
-
-std::string ShapeModel::get_ref_frame_name() const {
+template <class PointType>
+std::string ShapeModel<PointType>::get_ref_frame_name() const {
 	return this -> ref_frame_name;
 }
-
-const arma::mat::fixed<3,3> & ShapeModel::get_inertia() const {
+template <class PointType>
+const arma::mat::fixed<3,3> & ShapeModel<PointType>::get_inertia() const {
 	return this -> inertia;
 
 }
-
-double ShapeModel::get_volume() const{
+template <class PointType>
+double ShapeModel<PointType>::get_volume() const{
 	return this -> volume;
 }
 
-
-arma::vec ShapeModel::get_inertia_param() const{
+template <class PointType>
+arma::vec ShapeModel<PointType>::get_inertia_param() const{
 
 	double I_xx = this -> inertia(0,0);
 	double I_yy = this -> inertia(1,1);
@@ -40,16 +44,18 @@ arma::vec ShapeModel::get_inertia_param() const{
 	return I;
 }
 
-double ShapeModel::get_surface_area() const {
+template <class PointType>
+double ShapeModel<PointType>::get_surface_area() const {
 	return this -> surface_area;
 }
 
-
-const arma::vec::fixed<3> & ShapeModel::get_center_of_mass() const{
+template <class PointType>
+const arma::vec::fixed<3> & ShapeModel<PointType>::get_center_of_mass() const{
 	return this -> cm;
 }
 
-void ShapeModel::shift_to_barycenter() {
+template <class PointType>
+void ShapeModel<PointType>::shift_to_barycenter() {
 
 	arma::vec x = - this -> get_center_of_mass();
 	this -> translate(x);
@@ -57,8 +63,8 @@ void ShapeModel::shift_to_barycenter() {
 	assert(arma::norm(this -> cm) < 1e-10);
 
 }
-
-void ShapeModel:: align_with_principal_axes() {
+template <class PointType>
+void ShapeModel<PointType>:: align_with_principal_axes() {
 
 
 	this -> compute_inertia();
@@ -79,60 +85,47 @@ void ShapeModel:: align_with_principal_axes() {
 
 
 
-void ShapeModel::construct_kd_tree_control_points() {
-
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
-
-	// this -> kdt_control_points = std::make_shared<KDTreeControlPoints>(KDTreeControlPoints());
-	// this -> kdt_control_points = this -> kdt_control_points -> build(this -> control_points, 0);
-
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
-
-
-	// std::cout << "\n Elapsed time during KDTree construction : " << elapsed_seconds.count() << "s\n\n";
-
-}
-
-void ShapeModel::set_ref_frame_name(std::string ref_frame_name) {
+template <class PointType>
+void ShapeModel<PointType>::set_ref_frame_name(std::string ref_frame_name) {
 
 	this -> ref_frame_name = ref_frame_name;
 }
 
-
-const std::vector<ControlPoint> & ShapeModel::get_control_points() const{
+template <class PointType>
+const std::vector<PointType> & ShapeModel<PointType>::get_control_points() const{
 	return this -> control_points;
 
 }
 
-
-ControlPoint & ShapeModel::get_control_point(unsigned int i) {
+template <class PointType>
+PointType & ShapeModel<PointType>::get_control_point(unsigned int i) {
 	return this -> control_points[i];
 }
 
-const arma::vec::fixed<3> & ShapeModel::get_control_point_coordinates(unsigned int i) const{
+template <class PointType>
+const arma::vec::fixed<3> & ShapeModel<PointType>::get_control_point_coordinates(unsigned int i) const{
 	return this -> control_points[i].get_point_coordinates();
 }
 
 
-
-std::shared_ptr<KDTreeControlPoints> ShapeModel::get_KDTreeControlPoints() const {
-	return this -> kdt_control_points;
-}
-
-
-unsigned int ShapeModel::get_NControlPoints() const {
+template <class PointType>
+unsigned int ShapeModel<PointType>::get_NControlPoints() const {
 	return this -> control_points . size();
 }
 
-
-std::shared_ptr<KDTreeShape> ShapeModel::get_KDTreeShape() const {
+template <class PointType>
+std::shared_ptr<KDTreeShape> ShapeModel<PointType>::get_KDTreeShape() const {
 	return this -> kdt_facet;
 }
 
+template <class PointType>
+void ShapeModel<PointType>::construct_kd_tree_control_points(){
+	throw(std::runtime_error("To implement"));
+}
 
-arma::vec::fixed<3> ShapeModel::get_center() const{
+
+template <class PointType>
+arma::vec::fixed<3> ShapeModel<PointType>::get_center() const{
 	arma::vec center = {0,0,0};
 	unsigned int N = this -> get_NControlPoints();
 
@@ -142,7 +135,8 @@ arma::vec::fixed<3> ShapeModel::get_center() const{
 	return center;
 }
 
-void ShapeModel::translate( const arma::vec::fixed<3> & x){
+template <class PointType>
+void ShapeModel<PointType>::translate( const arma::vec::fixed<3> & x){
 	unsigned int N = this -> get_NControlPoints();
 	for (int i  = 0; i < N; ++i){
 		arma::vec::fixed<3> coords = this -> get_control_point_coordinates(i);
@@ -151,7 +145,8 @@ void ShapeModel::translate( const arma::vec::fixed<3> & x){
 	}
 }
 
-void ShapeModel::rotate(const arma::mat::fixed<3,3> & M){
+template <class PointType>
+void ShapeModel<PointType>::rotate(const arma::mat::fixed<3,3> & M){
 
 	unsigned int N = this -> get_NControlPoints();
 
@@ -161,8 +156,8 @@ void ShapeModel::rotate(const arma::mat::fixed<3,3> & M){
 	}
 }
 
-
-void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
+template <class PointType>
+void ShapeModel<PointType>::get_bounding_box(double * bounding_box,arma::mat M) const {
 
 	arma::vec bbox_min = M * this -> control_points[0]. get_point_coordinates();
 	arma::vec bbox_max = M * this -> control_points[0]. get_point_coordinates();
@@ -194,8 +189,8 @@ void ShapeModel::get_bounding_box(double * bounding_box,arma::mat M) const {
 
 }
 
-
-void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) const{
+template <class PointType>
+void ShapeModel<PointType>::get_principal_inertias(arma::mat & axes,arma::vec & moments) const{
 
 
 	arma::eig_sym(moments,axes,this -> inertia);
@@ -265,20 +260,20 @@ void ShapeModel::get_principal_inertias(arma::mat & axes,arma::vec & moments) co
 }
 
 
-
-void ShapeModel::add_control_point(ControlPoint & vertex) {
+template <class PointType>
+void ShapeModel<PointType>::add_control_point(PointType & vertex) {
 	this -> control_points.push_back(vertex);
 }
 
 
-
-void ShapeModel::assemble_covariance(arma::mat & P,
-	const ControlPoint & Ci,
-	const ControlPoint & Cj,
-	const ControlPoint & Ck,
-	const ControlPoint & Cl,
-	const ControlPoint & Cm,
-	const ControlPoint & Cp){
+template <class PointType>
+void ShapeModel<PointType>::assemble_covariance(arma::mat & P,
+	const PointType & Ci,
+	const PointType & Cj,
+	const PointType & Ck,
+	const PointType & Cl,
+	const PointType & Cm,
+	const PointType & Cp){
 
 
 	P = arma::zeros<arma::mat>(9,9);
@@ -326,15 +321,15 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 }
 
 
-
-void ShapeModel::assemble_covariance(arma::mat & P,
-	const ControlPoint & Ci,
-	const ControlPoint & Cj,
-	const ControlPoint & Ck,
-	const ControlPoint & Cl,
-	const ControlPoint & Cm,
-	const ControlPoint & Cp,
-	const ControlPoint & Cq){
+template <class PointType>
+void ShapeModel<PointType>::assemble_covariance(arma::mat & P,
+	const PointType & Ci,
+	const PointType & Cj,
+	const PointType & Ck,
+	const PointType & Cl,
+	const PointType & Cm,
+	const PointType & Cp,
+	const PointType & Cq){
 
 
 	P = arma::zeros<arma::mat>(12,9);
@@ -394,16 +389,16 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 }
 
-
-void ShapeModel::assemble_covariance(arma::mat & P,
-	const ControlPoint & Ci,
-	const ControlPoint & Cj,
-	const ControlPoint & Ck,
-	const ControlPoint & Cl,
-	const ControlPoint & Cm,
-	const ControlPoint & Cp,
-	const ControlPoint & Cq,
-	const ControlPoint & Cr){
+template <class PointType>
+void ShapeModel<PointType>::assemble_covariance(arma::mat & P,
+	const PointType & Ci,
+	const PointType & Cj,
+	const PointType & Ck,
+	const PointType & Cl,
+	const PointType & Cm,
+	const PointType & Cp,
+	const PointType & Cq,
+	const PointType & Cr){
 
 
 	P = arma::zeros<arma::mat>(12,12);
@@ -482,8 +477,8 @@ void ShapeModel::assemble_covariance(arma::mat & P,
 
 }
 
-
-double ShapeModel::get_circumscribing_radius() const{
+template <class PointType>
+double ShapeModel<PointType>::get_circumscribing_radius() const{
 
 	double radius  = arma::norm(this -> control_points[0].get_point_coordinates() - this -> cm );
 
@@ -495,8 +490,6 @@ double ShapeModel::get_circumscribing_radius() const{
 
 }
 
-
-
-
+template class ShapeModel<ControlPoint>;
 
 
