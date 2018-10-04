@@ -5,16 +5,16 @@
 #include <vector>
 #include <armadillo>
 
-template <class T> class PointCloud;
+// template <class T> class PointCloud;
 
-template <class T> class KDTree {
+template <template<class> class ContainerType, class PointType>  class KDTree {
 
 public:
 	std::shared_ptr<KDTree> left;
 	std::shared_ptr<KDTree> right;
 	std::vector<int> indices;
 
-	KDTree(PointCloud<T> * owner);
+	KDTree(ContainerType<PointType> * owner);
 
 	void build(const std::vector< int > & indices, int depth) ;
 
@@ -56,7 +56,7 @@ public:
 
 protected:
 
-	double distance(const T & point_in_pc, const arma::vec & point) const;
+	double distance(const PointType & point_in_pc, const arma::vec & point) const;
 
 	void search_node(const arma::vec & test_point,
 		const unsigned int & N_points,
@@ -81,7 +81,7 @@ protected:
 	double value;
 	unsigned int axis = 0;
 
-	PointCloud<T> * owner;
+	ContainerType<PointType> * owner;
 
 };
 

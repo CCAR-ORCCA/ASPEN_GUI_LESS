@@ -203,7 +203,7 @@ void PointCloud<PointType>::build_kdtree(){
 		}
 	}
 
-	this -> kdt = std::make_shared< KDTree<PointType> >(KDTree< PointType> (this));
+	this -> kdt = std::make_shared< KDTree<PointCloud,PointType> >(KDTree< PointCloud,PointType> (this));
 	this -> kdt -> build(indices,0);
 }
 

@@ -5,18 +5,20 @@
 #include <memory>
 #include <cassert>
 
-template <class T> class KDTree;
+// template <class PointType> class KDTree;
+template <template<class> class ContainerType, class PointType>  class KDTree ;
+
 
 typedef typename std::pair<int, int > PointPair ;
 
-template <class T> class PointCloud {
+template <class PointType> class PointCloud {
 
 public:
 
 	PointCloud();
 	PointCloud(int size);
-	PointCloud(const std::vector<T> & points);
-	PointCloud(std::vector< std::shared_ptr< PointCloud < T> > > & pcs,int points_retained);
+	PointCloud(const std::vector<PointType> & points);
+	PointCloud(std::vector< std::shared_ptr< PointCloud < PointType> > > & pcs,int points_retained);
 	PointCloud(std::string filename);
 
 	/**
@@ -32,14 +34,14 @@ public:
 	@param index Index of the queried point
 	@return queried point
 	*/
-	const T & get_point(unsigned int index) const;
+	const PointType & get_point(unsigned int index) const;
 
 	/**
 	Returns queried point
 	@param index Index of the queried point
 	@return queried point
 	*/
-	T & get_point(unsigned int index) ;
+	PointType & get_point(unsigned int index) ;
 
 
 	/**
@@ -56,7 +58,7 @@ public:
 	void transform(const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3));
 	
 	/**
-	Returns a map to the closest N T-s whose coordinates are closest to the provided test_point
+	Returns a map to the closest N PointType-s whose coordinates are closest to the provided test_point
 	using the KD Tree search
 	@param test_point 3-by-1 vector queried
 	@return map to these closest points sorted by distance
@@ -95,7 +97,7 @@ public:
 	/**
 	Adds an element to the point cloud
 	*/
-	void push_back(const T & point);
+	void push_back(const PointType & point);
 
 	/**
 	Builds KD Tree
@@ -105,7 +107,7 @@ public:
 	/**
 	Subscript operator accessing the underlying point vector
 	*/
-	T & operator[] (const int index);
+	PointType & operator[] (const int index);
 
 	/**
 	Checks if indexed point has been deemed value. 
@@ -120,8 +122,8 @@ public:
 
 protected:
 
-	std::vector<T> points;
-	std::shared_ptr< KDTree< T> > kdt;
+	std::vector<PointType> points;
+	std::shared_ptr< KDTree< PointCloud, PointType> > kdt;
 	arma::vec mean_feature_histogram;
 	std::string label;
 
