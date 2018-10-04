@@ -14,57 +14,75 @@
 int main(){
 	FrameGraph frame_graph;
 
-	ShapeModelTri a_priori_obj("", nullptr);
+	ShapeModelTri truth("", nullptr);
+	ShapeModelBezier bezier("", nullptr);
 
-	#ifdef __APPLE__
+
+
+
+	
+	ShapeModelImporter shape_io_truth("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj", 1, true);
+	shape_io_truth.load_obj_shape_model(&truth);	
+
+
+
+
+	ShapeModelImporter shape_io_bezier("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.b", 1, true);
+
+
+	shape_io_bezier.load_bezier_shape_model(&bezier);
+
+	truth.construct_kd_tree_shape();
+
+
+	// The shape error is computed here
+
+	int facet_index = 4;
+	Bezier * patch = static_cast<Bezier *>( bezier.get_elements() -> at(facet_index).get() );
+	arma::vec normal = patch -> get_normal_coordinates(1./3, 1./3);
+	arma::vec center = patch -> evaluate(1./3,1./3) - 0.01 * normal;
+
+	std::cout << "origin: " << center.t() << std::endl;
+	std::cout << "direction: " << normal.t() << std::endl;
+
+
+	Ray ray_n(center,normal);
+	std::cout << "##################### forward\n";
+
+	truth.ray_trace(&ray_n);
+
+	Ray ray_mn(center,-normal);
+	std::cout << "##################### backward\n";
+
+	truth.ray_trace(&ray_mn);
+
+
+	if (ray_n.get_true_range() < ray_mn.get_true_range()){
+			// shape_error_results.push_back({sd,ray_n.get_true_range()});
+
+	}
+	else if (ray_n.get_true_range() > ray_mn.get_true_range()){
+			// shape_error_results.push_back({sd,ray_mn.get_true_range()});
+
+	}
+	else{
+		std::cout << "didn't hit\n";
+	}
+
 	
-	// ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test/apriori.obj", 1, true);
-	
-	ShapeModelImporter shape_io_guess("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/cube.obj", 1, true);
-	shape_io_guess.load_obj_shape_model(&a_priori_obj);
-
-	
-	arma::mat points,normals;
-	a_priori_obj.random_sampling(100,points, normals);
-	// PC pc("../pc_cube.obj");
-	PC pc(points,normals);
-
-	pc.save("../pc_cube.obj");
-	// PC pc("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/pc/source_transformed_poisson.obj");
-
-
-	#elif __linux__
-
-	// ShapeModelImporter shape_io_guess("/home/bebe0705/libs/ASPEN_GUI_LESS/Apps/ShapeReconstruction/output/shape_model/apriori.obj", 1, true);
-	// PC pc("/home/bebe0705/libs/ASPEN_GUI_LESS/Apps/ShapeReconstruction/output/pc/source_transformed_poisson.obj");
-	
-	ShapeModelImporter shape_io_guess("/home/bebe0705/libs/ASPEN_GUI_LESS/resources/shape_models/cube.obj", 1, true);
-	shape_io_guess.load_obj_shape_model(&a_priori_obj);
-
-	PC pc("../pc_cube.obj");
-
-	#endif
 
 
 
-	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", &frame_graph));
-
-	// the shape is elevated to the prescribed degree
-	unsigned int starting_degree = a_priori_bezier -> get_degree();
-	// a_priori_bezier -> elevate_degree();
-	
-	a_priori_bezier -> initialize_index_table();
 
 
-	auto all_control_points = a_priori_bezier -> get_control_points();
-	for (unsigned int i= 0; i < all_control_points -> size(); ++i){
-		std::cout << a_priori_bezier -> get_control_point_index(all_control_points -> at(i)) << std::endl;
 
-	}	
 
-	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),&pc);
 
-	shape_fitter.fit_shape_batch(1,0);
+
+
+
+
+
 
 
 

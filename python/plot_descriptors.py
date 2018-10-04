@@ -83,35 +83,44 @@ def plot_descriptors(path_pc0,path_pc1 = None,point_range = [0]):
         plt.show()
 
 
-def plot_matches(pc0_path,pc1_path,
-    matches_path,index_limit = None,custom_weights_path = None):
+def plot_matches(pc0_path,
+    pc1_path,
+    matches_path,
+    index_limit = None,
+    custom_weights_path = None):
 
 
-
+    
     cmap = 'viridis'
 
     pc0,f0 = polyhedron.load_shape(pc0_path)
     pc1,f1 = polyhedron.load_shape(pc1_path)
 
     matches = np.loadtxt(matches_path)
-    weights = np.loadtxt(custom_weights_path)
-
+    indices = range(len(matches))
+    np.random.shuffle(indices)
+    matches = matches[indices,:]
+    if custom_weights_path is not None:
+        weights = np.loadtxt(custom_weights_path)
+        weights = weights[indices]         
     
     if index_limit is not None:
         matches = matches[0:index_limit + 1,:]
-        weights = weights[0:index_limit + 1]
+        if custom_weights_path is not None:
+            weights = weights[0:index_limit + 1]
 
     # print matches.shape
     # indices_active_matches = weights > 0
     # matches = matches[indices_active_matches,:]
     # weights = weights[indices_active_matches]
 
+    if custom_weights_path is not None:
 
-    print "Weights amplitude : min == " + str(min(weights)) + " , max == " + str(max(weights)) + "\n"
-
-    cmap =  plt.get_cmap(cmap) 
-    cNorm  = colors.Normalize(vmin=min(weights), vmax=max(weights))
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
+        print "Weights amplitude : min == " + str(min(weights)) + " , max == " + str(max(weights)) + "\n"
+        cmap =  plt.get_cmap(cmap) 
+        cNorm  = colors.Normalize(vmin=min(weights), vmax=max(weights))
+        scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
+        all_colors = [scalarMap.to_rgba(weights[i])[0:3] for i in range(len(weights))]
 
     # Point clouds
     pc0 = np.vstack(pc0)
@@ -119,26 +128,24 @@ def plot_matches(pc0_path,pc1_path,
     mayavi.mlab.figure(bgcolor=(66./255, 134./255, 244./255))
     p0_node = mlab.points3d(pc0[:,0],pc0[:,1],pc0[:,2],color = (1,1,0.),mode = "point")
     p1_node = mlab.points3d(pc1[:,0],pc1[:,1],pc1[:,2],color = (1,0,0),mode = "point")
-    p0_node.actor.property.set(representation='p', point_size=3)
-    p1_node.actor.property.set(representation='p', point_size=3)
-
+    p0_node.actor.property.set(representation='p', point_size=1.5)
+    p1_node.actor.property.set(representation='p', point_size=1.5)
 
     # Colored matches error
-    all_colors = [scalarMap.to_rgba(weights[i])[0:3] for i in range(len(weights))]
-
 
     # l = mlab.plot3d(1e-10 * matches[:,0],1e-10 * matches[:,1],1e-10 * matches[:,2],weights,opacity = 0,colormap = 'viridis' )
-
+    print custom_weights_path
     for i in range(matches.shape[0]):   
 
         print("Plotting match " + str(i+1) + " over " + str(matches.shape[0]) + "\n")
 
         p0 = matches[i,0:3]
         p1 = matches[i,3:6]
-        if weights[i] !=0:
-            mlab.plot3d([p0[0],p1[0]],[p0[1],p1[1]],[p0[2],p1[2]],color = all_colors[i],tube_radius = None,line_width= 3)
+        if custom_weights_path is not None:
+            if weights[i] !=0:
+                mlab.plot3d([p0[0],p1[0]],[p0[1],p1[1]],[p0[2],p1[2]],color = all_colors[i],tube_radius = None,line_width= 1.5)
         else:
-            mlab.plot3d([p0[0],p1[0]],[p0[1],p1[1]],[p0[2],p1[2]],color = (0.5,0.5,0.5),tube_radius = None,line_width= 3)
+            mlab.plot3d([p0[0],p1[0]],[p0[1],p1[1]],[p0[2],p1[2]],color = (0.5,0.5,0.5),tube_radius = None,line_width= 1.5)
 
 
     # l = mlab.plot3d(range(len(distances)),distances,opacity = 0)
@@ -148,16 +155,13 @@ def plot_matches(pc0_path,pc1_path,
     mlab.show()
 
 plot_matches(
-    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/itokawa_64_scaled_aligned.obj",
-    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/source_3_before.obj",
-    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/build/ransac_pairs.txt",
-    index_limit = 1000,
-    custom_weights_path = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/build/all_pairs_weights.txt")
+    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/build/point_pc_1.obj",
+    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/build/point_pc_2.obj",
+    "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/build/all_matches.txt",
+    index_limit = 300,
+    custom_weights_path = None)
 
 # plot_descriptors(path_pc0 = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/source_descriptors.txt",
 # 	path_pc1 = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/BenchmarkICP/destination_descriptors.txt",
 # 	point_range= range(100))
-
-
-
 

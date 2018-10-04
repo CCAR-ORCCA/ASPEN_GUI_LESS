@@ -24,11 +24,11 @@
 #include "json.hpp"
 
 // Various constants that set up the scenario
-#define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
+#define TARGET_SHAPE "itokawa_128_scaled_aligned" // Target shape
 
 // Lidar settings
-#define ROW_RESOLUTION 64 // Goldeneye
-#define COL_RESOLUTION 64 // Goldeneye
+#define ROW_RESOLUTION 128 // Goldeneye
+#define COL_RESOLUTION 128 // Goldeneye
 #define ROW_FOV 20 // ?
 #define COL_FOV 20 // ?
 
@@ -102,6 +102,22 @@ int main() {
 	double SPIN_PERIOD = input_data["SPIN_PERIOD"];
 	std::string dir = input_data["dir"];
 
+	std::cout << "SMA: " << SMA << std::endl;
+	std::cout << "E: " << E << std::endl;
+	std::cout << "I: " << I << std::endl;
+	std::cout << "RAAN: " << RAAN << std::endl;
+	std::cout << "PERI_OMEGA: " << PERI_OMEGA << std::endl;
+	std::cout << "M0: " << M0 << std::endl;
+	std::cout << "LATITUDE_SPIN: " << LATITUDE_SPIN << std::endl;
+	std::cout << "LONGITUDE_SPIN: " << LONGITUDE_SPIN << std::endl;
+	std::cout << "SPIN_PERIOD: " << SPIN_PERIOD << std::endl;
+
+
+
+
+
+
+
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -127,9 +143,16 @@ int main() {
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
 
+
+
+
 	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
 	shape_io_truth.load_obj_shape_model(&true_shape_model);
+	
 	true_shape_model.construct_kd_tree_shape();
+
+
+
 
 
 	double true_mu = arma::datum::G * true_shape_model . get_volume() * DENSITY;

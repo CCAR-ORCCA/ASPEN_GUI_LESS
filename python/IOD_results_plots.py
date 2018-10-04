@@ -4,7 +4,7 @@ import matplotlib as mpl
 from matplotlib.patches import Ellipse
 from np_array_to_latex import np_array_to_latex
 from mpl_toolkits.mplot3d import Axes3D
-import RigidBodyKinematics as RBK
+# import RigidBodyKinematics as RBK
 import fnmatch
 import os
 import polyhedron
@@ -435,8 +435,6 @@ def draw_dispersions(name,
         plt.savefig(savepath + prefix + suffix,bbox_inches='tight')
     plt.cla()
     plt.clf()
-
-
 
 
 def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/IOD/output"):

@@ -354,7 +354,7 @@ int main() {
 		
 		Bezier * patch = static_cast<Bezier *>( estimated_shape_model -> get_elements() -> at(i).get() );
 		arma::vec center = patch -> evaluate(1./3,1./3);
-		arma::vec normal = patch -> get_normal(1./3, 1./3);
+		arma::vec normal = patch -> get_normal_coordinates(1./3, 1./3);
 
 		arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
 		double sd = std::sqrt(arma::dot(normal,P * normal));

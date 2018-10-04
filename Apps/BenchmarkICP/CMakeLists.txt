@@ -138,7 +138,6 @@ endif()
 # link_directories(${PCL_LIBRARY_DIRS})
 # add_definitions(${PCL_DEFINITIONS})
 
-
 # Fortran compiler, required by Armadillo on Linux/Ubuntu
 # if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
 # 	find_library(GFORTRAN_LIBRARY gfortran

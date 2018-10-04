@@ -8,9 +8,6 @@
 
 #include "boost/progress.hpp"
 
-
-
-
 int main(){
 
 	arma::arma_rng::set_seed(0);

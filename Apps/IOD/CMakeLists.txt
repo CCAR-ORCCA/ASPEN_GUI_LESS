@@ -162,5 +162,5 @@ ${ASPEN_LIBRARY}
 )
 
 
-target_link_libraries(${EXE_NAME} ${library_dependencies})
+target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
 

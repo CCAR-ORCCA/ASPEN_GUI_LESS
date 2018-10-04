@@ -51,7 +51,7 @@ int main(){
 	double u = 0.2;
 	double v = 0.3;
 
-	arma::vec n_old = nominal_patch.get_normal(u,v);
+	arma::vec n_old = nominal_patch.get_normal_coordinates(u,v);
 
 	auto indices = nominal_patch.get_local_indices(v5);
 	arma::mat dndc = nominal_patch.partial_n_partial_Ck(u, v,std::get<0>(indices),std::get<1>(indices),2);
@@ -61,7 +61,7 @@ int main(){
 	std::cout << "Old normal: \n" << n_old.t();
 	v5 -> set_coordinates(v5 -> get_coordinates() + dC);
 
-	arma::vec n = nominal_patch.get_normal(u,v);
+	arma::vec n = nominal_patch.get_normal_coordinates(u,v);
 	std::cout << "New normal: \n" << n.t();
 
 	std::cout << "Predicted new normal : " << std::endl;

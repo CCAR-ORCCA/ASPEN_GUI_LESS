@@ -116,7 +116,6 @@ int main(){
 	shape_fitter.fit_shape_batch(5,0);
 	perturbed_patch.save_both("../output/fit");
 
-
 	// auto footpoints = shape_fitter.fit_shape_batch(20,1e-3);
 
 	// perturbed_patch.save_both("../output/fit");
