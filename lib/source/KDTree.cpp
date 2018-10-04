@@ -2,6 +2,8 @@
 #include <PointDescriptor.hpp>
 #include <PointCloud.hpp>
 #include <PointNormal.hpp>
+#include <ShapeModel.hpp>
+#include <ControlPoint.hpp>
 
 
 
@@ -439,6 +441,13 @@ double KDTree<PointCloud,PointDescriptor>::distance(const PointDescriptor & poin
 
 }
 
+template <>
+double KDTree<ShapeModel,ControlPoint>::distance(const ControlPoint & point_in_shape,
+	const arma::vec & point) const{
+
+	return arma::norm(point_in_shape.get_point_coordinates() - point);
+
+}
 
 template <template<class> class ContainerType, class PointType> 
 void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
@@ -552,5 +561,7 @@ int KDTree<ContainerType,PointType>::get_min_indices_per_node() const{
 // Explicit instantiations
 template class KDTree<PointCloud,PointNormal> ;
 template class KDTree<PointCloud,PointDescriptor> ;
+template class KDTree<ShapeModel,ControlPoint> ;
+
 
 

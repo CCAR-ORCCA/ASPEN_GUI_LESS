@@ -31,7 +31,7 @@ public:
 	*/
 	void update() ;
 
-	const arma::vec::fixed<3> & get_control_point_coordinates(int point_index) const;
+	const arma::vec::fixed<3> & get_point_coordinates(int point_index) const;
 
 	/**
 	Get element normal. 
@@ -56,7 +56,7 @@ public:
 	Return the control points owned by this element
 	@return owned control points
 	*/	
-	const std::vector<int > & get_control_points() const;
+	const std::vector<int > & get_points() const;
 
 	void set_control_points(std::vector<int > & control_points);
 

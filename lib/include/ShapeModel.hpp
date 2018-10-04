@@ -18,6 +18,7 @@
 class Ray ;
 class Element;
 class KDTreeShape;
+template <template<class> class ContainerType, class PointType>  class KDTree ;
 
 /**
 Declaration of the ShapeModel class. Base class for 
@@ -125,18 +126,18 @@ public:
 	std::string get_ref_frame_name() const;
 
 
-	PointType & get_control_point(unsigned int i) ;
-	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i) const;
+	PointType & get_point(unsigned int i) ;
+	const arma::vec::fixed<3> & get_point_coordinates(unsigned int i) const;
 
-	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const = 0;
+	virtual arma::vec::fixed<3> get_point_normal_coordinates(unsigned int i) const = 0;
 
 	/**
 	Pointer to the shape model's control points
 	@return vertices pointer to the control points
 	*/
-	const std::vector<PointType> & get_control_points() const;
+	const std::vector<PointType> & get_points() const;
 
-	unsigned int get_control_point_index(std::shared_ptr<PointType> point) const;
+	unsigned int get_point_index(std::shared_ptr<PointType> point) const;
 
 	
 
@@ -311,7 +312,7 @@ protected:
 
 	std::vector<std::set<int> > edges;
 	std::vector<PointType> control_points;
-	// std::shared_ptr<KDTreeControlPoints> kdt_control_points = nullptr;
+	std::shared_ptr<KDTree<ShapeModel,PointType> > kdt_control_points = nullptr;
 	std::shared_ptr<KDTreeShape> kdt_facet = nullptr;
 
 	std::map<std::shared_ptr<PointType> ,unsigned int> pointer_to_global_index;

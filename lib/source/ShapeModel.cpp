@@ -1,7 +1,9 @@
-#include "ShapeModel.hpp"
 #include <chrono>
 #include <assert.h>
 #include <ControlPoint.hpp>
+#include <KDTree.hpp>
+#include <ShapeModel.hpp>
+
 
 template <class PointType>
 ShapeModel<PointType>::ShapeModel() {
@@ -92,18 +94,18 @@ void ShapeModel<PointType>::set_ref_frame_name(std::string ref_frame_name) {
 }
 
 template <class PointType>
-const std::vector<PointType> & ShapeModel<PointType>::get_control_points() const{
+const std::vector<PointType> & ShapeModel<PointType>::get_points() const{
 	return this -> control_points;
 
 }
 
 template <class PointType>
-PointType & ShapeModel<PointType>::get_control_point(unsigned int i) {
+PointType & ShapeModel<PointType>::get_point(unsigned int i) {
 	return this -> control_points[i];
 }
 
 template <class PointType>
-const arma::vec::fixed<3> & ShapeModel<PointType>::get_control_point_coordinates(unsigned int i) const{
+const arma::vec::fixed<3> & ShapeModel<PointType>::get_point_coordinates(unsigned int i) const{
 	return this -> control_points[i].get_point_coordinates();
 }
 
@@ -120,7 +122,15 @@ std::shared_ptr<KDTreeShape> ShapeModel<PointType>::get_KDTreeShape() const {
 
 template <class PointType>
 void ShapeModel<PointType>::construct_kd_tree_control_points(){
-	throw(std::runtime_error("To implement"));
+
+	std::vector<int> indices;
+	for (int i =0; i < this -> get_NControlPoints(); ++i){
+			indices.push_back(i);
+	}
+
+	this -> kdt_control_points = std::make_shared< KDTree<ShapeModel,PointType> >(KDTree< ShapeModel,PointType> (this));
+	this -> kdt_control_points -> build(indices,0);
+
 }
 
 
@@ -130,7 +140,7 @@ arma::vec::fixed<3> ShapeModel<PointType>::get_center() const{
 	unsigned int N = this -> get_NControlPoints();
 
 	for (int i  = 0; i < N; ++i){
-		center += this -> get_control_point_coordinates(i) / N;
+		center += this -> get_point_coordinates(i) / N;
 	}
 	return center;
 }
@@ -139,7 +149,7 @@ template <class PointType>
 void ShapeModel<PointType>::translate( const arma::vec::fixed<3> & x){
 	unsigned int N = this -> get_NControlPoints();
 	for (int i  = 0; i < N; ++i){
-		arma::vec::fixed<3> coords = this -> get_control_point_coordinates(i);
+		arma::vec::fixed<3> coords = this -> get_point_coordinates(i);
 		coords += x;
 		this -> control_points[i].set_point_coordinates(coords) ;
 	}
@@ -151,7 +161,7 @@ void ShapeModel<PointType>::rotate(const arma::mat::fixed<3,3> & M){
 	unsigned int N = this -> get_NControlPoints();
 
 	for (int i  = 0; i < N; ++i){
-		arma::vec::fixed<3> coords = M*this -> get_control_point_coordinates(i);
+		arma::vec::fixed<3> coords = M*this -> get_point_coordinates(i);
 		this -> control_points[i].set_point_coordinates(coords) ;
 	}
 }

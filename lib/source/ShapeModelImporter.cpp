@@ -104,7 +104,7 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 		}
 		
 		for ( int i = 0; i < N_c; ++ i){
-			shape_model.get_control_point(vertices[i]).add_ownership(patch_index);
+			shape_model.get_point(vertices[i]).add_ownership(patch_index);
 		}
 
 		Bezier patch = Bezier(vertices,&shape_model);
@@ -235,9 +235,9 @@ void ShapeModelImporter::load_obj_shape_model(std::string filename, double scali
 		vertices.push_back(v2);
 
 
-		shape_model.get_control_point(v0).add_ownership(facet_index);
-		shape_model.get_control_point(v1).add_ownership(facet_index);
-		shape_model.get_control_point(v2).add_ownership(facet_index);
+		shape_model.get_point(v0).add_ownership(facet_index);
+		shape_model.get_point(v1).add_ownership(facet_index);
+		shape_model.get_point(v2).add_ownership(facet_index);
 
 		Facet facet(vertices,&shape_model);
 		facet.set_global_index(facet_index);

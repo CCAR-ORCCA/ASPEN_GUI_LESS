@@ -136,9 +136,9 @@ void Ray::reset(ShapeModel<ControlPoint> * shape_model) {
 
 bool Ray::intersection_inside(const arma::vec::fixed<3> & H, const Facet & facet, double tol) {
 
-	const arma::vec::fixed<3> P0 = facet.get_control_point_coordinates(0);
-	const arma::vec::fixed<3> P1 = facet.get_control_point_coordinates(1);
-	const arma::vec::fixed<3> P2 = facet.get_control_point_coordinates(2);
+	const arma::vec::fixed<3> P0 = facet.get_point_coordinates(0);
+	const arma::vec::fixed<3> P1 = facet.get_point_coordinates(1);
+	const arma::vec::fixed<3> P2 = facet.get_point_coordinates(2);
 
 	double epsilon = (facet.get_area()
 		- 0.5 * (
@@ -264,12 +264,12 @@ bool Ray::single_patch_ray_casting(const Bezier & patch,double & u,double & v,bo
 
 	// The barycentric coordinates are initialized at a planar guess
 	arma::mat E(3,2);
-	E.col(0) = patch.get_control_point_coordinates(patch.get_degree(),0) - patch.get_control_point_coordinates(0,0);
-	E.col(1) = patch.get_control_point_coordinates(0,patch.get_degree()) - patch.get_control_point_coordinates(0,0);
+	E.col(0) = patch.get_point_coordinates(patch.get_degree(),0) - patch.get_point_coordinates(0,0);
+	E.col(1) = patch.get_point_coordinates(0,patch.get_degree()) - patch.get_point_coordinates(0,0);
 
 	arma::vec::fixed<2> chi;
 	if (use_KD_impact){
-		chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch.get_control_point_coordinates(0,0)));
+		chi = arma::solve(E.t() * E,E.t() * (this -> get_KD_impact() - patch.get_point_coordinates(0,0)));
 	} 
 	else{
 		chi(0) = 1./3;

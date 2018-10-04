@@ -11,7 +11,7 @@ Element::Element(std::vector<int> & control_points,ShapeModel<ControlPoint> * ow
 }
 
 
-const std::vector<int> & Element::get_control_points() const {
+const std::vector<int> & Element::get_points() const {
 	return this -> control_points;
 }
 
@@ -20,8 +20,8 @@ double Element::get_area() const {
 	return this -> area;
 }
 
-const arma::vec::fixed<3> & Element::get_control_point_coordinates(int point_index) const{
-	return this -> owning_shape -> get_control_point_coordinates(point_index);
+const arma::vec::fixed<3> & Element::get_point_coordinates(int point_index) const{
+	return this -> owning_shape -> get_point_coordinates(point_index);
 }
 
 arma::vec::fixed<3> Element::get_center()  const{

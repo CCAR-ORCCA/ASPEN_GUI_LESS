@@ -57,7 +57,7 @@ std::set< int >  ControlPoint::common_elements(int control_point_index) const {
 
 	for (auto owning_element : this -> owning_elements) {
 
-		if (this -> owning_shape -> get_control_point(control_point_index).is_owned_by(owning_element)) {
+		if (this -> owning_shape -> get_point(control_point_index).is_owned_by(owning_element)) {
 			common_facets.insert(owning_element);
 		}
 
@@ -113,7 +113,7 @@ unsigned int ControlPoint::get_number_of_owning_elements() const {
 
 arma::vec::fixed<3> ControlPoint::get_normal_coordinates(bool bezier) const{
 
-	arma::vec::fixed<3> n = this -> owning_shape -> get_control_point_normal_coordinates(this -> get_global_index());
+	arma::vec::fixed<3> n = this -> owning_shape -> get_point_normal_coordinates(this -> get_global_index());
 		
 	return n;
 

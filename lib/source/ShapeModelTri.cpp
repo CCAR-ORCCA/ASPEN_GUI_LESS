@@ -75,7 +75,7 @@ void ShapeModelTri<PointType>::clear(){
 
 template <class PointType>
 const std::vector<int> & ShapeModelTri<PointType>::get_element_control_points(int e) const{
-	return this -> elements[e].get_control_points();
+	return this -> elements[e].get_points();
 }
 
 
@@ -118,7 +118,7 @@ void ShapeModelTri<PointType>::construct_kd_tree_shape() {
 
 
 template <class PointType>
-arma::vec::fixed<3> ShapeModelTri<PointType>::get_control_point_normal_coordinates(unsigned int i) const{
+arma::vec::fixed<3> ShapeModelTri<PointType>::get_point_normal_coordinates(unsigned int i) const{
 
 	auto owning_elements = this -> control_points[i].get_owning_elements();
 	arma::vec::fixed<3> n = {0,0,0};
@@ -146,7 +146,7 @@ bool ShapeModelTri<PointType>::contains(double * point, double tol ) {
 	// pragma omp parallel for reduction(+:lagrangian) if (USE_OMP_DYNAMIC_ANALYSIS)
 	for (unsigned int facet_index = 0; facet_index < this -> get_NElements(); ++ facet_index) {
 
-		const std::vector<int> & vertices = this -> elements[facet_index].get_control_points();
+		const std::vector<int> & vertices = this -> elements[facet_index].get_points();
 
 		const double * r1 =  this -> control_points[vertices[0]].get_point_coordinates().colptr(0);
 		const double * r2 =  this -> control_points[vertices[1]].get_point_coordinates().colptr(0);
@@ -225,7 +225,7 @@ void ShapeModelTri<PointType>::random_sampling(unsigned int N,arma::mat & points
 	// #pragma omp parallel for
 	for (unsigned int f = 0; f < this -> elements.size(); ++f){
 
-		const std::vector<int> & vertices = this -> elements[f].get_control_points();
+		const std::vector<int> & vertices = this -> elements[f].get_points();
 
 		const arma::vec::fixed<3> & V0 = this -> control_points[vertices[0]].get_point_coordinates();
 		const arma::vec::fixed<3> & V1 = this -> control_points[vertices[1]].get_point_coordinates();
@@ -271,9 +271,9 @@ void ShapeModelTri<PointType>::save(std::string path,const arma::vec & X,const a
 
 	for (unsigned int facet_index = 0;facet_index < this -> get_NElements();++facet_index) {
 
-		unsigned int v0 =  this -> elements[facet_index].get_control_points().at(0) + 1;
-		unsigned int v1 =  this -> elements[facet_index].get_control_points().at(1) + 1;
-		unsigned int v2 =  this -> elements[facet_index].get_control_points().at(2) + 1;
+		unsigned int v0 =  this -> elements[facet_index].get_points().at(0) + 1;
+		unsigned int v1 =  this -> elements[facet_index].get_points().at(1) + 1;
+		unsigned int v2 =  this -> elements[facet_index].get_points().at(2) + 1;
 
 		shape_file << "f " << v0 << " " << v1 << " " << v2 << std::endl;
 
@@ -326,7 +326,7 @@ void ShapeModelTri<PointType>::compute_volume() {
 	#pragma omp parallel for reduction(+:volume) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
 
-		const std::vector<int> & vertices = this -> elements[facet_index].get_control_points();
+		const std::vector<int> & vertices = this -> elements[facet_index].get_points();
 
 		const arma::vec & r0 =  this -> control_points[vertices[0]]. get_point_coordinates();
 		const arma::vec & r1 =  this -> control_points[vertices[1]]. get_point_coordinates();
@@ -353,7 +353,7 @@ void ShapeModelTri<PointType>::compute_center_of_mass() {
 	#pragma omp parallel for reduction (+:cx,cy,cz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
 
-		const std::vector<int> & vertices = this -> elements[facet_index].get_control_points();
+		const std::vector<int> & vertices = this -> elements[facet_index].get_points();
 		
 
 		const arma::vec::fixed<3> & r0 =  this -> control_points[vertices[0]].get_point_coordinates();
@@ -394,7 +394,7 @@ void ShapeModelTri<PointType>::compute_inertia() {
 	# pragma omp parallel for reduction(+:P_xx,P_yy,P_zz,P_xy,P_xz,P_yz) if (USE_OMP_SHAPE_MODEL)
 	for (unsigned int facet_index = 0;facet_index < this -> elements.size();++facet_index) {
 
-		const std::vector<int> & vertices = this -> elements[facet_index].get_control_points();
+		const std::vector<int> & vertices = this -> elements[facet_index].get_points();
 
 		// Normalized coordinates
 		const arma::vec::fixed<3> & r0 =  this -> control_points[vertices[0]].get_point_coordinates();

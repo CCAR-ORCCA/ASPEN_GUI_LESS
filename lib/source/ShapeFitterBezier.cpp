@@ -73,7 +73,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	std::cout << "- Assigning covariances to the  "<< this -> shape_model -> get_NControlPoints() <<  " control points ..." << std::endl;
 	
 
-	auto control_points = this -> shape_model -> get_control_points();
+	auto control_points = this -> shape_model -> get_points();
 	for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
 		
 		auto elements = (*point) -> get_owning_elements();
@@ -122,7 +122,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsigned int N_measurements){
 
 
-	auto control_points = this -> shape_model -> get_control_points();
+	auto control_points = this -> shape_model -> get_points();
 
 
 	for (unsigned int index =  0 ; index < control_points -> size(); ++index){
@@ -142,7 +142,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 		arma::vec n = patch -> get_normal_coordinates(u, v);
 		arma::mat proj = double(N_measurements) / double( this -> shape_model -> get_NElements()) * (arma::eye<arma::mat>(3,3) - n * n.t());
 
-		// unsigned int index = this -> shape_model -> get_control_point_index(*point);
+		// unsigned int index = this -> shape_model -> get_point_index(*point);
 		// std::cout << index + 1 << "/" << control_points -> size() << std::endl;
 
 		unsigned int row = 3 * index;
@@ -249,7 +249,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		Footpoint footpoint = footpoints[k];
 		Bezier * patch = dynamic_cast<Bezier *>(footpoint . element);
 
-		auto control_points = patch -> get_control_points();
+		auto control_points = patch -> get_points();
 		std::vector<int> global_indices;
 
 		std::vector<arma::rowvec> elements_to_add;
@@ -257,7 +257,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		// The different control points for this patch have their contribution added
 		for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
 
-			unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
+			unsigned int global_point_index = this -> shape_model -> get_point_index(*iter_points);
 			auto local_indices = patch -> get_local_indices(*iter_points);
 			unsigned int i = std::get<0>(local_indices);
 			unsigned int j = std::get<1>(local_indices);
@@ -326,10 +326,10 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 
 	// The deviations are added to the coordinates
-	auto control_points = this -> shape_model -> get_control_points();
+	auto control_points = this -> shape_model -> get_points();
 
 	for (auto iter_points = control_points -> begin(); iter_points != control_points -> end(); ++iter_points){
-		unsigned int global_point_index = this -> shape_model -> get_control_point_index(*iter_points);
+		unsigned int global_point_index = this -> shape_model -> get_point_index(*iter_points);
 		(*iter_points) -> set_coordinates((*iter_points) -> get_coordinates()
 			+ dC.rows(3 * global_point_index, 3 * global_point_index + 2));
 	}

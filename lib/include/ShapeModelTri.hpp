@@ -142,7 +142,7 @@ public:
 
 
 	virtual const std::vector<int> & get_element_control_points(int e) const;
-	virtual arma::vec::fixed<3> get_control_point_normal_coordinates(unsigned int i) const;
+	virtual arma::vec::fixed<3> get_point_normal_coordinates(unsigned int i) const;
 
 
 

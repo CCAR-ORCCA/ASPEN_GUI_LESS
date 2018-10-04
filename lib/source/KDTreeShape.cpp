@@ -67,14 +67,14 @@ void KDTreeShape::build(const std::vector<int > & elements,  int depth) {
 			// The elements currently owned by the node are split
 			// based on where their vertices lie
 
-			if ( midpoint(longest_axis) >= this -> owning_shape -> get_element(i).get_control_point_coordinates(v)(longest_axis)
+			if ( midpoint(longest_axis) >= this -> owning_shape -> get_element(i).get_point_coordinates(v)(longest_axis)
 				&& (added_to_left == false)) {
 
 				left_facets.push_back(elements[i]);
 				added_to_left = true;
 			}
 
-			else if (midpoint(longest_axis) <= this -> owning_shape -> get_element(i).get_control_point_coordinates(v)(longest_axis)
+			else if (midpoint(longest_axis) <= this -> owning_shape -> get_element(i).get_point_coordinates(v)(longest_axis)
 				&& (added_to_right == false)) {
 				right_facets.push_back(elements[i]);
 				added_to_right = true;

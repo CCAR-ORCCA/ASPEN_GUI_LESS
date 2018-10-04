@@ -19,7 +19,7 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 
 	// The control point of this shape model are the same as that
 	// of the provided shape
-	this -> control_points = shape_model.get_control_points();
+	this -> control_points = shape_model.get_points();
 
 	// The ownership relationships are reset
 	for (unsigned int i = 0; i < this -> control_points.size(); ++i){
@@ -31,7 +31,7 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model.get_NElements(); ++i){
 		Bezier patch(shape_model.get_element_control_points(i),this);
-		auto control_points_indices = patch.get_control_points();
+		auto control_points_indices = patch.get_points();
 		patch.set_global_index(i);
 
 		this -> elements.push_back(patch);
@@ -60,7 +60,7 @@ ShapeModelBezier<PointType>::ShapeModelBezier(ShapeModelTri<PointType> & shape_m
 
 	// // The control point of this shape model are the same as that
 	// // of the provided shape
-	// this -> control_points = (*shape_model -> get_control_points());
+	// this -> control_points = (*shape_model -> get_points());
 
 	// // The ownership relationships are reset
 	// for (unsigned int i = 0; i < shape_model -> get_NControlPoints(); ++i){
@@ -70,13 +70,13 @@ ShapeModelBezier<PointType>::ShapeModelBezier(ShapeModelTri<PointType> & shape_m
 	// // The surface elements are almost the same, expect that they are 
 	// // Bezier patches and not facets
 	// for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
-	// 	auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_control_points()));
+	// 	auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_points()));
 	// 	patch -> set_global_index(i);
 	// 	this -> elements.push_back(patch);
 
-	// 	patch -> get_control_points() -> at(0) -> add_ownership(patch.get());
-	// 	patch -> get_control_points() -> at(1) -> add_ownership(patch.get());
-	// 	patch -> get_control_points() -> at(2) -> add_ownership(patch.get());
+	// 	patch -> get_points() -> at(0) -> add_ownership(patch.get());
+	// 	patch -> get_points() -> at(1) -> add_ownership(patch.get());
+	// 	patch -> get_points() -> at(2) -> add_ownership(patch.get());
 	// 	patch -> set_P_X(surface_noise * surface_noise * arma::eye<arma::mat>(9,9));
 
 	// }
@@ -294,7 +294,7 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::compute_center_of_mass(const do
 			int q =  int(this -> cm_gamma_indices_coefs_table[index][6]);
 			int r =  int(this -> cm_gamma_indices_coefs_table[index][7]);
 
-			int i_g = patch.get_control_point(i,j);
+			int i_g = patch.get_point(i,j);
 
 			const ControlPoint & Ci = this -> control_points[i_g];
 			
@@ -339,8 +339,8 @@ void ShapeModelBezier<PointType>::compute_inertia(){
 			int t =  int(this -> inertia_indices_coefs_table[index][9]);
 			
 			inertia += (this -> inertia_indices_coefs_table[index][10]  
-				* RBK::tilde(patch.get_control_point_coordinates(i,j)) 
-				* RBK::tilde(patch.get_control_point_coordinates(k,l))
+				* RBK::tilde(patch.get_point_coordinates(i,j)) 
+				* RBK::tilde(patch.get_point_coordinates(k,l))
 				* patch.triple_product(m,p,q,r,s,t));
 		}
 
@@ -371,8 +371,8 @@ arma::mat::fixed<3,3> ShapeModelBezier<PointType>::compute_inertia(const arma::v
 			int s =  int(this -> inertia_indices_coefs_table[index][8]);
 			int t =  int(this -> inertia_indices_coefs_table[index][9]);
 
-			int i_g = patch . get_control_point(i,j);
-			int j_g = patch . get_control_point(k,l);
+			int i_g = patch . get_point(i,j);
+			int j_g = patch . get_point(k,l);
 
 			inertia += (this -> inertia_indices_coefs_table[index][10]  
 				* RBK::tilde(this -> control_points[i_g].get_point_coordinates() + deviation.rows(3 * i_g, 3 * i_g + 2)) 
@@ -387,7 +387,7 @@ arma::mat::fixed<3,3> ShapeModelBezier<PointType>::compute_inertia(const arma::v
 }
 
 template <class PointType>
-arma::vec::fixed<3> ShapeModelBezier<PointType>::get_control_point_normal_coordinates(unsigned int i) const{
+arma::vec::fixed<3> ShapeModelBezier<PointType>::get_point_normal_coordinates(unsigned int i) const{
 
 	auto owning_elements = this -> control_points[i].get_owning_elements();
 	arma::vec::fixed<3> n = {0,0,0};
@@ -395,7 +395,7 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::get_control_point_normal_coordi
 
 	for (auto e : owning_elements){
 
-		const std::vector<int> & control_points = this -> elements[e].get_control_points();
+		const std::vector<int> & control_points = this -> elements[e].get_points();
 		
 		int local_index = -1;
 		for (int k =0 ; k < control_points.size(); ++k){
@@ -433,7 +433,7 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::get_control_point_normal_coordi
 
 template <class PointType>
 const std::vector<int> & ShapeModelBezier<PointType>::get_element_control_points(int e) const{
-	return this -> elements[e].get_control_points();
+	return this -> elements[e].get_points();
 }
 
 template <class PointType>
@@ -447,12 +447,12 @@ void ShapeModelBezier<PointType>::find_correlated_elements(){
 		std::vector < int > elements_correlated_with_e ;
 
 		const Bezier & patch_e = this -> elements[e];
-		const std::vector<int> & patch_e_control_points = patch_e.get_control_points();
+		const std::vector<int> & patch_e_control_points = patch_e.get_points();
 
 		for (unsigned int f = 0; f < this -> get_NElements(); ++f){
 
 			const Bezier & patch_f = this -> elements[f];
-			const std::vector<int> & patch_f_control_points = patch_f.get_control_points();
+			const std::vector<int> & patch_f_control_points = patch_f.get_points();
 
 			for (unsigned int i = 0; i < patch_e_control_points.size(); ++i){
 				int i_g = patch_e_control_points[i];
@@ -625,13 +625,13 @@ double ShapeModelBezier<PointType>::compute_patch_pair_vol_sd_contribution(const
 		int v =  int(this -> volume_sd_indices_coefs_table[index][11]);
 
 
-		int i_g = patch_e.get_control_point_global_index(i,j);
-		int j_g = patch_e.get_control_point_global_index(k,l);
-		int k_g = patch_e.get_control_point_global_index(m,p);
+		int i_g = patch_e.get_point_global_index(i,j);
+		int j_g = patch_e.get_point_global_index(k,l);
+		int k_g = patch_e.get_point_global_index(m,p);
 
-		int l_g = patch_f.get_control_point_global_index(q,r);
-		int m_g = patch_f.get_control_point_global_index(s,t);
-		int p_g = patch_f.get_control_point_global_index(u,v);
+		int l_g = patch_f.get_point_global_index(q,r);
+		int m_g = patch_f.get_point_global_index(s,t);
+		int p_g = patch_f.get_point_global_index(u,v);
 
 		
 
@@ -695,15 +695,15 @@ arma::mat::fixed<3,3> ShapeModelBezier<PointType>::compute_patch_pair_cm_cov_con
 		int z =  int(coefs_row[15]);
 
 
-		i_g = patch_e. get_control_point_global_index(i,j);
-		j_g = patch_e. get_control_point_global_index(k,l);
-		k_g = patch_e. get_control_point_global_index(m,p);
-		l_g = patch_e. get_control_point_global_index(q,r);
+		i_g = patch_e. get_point_global_index(i,j);
+		j_g = patch_e. get_point_global_index(k,l);
+		k_g = patch_e. get_point_global_index(m,p);
+		l_g = patch_e. get_point_global_index(q,r);
 
-		m_g = patch_f. get_control_point_global_index(s,t);
-		p_g = patch_f. get_control_point_global_index(u,v);
-		q_g = patch_f. get_control_point_global_index(w,x);
-		r_g = patch_f. get_control_point_global_index(y,z);	
+		m_g = patch_f. get_point_global_index(s,t);
+		p_g = patch_f. get_point_global_index(u,v);
+		q_g = patch_f. get_point_global_index(w,x);
+		r_g = patch_f. get_point_global_index(y,z);	
 
 
 		const std::array<int,8> patch_e_indices_array = {i,j,k,l,m,p,q,r};
@@ -779,18 +779,18 @@ arma::mat::fixed<6,6> ShapeModelBezier<PointType>::compute_patch_pair_PI_contrib
 		int d =  int(coefs_row[19]);
 
 
-		i_g = patch_e. get_control_point_global_index(i,j);
-		j_g = patch_e. get_control_point_global_index(k,l);
-		k_g = patch_e. get_control_point_global_index(m,p);
-		l_g = patch_e. get_control_point_global_index(q,r);
-		m_g = patch_e. get_control_point_global_index(s,t);
+		i_g = patch_e. get_point_global_index(i,j);
+		j_g = patch_e. get_point_global_index(k,l);
+		k_g = patch_e. get_point_global_index(m,p);
+		l_g = patch_e. get_point_global_index(q,r);
+		m_g = patch_e. get_point_global_index(s,t);
 
 
-		p_g = patch_f. get_control_point_global_index(u,v);
-		q_g = patch_f. get_control_point_global_index(w,x);
-		r_g = patch_f. get_control_point_global_index(y,z);
-		s_g = patch_f. get_control_point_global_index(a,b);
-		t_g = patch_f. get_control_point_global_index(c,d);	
+		p_g = patch_f. get_point_global_index(u,v);
+		q_g = patch_f. get_point_global_index(w,x);
+		r_g = patch_f. get_point_global_index(y,z);
+		s_g = patch_f. get_point_global_index(a,b);
+		t_g = patch_f. get_point_global_index(c,d);	
 
 		const std::array<int,10> patch_e_indices_array = {i,j,k,l,m,p,q,r,s,t};
 		const std::array<int,10> patch_f_indices_array = {u,v,w,x,y,z,a,b,c,d};
@@ -851,15 +851,15 @@ arma::vec::fixed<6> ShapeModelBezier<PointType>::compute_patch_pair_P_MI_contrib
 		int z =  int(coefs_row[15]);
 
 
-		i_g = patch_e. get_control_point_global_index(i,j);
-		j_g = patch_e. get_control_point_global_index(k,l);
-		k_g = patch_e. get_control_point_global_index(m,p);
-		l_g = patch_e. get_control_point_global_index(q,r);
-		m_g = patch_e. get_control_point_global_index(s,t);	
+		i_g = patch_e. get_point_global_index(i,j);
+		j_g = patch_e. get_point_global_index(k,l);
+		k_g = patch_e. get_point_global_index(m,p);
+		l_g = patch_e. get_point_global_index(q,r);
+		m_g = patch_e. get_point_global_index(s,t);	
 
-		p_g = patch_f. get_control_point_global_index(u,v);
-		q_g = patch_f. get_control_point_global_index(w,x);
-		r_g = patch_f. get_control_point_global_index(y,z);
+		p_g = patch_f. get_point_global_index(u,v);
+		q_g = patch_f. get_point_global_index(w,x);
+		r_g = patch_f. get_point_global_index(y,z);
 
 
 		const std::array<int,10> patch_e_indices_array = {i,j,k,l,m,p,q,r,s,t};
@@ -1151,10 +1151,10 @@ void ShapeModelBezier<PointType>::assemble_mapping_matrices(){
 			std::array<int, 8> array = {i,j,k,l,m,p,q,r};
 
 
-			int i_g = patch_e. get_control_point_global_index(i,j);
-			int j_g = patch_e. get_control_point_global_index(k,l);
-			int k_g = patch_e. get_control_point_global_index(m,p);
-			int l_g = patch_e. get_control_point_global_index(q,r);
+			int i_g = patch_e. get_point_global_index(i,j);
+			int j_g = patch_e. get_point_global_index(k,l);
+			int k_g = patch_e. get_point_global_index(m,p);
+			int l_g = patch_e. get_point_global_index(q,r);
 			arma::mat::fixed<12,3> left_mat;
 
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
@@ -1179,11 +1179,11 @@ void ShapeModelBezier<PointType>::assemble_mapping_matrices(){
 
 			std::array<int, 10> array = {i,j,k,l,m,p,q,r,s,t};
 
-			int i_g = patch_e. get_control_point_global_index(i,j);
-			int j_g = patch_e. get_control_point_global_index(k,l);
-			int k_g = patch_e. get_control_point_global_index(m,p);
-			int l_g = patch_e. get_control_point_global_index(q,r);
-			int m_g = patch_e. get_control_point_global_index(s,t);
+			int i_g = patch_e. get_point_global_index(i,j);
+			int j_g = patch_e. get_point_global_index(k,l);
+			int k_g = patch_e. get_point_global_index(m,p);
+			int l_g = patch_e. get_point_global_index(q,r);
+			int m_g = patch_e. get_point_global_index(s,t);
 
 			arma::mat::fixed<6,15> left_mat;
 
@@ -1647,7 +1647,7 @@ void ShapeModelBezier<PointType>::compute_point_covariances(double sigma_sq,doub
 	for (unsigned int i = 0; i < this -> get_NControlPoints(); ++i){
 
 
-		arma::vec::fixed<3> ni = this -> get_control_point_normal_coordinates(i);
+		arma::vec::fixed<3> ni = this -> get_point_normal_coordinates(i);
 
 		arma::vec::fixed<3> u_2 = arma::randn<arma::vec>(3);
 		u_2 = arma::normalise(arma::cross(ni,u_2));
@@ -1663,10 +1663,10 @@ void ShapeModelBezier<PointType>::compute_point_covariances(double sigma_sq,doub
 		for (unsigned int j = i + 1; j < this -> get_NControlPoints(); ++j){
 
 
-			arma::vec::fixed<3> nj = this -> get_control_point_normal_coordinates(j);
+			arma::vec::fixed<3> nj = this -> get_point_normal_coordinates(j);
 
-			double distance = arma::norm(this ->get_control_point_coordinates(i)
-				- this ->get_control_point_coordinates(j));
+			double distance = arma::norm(this ->get_point_coordinates(i)
+				- this ->get_point_coordinates(j));
 
 			if ( distance < 3 * correl_distance){
 				double decay = std::exp(- std::pow(distance / correl_distance,2)) ;
@@ -1811,7 +1811,7 @@ void ShapeModelBezier<PointType>::save(std::string path) {
 		
 		shape_file << "f ";
 
-		auto points =  this -> elements[e].get_control_points();
+		auto points =  this -> elements[e].get_points();
 		
 		for (unsigned int index = 0; index < points.size(); ++index){
 
@@ -1868,9 +1868,9 @@ void ShapeModelBezier<PointType>::construct_kd_tree_shape(){
 
 	// 			if (t <= l){
 
-	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l - t);
-	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l - 1,l - t + 1);
-	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l - 1,l-t);
+	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l - t);
+	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l - 1,l - t + 1);
+	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l - 1,l-t);
 
 
 	// 				std::vector<std::shared_ptr<ControlPoint>> vertices;
@@ -1885,9 +1885,9 @@ void ShapeModelBezier<PointType>::construct_kd_tree_shape(){
 
 	// 			if (t > 0 ){
 
-	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_control_point(patch -> get_degree() - l,l-t);
-	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_control_point(patch -> get_degree() - l,l - t + 1 );
-	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_control_point(patch -> get_degree() - l -1,l - t + 1);
+	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l-t);
+	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l,l - t + 1 );
+	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l -1,l - t + 1);
 
 
 	// 				std::vector<std::shared_ptr<ControlPoint>> vertices;
@@ -1951,7 +1951,7 @@ void ShapeModelBezier<PointType>::save_to_obj(std::string path) const{
 
 		const Bezier & patch = this -> elements[i];
 
-		const std::vector<int> & control_points = patch.get_control_points();
+		const std::vector<int> & control_points = patch.get_points();
 
 
 		for (unsigned int index = 0; index < control_points. size(); ++index){
@@ -1983,18 +1983,18 @@ void ShapeModelBezier<PointType>::save_to_obj(std::string path) const{
 
 
 
-					int v0 = patch.get_control_point(patch.get_degree() - l,l - t);
-					int v1 = patch.get_control_point(patch.get_degree() - l - 1,l - t + 1);
-					int v2 = patch.get_control_point(patch.get_degree() - l - 1,l-t);
+					int v0 = patch.get_point(patch.get_degree() - l,l - t);
+					int v1 = patch.get_point(patch.get_degree() - l - 1,l - t + 1);
+					int v2 = patch.get_point(patch.get_degree() - l - 1,l-t);
 
 					facets.push_back(std::make_tuple(v0,v1,v2));
 				}
 
 				if (t > 0 ){
 
-					int v0 = patch.get_control_point(patch.get_degree() - l,l-t);
-					int v1 = patch.get_control_point(patch.get_degree() - l,l - t + 1 );
-					int v2 = patch.get_control_point(patch.get_degree() - l -1,l - t + 1);
+					int v0 = patch.get_point(patch.get_degree() - l,l-t);
+					int v1 = patch.get_point(patch.get_degree() - l,l - t + 1 );
+					int v2 = patch.get_point(patch.get_degree() - l -1,l - t + 1);
 
 					facets.push_back(std::make_tuple(v0,v1,v2));
 				}
@@ -2635,9 +2635,9 @@ void ShapeModelBezier<PointType>::take_slice(int axis,
 	// Each surface element is "sliced"
 	for (int el = 0; el < this -> elements.size(); ++el){
 
-		const ControlPoint & P0 = this -> control_points[this -> elements[el].get_control_point(1,0)];
-		const ControlPoint & P1 = this -> control_points[this -> elements[el].get_control_point(0,1)];
-		const ControlPoint & P2 = this -> control_points[this -> elements[el].get_control_point(0,0)];
+		const ControlPoint & P0 = this -> control_points[this -> elements[el].get_point(1,0)];
+		const ControlPoint & P1 = this -> control_points[this -> elements[el].get_point(0,1)];
+		const ControlPoint & P2 = this -> control_points[this -> elements[el].get_point(0,0)];
 
 		C.col(0) = P0.get_point_coordinates();
 		C.col(1) = P1.get_point_coordinates();
@@ -3178,7 +3178,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 	for (int e = 0; e < this -> elements.size(); ++e ){
 		
 		// These are the indices to the old control points owned by this element
-		const std::vector<int> & element_control_points = this -> elements[e].get_control_points();
+		const std::vector<int> & element_control_points = this -> elements[e].get_points();
 		
 		for (int i = 0; i < forw_after_elevation.size(); ++i){
 
@@ -3255,7 +3255,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 						// For all the elements that own this control point
 						for (auto element : ownership){
 							// For all the control points in this element
-							const auto & owning_element_control_points = this -> elements[element].get_control_points();
+							const auto & owning_element_control_points = this -> elements[element].get_points();
 							for (int j = 0; j < owning_element_control_points.size(); ++j){
 								
 								// if the global index of that control point corresponds to the global index
@@ -3359,7 +3359,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 
 
 						// We should now find the local indices of the two endpoints in the other element
-						const auto & other_element_control_points = this -> elements[other_element_index].get_control_points();
+						const auto & other_element_control_points = this -> elements[other_element_index].get_points();
 
 						// To be fair, we only need one of the two corner points: the one after the inserted point
 						// (which happens to be before the inserted point in the other element)

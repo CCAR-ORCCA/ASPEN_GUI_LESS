@@ -5,13 +5,13 @@
 #include <memory>
 #include <cassert>
 
-// template <class PointType> class KDTree;
 template <template<class> class ContainerType, class PointType>  class KDTree ;
 
 
 typedef typename std::pair<int, int > PointPair ;
 
-template <class PointType> class PointCloud {
+template <class PointType> 
+class PointCloud {
 
 public:
 

@@ -104,9 +104,9 @@ public:
 	@param j second index
 	@return local index to control point
 	*/
-	int get_control_point_local_index(unsigned int i, unsigned int j) const;
+	int get_point_local_index(unsigned int i, unsigned int j) const;
 
-	int get_control_point_global_index(unsigned int i, unsigned int j) const;
+	int get_point_global_index(unsigned int i, unsigned int j) const;
 
 
 
@@ -116,7 +116,7 @@ public:
 	@param j second index
 	@return global index of control point
 	*/	
-	int get_control_point(unsigned int i, unsigned int j) const;
+	int get_point(unsigned int i, unsigned int j) const;
 
 	/**
 	Returns the tuple of local indices (i,j,k) of a control point within a bezier patch
@@ -132,7 +132,7 @@ public:
 	@param j second index
 	@return coordinats of contorl point
 	*/	
-	const arma::vec::fixed<3> & get_control_point_coordinates(unsigned int i, unsigned int j) const;
+	const arma::vec::fixed<3> & get_point_coordinates(unsigned int i, unsigned int j) const;
 
 
 	/**
