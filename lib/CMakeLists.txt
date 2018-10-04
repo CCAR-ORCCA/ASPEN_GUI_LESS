@@ -159,7 +159,6 @@ add_library(${LIB_NAME} SHARED
 	source/IODFinder.cpp
 	source/KDTree.cpp
 	# source/KDTreeShape.cpp
-	# source/KDTreeControlPoints.cpp
 	source/Lidar.cpp
 	# source/NavigationFilter.cpp
 	# source/Observations.cpp
