@@ -15,7 +15,7 @@ class ControlPoint {
 public:
 
 
-	ControlPoint(ShapeModel<ControlPoint> * owning_shape);
+	ControlPoint(ShapeModel<ControlPoint> * owning_shape = nullptr);
 
 
 	/**

@@ -136,6 +136,7 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 add_library(${LIB_NAME} SHARED
 	# source/BatchFilter.cpp
 	source/BBox.cpp
+	source/BSpline.cpp
 	source/Bezier.cpp
 	# source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
