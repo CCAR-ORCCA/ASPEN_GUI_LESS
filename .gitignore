@@ -4,8 +4,6 @@
 *build*/
 *pc*/
 
-
-
 *.zip             
 *.pyc
 *.pdf
