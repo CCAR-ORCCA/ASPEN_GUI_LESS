@@ -91,21 +91,23 @@ BSpline::BSpline(int n_u,int n_v,int p_u,int p_v,
 
 			// Wrapping endpoints to close
 				bool wrapping_u = false;
+				bool wrapping_v = false;
+
 				if (i > this -> n_u - this -> p_u){
 					i_before_wrapping -= (this -> n_u - this -> p_u + 1);
 					wrapping_u = true;
 				}
 
 			// Wrapping endpoints to close
-				bool wrapping_v = false;
 
-				if (j == this -> n){
-					// j_before_wrapping -= (this -> n - this -> p + 1);
-					// wrapping = true;
-				}
+				// if (j == this -> n){
+				// 	// j_before_wrapping -= (this -> n - this -> p + 1);
+				// 	// wrapping_v = true;
+				// }
 
 				if (wrapping_u){
-					int index = (this -> n_v + 1) * i_before_wrapping + j_before_wrapping;
+
+					int index = (this -> n_v + 1 ) * i_before_wrapping + j_before_wrapping;
 					this -> control_point_indices[i][j] = index;
 
 				}
@@ -118,12 +120,15 @@ BSpline::BSpline(int n_u,int n_v,int p_u,int p_v,
 				else{
 
 					ControlPoint new_point;
-
+					double angle = std::floor(static_cast<double>(i) / (this -> n_u - this -> p_u + 1) * 8) * arma::datum::pi/4;
+					
 					arma::vec::fixed<3> coords = {
 						static_cast<double>(j),
-						static_cast<double>(i),
-						1 - std::sqrt( std::pow(i - this -> n_u/2.,2) + std::pow(j - this -> n_v/2.,2))
+						std::cos(angle),
+						std::sin(angle)
+						
 					};
+
 
 					new_point.set_point_coordinates(coords);
 					this -> control_point_indices[i][j] = this -> control_points.size();
@@ -135,8 +140,8 @@ BSpline::BSpline(int n_u,int n_v,int p_u,int p_v,
 
 
 	}
-	
-	
+
+
 }
 
 
