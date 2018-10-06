@@ -70,7 +70,7 @@ all_data = [
  {"PATH_SHAPE" : "../../../resources/shape_models/67P_lowlowres.obj",
 "ERROR_STANDARD_DEV" : 3e-2,
 "CORRELATION_DISTANCE" : 2e-1,
-"N_MONTE_CARLO" : 25000,
+"N_MONTE_CARLO" : 10000,
  "dir" : "../output/test_11"},
  ]
 
