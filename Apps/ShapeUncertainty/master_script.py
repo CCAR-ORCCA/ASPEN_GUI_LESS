@@ -8,11 +8,11 @@ import numpy as np
 all_data = [
 
 
-{"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
-"ERROR_STANDARD_DEV" : 5e-3,
-"CORRELATION_DISTANCE" : 5e-2,
-"N_MONTE_CARLO" : 10000,
- "dir" : "../output/test_0"},
+# {"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
+# "ERROR_STANDARD_DEV" : 5e-3,
+# "CORRELATION_DISTANCE" : 5e-2,
+# "N_MONTE_CARLO" : 10000,
+#  "dir" : "../output/test_0"},
 #  {"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
 # "ERROR_STANDARD_DEV" : 7.5e-3,
 # "CORRELATION_DISTANCE" : 5e-2,
@@ -23,11 +23,11 @@ all_data = [
 # "CORRELATION_DISTANCE" : 7.5e-2,
 # "N_MONTE_CARLO" : 10000,
 #  "dir" : "../output/test_2"},
- {"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
-"ERROR_STANDARD_DEV" : 1e-2,
-"CORRELATION_DISTANCE" : 1e-1,
-"N_MONTE_CARLO" : 10000,
- "dir" : "../output/test_3"},
+#  {"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
+# "ERROR_STANDARD_DEV" : 1e-2,
+# "CORRELATION_DISTANCE" : 1e-1,
+# "N_MONTE_CARLO" : 10000,
+#  "dir" : "../output/test_3"},
 
 
 # {"PATH_SHAPE" : "../../../resources/shape_models/itokawa_8.obj",
@@ -69,7 +69,7 @@ all_data = [
 #  "dir" : "../output/test_10"},
  {"PATH_SHAPE" : "../../../resources/shape_models/67P_lowlowres.obj",
 "ERROR_STANDARD_DEV" : 1e-1,
-"CORRELATION_DISTANCE" : 2e-1,
+"CORRELATION_DISTANCE" : 5e-1,
 "N_MONTE_CARLO" : 10000,
  "dir" : "../output/test_11"},
  ]
