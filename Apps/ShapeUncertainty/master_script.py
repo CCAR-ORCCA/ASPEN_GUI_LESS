@@ -68,8 +68,8 @@ all_data = [
 # "N_MONTE_CARLO" : 25000,
 #  "dir" : "../output/test_10"},
  {"PATH_SHAPE" : "../../../resources/shape_models/67P_lowlowres.obj",
-"ERROR_STANDARD_DEV" : 1e-1,
-"CORRELATION_DISTANCE" : 5e-1,
+"ERROR_STANDARD_DEV" : 7.5e-2,
+"CORRELATION_DISTANCE" : 3e-1,
 "N_MONTE_CARLO" : 10000,
  "dir" : "../output/test_11"},
  ]
