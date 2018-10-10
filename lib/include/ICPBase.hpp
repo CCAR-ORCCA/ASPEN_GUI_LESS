@@ -50,12 +50,6 @@ public:
 
 	void set_pairs(const std::vector<PointPair> & point_pairs);
 
-
-	void register_pc(
-		const double r_tol,
-		const double stol,
-		const arma::mat::fixed<3,3>  & dcm_0,
-		const arma::vec::fixed<3> &  X_0);
 	
 	void register_pc(
 		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
@@ -160,8 +154,8 @@ protected:
 	arma::mat::fixed<6,6> R;
 	
 	double J_res;
-	double r_tol = 1e-6;
-	double s_tol = 1e-3;
+	double r_tol = 1e-8;
+	double s_tol = 1e-2;
 	double neighborhood_radius = -1;
 
 	unsigned int iterations_max = 100;

@@ -3,7 +3,15 @@
 #include <EstimationFeature.hpp>
 #include <PointCloudIO.hpp>
 
-#define ICP_DEBUG 1
+#define ICP_DEBUG 0
+
+
+#pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
+initializer( omp_priv = arma::zeros<arma::vec>(6) )
+
+#pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\
+initializer( omp_priv = arma::zeros<arma::mat>(6,6) )
+
 
 ICPBase::ICPBase(){
 
@@ -15,20 +23,6 @@ ICPBase::ICPBase(
 	
 	this -> pc_destination = pc_destination;
 	this -> pc_source = pc_source;
-
-}
-
-void ICPBase::register_pc(
-	const double r_tol,
-	const double s_tol,
-	const arma::mat::fixed<3,3> & dcm_0,
-	const arma::vec::fixed<3> & X_0){
-
-	this -> r_tol = r_tol;
-	this -> s_tol = s_tol;
-
-
-	this -> register_pc(dcm_0,X_0);
 
 }
 
@@ -107,6 +101,9 @@ void ICPBase::register_pc(
 	const arma::mat::fixed<3,3> & dcm_0,
 	const arma::vec::fixed<3> & X_0){
 
+
+	auto start = std::chrono::system_clock::now();
+
 	double J  = std::numeric_limits<double>::infinity();
 	double J_0  = std::numeric_limits<double>::infinity();
 	double J_previous = std::numeric_limits<double>::infinity();
@@ -119,7 +116,6 @@ void ICPBase::register_pc(
 	arma::mat::fixed<6,6> info_mat;
 	arma::vec::fixed<6> normal_mat;
 
-
 	// The batch estimator is initialized
 	this -> mrp = RBK::dcm_to_mrp(dcm_0);
 	this -> x = X_0;
@@ -128,68 +124,67 @@ void ICPBase::register_pc(
 		this -> pca_prealignment(this -> mrp ,this -> x);
 	}
 
-	if (this -> iterations_max == 0){
-		return;
-	}
+	if (this -> iterations_max > 0){
+
 
 	// If no pairs have been provided, they are recomputed
-	if(this -> point_pairs.size() == 0){
-		this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
-		FeatureMatching<PointNormal>::save_matches(
-			"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(0) + ".txt",
-			this -> point_pairs,
-			*this -> pc_source,
-			*this -> pc_destination);
-		this -> hierarchical = true;
-		
-	}
-	else{
-		this -> hierarchical = false;
-	}
+		if(this -> point_pairs.size() == 0){
+			this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
+			FeatureMatching<PointNormal>::save_matches(
+				"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(0) + ".txt",
+				this -> point_pairs,
+				*this -> pc_source,
+				*this -> pc_destination);
+			this -> hierarchical = true;
 
-	J_0 = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
-	J = J_0;
+		}
+		else{
+			this -> hierarchical = false;
+		}
+
+		J_0 = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+		J = J_0;
 
 
 	#if ICP_DEBUG
-	std::cout << "\nStarting ICP with a-priori rigid transform : " << std::endl;
-	std::cout << "\tMRP: \n" << this -> mrp.t();
-	std::cout << "\tx: \n" << this -> x.t();
-	std::cout << "\nInitial residuals : " << std::endl;
-	std::cout << J_0 << std::endl;
+		std::cout << "\nStarting ICP with a-priori rigid transform : " << std::endl;
+		std::cout << "\tMRP: \n" << this -> mrp.t();
+		std::cout << "\tx: \n" << this -> x.t();
+		std::cout << "\nInitial residuals : " << std::endl;
+		std::cout << J_0 << std::endl;
 
 	#endif
 
 		// The ICP is iterated
-	for (unsigned int iter = 0; iter < this -> iterations_max; ++iter) {
+		for (unsigned int iter = 0; iter < this -> iterations_max; ++iter) {
 
 		/***************************************
 		Going down to the lower hierarchical level
 		****************************************/
 
-		if ( next_h == true && this -> hierarchical) {
+			if ( next_h == true && this -> hierarchical) {
 				// The pairs are formed only after a change in the hierchical search
-			this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
-			next_h = false;
+				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
+				next_h = false;
 
 				#if ICP_DEBUG
-			FeatureMatching<PointNormal>::save_matches(
-				"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",
-				this -> point_pairs,
-				*this -> pc_source,
-				*this -> pc_destination);
+				FeatureMatching<PointNormal>::save_matches(
+					"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",
+					this -> point_pairs,
+					*this -> pc_source,
+					*this -> pc_destination);
 				#endif
-		}
+			}
 		/**************************************
 		***************************************
 		**************************************/
 
 
 		#if ICP_DEBUG
-		std::cout << "ICP iteration " << iter + 1 << " / " << this -> iterations_max  << std::endl;
-		if (this -> hierarchical)
-			std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
-		std::cout << "Pairs: " << this -> point_pairs.size() << std::endl << std::endl;
+			std::cout << "ICP iteration " << iter + 1 << " / " << this -> iterations_max  << std::endl;
+			if (this -> hierarchical)
+				std::cout << "Hierchical level : " << std::to_string(h) << std::endl;
+			std::cout << "Pairs: " << this -> point_pairs.size() << std::endl << std::endl;
 		#endif
 
 
@@ -198,53 +193,58 @@ void ICPBase::register_pc(
 		***************************************/
 
 			// The matrices of the LS problem are now accumulated
-		info_mat.fill(0);
-		normal_mat.fill(0);
+			info_mat.fill(0);
+			normal_mat.fill(0);
 
-			// #pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
-		for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
-			arma::mat::fixed<6,6> info_mat_temp;
-			arma::vec::fixed<6> normal_mat_temp;
-			this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
-			info_mat += info_mat_temp;
-			normal_mat += normal_mat_temp;
+		#if !__APPLE__
+		#pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
+		#endif
+			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
+				arma::mat::fixed<6,6> info_mat_temp;
+				arma::vec::fixed<6> normal_mat_temp;
+				this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
 
 
-			
+				normal_mat += normal_mat_temp;
+				info_mat += info_mat_temp;
 
-		}
+
+			}
+
+
+
 
 
 			#if ICP_DEBUG
-		std::cout << "\nInfo mat: " << std::endl;
-		std::cout << info_mat << std::endl;
-		std::cout << "\nNormal mat: " << std::endl;
-		std::cout << normal_mat << std::endl;
+			std::cout << "\nInfo mat: " << std::endl;
+			std::cout << info_mat << std::endl;
+			std::cout << "\nNormal mat: " << std::endl;
+			std::cout << normal_mat << std::endl;
 			#endif
 
 			// The state deviation [dmrp,dx] is solved for
-		arma::vec dX = arma::solve(info_mat, normal_mat);
-		arma::vec dx = dX.subvec(0,2);
-		arma::vec dmrp = dX.subvec(3,5);
+			arma::vec dX = arma::solve(info_mat, normal_mat);
+			arma::vec dx = dX.subvec(0,2);
+			arma::vec dmrp = dX.subvec(3,5);
 
 			// The state is updated
-		this -> mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(this -> mrp));
-		this -> x +=  dx;
+			this -> mrp = RBK::dcm_to_mrp(RBK::mrp_to_dcm(dmrp) * RBK::mrp_to_dcm(this -> mrp));
+			this -> x +=  dx;
 
 			// the mrp is switched to its shadow if need be
-		this -> mrp = RBK::shadow_mrp(this -> mrp);
+			this -> mrp = RBK::shadow_mrp(this -> mrp);
 
 			// The postfit residuals are computed
-		J = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+			J = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
 
 			#if ICP_DEBUG
-		std::cout << "\nDeviation : " << std::endl;
-		std::cout << dX << std::endl;
-		std::cout << "\nResiduals: " << J << std::endl;
-		std::cout << "MRP: \n" << this -> mrp << std::endl;
-		std::cout << "x: \n" << this -> x << std::endl;
-		std::cout << "Covariance :\n" << std::endl;
-		std::cout << arma::inv(info_mat) << std::endl;
+			std::cout << "\nDeviation : " << std::endl;
+			std::cout << dX << std::endl;
+			std::cout << "\nResiduals: " << J << std::endl;
+			std::cout << "MRP: \n" << this -> mrp << std::endl;
+			std::cout << "x: \n" << this -> x << std::endl;
+			std::cout << "Covariance :\n" << std::endl;
+			std::cout << arma::inv(info_mat) << std::endl;
 			#endif
 
 
@@ -252,37 +252,48 @@ void ICPBase::register_pc(
 		************************
 		************************/
 
-		if(this -> check_convergence(iter,J,J_0,J_previous,h,next_h)){
-			break;
+			if(this -> check_convergence(iter,J,J_0,J_previous,h,next_h)){
+				break;
+			}
+
 		}
 
-	}
-	
 
 	#if ICP_DEBUG
-	std::cout << "Leaving ICPBase. Best transform: \n";
-	std::cout << "\tmrp: " << this -> mrp.t();
-	std::cout << "\tx: " << this -> x.t();
-	std::cout << "\tResiduals: " << J << std::endl;
-	FeatureMatching<PointNormal>::save_matches(
-		"icp_pairs.txt",
-		this -> point_pairs,
-		*this -> pc_source,
-		*this -> pc_destination,
-		RBK::mrp_to_dcm(this -> mrp),
-		this -> x);
+		std::cout << "Leaving ICPBase. Best transform: \n";
+		std::cout << "\tmrp: " << this -> mrp.t();
+		std::cout << "\tx: " << this -> x.t();
+		std::cout << "\tResiduals: " << J << std::endl;
+		FeatureMatching<PointNormal>::save_matches(
+			"icp_pairs.txt",
+			this -> point_pairs,
+			*this -> pc_source,
+			*this -> pc_destination,
+			RBK::mrp_to_dcm(this -> mrp),
+			this -> x);
 
 	#endif
 
 
 
-	try{
-		this -> R = arma::inv(info_mat);
+		try{
+			this -> R = arma::inv(info_mat);
+		}
+		catch(std::runtime_error & e){
+			std::cout << e.what();
+		}
+		this -> J_res = J ;
+
+
 	}
-	catch(std::runtime_error & e){
-		std::cout << e.what();
-	}
-	this -> J_res = J ;
+
+
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "Time elapsed in ICP: " << elapsed_seconds.count()<< " (s)"<< std::endl;
+
 
 }
 
@@ -303,7 +314,7 @@ bool ICPBase::check_convergence(const int & iter,const double & J,const double &
 		if (this -> hierarchical){
 			J_previous = std::numeric_limits<double>::infinity();
 		#if ICP_DEBUG
-		std::cout << "Has stalled, going to the next level\n";
+			std::cout << "Has stalled, going to the next level\n";
 		#endif
 		}
 		else{

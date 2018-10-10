@@ -32,9 +32,9 @@ double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pa
 	const std::shared_ptr<PC> & pc_S,
 	const std::shared_ptr<PC> & pc_D){
 
-	return std::abs(arma::dot(dcm_S * pc_S -> get_point_coordinates(point_pair.first)  + x_S 
+	return arma::dot(dcm_S * pc_S -> get_point_coordinates(point_pair.first)  + x_S 
 		- dcm_D * pc_D -> get_point_coordinates(point_pair.second)  - x_D,
-		dcm_D * pc_D -> get_normal_coordinates(point_pair.second) ));
+		dcm_D * pc_D -> get_normal_coordinates(point_pair.second));
 }
 
 
@@ -243,7 +243,6 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,
 
 	const arma::vec::fixed<3> & S_i = this -> pc_source -> get_point_coordinates(point_pairs[pair_index].first);
 	const arma::vec::fixed<3> & D_i = this -> pc_destination -> get_point_coordinates(point_pairs[pair_index].second);
-
 	const arma::vec::fixed<3> & n_i = this -> pc_destination -> get_normal_coordinates(point_pairs[pair_index].second);
 
 	// The partial derivative of the observation model is computed

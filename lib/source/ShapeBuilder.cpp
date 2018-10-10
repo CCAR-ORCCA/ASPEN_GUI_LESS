@@ -133,12 +133,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
 			icp_pc_prealign.set_minimum_h(4);
-			icp_pc_prealign.register_pc(1e-8,1e-2,M_pc,X_pc);
+			icp_pc_prealign.register_pc(M_pc,X_pc);
 
 
 			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 
-			icp_pc.register_pc(1e-8,1e-2,icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
+			icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -463,7 +463,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 				icp_pc.set_save_rigid_transform(this -> LN_t0.t(),this -> x_t0);
-				icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
+				icp_pc.register_pc(M_pc,X_pc);
 
 
 

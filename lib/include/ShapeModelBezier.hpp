@@ -4,8 +4,6 @@
 #include <ShapeModel.hpp>
 #include "Bezier.hpp"
 
-#include "CustomReductions.hpp"
-
 #include <Eigen/Cholesky>
 #include <Eigen/Dense>
 #include <array>
@@ -17,7 +15,6 @@ typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 
 template <class PointType>
 class ShapeModelBezier : public ShapeModel<PointType>{
-
 
 public:
 

@@ -10,7 +10,6 @@
 #define BUNDLE_ADJUSTER_DEBUG 1
 
 
-
 BundleAdjuster::BundleAdjuster(
 	int t0, 
 	int tf,
@@ -148,6 +147,9 @@ void BundleAdjuster::solve_bundle_adjustment(){
 		}
 
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+
+
+
 
 			// They are added to the whole problem
 			this -> add_subproblem_to_problem(coefficients,
@@ -298,11 +300,24 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		std::vector<PointPair> point_pairs;
 
 
+		if (!this -> use_true_pairs){
+		#if BUNDLE_ADJUSTER_DEBUG
+			std::cout << "Computing pairs\n";
+		#endif
+			IterativeClosestPointToPlane::compute_pairs(point_pairs,
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
+				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),
+				this -> h);	
+		}
+		else{
+		#if BUNDLE_ADJUSTER_DEBUG
+			std::cout << "Using true pairs\n";
+		#endif
 
-		IterativeClosestPointToPlane::compute_pairs(point_pairs,
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
-			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),
-			this -> h);		
+			for (int i = 0; i < this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> size(); ++i){
+				point_pairs.push_back(std::make_pair(i,i));
+			}
+		}	
 
 
 		IterativeClosestPointToPlane icp;
@@ -310,7 +325,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		icp.set_pc_destination(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]));
 		icp.set_pc_source(this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]));
 		icp.set_pairs(point_pairs);
-
 
 
 		double error = icp.compute_rms_residuals(point_pairs,
@@ -380,8 +394,6 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 			x_D);	
 	}
 	else{
-
-
 		#if BUNDLE_ADJUSTER_DEBUG
 		std::cout << "Using true pairs\n";
 		#endif
@@ -687,7 +699,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index.size());
 	++progress;
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned int i = 1; i < this -> local_pc_index_to_global_pc_index.size(); ++i){
 
 		int x_index = 6 * (i - 1);
