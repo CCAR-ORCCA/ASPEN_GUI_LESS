@@ -77,7 +77,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
 	int previous_closure_index = 0;
-	int coverage_check_last_index = 0;
 
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -173,16 +172,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> source_pc);
 
 
-			// The surface coverage is estimated
-
-			if (time_index - coverage_check_last_index > 10){
-				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
-				coverage_check_last_index = time_index;
-			}
-
-
-
-
 
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
@@ -241,6 +230,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						previous_closure_index);
 
 					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
 				// estimated_state =  this -> run_IOD_finder(times,
 				// 	last_ba_call_index ,
@@ -1099,14 +1089,15 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 
 
-void ShapeBuilder::estimate_coverage(std::string dir) const{
+void ShapeBuilder::estimate_coverage(int previous_closure_index,
+	std::string dir) const{
 
 	// A PC is formed with all the registered point clouds
 	PointCloud<PointNormal> global_pc;
 
-	for (const std::shared_ptr<PointCloud<PointNormal> > & pc : this -> all_registered_pc){
-		for (int j = 0; j < pc -> size(); ++j){
-			global_pc.push_back(pc -> get_point(j));
+	for (int i = 0; i <=  previous_closure_index; ++i){
+		for (int j = 0; j <  this -> all_registered_pc[i] -> size(); ++j){
+			global_pc.push_back( this -> all_registered_pc[i] -> get_point(j));
 		}
 	}
 

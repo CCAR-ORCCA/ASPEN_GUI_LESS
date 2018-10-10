@@ -120,7 +120,8 @@ protected:
 		const std::vector<RigidTransform> & absolute_rigid_transforms,
 		const std::vector<RigidTransform> & absolute_true_rigid_transforms) const;
 
-	void estimate_coverage(std::string dir) const;
+	void estimate_coverage(int previous_closure_index,
+		std::string dir) const;
 
 
 	/**
