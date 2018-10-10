@@ -101,8 +101,9 @@ public:
 
 	/**
 	Builds KD Tree
+	@param verbose true will display the time elapsed during kd tree construction
 	*/
-	void build_kdtree();
+	void build_kdtree(bool verbose = true);
 
 	/**
 	Subscript operator accessing the underlying point vector

@@ -124,7 +124,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 		}
 
-		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
+		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
+
+			
+			
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
@@ -147,8 +150,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
-			if (!this -> filter_arguments-> get_use_ba()){
-
+			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
 
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
 				M_pc = this -> LB_t0 * dcm_LB.t();
@@ -164,7 +166,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
 			BN_measured.push_back( BN_measured.front() * this -> LN_t0.t() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
-
 			
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
@@ -176,7 +177,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			if (time_index - coverage_check_last_index > 10){
 				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
-
 				coverage_check_last_index = time_index;
 			}
 
@@ -186,6 +186,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
+
+			assert(BN_measured.size() == BN_true.size());
+			assert(M_pcs.size() == BN_true.size());
+			assert(X_pcs.size() == BN_true.size());
+
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -200,51 +205,42 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 
-			if (this -> filter_arguments -> get_use_ba() && 
-				time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+			if (time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
 
-				std::cout << " -- Applying BA to successive point clouds\n";
-			std::vector<std::shared_ptr<PC > > pc_to_ba;
+				this -> save_attitude(dir + "/true",time_index,BN_true);
 
-			this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
-			this -> save_attitude(dir + "/true",time_index,BN_true);
+				if (!this -> filter_arguments -> get_use_ba() ){
+					this -> save_attitude(dir + "/measured_no_BA",time_index,BN_measured);
+					last_ba_call_index = time_index;
+				}
 
-		
+				else{
 
+					std::cout << " -- Applying BA to successive point clouds\n";
 
-			BundleAdjuster bundle_adjuster(
-				0, 
-				time_index,
-				&this -> all_registered_pc, 
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				5,
-				this -> LN_t0,
-				this -> x_t0,
-				dir); 
+					this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
 
-			bundle_adjuster.run(
-				M_pcs,
-				X_pcs,
-				BN_measured,
-				mrps_LN,
-				false,
-				previous_closure_index);
+					BundleAdjuster bundle_adjuster(
+						0, 
+						time_index,
+						&this -> all_registered_pc, 
+						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+						5,
+						this -> LN_t0,
+						this -> x_t0,
+						dir); 
 
 
+					bundle_adjuster.run(
+						M_pcs,
+						X_pcs,
+						BN_measured,
+						mrps_LN,
+						true,
+						previous_closure_index);
 
-
-
-
-
-
-
-
-
-
-			this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
-			throw;
-			std::cout << " -- Running IOD after correction\n";
+					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
 				// estimated_state =  this -> run_IOD_finder(times,
 				// 	last_ba_call_index ,
@@ -254,16 +250,17 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				// 	M_pcs);
 
 
+					last_ba_call_index = time_index;
+				}
+			}
 
-			last_ba_call_index = time_index;
-		}
 
-		else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
+			else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
-			std::cout << " -- Applying BA to whole point cloud batch\n";
+				std::cout << " -- Applying BA to whole point cloud batch\n";
 
-			throw(std::runtime_error("not implemented yet"));
-			std::vector<std::shared_ptr<PC > > pc_to_ba;
+				throw(std::runtime_error("not implemented yet"));
+				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
 
 			// BundleAdjuster bundle_adjuster(0, 
@@ -281,30 +278,30 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			// cutoff_index = bundle_adjuster.get_cutoff_index();
 
-			std::cout << " -- Running IOD after correction\n";
+				std::cout << " -- Running IOD after correction\n";
 
-		}
+			}
 
 			#if IOFLAGS_shape_builder
-		PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
-			"../output/pc/source_" + std::to_string(time_index) + ".obj",
-			this -> LN_t0.t(), 
-			this -> x_t0);
+			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+				"../output/pc/source_" + std::to_string(time_index) + ".obj",
+				this -> LN_t0.t(), 
+				this -> x_t0);
 			#endif
 
-		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-			std::cout << "- Initializing shape model" << std::endl;
+			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
+				std::cout << "- Initializing shape model" << std::endl;
 
-			this -> initialize_shape(cutoff_index);
-			this -> estimated_shape_model -> save(dir + "/fit_source_" + std::to_string(time_index)+ ".b");
+				this -> initialize_shape(cutoff_index);
+				this -> estimated_shape_model -> save(dir + "/fit_source_" + std::to_string(time_index)+ ".b");
 
-			arma::vec center_of_mass = this -> estimated_shape_model -> get_center_of_mass();
+				arma::vec center_of_mass = this -> estimated_shape_model -> get_center_of_mass();
 
 			// The estimated shape model is bary-centered 
-			this -> estimated_shape_model -> shift_to_barycenter();
-			this -> estimated_shape_model -> update_mass_properties();			
-			this -> estimated_shape_model -> shift_to_barycenter();
-			this -> estimated_shape_model -> update_mass_properties();
+				this -> estimated_shape_model -> shift_to_barycenter();
+				this -> estimated_shape_model -> update_mass_properties();			
+				this -> estimated_shape_model -> shift_to_barycenter();
+				this -> estimated_shape_model -> update_mass_properties();
 
 			// After being bary-centered, its inertial attitude is set
 			// Its coordinates are still expressed in the L0 frame
@@ -312,9 +309,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// So need to apply the following transform:
 			// [BN](0)[NL](0)
 
-			arma::mat dcm = BN_measured.front() * this -> LN_t0.t();
-			this -> estimated_shape_model -> rotate(dcm);
-			this -> estimated_shape_model -> update_mass_properties();
+				arma::mat dcm = BN_measured.front() * this -> LN_t0.t();
+				this -> estimated_shape_model -> rotate(dcm);
+				this -> estimated_shape_model -> update_mass_properties();
 
 			// The measured states are saved
 			// as they will be provided to the navigation filter
@@ -324,41 +321,41 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The final position is obtained from inverting the rigid transforms,
 			// using the computed position of the center of mass in the stitching frame
 
-			double dt = times(times.n_rows - 1) - times(times.n_rows - 2);
+				double dt = times(times.n_rows - 1) - times(times.n_rows - 2);
 
-			arma::vec final_pos = RBK::mrp_to_dcm(mrps_LN.back()).t() * M_pcs[M_pcs.size() - 1].t() * (X_pcs[X_pcs.size() - 1]- center_of_mass);
-			arma::vec final_pos_before = RBK::mrp_to_dcm(mrps_LN[mrps_LN.size() - 2]).t() * M_pcs[M_pcs.size() - 2].t() * (X_pcs[X_pcs.size() - 2] - center_of_mass);
+				arma::vec final_pos = RBK::mrp_to_dcm(mrps_LN.back()).t() * M_pcs[M_pcs.size() - 1].t() * (X_pcs[X_pcs.size() - 1]- center_of_mass);
+				arma::vec final_pos_before = RBK::mrp_to_dcm(mrps_LN[mrps_LN.size() - 2]).t() * M_pcs[M_pcs.size() - 2].t() * (X_pcs[X_pcs.size() - 2] - center_of_mass);
 
-			arma::vec final_vel = (final_pos - final_pos_before) / dt;
+				arma::vec final_vel = (final_pos - final_pos_before) / dt;
 
 
 			// the final angular velocity is obtained by finite differencing
 			// of the successive BAed (or not!) attitude measurements
 
-			arma::vec sigma_final = RBK::dcm_to_mrp(BN_measured.back());
-			arma::vec sigma_final_before = RBK::dcm_to_mrp(BN_measured[BN_measured.size() -2]);
+				arma::vec sigma_final = RBK::dcm_to_mrp(BN_measured.back());
+				arma::vec sigma_final_before = RBK::dcm_to_mrp(BN_measured[BN_measured.size() -2]);
 
-			arma::vec dmrp = sigma_final - sigma_final_before;
+				arma::vec dmrp = sigma_final - sigma_final_before;
 
 			// dmrp/dt == 1/4 Bmat(sigma_before) * omega
-			arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
+				arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
 
-			this -> filter_arguments -> set_position_final(final_pos);
-			this -> filter_arguments -> set_velocity_final(final_vel);
+				this -> filter_arguments -> set_position_final(final_pos);
+				this -> filter_arguments -> set_velocity_final(final_vel);
 
-			this -> filter_arguments -> set_mrp_EN_final(sigma_final);
-			this -> filter_arguments -> set_omega_EN_final(omega_final);
+				this -> filter_arguments -> set_mrp_EN_final(sigma_final);
+				this -> filter_arguments -> set_omega_EN_final(omega_final);
 
 
-			return;
+				return;
+
+			}
+
+
 
 		}
 
-
-
 	}
-
-}
 
 
 }
@@ -419,39 +416,15 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		// shape model and the source point cloud
 
 		this -> store_point_clouds(time_index,dir);
-
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
+		}
 
-			#if IOFLAGS_run_iod
-
-			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc,
-				dir + "/source_" + std::to_string(time_index) + ".obj",
-				this -> LN_t0.t(), 
-				this -> x_t0);
-
-			#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
+		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
-		}
-
-
-		if (this -> destination_pc != nullptr && this -> source_pc != nullptr) {
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
@@ -459,15 +432,9 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 			
 			try{
 
-
-
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 				icp_pc.set_save_rigid_transform(this -> LN_t0.t(),this -> x_t0);
 				icp_pc.register_pc(M_pc,X_pc);
-
-
-
-
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -511,8 +478,6 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 				dir + "/source_" + std::to_string(time_index) + ".obj",
 				this -> LN_t0.t(), 
 				this -> x_t0);
-
-
 
 
 			this -> source_pc -> transform(M_pc,X_pc);
@@ -864,11 +829,17 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> destination_pc,*this -> destination_pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
+
+		#if IOFLAGS_shape_builder
+		PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
+			this -> LN_t0.t(),this -> x_t0);
+		#endif
+
 	}
 
 	else {
 
-		// Only one source point cloud has been collected
+		// Only one destination point cloud has been collected
 		if (this -> source_pc == nullptr) {
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
@@ -881,6 +852,13 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 			estimate_normals.set_los_dir(los);
 			estimate_normals.estimate(6);
 
+
+			#if IOFLAGS_shape_builder
+			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
+				this -> LN_t0.t(),this -> x_t0);
+			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
+				this -> LN_t0.t(),this -> x_t0);
+			#endif
 
 
 		}
@@ -902,14 +880,12 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 			estimate_normals.estimate(6);
 
 
-
 			#if IOFLAGS_shape_builder
-			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
+			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index - 1) + ".obj",
 				this -> LN_t0.t(),this -> x_t0);
 			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
 				this -> LN_t0.t(),this -> x_t0);
 			#endif
-
 
 		}
 	}

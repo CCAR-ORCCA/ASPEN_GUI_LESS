@@ -8,8 +8,7 @@
 #include <Observer.hpp>
 #include <System.hpp>
 #include <ShapeBuilderArguments.hpp>
-#include <PC.hpp>
-
+#include <StatePropagator.hpp>
 
 #include <NavigationFilter.hpp>
 #include <SBGATSphericalHarmo.hpp>
@@ -18,6 +17,9 @@
 #include <boost/progress.hpp>
 #include <boost/numeric/odeint.hpp>
 #include <vtkOBJReader.h>
+
+#include "json.hpp"
+
 
 // Various constants that set up the visibility emulator scenario
 
@@ -29,7 +31,6 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_SHAPE 0.0016  // frequency at which point clouds are collected for the shape reconstruction phase
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 #define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
@@ -40,11 +41,6 @@
 // Process noise 
 #define PROCESS_NOISE_SIGMA_VEL 2e-8 // velocity
 #define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
-
-// Times
-#define T0 0
-#define OBSERVATION_TIMES 500 // shape reconstruction steps
-#define NAVIGATION_TIMES 80 // navigation steps
 
 // Shape fitting parameters
 #define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
@@ -60,15 +56,6 @@
 #define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
 #define IOD_ITERATIONS 30000 // Number of iterations
 
-// Target properties
-#define SPIN_RATE 12. // Spin rate (hours)
-#define DENSITY 1900 // Density (kg/m^3)
-#define USE_HARMONICS true // if true, will use the spherical harmonics expansion of the target's gravity field
-#define HARMONICS_DEGREE 10 // degree of the spherical harmonics expansion
-
-// Orbit properties
-#define INCLINATION 90 // Orbit inclination (degrees)
-
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
 #define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
@@ -80,15 +67,56 @@
 #define SIGMA_MRP 1e-3 // a-priori sd on mrp (-)
 #define SIGMA_OMEGA 1e-5 // a-priori sd on angular velocity (rad/s)
 
+
+#define T0 0
+
 // CHEATS (true: cheat is disabled)
-#define USE_BA true // Whether or not the bundle adjustment should be used
+#define USE_BA false // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
+#define USE_TRUE_RIGID_TRANSFORMS false // Whether or not the true rigid transforms should be used
 #define RECONSTRUCT_SHAPE true
 ///////////////////////////////////////////
 
 int main() {
 
 	arma::arma_rng::set_seed(0);
+
+
+	// Loading case parameters from file
+	arma::arma_rng::set_seed(0);
+
+	std::ifstream i("input_file.json");
+	nlohmann::json input_data;
+	i >> input_data;
+
+	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
+	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
+
+	double SMA = input_data["SMA"];
+	double E = input_data["E"];
+	double I = input_data["I"];
+	double RAAN = input_data["RAAN"];
+	double PERI_OMEGA = input_data["PERI_OMEGA"];
+	double M0 = input_data["M0"];
+	double LATITUDE_SPIN = input_data["LATITUDE_SPIN"];
+	double LONGITUDE_SPIN = input_data["LONGITUDE_SPIN"];
+	double SPIN_PERIOD = input_data["SPIN_PERIOD"];
+	double DENSITY = input_data["DENSITY"];
+	double INSTRUMENT_FREQUENCY_SHAPE = input_data["INSTRUMENT_FREQUENCY_SHAPE"];
+	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
+	bool USE_HARMONICS = input_data["USE_HARMONICS"];
+	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];
+
+	std::string dir = input_data["dir"];
+
+
+	double T_orbit = (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE;
+
+	// Angular velocity in body frame
+	double omega = 2 * arma::datum::pi / (SPIN_PERIOD * 3600);
+	arma::vec omega_vec = {0,0,omega};
+	arma::vec omega_0 = (RBK::M2(-LATITUDE_SPIN) * RBK::M3(LONGITUDE_SPIN)).t() * omega_vec;
+
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -102,7 +130,7 @@ int main() {
 	frame_graph.add_transform("N", "L");
 
 	// Shape model formed with triangles
-	ShapeModelTri true_shape_model("B", &frame_graph);
+	ShapeModelTri<ControlPoint> true_shape_model("B", &frame_graph);
 
 	std::string path_to_shape;
 
@@ -114,9 +142,7 @@ int main() {
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
 
-	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
-
-	shape_io_truth.load_obj_shape_model(&true_shape_model);
+	ShapeModelImporter::load_obj_shape_model(path_to_shape, 1, true,true_shape_model);
 	
 	true_shape_model.construct_kd_tree_shape();
 
@@ -148,24 +174,21 @@ int main() {
 	args.set_true_inertia(true_shape_model.get_inertia());
 
 
-
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/
 	/******************************************************/
-	# if USE_HARMONICS
+	if(USE_HARMONICS){
 
+		vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+		reader -> SetFileName(path_to_shape.c_str());
+		reader -> Update(); 
 
-	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-	reader -> SetFileName(path_to_shape.c_str());
-	reader -> Update(); 
-
-
-	vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
-	spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
-	spherical_harmonics -> SetDensity(DENSITY);
-	spherical_harmonics -> SetScaleMeters();
-	spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
+		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
+		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
+		spherical_harmonics -> SetDensity(DENSITY);
+		spherical_harmonics -> SetScaleMeters();
+		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
 	spherical_harmonics -> IsNormalized(); // can be skipped as normalized coefficients is the default parameter
 	spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
 	spherical_harmonics -> Update();
@@ -173,7 +196,7 @@ int main() {
 	// The spherical harmonics are saved to a file
 	spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
 	args.set_sbgat_harmonics(spherical_harmonics);
-	#endif
+}
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
@@ -186,34 +209,18 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
-
 	// Initial state
-	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
+arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
-	// Position in inertial frame
-	arma::vec pos_0 = {1000,50,150};
+arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
+OC::KepState kep_state(kep_state_vec,args.get_mu());
+OC::CartState cart_state = kep_state.convert_to_cart(0);
 
-	// MRP BN 
-	arma::vec mrp_0 = {0.,0.,0.214};
+X0_augmented.rows(0,2) = cart_state.get_position_vector();
+X0_augmented.rows(3,5) = cart_state.get_velocity_vector();
 
-	// Angular velocity in body frame
-	double omega = 2 * arma::datum::pi / (SPIN_RATE * 3600);
-	arma::vec omega_0 = {0e-2 * omega,0e-2 * omega,omega};
-
-	// Velocity determined from sma
-	double a = arma::norm(pos_0);
-	double v = sqrt(args.get_mu() * (2 / arma::norm(pos_0) - 1./ a));
-
-	// Velocity in inertial frame
-	arma::vec vel_0_inertial = {0,
-		std::cos(arma::datum::pi/ 180 * INCLINATION)*v,
-		std::sin(arma::datum::pi/ 180 * INCLINATION)*v
-	};
-
-	X0_augmented.rows(0,2) = pos_0;
-	X0_augmented.rows(3,5) = vel_0_inertial;
-	X0_augmented.rows(6,8) = mrp_0;
-	X0_augmented.rows(9,11) = omega_0;
+X0_augmented.rows(6,8) = MRP_0;
+X0_augmented.rows(9,11) = omega_0;
 
 	/******************************************************/
 	/******************************************************/
@@ -227,71 +234,35 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
-	arma::vec times = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES); 
-	arma::vec times_dense = arma::linspace<arma::vec>(T0, (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE,  OBSERVATION_TIMES * 10); 
+std::vector<double> T_obs;
+std::vector<arma::vec> X_augmented;
 
-	std::vector<double> T_obs,T_obs_dense;
+if(USE_HARMONICS){
+	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		Dynamics::harmonics_attitude_dxdt_inertial,args,
+		dir + "/","obs_harmonics");
+	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+		Dynamics::harmonics_attitude_dxdt_inertial,args,
+		dir + "/","full_orbit_harmonics");
+}
+else{
+	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		Dynamics::point_mass_attitude_dxdt_inertial,args,
+		dir + "/","obs_point_mass");
 
-	for (unsigned int i = 0; i < times.n_rows; ++i){
-		T_obs.push_back(times(i));
-	}
-	for (unsigned int i = 0; i < times_dense.n_rows; ++i){
-		T_obs_dense.push_back(times_dense(i));
-	}
+	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+		Dynamics::point_mass_attitude_dxdt_inertial,args,
+		dir + "/","full_orbit_point_mass");
+}
 
-	// Containers
-	std::vector<arma::vec> X_augmented,X_augmented_dense;
-
-
-	auto N_true = X0_augmented.n_rows;
-
-
-
-	# if USE_HARMONICS
-	System dynamics(args,N_true,Dynamics::harmonics_attitude_dxdt_inertial );
-	#else 
-	System dynamics(args,N_true,Dynamics::point_mass_attitude_dxdt_inertial );
-	#endif 
-
-	arma::vec X_augmented_1 = X0_augmented;
-
-	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
-	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-	boost::numeric::odeint::integrate_times(stepper, 
-		dynamics, 
-		X_augmented_1,
-		T_obs.begin(), 
-		T_obs.end(),
-		1e-3,
-		Observer::push_back_augmented_state(X_augmented));
-
-	auto stepper_dense = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
-
-	arma::vec X_augmented_2 = X0_augmented;
-
-	// The orbit is propagated with a finer timestep for visualization purposes
-	boost::numeric::odeint::integrate_times(stepper_dense, 
-		dynamics, 
-		X_augmented_2, 
-		T_obs_dense.begin(), 
-		T_obs_dense.end(),
-		1e-3,
-		Observer::push_back_augmented_state(X_augmented_dense));
-
-	arma::mat X_dense(12,X_augmented_dense.size());
-	arma::vec T_dense_arma(X_augmented_dense.size());
-	for (unsigned int i = 0; i < X_augmented_dense.size(); ++i){
-		X_dense.col(i) = X_augmented_dense[i];
-		T_dense_arma(i) = T_obs_dense[i];
-	}
-
-	# if USE_HARMONICS
-	X_dense.save("../output/filter/trajectory_harmo.txt",arma::raw_ascii);
-	#else
-	X_dense.save("../output/filter/trajectory_point_mass.txt",arma::raw_ascii);
-	#endif
-
-	T_dense_arma.save("../output/filter/T_traj.txt",arma::raw_ascii);
+arma::vec times(T_obs.size()); 
+for (int i = 0; i < T_obs.size(); ++i){
+	times(i) = T_obs[i];
+}
 
 	/******************************************************/
 	/******************************************************/
@@ -299,219 +270,216 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
+ShapeBuilderArguments shape_filter_args;
+shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
+shape_filter_args.set_points_retained(POINTS_RETAINED);
+shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
+shape_filter_args.set_N_edges(N_EDGES);
+shape_filter_args.set_shape_degree(SHAPE_DEGREE);
+shape_filter_args.set_use_icp(USE_ICP);
+shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
+shape_filter_args.set_use_ba(USE_BA);
+shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
+shape_filter_args.set_iod_particles(IOD_PARTICLES);
+shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
+shape_filter_args.set_use_true_rigid_transforms(USE_TRUE_RIGID_TRANSFORMS);
 
-	ShapeBuilderArguments shape_filter_args;
-	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_points_retained(POINTS_RETAINED);
-	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
-	shape_filter_args.set_N_edges(N_EDGES);
-	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
-	shape_filter_args.set_use_icp(USE_ICP);
-	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
-	shape_filter_args.set_use_ba(USE_BA);
-	shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
-	shape_filter_args.set_iod_particles(IOD_PARTICLES);
-	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
+ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
-
-	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-
-	#if RECONSTRUCT_SHAPE
-	shape_filter.run_shape_reconstruction(times,X_augmented,true);
+	// #if RECONSTRUCT_SHAPE
+shape_filter.run_shape_reconstruction(times,X_augmented,dir);
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	// The reconstructed shape model has its coordinates
 	// expressed in the estimated B frame, "E"
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
-	#else
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
+	// #else
 
 	// If not, the estimated shape is set to the true shape
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
-		ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
-		);
-	estimated_shape_model -> shift_to_barycenter();
-	estimated_shape_model -> update_mass_properties();
+	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
+	// 	ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
+	// 	);
+	// estimated_shape_model -> shift_to_barycenter();
+	// estimated_shape_model -> update_mass_properties();
 
-	estimated_shape_model -> shift_to_barycenter();
-	estimated_shape_model -> update_mass_properties();
+	// estimated_shape_model -> shift_to_barycenter();
+	// estimated_shape_model -> update_mass_properties();
 
-	estimated_shape_model -> align_with_principal_axes();
-	estimated_shape_model -> update_mass_properties();
-	#endif 
+	// estimated_shape_model -> align_with_principal_axes();
+	// estimated_shape_model -> update_mass_properties();
+	// #endif 
 
 
-	estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
-	estimated_shape_model -> construct_kd_tree_shape();
-	args.set_estimated_shape_model(estimated_shape_model.get());
+	// estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
+	// estimated_shape_model -> construct_kd_tree_shape();
+	// args.set_estimated_shape_model(estimated_shape_model.get());
 
-	// estimated_shape_model -> compute_volume_sd();
+	// // estimated_shape_model -> compute_volume_sd();
 
 
-	std::vector<std::array<double ,2> > shape_error_results;
-	std::vector<arma::vec> spurious_points;
+	// std::vector<std::array<double ,2> > shape_error_results;
+	// std::vector<arma::vec> spurious_points;
 
-	// The shape error is computed here
-	for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
-		
-		Bezier * patch = static_cast<Bezier *>( estimated_shape_model -> get_elements() -> at(i).get() );
-		arma::vec center = patch -> evaluate(1./3,1./3);
-		arma::vec normal = patch -> get_normal_coordinates(1./3, 1./3);
+	// // The shape error is computed here
+	// for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
 
-		arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
-		double sd = std::sqrt(arma::dot(normal,P * normal));
+	// 	Bezier * patch = static_cast<Bezier *>( estimated_shape_model -> get_elements() -> at(i).get() );
+	// 	arma::vec center = patch -> evaluate(1./3,1./3);
+	// 	arma::vec normal = patch -> get_normal_coordinates(1./3, 1./3);
 
-		Ray ray_n(center,normal);
-		Ray ray_mn(center,-normal);
+	// 	arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
+	// 	double sd = std::sqrt(arma::dot(normal,P * normal));
 
-		for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++facet_index){
+	// 	Ray ray_n(center,normal);
+	// 	Ray ray_mn(center,-normal);
 
-			Facet * facet = static_cast<Facet *>(true_shape_model.get_elements() -> at(facet_index).get());
+	// 	for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++facet_index){
 
-			ray_n.single_facet_ray_casting(facet,true,false);
-			ray_mn.single_facet_ray_casting(facet,true,false);
+	// 		Facet * facet = static_cast<Facet *>(true_shape_model.get_elements() -> at(facet_index).get());
 
-		}
+	// 		ray_n.single_facet_ray_casting(facet,true,false);
+	// 		ray_mn.single_facet_ray_casting(facet,true,false);
 
-		if (ray_n.get_true_range() < ray_mn.get_true_range()){
-			shape_error_results.push_back({sd,ray_n.get_true_range()});
-		}
-		else if (ray_n.get_true_range() > ray_mn.get_true_range()){
-			shape_error_results.push_back({sd,ray_mn.get_true_range()});
+	// 	}
 
-		}
-		else{
-			std::cout << "This ray did not hit\n";
-		}
+	// 	if (ray_n.get_true_range() < ray_mn.get_true_range()){
+	// 		shape_error_results.push_back({sd,ray_n.get_true_range()});
+	// 	}
+	// 	else if (ray_n.get_true_range() > ray_mn.get_true_range()){
+	// 		shape_error_results.push_back({sd,ray_mn.get_true_range()});
 
+	// 	}
+	// 	else{
+	// 		std::cout << "This ray did not hit\n";
+	// 	}
 
-	}
 
+	// }
 
-	arma::mat shape_error_arma(shape_error_results.size(),2);
-	for (unsigned int j = 0; j < shape_error_results.size(); ++j){
-		shape_error_arma(j,0) = shape_error_results[j][0];
-		shape_error_arma(j,1) = shape_error_results[j][1];
-	}
 
+	// arma::mat shape_error_arma(shape_error_results.size(),2);
+	// for (unsigned int j = 0; j < shape_error_results.size(); ++j){
+	// 	shape_error_arma(j,0) = shape_error_results[j][0];
+	// 	shape_error_arma(j,1) = shape_error_results[j][1];
+	// }
 
-	shape_error_arma.save("../output/shape_error.txt",arma::raw_ascii);
 
+	// shape_error_arma.save("../output/shape_error.txt",arma::raw_ascii);
 
 
 
+	// args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
+	// args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
 
+	// std::cout << "Estimated inertia:" << std::endl;
+	// std::cout << estimated_shape_model -> get_inertia() << std::endl;
 
+	// std::cout << "True inertia:" << std::endl;
+	// std::cout << true_shape_model. get_inertia() << std::endl;
 
+	// std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
+	// std::cout << "\nTrue volume: " << true_shape_model.get_volume();
+	// std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
+	// // estimated_shape_model -> compute_cm_cov();
 
+	// std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
 
 
+	// /***************************************/
+	// /* END OF SHAPE RECONSTRUCTION FILTER */
+	// /*************************************/
 
+	// /***************************************/
+	// /* BEGINNING OF NAVIGATION FILTER ******/
+	// /***************************************/
 
+	// // A-priori covariance on spacecraft state and asteroid state.
+	// arma::vec P0_diag = {
+	// 	SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,//position
+	// 	SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,//velocity
+	// 	SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,// mrp
+	// 	SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA // angular velocity
+	// };
 
+	// arma::mat P0 = arma::diagmat(P0_diag);
 
-	args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
-	args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
+	// arma::vec X0_true_augmented = X_augmented.back();
+	// arma::vec X0_estimated_augmented = X_augmented.back();
 
-	std::cout << "Estimated inertia:" << std::endl;
-	std::cout << estimated_shape_model -> get_inertia() << std::endl;
+	// #if USE_ICP && RECONSTRUCT_SHAPE
+	// // The initial estimated state is assembled from the output of the shape reconstruction filter
+	// std::cout << "Generating initial a-priori from rigid transforms ...\n";
+	// X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
+	// X0_estimated_augmented.subvec(3,5) = shape_filter_args.get_velocity_final();
+	// X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
+	// X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
 
-	std::cout << "True inertia:" << std::endl;
-	std::cout << true_shape_model. get_inertia() << std::endl;
+	// #else
+	// std::cout << "Generating initial a-priori from normal distribution ...\n";
 
-	std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
-	std::cout << "\nTrue volume: " << true_shape_model.get_volume();
-	std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
-	// estimated_shape_model -> compute_cm_cov();
+	// X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
+	// #endif
 
-	std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
+	// std::cout << "True State: " << std::endl;
+	// std::cout << X0_true_augmented.t() << std::endl;
 
+	// std::cout << "Initial Estimated state: " << std::endl;
+	// std::cout << X0_estimated_augmented.t() << std::endl;
 
-	/***************************************/
-	/* END OF SHAPE RECONSTRUCTION FILTER */
-	/*************************************/
+	// std::cout << "Initial Error: " << std::endl;
+	// std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
 
-	/***************************************/
-	/* BEGINNING OF NAVIGATION FILTER ******/
-	/***************************************/
+	// arma::vec nav_times(NAVIGATION_TIMES);
 
-	// A-priori covariance on spacecraft state and asteroid state.
-	arma::vec P0_diag = {
-		SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,//position
-		SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,//velocity
-		SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,// mrp
-		SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA // angular velocity
-	};
+	// // Times
+	// std::vector<double> nav_times_vec;
+	// for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
+	// 	nav_times(i) = T_obs[T_obs.size() - 1] + double(i)/INSTRUMENT_FREQUENCY_NAV;
+	// 	nav_times_vec.push_back( nav_times(i));
+	// }
 
-	arma::mat P0 = arma::diagmat(P0_diag);
-	
-	arma::vec X0_true_augmented = X_augmented.back();
-	arma::vec X0_estimated_augmented = X_augmented.back();
 
-	#if USE_ICP && RECONSTRUCT_SHAPE
-	// The initial estimated state is assembled from the output of the shape reconstruction filter
-	std::cout << "Generating initial a-priori from rigid transforms ...\n";
-	X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
-	X0_estimated_augmented.subvec(3,5) = shape_filter_args.get_velocity_final();
-	X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
-	X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
 
-	#else
-	std::cout << "Generating initial a-priori from normal distribution ...\n";
+	// NavigationFilter filter(args);
+	// arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
+	// filter.set_gamma_fun(Dynamics::gamma_OD);
 
-	X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
-	#endif
+	// filter.set_observations_fun(
+	// 	Observations::obs_pos_mrp_ekf_computed,
+	// 	Observations::obs_pos_mrp_ekf_computed_jac,
+	// 	Observations::obs_pos_mrp_ekf_lidar);	
 
-	std::cout << "True State: " << std::endl;
-	std::cout << X0_true_augmented.t() << std::endl;
 
-	std::cout << "Initial Estimated state: " << std::endl;
-	std::cout << X0_estimated_augmented.t() << std::endl;
+	// # if USE_HARMONICS
+	// filter.set_estimate_dynamics_fun(
+	// 	Dynamics::estimated_point_mass_attitude_dxdt_inertial,
+	// 	Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
+	// 	Dynamics::harmonics_attitude_dxdt_inertial);
+	// #else 
+	// filter.set_estimate_dynamics_fun(
+	// 	Dynamics::estimated_point_mass_attitude_dxdt_inertial,
+	// 	Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
+	// 	Dynamics::point_mass_attitude_dxdt_inertial);
+	// #endif 
 
-	std::cout << "Initial Error: " << std::endl;
-	std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
 
-	arma::vec nav_times(NAVIGATION_TIMES);
+	// filter.set_initial_information_matrix(arma::inv(P0));
 
-	// Times
-	std::vector<double> nav_times_vec;
-	for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
-		nav_times(i) = T_obs[T_obs.size() - 1] + double(i)/INSTRUMENT_FREQUENCY_NAV;
-		nav_times_vec.push_back( nav_times(i));
-	}
+	// auto start = std::chrono::system_clock::now();
+	// int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
+	// auto end = std::chrono::system_clock::now();
 
+	// std::chrono::duration<double> elapsed_seconds = end-start;
 
+	// std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
-	NavigationFilter filter(args);
-	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
-	filter.set_gamma_fun(Dynamics::gamma_OD);
 
-	filter.set_observations_fun(
-		Observations::obs_pos_mrp_ekf_computed,
-		Observations::obs_pos_mrp_ekf_computed_jac,
-		Observations::obs_pos_mrp_ekf_lidar);	
 
 
-	# if USE_HARMONICS
-	filter.set_estimate_dynamics_fun(
-		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-		Dynamics::harmonics_attitude_dxdt_inertial);
-	#else 
-	filter.set_estimate_dynamics_fun(
-		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-		Dynamics::point_mass_attitude_dxdt_inertial);
-	#endif 
 
 
-	filter.set_initial_information_matrix(arma::inv(P0));
 
-	auto start = std::chrono::system_clock::now();
-	int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
-	auto end = std::chrono::system_clock::now();
 
-	std::chrono::duration<double> elapsed_seconds = end-start;
 
-	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
 
 
@@ -520,22 +488,13 @@ int main() {
 
 
 
+	// filter.write_estimated_state("../output/filter/X_hat.txt");
+	// filter.write_true_state("../output/filter/X_true.txt");
+	// filter.write_T_obs(nav_times_vec,"../output/filter/nav_times.txt");
+	// filter.write_estimated_covariance("../output/filter/covariances.txt");
 
 
-
-
-
-
-
-
-
-	filter.write_estimated_state("../output/filter/X_hat.txt");
-	filter.write_true_state("../output/filter/X_true.txt");
-	filter.write_T_obs(nav_times_vec,"../output/filter/nav_times.txt");
-	filter.write_estimated_covariance("../output/filter/covariances.txt");
-
-
-	return 0;
+return 0;
 }
 
 

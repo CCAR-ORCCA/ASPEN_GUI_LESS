@@ -8,9 +8,8 @@
 #include <Observer.hpp>
 #include <System.hpp>
 #include <ShapeBuilderArguments.hpp>
-#include <PC.hpp>
 #include "IODFinder.hpp"
-#include "StatePropagator.hpp"
+#include <StatePropagator.hpp>
 #include <RigidBodyKinematics.hpp>
 
 #include <NavigationFilter.hpp>
@@ -131,7 +130,7 @@ int main() {
 	frame_graph.add_transform("N", "L");
 
 	// Shape model formed with triangles
-	ShapeModelTri true_shape_model("B", &frame_graph);
+	ShapeModelTri<ControlPoint> true_shape_model("B", &frame_graph);
 
 	std::string path_to_shape;
 
@@ -144,10 +143,7 @@ int main() {
 #endif
 
 
-
-
-	ShapeModelImporter shape_io_truth(path_to_shape, 1 , true);
-	shape_io_truth.load_obj_shape_model(&true_shape_model);
+	ShapeModelImporter::load_obj_shape_model(path_to_shape, 1, true,true_shape_model);
 	
 	true_shape_model.construct_kd_tree_shape();
 

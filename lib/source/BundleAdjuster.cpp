@@ -301,24 +301,16 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 
 		if (!this -> use_true_pairs){
-		#if BUNDLE_ADJUSTER_DEBUG
-			std::cout << "Computing pairs\n";
-		#endif
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]),
 				this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[D_k]),
 				this -> h);	
 		}
 		else{
-		#if BUNDLE_ADJUSTER_DEBUG
-			std::cout << "Using true pairs\n";
-		#endif
-
 			for (int i = 0; i < this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[S_k]) -> size(); ++i){
 				point_pairs.push_back(std::make_pair(i,i));
 			}
 		}	
-
 
 		IterativeClosestPointToPlane icp;
 
@@ -348,10 +340,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	}
 
-	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << "Done with create_pairs\n";
-
-	#endif
 
 
 
@@ -381,9 +369,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	}
 	
 	if (!this -> use_true_pairs){
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "Computing pairs\n";
-		#endif
+		
 		IterativeClosestPointToPlane::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
 			this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
@@ -394,9 +380,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 			x_D);	
 	}
 	else{
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "Using true pairs\n";
-		#endif
+		
 
 		for (int i = 0; i < this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]) -> size(); ++i){
 			point_pairs.push_back(std::make_pair(i,i));
@@ -511,9 +495,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 		else{
 
-			#if BUNDLE_ADJUSTER_DEBUG
-			std::cout << "Using true pairs\n";
-			#endif
+			
 
 			for (int i = 0; i < this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]) -> size(); ++i){
 				point_pairs.push_back(std::make_pair(i,i));
@@ -646,9 +628,6 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 
-	std::cout << deviation << std::endl;
-
-
 	boost::progress_display progress(this -> local_pc_index_to_global_pc_index . size());
 	++progress;
 	#pragma omp parallel for
@@ -712,8 +691,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 		int pc_global_index = this -> local_pc_index_to_global_pc_index[i];
 		assert(pc_global_index != 0);
 		this -> all_registered_pc -> at(pc_global_index) -> transform(NS_bar, x);
-		this -> all_registered_pc -> at(pc_global_index) -> build_kdtree();
-
+		this -> all_registered_pc -> at(pc_global_index) -> build_kdtree(false);
 
 		// The rigid transforms are fixed
 		M_pcs[pc_global_index] = NS_bar * M_pcs[pc_global_index];
@@ -747,25 +725,28 @@ void BundleAdjuster::save_connectivity() const{
 	for (int k = 0; k < M; ++k){
 		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
 
-		connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
-		connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
+		// connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
+		// connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
 
-		connectivity_matrix_overlap(point_cloud_pair.S_k,point_cloud_pair.D_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
-		connectivity_matrix_overlap(point_cloud_pair.D_k,point_cloud_pair.S_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
+		// connectivity_matrix_overlap(point_cloud_pair.S_k,point_cloud_pair.D_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
+		// connectivity_matrix_overlap(point_cloud_pair.D_k,point_cloud_pair.S_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
 
-		connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
-		connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
+		// connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
+		// connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
 
-		PointCloudIO<PointNormal>::save_to_obj(*this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.S_k]),
-			this -> dir + "/destination_" + std::to_string(point_cloud_pair.S_k) + "_ba.obj",
-			this -> LN_t0.t(), 
-			this -> x_t0);
+		if (point_cloud_pair.D_k != 0){
+			PointCloudIO<PointNormal>::save_to_obj(
+				*this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[point_cloud_pair.D_k]),
+				this -> dir + "/destination_" + std::to_string(point_cloud_pair.D_k) + "_ba.obj",
+				this -> LN_t0.t(), 
+				this -> x_t0);
+		}
 
 	}
 
-	connectivity_matrix_res.save(this -> dir + "/connectivity_res.txt",arma::raw_ascii);
-	connectivity_matrix_overlap.save(this -> dir + "/connectivity_overlap.txt",arma::raw_ascii);
-	connectivity_matrix_N_pairs.save(this -> dir + "/connectivity_N_pairs.txt",arma::raw_ascii);
+	// connectivity_matrix_res.save(this -> dir + "/connectivity_res.txt",arma::raw_ascii);
+	// connectivity_matrix_overlap.save(this -> dir + "/connectivity_overlap.txt",arma::raw_ascii);
+	// connectivity_matrix_N_pairs.save(this -> dir + "/connectivity_N_pairs.txt",arma::raw_ascii);
 
 
 }

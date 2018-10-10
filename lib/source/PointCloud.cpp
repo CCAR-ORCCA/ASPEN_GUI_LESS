@@ -213,7 +213,7 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 
 
 template <class PointType> 
-void PointCloud<PointType>::build_kdtree(){
+void PointCloud<PointType>::build_kdtree(bool verbose){
 
 	auto start = std::chrono::system_clock::now();
 
@@ -230,8 +230,10 @@ void PointCloud<PointType>::build_kdtree(){
 
 	auto end = std::chrono::system_clock::now();
 
-	std::chrono::duration<double> elapsed_seconds = end-start;
-	std::cout << "- Time elapsed building PointCloud kdtree: " << elapsed_seconds.count()<< " (s)"<< std::endl;
+	if (verbose){
+		std::chrono::duration<double> elapsed_seconds = end-start;
+		std::cout << "- Time elapsed building PointCloud kdtree: " << elapsed_seconds.count()<< " (s)"<< std::endl;
+	}
 	
 }
 

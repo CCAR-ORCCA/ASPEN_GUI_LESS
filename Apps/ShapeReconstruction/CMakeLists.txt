@@ -1,4 +1,4 @@
-# CMakeLists.txt for ShapeReconstruction
+# CMakeLists.txt for ShapeUncertainty
 # Benjamin Bercovici, 11/10/2017
 # ORCCA
 # University of Colorado 
@@ -43,27 +43,21 @@ elseif(UNIX AND NOT APPLE)
 	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
 endif()
 
+cmake_minimum_required(VERSION 3.0.0)
+
+
+if (${USE_GCC})
+	include(cmake/FindOmpGcc.cmake)
+else()
+	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
+	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
+endif()
+
 
 # Building procedure
 get_filename_component(dirName ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 set(EXE_NAME ${dirName} CACHE STRING "Name of executable to be created.")
 
-if (${IS_FORTUNA})
-	set(CMAKE_C_COMPILER "/usr/local/bin/gcc" CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++" CACHE STRING "C++ Compiler" FORCE)
-else()
-	if(APPLE)
-		if(EXISTS ${OMP_FRIENDLY_GCC_PATH}) # Else running on a MAC. Will attempt to switch compiler to get the OMP-friendly GCC 6.3.0_1 from Homebrew
-			message("Switching to OMP-friendly GCC ")
-	    	set(CMAKE_C_COMPILER ${OMP_FRIENDLY_GCC_PATH}gcc-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C Compiler" FORCE)
-			set(CMAKE_CXX_COMPILER ${OMP_FRIENDLY_GCC_PATH}g++-${OMP_FRIENDLY_GCC_MAJOR_VERSION} CACHE STRING "C++ Compiler" FORCE)
-
-		else()# no OMP-compliant compiler was found on this mac. 
-			message("No OMP-compliant compiler was found on this Mac.")
-		endif()
-		endif()
-		
-endif()
 
 project(${EXE_NAME})
 
@@ -73,7 +67,6 @@ if (${CMAKE_MAJOR_VERSION} LESS 3)
 endif()
 
 
-cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.0)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
@@ -83,9 +76,9 @@ add_definitions(-Wall -O2 )
 
 # Enable C++17 
 if (EXISTS /home/bebe0705/.am_fortuna)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
 else()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
 
 # Find ASPEN
@@ -151,23 +144,28 @@ endif()
 
 # Add source files in root directory
 add_executable(${EXE_NAME}
-main.cpp)
+	main.cpp)
 
 
 # Linking
 set(library_dependencies
-${ARMADILLO_LIBRARIES}
-${Boost_LIBRARIES}
-${RBK_LIBRARY}
-${OC_LIBRARY}
-${CGAL_LIBRARIES} 
-${CGAL_3RD_PARTY_LIBRARIES}
-${VTK_LIBRARIES}
-${SBGATCORE_LIBRARY}
-${CGAL_interface_LIBRARY}
-${ASPEN_LIBRARY}
-)
+	${ARMADILLO_LIBRARIES}
+	${Boost_LIBRARIES}
+	${RBK_LIBRARY}
+	${OC_LIBRARY}
+	${CGAL_LIBRARIES} 
+	${CGAL_3RD_PARTY_LIBRARIES}
+	${VTK_LIBRARIES}
+	${SBGATCORE_LIBRARY}
+	${CGAL_interface_LIBRARY}
+	${ASPEN_LIBRARY}
+	)
 
+if (UNIX AND NOT APPLE)
 
-target_link_libraries(${EXE_NAME} ${library_dependencies})
+	target_link_libraries(${EXE_NAME} ${library_dependencies})
+else()
+	target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+
+endif()
 

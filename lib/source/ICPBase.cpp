@@ -3,7 +3,7 @@
 #include <EstimationFeature.hpp>
 #include <PointCloudIO.hpp>
 
-#define ICP_DEBUG 0
+#define ICP_DEBUG 1
 
 
 #pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
@@ -1107,14 +1107,14 @@ double ICPBase::compute_mean_residuals(
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-			J += this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+			J += std::abs(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size());
 		}
 	}
 	else{
 		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-			J += weights(pair_index) * this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size();
+			J += weights(pair_index) * std::abs(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size());
 
 		}
 	}

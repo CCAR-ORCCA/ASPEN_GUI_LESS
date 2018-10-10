@@ -375,6 +375,8 @@ public:
 	}
 
 
+
+
 protected:
 
 	double density;
@@ -385,17 +387,14 @@ protected:
 	double minimum_elevation;
 	double mass;
 	double estimated_mass;
-
 	double skip_factor;
-
-
 	double sd_noise;
 	double sd_noise_prop = 0;
+	double ref_radius ;
 
 	int harmonics_degree;
 	int N_iter_mes_update;
 
-	double ref_radius ;
 
 	bool stopping_bool = false;
 	bool use_P_hat_in_batch = false;

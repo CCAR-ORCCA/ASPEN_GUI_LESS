@@ -485,7 +485,14 @@ public:
 		return this -> iod_mc_iter;
 	}
 
+	bool get_use_true_rigid_transforms() const{
+		return this -> use_true_rigid_transforms;
+	}
 
+
+	void set_use_true_rigid_transforms(bool use_true_rigid_transforms){
+		this -> use_true_rigid_transforms = use_true_rigid_transforms;
+	}
 
 protected:
 
@@ -524,6 +531,7 @@ protected:
 	bool has_transitioned_to_shape = false;
 	bool use_icp = true;
 	bool use_ba = false;
+	bool use_true_rigid_transforms = false;
 
 
 

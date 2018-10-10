@@ -1,8 +1,7 @@
 #include "IterativeClosestPointToPlane.hpp"
-#define ICP2P_DEBUG 1
+#define ICP2P_DEBUG 0
 #define RANSAC_DEBUG 1
 #include <chrono>
-
 
 IterativeClosestPointToPlane::IterativeClosestPointToPlane() : ICPBase(){
 
@@ -36,8 +35,6 @@ double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pa
 		- dcm_D * pc_D -> get_point_coordinates(point_pair.second)  - x_D,
 		dcm_D * pc_D -> get_normal_coordinates(point_pair.second));
 }
-
-
 
 
 
