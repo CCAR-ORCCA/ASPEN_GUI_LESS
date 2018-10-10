@@ -2,6 +2,16 @@
 #include "ShapeModelTri.hpp"
 #include "ShapeModelImporter.hpp"
 
+#pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
+initializer( omp_priv = arma::zeros<arma::vec>(6) )
+
+#pragma omp declare reduction (+ : arma::mat::fixed<3,3> : omp_out += omp_in)\
+initializer( omp_priv = arma::zeros<arma::mat>(3,3) )
+
+
+#pragma omp declare reduction (+ : arma::mat::fixed<6,6> : omp_out += omp_in)\
+initializer( omp_priv = arma::zeros<arma::mat>(6,6) )
+
 
 template <class PointType>
 ShapeModelBezier<PointType>::ShapeModelBezier(std::string ref_frame_name,
@@ -522,7 +532,11 @@ void ShapeModelBezier<PointType>::compute_all_statistics(){
 	std::cout << "\n- Computing all statistics over the " << connected_elements.size() << " surface element combinations ...\n";
 
 	boost::progress_display progress(connected_elements.size()) ;
+	
+	#if !__APPLE__
 	#pragma omp parallel for reduction(+:vol_sd_temp), reduction(+:cm_cov_temp), reduction(+:P_I_temp), reduction(+:P_M_I_temp)
+	#endif
+
 	for (unsigned int k = 0; k < connected_elements.size(); ++k) {
 
 		const Bezier & patch_e = this -> elements[connected_elements[k].first];
