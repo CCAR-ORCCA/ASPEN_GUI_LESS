@@ -209,7 +209,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		try{
 
 			if (use_true_pairs){
-
 				int s0 = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[ground_index]) -> size();
 				int sf = this -> all_registered_pc -> at(this -> local_pc_index_to_global_pc_index[tf]) -> size();
 
@@ -281,7 +280,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 	for (int i = 0; i < this -> local_pc_index_to_global_pc_index.size() - 1; ++i){
 		std::set<int> pair = {i,i+1};
 		pairs.insert(pair);
-
 	}
 
 
