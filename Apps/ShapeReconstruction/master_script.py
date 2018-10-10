@@ -5,7 +5,7 @@ import numpy as np
 all_data = [
 
 {
-"OBSERVATION_TIMES" : 80,
+"OBSERVATION_TIMES" : 160,
 "NAVIGATION_TIMES" : 500,
 "SMA" : 1000,
 "E" : 0.25,
