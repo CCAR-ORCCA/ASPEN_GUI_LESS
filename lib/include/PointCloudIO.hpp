@@ -1,5 +1,6 @@
 #ifndef HEADER_POINTCLOUDIO
 #define HEADER_POINTCLOUDIO
+
 #include <PointCloud.hpp>
 #include <PointNormal.hpp>
 #include <PointDescriptor.hpp>

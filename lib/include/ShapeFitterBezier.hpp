@@ -3,7 +3,6 @@
 
 #include "ShapeModelBezier.hpp"
 
-#include "PC.hpp"
 #include <assert.h>
 #include <map>
 #include "CustomException.hpp"

@@ -10,6 +10,9 @@ template <template<class> class ContainerType, class PointType>  class KDTree ;
 
 typedef typename std::pair<int, int > PointPair ;
 
+
+class Ray;
+
 template <class PointType> 
 class PointCloud {
 
@@ -17,6 +20,8 @@ public:
 
 	PointCloud();
 	PointCloud(int size);
+	PointCloud(std::vector<std::shared_ptr<Ray> > * focal_plane);
+
 	PointCloud(const std::vector<PointType> & points);
 	PointCloud(std::vector< std::shared_ptr< PointCloud < PointType> > > & pcs,int points_retained);
 	PointCloud(std::string filename);
@@ -64,11 +69,6 @@ public:
 	@return map to these closest points sorted by distance
 	*/
 	std::map<double,int > get_closest_N_points(const arma::vec & test_point, const unsigned int & N) const;
-
-	/**
-	Get label identifying the point cloud
-	*/
-	std::string get_label() const;
 
 	/**
 	Returns a constant reference to the coordinates of the queried point at the provided index
@@ -125,7 +125,6 @@ protected:
 	std::vector<PointType> points;
 	std::shared_ptr< KDTree< PointCloud, PointType> > kdt;
 	arma::vec mean_feature_histogram;
-	std::string label;
 
 
 };

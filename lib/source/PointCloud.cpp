@@ -1,6 +1,7 @@
 #include <PointCloud.hpp>
 #include <PointNormal.hpp>
 #include <KDTree.hpp>
+#include <Ray.hpp>
 
 #define PC_DEBUG_FLAG 1
 
@@ -11,6 +12,28 @@ template <class PointType> PointCloud<PointType>::PointCloud(){
 template <class PointType> PointCloud<PointType>::PointCloud(int size){
 this -> points.resize(size);
 }
+
+
+
+template <>
+PointCloud<PointNormal>::PointCloud(std::vector<std::shared_ptr<Ray> > * focal_plane){
+
+	for (int i = 0; i < focal_plane -> size(); ++i){
+
+		if (focal_plane -> at(i) -> get_hit_element() >= 0){
+
+			arma::vec::fixed<3> impact_point = focal_plane -> at(i) -> get_impact_point();
+
+			PointNormal point(impact_point,this -> points.size());
+			this -> points.push_back(point);
+
+		}
+
+	}
+
+}
+
+
 
 
 template <class PointType> 
@@ -52,10 +75,6 @@ const unsigned int & N) const {
 
 	return closest_points;
 
-}
-
-template <class PointType> std::string PointCloud<PointType>::get_label() const{
-return this -> label;
 }
 
 
@@ -196,6 +215,9 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 template <class PointType> 
 void PointCloud<PointType>::build_kdtree(){
 
+	auto start = std::chrono::system_clock::now();
+
+
 	std::vector<int> indices;
 	for (int i =0; i < this -> size(); ++i){
 		if (this -> check_if_point_valid(i)){
@@ -205,8 +227,13 @@ void PointCloud<PointType>::build_kdtree(){
 
 	this -> kdt = std::make_shared< KDTree<PointCloud,PointType> >(KDTree< PointCloud,PointType> (this));
 	this -> kdt -> build(indices,0);
-}
 
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+	std::cout << "- Time elapsed building PointCloud kdtree: " << elapsed_seconds.count()<< " (s)"<< std::endl;
+	
+}
 
 
 template <class PointType> 
@@ -225,7 +252,9 @@ void PointCloud<PointNormal>::transform(const arma::mat::fixed<3,3> & dcm,const 
 		p.set_normal_coordinates(dcm * p. get_normal_coordinates());
 	}
 
-	std::cout << "warning, the kd tree of the transformed point cloud was not recomputed\n";
+	// The KDTree is rebuilt
+
+	this -> build_kdtree();
 
 }
 

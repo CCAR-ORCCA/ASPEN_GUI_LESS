@@ -4,7 +4,6 @@
 #include <KDTree.hpp>
 #include <ShapeModel.hpp>
 
-
 template <class PointType>
 ShapeModel<PointType>::ShapeModel() {
 

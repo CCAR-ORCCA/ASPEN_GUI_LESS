@@ -19,8 +19,5 @@
 // Bezier debug flags
 #define BEZIER_DEBUG 0
 
-// ICP DEBUG FLAGS
-#define BUNDLE_ADJUSTER_DEBUG 0
-
 
 

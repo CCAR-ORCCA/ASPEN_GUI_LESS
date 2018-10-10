@@ -12,7 +12,6 @@
 #include <FrameGraph.hpp>
 // #include <KDTreeControlPoints.hpp>
 // #include <KDTreeShape.hpp>
-#include <PointCloud.hpp>
 
 
 class Ray ;

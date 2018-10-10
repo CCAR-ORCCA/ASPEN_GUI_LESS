@@ -56,8 +56,9 @@ void IterativeClosestPointToPlane::compute_pairs(int h,
 		int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
 
 		arma::ivec random_source_indices = arma::linspace<arma::ivec>(0, this -> pc_source -> size() - 1,this -> pc_source -> size());
-		random_source_indices = arma::shuffle(random_source_indices);
-
+		if (h != 0){
+			random_source_indices = arma::shuffle(random_source_indices);
+		}
 		for (int i = 0; i < N_pairs_max; ++i){
 			this -> point_pairs.push_back(std::make_pair<int,int>(random_source_indices(i),random_source_indices(i)));
 			

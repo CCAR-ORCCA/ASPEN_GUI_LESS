@@ -2,6 +2,7 @@
 #include "Facet.hpp"
 #include "Ray.hpp"
 #include <boost/progress.hpp>
+#include <KDTreeShape.hpp>
 
 
 #pragma omp declare reduction (+ : arma::vec::fixed<3> : omp_out += omp_in) \
@@ -82,10 +83,7 @@ const std::vector<int> & ShapeModelTri<PointType>::get_element_control_points(in
 template <class PointType>
 bool ShapeModelTri<PointType>::ray_trace(Ray * ray){
 
-	throw(std::runtime_error("To implement !"));
-
-	return false;
-	// return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
 }
 
 template <class PointType>
@@ -97,22 +95,21 @@ template <class PointType>
 void ShapeModelTri<PointType>::construct_kd_tree_shape() {
 
 
-	throw(std::runtime_error("To implement !"));
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 
-	// std::vector<int> element_indices;
-	// for (int i = 0; i < this -> elements.size(); ++i){
-	// 	element_indices.push_back(i);
-	// }
+	std::vector<int> element_indices;
+	for (int i = 0; i < this -> elements.size(); ++i){
+		element_indices.push_back(i);
+	}
 
-	// this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this));
-	// this -> kdt_facet -> build(element_indices, 0);
+	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this));
+	this -> kdt_facet -> build(element_indices, 0);
 
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
 
-	// std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	std::cout << "\n Elapsed time during polyhedron KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 }
 

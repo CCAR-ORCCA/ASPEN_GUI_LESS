@@ -1,29 +1,38 @@
-#include "ShapeBuilder.hpp"
-#include "ShapeModelTri.hpp"
-#include "ShapeModelBezier.hpp"
+#include <ShapeBuilder.hpp>
+#include <ShapeModelTri.hpp>
+#include <ShapeModelBezier.hpp>
 
-#include "Lidar.hpp"
-#include "FrameGraph.hpp"
-#include "ShapeBuilderArguments.hpp"
-#include "ICPBase.hpp"
-#include "IterativeClosestPointToPlane.hpp"
-#include "BundleAdjuster.hpp"
-#include "CustomException.hpp"
-#include "ControlPoint.hpp"
-#include "ShapeModelImporter.hpp"
-#include "ShapeFitterBezier.hpp"
-#include "IOFlags.hpp"
-#include "IODFinder.hpp"
-#include <CGAL_interface.hpp>
-#include <RigidBodyKinematics.hpp>
-#include "IODBounds.hpp"
+#include <Lidar.hpp>
+#include <FrameGraph.hpp>
+#include <ShapeBuilderArguments.hpp>
+
+#include <IterativeClosestPointToPlane.hpp>
+#include <IterativeClosestPoint.hpp>
+
+#include <BundleAdjuster.hpp>
+#include <CustomException.hpp>
+#include <ControlPoint.hpp>
+#include <ShapeModelImporter.hpp>
+// #include "ShapeFitterBezier.hpp"
+// #include <IOFlags.hpp>
+#include <IODFinder.hpp>
+// #include <CGAL_interface.hpp>
+
+#include <EstimationNormals.hpp>
+#include <IODBounds.hpp>
+#include <PointCloud.hpp>
+#include <PointCloudIO.hpp>
+
 #include <boost/progress.hpp>
 #include <chrono>
 #include <cmath>
+#include <RigidBodyKinematics.hpp>
+
+#define IOFLAGS_shape_builder 1
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
-	ShapeModelTri * true_shape_model,
+	ShapeModelTri<ControlPoint> * true_shape_model,
 	ShapeBuilderArguments * filter_arguments) {
 
 	this -> frame_graph = frame_graph;
@@ -34,7 +43,7 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
-	ShapeModelTri * true_shape_model) {
+	ShapeModelTri<ControlPoint> * true_shape_model) {
 
 	this -> frame_graph = frame_graph;
 	this -> lidar = lidar;
@@ -42,15 +51,12 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 }
 
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
-	const std::vector<arma::vec> & X,
-	bool save_shape_model) {
+	const std::vector<arma::vec> & X,const std::string dir) {
 
 
 	std::cout << "Running the filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
-	arma::mat longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
-	arma::mat true_longitude_latitude = arma::zeros<arma::mat>( times.n_rows, 2);
 
 
 	arma::vec lidar_pos = X_S.rows(0,2);
@@ -69,9 +75,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 	int last_ba_call_index = 0;
-	int last_IOD_epoch_index = 0;
 	int cutoff_index = 0;
 	int previous_closure_index = 0;
+	int coverage_check_last_index = 0;
 
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -104,15 +110,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		// The solution to this first registration will be used to prealign the 
 		// shape model and the source point cloud
 
-		this -> store_point_clouds(time_index);
+		this -> store_point_clouds(time_index,dir);
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
-			longitude_latitude.row(time_index) = arma::zeros<arma::rowvec>(2);
-
-			#if IOFLAGS_shape_builder
-			this -> destination_pc -> save("../output/pc/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
-			#endif
 
 			// It is legit to use the true attitude state at the first timestep
 			// as it just defines an offset
@@ -128,11 +129,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
 			// in the bundle adjustment
-			double longitude,latitude;
 			
+			
+			IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
+			icp_pc_prealign.set_minimum_h(4);
+			icp_pc_prealign.register_pc(1e-8,1e-2,M_pc,X_pc);
+
+
 			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 
-			icp_pc.register_pc(1e-8,1e-2,M_pc,X_pc);
+			icp_pc.register_pc(1e-8,1e-2,icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -143,6 +149,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
 			if (!this -> filter_arguments-> get_use_ba()){
 
+
+				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
 				M_pc = this -> LB_t0 * dcm_LB.t();
 
 				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
@@ -157,68 +165,24 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
 			BN_measured.push_back( BN_measured.front() * this -> LN_t0.t() *  M_pc * RBK::mrp_to_dcm(mrps_LN[time_index]));
 
-			// 		// The spacecraft longitude/latitude is computed from the estimated keplerian state
-			// 	for (int i = last_IOD_epoch_index; i <= time_index; ++i){
-
-			// 			/******************
-			// 			** ESTIMATED STATE*
-			// 			*******************/
-			// 		double dt = times(i) - times(last_IOD_epoch_index);
-			// 		arma::vec u_H = {1,0,0};
-
-			// 		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-			// 		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-			// 		arma::vec u_B = BN_measured[i] * DCM_HN.t() * u_H;
-
-			// 		longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-			// 		latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-			// 		arma::rowvec long_lat = {longitude,latitude};
-			// 		longitude_latitude.row(i) = long_lat;
-
-
-			// 		this -> fly_over_map.add_label(i,longitude,latitude);
-
-
-			// 			/*******************
-			// 			**** TRUE STATE ****
-			// 			********************/
-			// 		double true_f = OC::State::f_from_M(this -> true_kep_state_t0.get_M0() + this -> true_kep_state_t0.get_n() * dt,this -> true_kep_state_t0.get_eccentricity());
-			// 		arma::mat DCM_HN_true = RBK::M3(this -> true_kep_state_t0.get_omega() + true_f) * RBK::M1(this -> true_kep_state_t0.get_inclination()) * RBK::M3(this -> true_kep_state_t0.get_Omega());
-
-			// 		arma::vec u_B_true = BN_true[i] * DCM_HN_true.t() * u_H;
-
-			// 		double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
-			// 		double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
-
-			// 		arma::rowvec true_long_lat = {true_longitude,true_latitude};
-
-			// 		true_longitude_latitude.row(i) = true_long_lat;
-
-
-			// 	}
-
-			// 	OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
-			// 	this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
-
-			// 	// A guess particle is formed by assuming that the keplerian state will be unchanged.
-			// 	// The M0 is adjusted to the time of the next epoch
-			// 	iod_guess = est_particle;
-			// 	iod_guess(5) += est_kep_state.get_n() * (times(time_index) - times(last_IOD_epoch_index));
-
-
-			// 	longitude_latitude.save("../output/maps/longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-			// 	true_longitude_latitude.save("../output/maps/true_longitude_latitude_IOD_" +std::to_string(time_index) +  ".txt",arma::raw_ascii);
-
-			// 	// The proper containers and indices are reset
-			// 	last_IOD_epoch_index = time_index;
-			// 	rigid_transforms.clear();
-
-			// }
-
+			
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
+
+
+			// The surface coverage is estimated
+
+			if (time_index - coverage_check_last_index > 10){
+				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+
+				coverage_check_last_index = time_index;
+			}
+
+
+
+
 
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
@@ -235,53 +199,51 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The bundle adjustment covers two IOD runs so that the end state of the first run can be stiched
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
-			
+
 			if (this -> filter_arguments -> get_use_ba() && 
 				time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
-				
-				// this -> save_true_ground_track(BN_true,HN_true);
-				// std::cout << " -- Running IOD before correction\n";
-
-
-				// OC::KepState estimated_state = this -> run_IOD_finder(times,
-				// 	last_ba_call_index ,
-				// 	time_index, 
-				// 	mrps_LN,
-				// 	X_pcs,
-				// 	M_pcs);
-
-
-				// this -> save_estimated_ground_track(
-				// 	"estimated_lat_long_before.txt",
-				// 	times,
-				// 	last_ba_call_index ,
-				// 	time_index, 
-				// 	estimated_state,
-				// 	BN_measured);
-
 
 				std::cout << " -- Applying BA to successive point clouds\n";
 			std::vector<std::shared_ptr<PC > > pc_to_ba;
 
+			this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
+			this -> save_attitude(dir + "/true",time_index,BN_true);
 
-			this -> save_attitude("measured_before_BA",time_index,BN_measured);
-			this -> save_attitude("true",time_index,BN_true);
+		
 
-			BundleAdjuster bundle_adjuster(0, 
+
+			BundleAdjuster bundle_adjuster(
+				0, 
 				time_index,
+				&this -> all_registered_pc, 
+				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+				5,
+				this -> LN_t0,
+				this -> x_t0,
+				dir); 
+
+
+			bundle_adjuster.run(
 				M_pcs,
 				X_pcs,
 				BN_measured,
-				&this -> all_registered_pc,
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				this -> LN_t0,
-				this -> x_t0,
 				mrps_LN,
 				false,
 				previous_closure_index);
 
-			this -> save_attitude("measured_after_BA",time_index,BN_measured);
 
+
+
+
+
+
+
+
+
+
+
+			this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+			throw;
 			std::cout << " -- Running IOD after correction\n";
 
 				// estimated_state =  this -> run_IOD_finder(times,
@@ -299,41 +261,42 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
 			std::cout << " -- Applying BA to whole point cloud batch\n";
-			std::vector<std::shared_ptr<PC > > pc_to_ba;
-			int ground_index = 0;
-			
-			BundleAdjuster bundle_adjuster(0, 
-				time_index,
-				M_pcs,
-				X_pcs,
-				BN_measured,
-				&this -> all_registered_pc,
-				this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-				this -> LN_t0,
-				this -> x_t0,
-				mrps_LN,
-				true,
-				ground_index);
 
-			cutoff_index = bundle_adjuster.get_cutoff_index();
+			throw(std::runtime_error("not implemented yet"));
+			std::vector<std::shared_ptr<PC > > pc_to_ba;
+
+
+			// BundleAdjuster bundle_adjuster(0, 
+			// 	time_index,
+			// 	M_pcs,
+			// 	X_pcs,
+			// 	BN_measured,
+			// 	&this -> all_registered_pc,
+			// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+			// 	this -> LN_t0,
+			// 	this -> x_t0,
+			// 	mrps_LN,
+			// 	true,
+			// 	ground_index);
+
+			// cutoff_index = bundle_adjuster.get_cutoff_index();
 
 			std::cout << " -- Running IOD after correction\n";
 
 		}
 
-
 			#if IOFLAGS_shape_builder
-		this -> source_pc -> save("../output/pc/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+		PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+			"../output/pc/source_" + std::to_string(time_index) + ".obj",
+			this -> LN_t0.t(), 
+			this -> x_t0);
 			#endif
-
-
 
 		if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 			std::cout << "- Initializing shape model" << std::endl;
 
-			this -> initialize_shape(cutoff_index,longitude_latitude);
-			this -> estimated_shape_model -> save("../output/shape_model/fit_source_" + std::to_string(time_index)+ ".b");
-			
+			this -> initialize_shape(cutoff_index);
+			this -> estimated_shape_model -> save(dir + "/fit_source_" + std::to_string(time_index)+ ".b");
 
 			arma::vec center_of_mass = this -> estimated_shape_model -> get_center_of_mass();
 
@@ -404,7 +367,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 void ShapeBuilder::run_iod(const arma::vec &times ,
 	const std::vector<arma::vec> & X,std::string dir) {
 
-
 	std::cout << "Running the iod filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
@@ -424,9 +386,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	arma::vec iod_guess;
 
 	int last_ba_call_index = 0;
-	int last_IOD_epoch_index = 0;
 	int cutoff_index = 0;
-	int previous_closure_index = 0;
 
 
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
@@ -458,14 +418,32 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		// The solution to this first registration will be used to prealign the 
 		// shape model and the source point cloud
 
-		this -> store_point_clouds(time_index);
+		this -> store_point_clouds(time_index,dir);
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 
 			#if IOFLAGS_run_iod
-			this -> destination_pc -> save(dir + "/source_" + std::to_string(0) + ".obj",this -> LN_t0.t(),this -> x_t0);
+
+			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc,
+				dir + "/source_" + std::to_string(time_index) + ".obj",
+				this -> LN_t0.t(), 
+				this -> x_t0);
+
 			#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
@@ -529,13 +507,25 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
-			this -> source_pc -> save(dir + "/source_" + std::to_string(time_index) + "_before.obj",this -> LN_t0.t(),this -> x_t0);
+			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+				dir + "/source_" + std::to_string(time_index) + ".obj",
+				this -> LN_t0.t(), 
+				this -> x_t0);
+
+
+
 
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
-			#if IOFLAGS_run_iod
-			this -> source_pc -> save(dir + "/source_" + std::to_string(time_index) + ".obj",this -> LN_t0.t(),this -> x_t0);
+			#if IOFLAGS_run_iod			
+
+
+			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+				dir + "/source_" + std::to_string(time_index) + ".obj",
+				this -> LN_t0.t(), 
+				this -> x_t0);
+
 			#endif
 
 			M_pcs[time_index] = M_pc;
@@ -557,23 +547,24 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 		std::cout << " -- Applying BA to successive point clouds\n";
 		std::vector<std::shared_ptr<PC > > pc_to_ba;
 
+		throw(std::runtime_error("not implemented yet"));
 
-		BundleAdjuster bundle_adjuster(0, 
-			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1,
-			M_pcs,
-			X_pcs,
-			BN_measured,
-			&this -> all_registered_pc,
-			this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			this -> LN_t0,
-			this -> x_t0,
-			mrps_LN,
-			true,
-			previous_closure_index,
-			0);
+		// BundleAdjuster bundle_adjuster(0, 
+		// 	this -> filter_arguments -> get_iod_rigid_transforms_number() - 1,
+		// 	M_pcs,
+		// 	X_pcs,
+		// 	BN_measured,
+		// 	&this -> all_registered_pc,
+		// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+		// 	this -> LN_t0,
+		// 	this -> x_t0,
+		// 	mrps_LN,
+		// 	true,
+		// 	previous_closure_index,
+		// 	0);
 
 		std::cout << " -- Running IOD after correction\n";
-		final_index = previous_closure_index;
+		// final_index = previous_closure_index;
 
 	}
 
@@ -645,7 +636,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 }
 
 
-std::shared_ptr<ShapeModelBezier> ShapeBuilder::get_estimated_shape_model() const{
+std::shared_ptr<ShapeModelBezier< ControlPoint > > ShapeBuilder::get_estimated_shape_model() const{
 	return this -> estimated_shape_model;
 }
 
@@ -661,7 +652,7 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 
 	}
 
-	mrp_BN.save("../output/filter/BN_" + prefix + "_" + std::to_string(index) + ".txt",arma::raw_ascii);
+	mrp_BN.save( prefix + "_BN_" + std::to_string(index) + ".txt",arma::raw_ascii);
 
 }
 
@@ -859,14 +850,20 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 
 
 
-void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arma::mat & X_pc) {
+void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 
 	// No point cloud has been collected yet
 	if (this -> destination_pc == nullptr) {
 
-		this -> destination_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
-
+		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
+		this -> destination_pc = std::make_shared<PointCloud<PointNormal>>(pc);
+		this -> destination_pc -> build_kdtree ();
+		arma::vec::fixed<3> los = {1,0,0};
+		
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> destination_pc,*this -> destination_pc);
+		estimate_normals.set_los_dir(los);
+		estimate_normals.estimate(6);
 	}
 
 	else {
@@ -874,7 +871,16 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 		// Only one source point cloud has been collected
 		if (this -> source_pc == nullptr) {
 
-			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
+			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
+			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
+			this -> source_pc -> build_kdtree ();
+
+			arma::vec::fixed<3> los = {1,0,0};
+
+			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
+			estimate_normals.set_los_dir(los);
+			estimate_normals.estimate(6);
+
 
 
 		}
@@ -885,7 +891,25 @@ void ShapeBuilder::store_point_clouds(int index,const arma::mat & M_pc,const arm
 			// The source and destination point clouds are combined into the new source point cloud
 			this -> destination_pc = this -> source_pc;
 
-			this -> source_pc = std::make_shared<PC>(PC(this -> lidar -> get_focal_plane(),index));
+			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
+			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
+			this -> source_pc -> build_kdtree ();
+
+			arma::vec::fixed<3> los = {1,0,0};
+
+			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
+			estimate_normals.set_los_dir(los);
+			estimate_normals.estimate(6);
+
+
+
+			#if IOFLAGS_shape_builder
+			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
+				this -> LN_t0.t(),this -> x_t0);
+			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
+				this -> LN_t0.t(),this -> x_t0);
+			#endif
+
 
 		}
 	}
@@ -946,193 +970,135 @@ void ShapeBuilder::get_new_states(
 
 
 
-void ShapeBuilder::save_true_ground_track(const std::vector<arma::mat> & BN_true,
-	const std::vector<arma::mat> & HN_true) const{
+
+void ShapeBuilder::initialize_shape(unsigned int cutoff_index){
+
+	throw(std::runtime_error("not implemented yet"));
+
+	// std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
+	// std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
+	// std::string a_priori_path = "../output/shape_model/apriori.obj";
+	// std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
+	// std::shared_ptr<PC> destination_pc_concatenated;
 
 
-	arma::vec u_H = {1,0,0};
+	// if (this -> filter_arguments -> get_use_icp()){
 
-	arma::mat true_longitude_latitude(BN_true.size(),2);
+	// // The point clouds are bundle-adjusted
+	// 	std::vector<std::shared_ptr< PC>> kept_pcs;
 
-	for (int i = 0; i < BN_true.size(); ++i){
+	// 	if (this -> filter_arguments -> get_use_ba()){
 
-		arma::vec u_B_true = BN_true[i] * HN_true[i].t() * u_H;
+	// 		// Only the point clouds that looped with the first one are kept
 
-		double true_longitude = 180. / arma::datum::pi * std::atan2(u_B_true(1),u_B_true(0));
-		double true_latitude = 180. / arma::datum::pi * std::atan(u_B_true(2)/arma::norm(u_B_true.subvec(0,1)));
+	// 		std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
 
-		arma::rowvec true_long_lat = {true_longitude,true_latitude};
+	// 		for(int pc = 0; pc <= cutoff_index; ++pc){
+	// 			std::cout << "keeping pc " << pc << " / " << cutoff_index << std::endl;
+	// 			kept_pcs.push_back(this -> all_registered_pc.at(pc));
+	// 		}
 
-		true_longitude_latitude.row(i) = true_long_lat;
-	}
 
-	true_longitude_latitude.save("true_lat_long.txt",arma::raw_ascii);
+	// 	}
+	// 	else{
+	// 		kept_pcs = this -> all_registered_pc;
+	// 	}
 
+	// 	std::cout << "-- Constructing point cloud...\n";
+	// 	std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
+
+	// 	pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
+
+
+
+	// 	destination_pc_concatenated = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
+
+	// 	destination_pc_concatenated -> save(
+	// 		pc_path, 
+	// 		arma::eye<arma::mat>(3,3), 
+	// 		arma::zeros<arma::vec>(3), 
+	// 		true,
+	// 		false);
+
+
+
+	// 	destination_pc_concatenated -> save(
+	// 		pc_path_obj, 
+	// 		arma::eye<arma::mat>(3,3), 
+	// 		arma::zeros<arma::vec>(3), 
+	// 		false,
+	// 		true);
+
+
+
+	// 	// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
+	// 	// should perfectly overlap without noise and bundle-adjustment/ICP errors
+
+
+	// 	destination_pc_concatenated -> save(pc_aligned_path_obj, this -> LN_t0.t(),this -> x_t0);
+
+
+	// }
+
+	// else{
+
+	// 	arma::mat points,normals;
+
+	// 	this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_points_retained(),points,normals);
+
+	// 	destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
+
+	// 	destination_pc_concatenated -> save(
+	// 		pc_path, 
+	// 		arma::eye<arma::mat>(3,3), 
+	// 		arma::zeros<arma::vec>(3), 
+	// 		true,
+	// 		false);
+
+	// 	destination_pc_concatenated -> save(
+	// 		pc_path_obj, 
+	// 		arma::eye<arma::mat>(3,3), 
+	// 		arma::zeros<arma::vec>(3), 
+	// 		false,
+	// 		true);
+
+
+	// }
+
+
+	// std::cout << "-- Running PSR...\n";
+	// CGALINTERFACE::CGAL_interface(pc_path.c_str(),a_priori_path.c_str(),this -> filter_arguments -> get_N_edges());
+
+
+
+	// ShapeModelTri a_priori_obj("", nullptr);
+	// ShapeModelImporter::load_obj_shape_model(a_priori_path, 1, true,a_priori_obj);
+
+
+
+
+	// std::shared_ptr<ShapeModelBezier< ControlPoint > > a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
+
+	// // the shape is elevated to the prescribed degree
+	// unsigned int starting_degree = a_priori_bezier -> get_degree();
+	// for (unsigned int i = starting_degree; i < this -> filter_arguments -> get_shape_degree(); ++i){
+	// 	a_priori_bezier -> elevate_degree();
+	// }
+
+	// a_priori_bezier -> initialize_index_table();
+	// a_priori_bezier -> save_both("../output/shape_model/a_priori_bezier");
+
+	// ShapeFitterBezier shape_fitter(a_priori_bezier.get(),destination_pc_concatenated.get());
+
+	// shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
+
+	// a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
+
+	// // The estimated shape model is finally initialized
+	// this -> estimated_shape_model = a_priori_bezier;
+	// this -> estimated_shape_model -> update_mass_properties();
 
 }
-
-
-void ShapeBuilder::save_estimated_ground_track(
-	std::string path,
-	const arma::vec & times,
-	const int t0 ,
-	const int tf, 
-	const OC::KepState & est_kep_state,
-	const std::vector<arma::mat> BN_measured) const{
-
-
-	arma::mat longitude_latitude(tf - t0 + 1,2);
-	arma::vec u_H = {1,0,0};
-
-
-	for (int i = t0; i <= tf; ++i){
-
-
-		double dt = times(i) - times(t0);
-
-		double f = OC::State::f_from_M(est_kep_state.get_M0() + est_kep_state.get_n() * dt,est_kep_state.get_eccentricity());
-		arma::mat DCM_HN = RBK::M3(est_kep_state.get_omega() + f) * RBK::M1(est_kep_state.get_inclination()) * RBK::M3(est_kep_state.get_Omega());
-		arma::vec u_B = BN_measured.at(i) * DCM_HN.t() * u_H;
-
-		double longitude = 180. / arma::datum::pi * std::atan2(u_B(1),u_B(0));
-		double latitude = 180. / arma::datum::pi * std::atan(u_B(2)/arma::norm(u_B.subvec(0,1)));
-		arma::rowvec long_lat = {longitude,latitude};
-		longitude_latitude.row(i) = long_lat;
-	}
-
-	longitude_latitude.save(path,arma::raw_ascii);
-
-}
-
-void ShapeBuilder::initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude){
-
-
-	std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
-	std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
-	std::string a_priori_path = "../output/shape_model/apriori.obj";
-	std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
-	std::shared_ptr<PC> destination_pc_concatenated;
-	longitude_latitude.save("../output/maps/longitude_latitude_final.txt",arma::raw_ascii);
-
-
-	if (this -> filter_arguments -> get_use_icp()){
-
-	// The point clouds are bundle-adjusted
-		std::vector<std::shared_ptr< PC>> kept_pcs;
-
-		if (this -> filter_arguments -> get_use_ba()){
-
-			// Only the point clouds that looped with the first one are kept
-
-			std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
-
-			for(int pc = 0; pc <= cutoff_index; ++pc){
-				std::cout << "keeping pc " << pc << " / " << cutoff_index << std::endl;
-				kept_pcs.push_back(this -> all_registered_pc.at(pc));
-			}
-
-
-		}
-		else{
-			kept_pcs = this -> all_registered_pc;
-		}
-
-		std::cout << "-- Constructing point cloud...\n";
-		std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
-
-		pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
-
-
-
-		destination_pc_concatenated = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
-
-		destination_pc_concatenated -> save(
-			pc_path, 
-			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3), 
-			true,
-			false);
-
-
-
-		destination_pc_concatenated -> save(
-			pc_path_obj, 
-			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3), 
-			false,
-			true);
-
-
-
-		// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
-		// should perfectly overlap without noise and bundle-adjustment/ICP errors
-
-
-		destination_pc_concatenated -> save(pc_aligned_path_obj, this -> LN_t0.t(),this -> x_t0);
-
-
-	}
-
-	else{
-
-		arma::mat points,normals;
-
-		this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_points_retained(),points,normals);
-
-		destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
-
-		destination_pc_concatenated -> save(
-			pc_path, 
-			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3), 
-			true,
-			false);
-
-		destination_pc_concatenated -> save(
-			pc_path_obj, 
-			arma::eye<arma::mat>(3,3), 
-			arma::zeros<arma::vec>(3), 
-			false,
-			true);
-
-
-	}
-
-
-	std::cout << "-- Running PSR...\n";
-	CGALINTERFACE::CGAL_interface(pc_path.c_str(),a_priori_path.c_str(),this -> filter_arguments -> get_N_edges());
-
-
-
-	ShapeModelTri a_priori_obj("", nullptr);
-	ShapeModelImporter::load_obj_shape_model(a_priori_path, 1, true,a_priori_obj);
-
-
-
-
-	std::shared_ptr<ShapeModelBezier> a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
-
-	// the shape is elevated to the prescribed degree
-	unsigned int starting_degree = a_priori_bezier -> get_degree();
-	for (unsigned int i = starting_degree; i < this -> filter_arguments -> get_shape_degree(); ++i){
-		a_priori_bezier -> elevate_degree();
-	}
-
-	a_priori_bezier -> initialize_index_table();
-	a_priori_bezier -> save_both("../output/shape_model/a_priori_bezier");
-
-	ShapeFitterBezier shape_fitter(a_priori_bezier.get(),destination_pc_concatenated.get());
-
-	shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
-
-	a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
-
-	// The estimated shape model is finally initialized
-	this -> estimated_shape_model = a_priori_bezier;
-	this -> estimated_shape_model -> update_mass_properties();
-
-}
-
 
 
 arma::vec ShapeBuilder::get_center_collected_pcs(
@@ -1146,12 +1112,83 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 	arma::vec pc_center;
 	for (int i = 0; i < N; ++i){	
 
-		pc_center = this -> all_registered_pc[i]-> get_center();
+		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
 
 		center += 1./N * (absolute_rigid_transforms.at(i).M * (
 			absolute_true_rigid_transforms.at(i).M.t() * (pc_center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
 	}
 	return center;
+}
+
+
+
+
+void ShapeBuilder::estimate_coverage(std::string dir) const{
+
+	// A PC is formed with all the registered point clouds
+	PointCloud<PointNormal> global_pc;
+
+	for (const std::shared_ptr<PointCloud<PointNormal> > & pc : this -> all_registered_pc){
+		for (int j = 0; j < pc -> size(); ++j){
+			global_pc.push_back(pc -> get_point(j));
+		}
+	}
+
+
+	// The KD tree of this pc is built
+	global_pc.build_kdtree();
+
+
+	// The normals are NOT re-estimated. they come from the concatenated point clouds
+
+
+	// For each point in this global pc, its N nearest neighbors are searched
+	// The diameter of the search area defines the ... area Si associated with its normal
+	// So for each point p_i of normal n_i, to which a neighborhood area Si is assigned
+	// we define an approximated coverage criterion as
+	// 
+	// 			 ||sum(Si * n_i)||^2
+	// eta = 1 - ----------------
+	// 				(sum(Si))^2
+	// 
+	// which is a consistent criterion in the event of a perfect, uniform sampling
+	// along with the exact surface normals. when eta ~ 1, coverage is complete
+
+	arma::vec S(global_pc.size());
+	S.fill(0);
+	arma::vec::fixed<3> surface_normal_sum = {0,0,0};
+	double sum_S = 0;
+
+
+	#pragma omp parallel for reduction(+:sum_S)
+	for (int i = 0; i < global_pc.size(); ++i){
+
+		// The closest neighbors are extracted
+		std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),6);
+		double surface = std::pow((--closest_points.end()) -> first,2) * arma::datum::pi;
+
+		// S is defined as pi * r_mean ^ 2
+
+		S(i) = std::max(surface,arma::datum::pi * std::pow(3 ,2));
+
+		// the surface normal sum is incremented
+		surface_normal_sum += S(i) * global_pc.get_normal_coordinates(i);
+		sum_S += S(i);
+	}
+
+	// The coverage criterion is evaluated
+	std::cout << "-- Number of points in global pc: " << global_pc.size() << std::endl;
+	std::cout << "-- Stddev in sampling surface : " << arma::stddev(S) << std::endl;
+	std::cout << "-- Max sampling surface : " << arma::max(S) << std::endl;
+	std::cout << "-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
+
+
+	PointCloudIO<PointNormal>::save_to_obj(global_pc,
+		dir + "coverage_pc.obj",
+		this -> LN_t0.t(), 
+		this -> x_t0);
+
+
 }
 
 

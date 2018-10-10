@@ -136,9 +136,12 @@ void Ray::reset(ShapeModel<ControlPoint> * shape_model) {
 
 bool Ray::intersection_inside(const arma::vec::fixed<3> & H, const Facet & facet, double tol) {
 
-	const arma::vec::fixed<3> P0 = facet.get_point_coordinates(0);
-	const arma::vec::fixed<3> P1 = facet.get_point_coordinates(1);
-	const arma::vec::fixed<3> P2 = facet.get_point_coordinates(2);
+
+	const std::vector<int>  & control_points = facet.get_points();
+
+	const arma::vec::fixed<3> P0 = facet.get_point_coordinates(control_points[0]);
+	const arma::vec::fixed<3> P1 = facet.get_point_coordinates(control_points[1]);
+	const arma::vec::fixed<3> P2 = facet.get_point_coordinates(control_points[2]);
 
 	double epsilon = (facet.get_area()
 		- 0.5 * (
@@ -193,7 +196,6 @@ bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) 
 	const arma::vec::fixed<3> & p = facet.get_center();
 
 	double t = arma::dot(n, p - this -> origin_target_frame) / arma::dot(n, this -> direction_target_frame);
-
 	// The normal is facing the opposite way
 	if (arma::dot(n,this -> direction_target_frame) > 0 && outside){
 		return false;
@@ -209,7 +211,8 @@ bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) 
 		if (this -> intersection_inside(H, facet)) {
 
 			// Corresponds to range attenuation in 
-			// Amzajerdian, F., Hines, G. D., Roback, V. E., Petway, L. B., Barnes, B. W., Paul, F., … Bulyshev, A. (2015). Advancing Lidar Sensors Technologies for Next Generation Landing Missions (pp. 1–11). https://doi.org/10.2514/6.2015-0329
+			// Amzajerdian, F., Hines, G. D., Roback, V. E., Petway, L. B., Barnes, B. W., Paul, F., … Bulyshev, A. (2015). 
+			// Advancing Lidar Sensors Technologies for Next Generation Landing Missions (pp. 1–11). https://doi.org/10.2514/6.2015-0329
 
 			double b = 1800.; // max range
 			double a = (900. - b) / (60.);
@@ -256,6 +259,8 @@ bool Ray::single_patch_ray_casting(const Bezier & patch,double & u,double & v,bo
 	const arma::vec::fixed<3> & S = this -> origin_target_frame;
 	const arma::vec::fixed<3> & dir = this -> direction_target_frame;
 
+
+	throw(std::runtime_error("Have to fix get_point_coordinates access first"));
 
 	arma::mat u_tilde = RBK::tilde(dir);
 

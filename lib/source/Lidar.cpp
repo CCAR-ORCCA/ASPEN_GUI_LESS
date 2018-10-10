@@ -102,7 +102,6 @@ void Lidar::send_flash(ShapeModel<ControlPoint> * shape_model,bool add_noise,dou
 
 	for (unsigned int pixel = 0; pixel < resolution; ++pixel){
 		this -> focal_plane[pixel] -> reset( shape_model);
-
 		if (active_pixel_indices.size() == 0 || pixel - active_pixel_indices.back() >= pixels_skipped){
 			active_pixel_indices.push_back(pixel);
 		}

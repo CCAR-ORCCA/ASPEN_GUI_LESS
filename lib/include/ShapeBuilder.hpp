@@ -8,13 +8,15 @@
 #include <OrbitConversions.hpp>
 
 class Lidar;
-class PC;
 
-class ShapeModelTri;
-class ShapeModelBezier;
+template <class PointType> class ShapeModelTri;
+template <class PointType> class ShapeModelBezier;
+template <class PointType> class PointCloud;
+
 class ShapeBuilderArguments;
 class FrameGraph;
 class PointNormal;
+class ControlPoint;
 struct RigidTransform;
 
 /**
@@ -40,7 +42,7 @@ public:
 	*/
 	ShapeBuilder(FrameGraph * frame_graph,
 		Lidar * lidar,
-		ShapeModelTri * true_shape_model) ;
+		ShapeModelTri<ControlPoint> * true_shape_model) ;
 
 	/**
 	Constructor
@@ -51,7 +53,7 @@ public:
 	*/
 	ShapeBuilder(FrameGraph * frame_graph,
 		Lidar * lidar,
-		ShapeModelTri * true_shape_model,
+		ShapeModelTri<ControlPoint> * true_shape_model,
 		ShapeBuilderArguments * filter_arguments) ;
 
 	
@@ -59,12 +61,12 @@ public:
 	Runs the shape reconstruction filter
 	@param times vector of measurement times
 	@param X reference to state used within the filter
-	@param save_shape_model true if the true shape model must be saved prior 
 	to the run
+	@param dir path to directory where to save outputs
 	*/
 	void run_shape_reconstruction(const arma::vec &times ,
 		const std::vector<arma::vec> & X,
-		bool save_shape_model);
+		const std::string dir);
 
 
 
@@ -72,8 +74,7 @@ public:
 	Runs the iod filter
 	@param times vector of measurement times
 	@param X reference to state used within the filter
-	@param save_shape_model true if the true shape model must be saved prior 
-	to the run
+	@param dir path to directory where to save outputs
 	*/
 	void run_iod(const arma::vec &times ,
 		const std::vector<arma::vec> & X,
@@ -82,7 +83,7 @@ public:
 
 
 
-	std::shared_ptr<ShapeModelBezier> get_estimated_shape_model() const;
+	std::shared_ptr<ShapeModelBezier< ControlPoint > > get_estimated_shape_model() const;
 
 
 	arma::vec get_final_measured_attitude() const;
@@ -103,21 +104,10 @@ public:
 	Moves the latest measurements to the corresponding point clouds
 	and stores them to file
 	@param t time
+	@param dir path to output directory
 	*/
-	void store_point_clouds(int index,const arma::mat & M_pc = arma::eye<arma::mat>(3,3),const arma::mat & X_pc = arma::zeros<arma::vec>(3));
+	void store_point_clouds(int index,const std::string dir);
 
-	/**
-	Fits the shape using the prescribed point cloud
-	@param N_iter maximum number of iterations
-	@param J standard deviation of update norm below which convergence is reached
-	@param DS DCM aligning the provided point cloud with the shape
-	@param X_DS translation vector aligning the provided point cloud with the shape
-	*/
-	void fit_shape(PC * pc, 
-		unsigned int N_iter ,
-		double J ,
-		const arma::mat & DS , 
-		const arma::vec & X_DS );
 
 
 
@@ -130,8 +120,7 @@ protected:
 		const std::vector<RigidTransform> & absolute_rigid_transforms,
 		const std::vector<RigidTransform> & absolute_true_rigid_transforms) const;
 
-
-
+	void estimate_coverage(std::string dir) const;
 
 
 	/**
@@ -257,7 +246,7 @@ protected:
 	*/
 	void concatenate_point_clouds(unsigned int index);
 
-	void initialize_shape(unsigned int cutoff_index,arma::mat & longitude_latitude);
+	void initialize_shape(unsigned int cutoff_index);
 
 	/**
 	Computes the new relative states from the (sigma,omega),(r,r') relative states
@@ -292,17 +281,17 @@ protected:
 	ShapeBuilderArguments * filter_arguments;
 	FrameGraph * frame_graph;
 	Lidar * lidar;
-	ShapeModelTri * true_shape_model;
-	std::shared_ptr<ShapeModelBezier> estimated_shape_model;
+	ShapeModelTri<ControlPoint> * true_shape_model;
+	std::shared_ptr<ShapeModelBezier< ControlPoint > > estimated_shape_model;
 
-	std::shared_ptr<PC> destination_pc = nullptr;
-	std::shared_ptr<PC> source_pc = nullptr;
-	std::shared_ptr<PC> destination_pc_shape = nullptr;
+	std::shared_ptr<PointCloud < PointNormal > > destination_pc = nullptr;
+	std::shared_ptr<PointCloud < PointNormal > > source_pc = nullptr;
+	std::shared_ptr<PointCloud < PointNormal > > destination_pc_shape = nullptr;
 
 	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
 
 
-	std::vector< std::shared_ptr<PC> > all_registered_pc;
+	std::vector< std::shared_ptr<PointCloud < PointNormal > > > all_registered_pc;
 
 	arma::mat LN_t0;
 	arma::mat LB_t0;

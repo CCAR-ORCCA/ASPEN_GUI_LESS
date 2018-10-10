@@ -2,7 +2,6 @@
 #define HEADER_BUNDLE_ADJUSTER
 #include <armadillo>
 #include <memory>
-#include "PC.hpp"
 
 #include <Eigen/Sparse>
 #include <Eigen/Jacobi>
@@ -15,25 +14,32 @@ typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 typedef Eigen::Triplet<double> T;
 typedef Eigen::VectorXd EigVec;
 
+class PointNormal;
+
+template <class PointType> class PointCloud;
 
 class BundleAdjuster {
 
 public:
 
-	BundleAdjuster(int t0, 
-		int tf, 
-		std::map<int,arma::mat> & M_pcs, 
-		std::map<int,arma::vec> & X_pcs,
-		std::vector<arma::mat> & BN_measured,
-		std::vector< std::shared_ptr<PC> > * all_registered_pc_, 
+	
+	BundleAdjuster(
+		int t0, 
+		int tf,
+		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 		int N_iter,
+		int h,
 		const arma::mat & LN_t0,
 		const arma::vec & x_t0,
+		std::string dir);
+
+
+	void run(std::map<int,arma::mat> & M_pcs,
+		std::map<int,arma::vec> & X_pcs,
+		std::vector<arma::mat> & BN_measured,
 		const std::vector<arma::vec> & mrps_LN,
 		bool save_connectivity,
-		int & previous_closure_index,
-		int h = 5);
-
+		int & previous_closure_index);
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -46,10 +52,12 @@ public:
 
 	int get_cutoff_index() const;
 
+	void set_use_true_pairs(bool use_true_pairs);
+
 protected:
 	
 
-	std::vector< std::shared_ptr<PC> > * all_registered_pc;
+	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
 	int N_iter;
 
@@ -86,10 +94,11 @@ protected:
 	int ground_pc_index = 0;
 
 	std::vector<int> local_pc_index_to_global_pc_index;
-
+	bool use_true_pairs = false;
 
 	int closure_index = 0;
 	int h;
+	std::string dir;
 };
 
 

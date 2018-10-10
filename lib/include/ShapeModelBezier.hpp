@@ -1,7 +1,7 @@
 #ifndef HEADER_SHAPEMODELBEZIER
 #define HEADER_SHAPEMODELBEZIER
 
-#include "ShapeModel.hpp"
+#include <ShapeModel.hpp>
 #include "Bezier.hpp"
 
 #include "CustomReductions.hpp"
@@ -10,6 +10,9 @@
 #include <Eigen/Dense>
 #include <array>
 #include <ShapeModelTri.hpp>
+
+
+
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 
 template <class PointType>

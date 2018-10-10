@@ -1,5 +1,5 @@
 #include "IterativeClosestPoint.hpp"
-#define ICP_DEBUG 1
+#define ICP_DEBUG 0
 
 
 IterativeClosestPoint::IterativeClosestPoint() : ICPBase(){

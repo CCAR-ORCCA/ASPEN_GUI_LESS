@@ -138,7 +138,7 @@ add_library(${LIB_NAME} SHARED
 	source/BBox.cpp
 	source/BSpline.cpp
 	source/Bezier.cpp
-	# source/BundleAdjuster.cpp
+	source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
 	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
@@ -159,7 +159,7 @@ add_library(${LIB_NAME} SHARED
 	source/IterativeClosestPointToPlane.cpp
 	source/IODFinder.cpp
 	source/KDTree.cpp
-	# source/KDTreeShape.cpp
+	source/KDTreeShape.cpp
 	source/Lidar.cpp
 	# source/NavigationFilter.cpp
 	# source/Observations.cpp
@@ -173,7 +173,7 @@ add_library(${LIB_NAME} SHARED
 	source/Ray.cpp
 	source/RefFrame.cpp
 	source/SequentialFilter.cpp
-	# source/ShapeBuilder.cpp
+	source/ShapeBuilder.cpp
 	# source/ShapeFitterBezier.cpp
 	source/ShapeModel.cpp
 	source/ShapeModelBezier.cpp

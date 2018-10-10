@@ -18,7 +18,6 @@ class Ray;
 class ControlPoint;
 template<class PointType> class ShapeModel;
 class FrameGraph;
-class PC;
 class Facet;
 
 

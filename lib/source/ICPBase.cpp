@@ -208,6 +208,10 @@ void ICPBase::register_pc(
 			this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
 			info_mat += info_mat_temp;
 			normal_mat += normal_mat_temp;
+
+
+			
+
 		}
 
 
@@ -295,11 +299,11 @@ bool ICPBase::check_convergence(const int & iter,const double & J,const double &
 	else if ( (std::abs(J - J_previous) / J <= this -> s_tol && h > this -> minimum_h) && iter + 1 < this -> iterations_max) {
 		h = h - 1;
 		next_h = true;
-		std::cout << "Has stalled, going to the next level\n";
+
 		if (this -> hierarchical){
 			J_previous = std::numeric_limits<double>::infinity();
 		#if ICP_DEBUG
-			
+		std::cout << "Has stalled, going to the next level\n";
 		#endif
 		}
 		else{
@@ -1058,11 +1062,8 @@ double ICPBase::compute_rms_residuals(
 	const arma::vec::fixed<3> & x_D )  const{
 
 	double J = 0;
-	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
 
-	#if ICP_DEBUG
-	std::cout << "\tMean residuals : " << mean << std::endl;
-	#endif 
+	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
 
 	if (weights.size() == 0){
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
@@ -1090,6 +1091,7 @@ double ICPBase::compute_mean_residuals(
 
 	double J = 0;
 
+
 	if (weights.size() == 0){
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
@@ -1105,6 +1107,7 @@ double ICPBase::compute_mean_residuals(
 
 		}
 	}
+
 	return J;
 }
 
