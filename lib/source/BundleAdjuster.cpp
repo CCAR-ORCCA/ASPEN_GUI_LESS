@@ -208,7 +208,7 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
-		std::cout << "\Finding overlaps with " << i << std::endl;
+		std::cout << "Finding overlaps with " << i << std::endl;
 		auto overlap_with_ground = this -> find_overlap_with_pc(
 			i,
 			static_cast<int>(this -> all_registered_pc -> size() - 1),
@@ -705,7 +705,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 			pcs_to_check.push_back(start_index + i);
 		}
 		else{
-			pcs_to_check.push_back(end_index + i);
+			pcs_to_check.push_back(start_index - i);
 		}
 	}
 
