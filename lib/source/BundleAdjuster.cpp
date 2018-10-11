@@ -291,7 +291,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 		if (point_cloud_pair.S_k == 0 || point_cloud_pair.D_k == 0 ){
 
-			active_h = 0;
+			active_h = 4;
 		}
 		else{
 
@@ -700,11 +700,6 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	std::map<double,int> overlaps;
 
 
-
-
-
-
-
 	int step_sign = (end_index - start_index )/std::abs(end_index - start_index);
 	assert(std::abs(step_sign) == 1);
 
@@ -732,7 +727,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 			std::cout << " ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 			
-			if (prop > 75){
+			if (prop > 80){
 				overlaps[prop] = other_pc_index;
 				if (overlaps.size() > 5){
 					return overlaps;
