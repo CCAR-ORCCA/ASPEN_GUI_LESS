@@ -650,42 +650,19 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 }
 
 void BundleAdjuster::save_connectivity() const{
-	int M = this -> point_cloud_pairs. size();
-	int Q = this -> all_registered_pc -> size();
 
 
-	arma::mat connectivity_matrix_res(Q,Q);
-	arma::mat connectivity_matrix_overlap(Q,Q);
-	arma::mat connectivity_matrix_N_pairs(Q,Q);
+	for (int k = 1; k <= this -> closure_index; ++k){
 
-
-	connectivity_matrix_res.fill(-1);
-	connectivity_matrix_overlap.fill(-1);
-
-	for (int k = 0; k <= this -> closure_index; ++k){
-
-		// connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
-		// connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
-
-		// connectivity_matrix_overlap(point_cloud_pair.S_k,point_cloud_pair.D_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
-		// connectivity_matrix_overlap(point_cloud_pair.D_k,point_cloud_pair.S_k) = double(point_cloud_pair.N_accepted_pairs) / double(point_cloud_pair.N_pairs);
-
-		// connectivity_matrix_N_pairs(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.N_pairs;
-		// connectivity_matrix_N_pairs(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.N_pairs;
-
-		if (point_cloud_pair.D_k != 0){
-			PointCloudIO<PointNormal>::save_to_obj(
-				*this -> all_registered_pc -> at(k),
-				this -> dir + "/destination_" + std::to_string(k) + "_ba.obj",
-				this -> LN_t0.t(), 
-				this -> x_t0);
-		}
+		
+		PointCloudIO<PointNormal>::save_to_obj(
+			*this -> all_registered_pc -> at(k),
+			this -> dir + "/destination_" + std::to_string(k) + "_ba.obj",
+			this -> LN_t0.t(), 
+			this -> x_t0);
+		
 
 	}
-
-	// connectivity_matrix_res.save(this -> dir + "/connectivity_res.txt",arma::raw_ascii);
-	// connectivity_matrix_overlap.save(this -> dir + "/connectivity_overlap.txt",arma::raw_ascii);
-	// connectivity_matrix_N_pairs.save(this -> dir + "/connectivity_N_pairs.txt",arma::raw_ascii);
 
 }
 
