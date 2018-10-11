@@ -235,8 +235,8 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 		std::set<int> pair_set = *pair_iter;
 
-		int S_k = (*pair_set.begin());
-		int D_k = (*std::next(pair_set.begin()));
+		int S_k = *(pair_set.begin());
+		int D_k = *(--pair_set.end());
 
 		BundleAdjuster::PointCloudPair pair;
 		pair.S_k = S_k;
@@ -363,6 +363,9 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		
 
 		const BundleAdjuster::PointCloudPair & point_cloud_pair = this -> point_cloud_pairs[k];
+
+		std::cout << " S_k = " << point_cloud_pair.S_k << " , D_k = " << point_cloud_pair.D_k << std::endl;
+
 
 		arma::vec::fixed<3> x_S = arma::zeros<arma::vec>(3);
 		arma::mat::fixed<3,3> dcm_S = arma::eye<arma::mat>(3,3);
