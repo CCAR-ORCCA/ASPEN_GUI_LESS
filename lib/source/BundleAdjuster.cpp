@@ -47,6 +47,10 @@ void BundleAdjuster::run(
 	bool save_connectivity,
 	int & previous_closure_index){
 
+	
+	int Q = this -> all_registered_pc -> size();
+	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
+
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs(previous_closure_index);
 	this -> update_point_cloud_pairs();
@@ -85,8 +89,6 @@ void BundleAdjuster::run(
 
 void BundleAdjuster::solve_bundle_adjustment(){
 
-	int Q = this -> all_registered_pc -> size();
-	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
