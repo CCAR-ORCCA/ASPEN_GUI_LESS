@@ -29,7 +29,7 @@ all_data = [
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
-"INSTRUMENT_FREQUENCY_SHAPE" : 0.0003,
+"INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
 "MRP_0" : [0,0,0],
 "dir" : base_location + "output/test_0"}
 ]
