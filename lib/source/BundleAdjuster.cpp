@@ -698,7 +698,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	std::map<double,int> overlaps;
 
 	std::vector<int> pcs_to_check;
-
+	int active_h = 5;
 	int len = std::abs(end_index - start_index) + 1;
 	for (int i = 0; i < len; ++i){
 		if (start_index < end_index){
@@ -717,14 +717,14 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 		double p = std::log2(this -> all_registered_pc -> at(pc_global_index) -> size());
 
-		int N_pairs = (int)(std::pow(2, p - this -> h));
+		int N_pairs = (int)(std::pow(2, p - active_h));
 
 		try{
 
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(pc_global_index),
 				this -> all_registered_pc -> at(other_pc_index),
-				this -> h);
+				active_h);
 
 			prop = double(point_pairs.size()) / N_pairs * 100;
 			std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
