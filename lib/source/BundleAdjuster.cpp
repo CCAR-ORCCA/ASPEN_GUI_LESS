@@ -716,9 +716,9 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
-
 		int other_pc_index = start_index + i * step_sign;
 
+		if (other_pc_index == pc_global_index) continue;
 
 		double prop;
 
