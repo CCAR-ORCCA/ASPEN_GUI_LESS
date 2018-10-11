@@ -88,6 +88,9 @@ void BundleAdjuster::run(
 			X_pcs[i].save(this -> dir + "/X_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
 		}
 	}
+
+	std::cout << "- Leaving bundle adjustment" << std::endl;
+
 }
 
 
