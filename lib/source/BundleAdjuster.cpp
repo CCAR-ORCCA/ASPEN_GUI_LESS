@@ -88,7 +88,8 @@ void BundleAdjuster::run(
 
 
 void BundleAdjuster::solve_bundle_adjustment(){
-
+	int Q = this -> all_registered_pc -> size();
+	
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
