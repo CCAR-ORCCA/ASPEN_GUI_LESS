@@ -201,7 +201,6 @@ int BundleAdjuster::get_cutoff_index() const{
 
 void BundleAdjuster::create_pairs(int & previous_closure_index){
 
-	std::vector<PointPair> point_pairs;
 	std::set<std::set<int> > pairs;
 
 	int ground_index = 0; 
@@ -290,7 +289,6 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
 	}
 	
-	std::vector<PointPair> point_pairs;
 	int active_h;
 
 	if (!this -> use_true_pairs){
