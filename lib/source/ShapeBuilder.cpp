@@ -259,24 +259,42 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				throw(std::runtime_error("not implemented yet"));
 				std::vector<std::shared_ptr<PC > > pc_to_ba;
 
+				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
-			// BundleAdjuster bundle_adjuster(0, 
-			// 	time_index,
-			// 	M_pcs,
-			// 	X_pcs,
-			// 	BN_measured,
-			// 	&this -> all_registered_pc,
-			// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-			// 	this -> LN_t0,
-			// 	this -> x_t0,
-			// 	mrps_LN,
-			// 	true,
-			// 	ground_index);
+				BundleAdjuster bundle_adjuster(
+					0, 
+					time_index,
+					&this -> all_registered_pc, 
+					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+					0,
+					this -> LN_t0,
+					this -> x_t0,
+					dir); 
 
-			// cutoff_index = bundle_adjuster.get_cutoff_index();
+
+				bundle_adjuster.run(
+					M_pcs,
+					X_pcs,
+					BN_measured,
+					mrps_LN,
+					true,
+					previous_closure_index);
+
+				std::cout << " -- Saving attitude...\n";
+
+				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+
+				std::cout << " -- Estimating coverage...\n";
+
+				this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
+
+				std::cout << " -- Moving on...\n";
+
+
+
 
 				std::cout << " -- Running IOD after correction\n";
-
+				throw(std::runtime_error("not estimated yet"));
 			}
 
 			#if IOFLAGS_shape_builder
