@@ -229,9 +229,12 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		this -> closure_index << " ) in loop closure" <<  std::endl;
 		std::set<int> pair_1 = {pc_matching_with_closure_index,this -> closure_index};
 		pairs.insert(pair_1);
+		previous_closure_index = this -> closure_index;
+	}
+	else{
+		previous_closure_index = pc_matching_with_ground_index;
 	}
 
-	previous_closure_index = std::max(pc_matching_with_ground_index,pc_matching_with_closure_index);
 
 	std::cout << "Last closure index : " << previous_closure_index << std::endl;
 
