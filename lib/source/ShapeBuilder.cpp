@@ -1099,6 +1099,8 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	std::string dir) const{
 
+	std::cout << " -- Fetching points ...\n";
+
 	// A PC is formed with all the registered point clouds
 	PointCloud<PointNormal> global_pc;
 
@@ -1109,6 +1111,8 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	}
 
 
+	std::cout << "-- Number of points in global pc: " << global_pc.size() << std::endl;
+	
 	// The KD tree of this pc is built
 	global_pc.build_kdtree();
 
@@ -1151,7 +1155,6 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	}
 
 	// The coverage criterion is evaluated
-	std::cout << "-- Number of points in global pc: " << global_pc.size() << std::endl;
 	std::cout << "-- Stddev in sampling surface : " << arma::stddev(S) << std::endl;
 	std::cout << "-- Max sampling surface : " << arma::max(S) << std::endl;
 	std::cout << "-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
