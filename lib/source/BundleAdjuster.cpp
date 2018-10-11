@@ -632,6 +632,7 @@ void BundleAdjuster::save_connectivity() const{
 	for (int k = 0; k < M; ++k){
 		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
 
+		std::cout << "Saving point cloud pair S_k == "  << point_cloud_pair.S_k << " , D_k == " << point_cloud_pair.D_k << std::endl;
 		// connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
 		// connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
 
