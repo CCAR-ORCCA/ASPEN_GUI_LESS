@@ -2,6 +2,17 @@ import os
 import json
 import numpy as np
 
+import os
+import platform
+print platform.system()
+
+
+if (platform.system() == 'Linux'):
+	base_location = "/orc_raid/bebe0705/ShapeReconstruction/"
+else:
+	base_location = "../"
+
+
 all_data = [
 
 {
@@ -21,7 +32,7 @@ all_data = [
 "USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY_SHAPE" : 0.0003,
 "MRP_0" : [0,0,0],
-"dir" : "../output/test_0"}
+"dir" : base_location + "output/test_0"}
 ]
 
 for data in all_data:
