@@ -204,7 +204,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	int ground_index = 0; 
 
-	this -> closure_index = this -> all_registered_pc -> size() - 1;
 
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
@@ -226,6 +225,7 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	
 
+	this -> closure_index = previous_closure_index;
 
 
 	std::cout << "Last closure index : " << previous_closure_index << std::endl;
@@ -662,10 +662,8 @@ void BundleAdjuster::save_connectivity() const{
 	connectivity_matrix_res.fill(-1);
 	connectivity_matrix_overlap.fill(-1);
 
-	for (int k = 0; k < M; ++k){
-		auto point_cloud_pair = this -> point_cloud_pairs.at(k);
+	for (int k = 0; k <= this -> closure_index; ++k){
 
-		std::cout << "Saving point cloud pair S_k == "  << point_cloud_pair.S_k << " , D_k == " << point_cloud_pair.D_k << std::endl;
 		// connectivity_matrix_res(point_cloud_pair.S_k,point_cloud_pair.D_k) = point_cloud_pair.error;
 		// connectivity_matrix_res(point_cloud_pair.D_k,point_cloud_pair.S_k) = point_cloud_pair.error;
 
@@ -677,8 +675,8 @@ void BundleAdjuster::save_connectivity() const{
 
 		if (point_cloud_pair.D_k != 0){
 			PointCloudIO<PointNormal>::save_to_obj(
-				*this -> all_registered_pc -> at(point_cloud_pair.D_k),
-				this -> dir + "/destination_" + std::to_string(point_cloud_pair.D_k) + "_ba.obj",
+				*this -> all_registered_pc -> at(k),
+				this -> dir + "/destination_" + std::to_string(k) + "_ba.obj",
 				this -> LN_t0.t(), 
 				this -> x_t0);
 		}

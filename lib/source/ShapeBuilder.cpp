@@ -263,7 +263,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					time_index,
 					&this -> all_registered_pc, 
 					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					0,
+					5,
 					this -> LN_t0,
 					this -> x_t0,
 					dir); 
