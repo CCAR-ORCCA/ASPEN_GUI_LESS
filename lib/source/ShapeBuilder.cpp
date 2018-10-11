@@ -1095,7 +1095,7 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	// A PC is formed with all the registered point clouds
 	PointCloud<PointNormal> global_pc;
 
-	for (int i = 0; i <=  previous_closure_index; ++i){
+	for (int i = 0; i <=  this -> all_registered_pc.size(); ++i){
 		for (int j = 0; j <  this -> all_registered_pc[i] -> size(); ++j){
 			global_pc.push_back( this -> all_registered_pc[i] -> get_point(j));
 		}

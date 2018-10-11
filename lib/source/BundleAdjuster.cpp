@@ -47,7 +47,7 @@ void BundleAdjuster::run(
 	bool save_connectivity,
 	int & previous_closure_index){
 
-	
+
 	int Q = this -> all_registered_pc -> size();
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
@@ -89,7 +89,7 @@ void BundleAdjuster::run(
 
 void BundleAdjuster::solve_bundle_adjustment(){
 	int Q = this -> all_registered_pc -> size();
-	
+
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
@@ -212,14 +212,15 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	std::cout << "Choosing " << " ( " << ground_index << " , "<<
 	pc_matching_with_ground_index << " ) in loop closure" <<  std::endl;
-	
-	std::cout << "Choosing " << " ( " << pc_matching_with_closure_index << " , "<<
-	this -> closure_index << " ) in loop closure" <<  std::endl;
-
 	std::set<int> pair_0 = {ground_index,pc_matching_with_ground_index};
-	std::set<int> pair_1 = {pc_matching_with_closure_index,this -> closure_index};
 	pairs.insert(pair_0);
-	pairs.insert(pair_1);
+	
+	if (pc_matching_with_closure_index >= 0){
+		std::cout << "Choosing " << " ( " << pc_matching_with_closure_index << " , "<<
+		this -> closure_index << " ) in loop closure" <<  std::endl;
+		std::set<int> pair_1 = {pc_matching_with_closure_index,this -> closure_index};
+		pairs.insert(pair_1);
+	}
 
 
 	// The successive measurements are added
@@ -390,9 +391,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		std::vector<PointPair> point_pairs;
 
-		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "Computing point pairs within point cloud pair  S_k = " << point_cloud_pair.S_k << " , D_k = " << point_cloud_pair.D_k << std::endl;
-		#endif
 
 		if (!this -> use_true_pairs){
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
