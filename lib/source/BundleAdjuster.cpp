@@ -408,18 +408,35 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 
 		if (!this -> use_true_pairs){
-			IterativeClosestPointToPlane::compute_pairs(point_pairs,
-				this -> all_registered_pc -> at(point_cloud_pair.S_k),
-				this -> all_registered_pc -> at(point_cloud_pair.D_k),
-				this -> h,
-				dcm_S ,
-				x_S,
-				dcm_D ,
-				x_D );
+
+
+			if (point_cloud_pair.S_k == 0 || point_cloud_pair.D_k == 0){
+
+				IterativeClosestPointToPlane::compute_pairs(point_pairs,
+					this -> all_registered_pc -> at(point_cloud_pair.S_k),
+					this -> all_registered_pc -> at(point_cloud_pair.D_k),
+					0,
+					dcm_S ,
+					x_S,
+					dcm_D ,
+					x_D );
+			}
+			else{
+
+				IterativeClosestPointToPlane::compute_pairs(point_pairs,
+					this -> all_registered_pc -> at(point_cloud_pair.S_k),
+					this -> all_registered_pc -> at(point_cloud_pair.D_k),
+					this -> h,
+					dcm_S ,
+					x_S,
+					dcm_D ,
+					x_D );
+
+			}
 		}
 		else{
 
-			
+
 
 			for (int i = 0; i < this -> all_registered_pc -> at(point_cloud_pair.S_k) -> size(); ++i){
 				point_pairs.push_back(std::make_pair(i,i));
@@ -451,7 +468,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
-		
+
 		this -> point_cloud_pairs[k].error = rms_error;
 		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
