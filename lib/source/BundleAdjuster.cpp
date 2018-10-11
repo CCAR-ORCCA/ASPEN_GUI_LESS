@@ -53,7 +53,6 @@ void BundleAdjuster::run(
 
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs(previous_closure_index);
-	this -> update_point_cloud_pairs();
 
 	if (this -> all_registered_pc -> size() == 0){
 		std::cout << " - Nothing to do here, no loop closure or already closed\n";
@@ -210,33 +209,23 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 
 
+	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
-	auto overlap_with_ground = this -> find_overlap_with_pc(
-		ground_index,
-		static_cast<int>(this -> all_registered_pc -> size() - 1),
-		0);
+		auto overlap_with_ground = this -> find_overlap_with_pc(
+			i,
+			static_cast<int>(this -> all_registered_pc -> size() - 1),
+			0);
 
-	// auto overlap_with_closure = this -> find_overlap_with_pc(
-	// 	this -> closure_index,
-	// 	0,
-	// 	static_cast<int>(this -> all_registered_pc -> size() - 1));
-
-
-	for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
-		std::cout << "Using " << " ( " << ground_index << " , "<< it -> second << " ) in loop closure" <<  std::endl;
-		std::set<int> pair = {ground_index,it -> second};
-		pairs.insert(pair);
-		previous_closure_index = std::max(previous_closure_index,it -> second);
+		for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
+			std::cout << "Using " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
+			std::set<int> pair = {i,it -> second};
+			pairs.insert(pair);
+			if (i == 0){
+				previous_closure_index = std::max(previous_closure_index,it -> second);
+			}
+		}
 	}
 
-	// if (overlap_with_closure.size() > 0){
-	// 	for (auto it = overlap_with_closure.begin(); it != overlap_with_closure.end(); ++it){
-	// 		std::cout << "Using " << " ( " << it -> second << " , "<< this -> closure_index << " ) in loop closure" <<  std::endl;
-	// 		std::set<int> pair_0 = {it -> second,this -> closure_index};
-	// 		pairs.insert(pair);
-	// 	}
-	// 	previous_closure_index = this -> closure_index;
-	// }
 	
 
 
@@ -711,6 +700,11 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	std::map<double,int> overlaps;
 
 
+
+
+
+
+
 	int step_sign = (end_index - start_index )/std::abs(end_index - start_index);
 	assert(std::abs(step_sign) == 1);
 
@@ -740,6 +734,9 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 			
 			if (prop > 75){
 				overlaps[prop] = other_pc_index;
+				if (overlaps.size() > 5){
+					return overlaps;
+				}
 			}
 
 
