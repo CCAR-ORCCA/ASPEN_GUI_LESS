@@ -214,7 +214,7 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		auto overlap_with_ground = this -> find_overlap_with_pc(
 			i,
 			static_cast<int>(this -> all_registered_pc -> size() - 1),
-			0);
+			i);
 
 		for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
 			std::cout << "Using " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
