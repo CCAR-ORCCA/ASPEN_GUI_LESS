@@ -233,6 +233,7 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	previous_closure_index = std::max(pc_matching_with_ground_index,pc_matching_with_closure_index);
 
+	std::cout << "Last closure index : " << previous_closure_index << std::endl;
 
 	// The successive measurements are added
 	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
