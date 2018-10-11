@@ -4,7 +4,6 @@ import numpy as np
 
 import os
 import platform
-print platform.system()
 
 
 if (platform.system() == 'Linux'):
