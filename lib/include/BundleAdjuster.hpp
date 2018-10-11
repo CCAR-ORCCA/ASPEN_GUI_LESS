@@ -61,7 +61,7 @@ protected:
 	std::vector< PointCloudPair > point_cloud_pairs;
 	int N_iter;
 
-	int find_overlap_with_pc(int pc_global_index,int start_index,int end_index) const;
+	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index) const;
 	void save_connectivity() const;
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair);
