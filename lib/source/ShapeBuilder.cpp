@@ -256,9 +256,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";
 
-				throw(std::runtime_error("not implemented yet"));
-				std::vector<std::shared_ptr<PC > > pc_to_ba;
-
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
 				BundleAdjuster bundle_adjuster(
