@@ -364,8 +364,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 		const BundleAdjuster::PointCloudPair & point_cloud_pair = this -> point_cloud_pairs[k];
 
-		std::cout << " S_k = " << point_cloud_pair.S_k << " , D_k = " << point_cloud_pair.D_k << std::endl;
-
 
 		arma::vec::fixed<3> x_S = arma::zeros<arma::vec>(3);
 		arma::mat::fixed<3,3> dcm_S = arma::eye<arma::mat>(3,3);
@@ -388,6 +386,10 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 
 		std::vector<PointPair> point_pairs;
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << "Computing point pairs within point cloud pair  S_k = " << point_cloud_pair.S_k << " , D_k = " << point_cloud_pair.D_k << std::endl;
+		#endif
 
 		if (!this -> use_true_pairs){
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
