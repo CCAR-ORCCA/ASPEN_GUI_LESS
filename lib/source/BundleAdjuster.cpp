@@ -80,6 +80,8 @@ void BundleAdjuster::run(
 
 		this -> save_connectivity();
 
+		std::cout << "- Saving transforms ... " << std::endl;
+
 		// The rigid transforms are saved after being adjusted
 		for (int i = 1; i < M_pcs.size(); ++i){
 			RBK::dcm_to_mrp(M_pcs[i]).save(this -> dir + "/sigma_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
@@ -655,7 +657,6 @@ void BundleAdjuster::save_connectivity() const{
 	// connectivity_matrix_res.save(this -> dir + "/connectivity_res.txt",arma::raw_ascii);
 	// connectivity_matrix_overlap.save(this -> dir + "/connectivity_overlap.txt",arma::raw_ascii);
 	// connectivity_matrix_N_pairs.save(this -> dir + "/connectivity_N_pairs.txt",arma::raw_ascii);
-
 
 }
 
