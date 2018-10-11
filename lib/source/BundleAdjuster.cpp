@@ -290,24 +290,40 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
 	}
 	
+	std::vector<PointPair> point_pairs;
+	int active_h;
+
 	if (!this -> use_true_pairs){
-		
+
+
+		if (point_cloud_pair.S_k == 0 || point_cloud_pair.D_k == 0 ){
+
+			active_h = 0;
+		}
+		else{
+
+			active_h = this -> h;
+
+		}
+
 		IterativeClosestPointToPlane::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(point_cloud_pair.S_k),
 			this -> all_registered_pc -> at(point_cloud_pair.D_k),
-			0,
-			dcm_S,
+			active_h,
+			dcm_S ,
 			x_S,
-			dcm_D,
-			x_D);	
+			dcm_D ,
+			x_D );
 	}
-	else{
-		
 
+	else{
+		active_h = 0;
 		for (int i = 0; i < this -> all_registered_pc -> at(point_cloud_pair.S_k) -> size(); ++i){
 			point_pairs.push_back(std::make_pair(i,i));
 		}
-	}	
+		
+	}
+
 
 
 	
@@ -423,7 +439,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(point_cloud_pair.S_k),
 				this -> all_registered_pc -> at(point_cloud_pair.D_k),
-				0,
+				active_h,
 				dcm_S ,
 				x_S,
 				dcm_D ,
@@ -435,7 +451,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			for (int i = 0; i < this -> all_registered_pc -> at(point_cloud_pair.S_k) -> size(); ++i){
 				point_pairs.push_back(std::make_pair(i,i));
 			}
-		
+
 		}
 
 		IterativeClosestPointToPlane icp;
