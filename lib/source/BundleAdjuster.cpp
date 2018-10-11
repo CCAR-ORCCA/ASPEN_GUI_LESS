@@ -217,6 +217,8 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		0,
 		static_cast<int>(this -> all_registered_pc -> size() - 1));
 
+
+
 	std::cout << "Choosing " << " ( " << ground_index << " , "<<
 	pc_matching_with_ground_index << " ) in loop closure" <<  std::endl;
 	std::set<int> pair_0 = {ground_index,pc_matching_with_ground_index};
@@ -228,6 +230,8 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		std::set<int> pair_1 = {pc_matching_with_closure_index,this -> closure_index};
 		pairs.insert(pair_1);
 	}
+
+	previous_closure_index = std::max(pc_matching_with_ground_index,pc_matching_with_closure_index);
 
 
 	// The successive measurements are added
