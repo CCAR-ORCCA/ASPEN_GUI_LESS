@@ -206,18 +206,16 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	this -> closure_index = this -> all_registered_pc -> size() - 1;
 
-
-
-
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
+		std::cout << "\Finding overlaps with " << i << std::endl;
 		auto overlap_with_ground = this -> find_overlap_with_pc(
 			i,
 			static_cast<int>(this -> all_registered_pc -> size() - 1),
 			i);
 
 		for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
-			std::cout << "Using " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
+			std::cout << "\tUsing " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
 			std::set<int> pair = {i,it -> second};
 			pairs.insert(pair);
 			if (i == 0){
@@ -699,13 +697,19 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	std::vector<PointPair> point_pairs;
 	std::map<double,int> overlaps;
 
+	std::vector<int> pcs_to_check;
 
-	int step_sign = (end_index - start_index )/std::abs(end_index - start_index);
-	assert(std::abs(step_sign) == 1);
+	int len = std::abs(end_index - start_index) + 1;
+	for (int i = 0; i < len; ++i){
+		if (start_index < end_index){
+			pcs_to_check.push_back(start_index + i);
+		}
+		else{
+			pcs_to_check.push_back(end_index + i);
+		}
+	}
 
-	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
-
-		int other_pc_index = start_index + i * step_sign;
+	for (auto other_pc_index : pcs_to_check){
 
 		if (other_pc_index == pc_global_index) continue;
 
@@ -726,7 +730,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 			std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
 
 			std::cout << " ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
-			
+
 			if (prop > 80){
 				overlaps[prop] = other_pc_index;
 				if (overlaps.size() > 5){
