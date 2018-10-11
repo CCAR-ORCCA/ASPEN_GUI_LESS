@@ -237,6 +237,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
+					std::cout << " -- Moving on...\n";
+
 				// estimated_state =  this -> run_IOD_finder(times,
 				// 	last_ba_call_index ,
 				// 	time_index, 
