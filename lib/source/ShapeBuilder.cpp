@@ -229,7 +229,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						true,
 						previous_closure_index);
 
+					std::cout << " -- Saving attitude...\n";
+
 					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+
+					std::cout << " -- Estimating coverage...\n";
+
 					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
 				// estimated_state =  this -> run_IOD_finder(times,
