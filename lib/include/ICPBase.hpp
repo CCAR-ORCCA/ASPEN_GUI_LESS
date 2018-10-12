@@ -29,15 +29,7 @@ public:
 
 	const std::vector<PointPair > & get_point_pairs();
 
-	double compute_rms_residuals(
-		const std::vector<PointPair> & point_pairs,
-		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
-		const arma::vec & weights = {},
-		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
-		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
-
-	double compute_mean_residuals(
+	double compute_residuals(
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
@@ -109,12 +101,7 @@ protected:
 		const arma::mat::fixed<3,3> & dcm_S ,
 		const arma::vec::fixed<3> & x_S) const ;
 
-	double compute_rms_residuals(
-		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {});
-
-	double compute_mean_residuals(
+	double compute_residuals(
 		const arma::mat::fixed<3,3> & dcm,
 		const arma::vec::fixed<3> & x,
 		const arma::vec & weights = {});

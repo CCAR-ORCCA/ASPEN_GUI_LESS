@@ -142,7 +142,7 @@ void ICPBase::register_pc(
 			this -> hierarchical = false;
 		}
 
-		J_0 = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+		J_0 = this -> compute_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
 		J = J_0;
 
 
@@ -235,7 +235,7 @@ void ICPBase::register_pc(
 			this -> mrp = RBK::shadow_mrp(this -> mrp);
 
 			// The postfit residuals are computed
-			J = this -> compute_mean_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
+			J = this -> compute_residuals(RBK::mrp_to_dcm(this -> mrp),this -> x);
 
 			#if ICP_DEBUG
 			std::cout << "\nDeviation : " << std::endl;
@@ -1061,38 +1061,7 @@ unsigned int ICPBase::get_maximum_h() const{
 // }
 
 
-
-
-
-double ICPBase::compute_rms_residuals(
-	const std::vector<PointPair> & point_pairs,
-	const arma::mat::fixed<3,3> & dcm_S ,
-	const arma::vec::fixed<3> & x_S ,
-	const arma::vec & weights,
-	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D )  const{
-
-	double J = 0;
-
-	double mean = this -> compute_mean_residuals(point_pairs,dcm_S ,x_S ,weights ,dcm_D , x_D );
-
-	if (weights.size() == 0){
-	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-			J += std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
-		}
-	}
-	else{
-		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
-		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
-			J += weights(pair_index) * std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D) - mean,2);
-		}
-	}
-	return std::sqrt(J / (point_pairs.size()-1) );
-
-}
-
-double ICPBase::compute_mean_residuals(
+double ICPBase::compute_residuals(
 	const std::vector<PointPair> & point_pairs,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
@@ -1107,14 +1076,14 @@ double ICPBase::compute_mean_residuals(
 	#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-			J += std::abs(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size());
+			J += std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D),2)/ point_pairs.size();
 		}
 	}
 	else{
 		#pragma omp parallel for reduction(+:J) if (USE_OMP_ICP)
 		for (unsigned int pair_index = 0; pair_index <point_pairs.size(); ++pair_index) {
 
-			J += weights(pair_index) * std::abs(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D)/ point_pairs.size());
+			J += weights(pair_index) * std::pow(this -> compute_distance(point_pairs[pair_index],  dcm_S,x_S,dcm_D,x_D),2)/ point_pairs.size();
 
 		}
 	}
@@ -1139,21 +1108,12 @@ arma::vec ICPBase::compute_y_vector(const std::vector<PointPair> & point_pairs,
 }
 
 
-double ICPBase::compute_rms_residuals(
+
+double ICPBase::compute_residuals(
 	const arma::mat::fixed<3,3> & dcm,
 	const arma::vec::fixed<3> & x,
 	const arma::vec & weights) {
-
-	return this -> compute_rms_residuals(this -> point_pairs,dcm,x,weights);
-
-}
-
-
-double ICPBase::compute_mean_residuals(
-	const arma::mat::fixed<3,3> & dcm,
-	const arma::vec::fixed<3> & x,
-	const arma::vec & weights) {
-	return this -> compute_mean_residuals(this -> point_pairs,dcm,x,weights);
+	return this -> compute_residuals(this -> point_pairs,dcm,x,weights);
 
 }
 

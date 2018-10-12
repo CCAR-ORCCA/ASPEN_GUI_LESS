@@ -377,12 +377,8 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 
 void BundleAdjuster::update_point_cloud_pairs(){
 
-	double max_rms_error = -1;
-	double max_mean_error = -1;
-
-	double mean_rms_error = 0 ;
-	int worst_Sk_rms,worst_Dk_rms;
-	int worst_Sk_mean,worst_Dk_mean;
+	double max_error = -1;
+	int worst_Sk,worst_Dk;
 
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
@@ -451,15 +447,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		icp.set_pc_source(this -> all_registered_pc -> at(point_cloud_pair.S_k));
 		icp.set_pairs(point_pairs);
 
-		double rms_error = icp.compute_rms_residuals(point_pairs,
-			dcm_S ,
-			x_S,
-			{},
-			dcm_D ,
-			x_D);
-
-
-		double mean_error = std::abs(icp.compute_mean_residuals(point_pairs,
+		
+		double error = std::abs(icp.compute_residuals(point_pairs,
 			dcm_S ,
 			x_S,
 			{},
@@ -472,32 +461,24 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		int N_pairs = (int)(std::pow(2, p - active_h));
 
 
-		this -> point_cloud_pairs[k].error = rms_error;
+		this -> point_cloud_pairs[k].error = error;
 		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
 
 
-		if (rms_error > max_rms_error){
-			max_rms_error = rms_error;
-			worst_Dk_rms = this -> point_cloud_pairs[k].D_k;
-			worst_Sk_rms = this -> point_cloud_pairs[k].S_k;
+		
+		if (error > max_error){
+			max_error = error;
+			worst_Dk = this -> point_cloud_pairs[k].D_k;
+			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-		if (mean_error > max_mean_error){
-			max_mean_error = mean_error;
-			worst_Dk_mean = this -> point_cloud_pairs[k].D_k;
-			worst_Sk_mean = this -> point_cloud_pairs[k].S_k;
-		}
 
-		mean_rms_error += rms_error / this -> point_cloud_pairs.size(); 
-
-		std::cout << " -- (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << mean_error << " , " << rms_error << " | "<< point_pairs.size() << " point pairs" << std::endl;
+		std::cout << " -- (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << error << " | "<< point_pairs.size() << " point pairs" << std::endl;
 
 	}
 
-	std::cout << "-- Mean point-cloud pair ICP RMS error: " << mean_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP RMS error at (" << worst_Sk_rms << " , " << worst_Dk_rms <<  ") : " << max_rms_error << std::endl;
-	std::cout << "-- Maximum point-cloud pair ICP mean error at (" << worst_Sk_mean << " , " << worst_Dk_mean <<  ") : " << max_mean_error << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
 
 }
 

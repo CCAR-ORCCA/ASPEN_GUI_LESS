@@ -242,7 +242,7 @@ void IterativeClosestPoint::ransac(
 		if (icp_pairs.size() > minimum_N_icp_pairs){
 
 			// and if these pairs give good ICP residuals
-			double J = icp.compute_mean_residuals(icp_pairs,dcm,x);
+			double J = icp.compute_residuals(icp_pairs,dcm,x);
 
 			if (J < residuals_threshold){
 				
