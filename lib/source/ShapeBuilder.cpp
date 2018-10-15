@@ -251,7 +251,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 			}
 
-
 			else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";

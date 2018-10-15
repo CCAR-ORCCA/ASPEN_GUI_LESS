@@ -173,39 +173,54 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 	}
 
 	std::string line;
-	std::vector<arma::vec> points;
+	std::vector<arma::vec::fixed<3>> vertices,normals;
 	std::vector<std::vector<unsigned int> > shape_patch_indices;
-
 
 	while (std::getline(ifs, line)) {
 
 		std::stringstream linestream(line);
 
 
-		char type;
+		std::string type;
 		linestream >> type;
 
-		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+		if (type == "#" || type == "s"  || type == "o" || type == "m" || type == "u" || line.size() == 0) {
 			continue;
 		}
 
-		else if (type == 'v') {
+		else if (type == "v") {
 			double vx, vy, vz;
 			linestream >> vx >> vy >> vz;
-			arma::vec vertex = {vx, vy, vz};
-			points.push_back(vertex);
+			arma::vec::fixed<3> vertex = {vx, vy, vz};
+			vertices.push_back(vertex);
+
+		}
+		else if (type == "vn"){
+			double nx,ny,nz;
+			linestream >> nx >> ny >> nz;
+			arma::vec::fixed<3> normal = {nx, ny, nz};
+
+			normals.push_back(normal);
 
 		}
 
 		else {
-			throw(std::runtime_error(" unrecognized character in input file : "  + std::to_string(type)));
+			throw(std::runtime_error(" unrecognized string in input file : "  + type));
 		}
 
 	}
 
 	this -> points.clear();
-	for (unsigned int index = 0; index < points.size(); ++index) {
-		this -> points.push_back(PointNormal(points[index],index));
+	if (normals.size()!= 0){
+		assert(normals.size() == vertices.size());
+		for (unsigned int index = 0; index < vertices.size(); ++index) {
+			this -> points.push_back(PointNormal(vertices[index],normals[index],index));
+		}
+	}
+	else{
+		for (unsigned int index = 0; index < vertices.size(); ++index) {
+			this -> points.push_back(PointNormal(vertices[index],index));
+		}
 	}
 
 
