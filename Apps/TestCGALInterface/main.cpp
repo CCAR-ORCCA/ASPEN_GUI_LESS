@@ -42,11 +42,7 @@ int main(){
 	// sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
 	// sm_distance = 0.5; // Surface Approximation error w.r.t. point set average spacing.
 
-	
-	CGALINTERFACE::CGAL_interface(pc_cgal_path.c_str(), shape_cgal_path.c_str(),4000,
-		sm_angle,
-		sm_radius,
-		sm_distance);
+	CGALINTERFACE::CGAL_interface(pc_cgal_path.c_str(), shape_cgal_path.c_str(),4000,sm_angle,sm_radius,sm_distance);
 	
 	return 1;
 }

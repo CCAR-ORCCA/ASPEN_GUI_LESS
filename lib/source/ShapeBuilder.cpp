@@ -251,6 +251,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 			}
 
+
 			else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";
@@ -290,7 +291,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				std::cout << " -- Running IOD after correction\n";
-				throw(std::runtime_error("not estimated yet"));
+				throw(std::runtime_error("not implemented yet"));
 			}
 
 			#if IOFLAGS_shape_builder
@@ -299,6 +300,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> LN_t0.t(), 
 				this -> x_t0);
 			#endif
+
+
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
@@ -1110,8 +1113,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 
 
-void ShapeBuilder::estimate_coverage(int previous_closure_index,
-	std::string dir) const{
+void ShapeBuilder::estimate_coverage(int previous_closure_index,std::string dir) const{
 
 	std::cout << " -- Fetching points ...\n";
 
@@ -1173,10 +1175,7 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	std::cout << "-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
 
 
-	PointCloudIO<PointNormal>::save_to_obj(global_pc,
-		dir + "coverage_pc.obj",
-		this -> LN_t0.t(), 
-		this -> x_t0);
+	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
 
 
 }
