@@ -16,7 +16,9 @@ typedef Eigen::Triplet<double> T;
 typedef Eigen::VectorXd EigVec;
 
 template <class PointType> class ShapeModelBezier;
+template <class PointType> class ShapeModelTri;
 template <class PointType> class PointCloud;
+
 class PointNormal;
 class ControlPoint;
 
@@ -36,7 +38,9 @@ class ShapeFitterBezier {
 	
 public:
 
-	ShapeFitterBezier(ShapeModelBezier<ControlPoint> * shape_model,PointCloud<PointNormal> * pc);
+	ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
+		ShapeModelBezier<ControlPoint> * shape_model,
+		PointCloud<PointNormal> * pc);
 
 	bool fit_shape_batch(unsigned int N_iter, double ridge_coef);
 
@@ -44,7 +48,7 @@ public:
 protected:
 
 	ShapeModelBezier<ControlPoint> * shape_model;
-
+	ShapeModelTri<ControlPoint> * psr_shape;
 	std::vector<Footpoint> find_footpoints_omp() const;
 
 
@@ -69,6 +73,8 @@ protected:
 	void find_footpoint_omp(Footpoint & footpoint) const ;
 	
 	PointCloud<PointNormal> * pc;
+
+
 
 
 

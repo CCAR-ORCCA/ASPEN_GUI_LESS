@@ -494,6 +494,34 @@ public:
 		this -> use_true_rigid_transforms = use_true_rigid_transforms;
 	}
 
+	double get_min_triangle_angle() const{
+		return this -> min_triangle_angle;
+	}
+	double get_max_triangle_size() const{
+		return this -> max_triangle_size;
+	}
+	double get_surface_approx_error() const{
+		return this -> surface_approx_error;
+	}
+
+	int get_number_of_edges() const{
+		return this -> number_of_edges;
+	}
+
+	void set_min_triangle_angle(double min_triangle_angle) {
+		this -> min_triangle_angle = min_triangle_angle;
+	}
+	void set_max_triangle_size(double max_triangle_size) {
+		this -> max_triangle_size = max_triangle_size;
+	}
+	void set_surface_approx_error(double surface_approx_error) {
+		this -> surface_approx_error = surface_approx_error;
+	}
+
+	void set_number_of_edges(int number_of_edges) {
+		this -> number_of_edges = number_of_edges;
+	}
+
 protected:
 
 
@@ -505,12 +533,22 @@ protected:
 	double convergence_facet_residuals;
 	double maximum_J_rms_shape = 2;
 	double los_noise_sd_baseline;
+
+	double min_triangle_angle;
+	double max_triangle_size;
+	double surface_approx_error;
+
+
+
+
+
 	int points_retained;
 
 	int iod_rigid_transforms_number;
 	int iod_iterations;
 	int iod_particles;
 	int iod_mc_iter;
+	int number_of_edges;
 
 	unsigned int index_init;
 	unsigned int index_end;

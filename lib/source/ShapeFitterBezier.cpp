@@ -1,7 +1,8 @@
 #include <ShapeFitterBezier.hpp>
 #include <ShapeModelBezier.hpp>
-#include <ShapeModelBezier.hpp>
+#include <ShapeModelTri.hpp>
 #include <PointCloud.hpp>
+
 #include <PointNormal.hpp>
 #include <ControlPoint.hpp>
 #include <Footpoint.hpp>
@@ -9,11 +10,14 @@
 #include <Ray.hpp>
 
 #include "boost/progress.hpp"
-ShapeFitterBezier::ShapeFitterBezier(ShapeModelBezier<ControlPoint> * shape_model,PointCloud<PointNormal> * pc) {
-	
+ShapeFitterBezier::ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
+		ShapeModelBezier<ControlPoint> * shape_model,
+		PointCloud<PointNormal> * pc) {
+		
+	this -> psr_shape = psr_shape;
 	this -> shape_model = shape_model;
 	this -> pc = pc;
-}
+} 
 
 
 bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
@@ -444,8 +448,9 @@ void ShapeFitterBezier::find_footpoint_omp(Footpoint & footpoint) const {
 	Ray ray_plus(footpoint.Ptilde, footpoint.ntilde);
 	Ray ray_minus(footpoint.Ptilde, -footpoint.ntilde);
 
-	this -> shape_model -> ray_trace(&ray_plus);
-	this -> shape_model -> ray_trace(&ray_minus);
+	// The ShapeModelTri is ray-traced
+	this -> psr_shape -> ray_trace(&ray_plus);
+	this -> psr_shape -> ray_trace(&ray_minus);
 
 	double distance_hit_plus = std::numeric_limits<double>::infinity();
 	double distance_hit_minus = std::numeric_limits<double>::infinity();

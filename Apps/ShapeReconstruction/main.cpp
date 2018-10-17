@@ -85,13 +85,13 @@ int main() {
 	// Loading case parameters from file
 	arma::arma_rng::set_seed(0);
 
+	// Loading input data from json file
 	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
 	i >> input_data;
 
-	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
-	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 
+	// Fetching input data 
 	double SMA = input_data["SMA"];
 	double E = input_data["E"];
 	double I = input_data["I"];
@@ -103,10 +103,15 @@ int main() {
 	double SPIN_PERIOD = input_data["SPIN_PERIOD"];
 	double DENSITY = input_data["DENSITY"];
 	double INSTRUMENT_FREQUENCY_SHAPE = input_data["INSTRUMENT_FREQUENCY_SHAPE"];
-	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
+	double MIN_TRIANGLE_ANGLE = input_data["MIN_TRIANGLE_ANGLE"];
+	double MAX_TRIANGLE_SIZE = input_data["MAX_TRIANGLE_SIZE"];
+	double SURFACE_APPROX_ERROR = input_data["SURFACE_APPROX_ERROR"];
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
-	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];
-
+	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
+	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
+	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
+	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
+	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	std::string dir = input_data["dir"];
 
 
@@ -283,6 +288,13 @@ shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
 shape_filter_args.set_iod_particles(IOD_PARTICLES);
 shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
 shape_filter_args.set_use_true_rigid_transforms(USE_TRUE_RIGID_TRANSFORMS);
+shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
+shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
+shape_filter_args.set_max_triangle_size(MAX_TRIANGLE_SIZE);
+shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
+shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
+
+
 
 ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 

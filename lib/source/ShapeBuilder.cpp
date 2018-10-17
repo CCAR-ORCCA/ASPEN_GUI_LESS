@@ -255,7 +255,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";
-
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
 				BundleAdjuster bundle_adjuster(
@@ -278,27 +277,24 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					previous_closure_index);
 
 				std::cout << " -- Saving attitude...\n";
-
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
 				std::cout << " -- Estimating coverage...\n";
-
-				this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
+				PointCloud<PointNormal> global_pc;
+				this -> estimate_coverage(previous_closure_index,
+					dir +"/"+ std::to_string(time_index) + "_",&global_pc);
 
 				std::cout << " -- Making PSR a-priori...\n";
-
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
-
-				ShapeBuilder::run_psr(dir,psr_shape);
+				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
+				psr_shape.construct_kd_tree_shape();
 
 				std::cout << " -- Fitting PSR a-priori...\n";
-
-
 				ShapeModelBezier<ControlPoint> bezier_shape(psr_shape,"E",this -> frame_graph);
 				bezier_shape.elevate_degree();
 				bezier_shape.save_to_obj(dir + "/elevated_shape.obj");
-				
-				// ShapeFitterBezier shape_fitter(bezier_shape,&pc_global); 
+				ShapeFitterBezier shape_fitter(&psr_shape,&bezier_shape,&global_pc); 
+
 
 				throw(std::runtime_error("not implemented yet"));
 			}
@@ -1123,7 +1119,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 
 void ShapeBuilder::estimate_coverage(int previous_closure_index,
-	std::string dir) const{
+	std::string dir,PointCloud<PointNormal> * pc) const{
 
 	std::cout << " -- Fetching points ...\n";
 
@@ -1187,36 +1183,40 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
 
+	if (pc != nullptr){
+		*pc = global_pc;
+	}
 
 }
 
 
-void ShapeBuilder::run_psr(const std::string dir,ShapeModelTri<ControlPoint> & psr_shape){
+void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
+	const std::string dir,
+	ShapeModelTri<ControlPoint> & psr_shape,
+	ShapeBuilderArguments * filter_arguments){
 
-	std::string pc_original_path = dir + "/159_coverage_pc.obj";
 	std::string pc_cgal_path = dir + "/pc_cgal.txt";
 	std::string shape_cgal_path = dir + "/shape_cgal.obj";
 
 	double percentage_point_kept = 1;
 	
-	PointCloud<PointNormal> pc(pc_original_path);
 	PointCloud<PointNormal> pc_downsampled;
 
 	std::vector<int> indices;
-	for (int i = 0; i < pc.size(); ++i){
+	for (int i = 0; i < pc -> size(); ++i){
 		indices.push_back(i);
 	}
 
-	std::cout << "Shuffling\n";
+	std::cout << "\tShuffling\n";
 	std::random_shuffle ( indices.begin(), indices.end() );
 
-	int points_kept = static_cast<int>(percentage_point_kept/100. * pc.size() );
+	int points_kept = static_cast<int>(percentage_point_kept/100. * pc -> size() );
 
 	for (int i = 0; i < points_kept; ++i){
-		pc_downsampled.push_back(pc[indices[i]]);
+		pc_downsampled.push_back(pc -> get_point(indices[i]));
 	}
 
-	std::cout << "Saving to txt\n";
+	std::cout << "\tSaving to txt\n";
 
 	PointCloudIO<PointNormal>::save_to_txt(pc_downsampled, pc_cgal_path);
 
@@ -1224,7 +1224,12 @@ void ShapeBuilder::run_psr(const std::string dir,ShapeModelTri<ControlPoint> & p
 	// sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
 	// sm_distance = 0.5; // Surface Approximation error w.r.t. point set average spacing.
 
-	CGALINTERFACE::CGAL_interface(pc_cgal_path.c_str(), shape_cgal_path.c_str(),4000,30,3,3);
+	CGALINTERFACE::CGAL_interface(pc_cgal_path.c_str(), 
+		shape_cgal_path.c_str(),
+		filter_arguments -> get_number_of_edges(),
+		filter_arguments -> get_min_triangle_angle(),
+		filter_arguments -> get_max_triangle_size(),
+		filter_arguments -> get_surface_approx_error());
 
 	ShapeModelImporter::load_obj_shape_model(shape_cgal_path, 1, true,psr_shape);
 

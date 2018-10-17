@@ -121,7 +121,7 @@ protected:
 		const std::vector<RigidTransform> & absolute_true_rigid_transforms) const;
 
 	void estimate_coverage(int previous_closure_index,
-		std::string dir) const;
+		std::string dir,PointCloud<PointNormal> * pc  = nullptr) const;
 
 
 	/**
@@ -239,7 +239,10 @@ protected:
 
 	void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
 
-	static void run_psr(const std::string dir, ShapeModelTri<ControlPoint> & psr_shape);
+	static void run_psr(PointCloud<PointNormal> * pc,
+	const std::string dir,
+	ShapeModelTri<ControlPoint> & psr_shape,
+	ShapeBuilderArguments * filter_arguments);
 
 
 	/**
