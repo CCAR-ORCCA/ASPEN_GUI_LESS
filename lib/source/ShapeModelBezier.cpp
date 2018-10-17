@@ -1111,7 +1111,7 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::get_dims(const double & volume,
 template <class PointType>
 bool ShapeModelBezier<PointType>::ray_trace(Ray * ray){
 
-	throw(std::runtime_error("not implemented yet!"));
+	throw(std::runtime_error("ShapeModelBezier<PointType>::ray_trace not implemented yet!"));
 	return false;
 	// return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray,this);
 

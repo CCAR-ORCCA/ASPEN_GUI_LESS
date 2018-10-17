@@ -422,7 +422,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 	
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
-		this -> find_footpoint_omp(tentative_footpoints[i]);
+		this -> match_footpoint_to_element(tentative_footpoints[i]);
 		++progress;
 	}
 
@@ -439,7 +439,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 
 
-void ShapeFitterBezier::find_footpoint_omp(Footpoint & footpoint) const {
+void ShapeFitterBezier::match_footpoint_to_element(Footpoint & footpoint) const {
 	
 
 	// The prospective element this footpoint belongs to is found by ray-tracing the shape from the point cloud

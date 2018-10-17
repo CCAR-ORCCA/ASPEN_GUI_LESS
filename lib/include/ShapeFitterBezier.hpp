@@ -70,7 +70,7 @@ protected:
 	static bool refine_footpoint_coordinates(const Bezier & patch,Footpoint & footpoint);
 
 
-	void find_footpoint_omp(Footpoint & footpoint) const ;
+	void match_footpoint_to_element(Footpoint & footpoint) const ;
 	
 	PointCloud<PointNormal> * pc;
 
