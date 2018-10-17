@@ -295,6 +295,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				bezier_shape.save_to_obj(dir + "/elevated_shape.obj");
 				ShapeFitterBezier shape_fitter(&psr_shape,&bezier_shape,&global_pc); 
 
+				bezier_shape.save_to_obj(dir + "/fit_shape.obj");
 
 				throw(std::runtime_error("not implemented yet"));
 			}
