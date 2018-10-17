@@ -13,7 +13,7 @@
 #include <CustomException.hpp>
 #include <ControlPoint.hpp>
 #include <ShapeModelImporter.hpp>
-// #include "ShapeFitterBezier.hpp"
+#include <ShapeFitterBezier.hpp>
 // #include <IOFlags.hpp>
 #include <IODFinder.hpp>
 // #include <CGAL_interface.hpp>
@@ -285,12 +285,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
-				std::cout << " -- Moving on...\n";
+				std::cout << " -- Making PSR a-priori...\n";
+
+				ShapeModelBezier<ControlPoint> * shape_model;
+				PointCloud<PointNormal> pc_global;
 
 
+				std::cout << " -- Fitting PSR a-priori...\n";
 
+				ShapeFitterBezier shape_fitter(shape_model,&pc_global); 
 
-				std::cout << " -- Running IOD after correction\n";
 				throw(std::runtime_error("not implemented yet"));
 			}
 

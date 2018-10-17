@@ -174,7 +174,7 @@ add_library(${LIB_NAME} SHARED
 	source/RefFrame.cpp
 	source/SequentialFilter.cpp
 	source/ShapeBuilder.cpp
-	# source/ShapeFitterBezier.cpp
+	source/ShapeFitterBezier.cpp
 	source/ShapeModel.cpp
 	source/ShapeModelBezier.cpp
 	source/ShapeModelImporter.cpp

@@ -5,12 +5,15 @@
 
 
 struct Footpoint{
-	arma::vec Pbar;
-	arma::vec Ptilde;
+
+
+	arma::vec::fixed<3> Pbar;
+	arma::vec::fixed<3>  Ptilde;
+	arma::vec::fixed<3>  ntilde;
 	double u;
 	double v;
-	arma::vec n;
-	Element * element = nullptr;
+	arma::vec::fixed<3> n;
+	int element;
 };
 
 #endif

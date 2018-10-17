@@ -148,9 +148,7 @@ public:
 	@param u first coordinate
 	@param v second coordinate
 	*/
-	arma::mat partial_bezier(
-		const double u,
-		const double v) const;
+	arma::mat::fixed<3,2> partial_bezier(const double u,const double v) const;
 
 
 
@@ -285,15 +283,11 @@ public:
 
 
 	// Returns the partial derivative d^2P/(dchi dv)
-	arma::mat partial_bezier_dv(
-		const double u,
-		const double v) ;
+	arma::mat::fixed<3,2> partial_bezier_dv(const double u,const double v) const;
 
 
 	// Returns the partial derivative d^2P/(dchi du)
-	arma::mat partial_bezier_du(
-		const double u,
-		const double v) ;
+	arma::mat::fixed<3,2> partial_bezier_du(const double u,const double v) const;
 
 	/**
 	Evaluates the Berstein polynomial
@@ -322,12 +316,12 @@ public:
 	@param j second index
 	@param n polynomial order
 	*/
-	arma::mat partial_n_partial_Ck(
+	arma::mat::fixed<3,3> partial_n_partial_Ck(
 		const double u, 
 		const double v,
 		const int i ,  
 		const int j, 
-		const int n);
+		const int n) const;
 
 	static double compute_log_likelihood_full_diagonal(arma::vec L, 
 		std::pair<const std::vector<Footpoint> * , Bezier * > args,int verbose_level = 0);
@@ -534,7 +528,7 @@ protected:
 	@param n polynomial degree
 	@return evaluated partial derivative of the Bernstein polynomial
 	*/
-	static arma::rowvec partial_bernstein(
+	static arma::rowvec::fixed<2> partial_bernstein(
 		const double u,
 		const double v,
 		const int i,
@@ -542,10 +536,7 @@ protected:
 		const int n) ;
 
 
-
-
-	
-	arma::mat partial_bernstein_dv( 
+	static arma::rowvec::fixed<2> partial_bernstein_dv( 
 		const double u, 
 		const double v,
 		const int i ,  
@@ -553,7 +544,7 @@ protected:
 		const int n) ;
 
 
-	arma::mat partial_bernstein_du( 
+	static arma::rowvec::fixed<2> partial_bernstein_du( 
 		const double u, 
 		const double v,
 		const int i ,  

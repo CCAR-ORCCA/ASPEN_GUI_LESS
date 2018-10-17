@@ -289,7 +289,6 @@ std::set < int > Bezier::get_neighbors(double u, double v) const{
 
 	const ControlPoint & V0 = this -> owning_shape -> get_point(this -> get_point(this -> get_degree(),0));
 	const ControlPoint & V1 = this -> owning_shape -> get_point(this -> get_point(0,this -> get_degree()));
-	const ControlPoint & V2 = this -> owning_shape -> get_point(this -> get_point(0,0));
 
 
 	if ( v < 0){
@@ -417,31 +416,29 @@ double Bezier::bernstein(
 
 }
 
-arma::rowvec Bezier::partial_bernstein( 
+arma::rowvec::fixed<2> Bezier::partial_bernstein( 
 	const double u, 
 	const double v,
 	const int i ,  
 	const int j, 
 	const int n) {
 
-	arma::rowvec partials(2);
-
-
-	partials(0) = n *( bernstein(u, v,i - 1,j,n - 1) - bernstein(u, v,i,j,n - 1));
-	partials(1) = n *( bernstein(u, v,i,j - 1,n - 1) - bernstein(u, v,i,j,n - 1));
-
+	arma::rowvec::fixed<2> partials = {
+		n *( bernstein(u, v,i - 1,j,n - 1) - bernstein(u, v,i,j,n - 1)),
+		n *( bernstein(u, v,i,j - 1,n - 1) - bernstein(u, v,i,j,n - 1))
+	};
 	return partials;
 }
 
 
-arma::mat Bezier::partial_bernstein_du( 
+arma::rowvec::fixed<2> Bezier::partial_bernstein_du( 
 	const double u, 
 	const double v,
 	const int i ,  
 	const int j, 
 	const int n) {
 
-	arma::mat partials = n * ( partial_bernstein(u, v,i - 1,j,n - 1) - partial_bernstein(u, v,i,j,n - 1));
+	arma::rowvec::fixed<2> partials = n * ( partial_bernstein(u, v,i - 1,j,n - 1) - partial_bernstein(u, v,i,j,n - 1));
 
 
 
@@ -449,23 +446,23 @@ arma::mat Bezier::partial_bernstein_du(
 	return partials;
 }
 
-arma::mat Bezier::partial_bernstein_dv( 
+arma::rowvec::fixed<2> Bezier::partial_bernstein_dv( 
 	const double u, 
 	const double v,
 	const int i ,  
 	const int j, 
 	const int n) {
 
-	arma::mat partials = n * ( partial_bernstein(u, v,i,j-1,n - 1) - partial_bernstein(u, v,i,j,n - 1));
+	arma::rowvec::fixed<2> partials = n * ( partial_bernstein(u, v,i,j-1,n - 1) - partial_bernstein(u, v,i,j,n - 1));
 
 	return partials;
 }
 
-arma::mat Bezier::partial_bezier_du(
+arma::mat::fixed<3,2> Bezier::partial_bezier_du(
 	const double u,
-	const double v) {
+	const double v) const {
 
-	arma::mat partials = arma::zeros<arma::mat>(3,2);
+	arma::mat::fixed<3,2> partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
 		
 		int i = std::get<0>(this -> forw_table[l]);
@@ -474,15 +471,16 @@ arma::mat Bezier::partial_bezier_du(
 
 		partials += this -> owning_shape -> get_point_coordinates(this -> control_points[l]) * Bezier::partial_bernstein_du(u,v,i,j,this -> n) ;
 	}
+
 	return partials;
 
 }
 
-arma::mat Bezier::partial_bezier_dv(
+arma::mat::fixed<3,2> Bezier::partial_bezier_dv(
 	const double u,
-	const double v) {
+	const double v) const {
 
-	arma::mat partials = arma::zeros<arma::mat>(3,2);
+	arma::mat::fixed<3,2> partials = arma::zeros<arma::mat>(3,2);
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
 		
 		int i = std::get<0>(this -> forw_table[l]);
@@ -501,7 +499,7 @@ double Bezier::get_fitting_residuals() const{
 }
 
 
-arma::mat Bezier::partial_bezier(
+arma::mat::fixed<3,2> Bezier::partial_bezier(
 	const double u,
 	const double v) const{
 
@@ -517,7 +515,7 @@ arma::mat Bezier::partial_bezier(
 }
 
 
-arma::mat Bezier::partial_n_partial_Ck(const double u, const double v,const int i ,  const int j, const int n){
+arma::mat::fixed<3,3> Bezier::partial_n_partial_Ck(const double u, const double v,const int i ,  const int j, const int n) const{
 
 
 
@@ -621,7 +619,6 @@ void Bezier::train_patch_covariance(){
 	// std::vector<double> epsilon;
 
 	unsigned int N_C = this -> control_points.size();
-	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 	unsigned int N_iter = 30 ;
 
 	// The initial guess for the covariance is computed.
@@ -634,8 +631,6 @@ void Bezier::train_patch_covariance(){
 
 	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&this -> footpoints,&this -> v_i_norm);
 
-
-	double initial_ll = Bezier::compute_log_likelihood_block_diagonal(L, args) ;
 
 	// The covariance is refined by a particle-in-swarm optimizer
 	Psopt<std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > > psopt(Bezier::compute_log_likelihood_block_diagonal, 
@@ -689,10 +684,6 @@ double Bezier::evaluate_log_likelihood(const arma::mat & P_X){
 
 void Bezier::compute_range_biases(){
 
-	unsigned int N = 1;
-
-	unsigned int P = (N + 1) * (N + 2) / 2;
-
 	// arma::mat info_mat = arma::zeros<arma::mat>(P,P);
 	// arma::vec normal_mat = arma::zeros<arma::vec>(P);
 	// arma::rowvec Hi(P);
@@ -723,8 +714,6 @@ void Bezier::compute_range_biases(){
 		old_res_vec(i) = arma::dot(normal,Ptilde - Pbar);
 
 	}
-
-	double old_res_std = arma::stddev(old_res_vec);
 
 	// this -> biases = arma::solve(info_mat,normal_mat);
 	this -> fitting_residuals = arma::stddev(old_res_vec);
