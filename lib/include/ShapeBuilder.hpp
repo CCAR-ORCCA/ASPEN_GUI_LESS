@@ -239,6 +239,8 @@ protected:
 
 	void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
 
+	static void run_psr(const std::string dir, ShapeModelTri<ControlPoint> & psr_shape);
+
 
 	/**
 	Concatenates the destination and source point clouds. The latter is merged into the former

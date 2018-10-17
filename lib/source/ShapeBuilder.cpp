@@ -16,7 +16,7 @@
 #include <ShapeFitterBezier.hpp>
 // #include <IOFlags.hpp>
 #include <IODFinder.hpp>
-// #include <CGAL_interface.hpp>
+#include <CGAL_interface.hpp>
 
 #include <EstimationNormals.hpp>
 #include <IODBounds.hpp>
@@ -1117,7 +1117,8 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 
 
-void ShapeBuilder::estimate_coverage(int previous_closure_index,std::string dir) const{
+void ShapeBuilder::estimate_coverage(int previous_closure_index,
+	std::string dir) const{
 
 	std::cout << " -- Fetching points ...\n";
 
@@ -1184,6 +1185,45 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,std::string dir)
 
 }
 
+
+void ShapeBuilder::run_psr(const std::string dir,ShapeModelTri<ControlPoint> & psr_shape){
+
+	std::string pc_original_path = dir + "/159_coverage_pc.obj";
+	std::string pc_cgal_path = dir + "/pc_cgal.txt";
+	std::string shape_cgal_path = dir + "/shape_cgal.obj";
+
+	double percentage_point_kept = 1;
+	
+	PointCloud<PointNormal> pc(pc_original_path);
+	PointCloud<PointNormal> pc_downsampled;
+
+	std::vector<int> indices;
+	for (int i = 0; i < pc.size(); ++i){
+		indices.push_back(i);
+	}
+
+	std::cout << "Shuffling\n";
+	std::random_shuffle ( indices.begin(), indices.end() );
+
+	int points_kept = static_cast<int>(percentage_point_kept/100. * pc.size() );
+
+	for (int i = 0; i < points_kept; ++i){
+		pc_downsampled.push_back(pc[indices[i]]);
+	}
+
+	std::cout << "Saving to txt\n";
+
+	PointCloudIO<PointNormal>::save_to_txt(pc_downsampled, pc_cgal_path);
+
+	// sm_angle = 30.0; // Min triangle angle in degrees.
+	// sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
+	// sm_distance = 0.5; // Surface Approximation error w.r.t. point set average spacing.
+
+	CGALINTERFACE::CGAL_interface(pc_cgal_path.c_str(), shape_cgal_path.c_str(),4000,30,3,3);
+
+	ShapeModelImporter::load_obj_shape_model(shape_cgal_path, 1, true,psr_shape);
+
+}
 
 
 

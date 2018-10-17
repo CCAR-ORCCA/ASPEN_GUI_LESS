@@ -98,13 +98,13 @@ find_package(RigidBodyKinematics REQUIRED PATHS ${RBK_LOC})
 include_directories(${RBK_INCLUDE_DIR} )
 
 # Find CGAL
-# find_package(CGAL REQUIRED)
-# include( ${CGAL_USE_FILE} )
-# include( CGAL_CreateSingleSourceCGALProgram )
+find_package(CGAL REQUIRED)
+include( ${CGAL_USE_FILE} )
+include( CGAL_CreateSingleSourceCGALProgram )
 
-# # Find CGAL_interface
-# find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
-# include_directories(${CGAL_interface_INCLUDE_DIR})
+# Find CGAL_interface
+find_package(CGAL_interface REQUIRED PATHS ${CGAL_interface_LOC})
+include_directories(${CGAL_interface_INCLUDE_DIR})
 
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})
