@@ -287,13 +287,18 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Making PSR a-priori...\n";
 
-				ShapeModelBezier<ControlPoint> * shape_model;
-				PointCloud<PointNormal> pc_global;
+				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 
+				ShapeBuilder::run_psr(dir,psr_shape);
 
 				std::cout << " -- Fitting PSR a-priori...\n";
 
-				ShapeFitterBezier shape_fitter(shape_model,&pc_global); 
+
+				ShapeModelBezier<ControlPoint> bezier_shape(psr_shape,"E",this -> frame_graph);
+				bezier_shape.elevate_degree();
+				bezier_shape.save_to_obj(dir + "/elevated_shape.obj");
+				
+				// ShapeFitterBezier shape_fitter(bezier_shape,&pc_global); 
 
 				throw(std::runtime_error("not implemented yet"));
 			}
