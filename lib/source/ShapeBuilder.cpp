@@ -295,7 +295,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				bezier_shape.save_to_obj(dir + "/elevated_shape.obj");
 				ShapeFitterBezier shape_fitter(&psr_shape,&bezier_shape,&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
-					this -> get_ridge_coef());
+					this -> filter_arguments -> get_ridge_coef());
 
 
 
