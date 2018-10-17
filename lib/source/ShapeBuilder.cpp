@@ -298,7 +298,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> filter_arguments -> get_ridge_coef());
 
 
-
 				bezier_shape.save_to_obj(dir + "/fit_shape.obj");
 
 				throw(std::runtime_error("not implemented yet"));
@@ -1187,6 +1186,8 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
+	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
+
 
 	if (pc != nullptr){
 		*pc = global_pc;

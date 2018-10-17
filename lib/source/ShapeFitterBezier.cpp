@@ -11,9 +11,9 @@
 
 #include "boost/progress.hpp"
 ShapeFitterBezier::ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
-		ShapeModelBezier<ControlPoint> * shape_model,
-		PointCloud<PointNormal> * pc) {
-		
+	ShapeModelBezier<ControlPoint> * shape_model,
+	PointCloud<PointNormal> * pc) {
+
 	this -> psr_shape = psr_shape;
 	this -> shape_model = shape_model;
 	this -> pc = pc;
@@ -403,7 +403,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 
 	std::vector<Footpoint> tentative_footpoints,footpoints;
 
-	std::cout << "Finding footpoints ...";
+	std::cout << "\t\tFinding footpoints ...";
 
 
 	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
@@ -420,7 +420,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 	}
 	boost::progress_display progress(this -> pc -> size());
 	
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		this -> match_footpoint_to_element(tentative_footpoints[i]);
 		++progress;
@@ -448,24 +448,31 @@ void ShapeFitterBezier::match_footpoint_to_element(Footpoint & footpoint) const 
 	Ray ray_plus(footpoint.Ptilde, footpoint.ntilde);
 	Ray ray_minus(footpoint.Ptilde, -footpoint.ntilde);
 
+
 	// The ShapeModelTri is ray-traced
+
 	this -> psr_shape -> ray_trace(&ray_plus);
+
 	this -> psr_shape -> ray_trace(&ray_minus);
+
 
 	double distance_hit_plus = std::numeric_limits<double>::infinity();
 	double distance_hit_minus = std::numeric_limits<double>::infinity();
+	int element_hit_plus = ray_plus . get_hit_element();
+	int element_hit_minus = ray_minus . get_hit_element();
 
-	if (distance_hit_plus < distance_hit_minus){
 
-		int element_hit_plus = ray_plus . get_hit_element();
+	std::cout << element_hit_plus <<  " " << element_hit_minus << std::endl;
+
+	if (distance_hit_plus < distance_hit_minus && element_hit_plus != -1){
+
 		const Bezier & patch = this -> shape_model -> get_element(element_hit_plus);
 
 		ShapeFitterBezier::refine_footpoint_coordinates(patch,footpoint);
 
 	}
-	else if (distance_hit_plus >= distance_hit_minus){
-
-		int element_hit_minus = ray_minus . get_hit_element();
+	else if (distance_hit_plus > distance_hit_minus && element_hit_minus != -1){
+	
 		const Bezier & patch = this -> shape_model -> get_element(element_hit_minus);
 
 		ShapeFitterBezier::refine_footpoint_coordinates(patch,footpoint);
