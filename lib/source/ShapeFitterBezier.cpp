@@ -2,6 +2,8 @@
 #include <ShapeModelBezier.hpp>
 #include <ShapeModelTri.hpp>
 #include <PointCloud.hpp>
+#include <PointCloudIO.hpp>
+
 
 #include <PointNormal.hpp>
 #include <ControlPoint.hpp>
@@ -30,15 +32,34 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	// The initial matches are found
 	std::vector<Footpoint> footpoints = this -> find_footpoints_omp();
 
+
+
+	PointCloud<PointNormal> pc_footpoints;
+
+	for (int i = 0; i < footpoints.size(); ++i ){
+
+		pc_footpoints.push_back(footpoints[i].Pbar);
+
+
+
+
+	}
+
+	PointCloudIO<PointNormal>::save_to_obj(pc_footpoints,"footpoints_pc.obj");
+
+
+
+
+
 	for (unsigned int i = 0; i < N_iter; ++i){
 
-		std::cout << "Iteration " << i + 1 << " / " << N_iter << std::endl;
+		std::cout << "\nIteration " << i + 1 << " / " << N_iter << std::endl;
 
-		std::cout << "\t Updating shape" << std::endl;
+		std::cout << "\n\t Updating shape from the " << footpoints.size() <<  " footpoints...\n";
 
 		bool done = this -> update_shape(footpoints,ridge_coef);
 
-		std::cout << "\t Refining footpoints" << std::endl;
+		std::cout << "\n\t Refining footpoints" << std::endl;
 		boost::progress_display progress_1(footpoints.size());
 		#pragma omp parallel for
 		for (int e = 0; e < footpoints.size(); ++e){
@@ -49,8 +70,9 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 		}
 
 		std::vector<Footpoint> footpoints_temp;
-		std::cout << "\t Pruning footpoints" << std::endl;
+		std::cout << "\n\t Pruning footpoints" << std::endl;
 		boost::progress_display progress_2(footpoints.size());
+		
 		for (int e = 0; e < footpoints.size(); ++e){
 			if (footpoints[e].element >= 0){
 				footpoints_temp.push_back(footpoints[e]);
@@ -58,7 +80,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 			++progress_2;
 		}
 
-		std::cout << "\t Discarded " << (int)(footpoints.size()) - (int)(footpoints_temp.size()) << " from the " << footpoints.size() << " initial ones\n";
+		std::cout << "\n\t Discarded " << (int)(footpoints.size()) - (int)(footpoints_temp.size()) << " from the " << footpoints.size() << " initial ones\n";
 		footpoints = footpoints_temp;
 
 		if (done){
@@ -67,10 +89,8 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	}
 
-	std::cout << " - Done fitting\n";
+	std::cout << "\n - Done fitting\n";
 
-
-	throw(std::runtime_error("to reimplement"));
 
 	// // The footpoints are assigned to the patches
 	// // First, patches that were seen are cleared
@@ -158,7 +178,8 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 }
 
 
-void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsigned int N_measurements){
+void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,
+	unsigned int N_measurements){
 
 
 
@@ -168,7 +189,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 
 		const Bezier & patch =  this -> shape_model -> get_element(*point.get_owning_elements().begin());
 
-		const std::vector<int> points = patch.get_points();
+		const std::vector<int> & points = patch.get_points();
 
 
 		auto it_index = std::find(points.begin(), points.end(), index);
@@ -183,6 +204,7 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,unsign
 		unsigned int j = std::get<1>(indices);
 		double u = double(i) / double(patch.get_degree());
 		double v = double(j) / double(patch.get_degree());
+
 
 		arma::vec::fixed<3> n = patch.get_normal_coordinates(u, v);
 		arma::mat proj = double(N_measurements) / double( this -> shape_model -> get_NElements()) * (arma::eye<arma::mat>(3,3) - n * n.t());
@@ -276,7 +298,6 @@ void ShapeFitterBezier::add_to_problem(
 bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double ridge_coef){
 
 
-	std::cout << "\nUpdating shape from the " << footpoints.size() <<  " footpoints...\n";
 
 	// The normal and information matrices are created
 	unsigned int N = this -> shape_model -> get_NControlPoints();
@@ -307,15 +328,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 		for (int l = 0; l < control_points.size(); ++l){
 
-
-			// unsigned int global_point_index = this -> shape_model -> get_point_index(*iter_points);
-			// auto it_index = std::find(control_points.begin(), control_points.end(), index);
-			// if (it_index == points.end()){
-			// 	throw(std::runtime_error("Could not find point in patch"));
-			// }
-
-
-
 			auto local_indices = patch.get_local_indices(l);
 
 			unsigned int i = std::get<0>(local_indices);
@@ -330,7 +342,9 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 			global_indices.push_back(control_points[l]);
 		}
 		
-		double y = arma::dot(footpoint . n,footpoint . Ptilde - patch.evaluate(footpoint . u,footpoint . v));
+
+		double y = arma::dot(footpoint . n,footpoint . Ptilde - footpoint . Pbar);
+
 
 		this -> add_to_problem(coefficients,Nmat,y,elements_to_add,global_indices);
 
@@ -340,9 +354,9 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 
 	}
+
 	std::cout << "- Penalizing tangential motion\n";
 	this -> penalize_tangential_motion(coefficients,footpoints.size());
-
 
 	std::cout << "- Setting Lambda from the " << coefficients.size() <<  " coefs\n";
 
@@ -362,15 +376,14 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	arma::vec dC(3*N);
 
 	std::cout << "- Applying deviation\n";
-	// #pragma omp parallel for
+	
+	#pragma omp parallel for
 	for (unsigned int i = 0; i < 3 * N; ++i){
-
 		dC(i) = deviation(i);
 	}
 
 
 	double update_norm = 0;
-
 	for (unsigned int k = 0; k < N; ++k){
 		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/N;
 
@@ -420,7 +433,7 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 	}
 	boost::progress_display progress(this -> pc -> size());
 	
-	// #pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		this -> match_footpoint_to_element(tentative_footpoints[i]);
 		++progress;
@@ -451,28 +464,24 @@ void ShapeFitterBezier::match_footpoint_to_element(Footpoint & footpoint) const 
 
 	// The ShapeModelTri is ray-traced
 
-	this -> psr_shape -> ray_trace(&ray_plus);
-
+	this -> psr_shape -> ray_trace(&ray_plus,false);
 	this -> psr_shape -> ray_trace(&ray_minus);
 
 
-	double distance_hit_plus = std::numeric_limits<double>::infinity();
-	double distance_hit_minus = std::numeric_limits<double>::infinity();
+	double distance_hit_plus = ray_plus.get_true_range();
+	double distance_hit_minus = ray_minus.get_true_range();
 	int element_hit_plus = ray_plus . get_hit_element();
 	int element_hit_minus = ray_minus . get_hit_element();
 
 
-	std::cout << element_hit_plus <<  " " << element_hit_minus << std::endl;
-
 	if (distance_hit_plus < distance_hit_minus && element_hit_plus != -1){
 
 		const Bezier & patch = this -> shape_model -> get_element(element_hit_plus);
-
 		ShapeFitterBezier::refine_footpoint_coordinates(patch,footpoint);
 
 	}
 	else if (distance_hit_plus > distance_hit_minus && element_hit_minus != -1){
-	
+
 		const Bezier & patch = this -> shape_model -> get_element(element_hit_minus);
 
 		ShapeFitterBezier::refine_footpoint_coordinates(patch,footpoint);

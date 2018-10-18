@@ -196,6 +196,8 @@ bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) 
 	const arma::vec::fixed<3> & p = facet.get_center();
 
 	double t = arma::dot(n, p - this -> origin_target_frame) / arma::dot(n, this -> direction_target_frame);
+
+
 	// The normal is facing the opposite way
 	if (arma::dot(n,this -> direction_target_frame) > 0 && outside){
 		return false;

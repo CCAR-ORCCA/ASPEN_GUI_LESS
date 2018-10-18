@@ -1109,7 +1109,7 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::get_dims(const double & volume,
 
 
 template <class PointType>
-bool ShapeModelBezier<PointType>::ray_trace(Ray * ray){
+bool ShapeModelBezier<PointType>::ray_trace(Ray * ray,bool outside){
 
 	throw(std::runtime_error("ShapeModelBezier<PointType>::ray_trace not implemented yet!"));
 	return false;
@@ -1793,8 +1793,7 @@ void ShapeModelBezier<PointType>::save_both(std::string partial_path){
 
 	this -> save(partial_path + ".b");
 
-	ShapeModelBezier self("",nullptr);
-	ShapeModelImporter::load_bezier_shape_model(partial_path + ".b",1,true,self);
+	ShapeModelBezier self = (*this);
 
 	self.elevate_degree();
 	self.elevate_degree();
@@ -1830,14 +1829,14 @@ void ShapeModelBezier<PointType>::save(std::string path) {
 		for (unsigned int index = 0; index < points.size(); ++index){
 
 			if (index + 1 < points.size()){
-				shape_file << points[index] << " ";
+				shape_file << points[index] + 1 << " ";
 			}
 			else{
 				if (e + 1 < this -> elements.size()){
-					shape_file << points[index] << "\n";
+					shape_file << points[index] + 1 << "\n";
 				}
 				else{
-					shape_file << points[index];
+					shape_file << points[index] + 1;
 				}
 			}
 
@@ -3264,7 +3263,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 
 						int global_index_of_old_control_point = element_control_points[rev_before_elevation[old_indices]];
 
-						ownership = this -> control_points[element_control_points[rev_before_elevation[old_indices]]].get_owning_elements();
+						ownership = this -> control_points[global_index_of_old_control_point].get_owning_elements();
 
 						// For all the elements that own this control point
 						for (auto element : ownership){
@@ -3427,8 +3426,9 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 
 				}
 
-				new_control_points.push_back(new_control_point);
+
 				new_control_point.set_owning_elements(ownership);
+				new_control_points.push_back(new_control_point);
 
 			}
 
@@ -3439,6 +3439,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 	this -> control_points = new_control_points;
 	for (int e = 0; e < this -> elements.size(); ++e){
 		this -> elements[e] = Bezier(elements_to_control_points[e],this);
+		this -> elements[e].set_global_index(e);
 	}
 
 }

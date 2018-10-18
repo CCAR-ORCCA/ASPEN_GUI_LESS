@@ -198,7 +198,7 @@ public:
 	Finds the intersect between the provided ray and the shape model
 	@param ray pointer to ray. If a hit is found, the ray's internal is changed to store the range to the hit point
 	*/
-	virtual bool ray_trace(Ray * ray) = 0;
+	virtual bool ray_trace(Ray * ray,bool outside = true) = 0;
 
 
 

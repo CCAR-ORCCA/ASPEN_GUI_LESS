@@ -69,6 +69,9 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 
 	}
 
+	std::cout << " Shape degree: " << degree << std::endl;
+	std::cout << " Number of points per patch: " << N_c << std::endl;
+
 	std::cout << " Number of control points: " << control_point_coords.size() << std::endl;
 	std::cout << " Number of patches: " << shape_patch_indices.size() << std::endl;
 
@@ -90,9 +93,10 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 	std::cout << std::endl << " Constructing patches " << std::endl ;
 
 
-
-	boost::progress_display progress_facets(shape_patch_indices.size()) ;
 	std::vector<Bezier> elements;
+	
+	boost::progress_display progress_facets(shape_patch_indices.size()) ;
+
 	// Patches are added to the shape model
 	for (unsigned int patch_index = 0; patch_index < shape_patch_indices.size(); ++patch_index) {
 
@@ -102,7 +106,8 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 		for ( int i = 0; i < N_c; ++ i){
 			vertices.push_back(shape_patch_indices[patch_index][i]);
 		}
-		
+
+
 		for ( int i = 0; i < N_c; ++ i){
 			shape_model.get_point(vertices[i]).add_ownership(patch_index);
 		}

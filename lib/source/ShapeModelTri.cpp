@@ -81,9 +81,9 @@ const std::vector<int> & ShapeModelTri<PointType>::get_element_control_points(in
 
 
 template <class PointType>
-bool ShapeModelTri<PointType>::ray_trace(Ray * ray){
+bool ShapeModelTri<PointType>::ray_trace(Ray * ray,bool outside){
 
-	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray);
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray,outside);
 }
 
 template <class PointType>

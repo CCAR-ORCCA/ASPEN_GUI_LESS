@@ -177,6 +177,7 @@ void KDTreeShape::build(const std::vector<int > & elements,  int depth) {
 
 bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 	Ray * ray,
+	bool outside,
 	ShapeModelBezier<ControlPoint> * shape_model_bezier) const {
 	
 
@@ -217,6 +218,11 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 		}
 
 		else {
+
+			#if KDTREE_SHAPE_HIT_DEBUG
+			std::cout << "Searching all triangles in node for intersect\n";
+
+			#endif
 			bool hit_element = false;
 
 			// If not, the current node is a leaf
@@ -224,9 +230,14 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 			// std::cout << "starting in node" << std::endl;
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
+
+
+
 				// If there is a hit
 				if (shape_model_bezier == nullptr){
-					if (ray -> single_facet_ray_casting( this -> owning_shape -> get_element(node -> elements[i]))){
+
+
+					if (ray -> single_facet_ray_casting( this -> owning_shape -> get_element(node -> elements[i]),true,outside)){
 						
 						hit_element = true;
 					}
