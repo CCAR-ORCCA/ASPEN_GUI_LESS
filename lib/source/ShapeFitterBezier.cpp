@@ -227,9 +227,6 @@ void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,
 	}
 
 
-
-
-
 }
 
 
@@ -382,7 +379,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		dC(i) = deviation(i);
 	}
 
-
 	double update_norm = 0;
 	for (unsigned int k = 0; k < N; ++k){
 		update_norm += arma::norm(dC.subvec(3 * k, 3 * k + 2))/N;
@@ -394,7 +390,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 	std::cout << "- Mean: " << arma::mean(residuals) << std::endl;
 	std::cout << "- Standard deviation: " << arma::stddev(residuals) << std::endl;
 
-
 	// The deviations are added to the coordinates
 	auto control_points = this -> shape_model -> get_points();
 
@@ -404,10 +399,7 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		p.set_point_coordinates(p.get_point_coordinates()+ dC.rows(3 * g, 3 * g + 2));
 	}
 
-
 	return  (update_norm < 1e-5);
-
-
 
 
 }
@@ -417,7 +409,6 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 	std::vector<Footpoint> tentative_footpoints,footpoints;
 
 	std::cout << "\t\tFinding footpoints ...";
-
 
 	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
 		

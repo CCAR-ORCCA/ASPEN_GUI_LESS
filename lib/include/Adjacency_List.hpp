@@ -91,6 +91,7 @@ public:
 	 */
 	Adjacency_List() {
 		this->isdirected = false;
+		this -> n_edges = 0;
 	}
 
 	/**
@@ -139,7 +140,7 @@ public:
 		// throw error if edge does not exist
 		if (!exist) {
 			std::cout << "Error: Adjacency_List::getedge(). Edge between "
-			          << src << " and " << dest << " does not exist.\n";
+			<< src << " and " << dest << " does not exist.\n";
 			throw (std::runtime_error(""));
 		}
 
@@ -171,7 +172,7 @@ public:
 		}
 		else {
 			std::cout << "Error Adjacency_List::getneighbors(). vertex "
-			          << src << " does not exist!\n";
+			<< src << " does not exist!\n";
 			throw (std::runtime_error(""));
 
 		}
@@ -255,65 +256,65 @@ public:
 
 			// for all edges in adjacency list
 			for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
-			        ++adjIt) {
+				++adjIt) {
 
 				// display edge
 				std::cout << std::setw(w) << adjIt->first << " ";
 
-			}
-			std::cout << std::endl;
 		}
-		std::cout << std::endl << std::endl;
-
+		std::cout << std::endl;
 	}
+	std::cout << std::endl << std::endl;
+
+}
 
 	/**
 	\brief std::set<T2> get_edges()
 	\details Returns a set storing all the existing edges
 	*/
 
-	std::set<T2> get_edges() {
-		std::set<T2> edges;
+std::set<T2> get_edges() {
+	std::set<T2> edges;
 		// local type definitions
-		typename vertexmap::iterator        it;
-		typename std::list<edge>::iterator  adjIt;
+	typename vertexmap::iterator        it;
+	typename std::list<edge>::iterator  adjIt;
 
 		// for all vertices
-		for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
+	for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
 
 			// for all edges in adjacency list
-			for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
-			        ++adjIt) {
+		for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
+			++adjIt) {
 
 				// insert edge
-				edges.insert(adjIt->first);
+			edges.insert(adjIt->first);
 
-			}
-		}
-		return edges;
 	}
+}
+return edges;
+}
 
 	/**
 	\brief std::set<T1> get_vertices()
 	\details Returns a set storing all the existing vertices
 	*/
 
-	std::set<T1> get_vertices() {
-		std::set<T1> vertices;
+std::set<T1> get_vertices() {
+	std::set<T1> vertices;
 		// local type definitions
-		typename vertexmap::iterator        it;
+	typename vertexmap::iterator        it;
 
 		// for all vertices
-		for (it = this -> vmap.begin(); it != this -> vmap.end(); ++it) {
+	for (it = this -> vmap.begin(); it != this -> vmap.end(); ++it) {
 			// insert vertex
-			vertices.insert(it -> second -> data);
+		vertices.insert(it -> second -> data);
 
-		}
-
-
-
-		return vertices;
 	}
+
+
+
+	return vertices;
+}
 
 
 
@@ -334,39 +335,39 @@ public:
 	 *       needed later on.
 	 *
 	 */
-	std::deque<T1> dfs(T1 src, T1 dest) {
+std::deque<T1> dfs(T1 src, T1 dest) {
 
 		// local type definitions
-		typename vertexmap::iterator it, src_it, dest_it;
-		src_it  = (this->vmap.find(src));
-		dest_it = (this->vmap.find(dest));
+	typename vertexmap::iterator it, src_it, dest_it;
+	src_it  = (this->vmap.find(src));
+	dest_it = (this->vmap.find(dest));
 
 		// containter
-		std::deque<T1> dq;
+	std::deque<T1> dq;
 		// flag that indicates whether or not dest has been found
 		// (ie a path has been found)
-		bool found = false;
+	bool found = false;
 
 		// check that both vertices exist
-		if (src_it == vmap.end()) {
-			std::cout << "Error Adjacency_List::dfs(). Source vertex "
-			          << src << " does not exist!\n";
-			throw (std::runtime_error(""));
-		} else if (dest_it == vmap.end()) {
-			std::cout << "Error Adjacency_List::dfs(). Destination vertex "
-			          << dest << " does not exist!\n";
-			throw (std::runtime_error(""));
-		}
+	if (src_it == vmap.end()) {
+		std::cout << "Error Adjacency_List::dfs(). Source vertex "
+		<< src << " does not exist!\n";
+		throw (std::runtime_error(""));
+	} else if (dest_it == vmap.end()) {
+		std::cout << "Error Adjacency_List::dfs(). Destination vertex "
+		<< dest << " does not exist!\n";
+		throw (std::runtime_error(""));
+	}
 
 		// set all vertices to unidentified
-		for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
-			it->second->indentified = false;
-		}
+	for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
+		it->second->indentified = false;
+	}
 
 		// call the depth-first-search algorithm
-		_dfs(src, dest, dq, found);
-		return (dq);
-	}
+	_dfs(src, dest, dq, found);
+	return (dq);
+}
 
 
 	/**
@@ -376,11 +377,11 @@ public:
 	 *
 	 * Advantages: faster searches for large graphs
 	 */
-	void ddfs(T1 src, T1 dest) {
-		std::cout << "Error Adjacency_List::ddfs(). This function has not "
-		          << "yet been implemented. Sorry!\n";
-		throw (std::runtime_error(""));
-	}
+void ddfs(T1 src, T1 dest) {
+	std::cout << "Error Adjacency_List::ddfs(). This function has not "
+	<< "yet been implemented. Sorry!\n";
+	throw (std::runtime_error(""));
+}
 
 	/*------------------------- Mutator Methods ------------------------------*/
 
@@ -389,9 +390,9 @@ public:
 	 *
 	 * Set the directedness of the graph. Default is undirected (false)
 	 */
-	void setdirected(bool isdirected) {
-		this->isdirected = isdirected;
-	}
+void setdirected(bool isdirected) {
+	this->isdirected = isdirected;
+}
 
 	/**
 	 * \brief void addedge(T1 src, T1 dest, T2 link)
@@ -399,12 +400,12 @@ public:
 	 * Add edge between two vertices, if both exist.
 	 *
 	 */
-	void addedge(T1 src, T1 dest, T2 link) {
+void addedge(T1 src, T1 dest, T2 link) {
 
 		// local type definitions
-		typename vertexmap::iterator src_it, dest_it;
-		src_it  = (this->vmap.find(src));
-		dest_it = (this->vmap.find(dest));
+	typename vertexmap::iterator src_it, dest_it;
+	src_it  = (this->vmap.find(src));
+	dest_it = (this->vmap.find(dest));
 
 		// could add check for edge existence here if worried about adding
 		// multiple edges between vertices
@@ -412,28 +413,30 @@ public:
 		// between vertices so long as they contain differet values
 
 		// check that both vertices exist
-		if (src_it == vmap.end()) {
-			std::cout << "Warning Adjacency_List::addedge(). Source vertex "
-			          << src << " does not exist! Edge was not added!\n";
-		} else if (dest_it == vmap.end()) {
-			std::cout << "Warning Adjacency_List::addedge(). Destination vertex "
-			          << dest << " does not exist! Edge was not added!\n";
-		} else {
+	if (src_it == vmap.end()) {
+		std::cout << "Warning Adjacency_List::addedge(). Source vertex "
+		<< src << " does not exist! Edge was not added!\n";
+	} else if (dest_it == vmap.end()) {
+		std::cout << "Warning Adjacency_List::addedge(). Destination vertex "
+		<< dest << " does not exist! Edge was not added!\n";
+	} else {
 
 			// add edge
-			vertex *from = (this->vmap.find(src)->second);
-			vertex *to   = (this->vmap.find(dest)->second);
+		vertex *from = (this->vmap.find(src)->second);
+		vertex *to   = (this->vmap.find(dest)->second);
 
-			edge e1 = std::make_pair(link, to);
-			from->adj.push_back(e1);
+		edge e1 = std::make_pair(link, to);
+		from->adj.push_back(e1);
+
+		this -> n_edges += 1;
 
 			// if undirected, add 'other' edge
-			if (!this->isdirected) {
-				edge e2 = std::make_pair(link, from);
-				to->adj.push_back(e2);
-			}
+		if (!this->isdirected) {
+			edge e2 = std::make_pair(link, from);
+			to->adj.push_back(e2);
 		}
 	}
+}
 
 	/**
 	 * \brief void addvertex(T1 node)
@@ -441,22 +444,22 @@ public:
 	 * \details Add vertex to graph.
 	 *
 	 */
-	void addvertex(T1 node) {
+void addvertex(T1 node) {
 
 		// local type definitions
-		typename vertexmap::iterator it = this->vmap.begin();
-		it = this->vmap.find(node);
+	typename vertexmap::iterator it = this->vmap.begin();
+	it = this->vmap.find(node);
 
 		// if vertex does not already exist, add it
-		if (it == vmap.end()) {
-			vertex *v;
-			v = new vertex(node);
-			vmap[node] = v;
-			return;
-		}
-		std::cout << "Warning Adjacency_List::addvertex(). Vertex "
-		          << node << " already exists!\n";
+	if (it == vmap.end()) {
+		vertex *v;
+		v = new vertex(node);
+		vmap[node] = v;
+		return;
 	}
+	std::cout << "Warning Adjacency_List::addvertex(). Vertex "
+	<< node << " already exists!\n";
+}
 
 	/**
 	 * \brief void removeedge(T1 src, T1 dest)
@@ -464,33 +467,34 @@ public:
 	 * \details Remove edge from graph.
 	 *
 	 */
-	void removeedge(T1 src, T1 dest) {
+void removeedge(T1 src, T1 dest) {
 
 		// local type definitions
-		typename vertexmap::iterator it  = (this->vmap.find(src));
-		typename std::list<edge>::iterator adjIt;
+	typename vertexmap::iterator it  = (this->vmap.find(src));
+	typename std::list<edge>::iterator adjIt;
 
 		// search for and delete edge
+	for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
+		++adjIt) {
+		if (adjIt->second->data == dest) {
+			it->second->adj.remove(*adjIt);
+			this -> n_edges -= 1;
+			break;
+		}
+	}
+
+		// if this graph is undirected, delete the 'other' edge
+	if (!this->isdirected) {
+		it  = (this->vmap.find(dest));
 		for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
-		        ++adjIt) {
-			if (adjIt->second->data == dest) {
+			++adjIt) {
+			if (adjIt->second->data == src) {
 				it->second->adj.remove(*adjIt);
 				break;
 			}
 		}
-
-		// if this graph is undirected, delete the 'other' edge
-		if (!this->isdirected) {
-			it  = (this->vmap.find(dest));
-			for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
-			        ++adjIt) {
-				if (adjIt->second->data == src) {
-					it->second->adj.remove(*adjIt);
-					break;
-				}
-			}
-		}
 	}
+}
 
 	/**
 	 * \brief void removevertex(T1 node)
@@ -498,25 +502,27 @@ public:
 	 * \details Remove vertex, and all associated edges, from graph.
 	 *
 	 */
-	void removevertex(T1 node) {
+void removevertex(T1 node) {
 
 		// local type definitions
-		typename vertexmap::iterator it;
+	typename vertexmap::iterator it;
 
 		// remove all edges from node
-		it = (this->vmap.find(node));
-		it->second->adj.clear();
+	it = (this->vmap.find(node));
+	it->second->adj.clear();
 
 		// remove all edges to node
-		for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
-			removeedge(it->second->data, node);
-		}
+	for (it = this->vmap.begin(); it != this->vmap.end(); ++it) {
+		removeedge(it->second->data, node);
+	}
 
 		// remove node
-		delete vmap[node];
-		this->vmap.erase(node);
+	delete vmap[node];
+	this->vmap.erase(node);
 
-	}
+}
+
+int get_n_edges() const{return this -> n_edges;}
 
 
 private:
@@ -556,7 +562,7 @@ private:
 
 		// for all edges in adjacency list
 		for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end();
-		        ++adjIt) {
+			++adjIt) {
 
 			// if destination, push dest and src into queue and return
 			// path found!
@@ -592,6 +598,10 @@ private:
 	 */
 	Adjacency_List( const Adjacency_List &rhs );
 	void operator=( const Adjacency_List &rhs );
+
+
+
+	int n_edges;
 };
 
 #endif /* ADJACENCYLIST_HPP */

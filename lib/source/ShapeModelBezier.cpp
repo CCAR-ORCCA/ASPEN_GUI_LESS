@@ -201,9 +201,6 @@ void ShapeModelBezier<PointType>::compute_volume(){
 }
 
 
-
-
-
 template <class PointType>
 double ShapeModelBezier<PointType>::compute_volume(const arma::vec & deviation) const{
 	

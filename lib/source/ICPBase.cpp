@@ -274,8 +274,6 @@ void ICPBase::register_pc(
 
 	#endif
 
-
-
 		try{
 			this -> R = arma::inv(info_mat);
 		}
@@ -283,7 +281,6 @@ void ICPBase::register_pc(
 			std::cout << e.what();
 		}
 		this -> J_res = J ;
-
 
 	}
 

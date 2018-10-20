@@ -27,10 +27,21 @@ BundleAdjuster::BundleAdjuster(
 	this -> h = h;
 	this -> dir = dir;
 
-	
-	
+}
+
+BundleAdjuster::BundleAdjuster(
+	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
+	const arma::mat & LN_t0,
+	const arma::vec & x_t0,
+	std::string dir){
+
+	this -> all_registered_pc = all_registered_pc_;
+	this -> LN_t0 = LN_t0;
+	this -> x_t0 = x_t0;
+	this -> dir = dir;
 
 }
+
 
 
 void BundleAdjuster::set_use_true_pairs(bool use_true_pairs){
@@ -204,14 +215,10 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	int ground_index = 0; 
 
-
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
 		std::cout << "Finding overlaps with " << i << std::endl;
-		auto overlap_with_ground = this -> find_overlap_with_pc(
-			i,
-			static_cast<int>(this -> all_registered_pc -> size() - 1),
-			i);
+		auto overlap_with_ground = this -> find_overlap_with_pc(i,static_cast<int>(this -> all_registered_pc -> size() - 1),i);
 
 		for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
 			std::cout << "\tUsing " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
@@ -648,7 +655,8 @@ void BundleAdjuster::save_connectivity() const{
 }
 
 
-std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,int start_index,int end_index) const{
+std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,int start_index,int end_index,
+	bool prune_overlaps) const{
 
 	std::vector<PointPair> point_pairs;
 	std::map<double,int> overlaps;
@@ -656,9 +664,11 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	std::vector<int> pcs_to_check;
 	int active_h = 5;
 	int len = std::abs(end_index - start_index) + 1;
+	
 	for (int i = 0; i < len; ++i){
 		if (start_index < end_index){
 			pcs_to_check.push_back(start_index + i);
+
 		}
 		else{
 			pcs_to_check.push_back(start_index - i);
@@ -666,6 +676,8 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	}
 
 	for (auto other_pc_index : pcs_to_check){
+
+
 
 		if (other_pc_index == pc_global_index) continue;
 
@@ -689,7 +701,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 			if (prop > 80){
 				overlaps[prop] = other_pc_index;
-				if (overlaps.size() > 5){
+				if (prune_overlaps && overlaps.size() > 5){
 					return overlaps;
 				}
 			}
@@ -705,4 +717,53 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 	return overlaps;
 
 }
+
+
+
+
+
+void BundleAdjuster::update_overlap_graph(){
+
+	if (!this -> graph.vertexexists(0)){
+		std::cout << "\t Inserting point cloud #0 in graph\n";
+		this -> graph.addvertex(0);
+
+	}
+
+	int new_pc_index = static_cast<int>(this -> all_registered_pc -> size()) - 1;
+
+	std::cout << "\t Inserting point cloud # " << new_pc_index  << " in graph\n";
+	this -> graph.addvertex(new_pc_index);
+
+	auto overlap = this -> find_overlap_with_pc(new_pc_index,0,new_pc_index - 1,false);
+
+	for (auto it = overlap.begin(); it != overlap.end(); ++it){
+		this -> graph.addedge(new_pc_index,it -> second,it -> first);
+	}
+
+	std::cout << "Graph has " << this -> graph.get_n_edges() << " unique edges\n";
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -58,7 +58,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 
-
 	arma::vec lidar_pos = X_S.rows(0,2);
 	arma::vec lidar_vel = X_S.rows(3,5);
 
@@ -70,6 +69,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::mat> HN_true;
 	std::map<int,arma::vec> X_pcs;
 	std::map<int,arma::mat> M_pcs;
+	std::map<int,arma::mat::fixed<6,6> > R_pcs;
+
 
 	arma::vec iod_guess;
 
@@ -78,9 +79,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int cutoff_index = 0;
 	int previous_closure_index = 0;
 
-
 	arma::mat M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
+
+
+	BundleAdjuster ba_test(&this -> all_registered_pc, this -> LN_t0,this -> x_t0,dir);
+
 
 	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
 
@@ -125,8 +129,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
 
-			
-			
 
 			// The point-cloud to point-cloud ICP is used for point cloud registration
 			// This ICP can fail. If so, the update is still applied and will be fixed 
@@ -141,11 +143,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 
 			icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
+			
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
 			M_pc = icp_pc.get_dcm();
 			X_pc = icp_pc.get_x();
+			R_pcs[time_index] = icp_pc.get_R();
 
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
@@ -172,13 +176,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> all_registered_pc.push_back(this -> source_pc);
 
 
-
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
 
 			assert(BN_measured.size() == BN_true.size());
 			assert(M_pcs.size() == BN_true.size());
 			assert(X_pcs.size() == BN_true.size());
+
+
+			ba_test.update_overlap_graph();
 
 
 			// Bundle adjustment is periodically run
@@ -238,6 +244,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
 					std::cout << " -- Moving on...\n";
+
+
+
+					std::cout << "True position : " << X_S.subvec(0,2).t();
+					std::cout << "True velocity : " << X_S.subvec(3,5).t();
+					std::cout << "True cm shift at t0 : " << this -> x_t0.t();
+
+					this -> run_IOD_finder(times, 0 ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs);
+
+					throw;
 
 				// estimated_state =  this -> run_IOD_finder(times,
 				// 	last_ba_call_index ,
@@ -655,112 +671,281 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 	const std::map<int,arma::vec> & X_pcs,
 	const std::map<int,arma::mat> M_pcs) const{
 
+	// // The IOD Finder is ran before running bundle adjustment
+	// std::vector<RigidTransform> sequential_rigid_transforms;
+	// std::vector<RigidTransform> absolute_rigid_transforms;
+	// std::vector<RigidTransform> absolute_true_rigid_transforms;
 
-	// The IOD Finder is ran before running bundle adjustment
+	// ShapeBuilder::assemble_rigid_transforms_IOD(sequential_rigid_transforms,
+	// 	absolute_rigid_transforms,
+	// 	absolute_true_rigid_transforms,
+	// 	times,
+	// 	t0,
+	// 	tf,
+	// 	mrps_LN,
+	// 	X_pcs,
+	// 	M_pcs);
+
+
+	// IODFinder iod_finder(&sequential_rigid_transforms, 
+	// 	&absolute_rigid_transforms,
+	// 	mrps_LN,
+	// 	this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
+	// 	this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
+	// 	this -> filter_arguments -> get_iod_iterations(), 
+	// 	this -> filter_arguments -> get_iod_particles());
+
+
+	// // Crude IO
+	// // Get the center of the collected pcs
+	// arma::vec::fixed<3> center = this -> get_center_collected_pcs(t0,tf,absolute_rigid_transforms,
+	// 	absolute_true_rigid_transforms);
+	
+	// arma::vec::fixed<3> r0_crude = - this -> LN_t0.t() * center;
+	// arma::vec::fixed<3> r1_crude = sequential_rigid_transforms[0].M .t() * (r0_crude + sequential_rigid_transforms[0].X);
+	// arma::vec::fixed<3> r2_crude = sequential_rigid_transforms[1].M .t() * (r1_crude + sequential_rigid_transforms[1].X);
+
+	// // 2nd order interpolation
+	// arma::mat A = arma::zeros<arma::mat>(9,9) ;
+	// A.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
+	// A.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
+	// A.submat(6,0,8,2) = arma::eye<arma::mat>(3,3);
+
+	// A.submat(3,3,5,5) = sequential_rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
+	// A.submat(3,6,5,8) = std::pow(sequential_rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
+
+	// A.submat(6,3,8,5) = sequential_rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
+	// A.submat(6,6,8,8) = std::pow(sequential_rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
+
+	// arma::vec R = arma::vec(9);
+	// R.subvec(0,2) = r0_crude;
+	// R.subvec(3,5) = r1_crude;
+	// R.subvec(6,8) = r2_crude;
+
+	// arma::vec coefs = arma::solve(A,R);
+
+	// arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
+
+	// crude_guess = arma::zeros<arma::vec>(6);
+	// crude_guess.subvec(0,2) = r0_crude;
+	// crude_guess.subvec(3,5) = v1_crude;
+
+
+	// arma::vec dr =  (r1_crude - r0_crude);
+	// double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
+	// arma::vec v0_crude = dr / dt;
+
+
+	// arma::vec l_bounds = {
+	// 	r0_crude(0) - 100,
+	// 	r0_crude(1) - 100,
+	// 	r0_crude(2) - 100,
+	// 	v0_crude(0) - 100 / dt,
+	// 	v0_crude(1) - 100 / dt,
+	// 	v0_crude(2) - 100 / dt,
+	// 	MU_MIN
+	// };
+
+	// arma::vec u_bounds = {
+	// 	r0_crude(0) + 100,
+	// 	r0_crude(1) + 100,
+	// 	r0_crude(2) + 100,
+	// 	v0_crude(0) + 100 / dt,
+	// 	v0_crude(1) + 100 / dt,
+	// 	v0_crude(2) + 100 / dt,
+	// 	MU_MAX
+	// };
+
+
+	// arma::vec guess_particle = {
+	// 	r0_crude(0),r0_crude(1),r0_crude(2),
+	// 	v0_crude(0),v0_crude(1),v0_crude(2),
+	// 	NAN
+	// };
+
+	// iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
+
+	// state = iod_finder.get_result();
+
+	// iod_finder.run_batch(state,cov);
+
+
+}
+
+
+void ShapeBuilder::run_IOD_finder(const arma::vec & times,
+	const int t0 ,
+	const int tf, 
+	const std::vector<arma::vec> & mrps_LN,
+	const std::map<int,arma::vec> & X_pcs,
+	const std::map<int,arma::mat> & M_pcs,
+	const std::map<int, arma::mat::fixed<6,6> > & R_pcs) const{
+
+
+	// Forming the absolute/rigid transforms
 	std::vector<RigidTransform> sequential_rigid_transforms;
 	std::vector<RigidTransform> absolute_rigid_transforms;
-	std::vector<RigidTransform> absolute_true_rigid_transforms;
 
-	ShapeBuilder::assemble_rigid_transforms_IOD(sequential_rigid_transforms,
+	std::cout << "\n\tAssembling rigid transforms\n";
+
+	std::vector<int> obs_indices;
+
+	for (int i = t0; i < tf + 1; ++i){
+		obs_indices.push_back(i);
+	}
+
+	
+	this -> assemble_rigid_transforms_IOD(
+		sequential_rigid_transforms,
 		absolute_rigid_transforms,
-		absolute_true_rigid_transforms,
+		obs_indices,
 		times,
-		t0,
-		tf,
 		mrps_LN,
 		X_pcs,
 		M_pcs);
 
 
+
+	// Crude IO
+	std::cout << "\n\tGetting center of collected point clouds\n";
+
+	// Get the center of the collected pcs
+	// and use this as a crude guess for the very first position vector
+	// This vector must obviously be expressed in the N frame
+	arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
+
+
+
+	std::cout << "r_start_crude before mapping forward: " << r_start_crude.t() << std::endl;
+
+	// This position is mapped forward in time to the first start time in the IOD arc
+	// This start time is t0
+	for (int t = 0; t < t0; ++t){
+		r_start_crude = sequential_rigid_transforms[t].M .t() * (r_start_crude + sequential_rigid_transforms[t].X);
+	}
+
+
+	// Applying the k-th rigid transform (index starting at 0) 
+	// to the k-th position vector maps it to the (k+1)th position vector
+
+	// Should the positions along the arc be initialized from the rigid transforms
+	// or from the keplerian propagation of r_start_crude? 
+	// Well, I do not have a velocity crude guess at t_start, 
+	// so I have no choice but to use the rigid transforms
+	std::vector<arma::vec::fixed<3> > IOD_arc_positions;
+	IOD_arc_positions.push_back(r_start_crude);
+	
+	for (int t = t0; t < tf; ++t){
+		r_start_crude = sequential_rigid_transforms[t].M .t() * (r_start_crude + sequential_rigid_transforms[t].X);
+		IOD_arc_positions.push_back(r_start_crude);
+	}
+
+	
+	// Crude initial guess of velocity (assuming constant acceleration)
+	std::cout << "\n\tSolving for crude initial guess of velocity\n";
+	arma::mat A = arma::zeros<arma::mat>(9,9) ;
+	
+	
+	A.submat(0,0,2,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 0].t_start,2) * arma::eye<arma::mat>(3,3);
+	A.submat(3,0,5,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 1].t_start,2) * arma::eye<arma::mat>(3,3);
+	A.submat(6,0,8,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 2].t_start,2) * arma::eye<arma::mat>(3,3);
+
+	A.submat(0,3,2,5) = sequential_rigid_transforms[t0 + 0].t_start * arma::eye<arma::mat>(3,3);
+	A.submat(3,3,5,5) = sequential_rigid_transforms[t0 + 1].t_start * arma::eye<arma::mat>(3,3);
+	A.submat(6,3,8,5) = sequential_rigid_transforms[t0 + 2].t_start * arma::eye<arma::mat>(3,3);
+
+	A.submat(0,6,2,8) = arma::eye<arma::mat>(3,3);
+	A.submat(3,6,5,8) = arma::eye<arma::mat>(3,3);
+	A.submat(6,6,8,8) = arma::eye<arma::mat>(3,3);
+
+	arma::vec R = arma::vec(9);
+	R.subvec(0,2) = IOD_arc_positions[0];
+	R.subvec(3,5) = IOD_arc_positions[1];
+	R.subvec(6,8) = IOD_arc_positions[2];
+
+	arma::vec::fixed<9> coefs = arma::solve(A,R);
+
+	arma::vec::fixed<3> v_start_crude = sequential_rigid_transforms[t0].t_start * coefs.subvec(0,2) + coefs.subvec(3,5);
+
+
+	arma::vec::fixed<6> crude_guess;
+	crude_guess.subvec(0,2) = IOD_arc_positions[0];
+	crude_guess.subvec(3,5) = v_start_crude;
+
+
+	arma::mat M0 = sequential_rigid_transforms[t0 + 0].M;
+	arma::mat M1 = sequential_rigid_transforms[t0 + 1].M;
+
+	arma::mat::fixed<9,3> stacked_M_matrix = arma::zeros<arma::mat>(9,3);
+
+	stacked_M_matrix.rows(0,2) = arma::eye<arma::mat>(3,3);
+	stacked_M_matrix.rows(3,5) = M0.t();
+	stacked_M_matrix.rows(6,8) = M1.t() * M0.t();
+
+	arma::mat::fixed<3,3> P_r0r0 = 100 * arma::eye<arma::mat>(3,3);
+
+	arma::mat::fixed<9,3> partial_coefs_partial_r0 = arma::inv(A) * stacked_M_matrix;
+
+	arma::mat::fixed<3,6> partial_v_partial_coefs;
+	partial_v_partial_coefs.cols(0,2) = sequential_rigid_transforms[t0 + 0].t_start * arma::eye<arma::mat>(3,3);
+	partial_v_partial_coefs.cols(3,5) = arma::eye<arma::mat>(3,3);
+
+
+
+	arma::mat::fixed<9,9> P_coefs = partial_coefs_partial_r0 * P_r0r0 * partial_coefs_partial_r0.t();
+	arma::mat::fixed<3,3> P_v = partial_v_partial_coefs * P_coefs.submat(0,0,5,5) * partial_v_partial_coefs.t();
+
+
+	std::cout << "Initial crude position guess: " << IOD_arc_positions[0].t() << std::endl;
+	std::cout << "Initial crude velocity guess: " << v_start_crude.t() << std::endl;
+	std::cout << "Largest velocity sd: " << std::sqrt(arma::eig_sym(P_v).max()) << std::endl;
+
+
+
+	throw(std::runtime_error("done here"));
+
+
+
 	IODFinder iod_finder(&sequential_rigid_transforms, 
 		&absolute_rigid_transforms,
 		mrps_LN,
-		this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
-		this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
 		this -> filter_arguments -> get_iod_iterations(), 
 		this -> filter_arguments -> get_iod_particles());
-
-
-	arma::vec true_particle(7);
-	true_particle.subvec(0,5) = this -> true_kep_state_t0.get_state();
-	true_particle(6) = this -> true_kep_state_t0.get_mu();
-
-
-	// Crude IO
-
-	// get the center of the collected pcs
-	arma::vec center = this -> get_center_collected_pcs(t0,tf,absolute_rigid_transforms,
-		absolute_true_rigid_transforms);
 	
-	arma::vec r0_crude = - this -> LN_t0.t() * center;
-	arma::vec r1_crude = sequential_rigid_transforms[0].M .t() * (r0_crude + sequential_rigid_transforms[0].X);
-	arma::vec r2_crude = sequential_rigid_transforms[1].M .t() * (r1_crude + sequential_rigid_transforms[1].X);
-
-	// 2nd order interpolation
-	arma::mat A = arma::zeros<arma::mat>(9,9) ;
-	A.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
-	A.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
-	A.submat(6,0,8,2) = arma::eye<arma::mat>(3,3);
-
-	A.submat(3,3,5,5) = sequential_rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
-	A.submat(3,6,5,8) = std::pow(sequential_rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
-
-	A.submat(6,3,8,5) = sequential_rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
-	A.submat(6,6,8,8) = std::pow(sequential_rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
-
-	arma::vec R = arma::vec(9);
-	R.subvec(0,2) = r0_crude;
-	R.subvec(3,5) = r1_crude;
-	R.subvec(6,8) = r2_crude;
-
-	arma::vec coefs = arma::solve(A,R);
-
-	arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
-
-	crude_guess = arma::zeros<arma::vec>(6);
-	crude_guess.subvec(0,2) = r0_crude;
-	crude_guess.subvec(3,5) = v1_crude;
 
 
-	arma::vec dr =  (r1_crude - r0_crude);
-	double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
-	arma::vec v0_crude = dr / dt;
+	// arma::vec l_bounds = {
+	// 	crude_guess(0) - 100,
+	// 	crude_guess(1) - 100,
+	// 	crude_guess(2) - 100,
+	// 	crude_guess(3) - 100 / dt,
+	// 	crude_guess(4) - 100 / dt,
+	// 	crude_guess(5) - 100 / dt,
+	// 	MU_MIN
+	// };
 
+	// arma::vec u_bounds = {
+	// 	crude_guess(0) + 100,
+	// 	crude_guess(1) + 100,
+	// 	crude_guess(2) + 100,
+	// 	crude_guess(3) + 100 / dt,
+	// 	crude_guess(4) + 100 / dt,
+	// 	crude_guess(5) + 100 / dt,
+	// 	MU_MAX
+	// };
 
-	arma::vec l_bounds = {
-		r0_crude(0) - 100,
-		r0_crude(1) - 100,
-		r0_crude(2) - 100,
-		v0_crude(0) - 100 / dt,
-		v0_crude(1) - 100 / dt,
-		v0_crude(2) - 100 / dt,
-		MU_MIN
-	};
+	// arma::vec guess_particle = {
+	// 	crude_guess(0),crude_guess(1),crude_guess(2),
+	// 	crude_guess(3),crude_guess(4),crude_guess(5),
+	// 	NAN
+	// };
 
-	arma::vec u_bounds = {
-		r0_crude(0) + 100,
-		r0_crude(1) + 100,
-		r0_crude(2) + 100,
-		v0_crude(0) + 100 / dt,
-		v0_crude(1) + 100 / dt,
-		v0_crude(2) + 100 / dt,
-		MU_MAX
-	};
+	// iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
 
+	// arma::vec state = iod_finder.get_result();
 
-	arma::vec guess_particle = {
-		r0_crude(0),r0_crude(1),r0_crude(2),
-		v0_crude(0),v0_crude(1),v0_crude(2),
-		NAN
-	};
-
-	iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
-
-
-
-	state = iod_finder.get_result();
-
-	iod_finder.run_batch(state,cov);
+	// arma::mat cov;
+	// iod_finder.run_batch(state,cov,R_pcs);
 
 
 }
@@ -769,7 +954,9 @@ void ShapeBuilder::run_IOD_finder(arma::vec & state,
 
 
 
-void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & sequential_rigid_transforms,
+
+void ShapeBuilder::assemble_rigid_transforms_IOD(
+	std::vector<RigidTransform> & sequential_rigid_transforms,
 	std::vector<RigidTransform> & absolute_rigid_transforms,
 	std::vector<RigidTransform> & absolute_true_rigid_transforms,
 	const arma::vec & times, 
@@ -779,60 +966,128 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(std::vector<RigidTransform> & s
 	const std::map<int,arma::vec> & X_pcs,
 	const std::map<int,arma::mat> & M_pcs) const{
 
-	RigidTransform rt;
-	rt.t_k = times(0);
-	rt.X = X_pcs.at(0);
-	rt.M = M_pcs.at(0);
+	throw("not implemented");
 
-	absolute_rigid_transforms.push_back(rt);
-	absolute_true_rigid_transforms.push_back(rt);
+	// RigidTransform rt;
+	// rt.t_k = times(0);
+	// rt.X = X_pcs.at(0);
+	// rt.M = M_pcs.at(0);
 
-
-	std::map<int,arma::vec> X_pcs_noisy;
-	std::map<int,arma::mat> M_pcs_noisy;
+	// absolute_rigid_transforms.push_back(rt);
+	// absolute_true_rigid_transforms.push_back(rt);
 
 
-	X_pcs_noisy[0] = arma::zeros<arma::vec>(3);
-	M_pcs_noisy[0] = arma::eye<arma::mat>(3,3);
+	// std::map<int,arma::vec> X_pcs_noisy;
+	// std::map<int,arma::mat> M_pcs_noisy;
 
-	for (int k = 1; k < X_pcs.size(); ++k){
-		X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
-		M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
-	}
 
-	for (int k = t0_index ; k <=  tf_index; ++ k){
+	// X_pcs_noisy[0] = arma::zeros<arma::vec>(3);
+	// M_pcs_noisy[0] = arma::eye<arma::mat>(3,3);
+
+	// for (int k = 1; k < X_pcs.size(); ++k){
+	// 	X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
+	// 	M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
+	// }
+
+	// for (int k = t0_index ; k <=  tf_index; ++ k){
+
+	// 	if (k != 0){
+
+	// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
+	// // from t_k to t_(k-1)
+	// 		arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * M_pcs_noisy.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
+	// 		arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * (X_pcs_noisy.at(k) - X_pcs_noisy.at(k - 1));
+
+
+
+	// 		RigidTransform rigid_transform;
+	// 		rigid_transform.M = M_p_k;
+	// 		rigid_transform.X = X_p_k;
+	// 		rigid_transform.t_k = times(k - t0_index);
+	// 		sequential_rigid_transforms.push_back(rigid_transform);
+
+	// 		RigidTransform rt;
+	// 		rt.t_k = times(k - t0_index);
+	// 		rt.X = X_pcs_noisy[k];
+	// 		rt.M = M_pcs_noisy[k];
+
+	// 		absolute_rigid_transforms.push_back(rt);
+
+	// 		RigidTransform rt_true;
+	// 		rt_true.t_k = times(k - t0_index);
+	// 		rt_true.X = X_pcs.at(k);
+	// 		rt_true.M = M_pcs.at(k);
+
+	// 		absolute_true_rigid_transforms.push_back(rt_true);
+
+
+	// 	}
+	// }
+}
+
+
+void ShapeBuilder::assemble_rigid_transforms_IOD(
+	std::vector<RigidTransform> & sequential_rigid_transforms,
+	std::vector<RigidTransform> & absolute_rigid_transforms,
+	const std::vector<int> & obs_indices,
+	const arma::vec & times, 
+	const std::vector<arma::vec>  & mrps_LN,
+	const std::map<int,arma::vec> & X_pcs,
+	const std::map<int,arma::mat> & M_pcs) const{
+
+
+	for (auto k : obs_indices){
 
 		if (k != 0){
 
 	// Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
 	// from t_k to t_(k-1)
-			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * M_pcs_noisy.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
-			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * (X_pcs_noisy.at(k) - X_pcs_noisy.at(k - 1));
-
-
+			arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * M_pcs.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
+			arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs.at(k - 1).t() * (X_pcs.at(k) - X_pcs.at(k - 1));
 
 			RigidTransform rigid_transform;
 			rigid_transform.M = M_p_k;
 			rigid_transform.X = X_p_k;
-			rigid_transform.t_k = times(k - t0_index);
+			rigid_transform.t_start = times(k-1);
+			rigid_transform.t_end = times(k);
+			rigid_transform.index_start = k - 1;
+			rigid_transform.index_end = k;
+
+
 			sequential_rigid_transforms.push_back(rigid_transform);
 
 			RigidTransform rt;
-			rt.t_k = times(k - t0_index);
-			rt.X = X_pcs_noisy[k];
-			rt.M = M_pcs_noisy[k];
+
+			rt.t_end = times(k);
+			rt.t_start = times(0);
+
+			rt.index_end = k;
+			rt.index_start = 0;	
+
+			rt.X = X_pcs.at(k);
+			rt.M = M_pcs.at(k);
 
 			absolute_rigid_transforms.push_back(rt);
 
-			RigidTransform rt_true;
-			rt_true.t_k = times(k - t0_index);
-			rt_true.X = X_pcs.at(k);
-			rt_true.M = M_pcs.at(k);
+		}
+		else{
 
-			absolute_true_rigid_transforms.push_back(rt_true);
+			RigidTransform rt;
+			rt.t_start = times(0);
+			rt.t_end= times(0);
 
+			rt.index_start = 0;
+			rt.index_end= 0;
+
+			rt.X = X_pcs.at(0);
+			rt.M = M_pcs.at(0);
+
+			absolute_rigid_transforms.push_back(rt);
 
 		}
+
+
+
 	}
 }
 
@@ -1109,12 +1364,41 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 	arma::vec center = {0,0,0};
 	int N = last_pc_index - first_pc_index + 1;
 	arma::vec pc_center;
-	for (int i = 0; i < N; ++i){	
+	for (int i = first_pc_index; i < last_pc_index + 1; ++i){		
 
 		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
 
 		center += 1./N * (absolute_rigid_transforms.at(i).M * (
 			absolute_true_rigid_transforms.at(i).M.t() * (pc_center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
+	}
+	return center;
+}
+
+
+arma::vec ShapeBuilder::get_center_collected_pcs(
+	int first_pc_index,
+	int last_pc_index) const{
+
+	arma::vec center = {0,0,0};
+	int N = last_pc_index - first_pc_index + 1;
+	arma::vec pc_center;
+	
+	for (int i = first_pc_index; i < last_pc_index + 1; ++i){	
+
+		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
+
+		center += 1./N * pc_center ; 
+	}
+	return center;
+}
+
+
+arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
+
+	arma::vec::fixed<3> center = {0,0,0};
+	int N = this -> all_registered_pc.size();
+	for (int i = 0; i < N; ++i){	
+		center += 1./N * EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]) ; 
 	}
 	return center;
 }

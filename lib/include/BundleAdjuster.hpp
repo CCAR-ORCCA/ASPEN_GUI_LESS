@@ -6,6 +6,9 @@
 #include <Eigen/Sparse>
 #include <Eigen/Jacobi>
 #include <Eigen/Dense>
+#include <Adjacency_List.hpp>
+
+
 
 
 
@@ -34,6 +37,13 @@ public:
 		std::string dir);
 
 
+	BundleAdjuster(
+		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_,
+		const arma::mat & LN_t0,
+		const arma::vec & x_t0,
+		std::string dir);
+
+
 	void run(std::map<int,arma::mat> & M_pcs,
 		std::map<int,arma::vec> & X_pcs,
 		std::vector<arma::mat> & BN_measured,
@@ -54,6 +64,9 @@ public:
 
 	void set_use_true_pairs(bool use_true_pairs);
 
+
+	void update_overlap_graph();
+
 protected:
 	
 
@@ -61,7 +74,8 @@ protected:
 	std::vector< PointCloudPair > point_cloud_pairs;
 	int N_iter;
 
-	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index) const;
+	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index,
+		bool prune_overlaps = true) const;
 	void save_connectivity() const;
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair);
@@ -74,8 +88,6 @@ protected:
 		const PointCloudPair & point_cloud_pair);
 
 	void apply_deviation(const EigVec & deviation);
-
-	void update_flyover_map(arma::mat & longitude_latitude);
 
 	void solve_bundle_adjustment();
 
@@ -99,6 +111,10 @@ protected:
 	int closure_index = 0;
 	int h;
 	std::string dir;
+
+	Adjacency_List<int,double> graph;
+
+
 };
 
 

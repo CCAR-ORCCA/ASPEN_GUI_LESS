@@ -8,10 +8,12 @@ struct RigidTransform{
 
 	arma::mat::fixed<3,3> M;
 	arma::vec::fixed<3> X;
-	double t_k;
+	int index_start;
+	int index_end;
+	double t_start;
+	double t_end;
 
 };
-
 
 
 class IODFinder{
@@ -27,6 +29,12 @@ public:
 		int N_iter, 
 		int particles);
 
+	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
+		std::vector<RigidTransform> * absolute_rigid_transforms,  
+		std::vector<arma::vec> mrps_LN,
+		int N_iter, 
+		int particles);
+
 	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 	static double cost_function_cartesian(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 
@@ -37,9 +45,9 @@ public:
 	arma::vec get_result() const;
 
 
-
-	void run_batch(arma::vec & state,
-		arma::mat & cov);
+	void run_batch(arma::vec & state,arma::mat & cov);
+	void run_batch(arma::vec & state,arma::mat & cov,
+		const std::map<int, arma::mat::fixed<6,6> > & R_pcs);
 
 	static void debug_rigid_transforms();
 
@@ -60,10 +68,6 @@ public:
 	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
 
 
-	static void seq_transform_from_epoch_transform(int k, RigidTransform & seq_transform_k,
-		const RigidTransform & epoch_transform_k,
-		const RigidTransform & epoch_transform_km1, 
-		const std::vector<arma::vec> & mrps_LN);
 
 	void compute_W(const std::vector<arma::vec::fixed<3>> & positions);
 

@@ -70,7 +70,7 @@
 
 #define T0 0
 
-// CHEATS (true: cheat is disabled)
+// CHEATS 
 #define USE_BA true // Whether or not the bundle adjustment should be used
 #define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
 #define USE_TRUE_RIGID_TRANSFORMS false // Whether or not the true rigid transforms should be used
