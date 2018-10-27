@@ -192,10 +192,10 @@ public:
 	of the control points
 	@return 3x3 covariance
 	*/
-	arma::mat covariance_surface_point(
+	arma::mat::fixed<3,3> covariance_surface_point(
 		const double u,
 		const double v,
-		const arma::vec & dir);
+		const arma::vec & dir) const;
 
 	/**
 	Returns the 3x3 covariance matrix
@@ -209,11 +209,11 @@ public:
 	of the control points
 	@return 3x3 covariance
 	*/
-	arma::mat covariance_surface_point(
+	arma::mat::fixed<3,3> covariance_surface_point(
 		const double u,
 		const double v,
 		const arma::vec & dir,
-		const arma::mat & P_X);
+		const arma::mat & P_X) const;
 
 
 

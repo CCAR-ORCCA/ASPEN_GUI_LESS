@@ -15,6 +15,10 @@ template <class PointType>
 class ShapeModelTri;
 
 
+template <class PointType> 
+class ShapeModelBezier;
+
+
 class Args {
 
 public:
@@ -25,7 +29,7 @@ public:
 
 
 
-	void set_estimated_shape_model(ShapeModel<ControlPoint> * shape_model) {
+	void set_estimated_shape_model(ShapeModelBezier<ControlPoint> * shape_model) {
 		this -> estimated_shape_model = shape_model;
 	}
 
@@ -46,7 +50,7 @@ public:
 		return this -> true_shape_model;
 	}
 
-	ShapeModel<ControlPoint> * get_estimated_shape_model() const {
+	ShapeModelBezier<ControlPoint> * get_estimated_shape_model() const {
 		return this -> estimated_shape_model;
 	}
 
@@ -401,7 +405,7 @@ protected:
 	bool use_consistency_test = false;
 
 	FrameGraph * frame_graph;
-	ShapeModel<ControlPoint> * estimated_shape_model;
+	ShapeModelBezier<ControlPoint> * estimated_shape_model;
 	ShapeModelTri<ControlPoint> * true_shape_model;
 
 	DynamicAnalyses * dyn_analyses;

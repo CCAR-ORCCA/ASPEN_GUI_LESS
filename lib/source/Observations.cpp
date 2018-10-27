@@ -1,6 +1,7 @@
 #include "Observations.hpp"
 #include "ShapeModelBezier.hpp"
 #include "IOFlags.hpp"
+#include <Ray.hpp>
 
 // Observations: need range measurements between
 // spacecraft and bezier surface
@@ -75,7 +76,7 @@ arma::vec Observations::obs_lidar_range_computed(
 	arma::vec::fixed<3> e_h = arma::normalise(arma::cross(e_r,-args.get_true_vel()));
 	arma::vec::fixed<3> e_t = arma::cross(e_h,e_r);
 
-	arma::mat::fixed<3,3> dcm_LN(3,3);
+	arma::mat::fixed<3,3> dcm_LN;
 	dcm_LN.row(0) = e_r.t();
 	dcm_LN.row(1) = e_t.t();
 	dcm_LN.row(2) = e_h.t();
@@ -121,8 +122,6 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 
-	auto P_cm = static_cast<ShapeModelBezier * >(args.get_estimated_shape_model()) -> get_cm_cov();
-
 	args.get_sigma_consider_vector_ptr() -> clear();
 	args.get_biases_consider_vector_ptr() -> clear();
 	args.get_sigmas_range_vector_ptr() -> clear();
@@ -131,34 +130,27 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
-		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
+		if (focal_plane -> at(i) -> get_hit_element() != -1){
 
-			arma::vec u = *focal_plane -> at(i) -> get_direction_target_frame();
-			arma::vec n;
+			arma::vec::fixed<3> u = focal_plane -> at(i) -> get_direction_target_frame();
+			arma::vec::fixed<3> n;
 
-			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
+			const Bezier & bezier = args.get_estimated_shape_model() -> get_element(focal_plane -> at(i) -> get_hit_element());
 
-			if (bezier == nullptr){
-				n = focal_plane -> at(i) -> get_hit_element() -> get_normal_coordinates();
-			}			
-			else{
+			
+			double u_t, v_t;
 
-				double u_t, v_t;
+			focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 
-				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
-				
-				n = bezier -> get_normal_coordinates(u_t,v_t);
+			n = bezier.get_normal_coordinates(u_t,v_t);
 
-				auto P = bezier -> covariance_surface_point(u_t,v_t,u);
+			auto P = bezier.covariance_surface_point(u_t,v_t,u);
 
-				double sigma_range = std::sqrt(arma::dot(u,P * u));
-				double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
+			double sigma_range = std::sqrt(arma::dot(u,P * u));
 
-				args.get_sigma_consider_vector_ptr() -> push_back(sigma_cm);
-				args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
-				args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
+			args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 
-			}
+			
 
 			H.row(i) = - frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N").t() / arma::dot(n,u);
 		}
@@ -181,10 +173,8 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),6);
-	arma::vec u,n,n_inertial;
+	arma::vec::fixed<3> u,n,n_inertial;
 	arma::mat P(3,3);
-
-	auto P_cm = static_cast<ShapeModelBezier * >(args.get_estimated_shape_model()) -> get_cm_cov();
 
 	args.get_sigma_consider_vector_ptr() -> clear();
 	args.get_biases_consider_vector_ptr() -> clear();
@@ -194,34 +184,29 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
-		if (focal_plane -> at(i) -> get_hit_element() != nullptr){
+		if (focal_plane -> at(i) -> get_hit_element() != -1){
 
-			u = *focal_plane -> at(i) -> get_direction_target_frame();
+			u = focal_plane -> at(i) -> get_direction_target_frame();
 
-			Bezier * bezier = static_cast<Bezier *>(focal_plane -> at(i) -> get_hit_element());
-
-			if (bezier == nullptr){
-				n = focal_plane -> at(i) -> get_hit_element() -> get_normal_coordinates();
-			}			
-			else{
-
-				double u_t, v_t;
-
-				focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
+			const Bezier & bezier = args.get_estimated_shape_model() -> get_element(focal_plane -> at(i) -> get_hit_element());
 			
+			double u_t, v_t;
 
-				n = bezier -> get_normal_coordinates(u_t,v_t);
+			focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
 
-				P = bezier -> covariance_surface_point(u_t,v_t,u);
 
-				double sigma_range = std::sqrt(arma::dot(u,P * u));
+			n = bezier.get_normal_coordinates(u_t,v_t);
+
+			P = bezier.covariance_surface_point(u_t,v_t,u);
+
+			double sigma_range = std::sqrt(arma::dot(u,P * u));
 				// double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
 
-				args.get_sigma_consider_vector_ptr() -> push_back(sigma_range);
+			args.get_sigma_consider_vector_ptr() -> push_back(sigma_range);
 				// args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
 				// args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 
-			}
+			
 
 			n_inertial = frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
 			

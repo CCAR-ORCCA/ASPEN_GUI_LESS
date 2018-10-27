@@ -856,11 +856,11 @@ double Bezier::compute_log_likelihood_block_diagonal(arma::vec L,
 }
 
 
-arma::mat Bezier::covariance_surface_point(
+arma::mat::fixed<3,3> Bezier::covariance_surface_point(
 	const double u,
 	const double v,
 	const arma::vec & dir,
-	const arma::mat & P_X ){
+	const arma::mat & P_X ) const{
 
 	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
 	arma::mat AAA;
@@ -894,10 +894,10 @@ arma::mat Bezier::covariance_surface_point(
 }
 
 
-arma::mat Bezier::covariance_surface_point(
+arma::mat::fixed<3,3> Bezier::covariance_surface_point(
 	const double u,
 	const double v,
-	const arma::vec & dir){
+	const arma::vec & dir) const{
 
 	arma::mat A = RBK::tilde(dir) * partial_bezier(u,v);
 	arma::mat AAA;

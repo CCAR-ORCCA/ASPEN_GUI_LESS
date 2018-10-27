@@ -134,7 +134,7 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
-	# source/BatchFilter.cpp
+	source/BatchFilter.cpp
 	source/BBox.cpp
 	source/BSpline.cpp
 	source/Bezier.cpp
@@ -148,7 +148,7 @@ add_library(${LIB_NAME} SHARED
 	source/EstimationNormals.cpp
 	source/EstimationPFH.cpp
 	source/EventFunction.cpp
-	# source/ExtendedKalmanFilter.cpp
+	source/ExtendedKalmanFilter.cpp
 	source/Facet.cpp
 	source/FeatureMatching.cpp
 	source/Filter.cpp
@@ -161,12 +161,11 @@ add_library(${LIB_NAME} SHARED
 	source/KDTree.cpp
 	source/KDTreeShape.cpp
 	source/Lidar.cpp
-	# source/NavigationFilter.cpp
-	# source/Observations.cpp
+	source/NavigationFilter.cpp
+	source/Observations.cpp
 	source/PointCloud.cpp
 	source/PointDescriptor.cpp
 	source/PointCloudIO.cpp
-	# source/PC.cpp
 	source/PFH.cpp
 	source/PointNormal.cpp
 	source/Psopt.cpp

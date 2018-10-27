@@ -249,7 +249,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "True position : " << X_S.subvec(0,2).t();
 					std::cout << "True velocity : " << X_S.subvec(3,5).t();
-					std::cout << "True cm shift at t0 : " << this -> x_t0.t();
+					std::cout << "True position at t0 : " << (this -> x_t0).t() << std::endl;
 
 					this -> run_IOD_finder(times, 0 ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs);
 
@@ -812,9 +812,9 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// Get the center of the collected pcs
 	// and use this as a crude guess for the very first position vector
 	// This vector must obviously be expressed in the N frame
-	arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
+	// arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
 
-
+	arma::vec::fixed<3> r_start_crude = {-7.5609e+02 , -2.2611e+01,   7.4242e+02};
 
 	std::cout << "r_start_crude before mapping forward: " << r_start_crude.t() << std::endl;
 
@@ -839,6 +839,13 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		r_start_crude = sequential_rigid_transforms[t].M .t() * (r_start_crude + sequential_rigid_transforms[t].X);
 		IOD_arc_positions.push_back(r_start_crude);
 	}
+
+	arma::mat crude_positions(3,IOD_arc_positions.size());
+	for (int i = 0; i < IOD_arc_positions.size(); ++i){
+		crude_positions.col(i) = IOD_arc_positions[i];
+	}
+
+	crude_positions.save("crude_positions.txt",arma::raw_ascii);
 
 	
 	// Crude initial guess of velocity (assuming constant acceleration)
