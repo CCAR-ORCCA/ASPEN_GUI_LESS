@@ -28,14 +28,19 @@ all_data = [
 "LATITUDE_SPIN" : 0.5, 
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : False,
+"USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
 "MRP_0" : [0,0,0],
 "MIN_TRIANGLE_ANGLE" : 30,
 "MAX_TRIANGLE_SIZE" : 5,
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
+"LOS_NOISE_SD_BASELINE" : 5e-1,
+"USE_BA" : True,
+"USE_ICP" : True,
+"USE_TRUE_RIGID_TRANSFORMS" : False,
 "dir" : base_location + "output/test_0"}
+
 ]
 
 for data in all_data:

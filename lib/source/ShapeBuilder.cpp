@@ -53,7 +53,6 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,const std::string dir) {
 
-
 	std::cout << "Running the filter" << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
@@ -71,9 +70,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::map<int,arma::mat> M_pcs;
 	std::map<int,arma::mat::fixed<6,6> > R_pcs;
 
-
 	arma::vec iod_guess;
-
 
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
@@ -83,7 +80,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec X_pc = arma::zeros<arma::vec>(3);
 
 
-	BundleAdjuster ba_test(&this -> all_registered_pc, this -> LN_t0,this -> x_t0,dir);
+	BundleAdjuster ba_test(&this -> all_registered_pc,
+		this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
+		5,
+		this -> LN_t0,
+		this -> x_t0,
+		dir);
 
 
 	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
@@ -98,7 +100,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
-
 		// Setting the Lidar frame to its new state
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
 		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
@@ -135,31 +136,29 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// in the bundle adjustment
 			
 			
-			IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
-			icp_pc_prealign.set_minimum_h(4);
-			icp_pc_prealign.register_pc(M_pc,X_pc);
-
-
-			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
-
-			icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
-			
+			if(this -> filter_arguments -> get_use_icp()){
+				IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
+				icp_pc_prealign.set_minimum_h(4);
+				icp_pc_prealign.register_pc(M_pc,X_pc);
+				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
+				icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
-			M_pc = icp_pc.get_dcm();
-			X_pc = icp_pc.get_x();
-			R_pcs[time_index] = icp_pc.get_R();
-
+				M_pc = icp_pc.get_dcm();
+				X_pc = icp_pc.get_x();
+				R_pcs[time_index] = icp_pc.get_R();
+			}
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
-
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
 				M_pc = this -> LB_t0 * dcm_LB.t();
 
 				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
+				R_pcs[time_index] = arma::eye<arma::mat>(6,6);
+
 			}
 				/****************************************************************************/
 				/****************************************************************************/
@@ -184,8 +183,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(X_pcs.size() == BN_true.size());
 
 
+			std::cout << "Must enable update_overlap_graph back\n";
 			ba_test.update_overlap_graph();
-
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -211,41 +210,30 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				else{
 
-					std::cout << " -- Applying BA to successive point clouds\n";
+					std::cout << "\n-- Applying BA to successive point clouds\n";
 
 					this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
+					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
+						
+						ba_test.run(
+							M_pcs,
+							X_pcs,
+							BN_measured,
+							mrps_LN,
+							true,
+							previous_closure_index);
+					}
 
-					BundleAdjuster bundle_adjuster(
-						0, 
-						time_index,
-						&this -> all_registered_pc, 
-						this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-						5,
-						this -> LN_t0,
-						this -> x_t0,
-						dir); 
-
-
-					bundle_adjuster.run(
-						M_pcs,
-						X_pcs,
-						BN_measured,
-						mrps_LN,
-						true,
-						previous_closure_index);
-
-					std::cout << " -- Saving attitude...\n";
+					std::cout << "\n-- Saving attitude...\n";
 
 					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
-					std::cout << " -- Estimating coverage...\n";
+					std::cout << "\n-- Estimating coverage...\n";
 
 					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
 
-					std::cout << " -- Moving on...\n";
-
-
+					std::cout << "\n-- Moving on...\n";
 
 					std::cout << "True position : " << X_S.subvec(0,2).t();
 					std::cout << "True velocity : " << X_S.subvec(3,5).t();
@@ -273,18 +261,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Applying BA to whole point cloud batch\n";
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
-				BundleAdjuster bundle_adjuster(
-					0, 
-					time_index,
-					&this -> all_registered_pc, 
-					this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-					5,
-					this -> LN_t0,
-					this -> x_t0,
-					dir); 
+				
 
-
-				bundle_adjuster.run(
+				ba_test.run(
 					M_pcs,
 					X_pcs,
 					BN_measured,
@@ -794,7 +773,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		obs_indices.push_back(i);
 	}
 
-	
 	this -> assemble_rigid_transforms_IOD(
 		sequential_rigid_transforms,
 		absolute_rigid_transforms,
@@ -804,19 +782,15 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		X_pcs,
 		M_pcs);
 
-
-
 	// Crude IO
 	std::cout << "\n\tGetting center of collected point clouds\n";
 
 	// Get the center of the collected pcs
 	// and use this as a crude guess for the very first position vector
 	// This vector must obviously be expressed in the N frame
-	// arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
+	arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
 
-	arma::vec::fixed<3> r_start_crude = {-7.5609e+02 , -2.2611e+01,   7.4242e+02};
-
-	std::cout << "r_start_crude before mapping forward: " << r_start_crude.t() << std::endl;
+	std::cout << "r_0 before mapping forward: " << r_start_crude.t() << std::endl;
 
 	// This position is mapped forward in time to the first start time in the IOD arc
 	// This start time is t0
@@ -832,6 +806,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// or from the keplerian propagation of r_start_crude? 
 	// Well, I do not have a velocity crude guess at t_start, 
 	// so I have no choice but to use the rigid transforms
+
 	std::vector<arma::vec::fixed<3> > IOD_arc_positions;
 	IOD_arc_positions.push_back(r_start_crude);
 	
@@ -847,78 +822,59 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	crude_positions.save("crude_positions.txt",arma::raw_ascii);
 
+	// A first PSO run refines the velocity and standard gravitational parameter at the start time of 
+	// the observation arc
+
+	IODFinder iod_finder(&sequential_rigid_transforms, &absolute_rigid_transforms, mrps_LN,
+		this -> filter_arguments -> get_iod_iterations(),this -> filter_arguments -> get_iod_particles());
+
+
+	arma::vec guess = {
+		IOD_arc_positions.front()(0),
+		IOD_arc_positions.front()(1),
+		IOD_arc_positions.front()(2),
+		0,
+		0,
+		0,
+		2
+	};
+
+	arma::vec lower_bounds = {
+		guess(0) - 10,
+		guess(1) - 10,
+		guess(2) - 10,
+		-1e-1,
+		-1e-1,
+		-1e-1,
+		1
+	};
+
+	arma::vec upper_bounds = {
+		guess(0) + 10,
+		guess(1) + 10,
+		guess(2) + 10,
+		1e-1,
+		1e-1,
+		1e-1,
+		3
+	};
 	
-	// Crude initial guess of velocity (assuming constant acceleration)
-	std::cout << "\n\tSolving for crude initial guess of velocity\n";
-	arma::mat A = arma::zeros<arma::mat>(9,9) ;
-	
-	
-	A.submat(0,0,2,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 0].t_start,2) * arma::eye<arma::mat>(3,3);
-	A.submat(3,0,5,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 1].t_start,2) * arma::eye<arma::mat>(3,3);
-	A.submat(6,0,8,2) = 0.5 * std::pow(sequential_rigid_transforms[t0 + 2].t_start,2) * arma::eye<arma::mat>(3,3);
 
-	A.submat(0,3,2,5) = sequential_rigid_transforms[t0 + 0].t_start * arma::eye<arma::mat>(3,3);
-	A.submat(3,3,5,5) = sequential_rigid_transforms[t0 + 1].t_start * arma::eye<arma::mat>(3,3);
-	A.submat(6,3,8,5) = sequential_rigid_transforms[t0 + 2].t_start * arma::eye<arma::mat>(3,3);
-
-	A.submat(0,6,2,8) = arma::eye<arma::mat>(3,3);
-	A.submat(3,6,5,8) = arma::eye<arma::mat>(3,3);
-	A.submat(6,6,8,8) = arma::eye<arma::mat>(3,3);
-
-	arma::vec R = arma::vec(9);
-	R.subvec(0,2) = IOD_arc_positions[0];
-	R.subvec(3,5) = IOD_arc_positions[1];
-	R.subvec(6,8) = IOD_arc_positions[2];
-
-	arma::vec::fixed<9> coefs = arma::solve(A,R);
-
-	arma::vec::fixed<3> v_start_crude = sequential_rigid_transforms[t0].t_start * coefs.subvec(0,2) + coefs.subvec(3,5);
-
-
-	arma::vec::fixed<6> crude_guess;
-	crude_guess.subvec(0,2) = IOD_arc_positions[0];
-	crude_guess.subvec(3,5) = v_start_crude;
-
-
-	arma::mat M0 = sequential_rigid_transforms[t0 + 0].M;
-	arma::mat M1 = sequential_rigid_transforms[t0 + 1].M;
-
-	arma::mat::fixed<9,3> stacked_M_matrix = arma::zeros<arma::mat>(9,3);
-
-	stacked_M_matrix.rows(0,2) = arma::eye<arma::mat>(3,3);
-	stacked_M_matrix.rows(3,5) = M0.t();
-	stacked_M_matrix.rows(6,8) = M1.t() * M0.t();
-
-	arma::mat::fixed<3,3> P_r0r0 = 100 * arma::eye<arma::mat>(3,3);
-
-	arma::mat::fixed<9,3> partial_coefs_partial_r0 = arma::inv(A) * stacked_M_matrix;
-
-	arma::mat::fixed<3,6> partial_v_partial_coefs;
-	partial_v_partial_coefs.cols(0,2) = sequential_rigid_transforms[t0 + 0].t_start * arma::eye<arma::mat>(3,3);
-	partial_v_partial_coefs.cols(3,5) = arma::eye<arma::mat>(3,3);
-
-
-
-	arma::mat::fixed<9,9> P_coefs = partial_coefs_partial_r0 * P_r0r0 * partial_coefs_partial_r0.t();
-	arma::mat::fixed<3,3> P_v = partial_v_partial_coefs * P_coefs.submat(0,0,5,5) * partial_v_partial_coefs.t();
-
-
-	std::cout << "Initial crude position guess: " << IOD_arc_positions[0].t() << std::endl;
-	std::cout << "Initial crude velocity guess: " << v_start_crude.t() << std::endl;
-	std::cout << "Largest velocity sd: " << std::sqrt(arma::eig_sym(P_v).max()) << std::endl;
-
-
+	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
+	arma::vec state = iod_finder.get_result();
+	arma::mat cov;
+	iod_finder.run_batch(state,cov,R_pcs);
 
 	throw(std::runtime_error("done here"));
 
 
 
-	IODFinder iod_finder(&sequential_rigid_transforms, 
-		&absolute_rigid_transforms,
-		mrps_LN,
-		this -> filter_arguments -> get_iod_iterations(), 
-		this -> filter_arguments -> get_iod_particles());
-	
+	// IODFinder iod_finder(&sequential_rigid_transforms, 
+	// 	&absolute_rigid_transforms,
+	// 	mrps_LN,
+	// 	this -> filter_arguments -> get_iod_iterations(), 
+	// 	this -> filter_arguments -> get_iod_particles());
+
 
 
 	// arma::vec l_bounds = {
@@ -1110,7 +1066,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		this -> destination_pc = std::make_shared<PointCloud<PointNormal>>(pc);
 		this -> destination_pc -> build_kdtree ();
 		arma::vec::fixed<3> los = {1,0,0};
-		
+
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> destination_pc,*this -> destination_pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
@@ -1389,7 +1345,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 	arma::vec center = {0,0,0};
 	int N = last_pc_index - first_pc_index + 1;
 	arma::vec pc_center;
-	
+
 	for (int i = first_pc_index; i < last_pc_index + 1; ++i){	
 
 		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
@@ -1416,18 +1372,18 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	std::string dir,PointCloud<PointNormal> * pc) const{
 
-	std::cout << " -- Fetching points ...\n";
+	std::cout << "\n-- Fetching points ...\n";
 
 	// A PC is formed with all the registered point clouds
 	PointCloud<PointNormal> global_pc;
 
-	for (int i = 0; i <= previous_closure_index; ++i){
+	for (int i = 0; i < this -> all_registered_pc.size(); ++i){
 		for (int j = 0; j <  this -> all_registered_pc[i] -> size(); ++j){
 			global_pc.push_back( this -> all_registered_pc[i] -> get_point(j));
 		}
 	}
 
-	std::cout << "-- Number of points in global pc: " << global_pc.size() << std::endl;
+	std::cout << "\n-- Number of points in global pc: " << global_pc.size() << std::endl;
 
 	// The KD tree of this pc is built
 	global_pc.build_kdtree();
@@ -1471,9 +1427,9 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	}
 
 	// The coverage criterion is evaluated
-	std::cout << "-- Stddev in sampling surface : " << arma::stddev(S) << std::endl;
-	std::cout << "-- Max sampling surface : " << arma::max(S) << std::endl;
-	std::cout << "-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
+	std::cout << "\n-- Stddev in sampling surface : " << arma::stddev(S) << std::endl;
+	std::cout << "\n-- Max sampling surface : " << arma::max(S) << std::endl;
+	std::cout << "\n-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
 
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
@@ -1496,7 +1452,7 @@ void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
 	std::string shape_cgal_path = dir + "/shape_cgal.obj";
 
 	double percentage_point_kept = 1;
-	
+
 	PointCloud<PointNormal> pc_downsampled;
 
 	std::vector<int> indices;

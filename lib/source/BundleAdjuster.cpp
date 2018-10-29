@@ -11,8 +11,6 @@
 
 
 BundleAdjuster::BundleAdjuster(
-	int t0, 
-	int tf,
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 	int N_iter,
 	int h,
@@ -213,55 +211,78 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 
 	std::set<std::set<int> > pairs;
 
-	int ground_index = 0; 
+	std::set<int> vertices = this -> graph. get_vertices();
 
-	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
-
-		std::cout << "Finding overlaps with " << i << std::endl;
-		auto overlap_with_ground = this -> find_overlap_with_pc(i,static_cast<int>(this -> all_registered_pc -> size() - 1),i);
-
-		for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
-			std::cout << "\tUsing " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
-			std::set<int> pair = {i,it -> second};
-			pairs.insert(pair);
-			if (i == 0){
-				previous_closure_index = std::max(previous_closure_index,it -> second);
+	// Need to pull the point cloud pairs from the bundle adjustment graph
+	for (auto vertex : vertices){
+		std::set<int> neighbors = this -> graph. getneighbors(vertex);
+		for (auto neighbor : neighbors){
+			std::set<int> pair = {vertex,neighbor};
+			if (pair.size() == 2){
+				pairs.insert(pair);
 			}
 		}
 	}
 
-	
 
-	this -> closure_index = previous_closure_index;
-
-
-	std::cout << "Last closure index : " << previous_closure_index << std::endl;
-
-	// The successive measurements are added
-	for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
-		std::set<int> pair = {i,i+1};
-		pairs.insert(pair);
-	}
-
-
-	#if BUNDLE_ADJUSTER_DEBUG
-	std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
-	std::cout << " -- Storing pairs" << std::endl;
-	#endif
-
-	for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
-
-		std::set<int> pair_set = *pair_iter;
-
+	for (auto pair_set : pairs){
+		BundleAdjuster::PointCloudPair pair;
 		int S_k = *(pair_set.begin());
 		int D_k = *(--pair_set.end());
-
-		BundleAdjuster::PointCloudPair pair;
 		pair.S_k = S_k;
 		pair.D_k = D_k;
 		this -> point_cloud_pairs.push_back(pair);
-
 	}
+
+	// int ground_index = 0; 
+
+	// for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
+
+	// 	std::cout << "Finding overlaps with " << i << std::endl;
+	// 	auto overlap_with_ground = this -> find_overlap_with_pc(i,static_cast<int>(this -> all_registered_pc -> size() - 1),i);
+
+	// 	for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
+	// 		std::cout << "\tUsing " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
+	// 		std::set<int> pair = {i,it -> second};
+	// 		pairs.insert(pair);
+	// 		if (i == 0){
+	// 			previous_closure_index = std::max(previous_closure_index,it -> second);
+	// 		}
+	// 	}
+	// }
+
+	
+
+	// this -> closure_index = previous_closure_index;
+
+
+	// std::cout << "Last closure index : " << previous_closure_index << std::endl;
+
+	// // The successive measurements are added
+	// for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
+	// 	std::set<int> pair = {i,i+1};
+	// 	pairs.insert(pair);
+	// }
+
+
+	// #if BUNDLE_ADJUSTER_DEBUG
+	// std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
+	// std::cout << " -- Storing pairs" << std::endl;
+	// #endif
+
+	// for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
+
+	// 	std::set<int> pair_set = *pair_iter;
+
+	// 	int S_k = *(pair_set.begin());
+	// 	int D_k = *(--pair_set.end());
+
+	// 	BundleAdjuster::PointCloudPair pair;
+	// 	pair.S_k = S_k;
+	// 	pair.D_k = D_k;
+	// 	this -> point_cloud_pairs.push_back(pair);
+
+	// }
 
 
 }

@@ -4,6 +4,7 @@
 #include "Observer.hpp"
 #include "Dynamics.hpp"
 #include <boost/numeric/odeint.hpp>
+#include <vector>
 
 NavigationFilter::NavigationFilter(const Args & args) : ExtendedKalmanFilter(args){
 // 
@@ -56,8 +57,8 @@ int NavigationFilter::run(
 		// If true, there is an observation at the initial time
 		if (t == 0){
 
-			assert(this -> estimated_state_history.is_empty());
-			assert(this -> estimated_covariance_history.is_empty());
+			assert(this -> estimated_state_history.empty());
+			assert(this -> estimated_covariance_history.empty());
 			
 			this -> iterated_measurement_update(t,T_obs,X_hat, P_hat);
 		}

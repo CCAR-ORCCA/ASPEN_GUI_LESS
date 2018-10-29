@@ -35,7 +35,7 @@
 #define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-#define LOS_NOISE_SD_BASELINE 5e-1
+
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
@@ -53,8 +53,8 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 5000 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 30000 // Number of iterations
+#define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
+#define IOD_ITERATIONS 100 // Number of iterations
 
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
@@ -67,20 +67,11 @@
 #define SIGMA_MRP 1e-3 // a-priori sd on mrp (-)
 #define SIGMA_OMEGA 1e-5 // a-priori sd on angular velocity (rad/s)
 
-
 #define T0 0
 
-// CHEATS 
-#define USE_BA true // Whether or not the bundle adjustment should be used
-#define USE_ICP true // Use ICP (false if point cloud is generated from true shape)
-#define USE_TRUE_RIGID_TRANSFORMS false // Whether or not the true rigid transforms should be used
-#define RECONSTRUCT_SHAPE true
 ///////////////////////////////////////////
 
 int main() {
-
-	arma::arma_rng::set_seed(0);
-
 
 	// Loading case parameters from file
 	arma::arma_rng::set_seed(0);
@@ -89,7 +80,6 @@ int main() {
 	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
 	i >> input_data;
-
 
 	// Fetching input data 
 	double SMA = input_data["SMA"];
@@ -106,11 +96,19 @@ int main() {
 	double MIN_TRIANGLE_ANGLE = input_data["MIN_TRIANGLE_ANGLE"];
 	double MAX_TRIANGLE_SIZE = input_data["MAX_TRIANGLE_SIZE"];
 	double SURFACE_APPROX_ERROR = input_data["SURFACE_APPROX_ERROR"];
+	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
+	bool USE_BA = input_data["USE_BA"]; 
+	bool USE_ICP = input_data["USE_ICP"];
+	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
+
+
+
+
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	std::string dir = input_data["dir"];
 
@@ -148,7 +146,7 @@ int main() {
 #endif
 
 	ShapeModelImporter::load_obj_shape_model(path_to_shape, 1, true,true_shape_model);
-	
+
 	true_shape_model.construct_kd_tree_shape();
 
 // Lidar
@@ -295,11 +293,20 @@ shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
 shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
 
 
+std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
+std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
+
+
 
 ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
 
 	// #if RECONSTRUCT_SHAPE
 shape_filter.run_shape_reconstruction(times,X_augmented,dir);
+
+
+
+
+
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	// The reconstructed shape model has its coordinates
 	// expressed in the estimated B frame, "E"

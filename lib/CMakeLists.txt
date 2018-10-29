@@ -196,10 +196,12 @@ set(library_dependencies
 	)
 
 
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE )
 	target_link_libraries(${LIB_NAME} ${library_dependencies})
-else()
+elseif (OPENMP_FOUND)
 	target_link_libraries(${LIB_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+else()
+	target_link_libraries(${LIB_NAME} ${library_dependencies})
 endif()
 
 file(GLOB includes include/*.hpp)

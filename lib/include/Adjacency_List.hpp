@@ -315,6 +315,13 @@ std::set<T1> get_vertices() {
 
 	return vertices;
 }
+/**
+\brief int get_n_vertices()
+\details returns the number of vertices in the graph
+*/
+int get_n_vertices(){
+	return this -> vmap.size();
+}
 
 
 

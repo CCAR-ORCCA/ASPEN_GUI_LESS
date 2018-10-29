@@ -27,20 +27,22 @@ public:
 		double stdev_Xtilde,
 		double stdev_sigmatilde,
 		int N_iter, 
-		int particles);
+		int N_particles);
 
 	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 		std::vector<RigidTransform> * absolute_rigid_transforms,  
 		std::vector<arma::vec> mrps_LN,
 		int N_iter, 
-		int particles);
+		int N_particles);
 
 	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 	static double cost_function_cartesian(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 
-	void run( arma::vec lower_bounds = {}, arma::vec upper_bounds = {},
-		std::string type = "keplerian", 
-		int verbose_level = 0,const arma::vec & guess  = {});
+	void run_pso( 
+		arma::vec lower_bounds = {}, 
+		arma::vec upper_bounds = {},
+		int verbose_level = 0,
+		const arma::vec & guess  = {});
 	
 	arma::vec get_result() const;
 
@@ -50,7 +52,6 @@ public:
 		const std::map<int, arma::mat::fixed<6,6> > & R_pcs);
 
 	static void debug_rigid_transforms();
-
 
 	arma::mat::fixed<6,12> compute_dIprime_k_dVtilde_k(int k) const;
 
@@ -134,8 +135,10 @@ protected:
 
 	void compute_P_T();
 
+	void compute_P_T(const std::map<int, arma::mat::fixed<6,6> > & R_pcs);
 
-	int particles;
+
+	int N_particles;
 	int N_iter;
 	std::vector<arma::vec> mrps_LN;
 

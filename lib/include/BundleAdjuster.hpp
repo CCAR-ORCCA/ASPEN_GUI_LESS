@@ -8,10 +8,6 @@
 #include <Eigen/Dense>
 #include <Adjacency_List.hpp>
 
-
-
-
-
 typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 typedef Eigen::Triplet<double> T;
@@ -27,8 +23,6 @@ public:
 
 	
 	BundleAdjuster(
-		int t0, 
-		int tf,
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 		int N_iter,
 		int h,
@@ -72,7 +66,6 @@ protected:
 
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
-	int N_iter;
 
 	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index,
 		bool prune_overlaps = true) const;
@@ -110,6 +103,8 @@ protected:
 
 	int closure_index = 0;
 	int h;
+	int N_iter;
+
 	std::string dir;
 
 	Adjacency_List<int,double> graph;
