@@ -10,7 +10,7 @@
 
 IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 	std::vector<RigidTransform> * absolute_rigid_transforms,  
-	std::vector<arma::vec> mrps_LN,
+	std::vector<arma::vec::fixed<3> > mrps_LN,
 	double stdev_Xtilde,
 	double stdev_sigmatilde,
 	int N_iter, 
@@ -31,7 +31,7 @@ IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 
 IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 	std::vector<RigidTransform> * absolute_rigid_transforms,  
-	std::vector<arma::vec> mrps_LN,
+	std::vector<arma::vec::fixed<3> > mrps_LN,
 	int N_iter, 
 	int N_particles){
 

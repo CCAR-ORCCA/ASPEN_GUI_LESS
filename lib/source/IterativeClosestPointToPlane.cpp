@@ -123,13 +123,13 @@ void IterativeClosestPointToPlane::compute_pairs(
 	// #pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
-		arma::vec test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
+		arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
 
 		int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 		const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
 		
-		arma::vec n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
-		arma::vec n_source = dcm_S * source_pc -> get_normal_coordinates(destination_source_dist_vector[i].second);
+		arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
+		arma::vec::fixed<3> n_source = dcm_S * source_pc -> get_normal_coordinates(destination_source_dist_vector[i].second);
 
 		// If the two normals are compatible, the points are matched
 		if (arma::dot(n_dest,n_source) > std::sqrt(2) / 2 ) {
@@ -169,7 +169,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 		}
 
 	}
-
 
 	// The source/destination pairs are pre-formed
 	std::vector<std::pair<unsigned int , double> > formed_pairs;

@@ -15,7 +15,7 @@ else:
 all_data = [
 
 {
-"OBSERVATION_TIMES" : 160,
+"OBSERVATION_TIMES" : 90,
 "NAVIGATION_TIMES" : 500,
 "SMA" : 1000,
 "E" : 0.25,

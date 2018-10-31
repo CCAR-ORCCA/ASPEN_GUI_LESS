@@ -16,7 +16,7 @@ template <class T>
 void FeatureMatching<T>::match(std::map<int , std::vector< int > > & matches,const int & N){
 
 	// The kd tree in pc2 is recomputed
-	this -> pc2.build_kdtree();
+	this -> pc2.build_kdtree(false);
 
 	std::vector<std::vector< int > > matches_temp;
 
@@ -55,7 +55,7 @@ template <class T>
 void FeatureMatching<T>::match(std::vector< PointPair >  & matches,const int & N){
 
 	// The kd tree in pc2 is recomputed
-	this -> pc2.build_kdtree();
+	this -> pc2.build_kdtree(false);
 
 	std::vector<std::vector< int > > matches_temp;
 
@@ -132,7 +132,7 @@ void FeatureMatching<T>::greedy_pairing(
 
 
 	// The kd tree in pc2 is recomputed
-	descriptor_pc2.build_kdtree();
+	descriptor_pc2.build_kdtree(false);
 	std::vector< std::pair<int, std::vector< int > > > matches_temp,matches_active_only;
 	matches_temp.resize(point_pc1.size());
 	

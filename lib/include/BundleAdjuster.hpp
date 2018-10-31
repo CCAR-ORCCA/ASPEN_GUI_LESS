@@ -21,29 +21,27 @@ class BundleAdjuster {
 
 public:
 
-	
 	BundleAdjuster(
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 		int N_iter,
 		int h,
-		const arma::mat & LN_t0,
-		const arma::vec & x_t0,
+		arma::mat * LN_t0,
+		arma::vec * x_t0,
 		std::string dir);
-
 
 	BundleAdjuster(
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_,
-		const arma::mat & LN_t0,
-		const arma::vec & x_t0,
+		arma::mat * LN_t0,
+		arma::vec * x_t0,
 		std::string dir);
 
+	void run(std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+		std::map<int,arma::vec::fixed<3> > & X_pcs,
+		std::vector<arma::mat::fixed<3,3> > & BN_measured,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN,
+		bool save_connectivity);
 
-	void run(std::map<int,arma::mat> & M_pcs,
-		std::map<int,arma::vec> & X_pcs,
-		std::vector<arma::mat> & BN_measured,
-		const std::vector<arma::vec> & mrps_LN,
-		bool save_connectivity,
-		int & previous_closure_index);
+
 
 	struct PointCloudPair {
 		int S_k = -1;
@@ -85,16 +83,16 @@ protected:
 	void solve_bundle_adjustment();
 
 
-	void create_pairs( int & previous_closure_index);
+	void create_pairs();
 
 	void update_point_cloud_pairs();
-	void update_point_clouds(std::map<int,arma::mat> & M_pcs, 
-		std::map<int,arma::vec> & X_pcs,
-		std::vector<arma::mat> & BN_measured,
-		const std::vector<arma::vec> & mrps_LN);
+	void update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 
+		std::map<int,arma::vec::fixed<3> > & X_pcs,
+		std::vector<arma::mat::fixed<3,3> > & BN_measured,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
-	arma::mat LN_t0;
-	arma::vec x_t0;
+	arma::mat * LN_t0;
+	arma::vec * x_t0;
 	arma::vec X;
 
 	int ground_pc_index = 0;

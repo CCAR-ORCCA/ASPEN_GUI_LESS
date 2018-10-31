@@ -232,7 +232,6 @@ void PointCloud<PointType>::build_kdtree(bool verbose){
 
 	auto start = std::chrono::system_clock::now();
 
-
 	std::vector<int> indices;
 	for (int i =0; i < this -> size(); ++i){
 		if (this -> check_if_point_valid(i)){
@@ -271,7 +270,7 @@ void PointCloud<PointNormal>::transform(const arma::mat::fixed<3,3> & dcm,const 
 
 	// The KDTree is rebuilt
 
-	this -> build_kdtree();
+	this -> build_kdtree(false);
 
 }
 

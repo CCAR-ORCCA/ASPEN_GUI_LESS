@@ -90,16 +90,16 @@ public:
 	void set_pc_source(std::shared_ptr<PC> pc_source);
 	void set_pc_destination(std::shared_ptr<PC> pc_destination);
 
+	
+	arma::vec compute_y_vector(const std::vector<PointPair> & point_pairs,
+		const arma::mat::fixed<3,3> & dcm_S ,
+		const arma::vec::fixed<3> & x_S) const ;
 
 protected:
 	std::shared_ptr< PointCloud<PointNormal > > pc_destination;
 	std::shared_ptr< PointCloud<PointNormal > > pc_source;
 
 	double static compute_Huber_loss(const arma::vec & y, double threshold);
-
-	arma::vec compute_y_vector(const std::vector<PointPair> & point_pairs,
-		const arma::mat::fixed<3,3> & dcm_S ,
-		const arma::vec::fixed<3> & x_S) const ;
 
 	double compute_residuals(
 		const arma::mat::fixed<3,3> & dcm,

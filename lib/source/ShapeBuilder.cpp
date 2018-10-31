@@ -57,34 +57,31 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 
-	arma::vec lidar_pos = X_S.rows(0,2);
-	arma::vec lidar_vel = X_S.rows(3,5);
+	arma::vec::fixed<3> lidar_pos = X_S.rows(0,2);
+	arma::vec::fixed<3> lidar_vel = X_S.rows(3,5);
 
-	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
+	arma::mat::fixed<3,3> dcm_LB = arma::eye<arma::mat>(3, 3);
 	std::vector<RigidTransform> rigid_transforms;
-	std::vector<arma::vec> mrps_LN;
-	std::vector<arma::mat> BN_measured;
-	std::vector<arma::mat> BN_true;
-	std::vector<arma::mat> HN_true;
-	std::map<int,arma::vec> X_pcs;
-	std::map<int,arma::mat> M_pcs;
+	std::vector<arma::vec::fixed<3> > mrps_LN;
+	std::vector<arma::mat::fixed<3,3 > > BN_measured;
+	std::vector<arma::mat::fixed<3,3 > > BN_true;
+	std::vector<arma::mat::fixed<3,3 > > HN_true;
+	std::map<int,arma::vec::fixed<3> > X_pcs;
+	std::map<int,arma::mat::fixed<3,3> > M_pcs;
 	std::map<int,arma::mat::fixed<6,6> > R_pcs;
 
 	arma::vec iod_guess;
 
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
-	int previous_closure_index = 0;
 
-	arma::mat M_pc = arma::eye<arma::mat>(3,3);
-	arma::vec X_pc = arma::zeros<arma::vec>(3);
+	arma::mat::fixed<3,3> M_pc = arma::eye<arma::mat>(3,3);
+	arma::vec::fixed<3> X_pc = arma::zeros<arma::vec>(3);
 
-
-	BundleAdjuster ba_test(&this -> all_registered_pc,
-		this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
+	BundleAdjuster ba_test(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
 		5,
-		this -> LN_t0,
-		this -> x_t0,
+		&this -> LN_t0,
+		&this -> x_t0,
 		dir);
 
 
@@ -137,9 +134,21 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			
 			if(this -> filter_arguments -> get_use_icp()){
+
+				// An a-priori absolute rigid transform is extracted from the previous measurements
+
+				ShapeBuilder::extract_a_priori_transform(M_pc,X_pc,time_index,BN_measured,M_pcs,X_pcs,mrps_LN);
+
+
+
 				IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
 				icp_pc_prealign.set_minimum_h(4);
 				icp_pc_prealign.register_pc(M_pc,X_pc);
+
+
+
+
+
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 				icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
 
@@ -182,9 +191,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(M_pcs.size() == BN_true.size());
 			assert(X_pcs.size() == BN_true.size());
 
-
-			std::cout << "Must enable update_overlap_graph back\n";
 			ba_test.update_overlap_graph();
+
+			ba_test.run(
+				M_pcs,
+				X_pcs,
+				BN_measured,
+				mrps_LN,
+				false);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -221,8 +235,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 							X_pcs,
 							BN_measured,
 							mrps_LN,
-							true,
-							previous_closure_index);
+							true);
 					}
 
 					std::cout << "\n-- Saving attitude...\n";
@@ -231,7 +244,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "\n-- Estimating coverage...\n";
 
-					this -> estimate_coverage(previous_closure_index,dir +"/"+ std::to_string(time_index) + "_");
+					this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
 
 					std::cout << "\n-- Moving on...\n";
 
@@ -240,16 +253,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << "True position at t0 : " << (this -> x_t0).t() << std::endl;
 
 					this -> run_IOD_finder(times, 0 ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs);
-
-					throw;
-
-				// estimated_state =  this -> run_IOD_finder(times,
-				// 	last_ba_call_index ,
-				// 	time_index, 
-				// 	mrps_LN,
-				// 	X_pcs,
-				// 	M_pcs);
-
 
 					last_ba_call_index = time_index;
 				}
@@ -268,16 +271,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					X_pcs,
 					BN_measured,
 					mrps_LN,
-					true,
-					previous_closure_index);
+					true);
 
 				std::cout << " -- Saving attitude...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
 				std::cout << " -- Estimating coverage...\n";
 				PointCloud<PointNormal> global_pc;
-				this -> estimate_coverage(previous_closure_index,
-					dir +"/"+ std::to_string(time_index) + "_",&global_pc);
+				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_",&global_pc);
 
 				std::cout << " -- Making PSR a-priori...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
@@ -382,239 +383,239 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 void ShapeBuilder::run_iod(const arma::vec &times ,
 	const std::vector<arma::vec> & X,std::string dir) {
 
-	std::cout << "Running the iod filter" << std::endl;
+	// std::cout << "Running the iod filter" << std::endl;
 
-	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
+	// arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 
-	arma::vec lidar_pos = X_S.rows(0,2);
-	arma::vec lidar_vel = X_S.rows(3,5);
+	// arma::vec lidar_pos = X_S.rows(0,2);
+	// arma::vec lidar_vel = X_S.rows(3,5);
 
-	arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
-	std::vector<RigidTransform> rigid_transforms;
-	std::vector<arma::vec> mrps_LN;
-	std::vector<arma::mat> BN_measured;
-	std::vector<arma::mat> BN_true;
-	std::vector<arma::mat> HN_true;
-	std::map<int,arma::vec> X_pcs;
-	std::map<int,arma::mat> M_pcs;
+	// arma::mat dcm_LB = arma::eye<arma::mat>(3, 3);
+	// std::vector<RigidTransform> rigid_transforms;
+	// std::vector<arma::vec> mrps_LN;
+	// std::vector<arma::mat> BN_measured;
+	// std::vector<arma::mat> BN_true;
+	// std::vector<arma::mat> HN_true;
+	// std::map<int,arma::vec> X_pcs;
+	// std::map<int,arma::mat> M_pcs;
 
-	arma::vec iod_guess;
+	// arma::vec iod_guess;
 
-	int last_ba_call_index = 0;
-	int cutoff_index = 0;
+	// int last_ba_call_index = 0;
+	// int cutoff_index = 0;
 
 
-	arma::mat M_pc = arma::eye<arma::mat>(3,3);
-	arma::vec X_pc = arma::zeros<arma::vec>(3);
+	// arma::mat M_pc = arma::eye<arma::mat>(3,3);
+	// arma::vec X_pc = arma::zeros<arma::vec>(3);
 
-	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
+	// for (int time_index = 0; time_index < times.n_rows; ++time_index) {
 
-		std::stringstream ss;
-		ss << std::setw(6) << std::setfill('0') << time_index + 1;
-		std::string time_index_formatted = ss.str();
+	// 	std::stringstream ss;
+	// 	ss << std::setw(6) << std::setfill('0') << time_index + 1;
+	// 	std::string time_index_formatted = ss.str();
 
-		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
+	// 	std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
-		X_S = X[time_index];
+	// 	X_S = X[time_index];
 
-		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
+	// 	this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
-		// Setting the Lidar frame to its new state
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
-		this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
+	// 	// Setting the Lidar frame to its new state
+	// 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
+	// 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
 
-		// Setting the small body to its new attitude
-		this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(X_S.subvec(6,8));
+	// 	// Setting the small body to its new attitude
+	// 	this -> frame_graph -> get_frame(this -> true_shape_model -> get_ref_frame_name()) -> set_mrp_from_parent(X_S.subvec(6,8));
 
-		// Getting the true observations (noise is added)
-		this -> lidar -> send_flash(this -> true_shape_model,true);
+	// 	// Getting the true observations (noise is added)
+	// 	this -> lidar -> send_flash(this -> true_shape_model,true);
 
-		// The rigid transform best aligning the two point clouds is found
-		// The solution to this first registration will be used to prealign the 
-		// shape model and the source point cloud
+	// 	// The rigid transform best aligning the two point clouds is found
+	// 	// The solution to this first registration will be used to prealign the 
+	// 	// shape model and the source point cloud
 
-		this -> store_point_clouds(time_index,dir);
-		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
-			this -> all_registered_pc.push_back(this -> destination_pc);
-		}
+	// 	this -> store_point_clouds(time_index,dir);
+	// 	if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
+	// 		this -> all_registered_pc.push_back(this -> destination_pc);
+	// 	}
 
-		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
+	// 	else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
 
-			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
-			X_pcs[time_index] = arma::zeros<arma::vec>(3);
+	// 		M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
+	// 		X_pcs[time_index] = arma::zeros<arma::vec>(3);
 			
 
-			// The point-cloud to point-cloud ICP is used for point cloud registration
-			// This ICP can fail. If so, the update is still applied and will be fixed 
-			// in the bundle adjustment
+	// 		// The point-cloud to point-cloud ICP is used for point cloud registration
+	// 		// This ICP can fail. If so, the update is still applied and will be fixed 
+	// 		// in the bundle adjustment
 			
-			try{
+	// 		try{
 
-				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
-				icp_pc.set_save_rigid_transform(this -> LN_t0.t(),this -> x_t0);
-				icp_pc.register_pc(M_pc,X_pc);
+	// 			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
+	// 			icp_pc.set_save_rigid_transform(this -> LN_t0.t(),this -> x_t0);
+	// 			icp_pc.register_pc(M_pc,X_pc);
 
-			// These two align the consecutive point clouds 
-			// in the instrument frame at t_D == t_0
-				M_pc = icp_pc.get_dcm();
-				X_pc = icp_pc.get_x();	
-			}
-			catch(ICPException & e){
-				std::cout << e.what() << std::endl;
-			}
-			catch(ICPNoPairsException & e){
-				std::cout << e.what() << std::endl;
-			}
-			catch(std::runtime_error & e){
-				std::cout << e.what() << std::endl;
-			}
+	// 		// These two align the consecutive point clouds 
+	// 		// in the instrument frame at t_D == t_0
+	// 			M_pc = icp_pc.get_dcm();
+	// 			X_pc = icp_pc.get_x();	
+	// 		}
+	// 		catch(ICPException & e){
+	// 			std::cout << e.what() << std::endl;
+	// 		}
+	// 		catch(ICPNoPairsException & e){
+	// 			std::cout << e.what() << std::endl;
+	// 		}
+	// 		catch(std::runtime_error & e){
+	// 			std::cout << e.what() << std::endl;
+	// 		}
 
-			arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
-			arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
-			arma::vec X_pc_true = M_pc_true * pos_in_L - this -> LN_t0 * this -> x_t0;
+	// 		arma::mat M_pc_true = this -> LB_t0 * dcm_LB.t();
+	// 		arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
+	// 		arma::vec X_pc_true = M_pc_true * pos_in_L - this -> LN_t0 * this -> x_t0;
 
-			RBK::dcm_to_mrp(M_pc_true).save(dir + "/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			X_pc_true.save(dir + "/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+	// 		RBK::dcm_to_mrp(M_pc_true).save(dir + "/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+	// 		X_pc_true.save(dir + "/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
-			RBK::dcm_to_mrp(M_pc).save(dir + "/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			X_pc.save(dir + "/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+	// 		RBK::dcm_to_mrp(M_pc).save(dir + "/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
+	// 		X_pc.save(dir + "/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 			
 
-				/****************************************************************************/
-				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
-			if (!this -> filter_arguments -> get_use_icp()){
-				std::cout << "\t Using true rigid transform\n";
-				M_pc = M_pc_true;
-				X_pc = X_pc_true;
-			}
-				/****************************************************************************/
-				/****************************************************************************/
+	// 			/****************************************************************************/
+	// 			/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
+	// 		if (!this -> filter_arguments -> get_use_icp()){
+	// 			std::cout << "\t Using true rigid transform\n";
+	// 			M_pc = M_pc_true;
+	// 			X_pc = X_pc_true;
+	// 		}
+	// 			/****************************************************************************/
+	// 			/****************************************************************************/
 
-			// The source pc is registered, using the rigid transform that 
-			// the ICP returned
-			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
-				dir + "/source_" + std::to_string(time_index) + ".obj",
-				this -> LN_t0.t(), 
-				this -> x_t0);
-
-
-			this -> source_pc -> transform(M_pc,X_pc);
-			this -> all_registered_pc.push_back(this -> source_pc);
-
-			#if IOFLAGS_run_iod			
+	// 		// The source pc is registered, using the rigid transform that 
+	// 		// the ICP returned
+	// 		PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+	// 			dir + "/source_" + std::to_string(time_index) + ".obj",
+	// 			this -> LN_t0.t(), 
+	// 			this -> x_t0);
 
 
-			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
-				dir + "/source_" + std::to_string(time_index) + ".obj",
-				this -> LN_t0.t(), 
-				this -> x_t0);
+	// 		this -> source_pc -> transform(M_pc,X_pc);
+	// 		this -> all_registered_pc.push_back(this -> source_pc);
 
-			#endif
+	// 		#if IOFLAGS_run_iod			
 
-			M_pcs[time_index] = M_pc;
-			X_pcs[time_index] = X_pc;
 
-		}
+	// 		PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
+	// 			dir + "/source_" + std::to_string(time_index) + ".obj",
+	// 			this -> LN_t0.t(), 
+	// 			this -> x_t0);
 
-	}
+	// 		#endif
 
-	int final_index;
-	if (!this -> filter_arguments -> get_use_ba()){
-		final_index = this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
+	// 		M_pcs[time_index] = M_pc;
+	// 		X_pcs[time_index] = X_pc;
+
+	// 	}
+
+	// }
+
+	// int final_index;
+	// if (!this -> filter_arguments -> get_use_ba()){
+	// 	final_index = this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
 		
-	}
+	// }
 
 
-	else{
+	// else{
 
-		std::cout << " -- Applying BA to successive point clouds\n";
-		std::vector<std::shared_ptr<PC > > pc_to_ba;
+	// 	std::cout << " -- Applying BA to successive point clouds\n";
+	// 	std::vector<std::shared_ptr<PC > > pc_to_ba;
 
-		throw(std::runtime_error("not implemented yet"));
+	// 	throw(std::runtime_error("not implemented yet"));
 
-		// BundleAdjuster bundle_adjuster(0, 
-		// 	this -> filter_arguments -> get_iod_rigid_transforms_number() - 1,
-		// 	M_pcs,
-		// 	X_pcs,
-		// 	BN_measured,
-		// 	&this -> all_registered_pc,
-		// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
-		// 	this -> LN_t0,
-		// 	this -> x_t0,
-		// 	mrps_LN,
-		// 	true,
-		// 	previous_closure_index,
-		// 	0);
+	// 	// BundleAdjuster bundle_adjuster(0, 
+	// 	// 	this -> filter_arguments -> get_iod_rigid_transforms_number() - 1,
+	// 	// 	M_pcs,
+	// 	// 	X_pcs,
+	// 	// 	BN_measured,
+	// 	// 	&this -> all_registered_pc,
+	// 	// 	this -> filter_arguments -> get_N_iter_bundle_adjustment(),
+	// 	// 	this -> LN_t0,
+	// 	// 	this -> x_t0,
+	// 	// 	mrps_LN,
+	// 	// 	true,
+	// 	// 	previous_closure_index,
+	// 	// 	0);
 
-		std::cout << " -- Running IOD after correction\n";
-		// final_index = previous_closure_index;
+	// 	std::cout << " -- Running IOD after correction\n";
+	// 	// final_index = previous_closure_index;
 
-	}
+	// }
 
 	
-	int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
+	// int mc_iter = this -> filter_arguments -> get_iod_mc_iter();
 
-	arma::mat results(7,mc_iter);
-	arma::mat crude_guesses(6,mc_iter);
-	arma::mat all_covs(7 * mc_iter,7);
-	arma::vec all_rps(mc_iter);
-	arma::vec all_rps_sds(mc_iter);
+	// arma::mat results(7,mc_iter);
+	// arma::mat crude_guesses(6,mc_iter);
+	// arma::mat all_covs(7 * mc_iter,7);
+	// arma::vec all_rps(mc_iter);
+	// arma::vec all_rps_sds(mc_iter);
 
 
-	boost::progress_display progress(mc_iter);
+	// boost::progress_display progress(mc_iter);
 	
-	#pragma omp parallel for
-	for (int i = 0; i < mc_iter; ++i){
+	// #pragma omp parallel for
+	// for (int i = 0; i < mc_iter; ++i){
 
 
-		std::map<int,arma::vec> X_pcs_noisy;
-		std::map<int,arma::mat> M_pcs_noisy;
+	// 	std::map<int,arma::vec> X_pcs_noisy;
+	// 	std::map<int,arma::mat> M_pcs_noisy;
 
-		arma::vec state,crude_guess;
-		arma::mat cov;	
+	// 	arma::vec state,crude_guess;
+	// 	arma::mat cov;	
 
-		this -> run_IOD_finder(state,
-			cov,
-			crude_guess,
-			times,
-			last_ba_call_index ,
-			this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
-			mrps_LN,
-			X_pcs,
-			M_pcs);
+	// 	this -> run_IOD_finder(state,
+	// 		cov,
+	// 		crude_guess,
+	// 		times,
+	// 		last_ba_call_index ,
+	// 		this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
+	// 		mrps_LN,
+	// 		X_pcs,
+	// 		M_pcs);
 
-		results.submat(0,i,5,i) = state.subvec(0,5);
-		results.submat(6,i,6,i) = state(6);
+	// 	results.submat(0,i,5,i) = state.subvec(0,5);
+	// 	results.submat(6,i,6,i) = state(6);
 
-		OC::CartState cart_state(state.subvec(0,5),state(6));
-		OC::KepState kep_state = cart_state.convert_to_kep(0);
+	// 	OC::CartState cart_state(state.subvec(0,5),state(6));
+	// 	OC::KepState kep_state = cart_state.convert_to_kep(0);
 
-		crude_guesses.col(i) = crude_guess;
-		all_rps(i) = kep_state.get_a() * (1 - kep_state.get_eccentricity());
-		arma::rowvec::fixed<7> drpdstate = IODFinder::partial_rp_partial_state(state);
-		all_rps_sds(i) = std::sqrt(arma::dot(drpdstate.t(),cov * drpdstate.t() ));
+	// 	crude_guesses.col(i) = crude_guess;
+	// 	all_rps(i) = kep_state.get_a() * (1 - kep_state.get_eccentricity());
+	// 	arma::rowvec::fixed<7> drpdstate = IODFinder::partial_rp_partial_state(state);
+	// 	all_rps_sds(i) = std::sqrt(arma::dot(drpdstate.t(),cov * drpdstate.t() ));
 
 
-		all_covs.rows(7 * i, 7 * i + 6) = cov;
+	// 	all_covs.rows(7 * i, 7 * i + 6) = cov;
 		
-		++progress;
+	// 	++progress;
 
-	}
+	// }
 
-	results.save(dir + "/results.txt",arma::raw_ascii);
-	all_rps.save(dir + "/all_rps.txt",arma::raw_ascii);
-	all_rps_sds.save(dir + "/all_rps_sds.txt",arma::raw_ascii);
-	crude_guesses.save(dir + "/crude_guesses.txt",arma::raw_ascii);
-	all_covs.save(dir + "/all_covs.txt",arma::raw_ascii);
-	arma::vec results_mean = arma::mean(results,1);
-	arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
+	// results.save(dir + "/results.txt",arma::raw_ascii);
+	// all_rps.save(dir + "/all_rps.txt",arma::raw_ascii);
+	// all_rps_sds.save(dir + "/all_rps_sds.txt",arma::raw_ascii);
+	// crude_guesses.save(dir + "/crude_guesses.txt",arma::raw_ascii);
+	// all_covs.save(dir + "/all_covs.txt",arma::raw_ascii);
+	// arma::vec results_mean = arma::mean(results,1);
+	// arma::mat::fixed<7,7> cov_mc = arma::zeros<arma::mat>(7,7);
 
-	for (unsigned int i = 0; i < results.n_cols; ++i){
-		cov_mc +=  (results.col(i) - results_mean) * (results.col(i) - results_mean).t();
-	}
+	// for (unsigned int i = 0; i < results.n_cols; ++i){
+	// 	cov_mc +=  (results.col(i) - results_mean) * (results.col(i) - results_mean).t();
+	// }
 
-	cov_mc *= 1./(results.n_cols-1);
-	cov_mc.save(dir + "/cov_mc.txt",arma::raw_ascii);
+	// cov_mc *= 1./(results.n_cols-1);
+	// cov_mc.save(dir + "/cov_mc.txt",arma::raw_ascii);
 
 }
 
@@ -626,7 +627,7 @@ std::shared_ptr<ShapeModelBezier< ControlPoint > > ShapeBuilder::get_estimated_s
 
 
 
-void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const{
+void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<arma::mat::fixed<3,3> > & BN) const{
 
 
 	arma::mat mrp_BN = arma::mat( 3,BN.size());
@@ -640,124 +641,14 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 }
 
 
-void ShapeBuilder::run_IOD_finder(arma::vec & state,
-	arma::mat & cov,
-	arma::vec & crude_guess,
-	const arma::vec & times,
-	const int t0 ,
-	const int tf, 
-	const std::vector<arma::vec> & mrps_LN,
-	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> M_pcs) const{
-
-	// // The IOD Finder is ran before running bundle adjustment
-	// std::vector<RigidTransform> sequential_rigid_transforms;
-	// std::vector<RigidTransform> absolute_rigid_transforms;
-	// std::vector<RigidTransform> absolute_true_rigid_transforms;
-
-	// ShapeBuilder::assemble_rigid_transforms_IOD(sequential_rigid_transforms,
-	// 	absolute_rigid_transforms,
-	// 	absolute_true_rigid_transforms,
-	// 	times,
-	// 	t0,
-	// 	tf,
-	// 	mrps_LN,
-	// 	X_pcs,
-	// 	M_pcs);
-
-
-	// IODFinder iod_finder(&sequential_rigid_transforms, 
-	// 	&absolute_rigid_transforms,
-	// 	mrps_LN,
-	// 	this -> filter_arguments -> get_rigid_transform_noise_sd("X"),
-	// 	this -> filter_arguments -> get_rigid_transform_noise_sd("sigma"),
-	// 	this -> filter_arguments -> get_iod_iterations(), 
-	// 	this -> filter_arguments -> get_iod_particles());
-
-
-	// // Crude IO
-	// // Get the center of the collected pcs
-	// arma::vec::fixed<3> center = this -> get_center_collected_pcs(t0,tf,absolute_rigid_transforms,
-	// 	absolute_true_rigid_transforms);
-	
-	// arma::vec::fixed<3> r0_crude = - this -> LN_t0.t() * center;
-	// arma::vec::fixed<3> r1_crude = sequential_rigid_transforms[0].M .t() * (r0_crude + sequential_rigid_transforms[0].X);
-	// arma::vec::fixed<3> r2_crude = sequential_rigid_transforms[1].M .t() * (r1_crude + sequential_rigid_transforms[1].X);
-
-	// // 2nd order interpolation
-	// arma::mat A = arma::zeros<arma::mat>(9,9) ;
-	// A.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
-	// A.submat(3,0,5,2) = arma::eye<arma::mat>(3,3);
-	// A.submat(6,0,8,2) = arma::eye<arma::mat>(3,3);
-
-	// A.submat(3,3,5,5) = sequential_rigid_transforms[0].t_k * arma::eye<arma::mat>(3,3);
-	// A.submat(3,6,5,8) = std::pow(sequential_rigid_transforms[0].t_k,2) * arma::eye<arma::mat>(3,3);
-
-	// A.submat(6,3,8,5) = sequential_rigid_transforms[1].t_k * arma::eye<arma::mat>(3,3);
-	// A.submat(6,6,8,8) = std::pow(sequential_rigid_transforms[1].t_k,2) * arma::eye<arma::mat>(3,3);
-
-	// arma::vec R = arma::vec(9);
-	// R.subvec(0,2) = r0_crude;
-	// R.subvec(3,5) = r1_crude;
-	// R.subvec(6,8) = r2_crude;
-
-	// arma::vec coefs = arma::solve(A,R);
-
-	// arma::vec v1_crude = coefs.subvec(3,5) + 2 * sequential_rigid_transforms[1].t_k * coefs.subvec(6,8);
-
-	// crude_guess = arma::zeros<arma::vec>(6);
-	// crude_guess.subvec(0,2) = r0_crude;
-	// crude_guess.subvec(3,5) = v1_crude;
-
-
-	// arma::vec dr =  (r1_crude - r0_crude);
-	// double dt = (sequential_rigid_transforms[1].t_k - sequential_rigid_transforms[0].t_k);
-	// arma::vec v0_crude = dr / dt;
-
-
-	// arma::vec l_bounds = {
-	// 	r0_crude(0) - 100,
-	// 	r0_crude(1) - 100,
-	// 	r0_crude(2) - 100,
-	// 	v0_crude(0) - 100 / dt,
-	// 	v0_crude(1) - 100 / dt,
-	// 	v0_crude(2) - 100 / dt,
-	// 	MU_MIN
-	// };
-
-	// arma::vec u_bounds = {
-	// 	r0_crude(0) + 100,
-	// 	r0_crude(1) + 100,
-	// 	r0_crude(2) + 100,
-	// 	v0_crude(0) + 100 / dt,
-	// 	v0_crude(1) + 100 / dt,
-	// 	v0_crude(2) + 100 / dt,
-	// 	MU_MAX
-	// };
-
-
-	// arma::vec guess_particle = {
-	// 	r0_crude(0),r0_crude(1),r0_crude(2),
-	// 	v0_crude(0),v0_crude(1),v0_crude(2),
-	// 	NAN
-	// };
-
-	// iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
-
-	// state = iod_finder.get_result();
-
-	// iod_finder.run_batch(state,cov);
-
-
-}
 
 
 void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const int t0 ,
 	const int tf, 
-	const std::vector<arma::vec> & mrps_LN,
-	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> & M_pcs,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 	const std::map<int, arma::mat::fixed<6,6> > & R_pcs) const{
 
 
@@ -865,52 +756,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	arma::mat cov;
 	iod_finder.run_batch(state,cov,R_pcs);
 
-	throw(std::runtime_error("done here"));
-
-
-
-	// IODFinder iod_finder(&sequential_rigid_transforms, 
-	// 	&absolute_rigid_transforms,
-	// 	mrps_LN,
-	// 	this -> filter_arguments -> get_iod_iterations(), 
-	// 	this -> filter_arguments -> get_iod_particles());
-
-
-
-	// arma::vec l_bounds = {
-	// 	crude_guess(0) - 100,
-	// 	crude_guess(1) - 100,
-	// 	crude_guess(2) - 100,
-	// 	crude_guess(3) - 100 / dt,
-	// 	crude_guess(4) - 100 / dt,
-	// 	crude_guess(5) - 100 / dt,
-	// 	MU_MIN
-	// };
-
-	// arma::vec u_bounds = {
-	// 	crude_guess(0) + 100,
-	// 	crude_guess(1) + 100,
-	// 	crude_guess(2) + 100,
-	// 	crude_guess(3) + 100 / dt,
-	// 	crude_guess(4) + 100 / dt,
-	// 	crude_guess(5) + 100 / dt,
-	// 	MU_MAX
-	// };
-
-	// arma::vec guess_particle = {
-	// 	crude_guess(0),crude_guess(1),crude_guess(2),
-	// 	crude_guess(3),crude_guess(4),crude_guess(5),
-	// 	NAN
-	// };
-
-	// iod_finder.run(l_bounds,u_bounds,"cartesian",0,guess_particle);
-
-	// arma::vec state = iod_finder.get_result();
-
-	// arma::mat cov;
-	// iod_finder.run_batch(state,cov,R_pcs);
-
-
 }
 
 
@@ -925,9 +770,9 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(
 	const arma::vec & times, 
 	const int t0_index,
 	const int tf_index,
-	const std::vector<arma::vec>  & mrps_LN,
-	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> & M_pcs) const{
+	const std::vector<arma::vec::fixed<3> >  & mrps_LN,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs) const{
 
 	throw("not implemented");
 
@@ -994,9 +839,9 @@ void ShapeBuilder::assemble_rigid_transforms_IOD(
 	std::vector<RigidTransform> & absolute_rigid_transforms,
 	const std::vector<int> & obs_indices,
 	const arma::vec & times, 
-	const std::vector<arma::vec>  & mrps_LN,
-	const std::map<int,arma::vec> & X_pcs,
-	const std::map<int,arma::mat> & M_pcs) const{
+	const std::vector<arma::vec::fixed<3> >  & mrps_LN,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs) const{
 
 
 	for (auto k : obs_indices){
@@ -1064,7 +909,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		this -> destination_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-		this -> destination_pc -> build_kdtree ();
+		this -> destination_pc -> build_kdtree (false);
 		arma::vec::fixed<3> los = {1,0,0};
 
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> destination_pc,*this -> destination_pc);
@@ -1085,7 +930,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-			this -> source_pc -> build_kdtree ();
+			this -> source_pc -> build_kdtree (false);
 
 			arma::vec::fixed<3> los = {1,0,0};
 
@@ -1112,14 +957,13 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-			this -> source_pc -> build_kdtree ();
+			this -> source_pc -> build_kdtree (false);
 
 			arma::vec::fixed<3> los = {1,0,0};
 
 			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
 			estimate_normals.set_los_dir(los);
 			estimate_normals.estimate(6);
-
 
 			#if IOFLAGS_shape_builder
 			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index - 1) + ".obj",
@@ -1134,13 +978,13 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 
 void ShapeBuilder::get_new_states(
-	const arma::vec & X_S, 
-	arma::mat & dcm_LB, 
-	arma::vec & lidar_pos,
-	arma::vec & lidar_vel,
-	std::vector<arma::vec> & mrps_LN,
-	std::vector<arma::mat> & BN_true,
-	std::vector<arma::mat> & HN_true){
+	const arma::vec::fixed<3> & X_S, 
+	arma::mat::fixed<3,3> & dcm_LB, 
+	arma::vec::fixed<3> & lidar_pos,
+	arma::vec::fixed<3> & lidar_vel,
+	std::vector<arma::vec::fixed<3>> & mrps_LN,
+	std::vector<arma::mat::fixed<3,3> > & BN_true,
+	std::vector<arma::mat::fixed<3,3> > & HN_true){
 
 	// Getting the new small body inertial attitude
 	// and spacecraft relative position expressed in the small body centered inertia frame
@@ -1369,8 +1213,7 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 
 
 
-void ShapeBuilder::estimate_coverage(int previous_closure_index,
-	std::string dir,PointCloud<PointNormal> * pc) const{
+void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * pc) const{
 
 	std::cout << "\n-- Fetching points ...\n";
 
@@ -1386,7 +1229,7 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 	std::cout << "\n-- Number of points in global pc: " << global_pc.size() << std::endl;
 
 	// The KD tree of this pc is built
-	global_pc.build_kdtree();
+	global_pc.build_kdtree(false);
 
 
 	// The normals are NOT re-estimated. they come from the concatenated point clouds
@@ -1406,11 +1249,14 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 
 	arma::vec S(global_pc.size());
 	S.fill(0);
-	arma::vec::fixed<3> surface_normal_sum = {0,0,0};
 	double sum_S = 0;
+	double max_S = -1;
+	double Sx = 0;
+	double Sy = 0;
+	double Sz = 0;
 
 
-	#pragma omp parallel for reduction(+:sum_S)
+	#pragma omp parallel for reduction(+:sum_S,Sx,Sy,Sz), reduction(max: max_S)
 	for (int i = 0; i < global_pc.size(); ++i){
 
 		// The closest neighbors are extracted
@@ -1422,14 +1268,17 @@ void ShapeBuilder::estimate_coverage(int previous_closure_index,
 		S(i) = std::max(surface,arma::datum::pi * std::pow(3 ,2));
 
 		// the surface normal sum is incremented
-		surface_normal_sum += S(i) * global_pc.get_normal_coordinates(i);
+		Sx  += S(i) * global_pc.get_normal_coordinates(i)(0);
+		Sy  += S(i) * global_pc.get_normal_coordinates(i)(1);
+		Sz  += S(i) * global_pc.get_normal_coordinates(i)(2);
+		
 		sum_S += S(i);
+		max_S = std::max(max_S,S(i));
 	}
 
 	// The coverage criterion is evaluated
-	std::cout << "\n-- Stddev in sampling surface : " << arma::stddev(S) << std::endl;
-	std::cout << "\n-- Max sampling surface : " << arma::max(S) << std::endl;
-	std::cout << "\n-- Missing surface (%) : " << 100 * std::pow(arma::norm(surface_normal_sum),2) / std::pow(sum_S,2);
+	std::cout << "\n-- Max sampling radius : " << std::sqrt(max_S) << std::endl;
+	std::cout << "\n-- Missing surface (%) : " << 100 * std::sqrt(Sx * Sx + Sy * Sy + Sz * Sz) / sum_S;
 
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
@@ -1487,6 +1336,52 @@ void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
 	ShapeModelImporter::load_obj_shape_model(shape_cgal_path, 1, true,psr_shape);
 
 }
+
+
+void ShapeBuilder::extract_a_priori_transform(
+	arma::mat::fixed<3,3> & M, 
+	arma::vec::fixed<3> X,
+	const int index,
+	const arma::vec::fixed<3> & r_k_hat,
+	const arma::vec::fixed<3> & r_km1_hat,
+	const std::vector<arma::mat::fixed<3,3>> & BN_measured,
+	const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
+	const std::map<int,arma::vec::fixed<3> > &  X_pcs,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN){
+
+	// in all that follows, _k refers to the current time 
+
+	assert(mrps_LN.size() == BN_measured.size() + 1 );// should already have collected the spacecraft attitude at this time
+
+	// The a-priori rotation is extracted first
+
+	arma::mat::fixed<3,3> BN_km1 = BN_measured.back();
+	arma::mat::fixed<3,3> BN_k_hat; // to be defined
+
+
+	// This is a suitable a-priori rigid transform dcm
+	M = RBK::mrp_to_dcm(mrps_LN.front()) * BN_measured.front().t() * BN_k_hat * RBK::mrp_to_dcm(mrps_LN.back()).t();
+
+
+	// 
+
+	arma::mat::fixed<3,3> Mp_k_hat = (
+		RBK::mrp_to_dcm(*std::prev(mrps_LN.end(), 2)).t() 
+		* M_pcs.at(index - 1).t() 
+		* M 
+		* RBK::mrp_to_dcm(mrps_LN.back()));
+
+
+
+	// This is a suitable a-priori rigid transform X
+	X = M_pcs.at(index - 1) * RBK::mrp_to_dcm(*std::prev(mrps_LN.end(), 2)) * (Mp_k_hat * r_k_hat - r_km1_hat) + X_pcs.at(index - 1);
+
+
+}
+
+
+
+
 
 
 

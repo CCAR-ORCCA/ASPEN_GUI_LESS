@@ -3,21 +3,25 @@
 #include <PointDescriptor.hpp>
 
 template<>
-void PointCloudIO<PointNormal>::save_to_obj(const PointCloud<PointNormal> & pc, 
-	std::string savepath,const arma::mat::fixed<3,3> & dcm, const arma::vec::fixed<3> & x){
+void PointCloudIO<PointNormal>::save_to_obj(
+	const PointCloud<PointNormal> & pc, 
+	std::string savepath,
+	const arma::mat::fixed<3,3> & dcm, 
+	const arma::vec::fixed<3> & x){
+
 
 	std::ofstream shape_file;
 	shape_file.open(savepath);
 
 	for (unsigned int vertex_index = 0;vertex_index < pc.size();++vertex_index) {
-		const arma::vec & p = dcm * pc.get_point_coordinates(vertex_index) + x;
+		arma::vec::fixed<3> p = dcm * pc.get_point_coordinates(vertex_index) + x;
 		shape_file << "v " << p(0) << " " << p(1) << " " << p(2) << std::endl;
 	}	
 
 	// Only save the normals if they have been calculated
 	if (pc.get_point(0).get_normal_coordinates().size() > 0){
 		for (unsigned int vertex_index = 0;vertex_index < pc.size();++vertex_index) {
-			const arma::vec & n = dcm * pc.get_point(vertex_index).get_normal_coordinates();
+			arma::vec::fixed<3> n = dcm * pc.get_point(vertex_index).get_normal_coordinates();
 			shape_file << "vn " << n(0) << " " << n(1) << " " << n(2) << std::endl;
 		}
 	}
@@ -34,14 +38,14 @@ void PointCloudIO<PointNormal>::save_to_txt(const PointCloud<PointNormal> & pc,
 
 	if (pc.get_point(0).get_normal_coordinates().size() > 0){
 		for (unsigned int vertex_index = 0;vertex_index < pc.size();++vertex_index) {
-			arma::vec p = dcm * pc.get_point_coordinates(vertex_index) + x;
-			arma::vec n = dcm * pc.get_point(vertex_index).get_normal_coordinates();
+			arma::vec::fixed<3> p = dcm * pc.get_point_coordinates(vertex_index) + x;
+			arma::vec::fixed<3> n = dcm * pc.get_point(vertex_index).get_normal_coordinates();
 			shape_file << p(0) << " " << p(1) << " " << p(2) << " " << n(0) << " " << n(1) << " " << n(2) << std::endl;
 		}
 	}
 	else{
 		for (unsigned int vertex_index = 0;vertex_index < pc.size();++vertex_index) {
-			arma::vec p = dcm * pc.get_point_coordinates(vertex_index) + x;
+			arma::vec::fixed<3> p = dcm * pc.get_point_coordinates(vertex_index) + x;
 			shape_file << p(0) << " " << p(1) << " " << p(2) << std::endl;
 		}
 	}

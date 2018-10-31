@@ -23,7 +23,7 @@ public:
 
 	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms, 
 		std::vector<RigidTransform> *  absolute_rigid_transforms, 
-		std::vector<arma::vec> mrps_LN,
+		std::vector<arma::vec::fixed<3> > mrps_LN,
 		double stdev_Xtilde,
 		double stdev_sigmatilde,
 		int N_iter, 
@@ -31,7 +31,7 @@ public:
 
 	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 		std::vector<RigidTransform> * absolute_rigid_transforms,  
-		std::vector<arma::vec> mrps_LN,
+		std::vector<arma::vec::fixed<3> > mrps_LN,
 		int N_iter, 
 		int N_particles);
 
@@ -140,7 +140,7 @@ protected:
 
 	int N_particles;
 	int N_iter;
-	std::vector<arma::vec> mrps_LN;
+	std::vector<arma::vec::fixed<3> > mrps_LN;
 
 	std::vector<arma::mat> rigid_transforms_covariances;
 	arma::vec state_at_epoch;

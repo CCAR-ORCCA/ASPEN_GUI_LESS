@@ -14,8 +14,8 @@ BundleAdjuster::BundleAdjuster(
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 	int N_iter,
 	int h,
-	const arma::mat & LN_t0,
-	const arma::vec & x_t0,
+	arma::mat * LN_t0,
+	arma::vec * x_t0,
 	std::string dir){
 
 	this -> all_registered_pc = all_registered_pc_;
@@ -29,8 +29,8 @@ BundleAdjuster::BundleAdjuster(
 
 BundleAdjuster::BundleAdjuster(
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
-	const arma::mat & LN_t0,
-	const arma::vec & x_t0,
+	arma::mat * LN_t0,
+	arma::vec * x_t0,
 	std::string dir){
 
 	this -> all_registered_pc = all_registered_pc_;
@@ -49,19 +49,18 @@ void BundleAdjuster::set_use_true_pairs(bool use_true_pairs){
 
 
 void BundleAdjuster::run(
-	std::map<int,arma::mat> & M_pcs,
-	std::map<int,arma::vec> & X_pcs,
-	std::vector<arma::mat> & BN_measured,
-	const std::vector<arma::vec> & mrps_LN,
-	bool save_connectivity,
-	int & previous_closure_index){
+	std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	std::map<int,arma::vec::fixed<3> > & X_pcs,
+	std::vector<arma::mat::fixed<3,3> > & BN_measured,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN,
+	bool save_connectivity){
 
 
 	int Q = this -> all_registered_pc -> size();
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
 	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs(previous_closure_index);
+	this -> create_pairs();
 
 	if (this -> all_registered_pc -> size() == 0){
 		std::cout << " - Nothing to do here, no loop closure or already closed\n";
@@ -76,25 +75,22 @@ void BundleAdjuster::run(
 
 
 	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds(M_pcs,
-		X_pcs,
-		BN_measured,
-		mrps_LN);
+	this -> update_point_clouds(M_pcs,X_pcs,BN_measured,mrps_LN);
 	
 
 	// The connectivity matrix is saved
 	if (save_connectivity){
+		
 		std::cout << "- Saving connectivity ... " << std::endl;
-
 		this -> save_connectivity();
 
 		std::cout << "- Saving transforms ... " << std::endl;
-
 		// The rigid transforms are saved after being adjusted
 		for (int i = 1; i < M_pcs.size(); ++i){
 			RBK::dcm_to_mrp(M_pcs[i]).save(this -> dir + "/sigma_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
 			X_pcs[i].save(this -> dir + "/X_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
 		}
+
 	}
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
@@ -207,10 +203,10 @@ int BundleAdjuster::get_cutoff_index() const{
 	return this -> closure_index;
 }
 
-void BundleAdjuster::create_pairs(int & previous_closure_index){
+void BundleAdjuster::create_pairs(){
 
 	std::set<std::set<int> > pairs;
-
+	this -> point_cloud_pairs.clear();
 	std::set<int> vertices = this -> graph. get_vertices();
 
 	// Need to pull the point cloud pairs from the bundle adjustment graph
@@ -234,55 +230,6 @@ void BundleAdjuster::create_pairs(int & previous_closure_index){
 		this -> point_cloud_pairs.push_back(pair);
 	}
 
-	// int ground_index = 0; 
-
-	// for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
-
-	// 	std::cout << "Finding overlaps with " << i << std::endl;
-	// 	auto overlap_with_ground = this -> find_overlap_with_pc(i,static_cast<int>(this -> all_registered_pc -> size() - 1),i);
-
-	// 	for (auto it = overlap_with_ground.begin(); it != overlap_with_ground.end(); ++it){
-	// 		std::cout << "\tUsing " << " ( " << i << " , "<< it -> second << " ) in loop closure" <<  std::endl;
-	// 		std::set<int> pair = {i,it -> second};
-	// 		pairs.insert(pair);
-	// 		if (i == 0){
-	// 			previous_closure_index = std::max(previous_closure_index,it -> second);
-	// 		}
-	// 	}
-	// }
-
-	
-
-	// this -> closure_index = previous_closure_index;
-
-
-	// std::cout << "Last closure index : " << previous_closure_index << std::endl;
-
-	// // The successive measurements are added
-	// for (int i = 0; i < this -> all_registered_pc -> size() - 1; ++i){
-	// 	std::set<int> pair = {i,i+1};
-	// 	pairs.insert(pair);
-	// }
-
-
-	// #if BUNDLE_ADJUSTER_DEBUG
-	// std::cout << " -- Number of pairs: " << pairs.size() << std::endl;
-	// std::cout << " -- Storing pairs" << std::endl;
-	// #endif
-
-	// for (auto pair_iter = pairs.begin(); pair_iter != pairs.end(); ++pair_iter){
-
-	// 	std::set<int> pair_set = *pair_iter;
-
-	// 	int S_k = *(pair_set.begin());
-	// 	int D_k = *(--pair_set.end());
-
-	// 	BundleAdjuster::PointCloudPair pair;
-	// 	pair.S_k = S_k;
-	// 	pair.D_k = D_k;
-	// 	this -> point_cloud_pairs.push_back(pair);
-
-	// }
 
 
 }
@@ -502,7 +449,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 
 
-		std::cout << " -- (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << error << " | "<< point_pairs.size() << " point pairs" << std::endl;
+		std::cout << " -- h == " << active_h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << error << " | "<< point_pairs.size() << " point pairs" << std::endl;
 
 	}
 
@@ -620,10 +567,10 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 }
 
 
-void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs, 
-	std::map<int,arma::vec> & X_pcs,
-	std::vector<arma::mat> & BN_measured,
-	const std::vector<arma::vec> & mrps_LN){
+void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 
+	std::map<int,arma::vec::fixed<3> > & X_pcs,
+	std::vector<arma::mat::fixed<3,3> > & BN_measured,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 	++progress;
@@ -660,17 +607,12 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat> & M_pcs,
 
 void BundleAdjuster::save_connectivity() const{
 
-
-	for (int k = 1; k <= this -> closure_index; ++k){
-
-		
+	for (int k = 1; k < this -> all_registered_pc -> size(); ++k){
 		PointCloudIO<PointNormal>::save_to_obj(
 			*this -> all_registered_pc -> at(k),
 			this -> dir + "/destination_" + std::to_string(k) + "_ba.obj",
-			this -> LN_t0.t(), 
-			this -> x_t0);
-		
-
+			this -> LN_t0 -> t(), 
+			*this -> x_t0);
 	}
 
 }
@@ -702,7 +644,6 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 		if (other_pc_index == pc_global_index) continue;
 
-		double prop;
 
 		double p = std::log2(this -> all_registered_pc -> at(pc_global_index) -> size());
 
@@ -715,11 +656,12 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 				this -> all_registered_pc -> at(other_pc_index),
 				active_h);
 
-			prop = double(point_pairs.size()) / N_pairs * 100;
+			double prop = double(point_pairs.size()) / N_pairs * 100;
 			std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
 
 			std::cout << " ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 
+			std::cout << this -> all_registered_pc -> at(*current_pc_pair.begin()) -> size()  << " / " << this -> all_registered_pc -> at(* (-- current_pc_pair.end())) -> size()<< std::endl;
 			if (prop > 80){
 				overlaps[prop] = other_pc_index;
 				if (prune_overlaps && overlaps.size() > 5){
@@ -748,7 +690,6 @@ void BundleAdjuster::update_overlap_graph(){
 	if (!this -> graph.vertexexists(0)){
 		std::cout << "\t Inserting point cloud #0 in graph\n";
 		this -> graph.addvertex(0);
-
 	}
 
 	int new_pc_index = static_cast<int>(this -> all_registered_pc -> size()) - 1;
@@ -759,6 +700,7 @@ void BundleAdjuster::update_overlap_graph(){
 	auto overlap = this -> find_overlap_with_pc(new_pc_index,0,new_pc_index - 1,false);
 
 	for (auto it = overlap.begin(); it != overlap.end(); ++it){
+
 		this -> graph.addedge(new_pc_index,it -> second,it -> first);
 	}
 

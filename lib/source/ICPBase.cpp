@@ -130,11 +130,7 @@ void ICPBase::register_pc(
 	// If no pairs have been provided, they are recomputed
 		if(this -> point_pairs.size() == 0){
 			this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
-			FeatureMatching<PointNormal>::save_matches(
-				"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(0) + ".txt",
-				this -> point_pairs,
-				*this -> pc_source,
-				*this -> pc_destination);
+			
 			this -> hierarchical = true;
 
 		}

@@ -113,7 +113,16 @@ public:
 
 protected:
 
-
+	static void extract_a_priori_transform(
+	arma::mat::fixed<3,3> & M, 
+	arma::vec::fixed<3> X,
+	const int index,
+	const arma::vec::fixed<3> & r_k_hat,
+	const arma::vec::fixed<3> & r_km1_hat,
+	const std::vector<arma::mat::fixed<3,3> > & BN_measured,
+	const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
+	const std::map<int,arma::vec::fixed<3>> &  X_pcs,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
 	arma::vec get_center_collected_pcs(
 		int first_pc_index,
@@ -127,7 +136,7 @@ protected:
 	arma::vec::fixed<3> get_center_collected_pcs() const;
 
 
-	void estimate_coverage(int previous_closure_index,
+	void estimate_coverage(
 		std::string dir,PointCloud<PointNormal> * pc  = nullptr) const;
 
 
@@ -139,13 +148,13 @@ protected:
 	@param lidar_pos reference to relative position of the spacecraft w/r to the barycentric B frame
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
-	void get_new_states(const arma::vec & X_S, 
-		arma::mat & dcm_LB, 
-		arma::vec & lidar_pos,
-		arma::vec & lidar_vel,
-		std::vector<arma::vec> & mrps_LN,
-		std::vector<arma::mat> & BN_true,
-		std::vector<arma::mat> & HN_true);
+	void get_new_states(const arma::vec::fixed<3> & X_S, 
+		arma::mat::fixed<3,3> & dcm_LB, 
+		arma::vec::fixed<3> & lidar_pos,
+		arma::vec::fixed<3> & lidar_vel,
+		std::vector<arma::vec::fixed<3>> & mrps_LN,
+		std::vector<arma::mat::fixed<3,3>> & BN_true,
+		std::vector<arma::mat::fixed<3,3>> & HN_true);
 
 
 
@@ -178,9 +187,9 @@ protected:
 		const arma::vec & times, 
 		const int t0_index,
 		const int tf_index,
-		const std::vector<arma::vec>  & mrps_LN,
-		const std::map<int,arma::vec> &  X_pcs,
-		const std::map<int,arma::mat> &  M_pcs) const;
+		const std::vector<arma::vec::fixed<3> >  & mrps_LN,
+		const std::map<int,arma::vec::fixed<3> > &  X_pcs,
+		const std::map<int,arma::mat::fixed<3,3> > &  M_pcs) const;
 
 		/**
 	Assembles the rigid transforms needed to evaluate the IOD cost function
@@ -196,9 +205,9 @@ protected:
 		std::vector<RigidTransform> & absolute_rigid_transforms,
 		const std::vector<int> & obs_indices,
 		const arma::vec & times, 
-		const std::vector<arma::vec>  & mrps_LN,
-		const std::map<int,arma::vec> & X_pcs,
-		const std::map<int,arma::mat> & M_pcs) const;
+		const std::vector<arma::vec::fixed<3> >  & mrps_LN,
+		const std::map<int,arma::vec::fixed<3> > & X_pcs,
+		const std::map<int,arma::mat::fixed<3,3> > & M_pcs) const;
 
 
 
@@ -247,9 +256,9 @@ protected:
 		const arma::vec & times,
 		const int t0 ,
 		const int tf, 
-		const std::vector<arma::vec> & mrps_LN,
-		const std::map<int,arma::vec> & X_pcs,
-		const std::map<int,arma::mat> & M_pcs,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN,
+		const std::map<int,arma::vec::fixed<3> > & X_pcs,
+		const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 		const std::map<int, arma::mat::fixed<6,6> > & R_pcs) const;
 
 
@@ -284,7 +293,7 @@ protected:
 
 
 
-	void save_attitude(std::string prefix,int index,const std::vector<arma::mat> & BN) const;
+	void save_attitude(std::string prefix,int index,const std::vector<arma::mat::fixed<3,3> > & BN) const;
 
 	static void run_psr(PointCloud<PointNormal> * pc,
 		const std::string dir,
