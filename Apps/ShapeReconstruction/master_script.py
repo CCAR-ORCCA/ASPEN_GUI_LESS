@@ -17,7 +17,7 @@ all_data = [
 {
 "OBSERVATION_TIMES" : 120,
 "NAVIGATION_TIMES" : 500,
-"IOD_PARTICLES" : 500,
+"IOD_PARTICLES" : 100,
 "IOD_ITERATIONS" : 100,
 "SMA" : 1000,
 "E" : 0.25,
@@ -38,7 +38,7 @@ all_data = [
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"USE_BA" : True,
+"USE_BA" : Fals,
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : True,
 "dir" : base_location + "output/test_0"}
