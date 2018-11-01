@@ -651,10 +651,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// Get the center of the collected pcs
 	// and use this as a crude guess for the very first position vector
 	// This vector must obviously be expressed in the N frame
-	// arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
-
-	std::cout << "DEBUG\n";
-	arma::vec::fixed<3> r_start_crude ={-7.5609e+02,  -2.2611e+01,   7.4242e+02};
+	arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
 
 
 	std::cout << "r_0 before mapping forward: " << r_start_crude.t() << std::endl;
@@ -673,8 +670,19 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// Well, I do not have a velocity crude guess at t_start, 
 	// so I have no choice but to use the rigid transforms
 
+
+
+
 	std::vector<arma::vec::fixed<3> > IOD_arc_positions;
-	IOD_arc_positions.push_back(r_start_crude);
+	// IOD_arc_positions.push_back(r_start_crude);
+
+
+	std::cout << "debug\n";
+	arma::vec guess = {-7.5609e+02 , -2.2611e+01  , 7.4242e+02,  -3.6951e-02  ,-1.1442e-02 , -2.2454e-02,2.25535};
+
+
+	IOD_arc_positions.push_back(guess.subvec(0,2));
+
 	
 	for (int t = t0; t < tf; ++t){
 		r_start_crude = sequential_rigid_transforms[t].M .t() * (r_start_crude + sequential_rigid_transforms[t].X);
@@ -724,15 +732,15 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		this -> filter_arguments -> get_iod_particles());
 
 
-	arma::vec guess = {
-		IOD_arc_positions.front()(0),
-		IOD_arc_positions.front()(1),
-		IOD_arc_positions.front()(2),
-		0,
-		0,
-		0,
-		2
-	};
+	// arma::vec guess = {
+	// 	IOD_arc_positions.front()(0),
+	// 	IOD_arc_positions.front()(1),
+	// 	IOD_arc_positions.front()(2),
+	// 	0,
+	// 	0,
+	// 	0,
+	// 	2
+	// };
 
 	std::cout << "Initial guess on the IOD arc: " << guess.t() << std::endl;
 
