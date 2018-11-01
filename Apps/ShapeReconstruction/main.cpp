@@ -53,8 +53,6 @@
 
 // IOD parameters
 #define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
-#define IOD_PARTICLES 100 // Number of particles (10000 seems a minimum)
-#define IOD_ITERATIONS 100 // Number of iterations
 
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
