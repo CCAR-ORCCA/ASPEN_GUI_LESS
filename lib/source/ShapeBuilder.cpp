@@ -674,14 +674,13 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 
 	std::vector<arma::vec::fixed<3> > IOD_arc_positions;
-	// IOD_arc_positions.push_back(r_start_crude);
 
 
 	std::cout << "debug\n";
 	arma::vec guess = {-7.5609e+02 , -2.2611e+01  , 7.4242e+02,  -3.6951e-02  ,-1.1442e-02 , -2.2454e-02,2.25535};
+	r_start_crude = guess.subvec(0,2) ;
 
-
-	IOD_arc_positions.push_back(guess.subvec(0,2));
+	IOD_arc_positions.push_back(r_start_crude);
 
 	
 	for (int t = t0; t < tf; ++t){
