@@ -38,7 +38,7 @@ all_data = [
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "USE_BA" : True,
 "USE_ICP" : True,
-"USE_TRUE_RIGID_TRANSFORMS" : True,
+"USE_TRUE_RIGID_TRANSFORMS" : False,
 "dir" : base_location + "output/test_0"}
 
 ]
