@@ -660,7 +660,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	arma::vec::fixed<3> r_start_crude ={-7.5609e+02,  -2.2611e+01,   7.4242e+02};
 
 
-
 	std::cout << "r_0 before mapping forward: " << r_start_crude.t() << std::endl;
 
 	// This position is mapped forward in time to the first start time in the IOD arc
@@ -668,7 +667,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	for (int t = 0; t < t0; ++t){
 		r_start_crude = sequential_rigid_transforms[t].M .t() * (r_start_crude + sequential_rigid_transforms[t].X);
 	}
-
 
 	// Applying the k-th rigid transform (index starting at 0) 
 	// to the k-th position vector maps it to the (k+1)th position vector
