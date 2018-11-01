@@ -74,6 +74,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
+	int epoch_time_index = 0;
+	OC::CartState iod_state;
 
 	arma::mat::fixed<3,3> M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec::fixed<3> X_pc = arma::zeros<arma::vec>(3);
@@ -128,29 +130,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
 
 
-			// The point-cloud to point-cloud ICP is used for point cloud registration
-			// This ICP can fail. If so, the update is still applied and will be fixed 
-			// in the bundle adjustment
-			
-			
 			if(this -> filter_arguments -> get_use_icp()){
 
-				// An a-priori absolute rigid transform is extracted from the previous measurements
+				arma::mat::fixed<3,3> M_pc_a_priori;
+				arma::vec::fixed<3> X_pc_a_priori;
 
-				ShapeBuilder::extract_a_priori_transform(M_pc,X_pc,time_index,BN_measured,M_pcs,X_pcs,mrps_LN);
-
-
-
-				IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
-				icp_pc_prealign.set_minimum_h(4);
-				icp_pc_prealign.register_pc(M_pc,X_pc);
-
-
-
-
+				this -> get_best_a_priori_rigid_transform(
+					M_pc_a_priori,
+					X_pc_a_priori,
+					iod_state,
+					times,
+					time_index,
+					epoch_time_index,
+					BN_measured,
+					M_pcs,
+					X_pcs,
+					mrps_LN);
 
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
-				icp_pc.register_pc(icp_pc_prealign.get_dcm(),icp_pc_prealign.get_x());
+				icp_pc.register_pc(M_pc_a_priori,X_pc_a_priori);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -183,7 +181,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			this -> source_pc -> transform(M_pc,X_pc);
 			this -> all_registered_pc.push_back(this -> source_pc);
 
-
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
 
@@ -192,13 +189,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(X_pcs.size() == BN_true.size());
 
 			ba_test.update_overlap_graph();
-
-			ba_test.run(
-				M_pcs,
-				X_pcs,
-				BN_measured,
-				mrps_LN,
-				false);
+			ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
+			
+			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -230,12 +223,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
 						
-						ba_test.run(
-							M_pcs,
-							X_pcs,
-							BN_measured,
-							mrps_LN,
-							true);
+						ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,true);
 					}
 
 					std::cout << "\n-- Saving attitude...\n";
@@ -252,7 +240,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << "True velocity : " << X_S.subvec(3,5).t();
 					std::cout << "True position at t0 : " << (this -> x_t0).t() << std::endl;
 
-					this -> run_IOD_finder(times, 0 ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs);
+					this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 					last_ba_call_index = time_index;
 				}
@@ -263,8 +251,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
-
-				
 
 				ba_test.run(
 					M_pcs,
@@ -293,7 +279,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 
-
 				bezier_shape.save_to_obj(dir + "/fit_shape.obj");
 
 				throw(std::runtime_error("not implemented yet"));
@@ -305,8 +290,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> LN_t0.t(), 
 				this -> x_t0);
 			#endif
-
-
 
 			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
 				std::cout << "- Initializing shape model" << std::endl;
@@ -419,7 +402,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	// 	X_S = X[time_index];
 
 	// 	this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
-		
+
 	// 	// Setting the Lidar frame to its new state
 	// 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_origin_from_parent(X_S.subvec(0,2));
 	// 	this -> frame_graph -> get_frame(this -> lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrps_LN[time_index]);
@@ -443,12 +426,12 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	// 		M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 	// 		X_pcs[time_index] = arma::zeros<arma::vec>(3);
-			
+
 
 	// 		// The point-cloud to point-cloud ICP is used for point cloud registration
 	// 		// This ICP can fail. If so, the update is still applied and will be fixed 
 	// 		// in the bundle adjustment
-			
+
 	// 		try{
 
 	// 			IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
@@ -476,10 +459,10 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	// 		RBK::dcm_to_mrp(M_pc_true).save(dir + "/sigma_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 	// 		X_pc_true.save(dir + "/X_tilde_true_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			
+
 	// 		RBK::dcm_to_mrp(M_pc).save(dir + "/sigma_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
 	// 		X_pc.save(dir + "/X_tilde_before_ba_" + std::to_string(time_index ) + ".txt",arma::raw_ascii);
-			
+
 
 	// 			/****************************************************************************/
 	// 			/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
@@ -522,7 +505,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	// int final_index;
 	// if (!this -> filter_arguments -> get_use_ba()){
 	// 	final_index = this -> filter_arguments -> get_iod_rigid_transforms_number() - 1;
-		
+
 	// }
 
 
@@ -597,7 +580,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 
 	// 	all_covs.rows(7 * i, 7 * i + 6) = cov;
-		
+
 	// 	++progress;
 
 	// }
@@ -649,7 +632,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
 	const std::map<int,arma::vec::fixed<3> > & X_pcs,
 	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-	const std::map<int, arma::mat::fixed<6,6> > & R_pcs) const{
+	const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
+	OC::CartState & cart_state) const{
 
 
 	// Forming the absolute/rigid transforms
@@ -756,6 +740,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	arma::mat cov;
 	iod_finder.run_batch(state,cov,R_pcs);
 
+	cart_state.set_state(state.subvec(0,5));
+	cart_state.set_mu(state(6));
 }
 
 
@@ -978,7 +964,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 
 void ShapeBuilder::get_new_states(
-	const arma::vec::fixed<3> & X_S, 
+	const arma::vec & X_S, 
 	arma::mat::fixed<3,3> & dcm_LB, 
 	arma::vec::fixed<3> & lidar_pos,
 	arma::vec::fixed<3> & lidar_vel,
@@ -1340,7 +1326,7 @@ void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
 
 void ShapeBuilder::extract_a_priori_transform(
 	arma::mat::fixed<3,3> & M, 
-	arma::vec::fixed<3> X,
+	arma::vec::fixed<3> & X,
 	const int index,
 	const arma::vec::fixed<3> & r_k_hat,
 	const arma::vec::fixed<3> & r_km1_hat,
@@ -1352,35 +1338,132 @@ void ShapeBuilder::extract_a_priori_transform(
 	// in all that follows, _k refers to the current time 
 
 	assert(mrps_LN.size() == BN_measured.size() + 1 );// should already have collected the spacecraft attitude at this time
+	assert(mrps_LN.size() == index + 1);
 
 	// The a-priori rotation is extracted first
 
 	arma::mat::fixed<3,3> BN_km1 = BN_measured.back();
-	arma::mat::fixed<3,3> BN_k_hat; // to be defined
+	arma::mat::fixed<3,3> BN_km2 = *std::prev(BN_measured.end(), 2);
 
+	// Assumes a fixed rotation axis and angular velocity
+	arma::mat::fixed<3,3> BN_k_hat = (BN_km1 * BN_km2.t()) * BN_km1 ; 
+	arma::cx_vec eigval;
+	arma::cx_mat eigvec;
+	
+	arma::eig_gen( eigval, eigvec, BN_k_hat );
 
 	// This is a suitable a-priori rigid transform dcm
 	M = RBK::mrp_to_dcm(mrps_LN.front()) * BN_measured.front().t() * BN_k_hat * RBK::mrp_to_dcm(mrps_LN.back()).t();
 
-
 	// 
 
 	arma::mat::fixed<3,3> Mp_k_hat = (
-		RBK::mrp_to_dcm(*std::prev(mrps_LN.end(), 2)).t() 
+		RBK::mrp_to_dcm(mrps_LN[index - 1]).t() 
 		* M_pcs.at(index - 1).t() 
 		* M 
 		* RBK::mrp_to_dcm(mrps_LN.back()));
 
 
 
+
 	// This is a suitable a-priori rigid transform X
-	X = M_pcs.at(index - 1) * RBK::mrp_to_dcm(*std::prev(mrps_LN.end(), 2)) * (Mp_k_hat * r_k_hat - r_km1_hat) + X_pcs.at(index - 1);
+	X = M_pcs.at(index - 1) * RBK::mrp_to_dcm(mrps_LN[index - 1]) * (Mp_k_hat * r_k_hat - r_km1_hat) + X_pcs.at(index - 1);
 
 
 }
 
 
+void ShapeBuilder::get_best_a_priori_rigid_transform(
+	arma::mat::fixed<3,3> & M_pc_a_priori,
+	arma::vec::fixed<3> &  X_pc_a_priori,
+	const OC::CartState & cartesian_state,
+	const arma::vec & times,
+	const int & time_index,
+	const int & epoch_time_index,
+	const std::vector<arma::mat::fixed<3,3>> & BN_measured,
+	const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
+	const std::map<int,arma::vec::fixed<3> > &  X_pcs,
+	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
+
+	// icp_pc_prealign.set_minimum_h(4);
+	// 	icp_pc_prealign.register_pc(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+
+	// 	M_pc_a_priori = icp_pc_prealign.get_dcm();
+	// 	X_pc_a_priori = icp_pc_prealign.get_x();
+	// 	std::cout << "\t Choosing previous rt a-priori\n";
+
+	OC::KepState kep_state_epoch = cartesian_state.convert_to_kep(0);
+
+
+	OC::CartState cart_state_tk = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
+	OC::CartState cart_state_tkm1 = kep_state_epoch.convert_to_cart(times(time_index - 1) - times(epoch_time_index));
+
+
+	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
+	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
+
+
+	arma::mat::fixed<3,3> M_pc_iod;
+	arma::vec::fixed<3> X_pc_iod;
+
+	ShapeBuilder::extract_a_priori_transform(M_pc_iod,
+		X_pc_iod,
+		time_index,
+		r_k_hat,
+		r_km1_hat,
+		BN_measured,
+		M_pcs,
+		X_pcs,
+		mrps_LN);
+
+	// The quality of the pre-alignment is assessed by looking at which of the two predictions
+	// (M_pc_iod,X_pc_iod) or (M_pc,X_pc) yields the best pairs
+
+	// Previous rigid transform
+	IterativeClosestPoint icp_pc_prealign(this -> destination_pc, this -> source_pc);
+	icp_pc_prealign.compute_pairs(4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	
+	double res_previous_rt = icp_pc_prealign.compute_residuals(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	int N_pairs_previous_rt = icp_pc_prealign.get_point_pairs().size();
+	
+	std::cout << "\t Residuals from previous rt: " << res_previous_rt << " from " << icp_pc_prealign.get_point_pairs().size()<< " pairs" << std::endl;
+	std::cout << "\t Rigid transforms from previous rt: " << RBK::dcm_to_mrp(M_pcs.at(time_index - 1)).t() << " , " << X_pcs.at(time_index - 1).t() << std::endl << std::endl;
+
+	// IOD rigid transform
+	int N_pairs_iod = 0;
+	double res_previous_iod = std::numeric_limits<double>::infinity();
+	try{
+		icp_pc_prealign.compute_pairs(4,M_pc_iod,X_pc_iod);
+		res_previous_iod = icp_pc_prealign.compute_residuals(M_pc_iod,X_pc_iod);
+		N_pairs_iod = icp_pc_prealign.get_point_pairs().size();
+
+		std::cout << "\t Residuals from iod rt: " << res_previous_iod << " from "<< icp_pc_prealign.get_point_pairs().size()  << " pairs" << std::endl << std::endl;
+		std::cout << "\t Rigid transforms from iod rt: " << RBK::dcm_to_mrp(M_pc_iod).t() << " , " << X_pc_iod.t() << std::endl << std::endl;
+	}
+	catch(ICPNoPairsException & e){
+		e.what();
+	}
+
+	if (res_previous_rt < res_previous_iod || N_pairs_iod == 0){
+		std::cout << "\t Choosing previous rt a-priori\n";
+
+		icp_pc_prealign.clear_point_pairs();
+		icp_pc_prealign.set_minimum_h(4);
+		icp_pc_prealign.register_pc(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+
+		M_pc_a_priori = icp_pc_prealign.get_dcm();
+		X_pc_a_priori = icp_pc_prealign.get_x();
+	}
+	else{
+		std::cout << "\t Choosing iod rt a-priori\n";
+
+		M_pc_a_priori = M_pc_iod;
+		X_pc_a_priori = X_pc_iod;
+	}
+
+
+}
 
 
 

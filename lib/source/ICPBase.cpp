@@ -92,7 +92,9 @@ void ICPBase::set_pc_destination(std::shared_ptr<PC> pc_destination){
 
 
 
-
+void ICPBase::clear_point_pairs(){
+	this -> point_pairs.clear();
+}
 
 
 
@@ -107,7 +109,6 @@ void ICPBase::register_pc(
 	double J  = std::numeric_limits<double>::infinity();
 	double J_0  = std::numeric_limits<double>::infinity();
 	double J_previous = std::numeric_limits<double>::infinity();
-
 
 	int h = this -> maximum_h;
 
@@ -163,13 +164,7 @@ void ICPBase::register_pc(
 				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
 				next_h = false;
 
-				#if ICP_DEBUG
-				FeatureMatching<PointNormal>::save_matches(
-					"pairs_h_"+std::to_string(h) + "_iter_"+ std::to_string(iter) + ".txt",
-					this -> point_pairs,
-					*this -> pc_source,
-					*this -> pc_destination);
-				#endif
+				
 			}
 		/**************************************
 		***************************************

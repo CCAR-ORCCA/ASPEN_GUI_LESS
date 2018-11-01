@@ -94,6 +94,13 @@ public:
 	arma::vec compute_y_vector(const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S ,
 		const arma::vec::fixed<3> & x_S) const ;
+	
+	double compute_residuals(
+		const arma::mat::fixed<3,3> & dcm,
+		const arma::vec::fixed<3> & x,
+		const arma::vec & weights = {});
+
+	void clear_point_pairs();
 
 protected:
 	std::shared_ptr< PointCloud<PointNormal > > pc_destination;
@@ -101,10 +108,6 @@ protected:
 
 	double static compute_Huber_loss(const arma::vec & y, double threshold);
 
-	double compute_residuals(
-		const arma::mat::fixed<3,3> & dcm,
-		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {});
 
 	virtual double compute_distance(const PointPair & point_pair, 
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),

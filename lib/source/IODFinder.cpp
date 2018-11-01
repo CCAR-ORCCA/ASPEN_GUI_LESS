@@ -135,7 +135,7 @@ double IODFinder::cost_function_cartesian(
 	}
 
 
-	return arma::norm(epsilon);
+	return std::sqrt(arma::dot(epsilon,epsilon)/epsilon.size());
 
 }
 
@@ -383,7 +383,7 @@ void IODFinder::run_batch(
 		this -> compute_W(positions);
 		this -> build_normal_equations(info_mat,normal_mat,residual_vector,positions,stms);
 		
-		std::cout << "\tResiduals norm: " << arma::norm(residual_vector ) << std::endl;
+		std::cout << "\tResiduals RMS: " << std::sqrt(arma::dot(residual_vector,residual_vector)/residual_vector.size())<< std::endl;
 
 		arma::vec deviation = arma::solve(info_mat,normal_mat);
 

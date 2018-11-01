@@ -108,21 +108,33 @@ public:
 	*/
 	void store_point_clouds(int index,const std::string dir);
 
+	void get_best_a_priori_rigid_transform(
+		arma::mat::fixed<3,3> & M_pc_a_priori,
+		arma::vec::fixed<3> & X_pc_a_priori,
+		const OC::CartState & cartesian_state,
+		const arma::vec & times,
+		const int & time_index,
+		const int & epoch_time_index,
+		const std::vector<arma::mat::fixed<3,3>> & BN_measured,
+		const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
+		const std::map<int,arma::vec::fixed<3> > &  X_pcs,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN);
+
 
 
 
 protected:
 
 	static void extract_a_priori_transform(
-	arma::mat::fixed<3,3> & M, 
-	arma::vec::fixed<3> X,
-	const int index,
-	const arma::vec::fixed<3> & r_k_hat,
-	const arma::vec::fixed<3> & r_km1_hat,
-	const std::vector<arma::mat::fixed<3,3> > & BN_measured,
-	const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
-	const std::map<int,arma::vec::fixed<3>> &  X_pcs,
-	const std::vector<arma::vec::fixed<3> > & mrps_LN);
+		arma::mat::fixed<3,3> & M, 
+		arma::vec::fixed<3> & X,
+		const int index,
+		const arma::vec::fixed<3> & r_k_hat,
+		const arma::vec::fixed<3> & r_km1_hat,
+		const std::vector<arma::mat::fixed<3,3> > & BN_measured,
+		const std::map<int,arma::mat::fixed<3,3>> &  M_pcs,
+		const std::map<int,arma::vec::fixed<3>> &  X_pcs,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
 	arma::vec get_center_collected_pcs(
 		int first_pc_index,
@@ -148,7 +160,7 @@ protected:
 	@param lidar_pos reference to relative position of the spacecraft w/r to the barycentric B frame
 	@param lidar_vel reference to relative velocity of the spacecraft w/r to the barycentric B frame
 	*/
-	void get_new_states(const arma::vec::fixed<3> & X_S, 
+	void get_new_states(const arma::vec & X_S, 
 		arma::mat::fixed<3,3> & dcm_LB, 
 		arma::vec::fixed<3> & lidar_pos,
 		arma::vec::fixed<3> & lidar_vel,
@@ -229,27 +241,6 @@ protected:
 	@param mrps_LN time history of (true) [LN] in mrp form
 	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
 	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
-	*/
-	void run_IOD_finder(arma::vec & state,
-		arma::mat & cov,
-		arma::vec & crude_guess,
-		const arma::vec & times,
-		const int t0 ,
-		const int tf, 
-		const std::vector<arma::vec> & mrps_LN,
-		const std::map<int,arma::vec> & X_pcs,
-		const std::map<int,arma::mat> M_pcs) const;
-
-
-
-	/**
-	Computes a initial a-priori state minimizing the associated rigid transform norm 
-	@param times vector of times
-	@param t0_index timestamp of epoch in current IOD run
-	@param tf_index timestamp of last considered state in IOD run
-	@param mrps_LN time history of (true) [LN] in mrp form
-	@param X_pcs map of computed absolute rigid transform translations, indexed by timestamp
-	@param M_pcs map of computed absolute rigid transform rotations, indexed by timestamp
 	@param R_pcs map of absolute rigid transform covariance matrices 
 	*/
 	void run_IOD_finder(
@@ -259,7 +250,8 @@ protected:
 		const std::vector<arma::vec::fixed<3> > & mrps_LN,
 		const std::map<int,arma::vec::fixed<3> > & X_pcs,
 		const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-		const std::map<int, arma::mat::fixed<6,6> > & R_pcs) const;
+		const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
+		OC::CartState & cart_state) const;
 
 
 
