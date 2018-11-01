@@ -94,7 +94,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
-		int epoch_time_index = std::max(time_index - 15,0);
+		int epoch_time_index = std::max(time_index - 1500,0);
 
 		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
