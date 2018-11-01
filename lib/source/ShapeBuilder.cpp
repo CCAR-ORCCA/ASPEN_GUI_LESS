@@ -1334,19 +1334,10 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
 
-	// icp_pc_prealign.set_minimum_h(4);
-	// 	icp_pc_prealign.register_pc(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
-
-	// 	M_pc_a_priori = icp_pc_prealign.get_dcm();
-	// 	X_pc_a_priori = icp_pc_prealign.get_x();
-	// 	std::cout << "\t Choosing previous rt a-priori\n";
-
 	OC::KepState kep_state_epoch = cartesian_state.convert_to_kep(0);
-
 
 	OC::CartState cart_state_tk = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
 	OC::CartState cart_state_tkm1 = kep_state_epoch.convert_to_cart(times(time_index - 1) - times(epoch_time_index));
-
 
 	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
 	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
