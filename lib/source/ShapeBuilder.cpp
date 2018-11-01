@@ -654,7 +654,12 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// Get the center of the collected pcs
 	// and use this as a crude guess for the very first position vector
 	// This vector must obviously be expressed in the N frame
-	arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
+	// arma::vec::fixed<3> r_start_crude = - this -> LN_t0.t() * this -> get_center_collected_pcs();
+
+	std::cout << "DEBUG\n";
+	arma::vec::fixed<3> r_start_crude ={-7.5609e+02,  -2.2611e+01,   7.4242e+02};
+
+
 
 	std::cout << "r_0 before mapping forward: " << r_start_crude.t() << std::endl;
 
@@ -1338,6 +1343,7 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 	OC::CartState cart_state_tk = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
 	OC::CartState cart_state_tkm1 = kep_state_epoch.convert_to_cart(times(time_index - 1) - times(epoch_time_index));
+
 
 	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
 	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
