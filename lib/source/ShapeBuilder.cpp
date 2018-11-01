@@ -188,8 +188,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(X_pcs.size() == BN_true.size());
 
 			ba_test.update_overlap_graph();
-			ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
-				
+			if (this -> filter_arguments -> get_use_ba()){
+				ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
+			}
 			std::cout << "True state at epoch time before running IOD: " << X[epoch_time_index].subvec(0,5).t() << std::endl;
 			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
@@ -678,6 +679,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	std::cout << "debug\n";
 	arma::vec guess = {-7.5609e+02 , -2.2611e+01  , 7.4242e+02,  -3.6951e-02  ,-1.1442e-02 , -2.2454e-02,2.25535};
+	
 	r_start_crude = guess.subvec(0,2) ;
 
 	IOD_arc_positions.push_back(r_start_crude);
@@ -703,7 +705,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	std::vector<RigidTransform> sequential_rigid_transforms_arc;
 	std::vector<RigidTransform> absolute_rigid_transforms_arc;
 	std::vector<arma::vec::fixed<3> > mrps_LN_arc;
-
 
 	for (auto rt : sequential_rigid_transforms){
 		if (rt.index_start >= t0){
