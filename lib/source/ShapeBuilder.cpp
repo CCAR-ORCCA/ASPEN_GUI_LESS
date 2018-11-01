@@ -14,7 +14,6 @@
 #include <ControlPoint.hpp>
 #include <ShapeModelImporter.hpp>
 #include <ShapeFitterBezier.hpp>
-// #include <IOFlags.hpp>
 #include <IODFinder.hpp>
 #include <CGAL_interface.hpp>
 
@@ -191,7 +190,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			ba_test.update_overlap_graph();
 			ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
 			
-			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+			this -> run_IOD_finder(times, std::max(time_index - 15,0) ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -234,13 +233,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
 
-					std::cout << "\n-- Moving on...\n";
+					std::cout << "\n-- Running IOD Finder ...\n";
 
-					std::cout << "True position : " << X_S.subvec(0,2).t();
-					std::cout << "True velocity : " << X_S.subvec(3,5).t();
-					std::cout << "True position at t0 : " << (this -> x_t0).t() << std::endl;
-
-					this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+					this -> run_IOD_finder(times, std::max(time_index - 15,0) ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 					last_ba_call_index = time_index;
 				}
@@ -252,12 +247,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Applying BA to whole point cloud batch\n";
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
-				ba_test.run(
-					M_pcs,
-					X_pcs,
-					BN_measured,
-					mrps_LN,
-					true);
+				ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,true);
 
 				std::cout << " -- Saving attitude...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
@@ -691,6 +681,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	}
 
 	arma::mat crude_positions(3,IOD_arc_positions.size());
+	
 	for (int i = 0; i < IOD_arc_positions.size(); ++i){
 		crude_positions.col(i) = IOD_arc_positions[i];
 	}
@@ -700,8 +691,29 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	// A first PSO run refines the velocity and standard gravitational parameter at the start time of 
 	// the observation arc
 
-	IODFinder iod_finder(&sequential_rigid_transforms, &absolute_rigid_transforms, mrps_LN,
-		this -> filter_arguments -> get_iod_iterations(),this -> filter_arguments -> get_iod_particles());
+	// This arc is comprised of rigid transforms indexed between t0 and tf inclusive
+
+	std::vector<RigidTransform> sequential_rigid_transforms_arc;
+	std::vector<RigidTransform> absolute_rigid_transforms_arc;
+
+	for (auto rt : sequential_rigid_transforms){
+		if (rt.index_start >= t0){
+			sequential_rigid_transforms_arc.push_back(rt);
+		}
+	}
+
+	for (auto rt : absolute_rigid_transforms){
+		if (rt.index_end >= t0){
+			absolute_rigid_transforms_arc.push_back(rt);
+		}
+	}
+
+	IODFinder iod_finder(
+		&sequential_rigid_transforms_arc, 
+		&absolute_rigid_transforms_arc, 
+		mrps_LN,
+		this -> filter_arguments -> get_iod_iterations(),
+		this -> filter_arguments -> get_iod_particles());
 
 
 	arma::vec guess = {
@@ -744,80 +756,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	cart_state.set_mu(state(6));
 }
 
-
-
-
-
-
-void ShapeBuilder::assemble_rigid_transforms_IOD(
-	std::vector<RigidTransform> & sequential_rigid_transforms,
-	std::vector<RigidTransform> & absolute_rigid_transforms,
-	std::vector<RigidTransform> & absolute_true_rigid_transforms,
-	const arma::vec & times, 
-	const int t0_index,
-	const int tf_index,
-	const std::vector<arma::vec::fixed<3> >  & mrps_LN,
-	const std::map<int,arma::vec::fixed<3> > & X_pcs,
-	const std::map<int,arma::mat::fixed<3,3> > & M_pcs) const{
-
-	throw("not implemented");
-
-	// RigidTransform rt;
-	// rt.t_k = times(0);
-	// rt.X = X_pcs.at(0);
-	// rt.M = M_pcs.at(0);
-
-	// absolute_rigid_transforms.push_back(rt);
-	// absolute_true_rigid_transforms.push_back(rt);
-
-
-	// std::map<int,arma::vec> X_pcs_noisy;
-	// std::map<int,arma::mat> M_pcs_noisy;
-
-
-	// X_pcs_noisy[0] = arma::zeros<arma::vec>(3);
-	// M_pcs_noisy[0] = arma::eye<arma::mat>(3,3);
-
-	// for (int k = 1; k < X_pcs.size(); ++k){
-	// 	X_pcs_noisy[k] = X_pcs.at(k) + this -> filter_arguments -> get_rigid_transform_noise_sd("X") * arma::randn<arma::vec>(3);
-	// 	M_pcs_noisy[k] = M_pcs.at(k) * RBK::mrp_to_dcm(this -> filter_arguments -> get_rigid_transform_noise_sd("sigma") * arma::randn<arma::vec>(3));
-	// }
-
-	// for (int k = t0_index ; k <=  tf_index; ++ k){
-
-	// 	if (k != 0){
-
-	// // Adding the rigid transform. M_p_k and X_p_k represent the incremental rigid transform 
-	// // from t_k to t_(k-1)
-	// 		arma::mat M_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * M_pcs_noisy.at(k) * RBK::mrp_to_dcm(mrps_LN[k]);
-	// 		arma::vec X_p_k = RBK::mrp_to_dcm(mrps_LN[k - 1]).t() * M_pcs_noisy.at(k - 1).t() * (X_pcs_noisy.at(k) - X_pcs_noisy.at(k - 1));
-
-
-
-	// 		RigidTransform rigid_transform;
-	// 		rigid_transform.M = M_p_k;
-	// 		rigid_transform.X = X_p_k;
-	// 		rigid_transform.t_k = times(k - t0_index);
-	// 		sequential_rigid_transforms.push_back(rigid_transform);
-
-	// 		RigidTransform rt;
-	// 		rt.t_k = times(k - t0_index);
-	// 		rt.X = X_pcs_noisy[k];
-	// 		rt.M = M_pcs_noisy[k];
-
-	// 		absolute_rigid_transforms.push_back(rt);
-
-	// 		RigidTransform rt_true;
-	// 		rt_true.t_k = times(k - t0_index);
-	// 		rt_true.X = X_pcs.at(k);
-	// 		rt_true.M = M_pcs.at(k);
-
-	// 		absolute_true_rigid_transforms.push_back(rt_true);
-
-
-	// 	}
-	// }
-}
 
 
 void ShapeBuilder::assemble_rigid_transforms_IOD(

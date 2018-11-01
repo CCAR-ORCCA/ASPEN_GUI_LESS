@@ -108,6 +108,7 @@ double IODFinder::cost_function_cartesian(
 			std::cout << " - Time from 0 : " << t << std::endl;
 			std::cout << " - Time from epoch : " << time_from_epoch << std::endl << std::endl;
 		}
+	
 	}
 
 
