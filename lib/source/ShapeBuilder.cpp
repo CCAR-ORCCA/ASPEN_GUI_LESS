@@ -163,7 +163,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
 				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
-				R_pcs[time_index] = arma::eye<arma::mat>(6,6);
+				R_pcs[time_index] = 1e-10 * arma::eye<arma::mat>(6,6);
 
 			}
 				/****************************************************************************/
