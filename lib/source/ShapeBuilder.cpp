@@ -726,6 +726,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		2
 	};
 
+	std::cout << "Initial guess on the IOD arc: " << guess.t() << std::endl;
+
 	arma::vec lower_bounds = {
 		guess(0) - 10,
 		guess(1) - 10,

@@ -64,7 +64,6 @@ void IODFinder::run_pso(
 	this -> state_at_epoch = psopt.get_result();
 
 
-
 }
 
 arma::vec IODFinder::get_result() const{
@@ -92,6 +91,8 @@ double IODFinder::cost_function_cartesian(
 
 	if (verbose_level > 1){
 		std::cout << "\n - Epoch time: " << epoch_time;
+		std::cout << "\n - Epoch index: " << args -> front().index_start;
+
 	}
 
 	positions.col(0) = cart_state.get_position_vector();
