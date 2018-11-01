@@ -102,6 +102,9 @@ int main() {
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
+	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
+ 	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
+
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
