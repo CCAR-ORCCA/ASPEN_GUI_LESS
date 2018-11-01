@@ -104,8 +104,12 @@ const int  & convergence_interval) {
 				for (int particle = 0; particle < this -> population_size; ++particle){
 					arma::vec randn_vec = arma::randn(1);
 					
-					this -> population(particle,state_index) = this -> guess(state_index) + sd_vec(state_index) * randn_vec(0);
-
+					if (particle == 0){
+						this -> population(particle,state_index) = this -> guess(state_index);
+					}
+					else{
+						this -> population(particle,state_index) = this -> guess(state_index) + sd_vec(state_index) * randn_vec(0);
+					}
 					// Boundary check
 					if (this -> population(particle,state_index) > this -> upper_bounds(state_index)) {
 
@@ -120,7 +124,7 @@ const int  & convergence_interval) {
 							double distance_to_boundary_inside = this -> population(particle,state_index) - this -> upper_bounds(state_index);
 							this -> population(particle,state_index) = this -> population(particle,state_index) - distance_to_boundary_inside;
 
-						
+
 						}
 
 					}
@@ -139,7 +143,7 @@ const int  & convergence_interval) {
 
 							this -> population(particle,state_index) = this -> population(particle,state_index) + distance_to_boundary_inside;
 
-						
+
 						}
 
 					}
