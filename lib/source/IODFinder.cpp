@@ -109,7 +109,7 @@ double IODFinder::cost_function_cartesian(
 			std::cout << " - Time from 0 : " << t << std::endl;
 			std::cout << " - Time from epoch : " << time_from_epoch << std::endl << std::endl;
 		}
-	
+
 	}
 
 
@@ -383,52 +383,25 @@ void IODFinder::run_batch(
 		
 		std::cout << "\tResiduals RMS: " << std::sqrt(arma::dot(residual_vector,residual_vector)/residual_vector.size())<< std::endl;
 
-		arma::vec deviation = arma::solve(info_mat,normal_mat);
+		try{
+			arma::vec deviation = arma::solve(info_mat,normal_mat);
 
-		state += deviation;
+			state += deviation;
+
+		}
+		catch(std::runtime_error & e){
+			e.what();
+		}
 		std::cout << "\tState: " << state.t() << std::endl;
 
 	}
 
-	cov = arma::inv(info_mat);
-	
-
-
-}
-
-void IODFinder::run_batch(
-	arma::vec & state,
-	arma::mat & cov){
-
-	int N_iter = 10;
-
-	arma::mat info_mat(7,7);
-	arma::vec normal_mat(7);
-	arma::vec residual_vector = arma::vec(3 * this -> sequential_rigid_transforms -> size());
-
-	std::vector<arma::vec::fixed<3> > positions;
-	std::vector<arma::mat> stms;
-
-	for (int i = 0; i < N_iter; ++i){
-
-		this -> compute_state_stms(state,positions,stms);
-		this -> compute_W(positions);
-		this -> build_normal_equations(
-			info_mat,
-			normal_mat,
-			residual_vector,
-			positions,
-			stms);
-
-		arma::vec deviation = arma::solve(info_mat,normal_mat);
-		state += deviation;
-
+	try{
+		cov = arma::inv(info_mat);
 	}
-
-	cov = arma::inv(info_mat);
-	arma::vec index_v = arma::randi<arma::vec>(1);
-	double index = index_v(0);
-
+	catch(std::runtime_error & e){
+		e.what();
+	}
 
 }
 
