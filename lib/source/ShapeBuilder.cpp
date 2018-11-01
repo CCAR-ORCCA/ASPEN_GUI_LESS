@@ -189,7 +189,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			ba_test.update_overlap_graph();
 			ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
-			
+				
+			std::cout << "True state at epoch time before running IOD: " << X[epoch_time_index].subvec(0,5).t() << std::endl;
 			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 			// Bundle adjustment is periodically run
@@ -690,7 +691,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	// A first PSO run refines the velocity and standard gravitational parameter at the start time of 
 	// the observation arc
-
 	// This arc is comprised of rigid transforms indexed between t0 and tf inclusive
 
 	std::vector<RigidTransform> sequential_rigid_transforms_arc;
