@@ -21,14 +21,6 @@ class IODFinder{
 
 public:
 
-	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms, 
-		std::vector<RigidTransform> *  absolute_rigid_transforms, 
-		std::vector<arma::vec::fixed<3> > mrps_LN,
-		double stdev_Xtilde,
-		double stdev_sigmatilde,
-		int N_iter, 
-		int N_particles);
-
 	IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
 		std::vector<RigidTransform> * absolute_rigid_transforms,  
 		std::vector<arma::vec::fixed<3> > mrps_LN,
@@ -60,14 +52,6 @@ public:
 
 	arma::sp_mat compute_partial_y_partial_I(const std::vector<arma::vec::fixed<3>> & positions) const;
 	arma::sp_mat compute_partial_y_partial_T(const std::vector<arma::vec::fixed<3>> & positions) const;
-
-
-	void debug_R() const;
-	static void debug_rp_partial();
-
-
-	static void debug_stms(const std::vector<RigidTransform> * rigid_transforms);
-
 
 
 	void compute_W(const std::vector<arma::vec::fixed<3>> & positions);
@@ -132,8 +116,6 @@ protected:
 	void compute_state_stms(const arma::vec::fixed<7> & X_hat,
 		std::vector<arma::vec::fixed<3> > & positions,
 		std::vector<arma::mat> & stms) const;
-
-	void compute_P_T();
 
 	void compute_P_T(const std::map<int, arma::mat::fixed<6,6> > & R_pcs);
 

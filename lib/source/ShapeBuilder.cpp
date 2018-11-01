@@ -615,8 +615,6 @@ void ShapeBuilder::save_attitude(std::string prefix,int index,const std::vector<
 }
 
 
-
-
 void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const int t0 ,
 	const int tf, 
@@ -625,7 +623,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 	const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	OC::CartState & cart_state) const{
-
 
 	// Forming the absolute/rigid transforms
 	std::vector<RigidTransform> sequential_rigid_transforms;
@@ -763,7 +760,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
 	arma::vec state = iod_finder.get_result();
 	arma::mat cov;
-	iod_finder.run_batch(state,cov,R_pcs);
+	
+	// iod_finder.run_batch(state,cov,R_pcs);
 
 	cart_state.set_state(state.subvec(0,5));
 	cart_state.set_mu(state(6));
