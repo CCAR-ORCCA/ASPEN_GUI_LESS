@@ -353,7 +353,6 @@ void IODFinder::build_normal_equations(
 		residual_vector.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(positions[k],positions[k+1],Mkp1,Xkp1);
 	}
 
-
 	info_mat = H.t() * this -> W * H;
 	normal_mat = H.t() * this -> W * residual_vector;
 
@@ -463,6 +462,9 @@ void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 	arma::mat R = dydT * this -> P_T * dydT.t();
 
 	this -> W = arma::inv(R);
+
+	std::cout << "DEBUG\n"''
+	this -> W = arma::eye<arma::mat>(this -> W.n_rows,this -> W.n_cols);
 
 
 
