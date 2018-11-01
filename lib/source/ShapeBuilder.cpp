@@ -1384,8 +1384,9 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	double res_previous_iod = std::numeric_limits<double>::infinity();
 	try{
 		icp_pc_prealign.compute_pairs(4,M_pc_iod,X_pc_iod);
-		res_previous_iod = icp_pc_prealign.compute_residuals(M_pc_iod,X_pc_iod);
 		N_pairs_iod = icp_pc_prealign.get_point_pairs().size();
+		std::cout <M "\t N_pairs_iod: " << N_pairs_iod << std::endl;
+		res_previous_iod = icp_pc_prealign.compute_residuals(M_pc_iod,X_pc_iod);
 
 		std::cout << "\t Residuals from iod rt: " << res_previous_iod << " from "<< icp_pc_prealign.get_point_pairs().size()  << " pairs" << std::endl << std::endl;
 		std::cout << "\t Rigid transforms from iod rt: " << RBK::dcm_to_mrp(M_pc_iod).t() << " , " << X_pc_iod.t() << std::endl << std::endl;
