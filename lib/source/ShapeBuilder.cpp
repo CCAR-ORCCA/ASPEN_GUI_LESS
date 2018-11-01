@@ -73,7 +73,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
-	int epoch_time_index = 0;
 	OC::CartState iod_state;
 
 	arma::mat::fixed<3,3> M_pc = arma::eye<arma::mat>(3,3);
@@ -95,6 +94,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
+		int epoch_time_index = std::max(time_index - 15,0);
 
 		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
@@ -190,7 +190,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			ba_test.update_overlap_graph();
 			ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
 			
-			this -> run_IOD_finder(times, std::max(time_index - 15,0) ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -235,7 +235,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "\n-- Running IOD Finder ...\n";
 
-					this -> run_IOD_finder(times, std::max(time_index - 15,0) ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+					this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 					last_ba_call_index = time_index;
 				}
