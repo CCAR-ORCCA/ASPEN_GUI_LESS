@@ -349,10 +349,6 @@ void IODFinder::build_normal_equations(
 		arma::mat Mkp1 = this -> sequential_rigid_transforms -> at(k).M;
 		arma::vec Xkp1 = this -> sequential_rigid_transforms -> at(k).X;
 
-
-
-
-
 		H.rows(3 * k, 3 * k + 2) = IODFinder::compute_H_k(stms[k],stms[k+1],Mkp1);
 		residual_vector.rows(3 * k, 3 * k + 2) = IODFinder::compute_y_k(positions[k],positions[k+1],Mkp1,Xkp1);
 	}

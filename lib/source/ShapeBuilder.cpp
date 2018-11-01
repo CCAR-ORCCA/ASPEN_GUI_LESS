@@ -635,7 +635,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	std::vector<int> obs_indices;
 
-	for (int i = t0; i < tf + 1; ++i){
+	for (int i = 0; i < tf + 1; ++i){
 		obs_indices.push_back(i);
 	}
 
@@ -695,6 +695,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	std::vector<RigidTransform> sequential_rigid_transforms_arc;
 	std::vector<RigidTransform> absolute_rigid_transforms_arc;
+	std::vector<arma::vec::fixed<3> > mrps_LN_arc;
+
 
 	for (auto rt : sequential_rigid_transforms){
 		if (rt.index_start >= t0){
@@ -708,10 +710,16 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		}
 	}
 
+	for (int i = 0; i < mrps_LN.size(); ++i){
+		if (i >= t0){
+			mrps_LN_arc.push_back(mrps_LN[i]);
+		}
+	}
+
 	IODFinder iod_finder(
 		&sequential_rigid_transforms_arc, 
 		&absolute_rigid_transforms_arc, 
-		mrps_LN,
+		mrps_LN_arc,
 		this -> filter_arguments -> get_iod_iterations(),
 		this -> filter_arguments -> get_iod_particles());
 
