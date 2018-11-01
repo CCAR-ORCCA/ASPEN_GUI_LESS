@@ -274,12 +274,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Fitting PSR a-priori...\n";
 				ShapeModelBezier<ControlPoint> bezier_shape(psr_shape,"E",this -> frame_graph);
 				bezier_shape.elevate_degree();
-				bezier_shape.save_to_obj(dir + "/elevated_shape.obj");
+				bezier_shape.save_both(dir + "/elevated_shape");
 				ShapeFitterBezier shape_fitter(&psr_shape,&bezier_shape,&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 
-				bezier_shape.save_to_obj(dir + "/fit_shape.obj");
+				bezier_shape.save_both(dir + "/fit_shape");
 
 				throw(std::runtime_error("not implemented yet"));
 			}
