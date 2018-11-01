@@ -463,7 +463,7 @@ void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 
 	this -> W = arma::inv(R);
 
-	std::cout << "DEBUG\n"''
+	std::cout << "DEBUG\n";
 	this -> W = arma::eye<arma::mat>(this -> W.n_rows,this -> W.n_cols);
 
 
