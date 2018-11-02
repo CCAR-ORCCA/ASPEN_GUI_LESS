@@ -107,9 +107,6 @@ int main() {
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
 
-
-
-
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	std::string dir = input_data["dir"];
 
