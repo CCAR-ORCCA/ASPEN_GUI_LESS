@@ -191,7 +191,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			if (this -> filter_arguments -> get_use_ba()){
 				ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
 			}
-			std::cout << "True state at epoch time at index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t() << std::endl;
+			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t() << std::endl;
+			std::cout << "True position at index "<< epoch_time_index << " before running IOD: " << X[time_index].subvec(0,5).t() << std::endl;
+			
 			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
 
 			// Updating the epoch time here so that things remain consistent
@@ -680,8 +682,6 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 
 	std::vector<arma::vec::fixed<3> > IOD_arc_positions;
-
-
 	IOD_arc_positions.push_back(r_start_crude);
 
 	
