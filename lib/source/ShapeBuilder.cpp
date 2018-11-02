@@ -1353,8 +1353,8 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
 
 
-	arma::mat::fixed<3,3> M_pc_iod;
-	arma::vec::fixed<3> X_pc_iod;
+	arma::mat::fixed<3,3> M_pc_iod = arma::eye<arma::mat>(3,3);
+	arma::vec::fixed<3> X_pc_iod = arma::zeros<arma::vec>(3);
 
 	ShapeBuilder::extract_a_priori_transform(M_pc_iod,
 		X_pc_iod,
@@ -1382,6 +1382,7 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	// IOD rigid transform
 	int N_pairs_iod = 0;
 	double res_previous_iod = std::numeric_limits<double>::infinity();
+	
 	try{
 		icp_pc_prealign.compute_pairs(4,M_pc_iod,X_pc_iod);
 		N_pairs_iod = icp_pc_prealign.get_point_pairs().size();
