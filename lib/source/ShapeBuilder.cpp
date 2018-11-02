@@ -764,7 +764,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	arma::vec state = iod_finder.get_result();
 	arma::mat cov;
 	
-	// iod_finder.run_batch(state,cov,R_pcs);
+	iod_finder.run_batch(state,cov,R_pcs);
 
 	cart_state.set_state(state.subvec(0,5));
 	cart_state.set_mu(state(6));
