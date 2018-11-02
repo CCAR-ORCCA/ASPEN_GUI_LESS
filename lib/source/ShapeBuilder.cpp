@@ -1351,10 +1351,6 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
 	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
 
-	std::cout << r_km1_hat.t() << std::endl;
-	std::cout << r_k_hat.t() << std::endl;
-
-
 	arma::mat::fixed<3,3> M_pc_iod = arma::eye<arma::mat>(3,3);
 	arma::vec::fixed<3> X_pc_iod = arma::zeros<arma::vec>(3);
 	if (!r_k_hat.has_nan() && !r_km1_hat.has_nan()){
