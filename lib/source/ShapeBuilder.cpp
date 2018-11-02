@@ -727,15 +727,15 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		this -> filter_arguments -> get_iod_particles());
 
 
-	// arma::vec guess = {
-	// 	IOD_arc_positions.front()(0),
-	// 	IOD_arc_positions.front()(1),
-	// 	IOD_arc_positions.front()(2),
-	// 	0,
-	// 	0,
-	// 	0,
-	// 	2
-	// };
+	arma::vec guess = {
+		IOD_arc_positions.front()(0),
+		IOD_arc_positions.front()(1),
+		IOD_arc_positions.front()(2),
+		0,
+		0,
+		0,
+		2
+	};
 
 	std::cout << "Initial guess on the IOD arc: " << guess.t() << std::endl;
 
