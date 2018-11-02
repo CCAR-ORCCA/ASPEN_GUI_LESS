@@ -1356,6 +1356,8 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	arma::mat::fixed<3,3> M_pc_iod = arma::eye<arma::mat>(3,3);
 	arma::vec::fixed<3> X_pc_iod = arma::zeros<arma::vec>(3);
 
+	std::cout << r_k_hat.t() << " | " << r_km1_hat.t() << std::endl;
+
 	ShapeBuilder::extract_a_priori_transform(M_pc_iod,
 		X_pc_iod,
 		time_index,
