@@ -74,6 +74,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	int last_ba_call_index = 0;
 	int cutoff_index = 0;
 	OC::CartState iod_state;
+	int epoch_time_index = 0;
 
 	arma::mat::fixed<3,3> M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec::fixed<3> X_pc = arma::zeros<arma::vec>(3);
@@ -94,7 +95,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		std::cout << "\n################### Index : " << time_index << " / " <<  times.n_rows - 1  << ", Time : " << times(time_index) << " / " <<  times( times.n_rows - 1) << " ########################" << std::endl;
 
 		X_S = X[time_index];
-		int epoch_time_index = std::max(time_index - this -> filter_arguments -> get_iod_rigid_transforms_number(),0);
 
 		this -> get_new_states(X_S,dcm_LB,lidar_pos,lidar_vel,mrps_LN,BN_true,HN_true);
 		
@@ -193,6 +193,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 			std::cout << "True state at epoch time before running IOD: " << X[epoch_time_index].subvec(0,5).t() << std::endl;
 			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+
+			// Updating the epoch time here so that things remain consistent
+			epoch_time_index = std::max(time_index - this -> filter_arguments -> get_iod_rigid_transforms_number(),0);
+
+
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -1340,12 +1345,11 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 	OC::KepState kep_state_epoch = cartesian_state.convert_to_kep(0);
 
-	OC::CartState cart_state_tk = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
 	OC::CartState cart_state_tkm1 = kep_state_epoch.convert_to_cart(times(time_index - 1) - times(epoch_time_index));
+	OC::CartState cart_state_tk = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
 
-
-	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
 	arma::vec::fixed<3> r_km1_hat = cart_state_tkm1.get_position_vector();
+	arma::vec::fixed<3> r_k_hat = cart_state_tk.get_position_vector();
 
 	std::cout << r_km1_hat.t() << std::endl;
 	std::cout << r_k_hat.t() << std::endl;
