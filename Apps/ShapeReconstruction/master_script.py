@@ -19,6 +19,7 @@ all_data = [
 "NAVIGATION_TIMES" : 500,
 "IOD_PARTICLES" : 100,
 "IOD_ITERATIONS" : 100,
+"IOD_RIGID_TRANSFORMS_NUMBER" : 30 ,
 "SMA" : 1000,
 "E" : 0.25,
 "I" : 1.4,
@@ -42,7 +43,6 @@ all_data = [
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : True,
 "dir" : base_location + "output/test_0"}
-
 ]
 
 for data in all_data:

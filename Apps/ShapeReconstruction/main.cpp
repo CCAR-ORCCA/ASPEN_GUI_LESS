@@ -52,7 +52,6 @@
 #define N_ITER_BUNDLE_ADJUSTMENT 1 // Number of iterations in bundle adjustment
 
 // IOD parameters
-#define IOD_RIGID_TRANSFORMS_NUMBER 30 // Number of rigid transforms to be used in each IOD run
 
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
@@ -102,6 +101,7 @@ int main() {
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
 	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
  	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
+ 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
 
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
