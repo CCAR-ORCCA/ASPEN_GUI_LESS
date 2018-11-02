@@ -194,11 +194,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t();
 			std::cout << "True position at index "<< time_index << " before running IOD: " << X[time_index].subvec(0,5).t() << std::endl;
 			
-			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
-
-			// Updating the epoch time here so that things remain consistent
 			epoch_time_index = std::max(time_index - this -> filter_arguments -> get_iod_rigid_transforms_number(),0);
 
+			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+
+			
 
 
 			// Bundle adjustment is periodically run
