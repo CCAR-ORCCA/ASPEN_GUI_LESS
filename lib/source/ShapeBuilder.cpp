@@ -168,9 +168,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			X_pcs_true[time_index] = M_pcs_true[time_index] *(- this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L")) - this -> LN_t0 * this -> x_t0;
 
 
-			std::cout << "True rigid transform : \n";
-			std::cout << "sigma: " << RBK::dcm_to_mrp(M_pcs_true[time_index]).t();
-			std::cout << "x: " << X_pcs_true[time_index].t() << std::endl;
+			std::cout << "Error in ICP rigid transform : \n";
+			std::cout << "x: " << (X_pcs[time_index] - X_pcs_true[time_index]).t() << std::endl;
+			std::cout << "sigma: " << RBK::dcm_to_mrp(M_pcs[time_index] * M_pcs_true[time_index].t()).t();
 
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
