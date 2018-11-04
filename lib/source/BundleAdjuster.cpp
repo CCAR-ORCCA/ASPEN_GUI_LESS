@@ -197,6 +197,13 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 		// and the rigid transforms positioning them are also updated
 		this -> update_point_cloud_pairs();
 
+		// The covariances are extracted
+
+		MatrixXd Lambda_dense(Lambda);
+		MatrixXd Pdense = Lambda_dense.inverse();
+
+
+
 	}
 
 
@@ -459,7 +466,6 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
 
 
-		
 		if (error > max_error){
 			max_error = error;
 			worst_Dk = this -> point_cloud_pairs[k].D_k;
