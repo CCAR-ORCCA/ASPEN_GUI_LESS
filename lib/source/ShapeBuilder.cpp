@@ -1449,7 +1449,7 @@ void ShapeBuilder::save_rigid_transforms(std::string dir,
 
 		R_pcs_arma.row(i) = arma::vectorise(R_pcs.at(i+1)).t();
 
-		X_error_arma.row(i) = (X_pcs_arma.row(i) - X_pcs_true_arma.row(i)).t();
+		X_error_arma.row(i) = X_pcs_arma.row(i) - X_pcs_true_arma.row(i);
 		mrp_error_arma.row(i) = RBK::dcm_to_mrp(M_pcs.at(i + 1) * M_pcs_true.at(i + 1).t()).t();
 
 	}
