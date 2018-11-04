@@ -49,7 +49,7 @@
 #define SHAPE_DEGREE 2 // Shape degree
 #define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
-#define N_ITER_BUNDLE_ADJUSTMENT 1 // Number of iterations in bundle adjustment
+#define N_ITER_BUNDLE_ADJUSTMENT 2 // Number of iterations in bundle adjustment
 
 // IOD parameters
 
