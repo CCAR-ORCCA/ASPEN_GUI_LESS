@@ -342,7 +342,7 @@ for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements();
 	for (int i = 0; i < P_X_param.n_rows; ++i){
 		P_X_param_vector.push_back(P_X_param(i));
 	}
-	shape_covariances_data.push_back(P_X_param_vector)
+	shape_covariances_data.push_back(P_X_param_vector);
 }
 
 output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
