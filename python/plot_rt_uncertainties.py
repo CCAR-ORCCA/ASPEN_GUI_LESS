@@ -13,6 +13,8 @@ R = np.loadtxt(path_to_folder + "/R_pcs_arma.txt")
 plt.scatter(X_errors[:,1],X_errors[:,2],c = range(len(X_errors)))
 for i in range(len(X_errors) - 1):
 	draw_2d_covariance(0,R[i,:].reshape(6,6)[0:3,0:3],'b')
+	plt.gca().annotate(str(i),(X_errors[i,1],X_errors[i,2]))
+
 plt.xlabel("$e_y$")
 plt.ylabel("$e_z$")
 

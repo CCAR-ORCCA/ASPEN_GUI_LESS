@@ -49,7 +49,6 @@
 #define SHAPE_DEGREE 2 // Shape degree
 #define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
-#define N_ITER_BUNDLE_ADJUSTMENT 2 // Number of iterations in bundle adjustment
 
 // IOD parameters
 
@@ -96,7 +95,7 @@ int main() {
 	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
 	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
-
+	int N_ITER_BUNDLE_ADJUSTMENT = input_data["N_ITER_BUNDLE_ADJUSTMENT"];
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
