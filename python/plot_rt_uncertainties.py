@@ -13,6 +13,9 @@ R = np.loadtxt(path_to_folder + "/R_pcs_arma.txt")
 plt.scatter(X_errors[:,1],X_errors[:,2],c = range(len(X_errors)))
 for i in range(len(X_errors) - 1):
 	draw_2d_covariance(0,R[i,:].reshape(6,6)[0:3,0:3],'b')
+plt.xlabel("$e_y$")
+plt.ylabel("$e_z$")
+
 plt.title("X uncertainty, projected along $e_x$")
 plt.axis("equal")
 plt.show()
@@ -22,6 +25,10 @@ plt.scatter(X_errors[:,0],X_errors[:,2],c = range(len(X_errors)))
 for i in range(len(X_errors) - 1):
 	draw_2d_covariance(1,R[i,:].reshape(6,6)[0:3,0:3],'b')
 plt.title("X uncertainty, projected along $e_y$")
+
+plt.xlabel("$e_x$")
+plt.ylabel("$e_z$")
+
 plt.axis("equal")
 plt.show()
 
@@ -31,6 +38,9 @@ plt.scatter(X_errors[:,0],X_errors[:,1],c = range(len(X_errors)))
 for i in range(len(X_errors) - 1):
 	draw_2d_covariance(2,R[i,:].reshape(6,6)[0:3,0:3],'b')
 plt.title("X uncertainty, projected along $e_z$")
+
+plt.xlabel("$e_x$")
+plt.ylabel("$e_y$")
 plt.axis("equal")
 plt.show()
 
@@ -49,6 +59,7 @@ plt.clf()
 plt.scatter(mrp_errors[:,0],mrp_errors[:,2],c = range(len(mrp_errors)))
 for i in range(len(mrp_errors) - 1):
 	draw_2d_covariance(1,R[i,:].reshape(6,6)[3:6,3:6],'b')
+
 
 plt.axis("equal")
 plt.show()

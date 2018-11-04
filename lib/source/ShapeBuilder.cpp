@@ -167,6 +167,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			M_pcs_true[time_index] = this -> LB_t0 * dcm_LB.t();
 			X_pcs_true[time_index] = M_pcs_true[time_index] *(- this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L")) - this -> LN_t0 * this -> x_t0;
 
+
+			std::cout << "True rigid transform : \n";
+			std::cout << "sigma: " << RBK::mrp_to_dcm(M_pcs_true[time_index]).t();
+			std::cout << "x: " << X_pcs_true[time_index].t() << std::endl;
+
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
 				M_pc = M_pcs_true[time_index];
@@ -195,9 +200,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(X_pcs.size() == BN_true.size());
 
 			ba_test.update_overlap_graph();
+			
 			if (this -> filter_arguments -> get_use_ba()){
 				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 			}
+
 			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t();
 			std::cout << "True position at index "<< time_index << " before running IOD: " << X[time_index].subvec(0,5).t() << std::endl;
 			

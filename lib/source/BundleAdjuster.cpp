@@ -747,7 +747,6 @@ void BundleAdjuster::update_overlap_graph(){
 	auto overlap = this -> find_overlap_with_pc(new_pc_index,0,new_pc_index - 1,false);
 
 	for (auto it = overlap.begin(); it != overlap.end(); ++it){
-
 		this -> graph.addedge(new_pc_index,it -> second,it -> first);
 	}
 
