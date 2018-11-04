@@ -169,7 +169,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			std::cout << "True rigid transform : \n";
-			std::cout << "sigma: " << RBK::mrp_to_dcm(M_pcs_true[time_index]).t();
+			std::cout << "sigma: " << RBK::dcm_to_mrp(M_pcs_true[time_index]).t();
 			std::cout << "x: " << X_pcs_true[time_index].t() << std::endl;
 
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
