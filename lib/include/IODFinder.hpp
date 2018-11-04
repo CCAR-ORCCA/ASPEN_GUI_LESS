@@ -27,8 +27,7 @@ public:
 		int N_iter, 
 		int N_particles);
 
-	static double cost_function(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
-	static double cost_function_cartesian(arma::vec particle, std::vector<RigidTransform> * args,int verbose_level = 0);
+	static double cost_function_cartesian(const arma::vec & particle, std::vector<RigidTransform> * args,int verbose_level = 0);
 
 	void run_pso( 
 		arma::vec lower_bounds = {}, 

@@ -3,7 +3,7 @@
 #include "Bezier.hpp"
 
 
-template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
+template<class T> Psopt<T>::Psopt(double (*fitfun)(const arma::vec &, T ,int), const arma::vec & lower_bounds,
 const arma::vec & upper_bounds, const unsigned int & population_size,
 const unsigned int & iter_max ,
 T args) {
@@ -17,7 +17,7 @@ T args) {
 }
 
 
-template<class T> Psopt<T>::Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
+template<class T> Psopt<T>::Psopt(double (*fitfun)(const arma::vec &, T ,int), const arma::vec & lower_bounds,
 const arma::vec & upper_bounds, const unsigned int & population_size,
 const unsigned int & iter_max ,
 T args,const arma::vec & guess) {
@@ -63,7 +63,6 @@ const int  & convergence_interval) {
 		if (allowed_boundary_conditions.find(iter -> second) ==  allowed_boundary_conditions.end()){
 			throw(std::runtime_error("The boundary condition ' "+ iter -> second + " on the state of index (" + std::to_string(iter -> first) + ") is neither 'w' (wrapping) or 'c' (clamp) "));
 		}
-
 	}
 
 
@@ -376,8 +375,7 @@ return this -> result.t();
 
 // Explicit declaration
 struct RigidTransform;
-template class Psopt<std::pair<const std::vector<Footpoint> * ,std::vector<arma::vec> * > >;
-template class Psopt<std::pair<const std::vector<Footpoint> * ,Bezier * > >;
+template class Psopt<Bezier * >;
 template class Psopt<std::vector<RigidTransform> *>;
 
 

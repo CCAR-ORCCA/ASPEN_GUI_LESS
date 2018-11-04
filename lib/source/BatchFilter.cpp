@@ -49,15 +49,10 @@ int  BatchFilter::run(
 
 
 	std::vector<double> sigma_consider_vector;
-	std::vector<double> biases_consider_vector;
-	std::vector<double> sigmas_range_vector;
 
 
 	this -> args.set_sigma_consider_vector_ptr(&sigma_consider_vector);
-	this -> args.set_biases_consider_vector_ptr(&biases_consider_vector);
-	this -> args.set_sigmas_range_vector_ptr(&sigmas_range_vector);
-
-
+	
 
 	arma::mat info_mat;
 	arma::vec normal_mat;
@@ -135,7 +130,6 @@ int  BatchFilter::run(
 		
 		#if BATCH_DEBUG || FILTER_DEBUG
 
-
 		N_mes = y_non_zero.n_rows;
 
 		std::cout << "-----  Residuals RMS: " << rms_res << std::endl;
@@ -169,9 +163,6 @@ int  BatchFilter::run(
 		for (unsigned int p = 0; p < H.n_rows; ++p){
 
 			P_cc(p,p) = std::pow(sigma_consider_vector[p],2);
-
-			// W(p,p) = 1./std::pow(sigmas_range_vector[p],2);
-			// R(p,p) = std::pow(sigmas_range_vector[p],2);
 
 			W(p,p) = 1./std::pow(this -> args.get_sd_noise(),2);
 			R(p,p) = std::pow(this -> args.get_sd_noise(),2);

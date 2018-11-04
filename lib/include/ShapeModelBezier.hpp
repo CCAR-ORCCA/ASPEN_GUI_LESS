@@ -134,6 +134,13 @@ public:
 	void save_both(std::string partial_path);
 
 
+	/**
+	Sets the patches' covariances using the provided parametrization
+	@param covariance_params parametrization of the covariance of each patch
+	*/
+	void set_patch_covariances(const std::vector<std::vector<double >> & covariance_params);
+
+
 
 	/**
 	Runs a Monte Carlo on volume, cm

@@ -11,6 +11,7 @@
 
 
 BundleAdjuster::BundleAdjuster(
+	double sigma_rho,
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 	int N_iter,
 	int h,
@@ -18,6 +19,7 @@ BundleAdjuster::BundleAdjuster(
 	arma::vec * x_t0,
 	std::string dir){
 
+	this -> sigma_rho = sigma_rho;
 	this -> all_registered_pc = all_registered_pc_;
 	this -> LN_t0 = LN_t0;
 	this -> x_t0 = x_t0;
@@ -27,7 +29,7 @@ BundleAdjuster::BundleAdjuster(
 
 }
 
-BundleAdjuster::BundleAdjuster(
+BundleAdjuster::BundleAdjuster(double sigma_rho,
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 	arma::mat * LN_t0,
 	arma::vec * x_t0,
@@ -37,6 +39,7 @@ BundleAdjuster::BundleAdjuster(
 	this -> LN_t0 = LN_t0;
 	this -> x_t0 = x_t0;
 	this -> dir = dir;
+	this -> sigma_rho = sigma_rho;
 
 }
 
@@ -69,7 +72,7 @@ void BundleAdjuster::run(
 
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment();
+		this -> solve_bundle_adjustment(M_pcs);
 		std::cout << "- Solved bundle adjustment" << std::endl;
 	}	
 
@@ -98,7 +101,7 @@ void BundleAdjuster::run(
 }
 
 
-void BundleAdjuster::solve_bundle_adjustment(){
+void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
 	int Q = this -> all_registered_pc -> size();
 
 
@@ -151,7 +154,7 @@ void BundleAdjuster::solve_bundle_adjustment(){
 			// The Lambda_k and N_k specific to this point-cloud pair are computed
 			this -> assemble_subproblem(Lambda_k_vector. at(k),
 				N_k_vector. at(k),
-				this -> point_cloud_pairs . at(k));
+				this -> point_cloud_pairs . at(k),M_pcs);
 			#if !BUNDLE_ADJUSTER_DEBUG
 			++progress;
 			#endif
@@ -234,7 +237,8 @@ void BundleAdjuster::create_pairs(){
 
 }
 
-void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair){
+void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
+	const PointCloudPair & point_cloud_pair,const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
 
 	// The point-pairs in the prescribed point-cloud pair are formed (with h = 0, so we are using them all)
 	std::vector<PointPair> point_pairs;
@@ -308,7 +312,11 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
 
-		double y_ki = IterativeClosestPointToPlane::compute_distance(point_pairs[i],dcm_S,x_S,dcm_D,x_D,
+		double y_ki = IterativeClosestPointToPlane::compute_distance(point_pairs[i],
+			dcm_S,
+			x_S,
+			dcm_D,
+			x_D,
 			this -> all_registered_pc -> at(point_cloud_pair.S_k),
 			this -> all_registered_pc -> at(point_cloud_pair.D_k));
 		
@@ -342,8 +350,18 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,co
 		// epsilon = y - Hx !!!
 		H_ki = - H_ki;
 
-		Lambda_k +=  H_ki.t() * H_ki;
-		N_k +=  H_ki.t() * y_ki;
+
+		// Uncertainty on measurement
+		arma::vec::fixed<3> mapping_vector = (
+			dcm_S * M_pcs.at(point_cloud_pair.S_k) 
+			+ dcm_D * M_pcs.at(point_cloud_pair.D_k)).t() * (dcm_D * p_D.get_normal_coordinates());
+		
+		arma::vec::fixed<3> e = {1,0,0};
+		
+		double sigma_y = this -> sigma_rho * std::sqrt(arma::dot(mapping_vector,e * e.t() * mapping_vector));
+
+		Lambda_k +=  H_ki.t() * H_ki / sigma_y;
+		N_k +=  H_ki.t() * y_ki / sigma_y;
 
 	}
 
@@ -574,6 +592,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
 	++progress;
+	
 	#pragma omp parallel for
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
 

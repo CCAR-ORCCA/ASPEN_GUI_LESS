@@ -50,7 +50,7 @@ arma::vec IODFinder::get_result() const{
 }
 
 double IODFinder::cost_function_cartesian(
-	arma::vec particle, 
+	const arma::vec & particle, 
 	std::vector<RigidTransform> * args,
 	int verbose_level){
 

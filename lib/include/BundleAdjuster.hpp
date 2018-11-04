@@ -21,7 +21,7 @@ class BundleAdjuster {
 
 public:
 
-	BundleAdjuster(
+	BundleAdjuster(double sigma_rho,
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
 		int N_iter,
 		int h,
@@ -29,7 +29,7 @@ public:
 		arma::vec * x_t0,
 		std::string dir);
 
-	BundleAdjuster(
+	BundleAdjuster(double sigma_rho,
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_,
 		arma::mat * LN_t0,
 		arma::vec * x_t0,
@@ -69,7 +69,9 @@ protected:
 		bool prune_overlaps = true) const;
 	void save_connectivity() const;
 
-	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,const PointCloudPair & point_cloud_pair);
+	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
+		const PointCloudPair & point_cloud_pair,
+		const std::map<int,arma::mat::fixed<3,3> > & M_pcs);
 
 	void add_subproblem_to_problem(
 		std::vector<T>& coeffs,
@@ -80,7 +82,7 @@ protected:
 
 	void apply_deviation(const EigVec & deviation);
 
-	void solve_bundle_adjustment();
+	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs);
 
 
 	void create_pairs();
@@ -104,6 +106,7 @@ protected:
 	int N_iter;
 
 	std::string dir;
+	double sigma_rho;
 
 	Adjacency_List<int,double> graph;
 

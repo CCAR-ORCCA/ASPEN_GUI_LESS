@@ -51,6 +51,11 @@ public:
 		double los_noise_fraction_mes_truth
 		);
 
+	/**
+	Returns the instrument 1 sigma range error
+	@return 1 sigma range error (meters) 
+	*/
+	double get_los_noise_sd_baseline() const;
 
 
 	/**

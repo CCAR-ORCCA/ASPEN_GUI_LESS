@@ -4,6 +4,7 @@
 
 #include <vtkMath.h>
 #include <cassert>
+#define BEZIER_DEBUG_TRAINING 0
 
 Bezier::Bezier( std::vector<int> vertices,ShapeModel<ControlPoint> * owning_shape) : Element(vertices,owning_shape){
 
@@ -540,27 +541,24 @@ arma::mat::fixed<3,3> Bezier::partial_n_partial_Ck(const double u, const double 
 
 double Bezier::initialize_covariance(){
 
-	this -> v.clear();
-	this -> W.clear();
-	this -> v_i_norm.clear();
-	this -> epsilon.clear();
+	this -> v_i_norm_sq.clear();
+	this -> epsilons.clear();
 
 	unsigned int N_C = this -> control_points.size();
-	unsigned int P = 3 * N_C * (3 * N_C + 1) / 2;
 
 	arma::mat H_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
 	arma::mat N_mat = arma::zeros<arma::mat>(3*N_C, 3*N_C);
 
 	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
 
-		Footpoint footpoint = this -> footpoints[i];
-		arma::vec dir = footpoint.n;
+		const Footpoint & footpoint = this -> footpoints[i];
+		const arma::vec::fixed<3> & dir = footpoint.n;
 
 		arma::mat A = RBK::tilde(dir) * partial_bezier(footpoint.u,footpoint.v);
 		arma::mat AAA = A * arma::inv(A .t() * A);
 		arma::mat M = arma::zeros<arma::mat>(3 * N_C,3);
 		arma::mat Ck_dBkdchi = arma::zeros<arma::mat>(3,2);
-		arma::vec v_i_norm_vec = arma::zeros<arma::vec>(N_C);
+		arma::vec v_i_norm_sq_vec = arma::zeros<arma::vec>(N_C);
 
 		for (unsigned int k = 0; k < N_C; ++k){
 			auto indices = this -> forw_table[k];
@@ -571,25 +569,16 @@ double Bezier::initialize_covariance(){
 		arma::mat K =  RBK::tilde(dir) * AAA * Ck_dBkdchi.t();
 		arma::mat J = M * (arma::eye<arma::mat>(3,3) + K);
 		arma::vec v_i = J * dir;
-		arma::vec W_i = arma::zeros<arma::vec>(P);
-		arma::mat v_i_v_i = v_i * v_i.t();
 
 		for (unsigned int k = 0; k < N_C; ++k){
-			v_i_norm_vec(k) = arma::dot(v_i.rows(3 * k,3 * k + 2),v_i.rows(3 * k,3 * k + 2));
+			v_i_norm_sq_vec(k) = arma::dot(v_i.rows(3 * k,3 * k + 2),v_i.rows(3 * k,3 * k + 2));
 		}
 
-		for (unsigned int p = 0; p < W_i.n_rows; ++p){
-			int k = int ( (6 * N_C + 1 - std::sqrt(std::pow(6 * N_C + 1,2) - 8 * p))/2);
-			int l = p - k * 3 * N_C + k * (k + 1) / 2;
-			W_i(p) = v_i_v_i(k,l);
-		}
 
 		double epsilon_i = arma::dot(dir,footpoint.Ptilde - footpoint.Pbar);
 
-		this -> v.push_back(v_i);
-		this -> W.push_back(W_i);
-		this -> epsilon.push_back(epsilon_i);
-		this -> v_i_norm.push_back(v_i_norm_vec);
+		this -> epsilons.push_back(epsilon_i);
+		this -> v_i_norm_sq.push_back(v_i_norm_sq_vec);
 
 		N_mat += epsilon_i * epsilon_i * v_i * v_i.t() / std::pow(arma::dot(v_i,v_i),2);
 		H_mat += v_i * v_i.t() / arma::dot(v_i,v_i);
@@ -613,32 +602,26 @@ arma::mat Bezier::get_P_X() const{
 
 void Bezier::train_patch_covariance(){
 
-	// std::vector<arma::vec> v;
-	// std::vector<arma::vec> W;
-	// std::vector<arma::vec> v_i_norm;
-	// std::vector<double> epsilon;
-
 	unsigned int N_C = this -> control_points.size();
 	unsigned int N_iter = 30 ;
 
 	// The initial guess for the covariance is computed.
-	double alpha = initialize_covariance();
+	double alpha = this -> initialize_covariance();
 
 	arma::vec L = arma::ones<arma::vec>(N_C) * std::log(alpha);	
 	arma::vec lower_bounds =  L - 1;
 	arma::vec upper_bounds = L + 1;	
 
 
-	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&this -> footpoints,&this -> v_i_norm);
-
 
 	// The covariance is refined by a particle-in-swarm optimizer
-	Psopt<std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > > psopt(Bezier::compute_log_likelihood_block_diagonal, 
+	Psopt<Bezier *> psopt(
+		Bezier::compute_log_likelihood_block_diagonal, 
 		lower_bounds,
 		upper_bounds, 
 		200,
 		N_iter,
-		args);
+		this);
 
 	psopt.run(true,0);
 
@@ -647,18 +630,19 @@ void Bezier::train_patch_covariance(){
 	
 	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
 
-	#if BEZIER_DEBUG
+	this -> P_X_param = L;
+	#if BEZIER_DEBUG_TRAINING
 	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
-	std::cout << "-- Initial log-likelihood: " << initial_ll << std::endl;
+	std::cout << "-- Initial log-likelihood: " << Bezier::compute_log_likelihood_block_diagonal(std::log(alpha) * arma::ones<arma::vec>(N_C), this) << std::endl;
 
 	std::cout << "-- Final parametrization: " << L.t() << std::endl;
-	std::cout << "-- Final log-likelihood: " << Bezier::compute_log_likelihood_block_diagonal(L, args) << std::endl;
+	std::cout << "-- Final log-likelihood: " << Bezier::compute_log_likelihood_block_diagonal(L, this) << std::endl;
 
 
 	arma::vec L_correct_shape = arma::vectorise(arma::repmat(L,1,3),1).t();
-	std::cout << L_correct_shape << std::endl;
 	std::cout << "-- Final covariance: " << std::endl;
 	std::cout << this -> P_X << std::endl;
+
 	#endif
 	
 
@@ -667,127 +651,7 @@ void Bezier::train_patch_covariance(){
 
 
 
-double Bezier::evaluate_log_likelihood(const arma::mat & P_X){
 
-	unsigned int N_C = this -> control_points.size();
-
-	arma::vec L(N_C);
-	for (int i = 0; i < N_C; ++i){
-		L(i) = std::log(P_X(3 * i, 3 * i));
-	}
-	
-	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args = std::make_pair(&this -> footpoints,&this -> v_i_norm);
-
-	return Bezier::compute_log_likelihood_block_diagonal(L, args);
-}
-
-
-void Bezier::compute_range_biases(){
-
-	// arma::mat info_mat = arma::zeros<arma::mat>(P,P);
-	// arma::vec normal_mat = arma::zeros<arma::vec>(P);
-	// arma::rowvec Hi(P);
-
-
-	arma::vec old_res_vec(this -> footpoints.size());
-	// arma::vec new_res_vec(this -> footpoints.size());
-
-
-	for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
-
-		arma::vec normal = this -> footpoints[i].n;
-		arma::vec Ptilde = this -> footpoints[i].Ptilde;
-		arma::vec Pbar = this -> footpoints[i].Pbar;
-
-		// unsigned int p = 0;
-		
-		// for (unsigned int k = 0; k < N + 1; ++k){
-		// 	for (unsigned int l = 0; l < N + 1 - k; ++l){
-		// 		Hi(p) = Bezier::bernstein(u, v,k,l, N);
-		// 		++p;
-		// 	}	
-		// }
-
-
-		// normal_mat += Hi.t() * arma::dot(normal,Ptilde - Pbar);
-		// info_mat += Hi.t() * Hi;
-		old_res_vec(i) = arma::dot(normal,Ptilde - Pbar);
-
-	}
-
-	// this -> biases = arma::solve(info_mat,normal_mat);
-	this -> fitting_residuals = arma::stddev(old_res_vec);
-	this -> fitting_residuals_mean = arma::mean(old_res_vec);
-
-	#if BEZIER_DEBUG
-	std::cout << "-- Postfit range residuals Mean without biases: " << arma::mean(old_res_vec) << std::endl;
-	std::cout << "-- Postfit range residuals RMS without biases: " << arma::stddev(old_res_vec) << std::endl;
-	#endif 
-	
-	// for (unsigned int i = 0; i < this -> footpoints.size(); ++i){
-	// 	double u = this -> footpoints[i].u;
-	// 	double v = this -> footpoints[i].v;
-	// 	arma::vec normal = this -> footpoints[i].n;
-	// 	arma::vec Ptilde = this -> footpoints[i].Ptilde;
-	// 	arma::vec Pbar = this -> footpoints[i].Pbar;
-
-	// 	new_res_vec(i) = arma::dot(normal,Ptilde - Pbar) - this -> get_range_bias(u,v);
-	// }
-
-	// double new_res_std = arma::stddev(new_res_vec);
-
-
-	// std::cout << "-- Patch biases: " << std::endl;
-	// std::cout << this -> biases.t();
-	// double reduction = (new_res_std - old_res_std) /old_res_std* 100 ;
-
-	// std::cout << "-- Postfit range residuals Mean with biases: " << arma::mean(new_res_vec) << std::endl;
-	// std::cout << "-- Postfit range residuals RMS with biases: " << arma::stddev(new_res_vec) << std::endl;
-	
-	// std::cout << "-- Reduction percentage: " << reduction << " %"   << std::endl  << std::endl;
-
-	// if (abs(reduction) > 40){
-	// 	old_res_vec.save("../output/range_residuals/old_res.txt",arma::raw_ascii);
-	// 	new_res_vec.save("../output/range_residuals/new_res.txt",arma::raw_ascii);
-	// }
-
-}
-
-
-
-double Bezier::get_range_bias(const double & u, const double & v,const arma::vec & dir) const{
-
-	return  this -> fitting_residuals_mean * std::abs(arma::dot(this -> get_normal_coordinates(u,v),dir));
-
-}
-
-
-
-double Bezier::get_range_bias(const double & u, const double & v) const{
-
-
-	double bias = 0;
-	unsigned int i = 0;
-
-	int P = this -> biases.n_rows;
-	int N = (unsigned int ) ((-3. + std::sqrt(9 - 8 * (1 - P )))/2);
-
-	for (int l = 0; l < N + 1; ++l){
-		for (int k = 0; k < N + 1 - l; ++k){
-
-			bias += Bezier::bernstein(u,v,l,k,N) * this -> biases(i);
-
-			++i;
-		}
-
-
-	}
-
-	return bias;
-
-
-
-}
 
 
 void Bezier::add_footpoint(Footpoint footpoint){
@@ -802,52 +666,20 @@ void Bezier::reset_footpoints(){
 	this -> footpoints.clear();
 }
 
-double Bezier::compute_log_likelihood_full_diagonal(arma::vec L,
-	std::pair<const std::vector<Footpoint> * ,Bezier * > args,int verbose_level){
+
+double Bezier::compute_log_likelihood_block_diagonal(const arma::vec & L,
+	Bezier * patch,int verbose_level){
 
 	// All the footpoints are processed
 	double log_likelihood = 0;
 
-	for (unsigned int i = 0; i <  args.first -> size(); ++i){
-		auto footpoint = args.first -> at(i);
+	const std::vector<double> & epsilons = patch -> get_epsilons();
+	const std::vector<arma::vec> & v_i_norm_sq = patch -> get_v_i_norm_sq();
 
-		arma::mat P = args.second -> covariance_surface_point(footpoint . u,
-			footpoint . v,
-			footpoint . n,
-			arma::diagmat(arma::exp(L)));
-
-
-		double sigma_i_2 = arma::dot(footpoint . n,P * footpoint . n);
-		double epsilon_i = arma::dot(footpoint . n,
-			footpoint . Ptilde - footpoint . Pbar);
-
-
-		log_likelihood += - std::log(sigma_i_2) - std::pow(epsilon_i,2) / sigma_i_2;
-	}
-
-
-	return log_likelihood;
-
-}
-
-double Bezier::compute_log_likelihood_block_diagonal(arma::vec L,
-	std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,int verbose_level){
-
-	// All the footpoints are processed
-	double log_likelihood = 0;
-
-	for (unsigned int i = 0; i <  args.first -> size(); ++i){
-		auto footpoint = args.first -> at(i);
-
-		auto v_i_norm = args.second -> at(i);
-		arma::vec Z_i =  v_i_norm % arma::exp(L);
-		double sigma_i_2 =  arma::sum(Z_i);
-
-		double epsilon_i = arma::dot(footpoint . n,
-			footpoint . Ptilde - footpoint . Pbar);
-
-
-		log_likelihood += - std::log(sigma_i_2) - std::pow(epsilon_i,2) / sigma_i_2;
+	for (unsigned int i = 0; i <  v_i_norm_sq.size(); ++i){
+		
+		double sigma_i_2 =  arma::sum(v_i_norm_sq.at(i) % arma::exp(L));
+		log_likelihood += - std::log(sigma_i_2) - std::pow(epsilons[i],2) / sigma_i_2;
 	}
 
 
@@ -1032,6 +864,23 @@ std::vector<std::tuple< int,  int,  int> > Bezier::forward_table( int n){
 	return table;
 }
 
+
+
+void Bezier::set_patch_covariance(const std::vector<double> & covariance_param){
+
+
+	unsigned int N_C = this -> control_points.size();
+	this -> P_X_param.resize(covariance_param.size());
+	for (int i =0; i < covariance_param.size(); ++i){
+		this -> P_X_param(i) = covariance_param[i];
+	}
+
+
+	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(this -> P_X_param,1,3),1)));
+
+
+
+}
 
 
 

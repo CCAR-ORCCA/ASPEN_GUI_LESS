@@ -3441,5 +3441,26 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 
 }
 
+
+template <class PointType>
+void ShapeModelBezier<PointType>::set_patch_covariances(const std::vector<std::vector<double >> & covariance_params){
+
+
+	assert(covariance_params.size() == this -> elements.size());
+
+	for (int e = 0; e < this -> elements.size(); ++e){
+		this -> elements[e].set_patch_covariance(covariance_params[e]);
+		
+	}
+
+
+
+}
+
+
+
+
+
+
 template class ShapeModelBezier<ControlPoint>;
 

@@ -254,6 +254,8 @@ void Lidar::save(std::string path,bool conserve_format) {
 
 }
 
-
+double Lidar::get_los_noise_sd_baseline() const{
+	return this -> los_noise_sd_baseline;
+}
 
 

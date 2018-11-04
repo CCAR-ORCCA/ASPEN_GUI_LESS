@@ -114,8 +114,6 @@ arma::vec Observations::obs_lidar_range_computed(
 
 }
 
-
-
 arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, const Args & args){
 
 	Lidar * lidar = args.get_lidar();
@@ -137,7 +135,6 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 			const Bezier & bezier = args.get_estimated_shape_model() -> get_element(focal_plane -> at(i) -> get_hit_element());
 
-			
 			double u_t, v_t;
 
 			focal_plane -> at(i) -> get_impact_coords( u_t, v_t);
@@ -150,14 +147,10 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 			args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
 
-			
-
 			H.row(i) = - frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N").t() / arma::dot(n,u);
 		}
 		else{
 			args.get_sigma_consider_vector_ptr() -> push_back(-1);
-			args.get_biases_consider_vector_ptr() -> push_back(-1);
-			args.get_sigmas_range_vector_ptr() -> push_back(-1);
 		}
 
 	}

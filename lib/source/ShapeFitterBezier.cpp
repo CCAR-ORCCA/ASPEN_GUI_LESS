@@ -10,8 +10,8 @@
 #include <Footpoint.hpp>
 #include <Bezier.hpp>
 #include <Ray.hpp>
-
 #include "boost/progress.hpp"
+
 ShapeFitterBezier::ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
 	ShapeModelBezier<ControlPoint> * shape_model,
 	PointCloud<PointNormal> * pc) {
@@ -31,24 +31,13 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	// The initial matches are found
 	std::vector<Footpoint> footpoints = this -> find_footpoints_omp();
-
-
-
 	PointCloud<PointNormal> pc_footpoints;
 
 	for (int i = 0; i < footpoints.size(); ++i ){
-
 		pc_footpoints.push_back(footpoints[i].Pbar);
-
-
-
-
 	}
 
 	PointCloudIO<PointNormal>::save_to_obj(pc_footpoints,"footpoints_pc.obj");
-
-
-
 
 
 	for (unsigned int i = 0; i < N_iter; ++i){
@@ -89,88 +78,9 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	}
 
-	std::cout << "\n - Done fitting\n";
+	std::cout << "\n - Done fitting. Training covariances... \n";
 
-
-	// // The footpoints are assigned to the patches
-	// // First, patches that were seen are cleared
-	// // Then, the footpoints are added to the patches
-	// std::set<Bezier *> trained_patches;
-	// std::vector<Bezier *> trained_patches_vector;
-
-	// for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
-	// 	Bezier * patch = dynamic_cast<Bezier * >(footpoint -> element);
-	// 	if (trained_patches.find(patch) == trained_patches.end()){
-	// 		patch -> reset_footpoints();
-	// 		trained_patches.insert(patch);
-	// 	}
-	// 	patch -> add_footpoint(*footpoint);
-	// }
-
-	// for (auto patch = trained_patches.begin(); patch != trained_patches.end(); ++patch ){
-	// 	trained_patches_vector.push_back(*patch);
-	// }
-
-
-	// // Once this is done, each patch is trained
-	// std::cout << "\n- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
-	// boost::progress_display progress(trained_patches_vector.size());
-	
-	// #pragma omp parallel for
-	// for (int i = 0; i < trained_patches_vector.size(); ++i){
-	// 	Bezier * patch = trained_patches_vector[i];
-	// 	patch -> train_patch_covariance();
-	// 	patch -> compute_range_biases();
-	// 	++progress;
-	// }
-	
-	// std::cout << "- Done training "<< trained_patches_vector.size() <<  " patches " << std::endl;
-
-
-	// // The covariances are re-assigned to the control points
-	// boost::progress_display progress_points(this -> shape_model -> get_NControlPoints());
-	// std::cout << "- Assigning covariances to the  "<< this -> shape_model -> get_NControlPoints() <<  " control points ..." << std::endl;
-	
-
-	// auto control_points = this -> shape_model -> get_points();
-	// for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
-
-	// 	auto elements = (*point) -> get_owning_elements();
-
-	// 	Bezier * first_element = static_cast<Bezier *>(*elements.begin());
-	// 	unsigned int first_element_index = first_element -> get_local_index(*point);
-
-	// 	arma::mat P_C = first_element -> get_P_X().submat(
-	// 		first_element_index,first_element_index,
-	// 		first_element_index + 2, first_element_index + 2);
-
-
-	// 	for (auto el = elements.begin(); el != elements.end(); ++el){
-
-	// 		Bezier * element = static_cast<Bezier *>(*el);
-
-	// 		unsigned int element_index = element -> get_local_index(*point);
-
-
-	// 		arma::mat P = element -> get_P_X().submat(
-	// 			element_index,element_index,
-	// 			element_index + 2, element_index + 2);
-
-
-	// 		if (P.max() > P_C.max()){
-	// 			P_C = P;
-	// 		}
-
-	// 	}
-
-	// 	(*point) -> set_covariance(P_C);
-
-
-	// 	++progress_points;
-	// }
-	// std::cout << "- Done with the control points " << std::endl;
-
-
+	this -> train_shape_covariances(footpoints);
 
 
 	return false;
@@ -180,8 +90,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 void ShapeFitterBezier::penalize_tangential_motion(std::vector<T>& coeffs,
 	unsigned int N_measurements){
-
-
 
 	for (unsigned int index =  0 ; index < this -> shape_model -> get_NControlPoints(); ++index){
 
@@ -531,6 +439,84 @@ bool ShapeFitterBezier::refine_footpoint_coordinates(const Bezier & patch,Footpo
 	return false;
 }
 
+void ShapeFitterBezier::train_shape_covariances(const std::vector<Footpoint> & footpoints){
 
+	// The footpoints are assigned to the patches
+	// First, patches that were seen are cleared
+	// Then, the footpoints are added to the patches
+	std::set<int> trained_patches;
+	std::vector<int> trained_patches_vector;
+
+	for (auto footpoint = footpoints.begin(); footpoint != footpoints.end(); ++footpoint){
+		Bezier & patch = this -> shape_model -> get_element(footpoint -> element);
+		
+		if (trained_patches.find(patch.get_global_index()) == trained_patches.end()){
+			patch.reset_footpoints();
+			trained_patches.insert(patch.get_global_index());
+		}
+
+		patch.add_footpoint(*footpoint);
+	}
+
+	for (auto patch_index = trained_patches.begin(); patch_index != trained_patches.end(); ++patch_index ){
+		trained_patches_vector.push_back(*patch_index);
+	}
+	
+	// Once this is done, each patch is trained
+	std::cout << "\n- Training "<< trained_patches_vector.size() <<  " patches ..." << std::endl;
+	boost::progress_display progress(trained_patches_vector.size());
+	
+	#pragma omp parallel for
+	for (int i = 0; i < trained_patches_vector.size(); ++i){
+		Bezier & patch = this -> shape_model -> get_element(trained_patches_vector[i]);
+		patch.train_patch_covariance();
+		++progress;
+	}
+	
+	std::cout << "- Done training " << trained_patches_vector.size() <<  " patches " << std::endl;
+
+
+	// // The covariances are re-assigned to the control points
+	// boost::progress_display progress_points(this -> shape_model -> get_NControlPoints());
+	// std::cout << "- Assigning covariances to the  "<< this -> shape_model -> get_NControlPoints() <<  " control points ..." << std::endl;
+	
+	// auto control_points = this -> shape_model -> get_points();
+	// for (auto point = control_points -> begin(); point != control_points -> end(); ++point){
+
+	// 	auto elements = (*point) -> get_owning_elements();
+
+	// 	Bezier * first_element = static_cast<Bezier *>(*elements.begin());
+	// 	unsigned int first_element_index = first_element -> get_local_index(*point);
+
+	// 	arma::mat P_C = first_element -> get_P_X().submat(
+	// 		first_element_index,first_element_index,
+	// 		first_element_index + 2, first_element_index + 2);
+
+	// 	for (auto el = elements.begin(); el != elements.end(); ++el){
+
+	// 		Bezier * element = static_cast<Bezier *>(*el);
+
+	// 		unsigned int element_index = element -> get_local_index(*point);
+
+	// 		arma::mat P = element -> get_P_X().submat(
+	// 			element_index,element_index,
+	// 			element_index + 2, element_index + 2);
+
+
+	// 		if (P.max() > P_C.max()){
+	// 			P_C = P;
+	// 		}
+
+	// 	}
+
+	// 	(*point) -> set_covariance(P_C);
+
+
+	// 	++progress_points;
+	// }
+	// std::cout << "- Done with the control points " << std::endl;
+
+
+}
 
 

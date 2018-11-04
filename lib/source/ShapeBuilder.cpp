@@ -79,7 +79,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::mat::fixed<3,3> M_pc = arma::eye<arma::mat>(3,3);
 	arma::vec::fixed<3> X_pc = arma::zeros<arma::vec>(3);
 
-	BundleAdjuster ba_test(&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
+	BundleAdjuster ba_test(
+		this -> lidar -> get_los_noise_sd_baseline(),
+		&this -> all_registered_pc,this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
 		5,
 		&this -> LN_t0,
 		&this -> x_t0,
@@ -271,64 +273,44 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				psr_shape.construct_kd_tree_shape();
 
 				std::cout << " -- Fitting PSR a-priori...\n";
-				ShapeModelBezier<ControlPoint> bezier_shape(psr_shape,"E",this -> frame_graph);
-				bezier_shape.elevate_degree();
-				bezier_shape.save_both(dir + "/elevated_shape");
-				ShapeFitterBezier shape_fitter(&psr_shape,&bezier_shape,&global_pc); 
+				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
+				this -> estimated_shape_model -> elevate_degree();
+				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
+				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 
-				bezier_shape.save_both(dir + "/fit_shape");
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
 
-				throw(std::runtime_error("not implemented yet"));
-			}
+				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
 
-			#if IOFLAGS_shape_builder
-			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc,
-				"../output/pc/source_" + std::to_string(time_index) + ".obj",
-				this -> LN_t0.t(), 
-				this -> x_t0);
-			#endif
+				this -> estimated_shape_model -> rotate(this -> LN_t0.t());
+				this -> estimated_shape_model -> translate(initial_spacecraft_position);
 
-			if (time_index == times.n_rows - 1 || !this -> filter_arguments -> get_use_icp()){
-				std::cout << "- Initializing shape model" << std::endl;
+				// The estimated shape should now be aligned with the true shape model
 
-				this -> initialize_shape(cutoff_index);
-				this -> estimated_shape_model -> save(dir + "/fit_source_" + std::to_string(time_index)+ ".b");
+				// The estimated shape model is bary-centered 
+				this -> estimated_shape_model -> update_mass_properties();	
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape_N_frame");
 
-				arma::vec center_of_mass = this -> estimated_shape_model -> get_center_of_mass();
 
-			// The estimated shape model is bary-centered 
-				this -> estimated_shape_model -> shift_to_barycenter();
-				this -> estimated_shape_model -> update_mass_properties();			
-				this -> estimated_shape_model -> shift_to_barycenter();
-				this -> estimated_shape_model -> update_mass_properties();
+				this -> estimated_shape_model -> rotate(BN_measured.front());
+				this -> estimated_shape_model -> update_mass_properties();	
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
 
-			// After being bary-centered, its inertial attitude is set
-			// Its coordinates are still expressed in the L0 frame
-			// I want them in the B frame 
-			// So need to apply the following transform:
-			// [BN](0)[NL](0)
-
-				arma::mat dcm = BN_measured.front() * this -> LN_t0.t();
-				this -> estimated_shape_model -> rotate(dcm);
-				this -> estimated_shape_model -> update_mass_properties();
 
 			// The measured states are saved
 			// as they will be provided to the navigation filter
 			// as a-priori
 
-
 			// The final position is obtained from inverting the rigid transforms,
 			// using the computed position of the center of mass in the stitching frame
 
-				double dt = times(times.n_rows - 1) - times(times.n_rows - 2);
-
-				arma::vec final_pos = RBK::mrp_to_dcm(mrps_LN.back()).t() * M_pcs[M_pcs.size() - 1].t() * (X_pcs[X_pcs.size() - 1]- center_of_mass);
-				arma::vec final_pos_before = RBK::mrp_to_dcm(mrps_LN[mrps_LN.size() - 2]).t() * M_pcs[M_pcs.size() - 2].t() * (X_pcs[X_pcs.size() - 2] - center_of_mass);
-
-				arma::vec final_vel = (final_pos - final_pos_before) / dt;
-
+				OC::KepState kep_state_epoch = iod_state.convert_to_kep(0);
+				OC::CartState cart_state_tf = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
+				
+				arma::vec final_pos = cart_state_tf.get_position_vector();// could do better here by unrolling the rigid transforms
+				arma::vec final_vel = cart_state_tf.get_velocity_vector();
 
 			// the final angular velocity is obtained by finite differencing
 			// of the successive BAed (or not!) attitude measurements
@@ -339,13 +321,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec dmrp = sigma_final - sigma_final_before;
 
 			// dmrp/dt == 1/4 Bmat(sigma_before) * omega
-				arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
+				// arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
 
-				this -> filter_arguments -> set_position_final(final_pos);
-				this -> filter_arguments -> set_velocity_final(final_vel);
+				// this -> filter_arguments -> set_position_final(final_pos);
+				// this -> filter_arguments -> set_velocity_final(final_vel);
 
-				this -> filter_arguments -> set_mrp_EN_final(sigma_final);
-				this -> filter_arguments -> set_omega_EN_final(omega_final);
+				// this -> filter_arguments -> set_mrp_EN_final(sigma_final);
+				// this -> filter_arguments -> set_omega_EN_final(omega_final);
 
 
 				return;

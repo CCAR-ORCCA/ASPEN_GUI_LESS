@@ -334,15 +334,13 @@ protected:
 	FrameGraph * frame_graph;
 	Lidar * lidar;
 	ShapeModelTri<ControlPoint> * true_shape_model;
+
 	std::shared_ptr<ShapeModelBezier< ControlPoint > > estimated_shape_model;
 
 	std::shared_ptr<PointCloud < PointNormal > > destination_pc = nullptr;
 	std::shared_ptr<PointCloud < PointNormal > > source_pc = nullptr;
 	std::shared_ptr<PointCloud < PointNormal > > destination_pc_shape = nullptr;
-
 	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
-
-
 	std::vector< std::shared_ptr<PointCloud < PointNormal > > > all_registered_pc;
 
 	arma::mat LN_t0;

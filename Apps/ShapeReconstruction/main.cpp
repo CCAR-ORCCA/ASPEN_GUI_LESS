@@ -59,11 +59,6 @@
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
 // A-priori covariance
-#define SIGMA_POS 10 // a-priori sd on position (m)
-#define SIGMA_VEL 1e-3 // a-priori sd on velocity (m/s)
-#define SIGMA_MRP 1e-3 // a-priori sd on mrp (-)
-#define SIGMA_OMEGA 1e-5 // a-priori sd on angular velocity (rad/s)
-
 #define T0 0
 
 ///////////////////////////////////////////
@@ -100,8 +95,8 @@ int main() {
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
 	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
- 	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
- 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
+	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
+	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
 
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
@@ -109,7 +104,6 @@ int main() {
 
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	std::string dir = input_data["dir"];
-
 
 	double T_orbit = (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE;
 
@@ -294,15 +288,66 @@ shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
 std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
 std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
 
-
-
 ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-
-	// #if RECONSTRUCT_SHAPE
 shape_filter.run_shape_reconstruction(times,X_augmented,dir);
 
+nlohmann::json output_data;
+std::vector<arma::vec> X_estimated;
+
+std::string path_to_estimated_shape;
+std::string path_to_estimated_spherical_harmonics;
+
+output_data["X0_TRUE_SPACECRAFT"] = { 
+	X_augmented.back()[0], 
+	X_augmented.back()[1], 
+	X_augmented.back()[2],
+	X_augmented.back()[3], 
+	X_augmented.back()[4], 
+	X_augmented.back()[5]
+};
+
+output_data["X0_TRUE_SMALL_BODY"] = { 
+	X_augmented.back()[6], 
+	X_augmented.back()[7], 
+	X_augmented.back()[8],
+	X_augmented.back()[9], 
+	X_augmented.back()[10], 
+	X_augmented.back()[11]
+};
+
+output_data["X0_ESTIMATED_SPACECRAFT"] = { 
+	X_estimated.back()[0], 
+	X_estimated.back()[1], 
+	X_estimated.back()[2],
+	X_estimated.back()[3], 
+	X_estimated.back()[4], 
+	X_estimated.back()[5]
+};
+
+output_data["X0_ESTIMATED_SMALL_BODY"] = { 
+	X_estimated.back()[6], 
+	X_estimated.back()[7], 
+	X_estimated.back()[8],
+	X_estimated.back()[9], 
+	X_estimated.back()[10], 
+	X_estimated.back()[11]
+};
 
 
+nlohmann::json shape_covariances_data;
+for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
+
+	const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
+	std::vector<double> P_X_param_vector;
+	for (int i = 0; i < P_X_param.n_rows; ++i){
+		P_X_param_vector.push_back(P_X_param(i));
+	}
+	shape_covariances_data.push_back(P_X_param_vector)
+}
+
+output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
+output_data["ESTIMATED_SHAPE_PATH"] = path_to_estimated_shape;
+output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
 
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model

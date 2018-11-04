@@ -51,8 +51,6 @@ protected:
 	ShapeModelTri<ControlPoint> * psr_shape;
 	std::vector<Footpoint> find_footpoints_omp() const;
 
-
-
 	void add_to_problem(std::vector<T>& coeffs,
 		EigVec & N,
 		const double y,
@@ -71,6 +69,9 @@ protected:
 
 
 	void match_footpoint_to_element(Footpoint & footpoint) const ;
+
+	void train_shape_covariances(const std::vector<Footpoint> & footpoints);
+
 	
 	PointCloud<PointNormal> * pc;
 

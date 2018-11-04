@@ -74,14 +74,6 @@ public:
 
 
 	/**
-	Evaluates the log-likelihood
-	@param P_X prescribed patch covariance to use in the log-likelihood
-	evaluation
-	*/
-	double evaluate_log_likelihood(const arma::mat & P_X);
-
-
-	/**
 	Evaluates the normal of the bezier patch at the barycentric 
 	coordinates (u,v). Note that 0<= u + v <= 1
 	@param u first barycentric coordinate
@@ -180,6 +172,20 @@ public:
 	void set_P_X(arma::mat P_X){this -> P_X = P_X;}
 
 
+	/**
+	Returns stored footpoints
+	*/
+	const std::vector<Footpoint> & get_footpoints() const {return this -> footpoints;}
+
+	/**
+	Returns stored shape fitting residuals
+	*/
+	const std::vector<double> & get_epsilons() const {return this -> epsilons;}
+
+	/**
+	Returns stored mapping vectors for covariance training
+	*/
+	const std::vector<arma::vec> & get_v_i_norm_sq() const{return this ->v_i_norm_sq;}
 
 	/**
 	Returns the 3x3 covariance matrix
@@ -217,28 +223,18 @@ public:
 
 
 
+	
 	/**
 	Computes the patch covariance P_X maximizing the likelihood function 
-	associated with the provided footpoint pairs
-	@param footpoints vector of footpoints to be used in the training process
-	@param P_X trained covariance matrix maximizing p(e0,e1,e2,...,eN; P_X)= Prod(p(e_i;P_X))
-	@param diag if true, assumes P_X is diagonal
-	*/
-	void train_patch_covariance(arma::mat & P_X,const std::vector<Footpoint> & footpoints,bool diag = false);
-
-
-	/**
-	Computes the patch covariance P_X maximizing the likelihood function 
-	associated with the provided footpoint pairs
-	@param footpoints vector of footpoints to be used in the training process
-	*/
-	void train_patch_covariance(const std::vector<Footpoint> & footpoints);
-
-	/**
-	Computes the patch covariance P_X maximizing the likelihood function 
-	associated from the stored footpoint 
+	associated to the stored footpoints
 	*/
 	void train_patch_covariance();
+
+	/**
+	Sets the covariance parametrization to the prescribed values
+	@param covariance_param unique covariance parameters
+	*/
+	void set_patch_covariance(const std::vector<double> & covariance_param);
 
 
 	/**
@@ -323,11 +319,10 @@ public:
 		const int j, 
 		const int n) const;
 
-	static double compute_log_likelihood_full_diagonal(arma::vec L, 
-		std::pair<const std::vector<Footpoint> * , Bezier * > args,int verbose_level = 0);
-
-	static double compute_log_likelihood_block_diagonal(arma::vec L,
-		std::pair< const std::vector<Footpoint> * ,std::vector<arma::vec> * > args,int verbose_level = 0);
+	
+	static double compute_log_likelihood_block_diagonal(const arma::vec &  L,
+		Bezier * args,
+		int verbose_level = 0);
 
 	/**
 	Add footpoint to Bezier patch for the covariance training phase
@@ -409,30 +404,6 @@ public:
 	static double beta_ijkl( const int i,  const int j,  const int k, const  int l,  const int n);
 
 
-	/**
-	Compute normal range biases over the patch
-	*/
-	void compute_range_biases();
-
-	/**
-	Returns the range bias at the provided location, disregarding incidence
-	effect
-	@param u first barycentric coordinate
-	@param v second barycentric coordinate
-	@return range bias at queried location
-	*/
-	double get_range_bias(const double & u, const double & v) const;
-
-
-	/**
-	Returns the range bias at the provided location, weighted by the ray incidence
-	@param u first barycentric coordinate
-	@param v second barycentric coordinate
-	@param dir direction of measurement
-	@return range bias at queried location
-	*/
-	double get_range_bias(const double & u, const double & v,const arma::vec & dir) const;
-
 
 	/**
 	Returns the stacked crossed products
@@ -490,6 +461,14 @@ public:
 	@return number of combinations
 	*/
 	static int combinations(int k, int n);
+
+
+
+	/**
+	Returns the vector parametrization of the element covariance
+	@return parametrization of the element covariance
+	*/
+	const arma::vec & get_P_X_param() const{return this -> P_X_param;}
 
 protected:
 
@@ -562,14 +541,9 @@ protected:
 
 	arma::mat P_X;
 	std::vector<Footpoint> footpoints;
-
-	arma::vec biases;
-
-
-	std::vector<arma::vec> v;
-	std::vector<arma::vec> W;
-	std::vector<arma::vec> v_i_norm;
-	std::vector<double> epsilon;
+	std::vector<arma::vec> v_i_norm_sq;
+	std::vector<double> epsilons;
+	arma::vec P_X_param;
 
 };
 #endif

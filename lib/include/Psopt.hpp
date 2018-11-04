@@ -10,13 +10,15 @@ template <class T> class Psopt {
 
 public:
 	
-	Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
-		const arma::vec & upper_bounds, const unsigned int & population_size,
+	Psopt(double (*fitfun)(const arma::vec &, T ,int), 
+		const arma::vec & lower_bounds,
+		const arma::vec & upper_bounds, 
+		const unsigned int & population_size,
 		const unsigned int & iter_max,
 		T args);
 
 
-	Psopt(double (*fitfun)(arma::vec, T ,int), const arma::vec & lower_bounds,
+	Psopt(double (*fitfun)(const arma::vec &, T ,int), const arma::vec & lower_bounds,
 		const arma::vec & upper_bounds, const unsigned int & population_size,
 		const unsigned int & iter_max,
 		T args,
@@ -48,7 +50,7 @@ protected:
 	arma::vec lower_bounds;
 	arma::vec guess;
 	arma::vec upper_bounds;
-	double (*fitfun)(arma::vec, T ,int);
+	double (*fitfun)(const arma::vec &, T ,int);
 	unsigned int population_size;
 	unsigned int iter_max;
 	arma::mat population;
