@@ -54,6 +54,7 @@ void BundleAdjuster::set_use_true_pairs(bool use_true_pairs){
 void BundleAdjuster::run(
 	std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 	std::map<int,arma::vec::fixed<3> > & X_pcs,
+	std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 	std::vector<arma::mat::fixed<3,3> > & BN_measured,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
 	bool save_connectivity){
@@ -78,7 +79,7 @@ void BundleAdjuster::run(
 
 
 	std::cout << "- Updating point clouds ... " << std::endl;
-	this -> update_point_clouds(M_pcs,X_pcs,BN_measured,mrps_LN);
+	this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 	
 
 	// The connectivity matrix is saved
@@ -202,7 +203,12 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 		std::cout << "\n- Extracting the covariances" << std::endl;
 
 		MatrixXd Lambda_dense(Lambda);
-		MatrixXd Pdense = Lambda_dense.inverse();
+		this -> Pdense = Lambda_dense.inverse();
+
+
+
+
+
 
 
 
@@ -595,6 +601,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 
 	std::map<int,arma::vec::fixed<3> > & X_pcs,
+	std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 	std::vector<arma::mat::fixed<3,3> > & BN_measured,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
@@ -619,6 +626,19 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		// The rigid transforms are fixed
 		M_pcs[i] = NS_bar * M_pcs[i];
 		X_pcs[i] += x;
+
+		const auto & m = this -> Pdense.block<6,6>(x_index,x_index);
+
+		arma::mat::fixed<6,6> R;
+		for (int k = 0; k < 6; ++k){
+			for (int p = 0; p < 6; ++p){
+				R(k,p) = m(k,p);
+			}
+		}
+
+		R_pcs[i] = R;
+
+
 
 
 		// The small body attitude is fixed

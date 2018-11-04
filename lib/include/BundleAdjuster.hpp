@@ -37,6 +37,7 @@ public:
 
 	void run(std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 		std::map<int,arma::vec::fixed<3> > & X_pcs,
+		std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 		std::vector<arma::mat::fixed<3,3> > & BN_measured,
 		const std::vector<arma::vec::fixed<3> > & mrps_LN,
 		bool save_connectivity);
@@ -90,6 +91,7 @@ protected:
 	void update_point_cloud_pairs();
 	void update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 
 		std::map<int,arma::vec::fixed<3> > & X_pcs,
+		std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 		std::vector<arma::mat::fixed<3,3> > & BN_measured,
 		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
@@ -109,7 +111,7 @@ protected:
 	double sigma_rho;
 
 	Adjacency_List<int,double> graph;
-
+	MatrixXd Pdense;
 
 };
 

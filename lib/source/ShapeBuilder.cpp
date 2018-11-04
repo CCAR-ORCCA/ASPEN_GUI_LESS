@@ -67,7 +67,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::mat::fixed<3,3 > > HN_true;
 	std::map<int,arma::vec::fixed<3> > X_pcs;
 	std::map<int,arma::mat::fixed<3,3> > M_pcs;
+	std::map<int,arma::vec::fixed<3> > X_pcs_true;
+	std::map<int,arma::mat::fixed<3,3> > M_pcs_true;
 	std::map<int,arma::mat::fixed<6,6> > R_pcs;
+
+
 
 	arma::vec iod_guess;
 
@@ -159,13 +163,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 				/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
+			
+			M_pcs_true[time_index] = this -> LB_t0 * dcm_LB.t();
+			X_pcs_true[time_index] = M_pcs_true[time_index] *(- this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L")) - this -> LN_t0 * this -> x_t0;
+
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
-				M_pc = this -> LB_t0 * dcm_LB.t();
-
-				arma::vec pos_in_L = - this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L");
-				X_pc = M_pc * pos_in_L - this -> LN_t0 * this -> x_t0;
-				R_pcs[time_index] = arma::eye<arma::mat>(6,6);
+				M_pc = M_pcs_true[time_index];
+				X_pc = X_pcs_true[time_index];
 
 			}
 				/****************************************************************************/
@@ -191,7 +196,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			ba_test.update_overlap_graph();
 			if (this -> filter_arguments -> get_use_ba()){
-				ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,false);
+				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 			}
 			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t();
 			std::cout << "True position at index "<< time_index << " before running IOD: " << X[time_index].subvec(0,5).t() << std::endl;
@@ -233,7 +238,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
 						
-						ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,true);
+						ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
 					}
 
 					std::cout << "\n-- Saving attitude...\n";
@@ -253,15 +258,26 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			}
 
 
-			else if (this -> filter_arguments -> get_use_ba() && time_index == times.n_rows - 1){
+			else if (time_index == times.n_rows - 1){
 
 				std::cout << " -- Applying BA to whole point cloud batch\n";
 				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
-				ba_test.run(M_pcs,X_pcs,BN_measured,mrps_LN,true);
+				if (this -> filter_arguments -> get_use_ba())
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
 
 				std::cout << " -- Saving attitude...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+				this -> save_rigid_transforms(dir, 
+					X_pcs,
+					M_pcs,
+					X_pcs_true,
+					M_pcs_true,
+					R_pcs);
+
+
+
+
 
 				std::cout << " -- Estimating coverage...\n";
 				PointCloud<PointNormal> global_pc;
@@ -292,7 +308,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				// The estimated shape model is bary-centered 
 				this -> estimated_shape_model -> update_mass_properties();	
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_N_frame");
-
 
 				this -> estimated_shape_model -> rotate(BN_measured.front());
 				this -> estimated_shape_model -> update_mass_properties();	
@@ -1400,4 +1415,53 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 
 
+void ShapeBuilder::save_rigid_transforms(std::string dir, 
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs_true,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs_true,
+	const std::map<int,arma::mat::fixed<6,6> > & R_pcs){
 
+
+	assert(X_pcs.size() == M_pcs.size());
+	assert(M_pcs.size() == X_pcs_true.size());
+	assert(X_pcs_true.size() == M_pcs_true.size());
+	assert(M_pcs_true.size() == R_pcs.size());
+	assert(R_pcs.size() == X_pcs.size());
+
+
+	arma::mat X_pcs_arma(X_pcs.size(),3);
+	arma::mat mrp_pcs_arma(X_pcs.size(),3);
+	arma::mat X_error_arma(X_pcs.size(),3);
+
+	arma::mat X_pcs_true_arma(X_pcs.size(),3);
+	arma::mat mrp_pcs_true_arma(X_pcs.size(),3);
+	arma::mat mrp_error_arma(X_pcs.size(),3);
+	arma::mat R_pcs_arma(X_pcs.size(),36);
+
+
+	for (int i = 0; i < static_cast<int>(X_pcs.size()) - 1; ++i){
+		X_pcs_arma.row(i) = X_pcs.at(i + 1).t();
+		mrp_pcs_arma.row(i) = RBK::dcm_to_mrp(M_pcs.at(i + 1)).t();
+
+		X_pcs_true_arma.row(i) = X_pcs_true.at(i + 1).t();
+		mrp_pcs_true_arma.row(i) = RBK::dcm_to_mrp(M_pcs_true.at(i + 1)).t();
+
+		R_pcs_arma.row(i) = arma::vectorise(R_pcs.at(i+1));
+
+		X_error_arma.row(i) = (X_pcs_arma.row(i) - X_pcs_true_arma.row(i)).t();
+		mrp_error_arma.row(i) = RBK::dcm_to_mrp(M_pcs.at(i + 1) * M_pcs_true.at(i + 1).t()).t();
+
+	}
+
+	X_pcs_arma.save(dir + "/X_pcs_arma.txt",arma::raw_ascii);
+	mrp_pcs_arma.save(dir + "/M_pcs_arma.txt",arma::raw_ascii);
+	X_pcs_true_arma.save(dir + "/X_pcs_true_arma.txt",arma::raw_ascii);
+	mrp_pcs_true_arma.save(dir + "/M_pcs_true_arma.txt",arma::raw_ascii);
+
+	X_error_arma.save(dir + "/X_error_arma.txt",arma::raw_ascii);
+	mrp_error_arma.save(dir + "/mrp_error_arma.txt",arma::raw_ascii);
+
+	R_pcs_arma.save(dir + "/R_pcs_arma.txt",arma::raw_ascii);
+
+}

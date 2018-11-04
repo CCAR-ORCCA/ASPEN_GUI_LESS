@@ -330,6 +330,17 @@ protected:
 		const arma::mat & LN_t0);
 
 
+	/**
+	Saves true, estimated rigid transforms to file along with their covariances
+	*/
+	void save_rigid_transforms(std::string dir, 
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs_true,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs_true,
+	const std::map<int,arma::mat::fixed<6,6> > & R_pcs);
+
+
 	ShapeBuilderArguments * filter_arguments;
 	FrameGraph * frame_graph;
 	Lidar * lidar;

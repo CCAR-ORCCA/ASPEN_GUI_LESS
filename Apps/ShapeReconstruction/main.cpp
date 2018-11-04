@@ -91,7 +91,6 @@ int main() {
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
-	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
 	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
