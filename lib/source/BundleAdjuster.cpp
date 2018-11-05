@@ -88,12 +88,7 @@ void BundleAdjuster::run(
 		std::cout << "- Saving connectivity ... " << std::endl;
 		this -> save_connectivity();
 
-		std::cout << "- Saving transforms ... " << std::endl;
-		// The rigid transforms are saved after being adjusted
-		for (int i = 1; i < M_pcs.size(); ++i){
-			RBK::dcm_to_mrp(M_pcs[i]).save(this -> dir + "/sigma_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
-			X_pcs[i].save(this -> dir + "/X_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
-		}
+		
 
 	}	
 

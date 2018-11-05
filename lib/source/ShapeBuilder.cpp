@@ -274,8 +274,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				if (this -> filter_arguments -> get_use_ba())
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
 
-				std::cout << " -- Saving attitude...\n";
+				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+				
+				std::cout << " -- Saving rigid transforms ...\n";
+
+
 				this -> save_rigid_transforms(dir, 
 					X_pcs,
 					M_pcs,
@@ -287,16 +291,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-				std::cout << " -- Estimating coverage...\n";
+				std::cout << " -- Estimating coverage ...\n";
 				PointCloud<PointNormal> global_pc;
 				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_",&global_pc);
 
-				std::cout << " -- Making PSR a-priori...\n";
+				std::cout << " -- Making PSR a-priori ...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
 				psr_shape.construct_kd_tree_shape();
 
-				std::cout << " -- Fitting PSR a-priori...\n";
+				std::cout << " -- Fitting PSR a-priori ...\n";
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
 				this -> estimated_shape_model -> elevate_degree();
 				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
