@@ -8,6 +8,8 @@ import platform
 
 if (platform.system() == 'Linux'):
 	base_location = "/orc_raid/bebe0705/ShapeReconstruction/"
+	output_location = "/orc_raid/bebe0705/Navigation/"
+
 else:
 	base_location = "../"
 
@@ -42,13 +44,18 @@ all_data = [
 "USE_BA" : True,
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : False,
-"dir" : base_location + "output/test_0"}
+"dir" : base_location + "output/test_0",
+"output_dir" : output_location + "input/test_0"
+}
+
 ]
 
 for data in all_data:
 	print("\t Case " + data["dir"].split("/")[-1])
 	
 	os.system("mkdir " + data["dir"])
+	os.system("mkdir " + data["output_dir"])
+
 	print("\t - Making directory")
 
 	print("\t - Copying input file in build/")

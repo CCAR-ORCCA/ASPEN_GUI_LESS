@@ -7,8 +7,7 @@ import platform
 
 
 if (platform.system() == 'Linux'):
-	output_location = "/orc_raid/bebe0705/Navigation/"
-	base_location = "/orc_raid/bebe0705/ShapeReconstruction/"
+	base_location = "/orc_raid/bebe0705/Navigation/"
 
 else:
 	base_location = "../"
@@ -26,7 +25,7 @@ all_data = [
 "NUMBER_OF_EDGES" : 2000,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "dir" : base_location + "output/test_0",
-"output_dir" : output_location + "input/test_0"}
+}
 ]
 
 for data in all_data:
@@ -34,9 +33,8 @@ for data in all_data:
 	
 
 	print("\t - Making directory")
-	
+
 	os.system("mkdir " + data["dir"])
-	os.system("mkdir " + data["output_dir"])
 
 	print("\t - Copying input file in build/")
 
