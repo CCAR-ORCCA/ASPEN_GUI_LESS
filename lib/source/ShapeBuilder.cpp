@@ -203,7 +203,29 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			ba_test.update_overlap_graph();
 			
 			if (this -> filter_arguments -> get_use_ba()){
+				
+
+				std::cout << "Error in ICP rigid transform before bundle adjustment: \n";
+
+				for (int k = 1; k <= time_index;++k){
+					std::cout << "\t At index k = " << k << std::endl;
+					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
+					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t();
+				}
+
+
 				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
+
+				std::cout << "Error in ICP rigid transform after bundle adjustment: \n";
+
+				for (int k = 1; k <= time_index;++k){
+					std::cout << "\t At index k = " << k << std::endl;
+					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
+					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t();
+				}
+
+
+
 			}
 
 			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t();
