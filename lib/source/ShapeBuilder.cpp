@@ -87,7 +87,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		this -> lidar -> get_los_noise_sd_baseline(),
 		&this -> all_registered_pc,
 		this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
-		0,
+		3,
 		&this -> LN_t0,
 		&this -> x_t0,
 		dir);
@@ -210,7 +210,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (int k = 1; k <= time_index;++k){
 					std::cout << "\n\t At index k = " << k << std::endl;
 					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
-					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()));
+					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
 				}
 
 
@@ -221,7 +221,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				for (int k = 1; k <= time_index;++k){
 					std::cout << "\n\t At index k = " << k << std::endl;
 					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
-					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()));
+					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
 				}
 
 
