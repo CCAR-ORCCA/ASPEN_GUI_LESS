@@ -6,6 +6,17 @@ path_to_folder = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_les
 
 
 X_errors = np.loadtxt(path_to_folder + "/X_error_arma.txt")
+X = np.loadtxt(path_to_folder + "/X_pcs_arma.txt")
+X_true = np.loadtxt(path_to_folder + "/X_pcs_true_arma.txt")
+
+print X[0,:] - X_true[0,:]
+print X_errors[0,:]
+
+print np.amax(np.linalg.norm(X - X_true,axis = 1))
+
+w
+
+
 mrp_errors = np.loadtxt(path_to_folder + "/mrp_error_arma.txt")
 R = np.loadtxt(path_to_folder + "/R_pcs_arma.txt")
 
