@@ -57,10 +57,11 @@ public:
 
 	void set_use_true_pairs(bool use_true_pairs);
 
-
 	void update_overlap_graph();
 
 protected:
+
+	void remove_edges_from_graph();
 	
 
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
@@ -112,6 +113,8 @@ protected:
 
 	Adjacency_List<int,double> graph;
 	MatrixXd Pdense;
+
+	std::vector<std::set<int> >edges_to_remove;
 
 };
 

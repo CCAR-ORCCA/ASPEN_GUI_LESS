@@ -95,7 +95,10 @@ void BundleAdjuster::run(
 			X_pcs[i].save(this -> dir + "/X_tilde_after_ba_" + std::to_string(i) + ".txt",arma::raw_ascii);
 		}
 
-	}
+	}	
+
+	std::cout << "- Removing edges from graph ...\n";
+	this -> remove_edges_from_graph();
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
 
@@ -388,6 +391,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	double max_error = -1;
 	int worst_Sk,worst_Dk;
 
+	arma::vec errors(this -> point_cloud_pairs.size());
+
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
@@ -463,6 +468,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 			dcm_D ,
 			x_D));
 
+		errors(k) = error;
+
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
 		
@@ -486,6 +493,24 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	}
 
 	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
+
+	double stdev_error = arma::stddev(errors);
+	double mean_error = arma::mean(errors);
+	this -> edges_to_remove.clear();
+
+	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+		if ((errors(k) - mean_error)/stdev_error > 2){
+			if (std::abs(this -> point_cloud_pairs[k].D_k - this -> point_cloud_pairs[k].S_k) != 1){
+				std::set<int> edge_to_remove;
+				edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
+				edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
+				this -> edges_to_remove.push_back(edge_to_remove);
+			}
+		}
+	}
+
+
+
 
 }
 
@@ -762,6 +787,18 @@ void BundleAdjuster::update_overlap_graph(){
 
 
 
+void BundleAdjuster::remove_edges_from_graph(){
+
+
+	for (auto & edge_to_remove : this -> edges_to_remove){
+		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ")\n";
+
+		this -> graph.removeedge(*edge_to_remove.begin(),*(--edge_to_remove.end()));
+
+	}
+
+
+}
 
 
 
