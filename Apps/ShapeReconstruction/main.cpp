@@ -47,7 +47,6 @@
 #define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
 #define N_EDGES 4000 // Number of edges in a-priori
 #define SHAPE_DEGREE 2 // Shape degree
-#define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
 // IOD parameters
@@ -96,6 +95,7 @@ int main() {
 	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
 	int N_ITER_BUNDLE_ADJUSTMENT = input_data["N_ITER_BUNDLE_ADJUSTMENT"];
+	int N_ITER_SHAPE_FILTER = input_data["N_ITER_SHAPE_FILTER"];
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
