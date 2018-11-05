@@ -645,7 +645,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 		// The rigid transforms are fixed
 		M_pcs[i] = NS_bar * M_pcs[i];
-		X_pcs[i] += x;
+		X_pcs[i] = NS_bar * X_pcs[i] + x;
 
 		const auto & m = this -> Pdense.block<6,6>(x_index,x_index);
 
