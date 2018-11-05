@@ -375,8 +375,8 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		
 		double sigma_y = this -> sigma_rho * std::sqrt(arma::dot(mapping_vector,e * e.t() * mapping_vector));
 
-		Lambda_k +=  H_ki.t() * H_ki / sigma_y;
-		N_k +=  H_ki.t() * y_ki / sigma_y;
+		Lambda_k +=  H_ki.t() * H_ki / std::pow(sigma_y,2);
+		N_k +=  H_ki.t() * y_ki / std::pow(sigma_y,2);
 
 	}
 
