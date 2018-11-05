@@ -73,7 +73,8 @@ protected:
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair,
-		const std::map<int,arma::mat::fixed<3,3> > & M_pcs);
+		const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+		const std::map<int,arma::vec::fixed<3> > & X_pcs);
 
 	void add_subproblem_to_problem(
 		std::vector<T>& coeffs,
@@ -84,7 +85,8 @@ protected:
 
 	void apply_deviation(const EigVec & deviation);
 
-	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs);
+	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+		const std::map<int,arma::vec::fixed<3> > & X_pcs);
 
 
 	void create_pairs();

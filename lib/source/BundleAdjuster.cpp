@@ -74,7 +74,7 @@ void BundleAdjuster::run(
 	if (this -> N_iter > 0){
 		
 		// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment(M_pcs);
+		this -> solve_bundle_adjustment(M_pcs,X_pcs);
 
 	}	
 
@@ -101,7 +101,8 @@ void BundleAdjuster::run(
 }
 
 
-void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
+void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs){
 	int Q = this -> all_registered_pc -> size();
 
 
@@ -154,7 +155,8 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 			// The Lambda_k and N_k specific to this point-cloud pair are computed
 			this -> assemble_subproblem(Lambda_k_vector. at(k),
 				N_k_vector. at(k),
-				this -> point_cloud_pairs . at(k),M_pcs);
+				this -> point_cloud_pairs . at(k),
+				M_pcs,X_pcs);
 			#if !BUNDLE_ADJUSTER_DEBUG
 			++progress;
 			#endif
@@ -163,16 +165,11 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
-
-
-
 			// They are added to the whole problem
 			this -> add_subproblem_to_problem(coefficients,
 				Nmat,Lambda_k_vector. at(k),
 				N_k_vector. at(k),
 				this -> point_cloud_pairs . at(k));
-
-
 		}	
 
 		
@@ -245,7 +242,9 @@ void BundleAdjuster::create_pairs(){
 }
 
 void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
-	const PointCloudPair & point_cloud_pair,const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
+	const PointCloudPair & point_cloud_pair,
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs){
 
 	// The point-pairs in the prescribed point-cloud pair are formed (with h = 0, so we are using them all)
 	std::vector<PointPair> point_pairs;
@@ -359,13 +358,21 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 
 		// Uncertainty on measurement
-		arma::vec::fixed<3> mapping_vector = (
+		arma::vec::fixed<3> mapping_vector_1 = (
 			dcm_S * M_pcs.at(point_cloud_pair.S_k) 
 			+ dcm_D * M_pcs.at(point_cloud_pair.D_k)).t() * (dcm_D * p_D.get_normal_coordinates());
+
+
+		arma::rowvec::fixed<3> mapping_vector_2 = (
+			dcm_S * M_pcs.at(point_cloud_pair.S_k) * p_S.get_point_coordinates() + X_pcs.at(point_cloud_pair.S_k)
+			- dcm_D * M_pcs.at(point_cloud_pair.D_k) * p_D.get_point_coordinates() - X_pcs.at(point_cloud_pair.D_k)).t() * dcm_D ;
 		
 		arma::vec::fixed<3> e = {1,0,0};
+
+		arma::mat::fixed<3,3> P_n = (arma::eye<arma::mat>(3,3) - n * n.t());//assume the normal can vary 
 		
-		double sigma_y = this -> sigma_rho * std::sqrt(arma::dot(mapping_vector,e * e.t() * mapping_vector));
+		double sigma_y = this -> sigma_rho * std::sqrt(arma::dot(mapping_vector_1,e * e.t() * mapping_vector_1)
+			+ arma::dot(mapping_vector_2.t(),P_n * mapping_vector_2.t()));
 
 		Lambda_k +=  H_ki.t() * H_ki / std::pow(sigma_y,2);
 		N_k +=  H_ki.t() * y_ki / std::pow(sigma_y,2);
