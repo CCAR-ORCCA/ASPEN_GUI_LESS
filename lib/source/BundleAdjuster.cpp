@@ -74,7 +74,9 @@ void BundleAdjuster::run(
 	if (this -> N_iter > 0){
 	// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs);
-		std::cout << "- Solved bundle adjustment" << std::endl;
+
+		std::cout << "- Updating point clouds ... " << std::endl;
+		this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 	}	
 
 
@@ -657,8 +659,6 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		}
 
 		R_pcs[i] = R;
-
-
 
 
 		// The small body attitude is fixed
