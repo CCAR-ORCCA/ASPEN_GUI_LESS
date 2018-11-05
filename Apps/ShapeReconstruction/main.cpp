@@ -101,7 +101,10 @@ int main() {
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
 
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
+	
 	std::string dir = input_data["dir"];
+	std::string output_dir = input_data["output_dir"];
+
 
 	double T_orbit = (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE;
 
@@ -346,6 +349,9 @@ for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements();
 output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
 output_data["ESTIMATED_SHAPE_PATH"] = path_to_estimated_shape;
 output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
+
+std::ofstream o(output_dir + "/input_file.json");
+o << output_data;
 
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
