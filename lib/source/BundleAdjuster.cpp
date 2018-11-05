@@ -72,11 +72,10 @@ void BundleAdjuster::run(
 	}
 
 	if (this -> N_iter > 0){
-	// solve the bundle adjustment problem
+		
+		// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs);
 
-		std::cout << "- Updating point clouds ... " << std::endl;
-		this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 	}	
 
 
@@ -204,13 +203,6 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 
 		MatrixXd Lambda_dense(Lambda);
 		this -> Pdense = Lambda_dense.inverse();
-
-
-
-
-
-
-
 
 	}
 
