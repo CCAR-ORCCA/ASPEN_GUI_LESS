@@ -297,6 +297,7 @@ int main() {
 	nlohmann::json output_data;
 	std::vector<arma::vec> X_estimated;
 
+	X_estimated.push_back(arma::zeros<arma::vec>(12));
 	std::string path_to_estimated_shape;
 	std::string path_to_estimated_spherical_harmonics;
 

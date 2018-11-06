@@ -367,19 +367,19 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// The final position is obtained from inverting the rigid transforms,
 			// using the computed position of the center of mass in the stitching frame
 
-				OC::KepState kep_state_epoch = iod_state.convert_to_kep(0);
-				OC::CartState cart_state_tf = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
+				// OC::KepState kep_state_epoch = iod_state.convert_to_kep(0);
+				// OC::CartState cart_state_tf = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
 				
-				arma::vec final_pos = cart_state_tf.get_position_vector();// could do better here by unrolling the rigid transforms
-				arma::vec final_vel = cart_state_tf.get_velocity_vector();
+				// arma::vec final_pos = cart_state_tf.get_position_vector();// could do better here by unrolling the rigid transforms
+				// arma::vec final_vel = cart_state_tf.get_velocity_vector();
 
 			// the final angular velocity is obtained by finite differencing
 			// of the successive BAed (or not!) attitude measurements
 
-				arma::vec sigma_final = RBK::dcm_to_mrp(BN_measured.back());
-				arma::vec sigma_final_before = RBK::dcm_to_mrp(BN_measured[BN_measured.size() -2]);
+				// arma::vec sigma_final = RBK::dcm_to_mrp(BN_measured.back());
+				// arma::vec sigma_final_before = RBK::dcm_to_mrp(BN_measured[BN_measured.size() -2]);
 
-				arma::vec dmrp = sigma_final - sigma_final_before;
+				// arma::vec dmrp = sigma_final - sigma_final_before;
 
 			// dmrp/dt == 1/4 Bmat(sigma_before) * omega
 				// arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
