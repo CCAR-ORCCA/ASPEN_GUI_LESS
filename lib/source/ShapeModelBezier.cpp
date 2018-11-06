@@ -53,7 +53,9 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 	}
 
 	this -> construct_kd_tree_control_points();
-	this -> populate_mass_properties_coefs();
+	this -> populate_mass_properties_coefs_deterministics();
+	this -> populate_mass_properties_coefs_stochastics();
+
 	this -> assemble_mapping_matrices();
 	this -> update_mass_properties();
 
