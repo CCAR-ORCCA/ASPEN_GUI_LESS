@@ -999,7 +999,7 @@ void ShapeBuilder::get_new_states(
 
 
 
-		true_shape_model.save(dir + "/true_shape_L0",
+		true_shape_model -> save(dir + "/true_shape_L0",
 			- this -> LN_t0 * this -> x_,
 			this -> LN_t0);
 
