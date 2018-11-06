@@ -17,7 +17,7 @@ int main(){
 	ShapeModelBezier<ControlPoint> bezier("", nullptr);
 
 
-	ShapeModelImporter::load_obj_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test_0/fit_shape.obj"
+	ShapeModelImporter::load_obj_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test_0/true_shape_L0.obj"
 		, 1, true,truth);
 
 
@@ -26,6 +26,8 @@ int main(){
 
 
 
+	std::cout << truth.get_center_of_mass().t();
+	std::cout << bezier.get_center_of_mass().t();
 
 	return 0;
 }

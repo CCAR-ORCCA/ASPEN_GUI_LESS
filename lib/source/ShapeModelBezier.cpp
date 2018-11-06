@@ -3457,8 +3457,7 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 		this -> elements[e].set_global_index(e);
 	}
 
-	this -> populate_mass_properties_coefs_deterministics();
-	this -> update_mass_properties();
+	
 
 }
 
