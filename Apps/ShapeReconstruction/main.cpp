@@ -185,14 +185,14 @@ int main() {
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
-	spherical_harmonics -> IsNormalized(); // can be skipped as normalized coefficients is the default parameter
-	spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
-	spherical_harmonics -> Update();
+		spherical_harmonics -> IsNormalized(); 
+		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
+		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-	spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
-	args.set_sbgat_harmonics(spherical_harmonics);
-}
+		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
+		args.set_sbgat_harmonics(spherical_harmonics);
+	}
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
@@ -206,22 +206,24 @@ int main() {
 	/******************************************************/
 
 	// Initial state
-arma::vec X0_augmented = arma::zeros<arma::vec>(12);
+	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
-arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
-OC::KepState kep_state(kep_state_vec,args.get_mu());
-OC::CartState cart_state = kep_state.convert_to_cart(0);
+	arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
+	OC::KepState kep_state(kep_state_vec,args.get_mu());
+	OC::CartState cart_state = kep_state.convert_to_cart(0);
 
-X0_augmented.rows(0,2) = cart_state.get_position_vector();
-X0_augmented.rows(3,5) = cart_state.get_velocity_vector();
+	X0_augmented.rows(0,2) = cart_state.get_position_vector();
+	X0_augmented.rows(3,5) = cart_state.get_velocity_vector();
 
-X0_augmented.rows(6,8) = MRP_0;
-X0_augmented.rows(9,11) = omega_0;
+	X0_augmented.rows(6,8) = MRP_0;
+	X0_augmented.rows(9,11) = omega_0;
 
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
+
+
 
 	/******************************************************/
 	/******************************************************/
@@ -230,128 +232,128 @@ X0_augmented.rows(9,11) = omega_0;
 	/******************************************************/
 	/******************************************************/
 
-std::vector<double> T_obs;
-std::vector<arma::vec> X_augmented;
+	std::vector<double> T_obs;
+	std::vector<arma::vec> X_augmented;
 
-if(USE_HARMONICS){
-	StatePropagator::propagateOrbit(T_obs,X_augmented, 
-		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
-		X0_augmented,
-		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		dir + "/","obs_harmonics");
-	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-		Dynamics::harmonics_attitude_dxdt_inertial,args,
-		dir + "/","full_orbit_harmonics");
-}
-else{
-	StatePropagator::propagateOrbit(T_obs,X_augmented, 
-		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
-		X0_augmented,
-		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		dir + "/","obs_point_mass");
-
-	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-		Dynamics::point_mass_attitude_dxdt_inertial,args,
-		dir + "/","full_orbit_point_mass");
-}
-
-arma::vec times(T_obs.size()); 
-for (int i = 0; i < T_obs.size(); ++i){
-	times(i) = T_obs[i];
-}
-
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-
-ShapeBuilderArguments shape_filter_args;
-shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-shape_filter_args.set_points_retained(POINTS_RETAINED);
-shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
-shape_filter_args.set_N_edges(N_EDGES);
-shape_filter_args.set_shape_degree(SHAPE_DEGREE);
-shape_filter_args.set_use_icp(USE_ICP);
-shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
-shape_filter_args.set_use_ba(USE_BA);
-shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
-shape_filter_args.set_iod_particles(IOD_PARTICLES);
-shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
-shape_filter_args.set_use_true_rigid_transforms(USE_TRUE_RIGID_TRANSFORMS);
-shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
-shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
-shape_filter_args.set_max_triangle_size(MAX_TRIANGLE_SIZE);
-shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
-shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
-
-
-std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
-std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
-
-ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-shape_filter.run_shape_reconstruction(times,X_augmented,dir);
-
-nlohmann::json output_data;
-std::vector<arma::vec> X_estimated;
-
-std::string path_to_estimated_shape;
-std::string path_to_estimated_spherical_harmonics;
-
-output_data["X0_TRUE_SPACECRAFT"] = { 
-	X_augmented.back()[0], 
-	X_augmented.back()[1], 
-	X_augmented.back()[2],
-	X_augmented.back()[3], 
-	X_augmented.back()[4], 
-	X_augmented.back()[5]
-};
-
-output_data["X0_TRUE_SMALL_BODY"] = { 
-	X_augmented.back()[6], 
-	X_augmented.back()[7], 
-	X_augmented.back()[8],
-	X_augmented.back()[9], 
-	X_augmented.back()[10], 
-	X_augmented.back()[11]
-};
-
-output_data["X0_ESTIMATED_SPACECRAFT"] = { 
-	X_estimated.back()[0], 
-	X_estimated.back()[1], 
-	X_estimated.back()[2],
-	X_estimated.back()[3], 
-	X_estimated.back()[4], 
-	X_estimated.back()[5]
-};
-
-output_data["X0_ESTIMATED_SMALL_BODY"] = { 
-	X_estimated.back()[6], 
-	X_estimated.back()[7], 
-	X_estimated.back()[8],
-	X_estimated.back()[9], 
-	X_estimated.back()[10], 
-	X_estimated.back()[11]
-};
-
-
-nlohmann::json shape_covariances_data;
-for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
-
-	const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
-	std::vector<double> P_X_param_vector;
-	for (int i = 0; i < P_X_param.n_rows; ++i){
-		P_X_param_vector.push_back(P_X_param(i));
+	if(USE_HARMONICS){
+		StatePropagator::propagateOrbit(T_obs,X_augmented, 
+			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+			X0_augmented,
+			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			dir + "/","obs_harmonics");
+		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			dir + "/","full_orbit_harmonics");
 	}
-	shape_covariances_data.push_back(P_X_param_vector);
-}
+	else{
+		StatePropagator::propagateOrbit(T_obs,X_augmented, 
+			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+			X0_augmented,
+			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			dir + "/","obs_point_mass");
 
-output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
-output_data["ESTIMATED_SHAPE_PATH"] = path_to_estimated_shape;
-output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
+		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			dir + "/","full_orbit_point_mass");
+	}
 
-std::ofstream o(output_dir + "/input_file.json");
-o << output_data;
+	arma::vec times(T_obs.size()); 
+	for (int i = 0; i < T_obs.size(); ++i){
+		times(i) = T_obs[i];
+	}
+
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+
+	ShapeBuilderArguments shape_filter_args;
+	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
+	shape_filter_args.set_points_retained(POINTS_RETAINED);
+	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
+	shape_filter_args.set_N_edges(N_EDGES);
+	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
+	shape_filter_args.set_use_icp(USE_ICP);
+	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
+	shape_filter_args.set_use_ba(USE_BA);
+	shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
+	shape_filter_args.set_iod_particles(IOD_PARTICLES);
+	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
+	shape_filter_args.set_use_true_rigid_transforms(USE_TRUE_RIGID_TRANSFORMS);
+	shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
+	shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
+	shape_filter_args.set_max_triangle_size(MAX_TRIANGLE_SIZE);
+	shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
+	shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
+
+
+	std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
+	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
+
+	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
+	shape_filter.run_shape_reconstruction(times,X_augmented,dir);
+
+	nlohmann::json output_data;
+	std::vector<arma::vec> X_estimated;
+
+	std::string path_to_estimated_shape;
+	std::string path_to_estimated_spherical_harmonics;
+
+	output_data["X0_TRUE_SPACECRAFT"] = { 
+		X_augmented.back()[0], 
+		X_augmented.back()[1], 
+		X_augmented.back()[2],
+		X_augmented.back()[3], 
+		X_augmented.back()[4], 
+		X_augmented.back()[5]
+	};
+
+	output_data["X0_TRUE_SMALL_BODY"] = { 
+		X_augmented.back()[6], 
+		X_augmented.back()[7], 
+		X_augmented.back()[8],
+		X_augmented.back()[9], 
+		X_augmented.back()[10], 
+		X_augmented.back()[11]
+	};
+
+	output_data["X0_ESTIMATED_SPACECRAFT"] = { 
+		X_estimated.back()[0], 
+		X_estimated.back()[1], 
+		X_estimated.back()[2],
+		X_estimated.back()[3], 
+		X_estimated.back()[4], 
+		X_estimated.back()[5]
+	};
+
+	output_data["X0_ESTIMATED_SMALL_BODY"] = { 
+		X_estimated.back()[6], 
+		X_estimated.back()[7], 
+		X_estimated.back()[8],
+		X_estimated.back()[9], 
+		X_estimated.back()[10], 
+		X_estimated.back()[11]
+	};
+
+
+	nlohmann::json shape_covariances_data;
+	for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
+
+		const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
+		std::vector<double> P_X_param_vector;
+		for (int i = 0; i < P_X_param.n_rows; ++i){
+			P_X_param_vector.push_back(P_X_param(i));
+		}
+		shape_covariances_data.push_back(P_X_param_vector);
+	}
+
+	output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
+	output_data["ESTIMATED_SHAPE_PATH"] = dir + "/fit_shape_B_frame";
+	output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
+
+	std::ofstream o(output_dir + "/input_file.json");
+	o << output_data;
 
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
@@ -560,7 +562,7 @@ o << output_data;
 	// filter.write_estimated_covariance("../output/filter/covariances.txt");
 
 
-return 0;
+	return 0;
 }
 
 

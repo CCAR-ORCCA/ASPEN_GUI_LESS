@@ -996,6 +996,13 @@ void ShapeBuilder::get_new_states(
 		this -> x_t0 = lidar_pos;
 		this -> LB_t0 = dcm_LB;
 
+
+
+
+		true_shape_model.save(dir + "/true_shape_L0",
+			- this -> LN_t0 * this -> x_,
+			this -> LN_t0);
+
 		OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 		this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
 

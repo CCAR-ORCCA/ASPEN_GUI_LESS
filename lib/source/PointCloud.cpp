@@ -13,8 +13,6 @@ template <class PointType> PointCloud<PointType>::PointCloud(int size){
 this -> points.resize(size);
 }
 
-
-
 template <>
 PointCloud<PointNormal>::PointCloud(std::vector<std::shared_ptr<Ray> > * focal_plane){
 
@@ -22,7 +20,7 @@ PointCloud<PointNormal>::PointCloud(std::vector<std::shared_ptr<Ray> > * focal_p
 
 		if (focal_plane -> at(i) -> get_hit_element() >= 0){
 
-			arma::vec::fixed<3> impact_point = focal_plane -> at(i) -> get_impact_point();
+			const arma::vec::fixed<3> & impact_point = focal_plane -> at(i) -> get_impact_point();
 
 			PointNormal point(impact_point,this -> points.size());
 			this -> points.push_back(point);
