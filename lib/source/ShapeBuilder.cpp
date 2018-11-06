@@ -1241,16 +1241,15 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
 
-		int closest_point_index = global_pc.get_closest_point(global_pc.get_point_coordinates(i));
-		
-		S(i) = arma::norm(global_pc.get_point_coordinates(i) - global_pc.get_point_coordinates(closest_point_index));
+		// The closest neighbors are extracted
+		std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),3);
 
+		S(i) = (--closest_points.end()) -> first;
 	}
 
 	// The coverage criterion is evaluated
-	std::cout << "Average spacing : " << arma::mean(S) << std::endl;
-	std::cout << "Max spacing : " << arma::max(S) << std::endl;
-	std::cout << "Stddev in spacing : " << arma::stddev(S) << std::endl;
+	std::cout << "\n-- Mean spacing : " << arma::mean(S) << std::endl;
+	std::cout << "\n-- Stddev in spacing : " << arma::stddev(S)  << std::endl;
 
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
