@@ -342,7 +342,7 @@ int main() {
 
 
 	nlohmann::json shape_covariances_data;
-	std::cout << "Exporting covariances ...\n"
+	std::cout << "Exporting covariances ...\n";
 	for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
 
 		const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
