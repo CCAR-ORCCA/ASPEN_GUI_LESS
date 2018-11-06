@@ -1237,37 +1237,20 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	// along with the exact surface normals. when eta ~ 1, coverage is complete
 
 	arma::vec S(global_pc.size());
-	S.fill(0);
-	double sum_S = 0;
-	double max_S = -1;
-	double Sx = 0;
-	double Sy = 0;
-	double Sz = 0;
-
-
-	#pragma omp parallel for reduction(+:sum_S,Sx,Sy,Sz), reduction(max: max_S)
+	
+	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
 
-		// The closest neighbors are extracted
-		std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),6);
-		double surface = std::pow((--closest_points.end()) -> first,2) * arma::datum::pi;
-
-		// S is defined as pi * r_mean ^ 2
-
-		S(i) = std::max(surface,arma::datum::pi * std::pow(3 ,2));
-
-		// the surface normal sum is incremented
-		Sx  += S(i) * global_pc.get_normal_coordinates(i)(0);
-		Sy  += S(i) * global_pc.get_normal_coordinates(i)(1);
-		Sz  += S(i) * global_pc.get_normal_coordinates(i)(2);
+		int closest_point_index = global_pc.get_closest_point(global_pc.get_point_coordinates(i));
 		
-		sum_S += S(i);
-		max_S = std::max(max_S,S(i));
+		S(i) = arma::norm(global_pc.get_point_coordinates(i) - global_pc.get_point_coordinates(closest_point_index));
+
 	}
 
 	// The coverage criterion is evaluated
-	std::cout << "\n-- Max sampling radius : " << std::sqrt(max_S) << std::endl;
-	std::cout << "\n-- Missing surface (%) : " << 100 * std::sqrt(Sx * Sx + Sy * Sy + Sz * Sz) / sum_S;
+	std::cout << "Average spacing : " << arma::mean(S) << std::endl;
+	std::cout << "Max spacing : " << arma::max(S) << std::endl;
+	std::cout << "Stddev in spacing : " << arma::stddev(S) << std::endl;
 
 
 	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
