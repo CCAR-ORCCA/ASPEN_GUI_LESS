@@ -32,7 +32,7 @@ all_data = [
 "LATITUDE_SPIN" : 0., 
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : False,
+"USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
 "MRP_0" : [0,0,0],
 "N_ITER_BUNDLE_ADJUSTMENT" : 2,
@@ -58,7 +58,6 @@ for data in all_data:
 	os.system("mkdir " + data["output_dir"])
 
 	print("\t - Making directory")
-
 	print("\t - Copying input file in build/")
 
 	with open('input_file.json', 'w') as outfile:

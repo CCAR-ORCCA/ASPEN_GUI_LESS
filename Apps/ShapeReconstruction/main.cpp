@@ -298,9 +298,12 @@ int main() {
 	std::vector<arma::vec> X_estimated;
 
 	X_estimated.push_back(arma::zeros<arma::vec>(12));
-	std::string path_to_estimated_shape;
-	std::string path_to_estimated_spherical_harmonics;
+	std::string path_to_estimated_shape = "";
+	std::string path_to_estimated_spherical_harmonics = "";
 
+
+
+	std::cout << "Fetching output data...\n";
 	output_data["X0_TRUE_SPACECRAFT"] = { 
 		X_augmented.back()[0], 
 		X_augmented.back()[1], 
@@ -339,6 +342,7 @@ int main() {
 
 
 	nlohmann::json shape_covariances_data;
+	std::cout << "Exporting covariances ...\n"
 	for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
 
 		const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
