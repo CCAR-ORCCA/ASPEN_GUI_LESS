@@ -335,7 +335,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
-
+				this -> estimated_shape_model -> update_mass_properties();	
+				
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
 
 
