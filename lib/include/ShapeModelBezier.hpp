@@ -235,7 +235,9 @@ public:
 	void set_elements(std::vector<Bezier> elements);
 
 	void assemble_mapping_matrices();
-	void populate_mass_properties_coefs();
+	void populate_mass_properties_coefs_deterministics();
+	void populate_mass_properties_coefs_stochastics();
+
 
 protected:
 

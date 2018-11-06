@@ -336,12 +336,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 				this -> estimated_shape_model -> update_mass_properties();	
-				
+
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
-
-
-				std::cout << "Center-of-mass of reconstructed shape: " << this -> estimated_shape_model -> get_center_of_mass().t() << std::endl;
-				std::cout << "Center-of-mass of true shape: " << this -> true_shape_model -> get_center_of_mass().t() << std::endl << std::endl ;
 
 
 				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();

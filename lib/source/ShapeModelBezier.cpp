@@ -1214,13 +1214,10 @@ void ShapeModelBezier<PointType>::assemble_mapping_matrices(){
 
 
 template <class PointType>
-void ShapeModelBezier<PointType>::populate_mass_properties_coefs(){
+void ShapeModelBezier<PointType>::populate_mass_properties_coefs_stochastics(){
 
-	this -> cm_gamma_indices_coefs_table.clear();
-	this -> volume_indices_coefs_table.clear();
-	this -> inertia_indices_coefs_table.clear();
+	
 	this -> volume_sd_indices_coefs_table.clear();
-
 	this ->	cm_cov_1_indices_coefs_table.clear();
 	this -> cm_cov_2_indices_coefs_table.clear();
 	this -> P_I_indices_coefs_table.clear();
@@ -1234,30 +1231,7 @@ void ShapeModelBezier<PointType>::populate_mass_properties_coefs(){
 	ShapeModelBezier<PointType>::build_bezier_base_index_vector(n,base_vector);
 	std::vector<std::vector<std::vector<int> > > index_vectors;
 
-	// Volume
-	ShapeModelBezier<PointType>::build_bezier_index_vectors(3,
-		base_vector,
-		index_vectors);
-
-
-	for (auto vector : index_vectors){
-
-		int i = vector[0][0];
-		int j = vector[0][1];
-		int k = vector[1][0];
-		int l = vector[1][1];
-		int m = vector[2][0];
-		int p = vector[2][1];
-
-		double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
-		if(std::abs(alpha) > 0){
-			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
-			this -> volume_indices_coefs_table.push_back(index_vector);
-		}
-	}
-
-	std::cout << "- Volume coefficients: " << this -> volume_indices_coefs_table.size() << std::endl;
-
+	
 	// Volume sd
 	index_vectors.clear();
 	ShapeModelBezier<PointType>::build_bezier_index_vectors(6,
@@ -1302,48 +1276,7 @@ void ShapeModelBezier<PointType>::populate_mass_properties_coefs(){
 
 	std::cout << "- Volume SD coefficients: " << this -> volume_sd_indices_coefs_table.size() << std::endl;
 
-	// CM
-	// i
-
-
-	index_vectors.clear();
-	ShapeModelBezier<PointType>::build_bezier_index_vectors(4,
-		base_vector,
-		index_vectors);
-
-	for (auto vector : index_vectors){
-
-		int i = vector[0][0];
-		int j = vector[0][1];
-		int k = vector[1][0];
-		int l = vector[1][1];
-		int m = vector[2][0];
-		int p = vector[2][1];
-		int q = vector[3][0];
-		int r = vector[3][1];
-
-		double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
-		if (std::abs(gamma) > 0){
-			std::vector<double> index_vector = {
-				double(i),
-				double(j),
-				double(k),
-				double(l),
-				double(m),
-				double(p),
-				double(q),
-				double(r),
-				gamma
-			} ;
-			this -> cm_gamma_indices_coefs_table.push_back(index_vector);
-		}
-
-	}
-
-
-	std::cout << "- CM coefficients: " << this -> cm_gamma_indices_coefs_table.size() << std::endl;
-
-
+	
 
 
 	// CM covar, 1
@@ -1455,43 +1388,6 @@ void ShapeModelBezier<PointType>::populate_mass_properties_coefs(){
 	}
 	std::cout << "- CM cov coefficients : " << this -> cm_cov_1_indices_coefs_table.size() + this -> cm_cov_2_indices_coefs_table.size() << std::endl;
 
-
-
-
-	// Inertia
-	index_vectors.clear();
-	ShapeModelBezier<PointType>::build_bezier_index_vectors(5,
-		base_vector,
-		index_vectors);
-
-	for (auto vector : index_vectors){
-
-		int i = vector[0][0];
-		int j = vector[0][1];
-		int k = vector[1][0];
-		int l = vector[1][1];
-		int m = vector[2][0];
-		int p = vector[2][1];
-		int q = vector[3][0];
-		int r = vector[3][1];
-		int s = vector[4][0];
-		int t = vector[4][1];
-
-		double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
-
-		if (std::abs(kappa) > 0){
-
-			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
-				double(s),double(t),kappa
-			};
-
-			this -> inertia_indices_coefs_table.push_back(index_vector);
-		}
-	}
-
-
-
-	std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() << std::endl;
 
 
 	// Inertia statistics 1
@@ -1607,6 +1503,126 @@ void ShapeModelBezier<PointType>::populate_mass_properties_coefs(){
 
 	std::cout << "- P_I stats coefficients: " << this -> P_I_indices_coefs_table.size() << std::endl;
 	std::cout << "- P_MI stats coefficients: " <<  this -> P_MI_indices_coefs_table.size() << std::endl;
+
+}
+
+
+template <class PointType>
+void ShapeModelBezier<PointType>::populate_mass_properties_coefs_deterministics(){
+
+	this -> cm_gamma_indices_coefs_table.clear();
+	this -> volume_indices_coefs_table.clear();
+	this -> inertia_indices_coefs_table.clear();
+
+
+	int n = this -> get_degree();
+	std::cout << "- Shape degree: " << n << std::endl;
+
+
+	std::vector<std::vector<int> >  base_vector;
+	ShapeModelBezier<PointType>::build_bezier_base_index_vector(n,base_vector);
+	std::vector<std::vector<std::vector<int> > > index_vectors;
+
+	// Volume
+	ShapeModelBezier<PointType>::build_bezier_index_vectors(3,
+		base_vector,
+		index_vectors);
+
+
+	for (auto vector : index_vectors){
+
+		int i = vector[0][0];
+		int j = vector[0][1];
+		int k = vector[1][0];
+		int l = vector[1][1];
+		int m = vector[2][0];
+		int p = vector[2][1];
+
+		double alpha = Bezier::alpha_ijk(i, j, k, l, m, p, n);
+		if(std::abs(alpha) > 0){
+			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),alpha};
+			this -> volume_indices_coefs_table.push_back(index_vector);
+		}
+	}
+
+	std::cout << "- Volume coefficients: " << this -> volume_indices_coefs_table.size() << std::endl;
+
+	// CM
+	// i
+
+
+	index_vectors.clear();
+	ShapeModelBezier<PointType>::build_bezier_index_vectors(4,
+		base_vector,
+		index_vectors);
+
+	for (auto vector : index_vectors){
+
+		int i = vector[0][0];
+		int j = vector[0][1];
+		int k = vector[1][0];
+		int l = vector[1][1];
+		int m = vector[2][0];
+		int p = vector[2][1];
+		int q = vector[3][0];
+		int r = vector[3][1];
+
+		double gamma = Bezier::gamma_ijkl(i, j, k, l, m, p,q, r, n);
+		if (std::abs(gamma) > 0){
+			std::vector<double> index_vector = {
+				double(i),
+				double(j),
+				double(k),
+				double(l),
+				double(m),
+				double(p),
+				double(q),
+				double(r),
+				gamma
+			} ;
+			this -> cm_gamma_indices_coefs_table.push_back(index_vector);
+		}
+
+	}
+
+
+	std::cout << "- CM coefficients: " << this -> cm_gamma_indices_coefs_table.size() << std::endl;
+
+	// Inertia
+	index_vectors.clear();
+	ShapeModelBezier<PointType>::build_bezier_index_vectors(5,
+		base_vector,
+		index_vectors);
+
+	for (auto vector : index_vectors){
+
+		int i = vector[0][0];
+		int j = vector[0][1];
+		int k = vector[1][0];
+		int l = vector[1][1];
+		int m = vector[2][0];
+		int p = vector[2][1];
+		int q = vector[3][0];
+		int r = vector[3][1];
+		int s = vector[4][0];
+		int t = vector[4][1];
+
+		double kappa = Bezier::kappa_ijklm(i, j, k, l, m, p,q, r,s,t, n);
+
+		if (std::abs(kappa) > 0){
+
+			std::vector<double> index_vector = {double(i),double(j),double(k),double(l),double(m),double(p),double(q),double(r),
+				double(s),double(t),kappa
+			};
+
+			this -> inertia_indices_coefs_table.push_back(index_vector);
+		}
+	}
+
+
+
+	std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() << std::endl;
+
 
 }
 
@@ -3438,6 +3454,9 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 		this -> elements[e] = Bezier(elements_to_control_points[e],this);
 		this -> elements[e].set_global_index(e);
 	}
+
+	this -> populate_mass_properties_coefs_deterministics();
+	this -> update_mass_properties();
 
 }
 

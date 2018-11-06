@@ -124,7 +124,7 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 
 	std::cout << "done loading patches\n";
 	
-	shape_model.populate_mass_properties_coefs();
+	shape_model.populate_mass_properties_coefs_deterministics();
 	shape_model.assemble_mapping_matrices();
 	shape_model.update_mass_properties();
 
