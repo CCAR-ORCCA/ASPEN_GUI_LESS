@@ -75,7 +75,7 @@ int main() {
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::cout << SHAPE_RECONSTRUCTION_OUTPUT_DIR << std::endl;
 	
-
+	throw;
 
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
 	nlohmann::json shape_reconstruction_output_data;
