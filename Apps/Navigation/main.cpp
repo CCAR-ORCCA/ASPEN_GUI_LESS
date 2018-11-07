@@ -97,7 +97,6 @@ int main() {
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
 	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
-	throw;
 	
 
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
@@ -125,7 +124,7 @@ int main() {
 
 #elif __linux__
 	path_to_true_shape = "../../../resources/shape_models/" + std::string(TARGET_SHAPE) +".obj";
-	path_to_estimated_shape = input_data["ESTIMATED_SHAPE_PATH"];
+	path_to_estimated_shape = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
 #else
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
