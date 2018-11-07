@@ -124,7 +124,8 @@ int main() {
 
 #elif __linux__
 	path_to_true_shape = "../../../resources/shape_models/" + std::string(TARGET_SHAPE) +".obj";
-	path_to_estimated_shape = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"] + ".b";
+	path_to_estimated_shape = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
+	path_to_estimated_shape += ".b";
 #else
 	throw (std::runtime_error("Neither running on linux or mac os"));
 #endif
