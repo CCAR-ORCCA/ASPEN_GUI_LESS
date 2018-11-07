@@ -22,8 +22,8 @@ all_data = [
 "USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"dir" : base_location + "output/test_0",
-"input_dir" : base_location + "input/test_0"
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "output/test_0",
+"dir" : base_location + "input/test_0"
 }
 
 ]

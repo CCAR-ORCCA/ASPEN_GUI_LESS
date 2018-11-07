@@ -71,6 +71,10 @@ int main() {
 	nlohmann::json input_data;
 	i >> input_data;
 
+	std::ifstream j(input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]);
+	nlohmann::json shape_reconstruction_output_data;
+	j >> shape_reconstruction_output_data;
+
 	// Fetching input data 
 	double DENSITY = input_data["DENSITY"];
 	double INSTRUMENT_FREQUENCY = input_data["INSTRUMENT_FREQUENCY"];
@@ -79,14 +83,11 @@ int main() {
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
-	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
-	
-	std::vector<std::vector<double>> SHAPE_COVARIANCES = input_data["ESTIMATED_SHAPE_COVARIANCES"];
-	std::string ESTIMATED_SHAPE_PATH = input_data["ESTIMATED_SHAPE_PATH"];
-	std::string ESTIMATED_SPHERICAL_HARMONICS = input_data["ESTIMATED_SPHERICAL_HARMONICS"];
+	std::vector<std::vector<double>> SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
+	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
+	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
 
 	std::string dir = input_data["dir"];
-	std::string input_dir = input_data["input_dir"];
 
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
 
