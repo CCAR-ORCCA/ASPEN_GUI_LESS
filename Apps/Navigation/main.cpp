@@ -73,10 +73,10 @@ int main() {
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::cout << SHAPE_RECONSTRUCTION_OUTPUT_DIR << std::endl;
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
+
+	std::cout << SHAPE_RECONSTRUCTION_OUTPUT_DIR << std::endl;
 	nlohmann::json shape_reconstruction_output_data;
 	j >> shape_reconstruction_output_data;
-
-	std::cout << "done reading shape_reconstruction_output_data\n";
 
 	// Fetching input data 
 	double DENSITY = input_data["DENSITY"];
