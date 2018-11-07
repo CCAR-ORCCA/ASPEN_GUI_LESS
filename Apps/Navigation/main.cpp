@@ -76,7 +76,6 @@ int main() {
 	nlohmann::json shape_reconstruction_output_data;
 	j >> shape_reconstruction_output_data;
 
-	throw;
 	// Fetching input data 
 	double DENSITY = input_data["DENSITY"];
 	double INSTRUMENT_FREQUENCY = input_data["INSTRUMENT_FREQUENCY"];
