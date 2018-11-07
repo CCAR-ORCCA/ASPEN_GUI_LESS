@@ -88,7 +88,7 @@ int main() {
 	// std::vector<std::vector<double>> SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
 	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
-
+	throw;
 	std::cout << "Loading estimated shape path...\n";
 
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
