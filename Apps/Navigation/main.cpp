@@ -69,10 +69,7 @@ int main() {
 	// Loading input data from json file
 	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
-
-	std::cout << "Read input file\n";
-	throw;
-	
+	i >> input_data;
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::cout << SHAPE_RECONSTRUCTION_OUTPUT_DIR << std::endl;
 	
