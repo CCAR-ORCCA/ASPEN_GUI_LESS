@@ -91,12 +91,12 @@ int main() {
 	std::cout << "Loading estimated shape path...\n";
 
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
-	throw;
 	
 	std::cout << "Loading estimated shape spherical harmonics path...\n";
 
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
-
+	throw;
+	
 
 
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
