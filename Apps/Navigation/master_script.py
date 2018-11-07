@@ -21,11 +21,11 @@ all_data = [
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : False,
 "INSTRUMENT_FREQUENCY" : 0.0005,
-"MRP_0" : [0,0,0],
-"NUMBER_OF_EDGES" : 2000,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "dir" : base_location + "output/test_0",
+"input_dir" : base_location + "input/test_0"
 }
+
 ]
 
 for data in all_data:

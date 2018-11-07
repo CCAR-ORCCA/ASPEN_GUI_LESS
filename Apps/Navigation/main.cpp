@@ -59,7 +59,6 @@
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
 
-
 ///////////////////////////////////////////
 
 int main() {
@@ -80,8 +79,6 @@ int main() {
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
-
-	
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	
 	std::vector<std::vector<double>> SHAPE_COVARIANCES = input_data["ESTIMATED_SHAPE_COVARIANCES"];
@@ -146,7 +143,7 @@ int main() {
 	}
 
 
-
+throw;
 // Lidar
 	Lidar lidar(&frame_graph,
 		"L",
