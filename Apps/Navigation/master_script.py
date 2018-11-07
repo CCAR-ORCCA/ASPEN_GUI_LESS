@@ -22,7 +22,7 @@ all_data = [
 "USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "output/test_0/input_file.json",
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
 "dir" : base_location + "input/test_0"
 }
 

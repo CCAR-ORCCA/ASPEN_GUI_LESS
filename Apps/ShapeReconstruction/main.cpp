@@ -357,7 +357,7 @@ int main() {
 	output_data["ESTIMATED_SHAPE_PATH"] = dir + "/fit_shape_B_frame";
 	output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
 
-	std::ofstream o(output_dir + "/input_file.json");
+	std::ofstream o(output_dir + "/input_file_from_shape_reconstruction.json");
 	o << output_data;
 
 
