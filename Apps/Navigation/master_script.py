@@ -16,10 +16,10 @@ else:
 all_data = [
 
 {
-"OBSERVATION_TIMES" : 80,
+"NAVIGATION_TIMES" : 80,
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : False,
+"USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "dir" : base_location + "output/test_0",

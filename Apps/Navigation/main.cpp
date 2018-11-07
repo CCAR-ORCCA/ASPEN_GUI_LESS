@@ -88,8 +88,8 @@ int main() {
 	std::string dir = input_data["dir"];
 	std::string input_dir = input_data["input_dir"];
 
+	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
 
-	double tf = 24 * 3600;
 
 // Ref frame graph
 	FrameGraph frame_graph;
@@ -141,6 +141,8 @@ int main() {
 		element.set_patch_covariance(shape_covariance_param);
 
 	}
+
+
 
 
 throw;
