@@ -95,8 +95,8 @@ int main() {
 	std::cout << "Loading estimated shape spherical harmonics path...\n";
 
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
-
-std::cout << "Loading shape covariances...\n";
+	throw;
+	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
 
 
