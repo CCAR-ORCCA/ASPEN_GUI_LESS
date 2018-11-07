@@ -46,6 +46,6 @@ for data in all_data:
 		json.dump(data, outfile)
 	print("\t - Running case " +  data["dir"].split("/")[-1])
 
-	os.system("./ShapeReconstruction| tee " + data["dir"] + "/log.txt" )
+	os.system("./Navigation | tee " + data["dir"] + "/log.txt" )
 
 
