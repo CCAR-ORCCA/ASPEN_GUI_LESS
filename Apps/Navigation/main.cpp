@@ -71,6 +71,7 @@ int main() {
 	nlohmann::json input_data;
 	i >> input_data;
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
+	std::string dir = input_data["dir"];
 	
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
 	nlohmann::json shape_reconstruction_output_data;
@@ -85,13 +86,18 @@ int main() {
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
 	// std::vector<std::vector<double>> SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
-	
+	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
 
+	std::cout << "Loading estimated shape path...\n";
+
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
+
+	std::cout << "Loading estimated shape spherical harmonics path...\n";
+
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
 
-	std::string dir = input_data["dir"];
+
 
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
 
