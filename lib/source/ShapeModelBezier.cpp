@@ -1868,87 +1868,87 @@ void ShapeModelBezier<PointType>::construct_kd_tree_shape(){
 
 	throw(std::runtime_error("to re-implement"));
 
-	// std::chrono::time_point<std::chrono::system_clock> start, end;
-	// start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 
 
-	// // The KD tree is constructed by building an "enclosing" (not strictly-speaking) KD tree from the bezier shape
+	// The KD tree is constructed by building an "enclosing" (not strictly-speaking) KD tree from the bezier shape
 
 
-	// // An inverse map going from vertex pointer to global indices is created
-	// // Note that the actual vertices on the shape model will not be be 
-	// // the control points, but the points lying on the bezier patch
- // 	// they support
+	// An inverse map going from vertex pointer to global indices is created
+	// Note that the actual vertices on the shape model will not be be 
+	// the control points, but the points lying on the bezier patch
+ 	// they support
 
-	// std::vector<std::shared_ptr<Element > > facets;
-
-
-	// for (unsigned int i = 0; i < this -> get_NElements(); ++i){
-
-	// 	Bezier * patch = dynamic_cast<Bezier * >(this -> get_elements() -> at(i).get());
+	std::vector<std::shared_ptr<Element > > facets;
 
 
-	// // The facets are created
+	for (unsigned int i = 0; i < this -> get_NElements(); ++i){
 
-	// 	for (unsigned int l = 0; l < patch -> get_degree(); ++l){
-
-	// 		for (unsigned int t = 0; t < l + 1; ++t){
-
-	// 			if (t <= l){
-
-	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l - t);
-	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l - 1,l - t + 1);
-	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l - 1,l-t);
+		const Bezier & patch = this -> get_elements() -> at(i);
 
 
-	// 				std::vector<std::shared_ptr<ControlPoint>> vertices;
-	// 				vertices.push_back(v0);
-	// 				vertices.push_back(v1);
-	// 				vertices.push_back(v2);
+	// The facets are created
 
-	// 				std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
-	// 				facet -> set_super_element(this -> get_elements() -> at(i).get());
-	// 				facets.push_back(facet);
-	// 			}
+		for (unsigned int l = 0; l < patch -> get_degree(); ++l){
 
-	// 			if (t > 0 ){
+			for (unsigned int t = 0; t < l + 1; ++t){
 
-	// 				std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l-t);
-	// 				std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l,l - t + 1 );
-	// 				std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l -1,l - t + 1);
+				if (t <= l){
+
+					std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l - t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l - 1,l - t + 1);
+					std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l - 1,l-t);
 
 
-	// 				std::vector<std::shared_ptr<ControlPoint>> vertices;
+					std::vector<std::shared_ptr<ControlPoint>> vertices;
+					vertices.push_back(v0);
+					vertices.push_back(v1);
+					vertices.push_back(v2);
 
-	// 				vertices.push_back(v0);
-	// 				vertices.push_back(v1);
-	// 				vertices.push_back(v2);
+					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+					facet -> set_super_element(this -> get_elements() -> at(i).get());
+					facets.push_back(facet);
+				}
 
+				if (t > 0 ){
 
-	// 				std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
-	// 				facet -> set_super_element(this -> get_elements() -> at(i).get());
-
-	// 				facets.push_back(facet);
-
-	// 			}
-
-	// 		}
-
-	// 	}
-	// }
+					std::shared_ptr<ControlPoint> v0 = patch -> get_point(patch -> get_degree() - l,l-t);
+					std::shared_ptr<ControlPoint> v1 = patch -> get_point(patch -> get_degree() - l,l - t + 1 );
+					std::shared_ptr<ControlPoint> v2 = patch -> get_point(patch -> get_degree() - l -1,l - t + 1);
 
 
+					std::vector<std::shared_ptr<ControlPoint>> vertices;
+
+					vertices.push_back(v0);
+					vertices.push_back(v1);
+					vertices.push_back(v2);
 
 
-	// this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape());
-	// this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
+					std::shared_ptr<Element> facet = std::make_shared<Facet>(Facet(vertices));
+					facet -> set_super_element(this -> get_elements() -> at(i).get());
+
+					facets.push_back(facet);
+
+				}
+
+			}
+
+		}
+	}
 
 
-	// end = std::chrono::system_clock::now();
-	// std::chrono::duration<double> elapsed_seconds = end - start;
 
 
-	// std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
+	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape());
+	this -> kdt_facet = this -> kdt_facet -> build(facets, 0);
+
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+
+
+	std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
 
 
 
