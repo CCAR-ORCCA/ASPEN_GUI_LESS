@@ -40,6 +40,81 @@ void ShapeModelTri<PointType>::update_mass_properties() {
 
 }
 
+
+
+
+template <class PointType>
+ShapeModelTri<PointType>::ShapeModelTri(const std::vector<std::vector<int>> & vertices_in_facets,
+	const std::vector<int> & super_elements,
+	const std::vector<PointType> & control_points) {
+
+	
+
+	// Vertices are added to the shape model
+
+	for (unsigned int vertex_index = 0; vertex_index < control_points.size(); ++vertex_index) {
+
+		ControlPoint vertex(this);
+		vertex.set_point_coordinates(control_points[vertex_index].get_point_coordinates());
+		vertex.set_global_index(vertex_index);
+
+		this -> add_control_point(vertex);
+
+	}
+
+	std::cout << std::endl << " Constructing Facets " << std::endl ;
+
+	std::vector<Facet> elements;
+	
+	// Facets are added to the shape model
+	for (unsigned int facet_index = 0; facet_index < vertices_in_facets.size(); ++facet_index) {
+
+		// The vertices stored in this facet are pulled.
+		int v0 = vertices_in_facets[facet_index][0];
+		int v1 = vertices_in_facets[facet_index][1];
+		int v2 = vertices_in_facets[facet_index][2];
+
+		std::vector<int> vertices;
+		vertices.push_back(v0);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+
+
+		this -> get_point(v0).add_ownership(facet_index);
+		this -> get_point(v1).add_ownership(facet_index);
+		this -> get_point(v2).add_ownership(facet_index);
+
+		Facet facet(vertices,this);
+		facet.set_global_index(facet_index);
+		facet.set_super_element(super_elements[facet_index]);
+		elements. push_back(facet);
+	}
+
+	this -> set_elements(elements);
+
+	this -> update_facets();
+	this -> check_normals_consistency();
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class PointType>
 void ShapeModelTri<PointType>::update_facets() {
 

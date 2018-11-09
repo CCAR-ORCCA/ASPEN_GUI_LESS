@@ -36,6 +36,12 @@ public:
 		FrameGraph * frame_graph) : ShapeModel<PointType>(ref_frame_name,frame_graph){};
 
 
+	ShapeModelTri(){};
+
+	ShapeModelTri(const std::vector<std::vector<int> > & vertices,
+		const std::vector<int> & super_elements,
+		const std::vector<PointType> & control_points);
+
 	/**
 	Constructs the KDTree holding the shape model for ray-casting purposes
 	@param verbose true will save the bounding boxes to a file and display

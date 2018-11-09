@@ -427,7 +427,7 @@ protected:
 
 
 
-
+	ShapeModelTri<ControlPoint> enclosing_polyhedron;
 
 
 
