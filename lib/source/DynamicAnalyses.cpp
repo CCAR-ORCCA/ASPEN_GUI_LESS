@@ -1,6 +1,6 @@
 #include "DynamicAnalyses.hpp"
 #include <RigidBodyKinematics.hpp>
-#define ATTITUDE_JACOBIAN_DEBUG 1
+#define ATTITUDE_JACOBIAN_DEBUG 0
 
 DynamicAnalyses::DynamicAnalyses(ShapeModelTri<ControlPoint> * shape_model) {
 	this -> shape_model = shape_model;
@@ -63,9 +63,7 @@ arma::mat DynamicAnalyses::attitude_jacobian(arma::vec & attitude ,const arma::m
 
 	#if ATTITUDE_JACOBIAN_DEBUG
 	std::cout << "done computing dsigma_dot_domega\n";
-	std::cout << omega.t() << std::endl;
-	std::cout << inertia << std::endl;
-
+	
 	std::cout << RBK::tilde(omega) << std::endl;
 	#endif
 

@@ -187,6 +187,8 @@ int main() {
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_true_inertia(true_shape_model.get_inertia());
 	args.set_estimated_shape_model(&estimated_shape_model);
+	args.set_estimated_inertia(estimated_shape_model.get_inertia());
+	args.set_estimated_mass(estimated_shape_model . get_volume() * DENSITY);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
