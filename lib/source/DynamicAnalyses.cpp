@@ -42,12 +42,13 @@ arma::mat DynamicAnalyses::point_mass_jacobian(arma::vec & point , double mass) 
 arma::mat DynamicAnalyses::attitude_jacobian(arma::vec & attitude ,const arma::mat & inertia) const {
 
 
-	arma::mat A = arma::zeros<arma::mat>(6,6);
-	arma::mat sigma = attitude.subvec(0,2);
-	arma::mat omega = attitude.subvec(3,5);
+	arma::mat::fixed<6,6> A = arma::zeros<arma::mat>(6,6);
+	arma::vec::fixed<3> sigma = attitude.subvec(0,2);
+	arma::vec::fixed<3> omega = attitude.subvec(3,5);
 
 	// dsigma_dot_dsigma
-	A.submat(0,0,2,2) = 0.5 * (- omega * sigma.t() - RBK::tilde(omega) + arma::eye<arma::mat>(3,3)* arma::dot(sigma,omega) + sigma * omega.t());
+	A.submat(0,0,2,2) = (0.5 * (- omega * sigma.t() - RBK::tilde(omega) 
+		+ arma::eye<arma::mat>(3,3)* arma::dot(sigma,omega) + sigma * omega.t()));
 
 	// dsigma_dot_domega
 	A.submat(0,3,2,5) = 1./4 * RBK::Bmat(sigma);
