@@ -1,4 +1,8 @@
 #include "Dynamics.hpp"
+#define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 1
+#define ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL 1
+
+
 
 arma::vec Dynamics::point_mass_dxdt(double t, arma::vec X, Args * args) {
 
@@ -173,18 +177,27 @@ arma::vec Dynamics::harmonics_attitude_dxdt_body_frame(double t,const arma::vec 
 
 arma::mat Dynamics::point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args){
 
+
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "in Dynamics::point_mass_jac_attitude_dxdt_body_frame\n";
+	#endif 
+
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
-	arma::vec pos_body = X . subvec(0, 2);
-	arma::vec vel_body = X . subvec(3, 5);
+	arma::vec::fixed<3> pos_body = X . subvec(0, 2);
+	arma::vec::fixed<3> vel_body = X . subvec(3, 5);
 
-	arma::vec mrp_TN = X . subvec(6, 8);
-	arma::vec omega_TN = X . subvec(9, 11);
+	arma::vec::fixed<3> mrp_TN = X . subvec(6, 8);
+	arma::vec::fixed<3> omega_TN = X . subvec(9, 11);
 
 	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos_body , args . get_mass());
 	A.submat(3,0,5,2) += - omega_TN * omega_TN.t() + arma::eye<arma::mat>(3,3) * arma::dot(omega_TN,omega_TN);
 	A.submat(3,3,5,5) = - 2 * RBK::tilde(omega_TN);
 
+
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "leaving Dynamics::point_mass_jac_attitude_dxdt_body_frame\n";
+	#endif 
 	return A;
 
 }
@@ -267,6 +280,13 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial(double t,const arma::vec & 
 
 arma::vec Dynamics::estimated_point_mass_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args) {
 
+
+	#if DYNAMICS::ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL
+	std::cout << "in Dynamics::estimated_point_mass_attitude_dxdt_inertial\n";
+	#endif 
+
+
+
 	arma::vec pos = X . subvec(0, 2);
 
 	arma::vec X_small_body = X . subvec(6, 11);
@@ -280,6 +300,12 @@ arma::vec Dynamics::estimated_point_mass_attitude_dxdt_inertial(double t,const a
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;
 	dxdt.subvec(6,11) = dxdt_small_body;
+
+
+	#if DYNAMICS::ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL
+	std::cout << "leaving Dynamics::estimated_point_mass_attitude_dxdt_inertial\n";
+	#endif 
+
 
 	return dxdt;
 

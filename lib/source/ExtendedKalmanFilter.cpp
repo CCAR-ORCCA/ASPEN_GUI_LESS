@@ -51,6 +51,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	#if EKF_DEBUG
 	std::cout << "integrating dynamics\n";
 	#endif
+	
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state(augmented_state_history));
 
