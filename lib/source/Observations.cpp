@@ -86,6 +86,8 @@ arma::vec Observations::obs_lidar_range_computed(
 	arma::vec::fixed<3> mrp_LN = RBK::dcm_to_mrp(dcm_LN);
 
 	// Setting the Lidar frame to its new state
+	std::cout << "-- setting lidar to new state\n";
+
 	auto lidar = args.get_lidar();
 	auto frame_graph = args.get_frame_graph();
 
