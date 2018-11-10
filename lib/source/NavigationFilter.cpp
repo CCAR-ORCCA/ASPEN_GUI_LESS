@@ -1,10 +1,10 @@
 #include "NavigationFilter.hpp"
-#include "DebugFlags.hpp"
 #include "System.hpp"
 #include "Observer.hpp"
 #include "Dynamics.hpp"
 #include <boost/numeric/odeint.hpp>
 #include <vector>
+#define NAVIGATION_DEBUG 1
 
 NavigationFilter::NavigationFilter(const Args & args) : ExtendedKalmanFilter(args){
 // 
@@ -27,10 +27,6 @@ int NavigationFilter::run(
 	#endif
 
 	this -> compute_true_state(T_obs,X0_true_augmented,true);
-
-	#if NAVIGATION_DEBUG
-	std::cout << "-- Computing estimated small body state history" << std::endl;
-	#endif
 
 	// The filter is initialized
 	if (this -> info_mat_bar_0.n_rows == 0){

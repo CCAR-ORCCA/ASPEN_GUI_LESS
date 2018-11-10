@@ -95,7 +95,9 @@ arma::vec Observations::obs_lidar_range_computed(
 
 
 	// Getting the true observations (noise is added)
+	std::cout << "-- ray tracing\n";
 	lidar -> send_flash(args.get_estimated_shape_model(),false,args.get_skip_factor());
+	std::cout << "-- done ray tracing\n";
 
 	// The range measurements are extracted from the lidar and stored in an armadillo vector
 	auto focal_plane = lidar -> get_focal_plane();
@@ -235,8 +237,8 @@ arma::vec Observations::obs_pos_ekf_computed(double t,const arma::vec & x,const 
 arma::vec Observations::obs_pos_mrp_ekf_computed(double t,const arma::vec & x,const Args & args){
 
 	arma::vec Ybar(6);
-	Ybar.rows(0,2) = x.rows(0,2);
-	Ybar.rows(3,5) = x.rows(6,8);
+	Ybar.rows(0,2) = x.rows(0,2);//position
+	Ybar.rows(3,5) = x.rows(6,8);//mrp_BN
 
 	return Ybar;
 

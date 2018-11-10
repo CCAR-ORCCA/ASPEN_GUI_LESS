@@ -1,9 +1,11 @@
 #include "BatchFilter.hpp"
-#include "DebugFlags.hpp"
 #include "System.hpp"
 #include "Observer.hpp"
 #include <boost/numeric/odeint.hpp>
 #include "FixVectorSize.hpp"
+
+#define BATCH_DEBUG 1
+
 
 BatchFilter::BatchFilter(const Args & args) : Filter(args){
 }
@@ -18,7 +20,7 @@ int  BatchFilter::run(
 
 	
 	#if BATCH_DEBUG || FILTER_DEBUG
-	std::cout << "- Running filter" << std::endl;
+	std::cout << "- Running batch filter" << std::endl;
 	#endif
 
 	#if BATCH_DEBUG || FILTER_DEBUG
@@ -81,7 +83,7 @@ int  BatchFilter::run(
 	int iterations = N_iter;
 
 	#if BATCH_DEBUG || FILTER_DEBUG
-	std::cout << "-- Iterating the filter" << std::endl;
+	std::cout << "-- Iterating the batch filter" << std::endl;
 	#endif
 
 	double old_residuals = std::numeric_limits<double>::infinity();

@@ -4,10 +4,8 @@
 
 // Various filter debug flags
 #define FILTER_DEBUG 1
-#define BATCH_DEBUG 1
 #define SEQUENTIAL_DEBUG 0
 #define EKF_DEBUG 0
-#define NAVIGATION_DEBUG 1
 
 // Ellispoid Fitter debug flags
 #define ELLIPSOID_DEBUG 0
