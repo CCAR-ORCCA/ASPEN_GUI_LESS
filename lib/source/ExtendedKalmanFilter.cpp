@@ -1,8 +1,11 @@
 #include "ExtendedKalmanFilter.hpp"
-#include "DebugFlags.hpp"
 #include "System.hpp"
 #include "Observer.hpp"
 #include <boost/numeric/odeint.hpp>
+
+
+#define EKF_DEBUG 1
+
 
 ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter(args){
 // 
@@ -12,6 +15,11 @@ ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter
 
 void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	arma::vec & X_hat, arma::mat & P_hat) const{
+
+	#if EKF_DEBUG
+	std::cout << "in ExtendedKalmanFilter::time_update\n";
+	#endif
+
 
 	unsigned int N_est = X_hat.n_rows;
 	unsigned int N_true = 0;
@@ -40,6 +48,9 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	auto tbegin = times.begin();
 	auto tend = times.end();
 
+	#if EKF_DEBUG
+	std::cout << "integrating dynamics\n";
+	#endif
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state(augmented_state_history));
 
@@ -51,7 +62,9 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 		X_hat(i) = augmented_state_history[1](i);
 	}
 	
-
+	#if EKF_DEBUG
+	std::cout << "building stm\n";
+	#endif
 	arma::mat stm = arma::reshape(
 		augmented_state_history[1].rows(N_est,N_est + N_est * N_est - 1),
 		N_est,N_est);

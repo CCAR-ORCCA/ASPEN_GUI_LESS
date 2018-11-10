@@ -5,7 +5,6 @@
 // Various filter debug flags
 #define FILTER_DEBUG 1
 #define SEQUENTIAL_DEBUG 0
-#define EKF_DEBUG 0
 
 // Ellispoid Fitter debug flags
 #define ELLIPSOID_DEBUG 0
