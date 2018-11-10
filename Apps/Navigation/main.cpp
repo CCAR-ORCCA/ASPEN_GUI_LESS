@@ -306,6 +306,7 @@ int main() {
 
 		std::cout << "USING TRUE STATES TO INITIALIZE THE FILTER\n";
 		X0_estimated = X0_true;
+	 	
 	 	P0(0,0) = 1e1;
 	 	P0(1,1) = 1e1;
 	 	P0(2,2) = 1e1;
@@ -313,6 +314,14 @@ int main() {
 	 	P0(3,3) = 1e-1;
 	 	P0(4,4) = 1e-1;
 	 	P0(5,5) = 1e-1;
+
+	 	P0(6,6) = 1e-4;
+	 	P0(7,7) = 1e-4;
+	 	P0(8,8) = 1e-4;
+
+	 	P0(9,9) = 1e-10;
+	 	P0(10,10) = 1e-10;
+	 	P0(1,1) = 1e-10;
 
 	}
 	else{
