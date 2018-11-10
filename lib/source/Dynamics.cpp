@@ -335,12 +335,22 @@ arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, co
 	#endif 
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
-	arma::vec pos = X . subvec(0, 2);
-	arma::vec attitude = X . subvec(6, 11);
+	arma::vec::fixed<3> pos = X . subvec(0, 2);
+	arma::vec::fixed<6> attitude = X . subvec(6, 11);
 
 
 	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos , args . get_estimated_mass());
+	
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "computed point_mass_jacobian\n";
+	#endif 
+
 	A.submat(6,6,11,11) += args.get_dyn_analyses() -> attitude_jacobian(attitude , args . get_estimated_inertia());
+		
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "computed attitude_jacobian\n";
+	#endif 
+
 	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
 	std::cout << "leaving Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial\n";
 	#endif 
