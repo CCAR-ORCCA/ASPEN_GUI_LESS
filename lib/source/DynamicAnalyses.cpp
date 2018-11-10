@@ -63,15 +63,19 @@ arma::mat DynamicAnalyses::attitude_jacobian(arma::vec & attitude ,const arma::m
 
 	#if ATTITUDE_JACOBIAN_DEBUG
 	std::cout << "done computing dsigma_dot_domega\n";
+	std::cout << omega.t() << std::endl;
+	std::cout << inetia << std::endl;
+
+	std::cout << RBK::tilde(omega) << std::endl;
 	#endif
 
 	// domega_dot_dsigma is zero 
 
 	// domega_dot_domega
-	
+
 	A.submat(3,3,5,5) = arma::solve(inertia,- RBK::tilde(omega) * inertia + RBK::tilde(inertia * omega));
 
-	
+
 	#if ATTITUDE_JACOBIAN_DEBUG
 	std::cout << "done computing domega_dot_domega\n";
 	#endif
