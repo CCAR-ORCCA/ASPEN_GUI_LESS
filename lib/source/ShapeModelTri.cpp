@@ -48,8 +48,6 @@ ShapeModelTri<PointType>::ShapeModelTri(const std::vector<std::vector<int>> & ve
 	const std::vector<int> & super_elements,
 	const std::vector<PointType> & control_points) {
 
-	
-
 	// Vertices are added to the shape model
 
 	for (unsigned int vertex_index = 0; vertex_index < control_points.size(); ++vertex_index) {
@@ -61,8 +59,7 @@ ShapeModelTri<PointType>::ShapeModelTri(const std::vector<std::vector<int>> & ve
 		this -> add_control_point(vertex);
 
 	}
-
-	std::cout << std::endl << " Constructing Facets " << std::endl ;
+	std::cout << control_points.size() << " control points.\n";
 
 	std::vector<Facet> elements;
 	
@@ -79,7 +76,6 @@ ShapeModelTri<PointType>::ShapeModelTri(const std::vector<std::vector<int>> & ve
 		vertices.push_back(v1);
 		vertices.push_back(v2);
 
-
 		this -> get_point(v0).add_ownership(facet_index);
 		this -> get_point(v1).add_ownership(facet_index);
 		this -> get_point(v2).add_ownership(facet_index);
@@ -89,6 +85,8 @@ ShapeModelTri<PointType>::ShapeModelTri(const std::vector<std::vector<int>> & ve
 		facet.set_super_element(super_elements[facet_index]);
 		elements. push_back(facet);
 	}
+
+	std::cout << elements.size() << " facets.\n";
 
 	this -> set_elements(elements);
 
@@ -204,7 +202,7 @@ arma::vec::fixed<3> ShapeModelTri<PointType>::get_point_normal_coordinates(unsig
 }
 
 template <class PointType>
-const Facet & ShapeModelTri<PointType>::get_element(int e) const{
+Facet & ShapeModelTri<PointType>::get_element(int e){
 	return this -> elements[e];
 }
 

@@ -14,8 +14,6 @@ KDTreeShape::KDTreeShape(ShapeModelTri<ControlPoint> * owning_shape) {
 
 void KDTreeShape::build(const std::vector<int > & elements,  int depth) {
 
-
-
 	// Creating the node
 	this -> elements = elements;
 	this -> left = std::make_shared<KDTreeShape>(KDTreeShape(this -> owning_shape));;
@@ -26,6 +24,9 @@ void KDTreeShape::build(const std::vector<int > & elements,  int depth) {
 	#if KDTREE_SHAPE_BUILD_DEBUG
 	std::cout << "Building node at depth " << depth << std::endl;
 	std::cout << "Elements in node: " << elements.size() << std::endl;
+	if(depth == 0){
+		std::cout << "Owning shape has " << this -> owning_shape -> get_NElements() << " elements and " << this -> owning_shape -> get_NControlPoints() << " control points\n";
+	}
 	#endif
 
 	if (elements.size() == 0) {
@@ -181,6 +182,7 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 	ShapeModelBezier<ControlPoint> * shape_model_bezier) const {
 	
 
+
 	#if KDTREE_SHAPE_HIT_DEBUG
 	std::cout << "Node depth: " << node -> depth << std::endl;
 	#endif
@@ -210,8 +212,8 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 		// for intersect. First, the method checks whether it is still on a branch
 		if (node -> left -> elements.size() > 0 || node -> right -> elements.size() > 0) {
 
-			bool hitleft = this -> hit(node -> left, ray,shape_model_bezier);
-			bool hitright = this -> hit(node -> right, ray,shape_model_bezier);
+			bool hitleft = this -> hit(node -> left, ray,outside,shape_model_bezier);
+			bool hitright = this -> hit(node -> right, ray,outside,shape_model_bezier);
 
 			return (hitleft || hitright);
 
@@ -221,8 +223,8 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 
 			#if KDTREE_SHAPE_HIT_DEBUG
 			std::cout << "Searching all triangles in node for intersect\n";
-
 			#endif
+
 			bool hit_element = false;
 
 			// If not, the current node is a leaf
@@ -231,12 +233,14 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 			for (unsigned int i = 0; i < node -> elements.size(); ++i) {
 
 
-
+				#if KDTREE_SHAPE_HIT_DEBUG
+				std::cout << "\tFacet " << i << " in node, global triangle index is " << node -> elements[i] << "\n";
+				#endif
 
 				// If there is a hit
 				if (shape_model_bezier == nullptr){
 
-
+					
 					if (ray -> single_facet_ray_casting( this -> owning_shape -> get_element(node -> elements[i]),true,outside)){
 						
 						hit_element = true;
@@ -245,8 +249,14 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 
 				// If the shape is a collection of Bezier patches, things get a bit more protracted
 				else{
+
+
 					// If the KD tree enclosing the shape is hit, there may be an impact over the bezier shape
 					if (ray -> single_facet_ray_casting( this -> owning_shape -> get_element(node -> elements[i]),false)) {
+
+						#if KDTREE_SHAPE_HIT_DEBUG
+						std::cout << "\t Ray has hit enclosing triangle. Iterating on barycentric coordinates\n";
+						#endif
 
 						double u,v;
 						u = 1e10;
@@ -296,6 +306,11 @@ bool KDTreeShape::hit(const std::shared_ptr<KDTreeShape> & node,
 						}
 
 
+					}
+					else{
+						#if KDTREE_SHAPE_HIT_DEBUG
+						std::cout << "\t Ray has not hit enclosing triangle.\n";
+						#endif
 					}
 				}
 

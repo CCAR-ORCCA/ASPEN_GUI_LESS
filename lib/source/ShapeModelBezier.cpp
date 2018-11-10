@@ -1111,10 +1111,8 @@ arma::vec::fixed<3> ShapeModelBezier<PointType>::get_dims(const double & volume,
 template <class PointType>
 bool ShapeModelBezier<PointType>::ray_trace(Ray * ray,bool outside){
 
-	throw(std::runtime_error("ShapeModelBezier<PointType>::ray_trace not implemented yet!"));
-	return false;
-	// return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray,this);
-
+	return this -> kdt_facet -> hit(this -> get_KDTreeShape(),ray,false,this);
+	
 }
 
 template <class PointType>
@@ -1863,11 +1861,9 @@ void ShapeModelBezier<PointType>::save(std::string path) {
 }
 
 
-
 template <class PointType>
 void ShapeModelBezier<PointType>::construct_kd_tree_shape(){
 
-	throw(std::runtime_error("to re-implement"));
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
@@ -1934,33 +1930,30 @@ void ShapeModelBezier<PointType>::construct_kd_tree_shape(){
 	}
 
 	// We know have everything we need to create the enclosing shape
+	this -> enclosing_polyhedron = std::make_shared<ShapeModelTri<ControlPoint>>(ShapeModelTri<ControlPoint>(vertices_in_facets,
+		facets_super_element,this -> control_points));
 
 
-	this -> enclosing_polyhedron = ShapeModelTri<ControlPoint>(vertices_in_facets,
-		facets_super_element,this -> control_points);
+	for(int e = 0; e < this -> enclosing_polyhedron -> get_NElements(); ++e){
+		Facet & facet =  this -> enclosing_polyhedron -> get_element(e);
+		facet.set_owning_shape(this -> enclosing_polyhedron.get());
+	}
+
 
 
 	std::vector<int> facets;
-	for (int e = 0; e < this -> enclosing_polyhedron. get_NElements(); ++e){
+	for (int e = 0; e < this -> enclosing_polyhedron -> get_NElements(); ++e){
 		facets.push_back(e);
 	}
 
-	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(&this -> enclosing_polyhedron));
+
+	this -> kdt_facet = std::make_shared<KDTreeShape>(KDTreeShape(this -> enclosing_polyhedron.get()));
 	this -> kdt_facet -> build(facets, 0);
 
-
-
-
-
-
-	
 	end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end - start;
 
-
 	std::cout << "\n Elapsed time during Bezier KDTree construction : " << elapsed_seconds.count() << "s\n\n";
-
-
 
 }
 

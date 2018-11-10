@@ -61,6 +61,7 @@ public:
 	void set_control_points(std::vector<int > & control_points);
 
 
+	void set_owning_shape(ShapeModel<ControlPoint> * owning_shape);
 
 	
 	/**

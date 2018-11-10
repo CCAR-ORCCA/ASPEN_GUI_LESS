@@ -8,6 +8,8 @@
 #include "Element.hpp"
 #include "ControlPoint.hpp"
 
+#define SINGLE_FACET_RAY_CASTING_DEBUG 0
+#define INTERSECTION_INSIDE_DEBUG 0
 
 
 Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
@@ -137,11 +139,28 @@ void Ray::reset(ShapeModel<ControlPoint> * shape_model) {
 bool Ray::intersection_inside(const arma::vec::fixed<3> & H, const Facet & facet, double tol) {
 
 
-	const std::vector<int>  & control_points = facet.get_points();
+	const std::vector<int> & control_points = facet.get_points();
+
+
+	#if INTERSECTION_INSIDE_DEBUG
+	std::cout << "\t\tFacet is comprised of points " << control_points[0] << ", " << control_points[1] << ", " << control_points[2] << std::endl;
+	#endif
+
 
 	const arma::vec::fixed<3> P0 = facet.get_point_coordinates(control_points[0]);
+	#if INTERSECTION_INSIDE_DEBUG
+	std::cout << "\t\t P0: " << P0.t();
+	#endif
 	const arma::vec::fixed<3> P1 = facet.get_point_coordinates(control_points[1]);
+	#if INTERSECTION_INSIDE_DEBUG
+	std::cout << "\t\t P1: " << P1.t();
+	#endif
 	const arma::vec::fixed<3> P2 = facet.get_point_coordinates(control_points[2]);
+	#if INTERSECTION_INSIDE_DEBUG
+	std::cout << "\t\t P2: " << P2.t() << std::endl;
+	#endif
+
+
 
 	double epsilon = (facet.get_area()
 		- 0.5 * (
@@ -195,11 +214,21 @@ bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) 
 	const arma::vec::fixed<3> & n = facet.get_normal_coordinates();
 	const arma::vec::fixed<3> & p = facet.get_center();
 
+	#if SINGLE_FACET_RAY_CASTING_DEBUG
+	std::cout << "\t\tFacet normal: " << n.t();
+	std::cout << "\t\tFacet center: " << p.t() << std::endl;	
+	#endif
+
 	double t = arma::dot(n, p - this -> origin_target_frame) / arma::dot(n, this -> direction_target_frame);
 
 
 	// The normal is facing the opposite way
 	if (arma::dot(n,this -> direction_target_frame) > 0 && outside){
+
+	#if SINGLE_FACET_RAY_CASTING_DEBUG
+		std::cout << "\t\tNormal is facing the wrong way. No impact\n";
+	#endif
+
 		return false;
 	}
 
@@ -208,7 +237,9 @@ bool Ray::single_facet_ray_casting(const Facet & facet,bool store,bool outside) 
 	if (t > 0) {
 		arma::vec::fixed<3> H = this -> direction_target_frame * t + this -> origin_target_frame;
 
-
+		#if SINGLE_FACET_RAY_CASTING_DEBUG
+		std::cout << "\t\tChecking if intersection is inside facet\n";
+		#endif
 
 		if (this -> intersection_inside(H, facet)) {
 
@@ -261,16 +292,13 @@ bool Ray::single_patch_ray_casting(const Bezier & patch,double & u,double & v,bo
 	const arma::vec::fixed<3> & S = this -> origin_target_frame;
 	const arma::vec::fixed<3> & dir = this -> direction_target_frame;
 
-
-	throw(std::runtime_error("Have to fix get_point_coordinates access first"));
-
-	arma::mat u_tilde = RBK::tilde(dir);
+	arma::mat::fixed<3,3> u_tilde = RBK::tilde(dir);
 
 	// The ray caster iterates until a valid intersect is found
 	unsigned int N_iter_max = 20;
 
 	// The barycentric coordinates are initialized at a planar guess
-	arma::mat E(3,2);
+	arma::mat::fixed<3,2> E;
 	E.col(0) = patch.get_point_coordinates(patch.get_degree(),0) - patch.get_point_coordinates(0,0);
 	E.col(1) = patch.get_point_coordinates(0,patch.get_degree()) - patch.get_point_coordinates(0,0);
 

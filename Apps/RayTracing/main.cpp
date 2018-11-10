@@ -34,11 +34,10 @@ int main(){
 	frame_graph.add_transform("N", "B");
 
 	// Shape model formed with triangles
-	ShapeModelTri<ControlPoint> tri_shape("B", &frame_graph);
-	ShapeModelImporter::load_obj_shape_model("../../../resources/shape_models/itokawa_64_scaled_aligned.obj", 1, false,tri_shape);
+	ShapeModelBezier<ControlPoint> bezier_shape("B", &frame_graph);
+	ShapeModelImporter::load_bezier_shape_model("../fit_shape_N_frame.b", 1, false,bezier_shape);
 
-	tri_shape.construct_kd_tree_shape();
-
+	bezier_shape.construct_kd_tree_shape();
 
 	// Lidar
 	Lidar lidar(&frame_graph,
@@ -58,11 +57,11 @@ int main(){
 	arma::vec::fixed<3> mrp_BN = {-0.2,0.3,-0.3};
 
 
-	frame_graph. get_frame(lidar. get_ref_frame_name()) -> set_origin_from_parent(pos);
-	frame_graph. get_frame(lidar. get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
-	frame_graph. get_frame("B") -> set_mrp_from_parent(mrp_BN);
+	frame_graph . get_frame(lidar. get_ref_frame_name()) -> set_origin_from_parent(pos);
+	frame_graph . get_frame(lidar. get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
+	frame_graph . get_frame("B") -> set_mrp_from_parent(mrp_BN);
 
-	lidar.send_flash(&tri_shape,false);
+	lidar.send_flash(&bezier_shape,false);
 	lidar.save("lidar",true);
 
 

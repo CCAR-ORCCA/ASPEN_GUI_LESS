@@ -137,7 +137,7 @@ public:
 	virtual void compute_inertia();
 
 
-	const Facet & get_element(int e) const;
+	Facet & get_element(int e);
 
 
 	/**

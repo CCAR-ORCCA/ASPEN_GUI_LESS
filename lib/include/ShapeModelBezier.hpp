@@ -424,10 +424,7 @@ protected:
 	std::vector<std::map<  std::array<int, 8>,arma::mat::fixed<12,3> > > elements_to_cm_mapping_matrices;
 	std::vector<std::map<  std::array<int, 10>,arma::mat::fixed<6,15> > > elements_to_inertia_mapping_matrices;
 
-
-
-
-	ShapeModelTri<ControlPoint> enclosing_polyhedron;
+	std::shared_ptr<ShapeModelTri<ControlPoint>> enclosing_polyhedron;
 
 
 

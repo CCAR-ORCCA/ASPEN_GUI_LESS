@@ -31,7 +31,8 @@ public:
 
 	void build(const std::vector<int> & elements, int depth);
 	bool hit_bbox(Ray * ray) const;	
-	bool hit(const std::shared_ptr<KDTreeShape> & node, Ray * ray, bool outside = true,
+	bool hit(const std::shared_ptr<KDTreeShape> & node, Ray * ray, 
+		bool outside = true,
 		ShapeModelBezier<ControlPoint> * shape_model_bezier = nullptr) const;
 
 	int get_depth() const;
