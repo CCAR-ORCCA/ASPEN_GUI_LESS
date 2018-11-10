@@ -186,7 +186,7 @@ int main() {
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_true_inertia(true_shape_model.get_inertia());
-
+	args.set_estimated_shape_model(&estimated_shape_model);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
