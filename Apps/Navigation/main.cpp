@@ -70,6 +70,8 @@ int main() {
 	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
 	i >> input_data;
+
+
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::string dir = input_data["dir"];
 	
@@ -225,18 +227,18 @@ int main() {
 	// Initial state
 
 	arma::vec::fixed<12> X0_true = {
-		input_data["X0_TRUE_SPACECRAFT"][0],
-		input_data["X0_TRUE_SPACECRAFT"][1],
-		input_data["X0_TRUE_SPACECRAFT"][2],
-		input_data["X0_TRUE_SPACECRAFT"][3],
-		input_data["X0_TRUE_SPACECRAFT"][4],
-		input_data["X0_TRUE_SPACECRAFT"][5],
-		input_data["X0_TRUE_SMALL_BODY"][0],
-		input_data["X0_TRUE_SMALL_BODY"][1],
-		input_data["X0_TRUE_SMALL_BODY"][2],
-		input_data["X0_TRUE_SMALL_BODY"][3],
-		input_data["X0_TRUE_SMALL_BODY"][4],
-		input_data["X0_TRUE_SMALL_BODY"][5]
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][0],
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][1],
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][2],
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][3],
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][4],
+		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][5],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][0],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][1],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][2],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][3],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][4],
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5]
 	};
 
 	/******************************************************/
@@ -298,25 +300,25 @@ int main() {
 	// Initial state
 
 	arma::vec::fixed<12> X0_estimated = {
-		input_data["X0_ESTIMATED_SPACECRAFT"][0],
-		input_data["X0_ESTIMATED_SPACECRAFT"][1],
-		input_data["X0_ESTIMATED_SPACECRAFT"][2],
-		input_data["X0_ESTIMATED_SPACECRAFT"][3],
-		input_data["X0_ESTIMATED_SPACECRAFT"][4],
-		input_data["X0_ESTIMATED_SPACECRAFT"][5],
-		input_data["X0_ESTIMATED_SMALL_BODY"][0],
-		input_data["X0_ESTIMATED_SMALL_BODY"][1],
-		input_data["X0_ESTIMATED_SMALL_BODY"][2],
-		input_data["X0_ESTIMATED_SMALL_BODY"][3],
-		input_data["X0_ESTIMATED_SMALL_BODY"][4],
-		input_data["X0_ESTIMATED_SMALL_BODY"][5]
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][0],
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][1],
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][2],
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][3],
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][4],
+		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][5],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][0],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][1],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][2],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
+		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
 	};
 
 // A-priori covariance on spacecraft state and asteroid state.
 	
 	arma::mat::fixed<12,12> P0;
 
-
+	throw;
 
 
 
