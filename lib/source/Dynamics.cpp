@@ -281,7 +281,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial(double t,const arma::vec & 
 arma::vec Dynamics::estimated_point_mass_attitude_dxdt_inertial(double t,const arma::vec & X, const Args & args) {
 
 
-	#if ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL
+	#if ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG
 	std::cout << "in Dynamics::estimated_point_mass_attitude_dxdt_inertial\n";
 	#endif 
 
@@ -302,7 +302,7 @@ arma::vec Dynamics::estimated_point_mass_attitude_dxdt_inertial(double t,const a
 	dxdt.subvec(6,11) = dxdt_small_body;
 
 
-	#if ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL
+	#if ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG
 	std::cout << "leaving Dynamics::estimated_point_mass_attitude_dxdt_inertial\n";
 	#endif 
 
