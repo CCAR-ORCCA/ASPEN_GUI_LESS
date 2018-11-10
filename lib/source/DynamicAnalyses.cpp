@@ -64,7 +64,7 @@ arma::mat DynamicAnalyses::attitude_jacobian(arma::vec & attitude ,const arma::m
 	#if ATTITUDE_JACOBIAN_DEBUG
 	std::cout << "done computing dsigma_dot_domega\n";
 	std::cout << omega.t() << std::endl;
-	std::cout << inetia << std::endl;
+	std::cout << inertia << std::endl;
 
 	std::cout << RBK::tilde(omega) << std::endl;
 	#endif
