@@ -299,26 +299,41 @@ int main() {
 
 	// Initial state
 
-	arma::vec::fixed<12> X0_estimated = {
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][0],
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][1],
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][2],
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][3],
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][4],
-		shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][5],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][0],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][1],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][2],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
-		shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
-	};
+	arma::vec::fixed<12> X0_estimated;
+	arma::mat::fixed<12,12> P0 = arma::zeros<arma::mat>(12,12);
+
+	if (input_data["USE_TRUE_STATES"]){
+
+		std::cout << "USING TRUE STATES TO INITIALIZE THE FILTER\n";
+		X0_estimated = X0_true;
+	 	P0(0,0) = 1e1;
+	 	P0(1,1) = 1e1;
+	 	P0(2,2) = 1e1;
+
+	 	P0(3,3) = 1e-1;
+	 	P0(4,4) = 1e-1;
+	 	P0(5,5) = 1e-1;
+
+	}
+	else{
+		X0_estimated = {
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][0],
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][1],
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][2],
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][3],
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][4],
+			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][5],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][0],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][1],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][2],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
+		};
+	}
 
 // A-priori covariance on spacecraft state and asteroid state.
 	
-	arma::mat::fixed<12,12> P0;
-
-	throw;
 
 
 

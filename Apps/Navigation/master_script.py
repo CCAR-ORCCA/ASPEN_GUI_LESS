@@ -19,10 +19,11 @@ all_data = [
 "NAVIGATION_TIMES" : 80,
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : True,
+"USE_HARMONICS" : False,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
+"USE_TRUE_STATES": True,
 "dir" : base_location + "input/test_0"
 }
 
