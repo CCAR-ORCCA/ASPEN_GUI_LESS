@@ -127,6 +127,10 @@ arma::vec Observations::obs_lidar_range_computed(
 
 arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, const Args & args){
 
+
+
+	std::cout << "\tin obs_lidar_range_jac_pos\n";
+
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
@@ -134,6 +138,8 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 	args.get_sigmas_range_vector_ptr() -> clear();
 
 	FrameGraph *  frame_graph = args.get_frame_graph();
+
+	std::cout << "\tBrowsing focal plane\n";
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
