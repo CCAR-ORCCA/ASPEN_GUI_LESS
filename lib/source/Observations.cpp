@@ -95,6 +95,8 @@ arma::vec Observations::obs_lidar_range_computed(
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
 
 	// Setting the small body to its inertial attitude. 
+	std::cout << "-- setting the small body to its inertial attitude\n";
+	
 	frame_graph -> get_frame(args.get_estimated_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(x.rows(3,5));
 	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_true_mrp_BN());
 
