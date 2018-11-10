@@ -68,6 +68,9 @@ arma::vec Observations::obs_lidar_range_computed(
 	const arma::vec & x, 
 	const Args & args){
 
+
+	std::cout << "-- in obs_lidar_range_computed\n";
+
 	// Position of spacecraft relative to small body in inertial frame
 	arma::vec::fixed<3> lidar_pos = x.rows(0,2);
 
