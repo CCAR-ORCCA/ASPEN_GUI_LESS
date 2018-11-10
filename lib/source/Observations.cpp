@@ -178,6 +178,8 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x, const Args & args){
 
+	std::cout << "\tin obs_lidar_range_jac_pos_mrp\n";
+
 	Lidar * lidar = args.get_lidar();
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),6);
@@ -185,10 +187,9 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 	arma::mat P(3,3);
 
 	args.get_sigma_consider_vector_ptr() -> clear();
-	args.get_biases_consider_vector_ptr() -> clear();
-	args.get_sigmas_range_vector_ptr() -> clear();
 
 	FrameGraph *  frame_graph = args.get_frame_graph();
+	std::cout << "\tBrowsing focal plane\n";
 
 	for (unsigned int i = 0; i < focal_plane -> size(); ++i){
 
@@ -208,12 +209,9 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 			P = bezier.covariance_surface_point(u_t,v_t,u);
 
 			double sigma_range = std::sqrt(arma::dot(u,P * u));
-				// double sigma_cm = std::sqrt(arma::dot(u,P_cm * u));
 
 			args.get_sigma_consider_vector_ptr() -> push_back(sigma_range);
-				// args.get_biases_consider_vector_ptr() -> push_back(bezier -> get_range_bias(u_t,v_t,u));
-				// args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
-
+			
 			
 
 			n_inertial = frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N");
@@ -228,8 +226,6 @@ arma::mat Observations::obs_lidar_range_jac_pos_mrp(double t,const arma::vec & x
 		}
 		else{
 			args.get_sigma_consider_vector_ptr() -> push_back(-1);
-			args.get_biases_consider_vector_ptr() -> push_back(-1);
-			args.get_sigmas_range_vector_ptr() -> push_back(-1);
 		}
 
 	}
