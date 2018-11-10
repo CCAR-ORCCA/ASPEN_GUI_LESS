@@ -1,8 +1,9 @@
 #include "Dynamics.hpp"
-#define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 1
+#define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 1
+#define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 1
 #define ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 1
-
-
+#define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 1
+	
 
 arma::vec Dynamics::point_mass_dxdt(double t, arma::vec X, Args * args) {
 
@@ -178,7 +179,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_body_frame(double t,const arma::vec 
 arma::mat Dynamics::point_mass_jac_attitude_dxdt_body_frame(double t, const arma::vec & X, const Args & args){
 
 
-	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	#if POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
 	std::cout << "in Dynamics::point_mass_jac_attitude_dxdt_body_frame\n";
 	#endif 
 
@@ -195,7 +196,7 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_body_frame(double t, const arma
 	A.submat(3,3,5,5) = - 2 * RBK::tilde(omega_TN);
 
 
-	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	#if POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
 	std::cout << "leaving Dynamics::point_mass_jac_attitude_dxdt_body_frame\n";
 	#endif 
 	return A;
@@ -328,6 +329,10 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial(double t, const arma::
 
 arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, const arma::vec & X, const Args & args){
 
+
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "in Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial\n";
+	#endif 
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
 	arma::vec pos = X . subvec(0, 2);
@@ -336,7 +341,9 @@ arma::mat Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial(double t, co
 
 	A.submat(0,0,5,5) += args.get_dyn_analyses() -> point_mass_jacobian(pos , args . get_estimated_mass());
 	A.submat(6,6,11,11) += args.get_dyn_analyses() -> attitude_jacobian(attitude , args . get_estimated_inertia());
-
+	#if ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG
+	std::cout << "leaving Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial\n";
+	#endif 
 
 	return A;
 
