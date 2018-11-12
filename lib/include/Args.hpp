@@ -53,18 +53,21 @@ public:
 		return this -> estimated_shape_model;
 	}
 
-	void set_density(double density) {
-		this -> density = density;
+
+
+	void set_density_truth(double density) {
+		this -> density_truth = density;
+	}
+
+	void set_density_estimate(double density) {
+		this -> density_estimate = density;
 	}
 
 	void set_e(double e) {
 		this -> eccentricity = e;
 	}
 
-	void set_mu(double mu) {
-		this -> mu = mu;
-	}
-
+	
 	void set_sma(double sma) {
 		this -> sma = sma;
 	}
@@ -73,8 +76,21 @@ public:
 		return this -> sma;
 	}
 
-	double get_mu() const {
-		return this -> mu;
+	double get_mu_estimate() const {
+		return this -> mu_estimate;
+	}
+
+	double get_mu_truth() const {
+		return this -> mu_truth;
+	}
+
+
+	void set_mu_estimate(double mu)  {
+		 this -> mu_estimate = mu;
+	}
+
+	void set_mu_truth(double mu)  {
+		 this -> mu_truth = mu;
 	}
 
 
@@ -89,8 +105,12 @@ public:
 
 
 
-	double get_density() const {
-		return this -> density;
+	double get_density_truth() const {
+		return this -> density_truth;
+	}
+
+	double get_density_estimate() const {
+		return this -> density_estimate;
 	}
 
 	double get_e() const {
@@ -350,9 +370,13 @@ public:
 
 protected:
 
-	double density;
+	double density_truth;
+	double density_estimate;
+
 	double eccentricity;
-	double mu;
+	double mu_truth;
+	double mu_estimate;
+
 	double sma;
 	double time;
 	double minimum_elevation;

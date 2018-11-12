@@ -392,7 +392,6 @@ void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 	int N_est = X_hat.n_rows;
 
 	Args args;
-	args.set_mu(X_hat(6));
 	System dynamics(args,
 		N_est,
 		Dynamics::point_mass_mu_dxdt_odeint ,

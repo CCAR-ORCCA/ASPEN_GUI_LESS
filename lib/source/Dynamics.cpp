@@ -212,7 +212,6 @@ arma::mat Dynamics::create_Q(double sigma_vel){
 }
 
 
-
 arma::vec Dynamics::point_mass_mu_dxdt_odeint(double t, const arma::vec & x, const Args & args) {
 	
 	arma::vec r = x . rows(0, 2);

@@ -158,8 +158,8 @@ int main() {
 	Args args;
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
-	args.set_mu(arma::datum::G * true_shape_model . get_volume() * DENSITY);
-	args.set_mass(true_shape_model . get_volume() * DENSITY);
+	args.set_mu_truth(arma::datum::G * true_shape_model . get_volume() * DENSITY);
+	args.set_mass_truth(true_shape_model . get_volume() * DENSITY);
 	args.set_lidar(&lidar);
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
@@ -167,7 +167,7 @@ int main() {
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
-	args.set_true_inertia(true_shape_model.get_inertia());
+	args.set_inertia_truth(true_shape_model.get_inertia());
 
 
 	/******************************************************/
@@ -191,7 +191,7 @@ int main() {
 
 	// The spherical harmonics are saved to a file
 		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
-		args.set_sbgat_harmonics(spherical_harmonics);
+		args.set_sbgat_harmonics_truth(spherical_harmonics);
 	}
 	/******************************************************/
 	/******************************************************/
@@ -209,7 +209,7 @@ int main() {
 	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
 
 	arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
-	OC::KepState kep_state(kep_state_vec,args.get_mu());
+	OC::KepState kep_state(kep_state_vec,args.get_mu_truth());
 	OC::CartState cart_state = kep_state.convert_to_cart(0);
 
 	X0_augmented.rows(0,2) = cart_state.get_position_vector();
@@ -239,21 +239,21 @@ int main() {
 		StatePropagator::propagateOrbit(T_obs,X_augmented, 
 			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 			X0_augmented,
-			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			dir + "/","obs_harmonics");
 		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			dir + "/","full_orbit_harmonics");
 	}
 	else{
 		StatePropagator::propagateOrbit(T_obs,X_augmented, 
 			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 			X0_augmented,
-			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			dir + "/","obs_point_mass");
 
 		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			dir + "/","full_orbit_point_mass");
 	}
 

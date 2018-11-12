@@ -20,7 +20,6 @@
 
 #include "json.hpp"
 
-
 // Various constants that set up the visibility emulator scenario
 
 // Lidar settings
@@ -69,6 +68,8 @@ int main() {
 
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::string INPUT_DIR = input_data["INPUT_DIR"];
+	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
+
 	
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
 	nlohmann::json shape_reconstruction_output_data;
@@ -79,6 +80,8 @@ int main() {
 	double INSTRUMENT_FREQUENCY = input_data["INSTRUMENT_FREQUENCY"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
+	bool USE_HARMONICS_ESTIMATED_DYNAMICS = input_data["USE_HARMONICS_ESTIMATED_DYNAMICS"];
+
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
@@ -169,8 +172,8 @@ int main() {
 	Args args;
 	args.set_frame_graph(&frame_graph);
 	args.set_true_shape_model(&true_shape_model);
-	args.set_mu(arma::datum::G * true_shape_model . get_volume() * DENSITY);
-	args.set_mass(true_shape_model . get_volume() * DENSITY);
+	args.set_mu_truth(arma::datum::G * true_shape_model . get_volume() * DENSITY);
+	args.set_mass_truth(true_shape_model . get_volume() * DENSITY);
 	args.set_lidar(&lidar);
 	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
 	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
@@ -178,10 +181,11 @@ int main() {
 	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
-	args.set_true_inertia(true_shape_model.get_inertia());
+	args.set_inertia_truth(true_shape_model.get_inertia());
 	args.set_estimated_shape_model(&estimated_shape_model);
-	args.set_estimated_inertia(estimated_shape_model.get_inertia());
-	args.set_estimated_mass(estimated_shape_model . get_volume() * DENSITY);
+	
+	args.set_inertia_estimate(estimated_shape_model.get_inertia());
+	args.set_mass_estimate(estimated_shape_model . get_volume() * DENSITY);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
@@ -204,8 +208,8 @@ int main() {
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
-		args.set_sbgat_harmonics(spherical_harmonics);
+		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + "_truth.json");
+		args.set_sbgat_harmonics_truth(spherical_harmonics);
 	}
 	/******************************************************/
 	/******************************************************/
@@ -255,21 +259,21 @@ int main() {
 		StatePropagator::propagateOrbit(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true,
-			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
 		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
-			Dynamics::harmonics_attitude_dxdt_inertial,args,
+			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
 	else{
 		StatePropagator::propagateOrbit(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true,
-			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
 
 		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
-			Dynamics::point_mass_attitude_dxdt_inertial,args,
+			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
 
@@ -301,22 +305,22 @@ int main() {
 
 		std::cout << "USING TRUE STATES TO INITIALIZE THE FILTER\n";
 		X0_estimated = X0_true;
-	 	
-	 	P0(0,0) = 1e1;
-	 	P0(1,1) = 1e1;
-	 	P0(2,2) = 1e1;
 
-	 	P0(3,3) = 1e-1;
-	 	P0(4,4) = 1e-1;
-	 	P0(5,5) = 1e-1;
+		P0(0,0) = 1e1;
+		P0(1,1) = 1e1;
+		P0(2,2) = 1e1;
 
-	 	P0(6,6) = 1e-4;
-	 	P0(7,7) = 1e-4;
-	 	P0(8,8) = 1e-4;
+		P0(3,3) = 1e-1;
+		P0(4,4) = 1e-1;
+		P0(5,5) = 1e-1;
 
-	 	P0(9,9) = 1e-10;
-	 	P0(10,10) = 1e-10;
-	 	P0(11,11) = 1e-10;
+		P0(6,6) = 1e-4;
+		P0(7,7) = 1e-4;
+		P0(8,8) = 1e-4;
+
+		P0(9,9) = 1e-10;
+		P0(10,10) = 1e-10;
+		P0(11,11) = 1e-10;
 
 	}
 	else{
@@ -364,23 +368,53 @@ int main() {
 		PROCESS_NOISE_SIGMA_OMEG);
 	filter.set_gamma_fun(Dynamics::gamma_OD);
 
-	filter.set_observations_fun(
+	filter.set_observations_funs(
 		Observations::obs_pos_mrp_ekf_computed,
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
 
-	# if USE_HARMONICS
-	filter.set_estimate_dynamics_fun(
-		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-		Dynamics::harmonics_attitude_dxdt_inertial);
-	#else 
-	filter.set_estimate_dynamics_fun(
-		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-		Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-		Dynamics::point_mass_attitude_dxdt_inertial);
-	#endif 
 
+	// True state dynamics
+	if(USE_HARMONICS){
+		filter.set_true_dynamics_fun(Dynamics::harmonics_attitude_dxdt_inertial_truth);
+	}
+	else{
+		filter.set_true_dynamics_fun(Dynamics::point_mass_attitude_dxdt_inertial_truth);
+	}
+
+	// Estimated state dynamics
+	if(USE_HARMONICS_ESTIMATED_DYNAMICS){
+
+
+		vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+		reader -> SetFileName(path_to_true_shape.c_str());
+		reader -> Update(); 
+
+		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
+		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
+		spherical_harmonics -> SetDensity(DENSITY);
+		spherical_harmonics -> SetScaleMeters();
+		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
+	
+	// can be skipped as normalized coefficients is the default parameter
+		spherical_harmonics -> IsNormalized(); 
+		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
+		spherical_harmonics -> Update();
+
+	// The spherical harmonics are saved to a file
+		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + "_truth.json");
+		args.set_sbgat_harmonics_estimate(spherical_harmonics);
+
+		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
+		filter.set_jacobian_dynamics_function_estimate(Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate);
+		
+
+
+	}
+	else{
+		filter.set_dynamics_function_estimate(Dynamics::point_mass_attitude_dxdt_inertial_estimate);
+		filter.set_jacobian_dynamics_function_estimate(Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate);
+	}
 
 	filter.set_initial_information_matrix(arma::inv(P0));
 	auto start = std::chrono::system_clock::now();
