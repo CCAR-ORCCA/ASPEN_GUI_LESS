@@ -20,7 +20,7 @@ all_data = [
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
-"USE_HARMONICS_ESTIMATED_DYNAMICS" : False,
+"USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",

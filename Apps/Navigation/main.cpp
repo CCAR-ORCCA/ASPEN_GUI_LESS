@@ -377,9 +377,12 @@ int main() {
 
 	// True state dynamics
 	if(USE_HARMONICS){
+		std::cout << "Using spherical harmonics in the true dynamics\n";
 		filter.set_true_dynamics_fun(Dynamics::harmonics_attitude_dxdt_inertial_truth);
 	}
 	else{
+		std::cout << "Using point-mass gravity in the true dynamics\n";
+
 		filter.set_true_dynamics_fun(Dynamics::point_mass_attitude_dxdt_inertial_truth);
 	}
 
@@ -410,9 +413,12 @@ int main() {
 		filter.set_jacobian_dynamics_function_estimate(Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate);
 		
 
+		std::cout << "Using spherical harmonics gravity in the estimate dynamics\n";
 
 	}
 	else{
+		std::cout << "Using point-mass gravity in the estimate dynamics\n";
+
 		filter.set_dynamics_function_estimate(Dynamics::point_mass_attitude_dxdt_inertial_estimate);
 		filter.set_jacobian_dynamics_function_estimate(Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate);
 	}
