@@ -214,7 +214,7 @@ int main() {
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "_truth.json");
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmonics_truth.json");
 		args.set_sbgat_harmonics_truth(spherical_harmonics);
 	}
 	/******************************************************/
@@ -420,7 +420,7 @@ int main() {
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "_estimate.json");
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmonics_estimate.json");
 		args.set_sbgat_harmonics_estimate(spherical_harmonics);
 
 		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
