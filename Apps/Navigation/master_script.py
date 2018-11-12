@@ -26,7 +26,7 @@ all_data = [
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
 "USE_TRUE_STATES": True,
 "INPUT_DIR" : base_location + "input/test_0",
-"OUTPUT_DIR" : base_location + "output_dir/test_0"
+"OUTPUT_DIR" : base_location + "output/test_0"
 }
 
 ]
@@ -38,7 +38,7 @@ for data in all_data:
 
 	os.system("mkdir " + data["INPUT_DIR"])
 	os.system("mkdir " + data["OUTPUT_DIR"])
-	
+
 	print("\t - Copying input file in build/")
 
 	with open('input_file.json', 'w') as outfile:
