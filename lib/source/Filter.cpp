@@ -11,7 +11,7 @@ Filter ::Filter(const Args & args){
 	this -> args = args;
 }
 
-void Filter::set_estimate_dynamics_fun(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args),
+void Filter::set_dynamics_funs(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args),
 	arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args),
 	arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
 	
@@ -24,10 +24,42 @@ void Filter::set_estimate_dynamics_fun(arma::vec (*estimate_dynamics_fun)(double
 	else{
 		this -> true_dynamics_fun = true_dynamics_fun;
 	}
+
 }
 
 
-void Filter::set_observations_fun(
+
+void Filter::set_dynamics_function_estimate(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args)){
+	this -> estimate_dynamics_fun = estimate_dynamics_fun; 
+}
+
+void Filter::set_jacobian_dynamics_function_estimate(arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args)){
+	this -> estimate_jacobian_dynamics_fun = estimate_jacobian_dynamics_fun; 
+}
+
+void Filter::set_true_dynamics_fun(arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
+	this -> true_dynamics_fun = true_dynamics_fun; 
+}
+
+
+
+void Filter::set_observations_function_estimate(arma::vec (*estimate_observation_fun)(double, const arma::vec &, const Args & args)){
+	this -> estimate_observation_fun = estimate_observation_fun; 
+}
+
+void Filter::set_jacobian_observations_function_estimate(arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec &, const Args & args)){
+	this -> estimate_jacobian_observations_fun = estimate_jacobian_observations_fun; 
+}
+
+void Filter::set_true_observations_fun(arma::vec (*true_observation_fun)(double, const arma::vec &, const Args & args)){
+	this -> true_observation_fun = true_observation_fun; 
+}
+
+
+
+
+
+void Filter::set_observations_funs(
 	arma::vec (*estimate_observation_fun)(double, const arma::vec &, const Args & args),
 	arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec &, const Args & args),
 	arma::vec (*true_observation_fun)(double, const arma::vec &, const Args & args)){

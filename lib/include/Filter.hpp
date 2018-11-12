@@ -21,15 +21,35 @@ public:
 	void plot_residuals();
 
 	// Setters on dynamics, observations
-	void set_estimate_dynamics_fun(
+	void set_dynamics_funs(
 		arma::vec (*estimate_dynamics_fun)(double, const  arma::vec & , const Args & args),
 		arma::mat (*estimate_jacobian_dynamics_fun)(double, const  arma::vec & , const Args & args),
 		arma::vec (*true_dynamics_fun)(double, const  arma::vec & , const Args & args) = nullptr);
 
-	void set_observations_fun(
+	void set_observations_funs(
 		arma::vec (*estimate_observation_fun)(double, const  arma::vec & , const Args & args),
 		arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec & , const Args & args),
 		arma::vec (*true_observation_fun)(double, const arma::vec & , const Args & args) = nullptr);
+
+
+	void set_dynamics_function_estimate(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args));
+
+	void set_jacobian_dynamics_function_estimate(arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args));
+
+	void set_true_dynamics_fun(arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args));
+
+	void set_observations_function_estimate(arma::vec (*estimate_observation_fun)(double, const arma::vec &, const Args & args));
+
+	void set_jacobian_observations_function_estimate(arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec &, const Args & args));
+
+	void set_true_observations_fun(arma::vec (*true_observation_fun)(double, const arma::vec &, const Args & args));
+
+
+
+
+
+
+
 
 
 	// Setters on initial state information matrix

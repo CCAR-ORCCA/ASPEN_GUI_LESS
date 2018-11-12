@@ -140,7 +140,6 @@ add_library(${LIB_NAME} SHARED
 	source/Bezier.cpp
 	source/BundleAdjuster.cpp
 	source/ControlPoint.cpp
-	source/DynamicAnalyses.cpp
 	source/Dynamics.cpp
 	source/Element.cpp
 	source/EstimationFeature.cpp

@@ -2,7 +2,6 @@
 #define HEADER_ARGS
 
 #include "FrameGraph.hpp"
-#include "DynamicAnalyses.hpp"
 #include "Lidar.hpp"
 #include <SBGATSphericalHarmo.hpp>
 
@@ -79,22 +78,6 @@ public:
 	}
 
 
-	void set_Cnm(arma::mat * Cnm){
-		this -> Cnm = Cnm;
-	}
-
-	void set_Snm(arma::mat * Snm){
-		this -> Snm = Snm;
-	}
-
-	arma::mat * get_Cnm() const {
-		return this -> Cnm;
-	}
-
-	arma::mat * get_Snm()const {
-		return this -> Snm;
-	}
-
 	void set_ref_radius(const double ref_radius){
 		this -> ref_radius = ref_radius;
 	}
@@ -124,40 +107,37 @@ public:
 		this -> stopping_bool = stop;
 	}
 
-	void set_mass(double mass) {
-		this -> mass = mass;
+	void set_mass_truth(double mass) {
+		this -> mass_truth = mass;
 	}
 
-	double get_mass() const {
-		return this -> mass;
+	double get_mass_truth() const {
+		return this -> mass_truth;
 	}
 
-	void set_estimated_mass(double estimated_mass) {
-		this -> estimated_mass = estimated_mass;
+	void set_mass_estimate(double estimated_mass) {
+		this -> mass_estimate = estimated_mass;
 	}
 
-	double get_estimated_mass() const {
-		return this -> estimated_mass;
+	double get_mass_estimate() const {
+		return this -> mass_estimate;
 	}
 
-	int get_harmonics_degree() const{
-		return this -> harmonics_degree;
+	int get_harmonics_degree_truth() const{
+		return this -> harmonics_degree_truth;
 	}
-	void set_harmonics_degree(int deg){
-		this -> harmonics_degree = deg;
+	void set_harmonics_degree_truth(int deg){
+		this -> harmonics_degree_truth = deg;
+	}
+
+	int get_harmonics_degree_estimate() const{
+		return this -> harmonics_degree_estimate;
+	}
+	void set_harmonics_degree_estimate(int deg){
+		this -> harmonics_degree_estimate = deg;
 	}
 
 
-
-
-
-	// unsigned int get_degree() const{
-	// 	return this -> degree;
-	// }
-
-	// void set_degree (unsigned int degree ){
-	// 	this -> degree = degree;
-	// }
 
 	bool get_stopping_bool() const {
 		return this -> stopping_bool;
@@ -190,13 +170,6 @@ public:
 		return this -> time;
 	}
 
-	void set_dyn_analyses(DynamicAnalyses * dyn_analyses){
-		this -> dyn_analyses = dyn_analyses;
-	}
-
-	DynamicAnalyses * get_dyn_analyses() const{
-		return this -> dyn_analyses;
-	}
 	
 
 	void set_minimum_elevation(double el) {
@@ -236,22 +209,24 @@ public:
 		return this -> batch_output_covariance_ptr;
 	}
 
-	arma::mat get_true_inertia() const{
-		return this -> true_inertia;
+	arma::mat get_inertia_truth() const{
+		return this -> inertia_truth;
 	}
 
-	void set_true_inertia(arma::mat inertia){
-		this -> true_inertia = inertia;
+	void set_inertia_truth(arma::mat inertia){
+		this -> inertia_truth = inertia;
 	}
 
 
-	arma::mat get_estimated_inertia() const{
-		return this -> estimated_inertia;
+	arma::mat get_inertia_estimate() const{
+		return this -> inertia_estimate;
 	}
 
-	void set_estimated_inertia(arma::mat inertia){
-		this -> estimated_inertia = inertia;
+	void set_inertia_estimate(arma::mat inertia){
+		this -> inertia_estimate = inertia;
 	}
+
+	
 
 	
 
@@ -259,26 +234,8 @@ public:
 		return this -> sigma_consider_vector_ptr;
 	}
 
-
-	std::vector<double> * get_biases_consider_vector_ptr() const {
-		return this -> biases_consider_vector_ptr;
-	}
-
 	void set_sigma_consider_vector_ptr(std::vector<double> * ptr)  {
 		this -> sigma_consider_vector_ptr = ptr;
-	}
-
-	void set_biases_consider_vector_ptr(std::vector<double> * ptr)  {
-		this -> biases_consider_vector_ptr = ptr;
-	}
-
-
-	std::vector<double> * get_sigmas_range_vector_ptr() const {
-		return this -> sigmas_range_vector_ptr;
-	}
-
-	void set_sigmas_range_vector_ptr(std::vector<double> * ptr)  {
-		this -> sigmas_range_vector_ptr = ptr;
 	}
 
 
@@ -369,13 +326,23 @@ public:
 
 
 
-	vtkSmartPointer<SBGATSphericalHarmo> get_sbgat_harmonics() const{
-		return this -> sbgat_harmonics;
+	vtkSmartPointer<SBGATSphericalHarmo> get_sbgat_harmonics_truth() const{
+		return this -> sbgat_harmonics_truth;
 	}
 
 
-	void set_sbgat_harmonics(vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics) {
-		this -> sbgat_harmonics = spherical_harmonics;
+	void set_sbgat_harmonics_truth(vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics) {
+		this -> sbgat_harmonics_truth = spherical_harmonics;
+	}
+
+
+	vtkSmartPointer<SBGATSphericalHarmo> get_sbgat_harmonics_estimate() const{
+		return this -> sbgat_harmonics_estimate;
+	}
+
+
+	void set_sbgat_harmonics_estimate(vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics) {
+		this -> sbgat_harmonics_estimate = spherical_harmonics;
 	}
 
 
@@ -389,14 +356,16 @@ protected:
 	double sma;
 	double time;
 	double minimum_elevation;
-	double mass;
-	double estimated_mass;
+	double mass_truth;
+	double mass_estimate;
 	double skip_factor;
 	double sd_noise;
 	double sd_noise_prop = 0;
 	double ref_radius ;
 
-	int harmonics_degree;
+	int harmonics_degree_truth;
+	int harmonics_degree_estimate;
+
 	int N_iter_mes_update;
 
 
@@ -407,19 +376,13 @@ protected:
 	FrameGraph * frame_graph;
 	ShapeModelBezier<ControlPoint> * estimated_shape_model;
 	ShapeModelTri<ControlPoint> * true_shape_model;
-
-	DynamicAnalyses * dyn_analyses;
 	Lidar * lidar;
 
 	arma::vec constant_omega;
 	arma::vec coords_station;
 
-
-	arma::mat * Cnm;
-	arma::mat * Snm;
-
-	arma::mat true_inertia;
-	arma::mat estimated_inertia;
+	arma::mat inertia_truth;
+	arma::mat inertia_estimate;
 
 	arma::mat P_hat;
 
@@ -435,10 +398,10 @@ protected:
 	arma::vec estimated_mrp_BN;
 
 	std::vector<double> * sigma_consider_vector_ptr;
-	std::vector<double> * biases_consider_vector_ptr;
-	std::vector<double> * sigmas_range_vector_ptr;
 
-	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics;
+	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics_truth;
+	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics_estimate;
+
 
 
 

@@ -135,7 +135,7 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 	auto focal_plane = lidar -> get_focal_plane();
 	arma::mat H = arma::zeros<arma::mat>(focal_plane -> size(),3);
 
-	args.get_sigmas_range_vector_ptr() -> clear();
+	args.get_sigma_consider_vector_ptr() -> clear();
 
 	FrameGraph *  frame_graph = args.get_frame_graph();
 
@@ -160,13 +160,11 @@ arma::mat Observations::obs_lidar_range_jac_pos(double t,const arma::vec & x, co
 
 			double sigma_range = std::sqrt(arma::dot(u,P * u));
 
-			args.get_sigmas_range_vector_ptr() -> push_back(sigma_range);
+			args.get_sigma_consider_vector_ptr() -> push_back(sigma_range);
 
 			H.row(i) = - frame_graph -> convert(n,args.get_estimated_shape_model() -> get_ref_frame_name(),"N").t() / arma::dot(n,u);
 		}
-		else{
-			args.get_sigma_consider_vector_ptr() -> push_back(-1);
-		}
+		
 
 	}
 
@@ -260,7 +258,7 @@ arma::vec Observations::obs_pos_ekf_lidar(double t,const arma::vec & x,const Arg
 	// Setting the Lidar frame to its new state	
 	BatchFilter filter(args);
 	
-	filter.set_observations_fun(
+	filter.set_observations_funs(
 		Observations::obs_lidar_range_computed,
 		Observations::obs_lidar_range_jac_pos,
 		Observations::obs_lidar_range_true);
@@ -289,7 +287,7 @@ arma::vec Observations::obs_pos_mrp_ekf_lidar(double t,const arma::vec & x,const
 	// Setting the Lidar frame to its new state	
 	BatchFilter filter(args);
 	
-	filter.set_observations_fun(
+	filter.set_observations_funs(
 		Observations::obs_lidar_range_computed,
 		Observations::obs_lidar_range_jac_pos_mrp,
 		Observations::obs_lidar_range_true);
