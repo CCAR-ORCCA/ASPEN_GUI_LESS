@@ -202,13 +202,14 @@ int main() {
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
+	
 	// can be skipped as normalized coefficients is the default parameter
 		spherical_harmonics -> IsNormalized(); 
 		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + "_truth.json");
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "_truth.json");
 		args.set_sbgat_harmonics_truth(spherical_harmonics);
 	}
 	/******************************************************/
@@ -402,7 +403,7 @@ int main() {
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + "_truth.json");
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "_estimate.json");
 		args.set_sbgat_harmonics_estimate(spherical_harmonics);
 
 		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
