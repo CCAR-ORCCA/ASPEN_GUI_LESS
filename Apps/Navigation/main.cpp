@@ -35,7 +35,6 @@
 #define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
@@ -44,12 +43,8 @@
 
 // Shape fitting parameters
 #define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
-#define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
-#define N_EDGES 4000 // Number of edges in a-priori
 #define SHAPE_DEGREE 2 // Shape degree
-#define N_ITER_SHAPE_FILTER 5 // Filter iterations
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
-#define N_ITER_BUNDLE_ADJUSTMENT 3 // Number of iterations in bundle adjustment
 
 // IOD parameters
 
@@ -73,7 +68,7 @@ int main() {
 
 
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
-	std::string dir = input_data["dir"];
+	std::string INPUT_DIR = input_data["INPUT_DIR"];
 	
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
 	nlohmann::json shape_reconstruction_output_data;
@@ -86,8 +81,6 @@ int main() {
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
-
-
 
 
 	std::cout << "Loading estimated shape path...\n";
@@ -263,21 +256,21 @@ int main() {
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true,
 			Dynamics::harmonics_attitude_dxdt_inertial,args,
-			dir + "/","obs_harmonics");
+			OUTPUT_DIR + "/","orbit");
 		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
 			Dynamics::harmonics_attitude_dxdt_inertial,args,
-			dir + "/","full_orbit_harmonics");
+			OUTPUT_DIR + "/","full_orbit");
 	}
 	else{
 		StatePropagator::propagateOrbit(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true,
 			Dynamics::point_mass_attitude_dxdt_inertial,args,
-			dir + "/","obs_point_mass");
+			OUTPUT_DIR + "/","orbit");
 
 		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
 			Dynamics::point_mass_attitude_dxdt_inertial,args,
-			dir + "/","full_orbit_point_mass");
+			OUTPUT_DIR + "/","full_orbit");
 	}
 
 	arma::vec times(T_obs.size()); 
@@ -376,7 +369,6 @@ int main() {
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
 
-
 	# if USE_HARMONICS
 	filter.set_estimate_dynamics_fun(
 		Dynamics::estimated_point_mass_attitude_dxdt_inertial,
@@ -391,7 +383,6 @@ int main() {
 
 
 	filter.set_initial_information_matrix(arma::inv(P0));
-
 	auto start = std::chrono::system_clock::now();
 
 	int iter = filter.run(1,
@@ -408,10 +399,10 @@ int main() {
 	std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
 
 
-	filter.write_estimated_state(dir + "/X_hat.txt");
-	filter.write_true_state(dir + "/X_true.txt");
-	filter.write_T_obs(nav_times_vec,dir + "/nav_times.txt");
-	filter.write_estimated_covariance(dir + "/covariances.txt");
+	filter.write_estimated_state(OUTPUT_DIR + "/X_hat.txt");
+	filter.write_true_state(OUTPUT_DIR + "/X_true.txt");
+	filter.write_T_obs(nav_times_vec,OUTPUT_DIR + "/nav_times.txt");
+	filter.write_estimated_covariance(OUTPUT_DIR + "/covariances.txt");
 
 	return 0;
 }

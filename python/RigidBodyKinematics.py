@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import numpy as np
-from scipy.linalg import block_diag
 
 def prv_to_quat(axis,angle):
     '''

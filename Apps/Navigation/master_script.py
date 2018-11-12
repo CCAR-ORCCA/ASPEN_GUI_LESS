@@ -24,7 +24,8 @@ all_data = [
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
 "USE_TRUE_STATES": True,
-"dir" : base_location + "input/test_0"
+"INPUT_DIR" : base_location + "input/test_0"
+"OUTPUT_DIR" : base_location + "output_dir/test_0"
 }
 
 ]

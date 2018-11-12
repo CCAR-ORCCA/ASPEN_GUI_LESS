@@ -5,8 +5,81 @@ from matplotlib import rc
 from polyhedron import plot_shape
 import RigidBodyKinematics as RBK
 import matplotlib.ticker as mtick
+import os
+from pprint import pprint
 
+import json
 rc('text', usetex=True)
+
+
+
+def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
+
+    all_results_dirs  = [x[0] for x in os.walk(mainpath)][1:]
+
+    all_results_dirs_tag = np.array([int(all_results_dirs[i].split("_")[-1]) for i in range(len(all_results_dirs))])
+
+    sorted_order = np.argsort(all_results_dirs_tag)
+
+    all_results_dirs = [all_results_dirs[sorted_order[i]] for i in range(len(sorted_order))]
+
+    print "\t Found " + str(len(all_results_dirs)) + " result directories\n\n"
+
+    for i in range(len(all_results_dirs)):
+        print str(i) + " : " + all_results_dirs[i] + "\n"
+
+        with open(all_results_dirs[i] + "/input_file.json") as f:
+            data = json.load(f)
+
+        pprint(data)
+        print "\n"
+
+    index_str = raw_input(" Which one should be processed ? Pick a number or enter 'all'\n")
+    save_str = raw_input(" Should results be saved? (y/n) ?\n")
+
+    if index_str != "all":
+        if save_str is "y":
+            plot_all_results(all_results_dirs[int(index_str)],graphics_path)
+        elif save_str is "n":
+            plt.switch_backend('Qt5Agg')
+            plot_all_results(all_results_dirs[int(index_str)])
+        else:
+            raise(TypeError("Unrecognized input: " + str(save_str)))
+    else:
+
+
+        create_input_table(all_results_dirs[0:6],graphics_path + "/input_table_1")
+        create_input_table(all_results_dirs[6:12],graphics_path + "/input_table_2")
+        create_input_table(all_results_dirs[12:18],graphics_path + "/input_table_3")
+
+        create_output_table_mc(all_results_dirs[0:6],graphics_path + "/output_table_mc_1")
+        create_output_table_mc(all_results_dirs[6:12],graphics_path + "/output_table_mc_2")
+        create_output_table_mc(all_results_dirs[12:18],graphics_path + "/output_table_mc_3")
+
+        create_output_table_model(all_results_dirs[0:6],graphics_path + "/output_table_model_1")
+        create_output_table_model(all_results_dirs[6:12],graphics_path + "/output_table_model_2")
+        create_output_table_model(all_results_dirs[12:18],graphics_path + "/output_table_model_3")
+
+
+        create_consistency_matrix(all_results_dirs[0:6],graphics_path + "/rp_consistency_1")
+        create_consistency_matrix(all_results_dirs[6:12],graphics_path + "/rp_consistency_2")
+        create_consistency_matrix(all_results_dirs[12:18],graphics_path + "/rp_consistency_3")
+
+        
+        if save_str is "y":
+            for i in range(len(all_results_dirs)):
+                plot_all_results(all_results_dirs[i],graphics_path)
+
+        elif save_str is "n":
+            plt.switch_backend('Qt5Agg')
+            for i in range(len(all_results_dirs)):
+                plot_all_results(all_results_dirs[i])
+
+        else:
+            raise(TypeError("Unrecognized input: " + str(save_str)))
+
+
+
 
 
 def normalized(a, axis=-1, order=2):
@@ -14,42 +87,47 @@ def normalized(a, axis=-1, order=2):
     l2[l2==0] = 1
     return a / np.expand_dims(l2, axis)
 
-def plot_all_results(path = "",savepath = None):
+def plot_all_results(path,savepath = ""):
 
-    # plot_residuals(path,save)
-    if savepath is not None:
-        save = True
-    plot_orbit(path)
+    plot_orbit_planar(path,savepath)
+    plot_orbit(path,savepath)
     plot_cart_state_error_inertial(path,savepath)
     plot_state_error_RIC(path,savepath)
     plot_attitude_state_inertial(path,savepath)
 
 
-def plot_orbit_planar(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_BF.pdf"):
+def plot_orbit_planar(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "trajectory_harmo.txt")
-
-
+    X_true = np.loadtxt(path + "state_orbit.txt")
 
     plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
     plt.xlabel("X (m)")
     plt.ylabel("Y (m)")
     plt.axis('equal')
-    plt.show()
+    if savepath != "":
+        plt.savefig(savepath = "orbit_planar_z.pdf")
+    else:
+        plt.show()
 
     plt.clf()
     plt.plot(X_true[0,:]/1000,X_true[2,:]/1000)
     plt.xlabel("X (m)")
     plt.ylabel("Z (m)")
     plt.axis('equal')
-    plt.show()
+    if savepath != "":
+        plt.savefig(savepath = "orbit_planar_y.pdf")
+    else:
+        plt.show()
 
     plt.clf()
     plt.plot(X_true[1,:]/1000,X_true[2,:]/1000)
     plt.xlabel("Y (m)")
     plt.ylabel("Z (m)")
     plt.axis('equal')
-    plt.show()
+    if savepath != "":
+        plt.savefig(savepath = "orbit_planar_x.pdf")
+    else:
+        plt.show()
 
 
     plt.clf()
@@ -59,9 +137,9 @@ def plot_orbit_planar(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Resear
 
 
 
-def plot_orbit(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_BF.pdf"):
+def plot_orbit(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "trajectory_harmo.txt")
+    X_true = np.loadtxt(path + "state_orbit.txt")
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -84,23 +162,23 @@ def plot_orbit(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/pape
 
 
     plt.tight_layout()
-    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures/trajectory_inertial.pdf")
+    if savepath != "":
+        plt.savefig(savepath + "/trajectory_inertial.pdf")
+    else:
+        plt.show()
     plt.cla()
     plt.clf()
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    X_true_BF = np.loadtxt(path + "trajectory_harmo.txt")
+    X_true_BF = np.loadtxt(path + "state_orbit.txt")
     for i in range(X_true_BF.shape[1]):
         BN = RBK.mrp_to_dcm(X_true[6:9,i])
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])
 
     ax.plot(X_true_BF[0,:]/1000,X_true_BF[1,:]/1000,X_true_BF[2,:]/1000)
     
-
-    # plot_shape("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8_scaled.obj",ax = ax,scale_factor = 0.001,
-    #     show = False)
 
 
     ax.set_xlim3d(-1, 1)
@@ -121,7 +199,7 @@ def plot_orbit(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/pape
     plt.tight_layout()
 
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath)
@@ -130,7 +208,7 @@ def plot_orbit(path,savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/pape
     plt.cla()
 
 
-def plot_state_error_RIC(path = "",savepath= None):
+def plot_state_error_RIC(path = "",savepath= ""):
 
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
@@ -139,7 +217,6 @@ def plot_state_error_RIC(path = "",savepath= None):
 
 
     # The states must be converted to RIC frame
-
     X_true_RIC = np.zeros(X_true.shape)
     X_hat_RIC = np.zeros(X_hat.shape)
     P_RIC = np.zeros(P.shape)
@@ -196,7 +273,7 @@ def plot_state_error_RIC(path = "",savepath= None):
     plt.ylabel("Position error (m)")
     plt.tight_layout()
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig( savepath + "/position_error_RIC.pdf")
@@ -230,7 +307,7 @@ def plot_state_error_RIC(path = "",savepath= None):
     plt.tight_layout()
 
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/velocity_error_RIC.pdf")
@@ -239,7 +316,7 @@ def plot_state_error_RIC(path = "",savepath= None):
     plt.cla()
 
 
-def plot_attitude_state_inertial(path = "",savepath = None):
+def plot_attitude_state_inertial(path = "",savepath = ""):
 
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
@@ -268,7 +345,7 @@ def plot_attitude_state_inertial(path = "",savepath = None):
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.tight_layout()
     
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/attitude.pdf")
@@ -303,7 +380,7 @@ def plot_attitude_state_inertial(path = "",savepath = None):
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.tight_layout()
     
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/error_attitude.pdf")
@@ -339,7 +416,7 @@ def plot_attitude_state_inertial(path = "",savepath = None):
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/error_omega.pdf")
@@ -356,7 +433,7 @@ def plot_attitude_state_inertial(path = "",savepath = None):
 
     plt.gcf().tight_layout()
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/error_angle.pdf")
@@ -372,7 +449,7 @@ def plot_attitude_state_inertial(path = "",savepath = None):
 
     
 
-def plot_cart_state_error_inertial(path = "",savepath = None):
+def plot_cart_state_error_inertial(path = "",savepath = ""):
 
     X_true = np.loadtxt(path + "X_true.txt")
     X_hat = np.loadtxt(path + "X_hat.txt")
@@ -420,7 +497,7 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/error_pos.pdf")
@@ -451,7 +528,7 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
     plt.gcf().tight_layout()
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
 
-    if savepath is None:
+    if savepath == "":
         plt.show()
     else:
         plt.savefig(savepath + "/error_vel.pdf")
@@ -464,7 +541,11 @@ def plot_cart_state_error_inertial(path = "",savepath = None):
 # plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
 #     savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures" )
 
-# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
-#     savepath = None )
+# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output/test_0/",
+#     savepath = "" )
 
-plot_orbit_planar("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/IOD/output/traj/",savepath = None)
+
+graphics_path = ""
+
+
+list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output")
