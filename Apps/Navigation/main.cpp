@@ -114,6 +114,8 @@ int main() {
 	// Shape model formed with triangles
 	ShapeModelTri<ControlPoint> true_shape_model("B", &frame_graph);
 	ShapeModelBezier<ControlPoint> estimated_shape_model("E", &frame_graph);
+	ShapeModelBezier<ControlPoint> estimated_shape_model_to_elevate("", &frame_graph);
+
 
 	std::string path_to_true_shape,path_to_estimated_shape;
 
@@ -135,6 +137,9 @@ int main() {
 
 	ShapeModelImporter::load_bezier_shape_model(path_to_estimated_shape, 
 		1, true,estimated_shape_model);
+
+	ShapeModelImporter::load_bezier_shape_model(path_to_estimated_shape, 
+		1, true,estimated_shape_model_to_elevate);
 
 	estimated_shape_model.construct_kd_tree_shape();
 
@@ -390,15 +395,24 @@ int main() {
 	if(USE_HARMONICS_ESTIMATED_DYNAMICS){
 
 
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.save_both(OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics");
+
+
+		std::string path_to_estimated_elevated_shape = OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics.obj";
+
 		vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-		reader -> SetFileName(path_to_true_shape.c_str());
+		reader -> SetFileName(path_to_estimated_elevated_shape.c_str());
 		reader -> Update(); 
 
 		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
 		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
-		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
+		spherical_harmonics -> SetReferenceRadius(estimated_shape_model.get_circumscribing_radius());
 	
 	// can be skipped as normalized coefficients is the default parameter
 		spherical_harmonics -> IsNormalized(); 
