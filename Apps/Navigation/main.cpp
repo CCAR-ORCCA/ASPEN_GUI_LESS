@@ -207,7 +207,7 @@ int main() {
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
-	
+		
 	// can be skipped as normalized coefficients is the default parameter
 		spherical_harmonics -> IsNormalized(); 
 		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
@@ -221,6 +221,37 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
+
+	if (USE_HARMONICS_ESTIMATED_DYNAMICS){
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.elevate_degree();
+		estimated_shape_model_to_elevate.save_both(OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics");
+
+
+		std::string path_to_estimated_elevated_shape = OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics.obj";
+
+		vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+		reader -> SetFileName(path_to_estimated_elevated_shape.c_str());
+		reader -> Update(); 
+
+		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
+		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
+		spherical_harmonics -> SetDensity(DENSITY);
+		spherical_harmonics -> SetScaleMeters();
+		spherical_harmonics -> SetReferenceRadius(estimated_shape_model.get_circumscribing_radius());
+		
+	// can be skipped as normalized coefficients is the default parameter
+		spherical_harmonics -> IsNormalized(); 
+		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
+		spherical_harmonics -> Update();
+
+	// The spherical harmonics are saved to a file
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmonics_estimate.json");
+		args.set_sbgat_harmonics_estimate(spherical_harmonics);
+
+	}
 
 	/******************************************************/
 	/******************************************************/
@@ -393,35 +424,6 @@ int main() {
 
 	// Estimated state dynamics
 	if(USE_HARMONICS_ESTIMATED_DYNAMICS){
-
-
-		estimated_shape_model_to_elevate.elevate_degree();
-		estimated_shape_model_to_elevate.elevate_degree();
-		estimated_shape_model_to_elevate.elevate_degree();
-		estimated_shape_model_to_elevate.elevate_degree();
-		estimated_shape_model_to_elevate.save_both(OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics");
-
-
-		std::string path_to_estimated_elevated_shape = OUTPUT_DIR + "/elevated_estimated_shape_for_harmonics.obj";
-
-		vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-		reader -> SetFileName(path_to_estimated_elevated_shape.c_str());
-		reader -> Update(); 
-
-		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
-		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
-		spherical_harmonics -> SetDensity(DENSITY);
-		spherical_harmonics -> SetScaleMeters();
-		spherical_harmonics -> SetReferenceRadius(estimated_shape_model.get_circumscribing_radius());
-	
-	// can be skipped as normalized coefficients is the default parameter
-		spherical_harmonics -> IsNormalized(); 
-		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
-		spherical_harmonics -> Update();
-
-	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmonics_estimate.json");
-		args.set_sbgat_harmonics_estimate(spherical_harmonics);
 
 		
 		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
