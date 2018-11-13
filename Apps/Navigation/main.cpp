@@ -354,7 +354,9 @@ int main() {
 		P0(11,11) = 1e-10;
 
 	}
+
 	else{
+
 		X0_estimated = {
 			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][0],
 			shape_reconstruction_output_data["X0_ESTIMATED_SPACECRAFT"][1],
@@ -369,6 +371,7 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
 		};
+
 	}
 
 // A-priori covariance on spacecraft state and asteroid state.
@@ -395,15 +398,16 @@ int main() {
 	}
 
 	NavigationFilter filter(args);
+	
 	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,
 		PROCESS_NOISE_SIGMA_OMEG);
+	
 	filter.set_gamma_fun(Dynamics::gamma_OD);
 
 	filter.set_observations_funs(
 		Observations::obs_pos_mrp_ekf_computed,
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
-
 
 	// True state dynamics
 	if(USE_HARMONICS){
@@ -412,7 +416,6 @@ int main() {
 	}
 	else{
 		std::cout << "Using point-mass gravity in the true dynamics\n";
-
 		filter.set_true_dynamics_fun(Dynamics::point_mass_attitude_dxdt_inertial_truth);
 	}
 

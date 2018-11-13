@@ -103,7 +103,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 }
 
 
-arma::vec Dynamics::point_mass_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
+arma::vec s(double t,const arma::vec & X, const Args & args) {
 
 	
 
@@ -118,7 +118,6 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial_estimate(double t,const ar
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;
 	dxdt.subvec(6,11) = dxdt_small_body;
-
 
 
 	return dxdt;
