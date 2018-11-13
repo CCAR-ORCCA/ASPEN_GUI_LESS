@@ -86,11 +86,11 @@ public:
 
 
 	void set_mu_estimate(double mu)  {
-		 this -> mu_estimate = mu;
+		this -> mu_estimate = mu;
 	}
 
 	void set_mu_truth(double mu)  {
-		 this -> mu_truth = mu;
+		this -> mu_truth = mu;
 	}
 
 
@@ -366,6 +366,13 @@ public:
 	}
 
 
+	void set_output_dir(std::string dir){
+		this -> output_dir = dir;
+	}
+
+	std::string get_output_dir() const{
+		return this -> output_dir;
+	}
 
 
 protected:
@@ -426,9 +433,9 @@ protected:
 	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics_truth;
 	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics_estimate;
 
+	std::string output_dir;
 
 
-
-};
+};	
 
 #endif

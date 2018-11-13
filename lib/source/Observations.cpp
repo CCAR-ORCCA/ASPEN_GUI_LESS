@@ -3,11 +3,6 @@
 #include "IOFlags.hpp"
 #include <Ray.hpp>
 
-// Observations: need range measurements between
-// spacecraft and bezier surface
-// Will probably need to remove const before args
-// if args stores pointer to ref frame
-
 arma::vec Observations::obs_lidar_range_true(double t,
 	const arma::vec & x, 
 	const Args & args){
@@ -51,7 +46,7 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	arma::vec ranges = arma::vec(focal_plane -> size());
 
 	#if IOFLAGS_observations
-	lidar -> save("../output/lidar/pc_true_" + std::to_string(t),true);
+	lidar -> save(args.get_output_dir() + "/pc_true_" + std::to_string(t),true);
 	#endif
 
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){
@@ -114,7 +109,7 @@ arma::vec Observations::obs_lidar_range_computed(
 	arma::vec ranges = arma::vec(focal_plane -> size());
 	
 	#if IOFLAGS_observations
-	lidar -> save("../output/lidar/pc_bezier_" + std::to_string(t),true);
+	lidar -> save(args.get_output_dir() + "/pc_bezier_" + std::to_string(t),true);
 	#endif
 
 	for (unsigned int i = 0; i < ranges.n_rows; ++i){

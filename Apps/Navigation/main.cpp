@@ -184,6 +184,7 @@ int main() {
 	
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_mass_estimate(estimated_shape_model . get_volume() * DENSITY);
+	args.set_output_dir(OUTPUT_DIR);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
