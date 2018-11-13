@@ -4,7 +4,7 @@
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
 	arma::vec::fixed<3> acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
