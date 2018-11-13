@@ -198,7 +198,9 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	// Body frame position
 	arma::vec::fixed<3> pos_B = BN * pos;
 
-
+	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "Getting spherical harmonics acceleration\n";
+	#endif
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
@@ -206,7 +208,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 
 	// Partial derivatives of the spacecraft state.
-	
+
 	// drdot/dr is zero
 
 	// drdot/drdot
