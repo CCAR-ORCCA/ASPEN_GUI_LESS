@@ -200,6 +200,8 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "Getting spherical harmonics acceleration\n";
+	std::cout << args.get_sbgat_harmonics_estimate() << std::endl;
+	
 	#endif
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
