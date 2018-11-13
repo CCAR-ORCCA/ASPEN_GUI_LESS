@@ -23,11 +23,12 @@ all_data = [
 "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
 "INSTRUMENT_FREQUENCY" : 0.0005,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
+"LOS_NOISE_FRACTION_MES_TRUTH" : 0
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
 "USE_TRUE_STATES": True,
 "INPUT_DIR" : base_location + "input/test_0",
 "OUTPUT_DIR" : base_location + "output/test_0",
-"PROCESS_NOISE_SIGMA_VEL": 1e-8 ,
+"PROCESS_NOISE_SIGMA_VEL": 1e-9 ,
 "PROCESS_NOISE_SIGMA_OMEG": 1e-10 
 }
 
