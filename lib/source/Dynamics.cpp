@@ -2,9 +2,8 @@
 
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
+#define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
 	arma::vec::fixed<3> acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
@@ -185,6 +184,9 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 
 arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args){
 
+	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "in harmonics_jac_attitude_dxdt_inertial_estimate\n";
+	#endif
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
 	arma::vec::fixed<3> pos = X . subvec(0, 2);
@@ -204,7 +206,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 
 	// Partial derivatives of the spacecraft state.
-			
+	
 	// drdot/dr is zero
 
 	// drdot/drdot
@@ -224,6 +226,9 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	// The small body is not affected by the spacecraft state
 	A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
 
+	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "leaving harmonics_jac_attitude_dxdt_inertial_estimate\n";
+	#endif
 	return A;
 
 

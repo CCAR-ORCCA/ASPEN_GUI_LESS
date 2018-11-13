@@ -4,7 +4,7 @@
 #include <boost/numeric/odeint.hpp>
 
 
-#define EKF_DEBUG 1
+#define EKF_DEBUG 0
 
 
 ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter(args){

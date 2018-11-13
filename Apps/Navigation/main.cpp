@@ -423,6 +423,7 @@ int main() {
 		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmonics_estimate.json");
 		args.set_sbgat_harmonics_estimate(spherical_harmonics);
 
+		
 		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
 		filter.set_jacobian_dynamics_function_estimate(Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate);
 		
