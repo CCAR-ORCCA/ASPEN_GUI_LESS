@@ -218,7 +218,9 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	A.submat(3,0,5,2) = BN.t() * gravity_gradient_mat * BN;
 
 	// drddot/drdot is zero
-
+	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "Getting partials\n";
+	#endif
 	// drddot/dsigma
 	arma::vec::fixed<3> acc_body_grav = args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
 
