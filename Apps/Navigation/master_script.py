@@ -26,7 +26,9 @@ all_data = [
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "input/test_0/input_file_from_shape_reconstruction.json",
 "USE_TRUE_STATES": True,
 "INPUT_DIR" : base_location + "input/test_0",
-"OUTPUT_DIR" : base_location + "output/test_0"
+"OUTPUT_DIR" : base_location + "output/test_0",
+"PROCESS_NOISE_SIGMA_VEL": 1e-8 ,
+"PROCESS_NOISE_SIGMA_OMEG": 1e-10 
 }
 
 ]

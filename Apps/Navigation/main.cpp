@@ -36,13 +36,7 @@
 // Noise
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
-// Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 2e-8 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
-
 // Shape fitting parameters
-#define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
-#define SHAPE_DEGREE 2 // Shape degree
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
 // IOD parameters
@@ -79,6 +73,9 @@ int main() {
 	double DENSITY = input_data["DENSITY"];
 	double INSTRUMENT_FREQUENCY = input_data["INSTRUMENT_FREQUENCY"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
+	double PROCESS_NOISE_SIGMA_VEL = input_data["PROCESS_NOISE_SIGMA_VEL"];
+	double PROCESS_NOISE_SIGMA_OMEG = input_data["PROCESS_NOISE_SIGMA_OMEG"];
+
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	bool USE_HARMONICS_ESTIMATED_DYNAMICS = input_data["USE_HARMONICS_ESTIMATED_DYNAMICS"];
 
@@ -207,7 +204,7 @@ int main() {
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(true_shape_model.get_circumscribing_radius());
-		
+
 	// can be skipped as normalized coefficients is the default parameter
 		spherical_harmonics -> IsNormalized(); 
 		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
@@ -241,7 +238,7 @@ int main() {
 		spherical_harmonics -> SetDensity(DENSITY);
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(estimated_shape_model.get_circumscribing_radius());
-		
+
 	// can be skipped as normalized coefficients is the default parameter
 		spherical_harmonics -> IsNormalized(); 
 		spherical_harmonics -> SetDegree(HARMONICS_DEGREE);
