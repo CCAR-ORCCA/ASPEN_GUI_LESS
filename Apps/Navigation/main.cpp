@@ -31,7 +31,6 @@
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
 #define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
-#define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 
 // Shape fitting parameters
@@ -81,17 +80,14 @@ int main() {
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
-
 	std::cout << "Loading estimated shape path...\n";
-
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
 
 	std::cout << "Loading estimated shape spherical harmonics path...\n";
-
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
+	
 	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
-
 
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
 
