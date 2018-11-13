@@ -98,14 +98,14 @@ def plot_all_results(path,savepath = ""):
 
 def plot_orbit_planar(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "state_orbit.txt")
+    X_true = np.loadtxt(path + "/state_orbit.txt")
 
     plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
     plt.xlabel("X (m)")
     plt.ylabel("Y (m)")
     plt.axis('equal')
     if savepath != "":
-        plt.savefig(savepath = "orbit_planar_z.pdf")
+        plt.savefig(savepath + "/orbit_planar_z.pdf")
     else:
         plt.show()
 
@@ -115,7 +115,7 @@ def plot_orbit_planar(path,savepath = ""):
     plt.ylabel("Z (m)")
     plt.axis('equal')
     if savepath != "":
-        plt.savefig(savepath = "orbit_planar_y.pdf")
+        plt.savefig(savepath + "/orbit_planar_y.pdf")
     else:
         plt.show()
 
@@ -125,7 +125,7 @@ def plot_orbit_planar(path,savepath = ""):
     plt.ylabel("Z (m)")
     plt.axis('equal')
     if savepath != "":
-        plt.savefig(savepath = "orbit_planar_x.pdf")
+        plt.savefig(savepath + "/orbit_planar_x.pdf")
     else:
         plt.show()
 
@@ -139,7 +139,7 @@ def plot_orbit_planar(path,savepath = ""):
 
 def plot_orbit(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "state_orbit.txt")
+    X_true = np.loadtxt(path + "/state_orbit.txt")
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -172,7 +172,7 @@ def plot_orbit(path,savepath = ""):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    X_true_BF = np.loadtxt(path + "state_orbit.txt")
+    X_true_BF = np.loadtxt(path + "/state_orbit.txt")
     for i in range(X_true_BF.shape[1]):
         BN = RBK.mrp_to_dcm(X_true[6:9,i])
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])
@@ -202,7 +202,7 @@ def plot_orbit(path,savepath = ""):
     if savepath == "":
         plt.show()
     else:
-        plt.savefig(savepath)
+        plt.savefig(savepath + "/orbit_body_frame.pdf")
 
     plt.clf()
     plt.cla()
@@ -210,10 +210,10 @@ def plot_orbit(path,savepath = ""):
 
 def plot_state_error_RIC(path = "",savepath= ""):
 
-    X_true = np.loadtxt(path + "X_true.txt")
-    X_hat = np.loadtxt(path + "X_hat.txt")
-    P = np.loadtxt(path + "covariances.txt")
-    T_obs = np.loadtxt(path + "nav_times.txt") / 60
+    X_true = np.loadtxt(path + "/X_true.txt")
+    X_hat = np.loadtxt(path + "/X_hat.txt")
+    P = np.loadtxt(path + "/covariances.txt")
+    T_obs = np.loadtxt(path + "/nav_times.txt") / 60
 
 
     # The states must be converted to RIC frame
@@ -318,10 +318,10 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
 def plot_attitude_state_inertial(path = "",savepath = ""):
 
-    X_true = np.loadtxt(path + "X_true.txt")
-    X_hat = np.loadtxt(path + "X_hat.txt")
-    P = np.loadtxt(path + "covariances.txt")
-    T_obs = np.loadtxt(path + "nav_times.txt") / 60
+    X_true = np.loadtxt(path + "/X_true.txt")
+    X_hat = np.loadtxt(path + "/X_hat.txt")
+    P = np.loadtxt(path + "/covariances.txt")
+    T_obs = np.loadtxt(path + "/nav_times.txt") / 60
 
     mrp_error = np.zeros([3,len(T_obs)])
 
@@ -451,10 +451,10 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
 
 def plot_cart_state_error_inertial(path = "",savepath = ""):
 
-    X_true = np.loadtxt(path + "X_true.txt")
-    X_hat = np.loadtxt(path + "X_hat.txt")
-    P = np.loadtxt(path + "covariances.txt")
-    T_obs = np.loadtxt(path + "nav_times.txt") / 60
+    X_true = np.loadtxt(path + "/X_true.txt")
+    X_hat = np.loadtxt(path + "/X_hat.txt")
+    P = np.loadtxt(path + "/covariances.txt")
+    T_obs = np.loadtxt(path + "/nav_times.txt") / 60
 
     X_true_augmented = np.zeros([4,len(T_obs)])
     X_hat_augmented = np.zeros([4,len(T_obs)])
@@ -465,8 +465,6 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     X_hat_augmented[1:,:] = X_hat[0:3,:]
     X_true_augmented[1:,:] = X_true[0:3,:]
 
-    np.savetxt(path + "X_hat_augmented.txt",X_hat_augmented)
-    np.savetxt(path + "X_true_augmented.txt",X_true_augmented)
 
     sd = []
 
@@ -501,6 +499,9 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
         plt.show()
     else:
         plt.savefig(savepath + "/error_pos.pdf")
+
+        np.savetxt(savepath + "/X_hat_augmented.txt",X_hat_augmented)
+        np.savetxt(savepath + "/X_true_augmented.txt",X_true_augmented)
 
     plt.clf()
     

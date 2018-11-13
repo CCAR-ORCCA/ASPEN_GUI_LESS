@@ -4,7 +4,7 @@
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define ESTIMATED_POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define ESTIMATED_POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
 	arma::vec::fixed<3> acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
@@ -139,7 +139,6 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate(double t, con
 
 	A.submat(0,0,5,5) += Dynamics::point_mass_jacobian(pos , args . get_mass_estimate());
 	
-	
 	A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
 
 
@@ -149,7 +148,9 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate(double t, con
 }
 
 arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args){
-
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "in Dynamics::harmonics_attitude_dxdt_inertial_estimate\n";
+	#endif
 
 	// Inertial position
 	arma::vec::fixed<3> pos = X . subvec(0, 2);
@@ -175,11 +176,56 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 	dxdt.subvec(0,5) = dxdt_spacecraft;
 	dxdt.subvec(6,11) = Dynamics::attitude_dxdt_truth(t, X_small_body, args);
 
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "leaving Dynamics::harmonics_attitude_dxdt_inertial_estimate\n";
+	#endif
 	return dxdt;
 
 }
 
 arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args){
+
+	arma::mat A = arma::zeros<arma::mat>(12,12);
+
+	arma::vec::fixed<3> pos = X . subvec(0, 2);
+	arma::vec::fixed<6> attitude = X . subvec(6, 11);
+
+	// DCM BN
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(attitude.subvec(0,3));
+
+	// Body frame position
+	arma::vec::fixed<3> pos_B = BN * pos;
+
+
+	arma::mat::fixed<3,3> gravity_gradient_mat;
+	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
+	
+
+
+
+	// Partial derivatives of the spacecraft state.
+			
+	// drdot/dr is zero
+
+	// drdot/drdot
+	A.submat(0,3,2,5) = arma::eye<arma::mat>(3,3);
+
+	// drddot/dr
+	A.submat(3,0,5,2) = BN.t() * gravity_gradient_mat * BN;
+
+	// drddot/drdot is zero
+
+	// drddot/dsigma
+	arma::vec::fixed<3> acc_body_grav = args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
+
+	A.submat(3,6,5,8) = 4 * (BN.t() * gravity_gradient_mat * BN * RBK::tilde(pos) - RBK::tilde(BN.t() * acc_body_grav));
+
+
+	// The small body is not affected by the spacecraft state
+	A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
+
+	return A;
+
 
 }
 

@@ -382,7 +382,7 @@ int main() {
 
 	// True state dynamics
 	if(USE_HARMONICS){
-		std::cout << "Using spherical harmonics in the true dynamics\n";
+		std::cout << "Using spherical harmonics gravity in the true dynamics\n";
 		filter.set_true_dynamics_fun(Dynamics::harmonics_attitude_dxdt_inertial_truth);
 	}
 	else{
