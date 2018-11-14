@@ -2,7 +2,7 @@
 
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 0
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 1
 
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 
@@ -124,6 +124,10 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 	dxdt.subvec(0,5) = dxdt_spacecraft;
 	dxdt.subvec(6,11) = Dynamics::attitude_dxdt_truth(t, X_small_body, args);
 
+
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG
+	std::cout << "leaving Dynamics::harmonics_attitude_dxdt_inertial_truth\n";
+	#endif
 	return dxdt;
 
 }
