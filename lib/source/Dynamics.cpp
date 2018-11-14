@@ -71,6 +71,23 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial_truth(double t,const arma:
 }
 
 
+arma::vec Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
+
+	arma::vec dxdt = Dynamics::attitude_dxdt_estimate(t, X, args);
+
+	return dxdt;
+
+}
+
+
+
+
+arma::mat Dynamics::attitude_jac_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args){
+
+	arma::mat A = Dynamics::attitude_jacobian(X , args . get_inertia_estimate());
+	return A;
+
+}
 
 arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::vec & X, const Args & args) {
 
@@ -318,3 +335,13 @@ arma::mat::fixed<6,6> Dynamics::attitude_jacobian(const arma::vec::fixed<6> & at
 	return A;
 
 }
+
+
+
+
+
+
+
+
+
+

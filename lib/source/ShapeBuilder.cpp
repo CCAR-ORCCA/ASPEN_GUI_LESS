@@ -26,6 +26,7 @@
 #include <chrono>
 #include <cmath>
 #include <RigidBodyKinematics.hpp>
+#include <BatchAttitude.hpp>
 
 #define IOFLAGS_shape_builder 1
 
@@ -71,7 +72,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::map<int,arma::mat::fixed<3,3> > M_pcs_true;
 	std::map<int,arma::mat::fixed<6,6> > R_pcs;
 
-
+	arma::mat epoch_cov,final_cov;
+	arma::vec epoch_state,final_state;
 
 	arma::vec iod_guess;
 
@@ -239,10 +241,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			epoch_time_index = std::max(time_index - this -> filter_arguments -> get_iod_rigid_transforms_number(),0);
 
-			this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+			this -> run_IOD_finder(times, 
+				epoch_time_index ,
+				time_index, 
+				mrps_LN,
+				X_pcs,
+				M_pcs,
+				R_pcs,
+				iod_state,
+				epoch_state,
+				final_state,
+				epoch_cov,
+				final_cov);
 
-			
+			// Estimating small body state
+			BatchAttitude batch_attitude;
 
+			batch_attitude.run(const std::vector<RigidTransform> & absolute_rigid_transforms,
+		const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
+		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -287,25 +304,52 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "\n-- Running IOD Finder ...\n";
 
-					this -> run_IOD_finder(times, epoch_time_index ,time_index, mrps_LN,X_pcs,M_pcs,R_pcs,iod_state);
+					this -> run_IOD_finder(times, 
+						epoch_time_index ,
+						time_index, 
+						mrps_LN,
+						X_pcs,
+						M_pcs,
+						R_pcs,
+						iod_state,
+						epoch_state,
+						final_state,
+						epoch_cov,
+						final_cov);
 
 					last_ba_call_index = time_index;
+
 				}
 			}
 
 
 			else if (time_index == times.n_rows - 1){
 
-				std::cout << " -- Applying BA to whole point cloud batch\n";
-				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
-
+				
 				if (this -> filter_arguments -> get_use_ba())
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
 
 				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 				
-				std::cout << " -- Saving rigid transforms ...\n";
+				std::cout << "\n-- Estimating coverage...\n";
+
+				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+
+				std::cout << "\n-- Running IOD Finder ...\n";
+
+				this -> run_IOD_finder(times,
+				 epoch_time_index ,
+				 time_index, 
+				 mrps_LN,
+				 X_pcs,
+				 M_pcs,
+				 R_pcs,
+				 iod_state,
+				 epoch_state,
+				 final_state,
+				 epoch_cov,
+				 final_cov);
 
 
 				this -> save_rigid_transforms(dir, 
@@ -314,10 +358,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					X_pcs_true,
 					M_pcs_true,
 					R_pcs);
-
-
-
-
 
 				std::cout << " -- Estimating coverage ...\n";
 				PointCloud<PointNormal> global_pc;
@@ -358,6 +398,18 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> estimated_shape_model -> rotate(BN_measured.front());
 				this -> estimated_shape_model -> update_mass_properties();	
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
+
+				this -> covariance_estimated_state = arma::zeros<arma::mat>(12,12);
+				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
+
+				this -> estimated_state = arma::zeros<arma::vec>(12);
+				this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
+
+
+
+
+
+
 
 
 			// The measured states are saved
@@ -673,7 +725,11 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	const std::map<int,arma::vec::fixed<3> > & X_pcs,
 	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 	const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
-	OC::CartState & cart_state) const{
+	OC::CartState & cart_state,
+	arma::vec & epoch_state,
+	arma::vec & final_state,
+	arma::mat & epoch_cov,
+	arma::mat & final_cov) const{
 
 	// Forming the absolute/rigid transforms
 	std::vector<RigidTransform> sequential_rigid_transforms;
@@ -809,13 +865,14 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	
 
 	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
-	arma::vec state = iod_finder.get_result();
-	arma::mat cov;
-	
-	iod_finder.run_batch(state,cov,R_pcs);
+	epoch_state = iod_finder.get_result();
+	final_state = arma::zeros<arma::vec>(epoch_state.n_rows);
 
-	cart_state.set_state(state.subvec(0,5));
-	cart_state.set_mu(state(6));
+	
+	iod_finder.run_batch(epoch_state,final_state,epoch_cov,final_cov,R_pcs);
+	cart_state.set_state(epoch_state.subvec(0,5));
+	cart_state.set_mu(epoch_state(6));
+
 }
 
 
@@ -1497,3 +1554,8 @@ void ShapeBuilder::save_rigid_transforms(std::string dir,
 	R_pcs_arma.save(dir + "/R_pcs_arma.txt",arma::raw_ascii);
 
 }
+
+arma::mat ShapeBuilder::get_covariance_estimated_state() const{
+	return this -> covariance_estimated_state;
+}
+

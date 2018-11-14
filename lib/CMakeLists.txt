@@ -134,6 +134,7 @@ include_directories(${SBGATCORE_INCLUDE_HEADER})
 
 # Add source files in root directory
 add_library(${LIB_NAME} SHARED
+	source/BatchAttitude.cpp
 	source/BatchFilter.cpp
 	source/BBox.cpp
 	source/BSpline.cpp

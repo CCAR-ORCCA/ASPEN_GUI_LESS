@@ -140,6 +140,14 @@ public:
 		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
 
+	/**
+	Returns covariance of estimated state
+	@return covariance of estimated state (position,velocity,mrp,angular velocity)
+	*/
+	arma::mat get_covariance_estimated_state() const;
+
+
+
 
 
 protected:
@@ -249,7 +257,11 @@ protected:
 		const std::map<int, arma::vec::fixed<3> > & X_pcs,
 		const std::map<int, arma::mat::fixed<3,3> > & M_pcs,
 		const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
-		OC::CartState & cart_state) const;
+		OC::CartState & cart_state,
+		arma::vec & epoch_state,
+		arma::vec & final_state,
+		arma::mat & epoch_cov,
+		arma::mat & final_cov) const;
 
 
 
@@ -356,6 +368,8 @@ protected:
 
 	arma::mat LN_t0;
 	arma::mat LB_t0;
+	arma::mat  covariance_estimated_state;
+	arma::vec estimated_state;
 	OC::KepState true_kep_state_t0;
 
 

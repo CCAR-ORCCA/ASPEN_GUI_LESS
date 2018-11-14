@@ -295,13 +295,14 @@ int main() {
 	shape_filter.run_shape_reconstruction(times,X_augmented,dir);
 
 	nlohmann::json output_data;
-	std::vector<arma::vec> X_estimated;
+	arma::vec X_estimated = arma::zeros<arma::vec>(12);
 
-	X_estimated.push_back(arma::zeros<arma::vec>(12));
 	std::string path_to_estimated_shape = "";
 	std::string path_to_estimated_spherical_harmonics = "";
 
+	arma::mat covariance_estimated_state = shape_filter.get_covariance_estimated_state();
 
+	covariance_estimated_state.save(output_dir + "/covariance_estimated_state.txt",arma::raw_ascii);
 
 	std::cout << "Fetching output data...\n";
 	output_data["X0_TRUE_SPACECRAFT"] = { 
@@ -323,21 +324,21 @@ int main() {
 	};
 
 	output_data["X0_ESTIMATED_SPACECRAFT"] = { 
-		X_estimated.back()[0], 
-		X_estimated.back()[1], 
-		X_estimated.back()[2],
-		X_estimated.back()[3], 
-		X_estimated.back()[4], 
-		X_estimated.back()[5]
+		X_estimated[0], 
+		X_estimated[1], 
+		X_estimated[2],
+		X_estimated[3], 
+		X_estimated[4], 
+		X_estimated[5]
 	};
 
 	output_data["X0_ESTIMATED_SMALL_BODY"] = { 
-		X_estimated.back()[6], 
-		X_estimated.back()[7], 
-		X_estimated.back()[8],
-		X_estimated.back()[9], 
-		X_estimated.back()[10], 
-		X_estimated.back()[11]
+		X_estimated[6], 
+		X_estimated[7], 
+		X_estimated[8],
+		X_estimated[9], 
+		X_estimated[10], 
+		X_estimated[11]
 	};
 
 
@@ -360,6 +361,7 @@ int main() {
 	std::ofstream o(output_dir + "/input_file_from_shape_reconstruction.json");
 	o << output_data;
 
+	
 
 	// At this stage, the bezier shape model is NOT aligned with the true shape model
 	// The reconstructed shape model has its coordinates
@@ -460,111 +462,6 @@ int main() {
 	// /***************************************/
 	// /* END OF SHAPE RECONSTRUCTION FILTER */
 	// /*************************************/
-
-	// /***************************************/
-	// /* BEGINNING OF NAVIGATION FILTER ******/
-	// /***************************************/
-
-	// // A-priori covariance on spacecraft state and asteroid state.
-	// arma::vec P0_diag = {
-	// 	SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,SIGMA_POS * SIGMA_POS,//position
-	// 	SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,SIGMA_VEL * SIGMA_VEL,//velocity
-	// 	SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,SIGMA_MRP * SIGMA_MRP,// mrp
-	// 	SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA,SIGMA_OMEGA * SIGMA_OMEGA // angular velocity
-	// };
-
-	// arma::mat P0 = arma::diagmat(P0_diag);
-
-	// arma::vec X0_true_augmented = X_augmented.back();
-	// arma::vec X0_estimated_augmented = X_augmented.back();
-
-	// #if USE_ICP && RECONSTRUCT_SHAPE
-	// // The initial estimated state is assembled from the output of the shape reconstruction filter
-	// std::cout << "Generating initial a-priori from rigid transforms ...\n";
-	// X0_estimated_augmented.subvec(0,2) = shape_filter_args.get_position_final();
-	// X0_estimated_augmented.subvec(3,5) = shape_filter_args.get_velocity_final();
-	// X0_estimated_augmented.subvec(6,8) = shape_filter_args.get_mrp_EN_final();
-	// X0_estimated_augmented.subvec(9,11) = shape_filter_args.get_omega_EN_final();
-
-	// #else
-	// std::cout << "Generating initial a-priori from normal distribution ...\n";
-
-	// X0_estimated_augmented += arma::diagmat(arma::sqrt(P0_diag)) * arma::randn<arma::vec>(X0_estimated_augmented.n_rows);
-	// #endif
-
-	// std::cout << "True State: " << std::endl;
-	// std::cout << X0_true_augmented.t() << std::endl;
-
-	// std::cout << "Initial Estimated state: " << std::endl;
-	// std::cout << X0_estimated_augmented.t() << std::endl;
-
-	// std::cout << "Initial Error: " << std::endl;
-	// std::cout << (X0_true_augmented-X0_estimated_augmented).t() << std::endl;
-
-	// arma::vec nav_times(NAVIGATION_TIMES);
-
-	// // Times
-	// std::vector<double> nav_times_vec;
-	// for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
-	// 	nav_times(i) = T_obs[T_obs.size() - 1] + double(i)/INSTRUMENT_FREQUENCY_NAV;
-	// 	nav_times_vec.push_back( nav_times(i));
-	// }
-
-
-
-	// NavigationFilter filter(args);
-	// arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
-	// filter.set_gamma_fun(Dynamics::gamma_OD);
-
-	// filter.set_observations_fun(
-	// 	Observations::obs_pos_mrp_ekf_computed,
-	// 	Observations::obs_pos_mrp_ekf_computed_jac,
-	// 	Observations::obs_pos_mrp_ekf_lidar);	
-
-
-	// # if USE_HARMONICS
-	// filter.set_estimate_dynamics_fun(
-	// 	Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-	// 	Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-	// 	Dynamics::harmonics_attitude_dxdt_inertial);
-	// #else 
-	// filter.set_estimate_dynamics_fun(
-	// 	Dynamics::estimated_point_mass_attitude_dxdt_inertial,
-	// 	Dynamics::estimated_point_mass_jac_attitude_dxdt_inertial,
-	// 	Dynamics::point_mass_attitude_dxdt_inertial);
-	// #endif 
-
-
-	// filter.set_initial_information_matrix(arma::inv(P0));
-
-	// auto start = std::chrono::system_clock::now();
-	// int iter = filter.run(1,X0_true_augmented,X0_estimated_augmented,nav_times_vec,arma::ones<arma::mat>(1,1),Q);
-	// auto end = std::chrono::system_clock::now();
-
-	// std::chrono::duration<double> elapsed_seconds = end-start;
-
-	// std::cout << " Done running filter " << elapsed_seconds.count() << " s\n";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// filter.write_estimated_state("../output/filter/X_hat.txt");
-	// filter.write_true_state("../output/filter/X_true.txt");
-	// filter.write_T_obs(nav_times_vec,"../output/filter/nav_times.txt");
-	// filter.write_estimated_covariance("../output/filter/covariances.txt");
 
 
 	return 0;

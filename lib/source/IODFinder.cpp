@@ -339,8 +339,10 @@ void IODFinder::build_normal_equations(
 
 
 void IODFinder::run_batch(
-	arma::vec & state,
-	arma::mat & cov,
+	arma::vec & epoch_state,
+	arma::vec & final_state,
+	arma::mat & epoch_cov,
+	arma::mat & final_cov,
 	const std::map<int, arma::mat::fixed<6,6> > & R_pcs){
 
 	int N_iter = 10;
@@ -349,31 +351,38 @@ void IODFinder::run_batch(
 	arma::vec normal_mat(7);
 	arma::vec residual_vector = arma::vec(3 * this -> sequential_rigid_transforms -> size());
 
-	std::vector<arma::vec::fixed<3> > positions;
+	std::vector<arma::vec::fixed<3> > positions,velocities;
 	std::vector<arma::mat> stms;
 
 	this -> compute_P_T(R_pcs);
 	for (int i = 0; i < N_iter; ++i){
 
-		this -> compute_state_stms(state,positions,stms);
+		this -> compute_state_stms(epoch_state,positions,velocities,stms);
 		this -> compute_W(positions);
 		this -> build_normal_equations(info_mat,normal_mat,residual_vector,positions,stms);
 		
 		std::cout << "\tResiduals RMS: " << std::sqrt(arma::dot(residual_vector,residual_vector)/residual_vector.size())<< std::endl;
 
 		try{
-			state += arma::solve(info_mat,normal_mat);
+			epoch_state += arma::solve(info_mat,normal_mat);
+
+
+			final_state.subvec(0,2) = positions.back();
+			final_state.subvec(3,5) = velocities.back();
+			final_state(6) = epoch_state(6);
 
 		}
 		catch(std::runtime_error & e){
 			e.what();
 		}
-		std::cout << "\tState: " << state.t() << std::endl;
+		std::cout << "\tState: " << epoch_state.t() << std::endl;
 
 	}
 
 	try{
-		cov = arma::inv(info_mat);
+		epoch_cov = arma::inv(info_mat);
+		final_cov = stms.back() * epoch_cov * stms.back().t();
+
 	}
 	catch(std::runtime_error & e){
 		e.what();
@@ -384,9 +393,11 @@ void IODFinder::run_batch(
 
 void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 	std::vector<arma::vec::fixed<3> > & positions,
+	std::vector<arma::vec::fixed<3> > & velocities,
 	std::vector<arma::mat> & stms) const{
 
 	positions.clear();
+	velocities.clear();
 	stms.clear();
 
 	int N_est = X_hat.n_rows;
@@ -423,6 +434,7 @@ void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 
 		arma::mat::fixed<7,7> stm = arma::reshape(augmented_state_history[i].rows(N_est,N_est + N_est * N_est - 1),N_est,N_est);
 		positions.push_back(augmented_state_history[i].rows(0,2));
+		velocities.push_back(augmented_state_history[i].rows(3,5));
 		stms.push_back(stm);
 	}
 
@@ -438,10 +450,6 @@ void IODFinder::compute_W(const std::vector<arma::vec::fixed<3>> & positions){
 	arma::mat R = dydT * this -> P_T * dydT.t();
 
 	this -> W = arma::inv(R);
-
-	std::cout << "DEBUG\n";
-	this -> W = arma::eye<arma::mat>(this -> W.n_rows,this -> W.n_cols);
-
 
 
 }

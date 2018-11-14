@@ -39,7 +39,8 @@ public:
 
 
 	void run_batch(arma::vec & state,arma::mat & cov);
-	void run_batch(arma::vec & state,arma::mat & cov,
+	void run_batch(arma::vec & epoch_state,arma::vec & final_state,arma::mat & epoch_cov,
+		arma::mat & final_cov,
 		const std::map<int, arma::mat::fixed<6,6> > & R_pcs);
 
 	static void debug_rigid_transforms();
@@ -114,6 +115,7 @@ protected:
 
 	void compute_state_stms(const arma::vec::fixed<7> & X_hat,
 		std::vector<arma::vec::fixed<3> > & positions,
+		std::vector<arma::vec::fixed<3> > & velocities,
 		std::vector<arma::mat> & stms) const;
 
 	void compute_P_T(const std::map<int, arma::mat::fixed<6,6> > & R_pcs);

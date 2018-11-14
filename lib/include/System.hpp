@@ -64,7 +64,6 @@ public:
 					X_spc_estimated(i) = X(i);
 				}
 				
-
 				arma::mat Phi = arma::reshape(X.subvec(this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est - 1), this -> N_est, this -> N_est );
 				

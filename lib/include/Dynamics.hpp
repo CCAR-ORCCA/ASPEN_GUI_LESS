@@ -44,6 +44,12 @@ namespace Dynamics{
 	arma::mat harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
 
 
+	arma::vec attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
+	arma::mat attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
+
+
+
+
 	arma::mat gamma_OD(double dt);
 	arma::mat gamma_OD_augmented(double dt);
 
@@ -58,14 +64,5 @@ namespace Dynamics{
 	arma::mat create_Q(double sigma_vel);
 
 }
-
-
-
-
-
-
-
-
-
 
 #endif
