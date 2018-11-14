@@ -255,11 +255,17 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				final_cov);
 
 			// Estimating small body state
-			BatchAttitude batch_attitude;
 
-			batch_attitude.run(const std::vector<RigidTransform> & absolute_rigid_transforms,
-		const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
-		const std::vector<arma::vec::fixed<3> > & mrps_LN);
+
+			arma::vec::fixed<6> a_priori_state;
+
+			a_priori_state.subvec(0,2) = RBK::dcm_to_mrp(BN_measured.front());
+			a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
+
+
+			BatchAttitude batch_attitude(times,M_pcs);
+			batch_attitude.set_a_priori_state(a_priori_state);
+			batch_attitude.run(R_pcs,mrps_LN);
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected

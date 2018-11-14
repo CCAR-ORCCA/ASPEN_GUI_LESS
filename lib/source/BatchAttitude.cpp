@@ -5,6 +5,57 @@
 
 #define BATCH_ATTITUDE_DEBUG 1
 
+BatchAttitude::BatchAttitude(const arma::vec & times,  const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
+
+	for (int k = 0; k < M_pcs.size(); ++k){
+
+		if (k != 0){
+
+			RigidTransform rt;
+
+			rt.t_end = times(k);
+			rt.t_start = times(0);
+
+			rt.index_end = k;
+			rt.index_start = 0;	
+
+			rt.M = M_pcs.at(k);
+
+			this -> absolute_rigid_transforms.push_back(rt);
+
+		}
+
+		else{
+
+			RigidTransform rt;
+			
+			rt.t_start = times(0);
+			rt.t_end= times(0);
+
+			rt.index_start = 0;
+			rt.index_end= 0;
+
+			rt.M = M_pcs.at(0);
+
+			this -> absolute_rigid_transforms.push_back(rt);
+
+		}
+
+
+
+	}
+
+}
+
+
+
+
+void BatchAttitude::set_a_priori_state(const arma::vec::fixed<6> & initial_state){
+	this -> state_estimate_at_epoch = initial_state;
+}
+
+
+
 arma::vec::fixed<6> BatchAttitude::get_state_estimate_at_epoch() const{
 	return this -> state_estimate_at_epoch;
 }
@@ -23,8 +74,7 @@ std::vector<arma::mat::fixed<6,6> > BatchAttitude::get_attitude_state_covariance
 	return this -> attitude_state_covariances_history;
 }
 
-void BatchAttitude::run(const std::vector<RigidTransform> & absolute_rigid_transforms,
-	const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
+void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
 	int N_iter = 5;
@@ -35,7 +85,7 @@ void BatchAttitude::run(const std::vector<RigidTransform> & absolute_rigid_trans
 
 	arma::mat info_mat(6,6);
 	arma::vec normal_mat(6);
-	arma::vec residual_vector = arma::vec(3 * absolute_rigid_transforms.size());
+	arma::vec residual_vector = arma::vec(3 * this -> absolute_rigid_transforms.size());
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "In BatchAttitude::run\n";
 	#endif
@@ -49,9 +99,7 @@ void BatchAttitude::run(const std::vector<RigidTransform> & absolute_rigid_trans
 		#endif
 
 
-		this -> compute_state_stms( state_history,
-			stms,
-			absolute_rigid_transforms);
+		this -> compute_state_stms( state_history,stms);
 
 		#if BATCH_ATTITUDE_DEBUG
 		std::cout << "\tBuilding normal equations\n";
@@ -60,7 +108,6 @@ void BatchAttitude::run(const std::vector<RigidTransform> & absolute_rigid_trans
 		this -> build_normal_equations(info_mat,
 			normal_mat,
 			residual_vector,
-			absolute_rigid_transforms,
 			state_history,
 			stms,
 			mrps_LN,
@@ -85,6 +132,10 @@ void BatchAttitude::run(const std::vector<RigidTransform> & absolute_rigid_trans
 				* RBK::mrp_to_dcm(dattitude_state.subvec(0,2)) );
 
 			this -> state_estimate_at_epoch.subvec(3,5) += dattitude_state.subvec(3,5);
+
+			#if BATCH_ATTITUDE_DEBUG
+			std::cout << "\tInitial state after update: " << this -> state_estimate_at_epoch.t() << std::endl;
+		#endif
 		}
 		catch(std::runtime_error & e){
 			e.what();
@@ -116,7 +167,6 @@ void BatchAttitude::build_normal_equations(
 	arma::mat & info_mat,
 	arma::vec & normal_mat,
 	arma::vec & residual_vector,
-	const std::vector<RigidTransform> & absolute_rigid_transforms,
 	const std::vector<arma::vec::fixed<6> > & state_history,
 	const std::vector<arma::mat::fixed<6,6> > & stms,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
@@ -125,30 +175,31 @@ void BatchAttitude::build_normal_equations(
 	residual_vector.fill(0);
 	
 	info_mat.fill(0);
+
+	info_mat.submat(0,0,2,2) = 1e10 * arma::eye<arma::mat>(3,3);// this way, the initial MRP is frozen
+
 	normal_mat.fill(0);
 
 	arma::mat::fixed<3,6> Htilde = arma::zeros<arma::mat>(3,6);
 	Htilde.submat(0,0,2,2) = arma::eye<arma::mat>(3,3);
 	arma::mat::fixed<3,6> H;
 
-	arma::mat::fixed<3,3> BN_t0 = arma::eye<arma::mat>(3,3);
+	arma::mat::fixed<3,3> BN_t0 = RBK::mrp_to_dcm(this -> state_estimate_at_epoch.subvec(0,2));
 
-	for (int k = 0; k < absolute_rigid_transforms.size(); ++ k){
+	for (int k = 0; k < this -> absolute_rigid_transforms.size(); ++ k){
 
-		
-		arma::mat::fixed<3,3> LNk = mrps_LN.at(absolute_rigid_transforms.at(k).index_start);
+		arma::mat::fixed<3,3> LNk = mrps_LN.at(this -> absolute_rigid_transforms.at(k).index_start);
 		arma::mat::fixed<3,3> LN_t0 = RBK::mrp_to_dcm(mrps_LN.front());
-
 
 		arma::mat::fixed<3,3> BN_k_mes = (BN_t0 *
 			LN_t0.t()
-			* absolute_rigid_transforms.at(k).M 
+			* this -> absolute_rigid_transforms.at(k).M 
 			* LNk);
-		arma::mat::fixed<3,3> BN_k_computed = RBK::mrp_to_dcm(state_history[k].subvec(0,2));
+		arma::mat::fixed<3,3> BN_k_computed = RBK::mrp_to_dcm(state_history[this -> absolute_rigid_transforms.at(k).index_start].subvec(0,2));
 
-		H = Htilde * stms[k];
+		H = Htilde * stms[this -> absolute_rigid_transforms.at(k).index_start];
 
-		arma::mat::fixed<3,3> A = BN_k_computed.t() * BN_t0 * LN_t0.t() * absolute_rigid_transforms.at(k).M;
+		arma::mat::fixed<3,3> A = BN_k_computed.t() * BN_t0 * LN_t0.t() * this -> absolute_rigid_transforms.at(k).M;
 
 		arma::vec::fixed<3> e0 = {1,0,0};
 		arma::vec::fixed<3> e1 = {0,1,0};
@@ -160,7 +211,7 @@ void BatchAttitude::build_normal_equations(
 		partial_mat.row(2) = - e1.t() * A * RBK::tilde(LNk * e0);
 
 
-		arma::mat::fixed<3,3> R = partial_mat * R_pcs.at(absolute_rigid_transforms.at(k).index_start).submat(3,3,5,5) * partial_mat.t();
+		arma::mat::fixed<3,3> R = partial_mat * R_pcs.at(this -> absolute_rigid_transforms.at(k).index_start).submat(3,3,5,5) * partial_mat.t();
 
 		residual_vector.rows(3 * k, 3 * k + 2) = RBK::dcm_to_mrp(BN_k_mes * BN_k_computed.t());
 
@@ -173,15 +224,7 @@ void BatchAttitude::build_normal_equations(
 }
 
 
-
-
-
-
-
-
-void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state_history,
-	std::vector<arma::mat::fixed<6,6> > & stms,
-	const std::vector<RigidTransform> & absolute_rigid_transforms) const{
+void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state_history,std::vector<arma::mat::fixed<6,6> > & stms) const{
 
 	state_history.clear();
 	stms.clear();
@@ -206,8 +249,8 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 	std::vector<double> times;
 
-	for (int i = 0 ; i <  absolute_rigid_transforms. size(); ++i){
-		times.push_back( absolute_rigid_transforms. at(i).t_start);
+	for (int i = 0 ; i <  this -> absolute_rigid_transforms. size(); ++i){
+		times.push_back( this -> absolute_rigid_transforms. at(i).t_start);
 	}
 
 	auto tbegin = times.begin();
