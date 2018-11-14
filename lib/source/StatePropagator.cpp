@@ -172,7 +172,7 @@ void StatePropagator::propagate(std::vector<double> & T, std::vector<arma::vec> 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
-	std::cout << "In StatePropagator::propagate\n"
+	std::cout << "In StatePropagator::propagate\n";
 	boost::numeric::odeint::integrate_times(stepper, 
 		dynamics, 
 		initial_state,
