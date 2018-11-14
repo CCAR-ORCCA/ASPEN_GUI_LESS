@@ -2,8 +2,11 @@
 
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
-#define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 0
+
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
+
+#define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
@@ -91,13 +94,19 @@ arma::mat Dynamics::attitude_jac_dxdt_inertial_estimate(double t, const arma::ve
 
 arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::vec & X, const Args & args) {
 
+
+
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG
+	std::cout << "in Dynamics::harmonics_attitude_dxdt_inertial_truth\n";
+	#endif
+
 	// Inertial position
 	arma::vec pos = X . subvec(0, 2);
 
 	arma::vec X_small_body = X . subvec(6, 11);
 
 	// DCM BN
-	arma::mat BN = RBK::mrp_to_dcm(X_small_body.subvec(0,3));
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,3));
 
 	// Body frame position
 	pos = BN * pos;
@@ -261,7 +270,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 arma::vec Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const Args & args) {
 
-	arma::vec dxdt = RBK::dXattitudedt(t, X , args . get_inertia_estimate());
+	arma::vec::fixed<6> dxdt = RBK::dXattitudedt(t, X , args . get_inertia_estimate());
 
 	return dxdt;
 
@@ -269,7 +278,7 @@ arma::vec Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const 
 
 arma::vec Dynamics::attitude_dxdt_truth(double t, const arma::vec & X, const Args & args) {
 
-	arma::vec dxdt = RBK::dXattitudedt(t, X , args . get_inertia_truth());
+	arma::vec::fixed<6> dxdt = RBK::dXattitudedt(t, X , args . get_inertia_truth());
 
 	return dxdt;
 
