@@ -234,7 +234,7 @@ int main() {
 
 	std::vector<double> T_obs;
 	std::vector<arma::vec> X_augmented;
-
+	std::cout << "Propagating true state\n";
 	if(USE_HARMONICS){
 		StatePropagator::propagateOrbit(T_obs,X_augmented, 
 			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
