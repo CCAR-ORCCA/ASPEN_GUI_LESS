@@ -83,7 +83,6 @@ namespace Observer {
 					Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
 
 			// The stm is switched
-					std::cout << "storing\n";
 					x.rows(12,12 + 12 * 12 - 1) = arma::vectorise(Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12));
 				}
 			}
