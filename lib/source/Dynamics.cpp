@@ -74,21 +74,18 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial_truth(double t,const arma:
 }
 
 
-arma::vec Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
+arma::vec::fixed<6> Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
 
-	arma::vec dxdt = Dynamics::attitude_dxdt_estimate(t, X, args);
-
-	return dxdt;
+	return Dynamics::attitude_dxdt_estimate(t, X, args);
 
 }
 
 
 
 
-arma::mat Dynamics::attitude_jac_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args){
+arma::mat::fixed<6,6> Dynamics::attitude_jac_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args){
 
-	arma::mat A = Dynamics::attitude_jacobian(X , args . get_inertia_estimate());
-	return A;
+	return Dynamics::attitude_jacobian(X , args . get_inertia_estimate());
 
 }
 
@@ -101,9 +98,9 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 	#endif
 
 	// Inertial position
-	arma::vec pos = X . subvec(0, 2);
+	arma::vec::fixed<3> pos = X . subvec(0, 2);
 
-	arma::vec X_small_body = X . subvec(6, 11);
+	arma::vec::fixed<3> X_small_body = X . subvec(6, 11);
 
 	// DCM BN
 	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,3));
@@ -113,7 +110,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 
 
 	// Gravity acceleration expressed in the body frame
-	arma::vec acc = args.get_sbgat_harmonics_truth() -> GetAcceleration(pos);
+	arma::vec::fixed<3> acc = args.get_sbgat_harmonics_truth() -> GetAcceleration(pos);
 
 	// Mapping it back to the inertial frame
 	acc = BN.t() * acc;
@@ -272,7 +269,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 }
 
 
-arma::vec Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const Args & args) {
+arma::vec::fixed<6> Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const Args & args) {
 
 	arma::vec::fixed<6> dxdt = RBK::dXattitudedt(t, X , args . get_inertia_estimate());
 
@@ -280,7 +277,7 @@ arma::vec Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const 
 
 }
 
-arma::vec Dynamics::attitude_dxdt_truth(double t, const arma::vec & X, const Args & args) {
+arma::vec::fixed<6> Dynamics::attitude_dxdt_truth(double t, const arma::vec & X, const Args & args) {
 
 	arma::vec::fixed<6> dxdt = RBK::dXattitudedt(t, X , args . get_inertia_truth());
 
