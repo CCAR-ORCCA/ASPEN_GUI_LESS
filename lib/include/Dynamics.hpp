@@ -44,8 +44,8 @@ namespace Dynamics{
 	arma::mat harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
 
 
-	arma::vec::fixed<6> attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
-	arma::mat::fixed<6,6> attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
+	arma::vec attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
+	arma::mat attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
 
 
 
