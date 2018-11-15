@@ -47,27 +47,37 @@ int main(){
 	estimated_shape_model.update_mass_properties();
 	int N_times = 100;
 
-	double T_L = 1./0.0001;
 	double T_B = 12 * 3600;
+	double T_L = 10 * 3600;
+
 	double dt = 1000;
 
 	arma::vec times(N_times);
 	std::map<int,arma::mat::fixed<3,3> > M_pcs;
 	std::vector<arma::vec::fixed<3>> mrps_LN;
 	std::vector<arma::mat::fixed<3,3>> BN_measured;
+	std::vector<arma::mat::fixed<3,3>> BN_true;
+
 	std::map<int, arma::mat::fixed<6,6> > R_pcs;
 
 
 	mrps_LN.push_back(arma::zeros<arma::vec>(3));
+	
+
 	times(0) = 0;
 	BN_measured.push_back(arma::eye<arma::mat>(3,3));
 	M_pcs[0] = arma::eye<arma::mat>(3,3);
+
 	for (int i = 1; i < 100; ++i){
 		double t = i * dt;
 		times(i) = t;
-		M_pcs[i] = RBK::M3(t/T_B * 2 * arma::datum::pi);
-		mrps_LN.push_back(RBK::dcm_to_mrp(RBK::M3(t/T_L * 2 * arma::datum::pi)));
+		mrps_LN.push_back(RBK::dcm_to_mrp(RBK::M2(t / T_L * arma::datum::pi * 2) * RBK::M1(t / T_L * arma::datum::pi * 2)));
+
 		BN_measured.push_back(RBK::M3(t/T_B * 2 * arma::datum::pi));
+
+
+		M_pcs[i] = RBK::mrp_to_dcm(mrps_LN.front()) * BN_measured.front().t() * BN_measured[i] * RBK::mrp_to_dcm(mrps_LN[i]).t();
+
 		R_pcs[i] = arma::eye<arma::mat>(6,6);
 	}
 
@@ -84,6 +94,20 @@ int main(){
 	batch_attitude.set_a_priori_state(a_priori_state);
 	batch_attitude.set_inertia_estimate(estimated_shape_model.get_inertia());
 	batch_attitude.run(R_pcs,mrps_LN);
+
+	const auto & state_history = batch_attitude.get_attitude_state_history();
+	const auto & state_covariances_history = batch_attitude.get_attitude_state_covariances_history();
+
+	for (int i = 0 ; i < state_history.size(); ++i){
+
+		std::cout << "State:\n";
+		std::cout << state_history[i].t();
+		std::cout << "Covariance:\n";
+		std::cout << state_covariances_history[i] << std::endl << std::endl;
+
+
+	}
+
 
 
 	return 0;

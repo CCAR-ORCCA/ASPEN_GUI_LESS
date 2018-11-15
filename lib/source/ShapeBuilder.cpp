@@ -414,13 +414,15 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-				this -> covariance_estimated_state = arma::zeros<arma::mat>(12,12);
-				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
 
 				this -> estimated_state = arma::zeros<arma::vec>(12);
 				this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
+				this -> estimated_state.subvec(6,11) = batch_attitude.get_attitude_state_history().back();
 
 
+				this -> covariance_estimated_state = arma::zeros<arma::mat>(12,12);
+				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
+				this -> covariance_estimated_state.submat(6,6,11,11) = batch_attitude.get_attitude_state_covariances_history().back();
 
 
 
@@ -1570,5 +1572,10 @@ void ShapeBuilder::save_rigid_transforms(std::string dir,
 
 arma::mat ShapeBuilder::get_covariance_estimated_state() const{
 	return this -> covariance_estimated_state;
+}
+
+
+arma::vec::fixed<12> ShapeBuilder::get_estimated_state() const{
+	return this -> estimated_state;
 }
 

@@ -300,7 +300,9 @@ int main() {
 	std::string path_to_estimated_shape = "";
 	std::string path_to_estimated_spherical_harmonics = "";
 
-	arma::mat covariance_estimated_state = shape_filter.get_covariance_estimated_state();
+
+	arma::vec::fixed<12> X_estimated = shape_filter.get_estimated_state();
+	arma::mat::fixed<12,12> covariance_estimated_state = shape_filter.get_covariance_estimated_state();
 
 	covariance_estimated_state.save(output_dir + "/covariance_estimated_state.txt",arma::raw_ascii);
 
@@ -362,34 +364,6 @@ int main() {
 	o << output_data;
 
 	
-
-	// At this stage, the bezier shape model is NOT aligned with the true shape model
-	// The reconstructed shape model has its coordinates
-	// expressed in the estimated B frame, "E"
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = shape_filter.get_estimated_shape_model();
-	// #else
-
-	// If not, the estimated shape is set to the true shape
-	// std::shared_ptr<ShapeModelBezier> estimated_shape_model = std::make_shared<ShapeModelBezier>(
-	// 	ShapeModelBezier(&true_shape_model,"E",&frame_graph,1)
-	// 	);
-	// estimated_shape_model -> shift_to_barycenter();
-	// estimated_shape_model -> update_mass_properties();
-
-	// estimated_shape_model -> shift_to_barycenter();
-	// estimated_shape_model -> update_mass_properties();
-
-	// estimated_shape_model -> align_with_principal_axes();
-	// estimated_shape_model -> update_mass_properties();
-	// #endif 
-
-
-	// estimated_shape_model -> save_both("../output/shape_model/fit_shape_aligned");
-	// estimated_shape_model -> construct_kd_tree_shape();
-	// args.set_estimated_shape_model(estimated_shape_model.get());
-
-	// // estimated_shape_model -> compute_volume_sd();
-
 
 	// std::vector<std::array<double ,2> > shape_error_results;
 	// std::vector<arma::vec> spurious_points;

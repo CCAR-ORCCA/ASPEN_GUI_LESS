@@ -30,10 +30,10 @@ BatchAttitude::BatchAttitude(const arma::vec & times,  const std::map<int,arma::
 			RigidTransform rt;
 			
 			rt.t_start = times(0);
-			rt.t_end= times(0);
+			rt.t_end = times(0);
 
 			rt.index_start = 0;
-			rt.index_end= 0;
+			rt.index_end = 0;
 
 			rt.M = M_pcs.at(0);
 
@@ -92,6 +92,9 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 
 
 	arma::mat info_mat(6,6);
+	arma::mat covar_omega_0(6,6);
+
+
 	arma::vec normal_mat(6);
 	arma::vec residual_vector = arma::vec(3 * this -> absolute_rigid_transforms.size());
 	
@@ -127,18 +130,22 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 		std::cout << "\tSolving for deviation\n";
 		#endif
 		try{
-			arma::vec::fixed<6> dattitude_state = arma::solve(info_mat,normal_mat);
 
 
+			arma::mat::fixed<6,3> Lambda_prime;
+			Lambda_prime.submat(0,0,2,2) = info_mat.submat(0,3,2,5);
+			Lambda_prime.submat(3,0,5,2) = info_mat.submat(3,3,5,5);
+
+
+			arma::vec::fixed<3> domega_state = arma::solve(Lambda_prime.t() * Lambda_prime,Lambda_prime.t() * normal_mat);
+
+			covar_omega_0 = arma::inv(Lambda_prime.t() * Lambda_prime);
 		#if BATCH_ATTITUDE_DEBUG
-			std::cout << "\tDeviation: " << dattitude_state.t() << std::endl;
+			std::cout << "\tDeviation on angular velocity: " << domega_state.t() << std::endl;
 			std::cout << "\tApplying deviation\n";
 		#endif
-			this -> state_estimate_at_epoch.subvec(0,2) = RBK::dcm_to_mrp(
-				RBK::mrp_to_dcm(this -> state_estimate_at_epoch.subvec(0,2)) 
-				* RBK::mrp_to_dcm(dattitude_state.subvec(0,2)) );
 
-			this -> state_estimate_at_epoch.subvec(3,5) += dattitude_state.subvec(3,5);
+			this -> state_estimate_at_epoch.subvec(3,5) += domega_state;
 
 			#if BATCH_ATTITUDE_DEBUG
 			std::cout << "\tInitial state after update: " << this -> state_estimate_at_epoch.t() << std::endl;
@@ -151,15 +158,12 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	}
 
 	try{
-		this -> state_covariance_at_epoch = arma::inv(info_mat);
-
+		this -> state_covariance_at_epoch = arma::zeros<arma::mat>(6,6);
+		this -> state_covariance_at_epoch.submat(3,3,5,5) = covar_omega_0;
 
 		for (int k = 0; k < stms.size(); ++k){
 			this -> attitude_state_history.push_back(state_history[k]);
-			this -> attitude_state_covariances_history.push_back(
-				stms[k] 
-				* this -> state_covariance_at_epoch 
-				* stms[k].t());
+			this -> attitude_state_covariances_history.push_back(stms[k] * this -> state_covariance_at_epoch * stms[k].t());
 
 		}
 	}
