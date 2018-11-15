@@ -192,13 +192,10 @@ void BatchAttitude::build_normal_equations(
 
 	for (int k = 0; k < this -> absolute_rigid_transforms.size(); ++ k){
 
-		arma::mat::fixed<3,3> LNk = mrps_LN.at(this -> absolute_rigid_transforms.at(k).index_start);
+		arma::mat::fixed<3,3> LNk = RBK::mrp_to_dcm(mrps_LN.at(this -> absolute_rigid_transforms.at(k).index_start));
 		arma::mat::fixed<3,3> LN_t0 = RBK::mrp_to_dcm(mrps_LN.front());
 
-		arma::mat::fixed<3,3> BN_k_mes = (BN_t0 *
-			LN_t0.t()
-			* this -> absolute_rigid_transforms.at(k).M 
-			* LNk);
+		arma::mat::fixed<3,3> BN_k_mes = (BN_t0 *LN_t0.t()* this -> absolute_rigid_transforms.at(k).M * LNk);
 		arma::mat::fixed<3,3> BN_k_computed = RBK::mrp_to_dcm(state_history[this -> absolute_rigid_transforms.at(k).index_start].subvec(0,2));
 
 		H = Htilde * stms[this -> absolute_rigid_transforms.at(k).index_start];

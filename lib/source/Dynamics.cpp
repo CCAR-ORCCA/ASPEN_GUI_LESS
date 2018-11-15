@@ -16,8 +16,6 @@ arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> 
 }
 
 
-
-
 arma::mat Dynamics::gamma_OD(double dt){
 	arma::mat gamma = arma::zeros<arma::mat>(6,3);
 	gamma.submat(0,0,2,2) = 0.5 * dt * arma::eye<arma::mat>(3,3);

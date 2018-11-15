@@ -426,8 +426,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-
-
 			// The measured states are saved
 			// as they will be provided to the navigation filter
 			// as a-priori
