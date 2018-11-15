@@ -45,7 +45,7 @@ all_data = [
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : False,
 "INPUT_DIR" : base_location + "ShapeReconstruction/input/test_0",
-"OUTPUT_DIR" : output_location + "ShapeReconstruction/output/test_0"
+"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
 }
 
 ]
