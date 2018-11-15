@@ -54,6 +54,10 @@ void BatchAttitude::set_a_priori_state(const arma::vec::fixed<6> & initial_state
 	this -> state_estimate_at_epoch = initial_state;
 }
 
+void BatchAttitude::set_inertia_estimate(const arma::mat::fixed<3,3> & inertia){
+	this -> inertia_estimate = inertia;
+}
+
 
 
 arma::vec::fixed<6> BatchAttitude::get_state_estimate_at_epoch() const{
@@ -232,6 +236,7 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	int N_est = this -> state_estimate_at_epoch.n_rows;
 
 	Args args;
+	args.set_inertia_estimate(this -> inertia_estimate);
 	System dynamics(args,
 		N_est,
 		Dynamics::attitude_dxdt_inertial_estimate ,

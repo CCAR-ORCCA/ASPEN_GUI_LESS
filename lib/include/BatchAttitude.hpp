@@ -22,6 +22,7 @@ public:
 
 
 	void set_a_priori_state(const arma::vec::fixed<6> & initial_state);
+	void set_inertia_estimate(const arma::mat::fixed<3,3> & inertia);
 
 protected:	
 
@@ -52,6 +53,7 @@ protected:
 	arma::mat::fixed<6,6> state_covariance_at_epoch;
 
 
+	arma::mat::fixed<3,3> inertia_estimate;
 
 
 };

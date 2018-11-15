@@ -2,10 +2,8 @@
 
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
-#define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 1
-
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 0
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
-
 #define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
@@ -100,17 +98,23 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 	std::cout << "in Dynamics::harmonics_attitude_dxdt_inertial_truth\n";
 	#endif
 
+	
 	// Inertial position
 	arma::vec::fixed<3> pos = X . subvec(0, 2);
+	arma::vec::fixed<6> X_small_body = X . subvec(6, 11);
 
-	arma::vec::fixed<3> X_small_body = X . subvec(6, 11);
-
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG
+	std::cout << "extracting DCM\n";
+	#endif
 	// DCM BN
-	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,3));
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,2));
 
 	// Body frame position
 	pos = BN * pos;
 
+	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG
+	std::cout << "getting acceleration\n";
+	#endif
 
 	// Gravity acceleration expressed in the body frame
 	arma::vec::fixed<3> acc = args.get_sbgat_harmonics_truth() -> GetAcceleration(pos);
@@ -118,8 +122,8 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 	// Mapping it back to the inertial frame
 	acc = BN.t() * acc;
 
-	arma::vec dxdt = arma::zeros<arma::vec>(12);
-	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc(0), acc(1), acc(2)};
+	arma::vec::fixed<12> dxdt = arma::zeros<arma::vec>(12);
+	arma::vec::fixed<6> dxdt_spacecraft = { X(3), X(4), X(5), acc(0), acc(1), acc(2)};
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;
 	dxdt.subvec(6,11) = Dynamics::attitude_dxdt_truth(t, X_small_body, args);
@@ -188,7 +192,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 	arma::vec::fixed<6> X_small_body = X . subvec(6, 11);
 
 	// DCM BN
-	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,3));
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(X_small_body.subvec(0,2));
 
 	// Body frame position
 	pos = BN * pos;
@@ -224,7 +228,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	arma::vec::fixed<6> attitude = X . subvec(6, 11);
 
 	// DCM BN
-	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(attitude.subvec(0,3));
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(attitude.subvec(0,2));
 
 	// Body frame position
 	arma::vec::fixed<3> pos_B = BN * pos;
@@ -237,8 +241,6 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
-
-
 
 	// Partial derivatives of the spacecraft state.
 
@@ -267,7 +269,6 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	std::cout << "leaving harmonics_jac_attitude_dxdt_inertial_estimate\n";
 	#endif
 	return A;
-
 
 }
 

@@ -12,6 +12,7 @@ if (platform.system() == 'Linux'):
 
 else:
 	base_location = "../"
+	output_location = "./"
 
 
 all_data = [
@@ -42,9 +43,9 @@ all_data = [
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"USE_BA" : True,
+"USE_BA" : False,
 "USE_ICP" : True,
-"USE_TRUE_RIGID_TRANSFORMS" : False,
+"USE_TRUE_RIGID_TRANSFORMS" : True,
 "dir" : base_location + "output/test_0",
 "output_dir" : output_location + "input/test_0"
 }

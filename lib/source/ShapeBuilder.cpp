@@ -133,6 +133,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			M_pcs[time_index] = arma::eye<arma::mat>(3,3);;
 			X_pcs[time_index] = arma::zeros<arma::vec>(3);
 
+			M_pcs_true[time_index] = arma::eye<arma::mat>(3,3);;
+			X_pcs_true[time_index] = arma::zeros<arma::vec>(3);
+
+			R_pcs[time_index] = arma::zeros<arma::mat>(6,6);
 
 			true_shape_model -> save(dir + "/true_shape_L0.obj",
 				- this -> LN_t0 * this -> x_t0,
@@ -208,10 +212,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(M_pcs.size() == BN_true.size());
 			assert(X_pcs.size() == BN_true.size());
 
-			ba_test.update_overlap_graph();
 			
 			if (this -> filter_arguments -> get_use_ba()){
-				
+				ba_test.update_overlap_graph();
+
 
 				std::cout << "Error in ICP rigid transform before bundle adjustment: \n";
 
@@ -263,9 +267,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
 
 
-			BatchAttitude batch_attitude(times,M_pcs);
-			batch_attitude.set_a_priori_state(a_priori_state);
-			batch_attitude.run(R_pcs,mrps_LN);
+
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -345,17 +347,17 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << "\n-- Running IOD Finder ...\n";
 
 				this -> run_IOD_finder(times,
-				 epoch_time_index ,
-				 time_index, 
-				 mrps_LN,
-				 X_pcs,
-				 M_pcs,
-				 R_pcs,
-				 iod_state,
-				 epoch_state,
-				 final_state,
-				 epoch_cov,
-				 final_cov);
+					epoch_time_index ,
+					time_index, 
+					mrps_LN,
+					X_pcs,
+					M_pcs,
+					R_pcs,
+					iod_state,
+					epoch_state,
+					final_state,
+					epoch_cov,
+					final_cov);
 
 
 				this -> save_rigid_transforms(dir, 
@@ -404,6 +406,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> estimated_shape_model -> rotate(BN_measured.front());
 				this -> estimated_shape_model -> update_mass_properties();	
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
+
+				BatchAttitude batch_attitude(times,M_pcs);
+				batch_attitude.set_a_priori_state(a_priori_state);
+				batch_attitude.set_inertia_estimate(this -> estimated_shape_model -> get_inertia());
+
+				batch_attitude.run(R_pcs,mrps_LN);
+
+
 
 				this -> covariance_estimated_state = arma::zeros<arma::mat>(12,12);
 				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
