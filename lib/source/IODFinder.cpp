@@ -354,6 +354,8 @@ void IODFinder::run_batch(
 	std::vector<arma::vec::fixed<3> > positions,velocities;
 	std::vector<arma::mat> stms;
 
+	double old_residuals = std::numeric_limits<double>::infinity();
+
 	this -> compute_P_T(R_pcs);
 	for (int i = 0; i < N_iter; ++i){
 
@@ -361,7 +363,9 @@ void IODFinder::run_batch(
 		this -> compute_W(positions);
 		this -> build_normal_equations(info_mat,normal_mat,residual_vector,positions,stms);
 		
-		std::cout << "\tResiduals RMS: " << std::sqrt(arma::dot(residual_vector,residual_vector)/residual_vector.size())<< std::endl;
+		double new_residuals = std::sqrt(arma::dot(residual_vector,residual_vector)/residual_vector.size());
+		std::cout << "\tResiduals RMS: " << new_residuals<< std::endl;
+		
 
 		try{
 			epoch_state += arma::solve(info_mat,normal_mat);
@@ -377,7 +381,17 @@ void IODFinder::run_batch(
 		}
 		std::cout << "\tState: " << epoch_state.t() << std::endl;
 
+		if (std::abs(new_residuals - old_residuals)/new_residuals * 100 < 1e-2){
+			std::cout << "\tBatch has converged after " << i + 1 << " iterations\n";
+			break;
+		}
+		else{
+			old_residuals = new_residuals;
+		}
+
 	}
+
+
 
 	try{
 		epoch_cov = arma::inv(info_mat);
