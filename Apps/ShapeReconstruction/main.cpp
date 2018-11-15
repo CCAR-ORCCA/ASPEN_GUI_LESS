@@ -102,9 +102,7 @@ int main() {
 
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	
-	std::string dir = input_data["dir"];
-	std::string output_dir = input_data["output_dir"];
-
+	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
 
 	double T_orbit = (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE;
 
@@ -240,21 +238,21 @@ int main() {
 			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 			X0_augmented,
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			dir + "/","obs_harmonics");
+			OUTPUT_DIR + "/","obs_harmonics");
 		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			dir + "/","full_orbit_harmonics");
+			OUTPUT_DIR + "/","full_orbit_harmonics");
 	}
 	else{
 		StatePropagator::propagateOrbit(T_obs,X_augmented, 
 			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 			X0_augmented,
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			dir + "/","obs_point_mass");
+			OUTPUT_DIR + "/","obs_point_mass");
 
 		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			dir + "/","full_orbit_point_mass");
+			OUTPUT_DIR + "/","full_orbit_point_mass");
 	}
 
 	arma::vec times(T_obs.size()); 
@@ -292,7 +290,7 @@ int main() {
 	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-	shape_filter.run_shape_reconstruction(times,X_augmented,dir);
+	shape_filter.run_shape_reconstruction(times,X_augmented,OUTPUT_DIR);
 
 	nlohmann::json output_data;
 	std::string path_to_estimated_shape = "";
@@ -302,7 +300,7 @@ int main() {
 	arma::vec::fixed<12> X_estimated = shape_filter.get_estimated_state();
 	arma::mat::fixed<12,12> covariance_estimated_state = shape_filter.get_covariance_estimated_state();
 
-	covariance_estimated_state.save(output_dir + "/covariance_estimated_state.txt",arma::raw_ascii);
+	covariance_estimated_state.save(OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii);
 
 	std::cout << "Fetching output data...\n";
 	output_data["X0_TRUE_SPACECRAFT"] = { 
@@ -355,14 +353,13 @@ int main() {
 	}
 
 	output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
-	output_data["ESTIMATED_SHAPE_PATH"] = dir + "/fit_shape_B_frame";
+	output_data["ESTIMATED_SHAPE_PATH"] = OUTPUT_DIR + "/fit_shape_B_frame";
 	output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
 
-	std::ofstream o(output_dir + "/input_file_from_shape_reconstruction.json");
+	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
 	o << output_data;
 
 	
-
 	// std::vector<std::array<double ,2> > shape_error_results;
 	// std::vector<arma::vec> spurious_points;
 

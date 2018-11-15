@@ -58,7 +58,6 @@ int main() {
 
 
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
-	std::string INPUT_DIR = input_data["INPUT_DIR"];
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
 
 	

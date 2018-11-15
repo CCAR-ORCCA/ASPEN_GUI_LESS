@@ -6,13 +6,11 @@ import os
 import platform
 
 
-if (platform.system() == 'Linux'):
-	base_location = "/orc_raid/bebe0705/ShapeReconstruction/"
-	output_location = "/orc_raid/bebe0705/Navigation/"
 
+if (platform.system() == 'Linux'):
+	base_location = "/orc_raid/bebe0705/"
 else:
-	base_location = "../"
-	output_location = "./"
+	base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
 
 
 all_data = [
@@ -35,7 +33,7 @@ all_data = [
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
-"MRP_0" : [0,0,0],# do not change this
+"MRP_0" : [0,0,0],
 "N_ITER_BUNDLE_ADJUSTMENT" : 2,
 "N_ITER_SHAPE_FILTER" : 3,
 "MIN_TRIANGLE_ANGLE" : 30,
@@ -43,20 +41,20 @@ all_data = [
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"USE_BA" : False,
+"USE_BA" : True,
 "USE_ICP" : True,
-"USE_TRUE_RIGID_TRANSFORMS" : True,
-"dir" : base_location + "output/test_0",
-"output_dir" : output_location + "input/test_0"
+"USE_TRUE_RIGID_TRANSFORMS" : False,
+"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_0",
+"OUTPUT_DIR" : output_location + "ShapeReconstruction/output/test_0"
 }
 
 ]
 
 for data in all_data:
-	print("\t Case " + data["dir"].split("/")[-1])
+	print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 	
-	os.system("mkdir " + data["dir"])
-	os.system("mkdir " + data["output_dir"])
+	os.system("mkdir " + data["INPUT_DIR"])
+	os.system("mkdir " + data["OUTPUT_DIR"])
 
 	print("\t - Making directory")
 	print("\t - Copying input file in build/")
@@ -64,11 +62,14 @@ for data in all_data:
 	with open('input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
 
-	print("\t - Saving input file in output/")
-	with open(data["dir"] + '/input_file.json', 'w') as outfile:
+	print("\t - Saving input file in input/ and output/")
+	with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
-	print("\t - Running case " +  data["dir"].split("/")[-1])
+	with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+		json.dump(data, outfile)
 
-	os.system("./ShapeReconstruction| tee " + data["dir"] + "/log.txt" )
+	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+
+	os.system("./ShapeReconstruction | tee " + data["OUTPUT_DIR"] + "/log.txt" )
 
 
