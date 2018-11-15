@@ -227,6 +227,11 @@ void BatchAttitude::build_normal_equations(
 
 void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state_history,std::vector<arma::mat::fixed<6,6> > & stms) const{
 
+
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "\tin compute_state_stms\n";
+	#endif 
+
 	state_history.clear();
 	stms.clear();
 
@@ -234,13 +239,20 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 	Args args;
 	args.set_inertia_estimate(this -> inertia_estimate);
+
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "\tConstructing system\n";
+	#endif 
+	
 	System dynamics(args,
 		N_est,
 		Dynamics::attitude_dxdt_inertial_estimate ,
 		Dynamics::attitude_jac_dxdt_inertial_estimate,
 		0,
 		nullptr);
-
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "\tPopulating states\n";
+	#endif 
 	arma::vec x(N_est + N_est * N_est);
 	x.rows(0,N_est - 1) = this -> state_estimate_at_epoch;
 	x.rows(N_est,N_est + N_est * N_est - 1) = arma::vectorise(arma::eye<arma::mat>(N_est,N_est));
@@ -257,6 +269,10 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 	auto tbegin = times.begin();
 	auto tend = times.end();
+
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "\tRunning integrator\n";
+	#endif 
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_attitude_state(augmented_state_history));
 
