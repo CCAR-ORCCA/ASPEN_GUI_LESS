@@ -3,6 +3,8 @@
 #include <armadillo>
 #include <vector>
 
+#define PUSH_BACK_AUGMENTED_STATE_DEBUG 0
+#define PUSH_BACK_ATTITUDE_STATE_DEBUG 0
 
 namespace Observer {
 
@@ -42,7 +44,17 @@ namespace Observer {
 		}
 
 		void operator()( arma::vec & x,  double t){
+
+			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
+			std::cout << "in push_back_attitude_state::operator() at time t == " << t << "\n";
+			std::cout << "x == " << x.t() << "\n";
+			#endif
+
 			if (arma::norm(x.subvec(0,2)) > 1){
+
+			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
+			std::cout << "switching in push_back_attitude_state::operator()\n";
+			#endif
 				x.subvec(0,2) = - x.subvec(0,2) / arma::dot(x.subvec(0,2),x.subvec(0,2));
 				
 				if (x.n_rows > 6){
@@ -52,11 +64,17 @@ namespace Observer {
 					Theta.submat(0,0,2,2) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
 
 			// The stm is switched
-					x.rows(6,6 + 6 * 6 - 1) = arma::vectorise(Theta * arma::reshape(x.rows(6,6 + 6 * 6 - 1),6,6));
+					x.subvec(6,6 + 6 * 6 - 1) = arma::vectorise(Theta * arma::reshape(x.subvec(6,6 + 6 * 6 - 1),6,6));
 				}
 			}
 
+
+
 			m_states.push_back( x );
+
+			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
+			std::cout << "leaving push_back_attitude_state::operator()\n";
+			#endif
 		}
 
 	};
@@ -70,6 +88,10 @@ namespace Observer {
 		}
 
 		void operator()( arma::vec & x,  double t){
+
+			#if PUSH_BACK_AUGMENTED_STATE_DEBUG
+			std::cout << "push_back_augmented_state::operator()\n";
+			#endif
 
 			if (arma::norm(x.subvec(6,8)) > 1){
 

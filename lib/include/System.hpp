@@ -5,6 +5,7 @@
 #include "FixVectorSize.hpp"
 #include "Args.hpp"
 
+#define OPERATOR_DEBUG 0
 
 
 class System {
@@ -35,6 +36,12 @@ public:
 
 	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
 		
+
+
+		#if OPERATOR_DEBUG
+		std::cout << "in System::operator\n";
+		#endif
+
 		if (this -> N_est == 0){
 
 			arma::vec derivative =  this -> true_dynamics_fun(t,X,args);

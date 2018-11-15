@@ -5,9 +5,9 @@
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 0
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 #define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
-#define ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
-#define ATTITUDE_DXDT_ESTIMATE_DEBUG 1
-#define ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG 1
+#define ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
+#define ATTITUDE_DXDT_ESTIMATE_DEBUG 0
+#define ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
@@ -85,7 +85,6 @@ arma::vec Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X
 	return dxdt;
 
 }
-
 
 
 

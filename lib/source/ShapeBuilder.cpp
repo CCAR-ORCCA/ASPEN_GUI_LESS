@@ -258,14 +258,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				epoch_cov,
 				final_cov);
 
-			// Estimating small body state
-
-
-			arma::vec::fixed<6> a_priori_state;
-
-			a_priori_state.subvec(0,2) = RBK::dcm_to_mrp(BN_measured.front());
-			a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
-
+			
 
 
 
@@ -408,6 +401,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
 
 				BatchAttitude batch_attitude(times,M_pcs);
+				
+				// Estimating small body state
+				arma::vec::fixed<6> a_priori_state;
+				a_priori_state.subvec(0,2) = RBK::dcm_to_mrp(BN_measured.front());
+				a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
+
 				batch_attitude.set_a_priori_state(a_priori_state);
 				batch_attitude.set_inertia_estimate(this -> estimated_shape_model -> get_inertia());
 

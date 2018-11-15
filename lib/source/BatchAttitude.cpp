@@ -81,6 +81,10 @@ std::vector<arma::mat::fixed<6,6> > BatchAttitude::get_attitude_state_covariance
 void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "In BatchAttitude::run\n";
+	#endif
+
 	int N_iter = 5;
 
 	std::vector<arma::vec::fixed<6> > state_history;
@@ -90,9 +94,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	arma::mat info_mat(6,6);
 	arma::vec normal_mat(6);
 	arma::vec residual_vector = arma::vec(3 * this -> absolute_rigid_transforms.size());
-	#if BATCH_ATTITUDE_DEBUG
-	std::cout << "In BatchAttitude::run\n";
-	#endif
+	
 
 
 	for (int i = 0; i < N_iter; ++i){
@@ -125,10 +127,11 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 		std::cout << "\tSolving for deviation\n";
 		#endif
 		try{
-			arma::vec::fixed<3> dattitude_state = arma::solve(info_mat,normal_mat);
+			arma::vec::fixed<6> dattitude_state = arma::solve(info_mat,normal_mat);
 
 
 		#if BATCH_ATTITUDE_DEBUG
+			std::cout << "\tDeviation: " << dattitude_state.t() << std::endl;
 			std::cout << "\tApplying deviation\n";
 		#endif
 			this -> state_estimate_at_epoch.subvec(0,2) = RBK::dcm_to_mrp(
@@ -190,17 +193,25 @@ void BatchAttitude::build_normal_equations(
 
 	arma::mat::fixed<3,3> BN_t0 = RBK::mrp_to_dcm(this -> state_estimate_at_epoch.subvec(0,2));
 
-	for (int k = 0; k < this -> absolute_rigid_transforms.size(); ++ k){
+	int k = 0;
+	for (auto rt : this -> absolute_rigid_transforms){
 
-		arma::mat::fixed<3,3> LNk = RBK::mrp_to_dcm(mrps_LN.at(this -> absolute_rigid_transforms.at(k).index_start));
+
+
+		if (rt.index_end == 0){
+			continue;
+		}
+
+
+		arma::mat::fixed<3,3> LNk = RBK::mrp_to_dcm(mrps_LN.at(rt.index_end));
 		arma::mat::fixed<3,3> LN_t0 = RBK::mrp_to_dcm(mrps_LN.front());
 
-		arma::mat::fixed<3,3> BN_k_mes = BN_t0 *LN_t0.t()* this -> absolute_rigid_transforms.at(k).M * LNk;
-		arma::mat::fixed<3,3> BN_k_computed = RBK::mrp_to_dcm(state_history[this -> absolute_rigid_transforms.at(k).index_start].subvec(0,2));
+		arma::mat::fixed<3,3> BN_k_mes = BN_t0 * LN_t0.t() * rt.M * LNk;
+		arma::mat::fixed<3,3> BN_k_computed = RBK::mrp_to_dcm(state_history[rt.index_end].subvec(0,2));
 
-		H = Htilde * stms[this -> absolute_rigid_transforms.at(k).index_start];
+		H = Htilde * stms[rt.index_end];
 
-		arma::mat::fixed<3,3> A = BN_k_computed.t() * BN_t0 * LN_t0.t() * this -> absolute_rigid_transforms.at(k).M;
+		arma::mat::fixed<3,3> A = BN_k_computed.t() * BN_t0 * LN_t0.t() * rt.M;
 
 		arma::vec::fixed<3> e0 = {1,0,0};
 		arma::vec::fixed<3> e1 = {0,1,0};
@@ -211,14 +222,14 @@ void BatchAttitude::build_normal_equations(
 		partial_mat.row(1) = - e0.t() * A * RBK::tilde(LNk * e2);
 		partial_mat.row(2) = - e1.t() * A * RBK::tilde(LNk * e0);
 
-
-		arma::mat::fixed<3,3> R = partial_mat * R_pcs.at(this -> absolute_rigid_transforms.at(k).index_start).submat(3,3,5,5) * partial_mat.t();
+		arma::mat::fixed<3,3> R = partial_mat * R_pcs.at(rt.index_end).submat(3,3,5,5) * partial_mat.t();
 
 		residual_vector.rows(3 * k, 3 * k + 2) = RBK::dcm_to_mrp(BN_k_mes * BN_k_computed.t());
 
 		info_mat += H.t() * arma::inv(R) * H;
 		normal_mat += H.t() * arma::inv(R) * residual_vector.rows(3 * k, 3 * k + 2);
 
+		++k;
 	}
 
 	
@@ -242,6 +253,8 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "\tConstructing system\n";
+	std::cout << "Inertia: \n";
+	std::cout << this -> inertia_estimate << std::endl;
 	#endif 
 	
 	System dynamics(args,
@@ -250,8 +263,10 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 		Dynamics::attitude_jac_dxdt_inertial_estimate,
 		0,
 		nullptr);
+
+	
 	#if BATCH_ATTITUDE_DEBUG
-	std::cout << "\tPopulating states\n";
+	std::cout << "\tPopulating states . N_est == "<<  N_est << " \n";
 	#endif 
 	arma::vec x(N_est + N_est * N_est);
 	x.rows(0,N_est - 1) = this -> state_estimate_at_epoch;
@@ -264,7 +279,8 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	std::vector<double> times;
 
 	for (int i = 0 ; i <  this -> absolute_rigid_transforms. size(); ++i){
-		times.push_back( this -> absolute_rigid_transforms. at(i).t_start);
+		times.push_back( this -> absolute_rigid_transforms. at(i).t_end);
+		
 	}
 
 	auto tbegin = times.begin();
@@ -273,14 +289,17 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "\tRunning integrator\n";
 	#endif 
-	
+
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_attitude_state(augmented_state_history));
+	
+	#if BATCH_ATTITUDE_DEBUG
+	std::cout << "\tDone running integrator\n";
+	#endif 
 
 	for (int i = 0; i < times.size(); ++i){
-		arma::mat::fixed<6,6> stm = arma::reshape(augmented_state_history[i].rows(N_est,N_est + N_est * N_est - 1),N_est,N_est);
-		state_history.push_back(augmented_state_history[i]);
-		stms.push_back(stm);
+		stms.push_back(arma::reshape(augmented_state_history[i].subvec(N_est,N_est + N_est * N_est - 1),N_est,N_est));
+		state_history.push_back(augmented_state_history[i].subvec(0,N_est - 1));
 	}
 
 }
