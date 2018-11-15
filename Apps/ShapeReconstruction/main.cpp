@@ -295,8 +295,6 @@ int main() {
 	shape_filter.run_shape_reconstruction(times,X_augmented,dir);
 
 	nlohmann::json output_data;
-	arma::vec X_estimated = arma::zeros<arma::vec>(12);
-
 	std::string path_to_estimated_shape = "";
 	std::string path_to_estimated_spherical_harmonics = "";
 
