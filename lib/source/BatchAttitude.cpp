@@ -273,6 +273,7 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "\tRunning integrator\n";
 	#endif 
+	
 	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
 		Observer::push_back_attitude_state(augmented_state_history));
 

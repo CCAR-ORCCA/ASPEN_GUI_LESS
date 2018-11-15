@@ -3,8 +3,11 @@
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define HARMONICS_ATTITUDE_DXDT_INERTIAL_TRUTH_DEBUG 0
-#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
-#define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
+#define HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
+#define HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 0
+#define ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG 1
+#define ATTITUDE_DXDT_ESTIMATE_DEBUG 1
+#define ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG 1
 
 arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
 
@@ -72,6 +75,11 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial_truth(double t,const arma:
 
 arma::vec Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
 
+
+	#if ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "in Dynamics::attitude_dxdt_inertial_estimate\n";
+	#endif
+
 	arma::vec dxdt = Dynamics::attitude_dxdt_estimate(t, X, args);
 
 	return dxdt;
@@ -82,8 +90,15 @@ arma::vec Dynamics::attitude_dxdt_inertial_estimate(double t,const arma::vec & X
 
 
 arma::mat Dynamics::attitude_jac_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args){
-
+	#if ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "in attitude_jac_dxdt_inertial_estimate\n";
+	#endif
 	arma::mat A = Dynamics::attitude_jacobian(X , args . get_inertia_estimate());
+	
+	#if ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG
+	std::cout << "leaving attitude_jac_dxdt_inertial_estimate\n";
+	#endif
+
 	return A;
 
 }
@@ -180,6 +195,7 @@ arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate(double t, con
 }
 
 arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args){
+	
 	#if HARMONICS_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "in Dynamics::harmonics_attitude_dxdt_inertial_estimate\n";
 	#endif
@@ -272,8 +288,16 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 
 arma::vec::fixed<6> Dynamics::attitude_dxdt_estimate(double t, const arma::vec & X, const Args & args) {
+	
+	#if ATTITUDE_DXDT_ESTIMATE_DEBUG
+	std::cout << "in attitude_dxdt_estimate\n";
+	#endif
 
 	arma::vec::fixed<6> dxdt = RBK::dXattitudedt(t, X , args . get_inertia_estimate());
+
+	#if ATTITUDE_DXDT_ESTIMATE_DEBUG
+	std::cout << "leaving attitude_dxdt_estimate\n";
+	#endif
 
 	return dxdt;
 
@@ -330,9 +354,13 @@ arma::mat Dynamics::point_mass_mu_jac_odeint(double t, const arma::vec & x, cons
 arma::mat::fixed<6,6> Dynamics::attitude_jacobian(const arma::vec::fixed<6> & attitude_state ,const arma::mat & inertia) {
 
 
+	#if ATTITUDE_JACOBIAN_DEBUG
+	std::cout << "in Dynamics::attitude_jacobian\n";
+	#endif
+
 	arma::mat::fixed<6,6> A = arma::zeros<arma::mat>(6,6);
-	arma::vec::fixed<3> sigma = attitude_state.subvec(0,2);
-	arma::vec::fixed<3> omega = attitude_state.subvec(3,5);
+	const arma::vec::fixed<3> & sigma = attitude_state.subvec(0,2);
+	const arma::vec::fixed<3> & omega = attitude_state.subvec(3,5);
 
 	// dsigma_dot_dsigma
 	A.submat(0,0,2,2) = (0.5 * (- omega * sigma.t() - RBK::tilde(omega) 
@@ -344,6 +372,9 @@ arma::mat::fixed<6,6> Dynamics::attitude_jacobian(const arma::vec::fixed<6> & at
 	A.submat(3,3,5,5) = arma::solve(inertia,- RBK::tilde(omega) * inertia + RBK::tilde(inertia * omega));
 
 
+	#if ATTITUDE_JACOBIAN_DEBUG
+	std::cout << "exiting Dynamics::attitude_jacobian\n";
+	#endif
 	return A;
 
 }
