@@ -1399,7 +1399,6 @@ void ShapeBuilder::extract_a_priori_transform(
 	assert(mrps_LN.size() == index + 1);
 
 	// The a-priori rotation is extracted first
-
 	arma::mat::fixed<3,3> BN_km1 = BN_measured.back();
 	arma::mat::fixed<3,3> BN_km2 = *std::prev(BN_measured.end(), 2);
 
@@ -1527,6 +1526,7 @@ void ShapeBuilder::save_rigid_transforms(std::string dir,
 	const std::map<int,arma::mat::fixed<6,6> > & R_pcs){
 
 
+	assert(X_pcs.size() == this -> all_registered_pc.size() );
 	assert(X_pcs.size() == M_pcs.size());
 	assert(M_pcs.size() == X_pcs_true.size());
 	assert(X_pcs_true.size() == M_pcs_true.size());
@@ -1534,14 +1534,14 @@ void ShapeBuilder::save_rigid_transforms(std::string dir,
 	assert(R_pcs.size() == X_pcs.size());
 
 
-	arma::mat X_pcs_arma(X_pcs.size(),3);
-	arma::mat mrp_pcs_arma(X_pcs.size(),3);
-	arma::mat X_error_arma(X_pcs.size(),3);
+	arma::mat X_pcs_arma(static_cast<int>(X_pcs.size() - 1) ,3);
+	arma::mat mrp_pcs_arma(static_cast<int>(X_pcs.size() - 1) ,3);
+	arma::mat X_error_arma(static_cast<int>(X_pcs.size() - 1) ,3);
 
-	arma::mat X_pcs_true_arma(X_pcs.size(),3);
-	arma::mat mrp_pcs_true_arma(X_pcs.size(),3);
-	arma::mat mrp_error_arma(X_pcs.size(),3);
-	arma::mat R_pcs_arma(X_pcs.size(),36);
+	arma::mat X_pcs_true_arma(static_cast<int>(X_pcs.size() - 1) ,3);
+	arma::mat mrp_pcs_true_arma(static_cast<int>(X_pcs.size() - 1) ,3);
+	arma::mat mrp_error_arma(static_cast<int>(X_pcs.size() - 1) ,3);
+	arma::mat R_pcs_arma(static_cast<int>(X_pcs.size() - 1) ,36);
 
 
 	for (int i = 0; i < static_cast<int>(X_pcs.size()) - 1; ++i){

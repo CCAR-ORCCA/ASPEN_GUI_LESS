@@ -7,7 +7,11 @@
 
 BatchAttitude::BatchAttitude(const arma::vec & times,  const std::map<int,arma::mat::fixed<3,3> > & M_pcs){
 
-	for (int k = 0; k < M_pcs.size(); ++k){
+
+	for (auto it = M_pcs.begin(); it != M_pcs.end(); ++it){
+
+		int k = it -> first;
+
 
 		if (k != 0){
 
@@ -19,7 +23,7 @@ BatchAttitude::BatchAttitude(const arma::vec & times,  const std::map<int,arma::
 			rt.index_end = k;
 			rt.index_start = 0;	
 
-			rt.M = M_pcs.at(k);
+			rt.M = it -> second;
 
 			this -> absolute_rigid_transforms.push_back(rt);
 
@@ -96,7 +100,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 
 
 	arma::vec normal_mat(6);
-	arma::vec residual_vector = arma::vec(3 * this -> absolute_rigid_transforms.size());
+	arma::vec residual_vector = arma::vec(3 * (static_cast<int>(this -> absolute_rigid_transforms.size()) - 1) );
 	
 
 
@@ -140,8 +144,10 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 			arma::vec::fixed<3> domega_state = arma::solve(Lambda_prime.t() * Lambda_prime,Lambda_prime.t() * normal_mat);
 
 			covar_omega_0 = arma::inv(Lambda_prime.t() * Lambda_prime);
+		
 		#if BATCH_ATTITUDE_DEBUG
 			std::cout << "\tDeviation on angular velocity: " << domega_state.t() << std::endl;
+			std::cout << "\tCovariance in omega_0 :\n" << covar_omega_0 << std::endl;
 			std::cout << "\tApplying deviation\n";
 		#endif
 
@@ -187,8 +193,6 @@ void BatchAttitude::build_normal_equations(
 	
 	info_mat.fill(0);
 
-	info_mat.submat(0,0,2,2) = 1e10 * arma::eye<arma::mat>(3,3);// this way, the initial MRP is frozen
-
 	normal_mat.fill(0);
 
 	arma::mat::fixed<3,6> Htilde = arma::zeros<arma::mat>(3,6);
@@ -199,7 +203,6 @@ void BatchAttitude::build_normal_equations(
 
 	int k = 0;
 	for (auto rt : this -> absolute_rigid_transforms){
-
 
 
 		if (rt.index_end == 0){
@@ -227,6 +230,12 @@ void BatchAttitude::build_normal_equations(
 		partial_mat.row(2) = - e1.t() * A * RBK::tilde(LNk * e0);
 
 		arma::mat::fixed<3,3> R = partial_mat * R_pcs.at(rt.index_end).submat(3,3,5,5) * partial_mat.t();
+
+		#if (BATCH_ATTITUDE_DEBUG)
+		std::cout << "k == " << k << std::endl;
+		std::cout << "R_pcs.at(rt.index_end).submat(3,3,5,5) == \n" << R_pcs.at(rt.index_end).submat(3,3,5,5) << std::endl;
+		std::cout << "R == \n" << R << std::endl << std::endl;
+		#endif
 
 		residual_vector.rows(3 * k, 3 * k + 2) = RBK::dcm_to_mrp(BN_k_mes * BN_k_computed.t());
 

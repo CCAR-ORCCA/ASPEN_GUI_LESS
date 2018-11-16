@@ -535,7 +535,7 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 			for(unsigned int j = 0; j < 6; ++j){
 				coeffs.push_back(T(6 * (D_k - 1) + i, 6 * (D_k - 1) + j,Lambda_k(i + 6,j + 6)));
 			}
-			N(6 *(D_k -1) + i) += N_k(i + 6);
+			N(6 * (D_k -1) + i) += N_k(i + 6);
 		}
 
 		// Cross-correlations
@@ -635,11 +635,10 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		int x_index = 6 * (i - 1);
 		int mrp_index = 6 * (i - 1) + 3;
 
-		const arma::vec::fixed<3> & x = this-> X.subvec(x_index , x_index + 2);
+		const arma::vec::fixed<3> & x = this -> X.subvec(x_index , x_index + 2);
 		const arma::vec::fixed<3> & mrp = this -> X.subvec(mrp_index, mrp_index + 2);
 
 		arma::mat::fixed<3,3> NS_bar = RBK::mrp_to_dcm(mrp);
-		
 		
 		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
 		this -> all_registered_pc -> at(i) -> build_kdtree(false);
@@ -658,7 +657,6 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		}
 
 		R_pcs[i] = R;
-
 
 		// The small body attitude is fixed
 		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
