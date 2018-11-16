@@ -775,6 +775,9 @@ void BundleAdjuster::update_overlap_graph(){
 
 
 
+void BundleAdjuster::set_cluster_size(int size){
+	this -> cluster_size = size;
+}
 
 
 
@@ -782,12 +785,112 @@ void BundleAdjuster::update_overlap_graph(){
 void BundleAdjuster::remove_edges_from_graph(){
 
 
+
+	
+
+
 	for (auto & edge_to_remove : this -> edges_to_remove){
-		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ")\n";
+		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ") based on residuals\n";
 
 		this -> graph.removeedge(*edge_to_remove.begin(),*(--edge_to_remove.end()));
 
 	}
+
+
+
+
+	// The graph is cleaned up by keeping up to N at each node
+	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
+
+		std::set<int> neighbors = this -> graph.getneighbors(i);
+
+		// Removing immediate connections
+		if (i > 0){
+			neighbors.erase(i - 1);
+		}
+
+		if (i < static_cast<int>(this -> all_registered_pc -> size()) - 1){
+			neighbors.erase(i + 1);
+		}
+
+		std::vector<std::set<int> > clusters;
+
+		std::set<int> cluster;
+		
+		cluster.insert(*neighbors.begin());
+
+		for (auto neighbor_it = neighbors.begin(); neighbor_it != neighbors.end(); ++neighbor_it){
+
+			int neighbor = (*neighbor_it);
+
+			if (std::abs(neighbor - *(--cluster.end())) <= this -> cluster_size){
+				// If this neighbor and the one that preceeded it in the cluster
+				// are less than this -> cluster_size appart
+				// then the neighbor belongs to the same cluster
+				cluster.insert(neighbor);
+			}
+			else{
+				// If not, then the neighbor is added to a new cluster. 
+				// The previous cluster is saved as is
+				// And a new cluster is created with the neighbor
+				
+				clusters.push_back(cluster);
+				cluster.clear();
+
+				cluster.insert(neighbor);
+
+			}
+
+			if (neighbor_it == (--neighbors.end())){
+				clusters.push_back(cluster);
+				cluster.clear();
+			}
+
+		}
+
+		assert(cluster.size() == 0);
+
+
+		#if BUNDLE_ADJUSTER_DEBUG
+		std::cout << "For pc # " << i << ", formed clusters: \n";
+		for (int k = 0; k < clusters.size(); ++k){
+			std::cout << "\tCluster #" << k << " : (";
+			for (auto index : clusters[k]){
+				std::cout << index << ", ";
+			}
+			std::cout << std::endl;
+		}
+
+		#endif
+
+
+
+		// Clusters now stores all the different clusters of neighbors.
+		// only only one point cloud per cluster will be kept
+
+		for (auto cluster_to_process : clusters){
+
+
+			auto cluster_to_process_it = cluster_to_process.begin();
+			
+			// The first index in the cluster is kept
+			++cluster_to_process_it;
+
+			// The rest of the indices in this cluster are discarded
+			while(cluster_to_process_it != cluster_to_process.end()){
+				std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
+
+				this -> graph.removeedge(i,*cluster_to_process_it);
+				++cluster_to_process_it;
+
+			}
+
+		}
+
+
+
+	}
+
 
 
 }

@@ -59,6 +59,11 @@ public:
 
 	void update_overlap_graph();
 
+	/**
+	Sets the maximum number of point clouds in a given cluster
+	*/
+	void set_cluster_size(int size);
+
 protected:
 
 	void remove_edges_from_graph();
@@ -109,6 +114,7 @@ protected:
 	int closure_index = 0;
 	int h;
 	int N_iter;
+	int cluster_size = 4;
 
 	std::string dir;
 	double sigma_rho;

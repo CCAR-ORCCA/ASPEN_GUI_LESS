@@ -163,8 +163,6 @@ public:
 			typename std::list<edge>::iterator adjIt;
 
 
-
-
 			// search source's adjacency list for edge
 			for (adjIt = it->second->adj.begin(); adjIt != it->second->adj.end(); ++adjIt) {
 				neighbors.insert(adjIt -> second -> data);
