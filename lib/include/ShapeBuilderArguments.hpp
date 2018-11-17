@@ -526,10 +526,10 @@ public:
 		return this -> ba_h;
 	}
 
-	void set_get_ba_h(int ba_h){
+	void set_ba_h(int ba_h){
 		this -> ba_h = ba_h;
 	}
-	
+
 protected:
 
 
@@ -558,7 +558,7 @@ protected:
 	int iod_mc_iter;
 	int number_of_edges;
 	int ba_h = 4;
-	
+
 	unsigned int index_init;
 	unsigned int index_end;
 	
