@@ -96,8 +96,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 
 
 	arma::mat info_mat(6,6);
-	arma::mat covar_omega_0(6,6);
-
+	arma::mat::fixed<6,6> covar_0;
 
 	arma::vec normal_mat(6);
 	arma::vec residual_vector = arma::vec(3 * (static_cast<int>(this -> absolute_rigid_transforms.size()) - 1) );
@@ -136,22 +135,17 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 		try{
 
 
-			arma::mat::fixed<6,3> Lambda_prime;
-			Lambda_prime.submat(0,0,2,2) = info_mat.submat(0,3,2,5);
-			Lambda_prime.submat(3,0,5,2) = info_mat.submat(3,3,5,5);
+			
+			arma::vec::fixed<6> dX0 = arma::solve(info_mat,normal_mat);
+			covar_0 = arma::inv(info_mat);
 
-
-			arma::vec::fixed<3> domega_state = arma::solve(Lambda_prime.t() * Lambda_prime,Lambda_prime.t() * normal_mat);
-
-			covar_omega_0 = arma::inv(Lambda_prime.t() * Lambda_prime);
-		
 		#if BATCH_ATTITUDE_DEBUG
-			std::cout << "\tDeviation on angular velocity: " << domega_state.t() << std::endl;
-			std::cout << "\tCovariance in omega_0 :\n" << covar_omega_0 << std::endl;
+			std::cout << "\tDeviation on angular velocity: " << dX0.subvec(3,5).t() << std::endl;
+			std::cout << "\tCovariance in X_0 :\n" << covar_0 << std::endl;
 			std::cout << "\tApplying deviation\n";
 		#endif
 
-			this -> state_estimate_at_epoch.subvec(3,5) += domega_state;
+			this -> state_estimate_at_epoch.subvec(3,5) += dX0.subvec(3,5);
 
 			#if BATCH_ATTITUDE_DEBUG
 			std::cout << "\tInitial state after update: " << this -> state_estimate_at_epoch.t() << std::endl;
@@ -164,8 +158,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	}
 
 	try{
-		this -> state_covariance_at_epoch = arma::zeros<arma::mat>(6,6);
-		this -> state_covariance_at_epoch.submat(3,3,5,5) = covar_omega_0;
+		this -> state_covariance_at_epoch.submat(3,3,5,5) = covar_0;
 
 		for (int k = 0; k < stms.size(); ++k){
 			this -> attitude_state_history.push_back(state_history[k]);
@@ -192,6 +185,7 @@ void BatchAttitude::build_normal_equations(
 	residual_vector.fill(0);
 	
 	info_mat.fill(0);
+	info_mat.submat(0,0,2,2) = 1e20 * arma::eye<arma::mat>(3,3);
 
 	normal_mat.fill(0);
 

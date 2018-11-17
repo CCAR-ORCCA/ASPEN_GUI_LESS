@@ -89,7 +89,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		this -> lidar -> get_los_noise_sd_baseline(),
 		&this -> all_registered_pc,
 		this -> filter_arguments -> get_N_iter_bundle_adjustment() ,
-		3,
+		this -> filter_arguments -> get_ba_h(),
 		&this -> LN_t0,
 		&this -> x_t0,
 		dir);

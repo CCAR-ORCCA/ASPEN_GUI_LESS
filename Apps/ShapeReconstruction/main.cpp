@@ -96,6 +96,8 @@ int main() {
 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
 	int N_ITER_BUNDLE_ADJUSTMENT = input_data["N_ITER_BUNDLE_ADJUSTMENT"];
 	int N_ITER_SHAPE_FILTER = input_data["N_ITER_SHAPE_FILTER"];
+	int BA_H = input_data["BA_H"];
+
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
@@ -166,7 +168,7 @@ int main() {
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
-
+	args.set_ba_h(BA_H);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/

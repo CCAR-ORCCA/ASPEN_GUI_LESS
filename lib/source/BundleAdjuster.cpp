@@ -823,8 +823,8 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 			int neighbor = (*neighbor_it);
 
-			if (std::abs(neighbor - *(--cluster.end())) <= this -> cluster_size){
-				// If this neighbor and the one that preceeded it in the cluster
+			if (std::abs(neighbor - *(cluster.begin())) <= this -> cluster_size){
+				// If this neighbor and the one that started the cluster
 				// are less than this -> cluster_size appart
 				// then the neighbor belongs to the same cluster
 				cluster.insert(neighbor);
@@ -858,7 +858,7 @@ void BundleAdjuster::remove_edges_from_graph(){
 			for (auto index : clusters[k]){
 				std::cout << index << ", ";
 			}
-			std::cout << std::endl;
+			std::cout << ")" << std::endl;
 		}
 
 		#endif

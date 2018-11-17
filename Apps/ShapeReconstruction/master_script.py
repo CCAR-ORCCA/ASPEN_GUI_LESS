@@ -40,6 +40,7 @@ all_data = [
 "MAX_TRIANGLE_SIZE" : 5,
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
+"BA_H" : 4,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "USE_BA" : True,
 "USE_ICP" : True,
