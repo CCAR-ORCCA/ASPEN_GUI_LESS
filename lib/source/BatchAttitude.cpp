@@ -158,7 +158,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	}
 
 	try{
-		this -> state_covariance_at_epoch.submat(3,3,5,5) = covar_0;
+		this -> state_covariance_at_epoch = covar_0;
 
 		for (int k = 0; k < stms.size(); ++k){
 			this -> attitude_state_history.push_back(state_history[k]);
