@@ -168,7 +168,6 @@ int main() {
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
-	args.set_ba_h(BA_H);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
@@ -286,7 +285,8 @@ int main() {
 	shape_filter_args.set_max_triangle_size(MAX_TRIANGLE_SIZE);
 	shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
 	shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
-
+	shape_filter_args.set_ba_h(BA_H);
+	
 
 	std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
 	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
