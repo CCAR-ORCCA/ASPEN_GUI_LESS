@@ -327,9 +327,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			else if (time_index == times.n_rows - 1){
 
 				
-				if (this -> filter_arguments -> get_use_ba())
+				if (this -> filter_arguments -> get_use_ba()){
+					this -> filter_arguments -> set_ba_h(0);
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
-
+				}
 				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 				
