@@ -368,7 +368,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 		arma::mat::fixed<3,3> R_n = sigma_angle * sigma_angle / 2 * (arma::eye<arma::mat>(3,3) - n * n.t());
 
-		double sigma_y_squared = arma::dot(mapping_vector.t(),R_n,mapping_vector.t());
+		double sigma_y_squared = arma::dot(mapping_vector.t(),R_n * mapping_vector.t());
 
 
 		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(dcm_D * p_D.get_normal_coordinates(),
