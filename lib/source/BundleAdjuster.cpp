@@ -360,8 +360,8 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		// Uncertainty on measurement
 		
 		arma::rowvec::fixed<3> mapping_vector = (
-			dcm_S * p_S.get_point_coordinates() + X_pcs.at(point_cloud_pair.S_k)
-			- dcm_D * p_D.get_point_coordinates() - X_pcs.at(point_cloud_pair.D_k)).t() * dcm_D ;
+			dcm_S * p_S.get_point_coordinates() + x_S
+			- dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
 		
 		arma::vec::fixed<3> e = {1,0,0};
 		double sigma_angle = 0.1; //5.7 deg of uncertainty
@@ -374,7 +374,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(dcm_D * p_D.get_normal_coordinates(),
 			(dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
 			+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
-			* (dcm_D * p_D.get_normal_coordinates()).t());
+			* dcm_D * p_D.get_normal_coordinates());
 
 
 		Lambda_k +=  H_ki.t() * H_ki / sigma_y_squared;
