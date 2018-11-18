@@ -384,6 +384,10 @@ int main() {
 	std::cout << "Initial Estimated state: " << std::endl;
 	std::cout << X0_estimated.t() << std::endl;
 
+
+	std::cout << "Initial Estimated state covariance: " << std::endl;
+	std::cout << P0 << std::endl;
+
 	std::cout << "Initial Error: " << std::endl;
 	std::cout << (X0_true-X0_estimated).t() << std::endl;
 
