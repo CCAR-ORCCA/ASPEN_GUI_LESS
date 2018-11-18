@@ -358,34 +358,27 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 
 		// Uncertainty on measurement
-		// arma::vec::fixed<3> mapping_vector_1 = (
-		// 	dcm_S * M_pcs.at(point_cloud_pair.S_k) 
-		// 	+ dcm_D * M_pcs.at(point_cloud_pair.D_k)).t() * (dcm_D * p_D.get_normal_coordinates());
-
-
-		// arma::rowvec::fixed<3> mapping_vector_2 = (
-		// 	dcm_S * M_pcs.at(point_cloud_pair.S_k) * p_S.get_point_coordinates() + X_pcs.at(point_cloud_pair.S_k)
-		// 	- dcm_D * M_pcs.at(point_cloud_pair.D_k) * p_D.get_point_coordinates() - X_pcs.at(point_cloud_pair.D_k)).t() * dcm_D ;
+		
+		arma::rowvec::fixed<3> mapping_vector = (
+			dcm_S * p_S.get_point_coordinates() + X_pcs.at(point_cloud_pair.S_k)
+			- dcm_D * p_D.get_point_coordinates() - X_pcs.at(point_cloud_pair.D_k)).t() * dcm_D ;
 		
 		arma::vec::fixed<3> e = {1,0,0};
+		double sigma_angle = 0.1; //5.7 deg of uncertainty
 
-		// arma::mat::fixed<3,3> P_n = (arma::eye<arma::mat>(3,3) - n * n.t());//assume the normal can vary 
-		
-		// double sigma_y = this -> sigma_rho * std::sqrt(arma::dot(mapping_vector_1,e * e.t() * mapping_vector_1)
-		// 	+ arma::dot(mapping_vector_2.t(),P_n * mapping_vector_2.t()));
+		arma::mat::fixed<3,3> R_n = sigma_angle * sigma_angle / 2 * (arma::eye<arma::mat>(3,3) - n * n.t());
+
+		double sigma_y_squared = arma::dot(mapping_vector.t(),R_n,mapping_vector.t());
 
 
+		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(dcm_D * p_D.get_normal_coordinates(),
+			(dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
+			+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
+			* (dcm_D * p_D.get_normal_coordinates()).t());
 
-		arma::vec::fixed<3> epsilon_vec = (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D);
-		arma::mat::fixed<3,3> mapping_mat = (
-			dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
-			+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t());
 
-		double sigma_y = this -> sigma_rho / arma::norm(epsilon_vec) * std::sqrt(
-			arma::dot(epsilon_vec,mapping_mat * epsilon_vec));
-
-		Lambda_k +=  H_ki.t() * H_ki / std::pow(sigma_y,2);
-		N_k +=  H_ki.t() * y_ki / std::pow(sigma_y,2);
+		Lambda_k +=  H_ki.t() * H_ki / sigma_y_squared;
+		N_k +=  H_ki.t() * y_ki / sigma_y_squared;
 
 	}
 
