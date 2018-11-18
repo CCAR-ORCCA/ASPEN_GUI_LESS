@@ -48,7 +48,7 @@
 
 int main() {
 		assert(1 == 0);
-	
+
 	// Loading case parameters from file
 	arma::arma_rng::set_seed(0);
 
@@ -373,7 +373,7 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
 		};
 
-		assert(P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt"),arma::raw_ascii);
+		assert(P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii));
 	}
 
 // A-priori covariance on spacecraft state and asteroid state.
