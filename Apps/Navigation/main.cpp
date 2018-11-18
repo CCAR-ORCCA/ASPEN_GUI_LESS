@@ -61,7 +61,7 @@ int main() {
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
 
 	
-	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR);
+	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "output_file_from_shape_reconstruction.json");
 	nlohmann::json shape_reconstruction_output_data;
 	j >> shape_reconstruction_output_data;
 
@@ -371,12 +371,12 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
 		};
 
+		assert(P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt"));
+
 	}
 
 // A-priori covariance on spacecraft state and asteroid state.
 	
-
-
 
 	std::cout << "True State: " << std::endl;
 	std::cout << X0_true.t() << std::endl;

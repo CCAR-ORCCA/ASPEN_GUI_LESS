@@ -38,7 +38,7 @@ all_data = [{
 "INSTRUMENT_FREQUENCY" : 1./3600,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/output_file_from_shape_reconstruction.json",
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
 "USE_TRUE_STATES": False,
 "INPUT_DIR" : base_location + "Navigation/input/test_0",
 "OUTPUT_DIR" : base_location + "Navigation/output/test_0",
