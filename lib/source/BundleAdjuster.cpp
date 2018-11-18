@@ -899,7 +899,9 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 
 
-
+void BundleAdjuster::set_h(int h){
+	this -> h = h;
+}
 
 
 

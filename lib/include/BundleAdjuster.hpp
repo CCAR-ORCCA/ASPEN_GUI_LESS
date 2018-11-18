@@ -43,6 +43,8 @@ public:
 		bool save_connectivity);
 
 
+	void set_h(int h);
+
 
 	struct PointCloudPair {
 		int S_k = -1;

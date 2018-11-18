@@ -328,7 +328,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				
 				if (this -> filter_arguments -> get_use_ba()){
-					this -> filter_arguments -> set_ba_h(0);
+					ba_test.set_h(0);
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
 				}
 				std::cout << " -- Saving attitude ...\n";
