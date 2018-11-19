@@ -278,15 +278,10 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 	if (!this -> use_true_pairs){
 
 
-		if (point_cloud_pair.S_k == 0 || point_cloud_pair.D_k == 0 ){
+		
+		active_h = this -> h;
 
-			active_h = 4;
-		}
-		else{
-
-			active_h = this -> h;
-
-		}
+		
 
 		IterativeClosestPointToPlane::compute_pairs(point_pairs,
 			this -> all_registered_pc -> at(point_cloud_pair.S_k),
@@ -432,15 +427,10 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		if (!this -> use_true_pairs){
 
 
-			if (point_cloud_pair.S_k == 0 || point_cloud_pair.D_k == 0 ){
+			
+			active_h = this -> h;
 
-				active_h = 0;
-			}
-			else{
-
-				active_h = this -> h;
-
-			}
+			
 
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(point_cloud_pair.S_k),
