@@ -166,6 +166,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					mrps_LN);
 
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
+				
 				icp_pc.register_pc(M_pc_a_priori,X_pc_a_priori);
 
 			// These two align the consecutive point clouds 

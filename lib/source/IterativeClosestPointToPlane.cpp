@@ -241,15 +241,22 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,
 	const arma::vec::fixed<3> & D_i = this -> pc_destination -> get_point_coordinates(point_pairs[pair_index].second);
 	const arma::vec::fixed<3> & n_i = this -> pc_destination -> get_normal_coordinates(point_pairs[pair_index].second);
 
+	arma::vec::fixed<3> e = {1,0,0};
+	arma::vec::fixed<3> u_S = RBK::mrp_to_dcm(mrp) * e;
+
+	double sigma_rho_sq = (5e-1) * (5e-1);
+	double sigma_y_sq = sigma_rho_sq * arma::dot(n,RBK::mrp_to_dcm(mrp) * u_S * u_S.t( ) * 
+		RBK::mrp_to_dcm(mrp).t() + 0);
+
 	// The partial derivative of the observation model is computed
 	arma::rowvec::fixed<6> H = arma::zeros<arma::rowvec>(6);
 
 	H.subvec(0,2) = - n_i.t();
 	H.subvec(3,5) = - 4 * n_i.t() * RBK::tilde(RBK::mrp_to_dcm(mrp) * S_i);
 
-	info_mat_temp = w * H.t() * H;
+	info_mat_temp = H.t() * H / sigma_y_sq;
 
-	normal_mat_temp = w * H.t() * (arma::dot(n_i.t(),RBK::mrp_to_dcm(mrp) * S_i + x - D_i));
+	normal_mat_temp =  H.t() * (arma::dot(n_i.t(),RBK::mrp_to_dcm(mrp) * S_i + x - D_i)) / sigma_y_sq;
 	
 }
 
