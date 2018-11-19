@@ -36,9 +36,6 @@ double IterativeClosestPointToPlane::compute_distance(const PointPair & point_pa
 		dcm_D * pc_D -> get_normal_coordinates(point_pair.second));
 }
 
-
-
-
 void IterativeClosestPointToPlane::compute_pairs(int h,
 	const arma::mat::fixed<3,3> & dcm ,
 	const arma::vec::fixed<3> & x ) {

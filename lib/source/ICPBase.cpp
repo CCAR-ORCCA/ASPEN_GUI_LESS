@@ -1076,7 +1076,7 @@ double ICPBase::compute_residuals(
 		}
 	}
 
-	return J;
+	return std::sqrt(J);
 }
 
 
