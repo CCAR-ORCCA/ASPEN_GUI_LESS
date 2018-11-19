@@ -40,7 +40,8 @@ public:
 		std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 		std::vector<arma::mat::fixed<3,3> > & BN_measured,
 		const std::vector<arma::vec::fixed<3> > & mrps_LN,
-		bool save_connectivity);
+		bool save_connectivity,
+		bool apply_deviation = true);
 
 
 	void set_h(int h);
@@ -93,7 +94,7 @@ protected:
 	void apply_deviation(const EigVec & deviation);
 
 	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-		const std::map<int,arma::vec::fixed<3> > & X_pcs);
+		const std::map<int,arma::vec::fixed<3> > & X_pcs,bool apply_deviation = true);
 
 
 	void create_pairs();

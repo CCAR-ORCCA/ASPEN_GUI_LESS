@@ -57,7 +57,8 @@ void BundleAdjuster::run(
 	std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 	std::vector<arma::mat::fixed<3,3> > & BN_measured,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
-	bool save_connectivity){
+	bool save_connectivity,
+	bool apply_deviation){
 
 
 	int Q = this -> all_registered_pc -> size();
@@ -74,7 +75,7 @@ void BundleAdjuster::run(
 	if (this -> N_iter > 0){
 		
 		// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment(M_pcs,X_pcs);
+		this -> solve_bundle_adjustment(M_pcs,X_pcs,apply_deviation);
 
 	}	
 
@@ -102,7 +103,7 @@ void BundleAdjuster::run(
 
 
 void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-	const std::map<int,arma::vec::fixed<3> > & X_pcs){
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,bool apply_deviation){
 	int Q = this -> all_registered_pc -> size();
 
 
@@ -185,14 +186,19 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 		EigVec deviation = chol.solve(Nmat);    
 
 		// It is applied to all of the point clouds (minus the first one)
-		std::cout << "\n- Applying the deviation" << std::endl;
+		if (apply_deviation){
+			std::cout << "\n- Applying the deviation" << std::endl;
 
-		this -> apply_deviation(deviation);
-		std::cout << "\n- Updating the point cloud pairs" << std::endl;
+			this -> apply_deviation(deviation);
+			std::cout << "\n- Updating the point cloud pairs" << std::endl;
 
 		// The point cloud pairs are updated: their residuals are updated
 		// and the rigid transforms positioning them are also updated
-		this -> update_point_cloud_pairs();
+			this -> update_point_cloud_pairs();
+		}
+		else{
+			std::cout << "Not applying deviations, just extracting covariances\n";
+		}
 
 		// The covariances are extracted
 
@@ -363,9 +369,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 			dcm_S * p_S.get_point_coordinates() + x_S
 			- dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
 		
-		arma::vec::fixed<3> e = {1,
-			0,
-			0};
+		arma::vec::fixed<3> e = {1,0,0};
 		double sigma_angle = 0.3; //5.7 deg of uncertainty
 
 		arma::mat::fixed<3,3> R_n = std::pow(sigma_angle,2) / 2 * (arma::eye<arma::mat>(3,3) - n * n.t());
@@ -376,7 +380,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(
 			dcm_D * p_D.get_normal_coordinates(),
 			(dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
-			+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
+				+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
 			* dcm_D * p_D.get_normal_coordinates());
 
 
