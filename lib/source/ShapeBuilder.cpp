@@ -222,8 +222,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				for (int k = 1; k <= time_index;++k){
 					std::cout << "\n\t At index k = " << k << std::endl;
-					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
-					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
+					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]) << std::endl;
+					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()) << std::endl;
 					std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
 				
 				}
@@ -235,8 +235,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				for (int k = 1; k <= time_index;++k){
 					std::cout << "\n\t At index k = " << k << std::endl;
-					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
-					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
+					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]) << std::endl;
+					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()) << std::endl;
 					std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
 					
 				}
