@@ -148,7 +148,7 @@ protected:
 	double s_tol = 1e-2;
 	double neighborhood_radius = -1;
 
-	unsigned int iterations_max = 100;
+	unsigned int iterations_max = 1000;
 	unsigned int minimum_h = 0;
 	unsigned int maximum_h = 7;
 	unsigned int N_bins = 3;
