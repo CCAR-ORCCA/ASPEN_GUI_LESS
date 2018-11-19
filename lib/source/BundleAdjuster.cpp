@@ -363,15 +363,18 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 			dcm_S * p_S.get_point_coordinates() + x_S
 			- dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
 		
-		arma::vec::fixed<3> e = {1,0,0};
-		double sigma_angle = 0.1; //5.7 deg of uncertainty
+		arma::vec::fixed<3> e = {1,
+			0,
+			0};
+		double sigma_angle = 0.3; //5.7 deg of uncertainty
 
-		arma::mat::fixed<3,3> R_n = sigma_angle * sigma_angle / 2 * (arma::eye<arma::mat>(3,3) - n * n.t());
+		arma::mat::fixed<3,3> R_n = std::pow(sigma_angle,2) / 2 * (arma::eye<arma::mat>(3,3) - n * n.t());
 
 		double sigma_y_squared = arma::dot(mapping_vector.t(),R_n * mapping_vector.t());
 
 
-		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(dcm_D * p_D.get_normal_coordinates(),
+		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(
+			dcm_D * p_D.get_normal_coordinates(),
 			(dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
 			+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
 			* dcm_D * p_D.get_normal_coordinates());
