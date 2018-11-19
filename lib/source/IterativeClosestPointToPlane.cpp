@@ -245,8 +245,8 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,
 	arma::vec::fixed<3> u_S = RBK::mrp_to_dcm(mrp) * e;
 
 	double sigma_rho_sq = (5e-1) * (5e-1);
-	double sigma_y_sq = sigma_rho_sq * arma::dot(n,RBK::mrp_to_dcm(mrp) * u_S * u_S.t( ) * 
-		RBK::mrp_to_dcm(mrp).t() + 0);
+	double sigma_y_sq = sigma_rho_sq * arma::dot(n_i,RBK::mrp_to_dcm(mrp) * u_S * u_S.t( ) * 
+		RBK::mrp_to_dcm(mrp).t() + 0,n_i);
 
 	// The partial derivative of the observation model is computed
 	arma::rowvec::fixed<6> H = arma::zeros<arma::rowvec>(6);
