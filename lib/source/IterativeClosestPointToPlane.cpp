@@ -180,7 +180,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 			arma::vec n = dcm_D * destination_pc -> get_normal_coordinates(destination_source_dist_vector[i].first);
 			arma::vec D = dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
 
-			formed_pairs.push_back(std::make_pair(i,std::pow(arma::dot(n,S - D),2)));
+			formed_pairs.push_back(std::make_pair(i,arma::dot(n,S - D)));
 		}
 	}	
 
@@ -204,11 +204,9 @@ void IterativeClosestPointToPlane::compute_pairs(
 	double mean = arma::mean(dist_vec);
 	double sd = arma::stddev(dist_vec);
 
-	
-
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
-		if (std::abs(dist_vec(i) - mean) <= sd){
+		if (std::abs(dist_vec(i) - mean) <= 3 * sd){
 			
 			point_pairs.push_back(
 				std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
@@ -217,7 +215,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 		}
 
 	}
-
 
 	#if ICP2P_DEBUG
 	std::cout << "\tMean pair distance : " << mean << std::endl;

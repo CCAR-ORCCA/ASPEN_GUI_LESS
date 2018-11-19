@@ -841,14 +841,13 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 			}
 
-			if (neighbor_it == (--neighbors.end())){
-				clusters.push_back(cluster);
-				cluster.clear();
-			}
+			
 
 		}
 
-		assert(cluster.size() == 0);
+		if (cluster.size() != 0){
+			clusters.push_back(cluster);
+		}
 
 
 		#if BUNDLE_ADJUSTER_DEBUG
