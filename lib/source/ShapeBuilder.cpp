@@ -174,9 +174,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				X_pc = icp_pc.get_x();
 				R_pcs[time_index] = icp_pc.get_R();
 			}
-				/****************************************************************************/
-				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
-			
+				
 			M_pcs_true[time_index] = this -> LB_t0 * dcm_LB.t();
 			X_pcs_true[time_index] = M_pcs_true[time_index] *(- this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L")) - this -> LN_t0 * this -> x_t0;
 
@@ -185,6 +183,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			std::cout << "x: " << (X_pc - X_pcs_true[time_index]).t() << std::endl;
 			std::cout << "sigma: " << RBK::dcm_to_mrp(M_pc * M_pcs_true[time_index].t()).t();
 
+			/****************************************************************************/
+				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
+			
 			if (this -> filter_arguments -> get_use_true_rigid_transforms()){
 				std::cout << "MAKES ICP USE TRUE RIGID TRANSFORMS\n";
 				M_pc = M_pcs_true[time_index];
@@ -223,6 +224,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << "\n\t At index k = " << k << std::endl;
 					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
 					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
+					std::cout << "\t\t covariance: " << R_pcs[k] << std::endl;
+				
 				}
 
 
@@ -234,6 +237,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << "\n\t At index k = " << k << std::endl;
 					std::cout << "\t\t x: " << arma::norm((X_pcs[k] - X_pcs_true[k])) << std::endl;
 					std::cout << "\t\t sigma: " << arma::norm(RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t())) << std::endl;
+					std::cout << "\t\t covariance: " << R_pcs[k] << std::endl;
+					
 				}
 
 
