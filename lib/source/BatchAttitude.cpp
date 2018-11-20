@@ -89,7 +89,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	std::cout << "In BatchAttitude::run\n";
 	#endif
 
-	int N_iter = 10;
+	int N_iter = 30;
 
 	std::vector<arma::vec::fixed<6> > state_history;
 	std::vector<arma::mat::fixed<6,6> > stms;
@@ -185,7 +185,7 @@ void BatchAttitude::build_normal_equations(
 	residual_vector.fill(0);
 	
 	info_mat.fill(0);
-	info_mat.submat(0,0,2,2) = 1e20 * arma::eye<arma::mat>(3,3);
+	info_mat.submat(0,0,2,2) = 1e30 * arma::eye<arma::mat>(3,3);
 
 	normal_mat.fill(0);
 
