@@ -161,7 +161,7 @@ void ICPBase::register_pc(
 		Going down to the lower hierarchical level
 		****************************************/
 
-			if ( next_h == true && this -> hierarchical || h == 0) {
+			if ( (next_h == true && this -> hierarchical) || h == 0) {
 				// The pairs are formed only after a change in the hierchical search
 				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
 				next_h = false;
