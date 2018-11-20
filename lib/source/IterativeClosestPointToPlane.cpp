@@ -223,11 +223,14 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 
 
-void IterativeClosestPointToPlane::build_matrices(const int pair_index,
+void IterativeClosestPointToPlane::build_matrices(
+	const int pair_index,
 	const arma::vec::fixed<3> & mrp, 
 	const arma::vec::fixed<3> & x,
 	arma::mat::fixed<6,6> & info_mat_temp,
 	arma::vec::fixed<6> & normal_mat_temp,
+	arma::vec & residual_vector,
+	arma::vec & sigma_vector,
 	const double & w,
 	const double & los_noise_sd_baseline,
 	const arma::mat::fixed<3,3> & M_pc_D){
@@ -264,6 +267,10 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,
 	info_mat_temp = H.t() * H / sigma_y_sq;
 
 	normal_mat_temp =  H.t() * (arma::dot(n_i.t(),dcm_S * S_i + x - D_i)) / sigma_y_sq;
+		
+	residual_vector(pair_index) = arma::dot(n_i.t(),dcm_S * S_i + x - D_i);
+	sigma_vector(pair_index) = std::sqrt(sigma_y_sq);
+
 	
 }
 

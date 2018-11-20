@@ -118,6 +118,7 @@ void ICPBase::register_pc(
 
 	arma::mat::fixed<6,6> info_mat;
 	arma::vec::fixed<6> normal_mat;
+	arma::vec residual_vector,sigma_vector;
 
 	// The batch estimator is initialized
 	this -> mrp = RBK::dcm_to_mrp(dcm_0);
@@ -187,6 +188,8 @@ void ICPBase::register_pc(
 			// The matrices of the LS problem are now accumulated
 			info_mat.fill(0);
 			normal_mat.fill(0);
+			residual_vector.resize(this -> point_pairs.size());
+			sigma_vector.resize(this -> point_pairs.size());
 
 		#if !__APPLE__
 		#pragma omp parallel for reduction(+:info_mat), reduction(+:normal_mat) if (USE_OMP_ICP)
@@ -199,6 +202,8 @@ void ICPBase::register_pc(
 					this -> x,
 					info_mat_temp,
 					normal_mat_temp,
+					residual_vector,
+					sigma_vector,
 					1,
 					los_noise_sd_baseline,
 					M_pc_D);
@@ -206,7 +211,6 @@ void ICPBase::register_pc(
 
 				normal_mat += normal_mat_temp;
 				info_mat += info_mat_temp;
-
 
 			}
 
@@ -219,6 +223,8 @@ void ICPBase::register_pc(
 			std::cout << info_mat << std::endl;
 			std::cout << "\nNormal mat: " << std::endl;
 			std::cout << normal_mat << std::endl;
+			std::cout << "\nNormalized residuals: \n";
+			std::cout << arma::stddev(residual_vector/sigma_vector) << std::endl;
 			#endif
 
 			// The state deviation [dmrp,dx] is solved for

@@ -62,8 +62,12 @@ protected:
 
 
 	virtual void build_matrices(const int pair_index,const arma::vec::fixed<3> & mrp, 
-		const arma::vec::fixed<3> & x,arma::mat::fixed<6,6> & info_mat_temp,
-		arma::vec::fixed<6> & normal_mat_temp,const double & w,
+		const arma::vec::fixed<3> & x,
+		arma::mat::fixed<6,6> & info_mat_temp,
+		arma::vec::fixed<6> & normal_mat_temp,
+		arma::vec & residual_vector,
+		arma::vec & sigma_vector,
+		const double & w,
 		const double & los_noise_sd_baseline,
 		const arma::mat::fixed<3,3> & M_pc_D);
 
