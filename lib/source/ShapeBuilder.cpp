@@ -339,10 +339,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					ba_test.set_h(0);
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,true);
 
-					// Recomputing a BA run but without applying the deviation 
-					// to the point clouds. Just computing covariances
-					ba_test.set_h(5);
-					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,false);
+					
 				}
 				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
@@ -893,7 +890,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	};
 	
 
-	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
+	iod_finder.run_pso(lower_bounds, upper_bounds,0,guess);
 	epoch_state = iod_finder.get_result();
 	final_state = arma::zeros<arma::vec>(epoch_state.n_rows);
 

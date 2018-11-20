@@ -647,16 +647,18 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		M_pcs[i] = NS_bar * M_pcs[i];
 		X_pcs[i] = NS_bar * X_pcs[i] + x;
 
-		const auto & m = this -> Pdense.block<6,6>(x_index,x_index);
+		// Not using the bundle adjuster covariances
 
-		arma::mat::fixed<6,6> R;
-		for (int k = 0; k < 6; ++k){
-			for (int p = 0; p < 6; ++p){
-				R(k,p) = m(k,p);
-			}
-		}
+		// const auto & m = this -> Pdense.block<6,6>(x_index,x_index);
 
-		R_pcs[i] = R;
+		// arma::mat::fixed<6,6> R;
+		// for (int k = 0; k < 6; ++k){
+		// 	for (int p = 0; p < 6; ++p){
+		// 		R(k,p) = m(k,p);
+		// 	}
+		// }
+
+		// R_pcs[i] = R;
 
 		// The small body attitude is fixed
 		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
