@@ -167,8 +167,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
 				
-				icp_pc.register_pc(M_pc_a_priori,X_pc_a_priori);
-					throw;
+				icp_pc.register_pc(
+					this -> filter_arguments -> get_los_noise_sd_baseline(),
+					M_pcs.at(time_index - 1),
+					M_pc_a_priori,
+					X_pc_a_priori
+					);
 
 			// These two align the consecutive point clouds 
 			// in the instrument frame at t_D == t_0
@@ -176,7 +180,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				X_pc = icp_pc.get_x();
 				R_pcs[time_index] = icp_pc.get_R();
 			}
-				
+
 			M_pcs_true[time_index] = this -> LB_t0 * dcm_LB.t();
 			X_pcs_true[time_index] = M_pcs_true[time_index] *(- this -> frame_graph -> convert(arma::zeros<arma::vec>(3),"B","L")) - this -> LN_t0 * this -> x_t0;
 
@@ -227,7 +231,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
 					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
 					std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
-				
+
 				}
 
 
@@ -1510,7 +1514,10 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 		icp_pc_prealign.clear_point_pairs();
 		icp_pc_prealign.set_minimum_h(4);
-		icp_pc_prealign.register_pc(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+		icp_pc_prealign.register_pc(this -> filter_arguments -> get_los_noise_sd_baseline(),
+			M_pcs.at(std::max(0,time_index - 2)),
+			M_pcs.at(time_index - 1),
+			X_pcs.at(time_index - 1));
 
 		M_pc_a_priori = icp_pc_prealign.get_dcm();
 		X_pc_a_priori = icp_pc_prealign.get_x();

@@ -44,6 +44,8 @@ public:
 
 	
 	void register_pc(
+		double los_noise_sd_baseline,
+		const arma::mat::fixed<3,3> & M_pc_D,
 		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & X_0  = arma::zeros<arma::vec>(3));
 
@@ -125,7 +127,9 @@ protected:
 		const arma::vec::fixed<3> & x,
 		arma::mat::fixed<6,6> & info_mat_temp,
 		arma::vec::fixed<6> & normal_mat_temp,
-		const double & w) = 0;
+		const double & w,
+		const double & los_noise_sd_baseline,
+		const arma::mat::fixed<3,3> & M_pc_D) = 0;
 
 	void pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const;
 
@@ -147,6 +151,7 @@ protected:
 	double r_tol = 1e-8;
 	double s_tol = 1e-2;
 	double neighborhood_radius = -1;
+	double sigma_rho_sq;
 
 	unsigned int iterations_max = 100;
 	unsigned int minimum_h = 0;

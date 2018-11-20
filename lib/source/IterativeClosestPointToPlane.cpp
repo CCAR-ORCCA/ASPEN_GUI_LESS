@@ -228,129 +228,140 @@ void IterativeClosestPointToPlane::build_matrices(const int pair_index,
 	const arma::vec::fixed<3> & x,
 	arma::mat::fixed<6,6> & info_mat_temp,
 	arma::vec::fixed<6> & normal_mat_temp,
-	const double & w){
+	const double & w,
+	const double & los_noise_sd_baseline,
+	const arma::mat::fixed<3,3> & M_pc_D){
 
 
 	const arma::vec::fixed<3> & S_i = this -> pc_source -> get_point_coordinates(point_pairs[pair_index].first);
 	const arma::vec::fixed<3> & D_i = this -> pc_destination -> get_point_coordinates(point_pairs[pair_index].second);
 	const arma::vec::fixed<3> & n_i = this -> pc_destination -> get_normal_coordinates(point_pairs[pair_index].second);
 
-	// arma::vec::fixed<3> e = {1,0,0};
-	// arma::vec::fixed<3> u_S = RBK::mrp_to_dcm(mrp) * e;
+	arma::vec::fixed<3> e = {1,0,0};
 
-	// double sigma_rho_sq = (5e-1) * (5e-1);
-	// double sigma_y_sq = sigma_rho_sq * arma::dot(n_i,RBK::mrp_to_dcm(mrp) * u_S * u_S.t( ) * RBK::mrp_to_dcm(mrp).t() * n_i);
+	// The noise statistics of each measurement is different.
+	// The measurements are uncorrelated but the corresponding R matrix is not proportional to the identity (but only diagonal)
+	arma::mat::fixed<3,3> dcm_S = RBK::mrp_to_dcm(mrp) ;
+	double sigma_y_sq = std::pow(los_noise_sd_baseline,2) * arma::dot(n_i,
+		(dcm_S * e * e.t() * dcm_S.t() 
+		+ M_pc_D * e * e.t() *   M_pc_D.t()) * n_i);
 
 
-	double sigma_y_sq = 1;
+	// the normal is also uncertain
+	double sigma_theta = 20. * arma::datum::pi / 180.; // assume are known within a 20 degree cone
+	arma::mat::fixed<3,3> P_n = std::pow(sigma_theta,2) / 2 * (arma::eye<arma::mat>(3,3) - n_i * n_i.t());
+
+	sigma_y_sq += arma::dot(dcm_S * S_i + x - D_i,
+		P_n * (dcm_S * S_i + x - D_i));
+
 
 	// The partial derivative of the observation model is computed
 	arma::rowvec::fixed<6> H = arma::zeros<arma::rowvec>(6);
 
 	H.subvec(0,2) = - n_i.t();
-	H.subvec(3,5) = - 4 * n_i.t() * RBK::tilde(RBK::mrp_to_dcm(mrp) * S_i);
+	H.subvec(3,5) = - 4 * n_i.t() * RBK::tilde(dcm_S * S_i);
 
 	info_mat_temp = H.t() * H / sigma_y_sq;
 
-	normal_mat_temp =  H.t() * (arma::dot(n_i.t(),RBK::mrp_to_dcm(mrp) * S_i + x - D_i)) / sigma_y_sq;
+	normal_mat_temp =  H.t() * (arma::dot(n_i.t(),dcm_S * S_i + x - D_i)) / sigma_y_sq;
 	
 }
 
 
 
-void IterativeClosestPointToPlane::ransac(
-	const std::vector<PointPair> & all_pairs,
-	int N_feature_pairs,
-	int minimum_N_icp_pairs,
-	double residuals_threshold,
-	int N_iter_ransac,
-	std::shared_ptr<PC> pc_source,
-	std::shared_ptr<PC> pc_destination,
-	arma::mat::fixed<3,3> & dcm_ransac,
-	arma::vec::fixed<3> & x_ransac,
-	std::vector< PointPair > & matches_ransac){
+// void IterativeClosestPointToPlane::ransac(
+// 	const std::vector<PointPair> & all_pairs,
+// 	int N_feature_pairs,
+// 	int minimum_N_icp_pairs,
+// 	double residuals_threshold,
+// 	int N_iter_ransac,
+// 	std::shared_ptr<PC> pc_source,
+// 	std::shared_ptr<PC> pc_destination,
+// 	arma::mat::fixed<3,3> & dcm_ransac,
+// 	arma::vec::fixed<3> & x_ransac,
+// 	std::vector< PointPair > & matches_ransac){
 
 
-	double J_best = std::numeric_limits<double>::infinity();
-	std::vector<PointPair> best_pairs;
+// 	double J_best = std::numeric_limits<double>::infinity();
+// 	std::vector<PointPair> best_pairs;
 
-	for (int iter = 0; iter < N_iter_ransac; ++iter){
+// 	for (int iter = 0; iter < N_iter_ransac; ++iter){
 
-		#if RANSAC_DEBUG
-		std::cout << "RANSAC iteration " << iter + 1 << "/" << N_iter_ransac << std::endl;
-		#endif
+// 		#if RANSAC_DEBUG
+// 		std::cout << "RANSAC iteration " << iter + 1 << "/" << N_iter_ransac << std::endl;
+// 		#endif
 
-		// Creating the icp instance
-		IterativeClosestPointToPlane icp;
-		icp.set_pc_source(pc_source);
-		icp.set_pc_destination(pc_destination);
-
-
-		#if RANSAC_DEBUG
-		std::cout << "\tSampling arbitrary feature pairs" << std::endl;
-		#endif
+// 		// Creating the icp instance
+// 		IterativeClosestPointToPlane icp;
+// 		icp.set_pc_source(pc_source);
+// 		icp.set_pc_destination(pc_destination);
 
 
-		// Sampling random feature correspondance pairs
-		std::vector< PointPair > kept_matches;
-		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
-		for (int j = 0; j < N_feature_pairs; ++j){
-			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
-		}
-		icp.set_pairs(kept_matches);
+// 		#if RANSAC_DEBUG
+// 		std::cout << "\tSampling arbitrary feature pairs" << std::endl;
+// 		#endif
+
+
+// 		// Sampling random feature correspondance pairs
+// 		std::vector< PointPair > kept_matches;
+// 		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
+// 		for (int j = 0; j < N_feature_pairs; ++j){
+// 			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
+// 		}
+// 		icp.set_pairs(kept_matches);
 		
-		// Registering using these pairs
-		icp.register_pc();
+// 		// Registering using these pairs
+// 		icp.register_pc();
 
 
-		arma::vec::fixed<3> x = icp.get_x();
-		arma::mat::fixed<3,3> dcm = icp.get_dcm();
+// 		arma::vec::fixed<3> x = icp.get_x();
+// 		arma::mat::fixed<3,3> dcm = icp.get_dcm();
 
-		// Computing the point pairs arising from the ICP cost function
-		try{
-			icp.compute_pairs(6,icp.get_dcm(),icp.get_x());
-		}
-		catch(ICPNoPairsException & e){
-			continue;
-		}
-		// Getting the ICP pairs
-		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
+// 		// Computing the point pairs arising from the ICP cost function
+// 		try{
+// 			icp.compute_pairs(6,icp.get_dcm(),icp.get_x());
+// 		}
+// 		catch(ICPNoPairsException & e){
+// 			continue;
+// 		}
+// 		// Getting the ICP pairs
+// 		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
 
 
-		#if RANSAC_DEBUG
-		std::cout << "\tRANSAC: Got " << icp_pairs.size() << " active ICP pairs" << std::endl;
-		#endif
+// 		#if RANSAC_DEBUG
+// 		std::cout << "\tRANSAC: Got " << icp_pairs.size() << " active ICP pairs" << std::endl;
+// 		#endif
 
-		// If there are enough active pairs
-		if (icp_pairs.size() > minimum_N_icp_pairs){
+// 		// If there are enough active pairs
+// 		if (icp_pairs.size() > minimum_N_icp_pairs){
 
-			// and if these pairs give good ICP residuals
-			double J = icp.compute_residuals(icp_pairs,dcm,x);
+// 			// and if these pairs give good ICP residuals
+// 			double J = icp.compute_residuals(icp_pairs,dcm,x);
 
-			#if RANSAC_DEBUG
-			std::cout << "\tRANSAC: Residuals:  " << J << " , previous best residuals: " << J_best << std::endl;
-			#endif
+// 			#if RANSAC_DEBUG
+// 			std::cout << "\tRANSAC: Residuals:  " << J << " , previous best residuals: " << J_best << std::endl;
+// 			#endif
 
-			if (J < residuals_threshold){
+// 			if (J < residuals_threshold){
 				
-				// If it surpasses the previous best
-				if (J < J_best){
-					#if RANSAC_DEBUG
-					std::cout << "\tRANSAC: Found better model. Best J= " << J << std::endl;
-					#endif
-					J_best = J;
+// 				// If it surpasses the previous best
+// 				if (J < J_best){
+// 					#if RANSAC_DEBUG
+// 					std::cout << "\tRANSAC: Found better model. Best J= " << J << std::endl;
+// 					#endif
+// 					J_best = J;
 
-					matches_ransac = kept_matches;
-					matches_ransac.insert(matches_ransac.end(), icp_pairs.begin(), icp_pairs.end());
-					dcm_ransac = dcm;
-					x_ransac = x;
-				}
-			}
+// 					matches_ransac = kept_matches;
+// 					matches_ransac.insert(matches_ransac.end(), icp_pairs.begin(), icp_pairs.end());
+// 					dcm_ransac = dcm;
+// 					x_ransac = x;
+// 				}
+// 			}
 
-		}
+// 		}
 		
-	}
+// 	}
 
-}
+// }
 
 

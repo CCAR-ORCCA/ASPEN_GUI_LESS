@@ -100,6 +100,8 @@ void ICPBase::clear_point_pairs(){
 
 
 void ICPBase::register_pc(
+	double los_noise_sd_baseline,
+	const arma::mat::fixed<3,3> & M_pc_D,
 	const arma::mat::fixed<3,3> & dcm_0,
 	const arma::vec::fixed<3> & X_0){
 
@@ -193,7 +195,14 @@ void ICPBase::register_pc(
 			for (unsigned int pair_index = 0; pair_index < this -> point_pairs.size(); ++pair_index) {
 				arma::mat::fixed<6,6> info_mat_temp;
 				arma::vec::fixed<6> normal_mat_temp;
-				this -> build_matrices(pair_index, this -> mrp,this -> x,info_mat_temp,normal_mat_temp,1);
+				this -> build_matrices(pair_index, 
+					this -> mrp,
+					this -> x,
+					info_mat_temp,
+					normal_mat_temp,
+					1,
+					los_noise_sd_baseline,
+					M_pc_D);
 
 
 				normal_mat += normal_mat_temp;

@@ -181,7 +181,9 @@ void IterativeClosestPoint::build_matrices(const int pair_index,
 	const arma::vec::fixed<3> & x,
 	arma::mat::fixed<6,6> & info_mat_temp,
 	arma::vec::fixed<6> & normal_mat_temp,
-	const double & w){
+	const double & w,
+	const double & los_noise_sd_baseline,
+	const arma::mat::fixed<3,3> & M_pc_D){
 
 	const arma::vec::fixed<3> & S_i = this -> pc_source -> get_point_coordinates(point_pairs[pair_index].first);
 	const arma::vec::fixed<3> & D_i = this -> pc_destination -> get_point_coordinates(point_pairs[pair_index].second);
@@ -200,72 +202,72 @@ void IterativeClosestPoint::build_matrices(const int pair_index,
 
 
 
-void IterativeClosestPoint::ransac(
-	const std::vector<PointPair> & all_pairs,
-	int N_feature_pairs,
-	int minimum_N_icp_pairs,
-	double residuals_threshold,
-	int N_iter_ransac,
-	std::shared_ptr<PC> pc_source,
-	std::shared_ptr<PC> pc_destination){
+// void IterativeClosestPoint::ransac(
+// 	const std::vector<PointPair> & all_pairs,
+// 	int N_feature_pairs,
+// 	int minimum_N_icp_pairs,
+// 	double residuals_threshold,
+// 	int N_iter_ransac,
+// 	std::shared_ptr<PC> pc_source,
+// 	std::shared_ptr<PC> pc_destination){
 
 
-	double J_best = std::numeric_limits<double>::infinity();
-	std::vector<PointPair> best_pairs;
-	for (int iter = 0; iter < N_iter_ransac; ++iter){
+// 	double J_best = std::numeric_limits<double>::infinity();
+// 	std::vector<PointPair> best_pairs;
+// 	for (int iter = 0; iter < N_iter_ransac; ++iter){
 
-		// Creating the icp instance
-		IterativeClosestPoint icp;
-		icp.set_pc_source(pc_source);
-		icp.set_pc_destination(pc_destination);
+// 		// Creating the icp instance
+// 		IterativeClosestPoint icp;
+// 		icp.set_pc_source(pc_source);
+// 		icp.set_pc_destination(pc_destination);
 
-		// Sampling random feature correspondance pairs
-		std::vector< PointPair > kept_matches;
-		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
-		for (int j = 0; j < N_feature_pairs; ++j){
-			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
-		}
-		icp.set_pairs(kept_matches);
+// 		// Sampling random feature correspondance pairs
+// 		std::vector< PointPair > kept_matches;
+// 		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
+// 		for (int j = 0; j < N_feature_pairs; ++j){
+// 			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
+// 		}
+// 		icp.set_pairs(kept_matches);
 
-		// Registering using these pairs
-		icp.register_pc();
-		arma::vec::fixed<3> x = icp.get_x();
-		arma::mat::fixed<3,3> dcm = icp.get_dcm();
+// 		// Registering using these pairs
+// 		icp.register_pc();
+// 		arma::vec::fixed<3> x = icp.get_x();
+// 		arma::mat::fixed<3,3> dcm = icp.get_dcm();
 
-		// Computing the point pairs arising from the ICP cost function
-		icp.compute_pairs(4,icp.get_dcm(),icp.get_x());
+// 		// Computing the point pairs arising from the ICP cost function
+// 		icp.compute_pairs(4,icp.get_dcm(),icp.get_x());
 
-		// Getting the ICP pairs
-		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
+// 		// Getting the ICP pairs
+// 		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
 
-		// If there are enough active pairs
-		if (icp_pairs.size() > minimum_N_icp_pairs){
+// 		// If there are enough active pairs
+// 		if (icp_pairs.size() > minimum_N_icp_pairs){
 
-			// and if these pairs give good ICP residuals
-			double J = icp.compute_residuals(icp_pairs,dcm,x);
+// 			// and if these pairs give good ICP residuals
+// 			double J = icp.compute_residuals(icp_pairs,dcm,x);
 
-			if (J < residuals_threshold){
+// 			if (J < residuals_threshold){
 				
-				// If it surpasses the previous best
-				if (J < J_best){
-					J_best = icp.get_J_res();
+// 				// If it surpasses the previous best
+// 				if (J < J_best){
+// 					J_best = icp.get_J_res();
 
-					best_pairs = kept_matches;
-					best_pairs.insert(best_pairs.end(), icp_pairs.begin(), icp_pairs.end());
-				}
-			}
+// 					best_pairs = kept_matches;
+// 					best_pairs.insert(best_pairs.end(), icp_pairs.begin(), icp_pairs.end());
+// 				}
+// 			}
 
-		}
+// 		}
 		
 
 
 
 
-	}
+// 	}
 
 
 
 
 
-}
+// }
 
