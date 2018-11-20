@@ -47,7 +47,7 @@ all_data = [
 "USE_TRUE_RIGID_TRANSFORMS" : False,
 "INPUT_DIR" : base_location + "ShapeReconstruction/input/test_1",
 "OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1"
-}
+},
 
 {
 "OBSERVATION_TIMES" : 150,
