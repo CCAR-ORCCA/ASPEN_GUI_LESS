@@ -163,6 +163,7 @@ void ICPBase::register_pc(
 
 			if ( (next_h == true && this -> hierarchical) || h == 0) {
 				// The pairs are formed only after a change in the hierchical search
+				std::cout << "Updating pairs at h == " << h << std::endl;
 				this -> compute_pairs(h,RBK::mrp_to_dcm(this -> mrp),this -> x);
 				next_h = false;
 			}
