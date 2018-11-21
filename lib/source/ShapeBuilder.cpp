@@ -186,9 +186,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 			std::cout << "Error in ICP rigid transform : \n";
-			std::cout << "x: " << (X_pc - X_pcs_true[time_index]).t() << std::endl;
-			std::cout << "sigma: " << RBK::dcm_to_mrp(M_pc * M_pcs_true[time_index].t()).t();
 
+			arma::vec dX_pc = X_pc - X_pcs_true[time_index];
+			arma::vec dsigma_pc = RBK::dcm_to_mrp(M_pc * M_pcs_true[time_index].t());
+
+			std::cout << dX_pc(0) << " " << dX_pc(1) << " " << dX_pc(2) << " " << dsigma_pc(0) << " " << dsigma_pc(1) << " "  << dsigma_pc(2) << std::endl;
 			/****************************************************************************/
 				/********** ONLY FOR DEBUG: MAKES ICP USE TRUE RIGID TRANSFORMS *************/
 			
