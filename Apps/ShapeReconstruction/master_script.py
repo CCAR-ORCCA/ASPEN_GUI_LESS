@@ -31,7 +31,7 @@ all_data = [
 "LATITUDE_SPIN" : 0., 
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : False,
+"USE_HARMONICS" : True,
 "INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
 "MRP_0" : [0,0,0],
 "N_ITER_BUNDLE_ADJUSTMENT" : 2,
@@ -45,8 +45,8 @@ all_data = [
 "USE_BA" : True,
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : False,
-"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_1",
-"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1"
+"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_0",
+"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
 },
 
 {
@@ -75,12 +75,12 @@ all_data = [
 "SURFACE_APPROX_ERROR" : 1,
 "NUMBER_OF_EDGES" : 2000,
 "BA_H" : 4,
-"LOS_NOISE_SD_BASELINE" : 5e-2,
+"LOS_NOISE_SD_BASELINE" : 5e-1,
 "USE_BA" : True,
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : False,
-"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_0",
-"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
+"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_1",
+"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1"
 }
 
 
