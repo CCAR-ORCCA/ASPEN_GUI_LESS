@@ -231,7 +231,8 @@ int main() {
 
 		vtkSmartPointer<SBGATSphericalHarmo> spherical_harmonics = vtkSmartPointer<SBGATSphericalHarmo>::New();
 		spherical_harmonics -> SetInputConnection(reader -> GetOutputPort());
-		spherical_harmonics -> SetDensity(DENSITY);
+		spherical_harmonics -> SetDensity(1);// the density is set to 1 so that the 
+		// filter can just multiply the computed acceleration by the estimated density
 		spherical_harmonics -> SetScaleMeters();
 		spherical_harmonics -> SetReferenceRadius(estimated_shape_model.get_circumscribing_radius());
 
@@ -255,7 +256,7 @@ int main() {
 
 	// Initial state
 
-	arma::vec::fixed<12> X0_true = {
+	arma::vec::fixed<13> X0_true = {
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][0],
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][1],
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][2],
@@ -267,7 +268,8 @@ int main() {
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][2],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][3],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][4],
-		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5]
+		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5],
+		DENSITY
 	};
 
 	/******************************************************/
@@ -288,21 +290,21 @@ int main() {
 	if(USE_HARMONICS){
 		StatePropagator::propagateOrbit(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
-			X0_true,
+			X0_true.subvec(0,11),
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
-		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
+		StatePropagator::propagateOrbit(0, tf, 10. , X0_true.subvec(0,11),
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
 	else{
 		StatePropagator::propagateOrbit(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
-			X0_true,
+			X0_true.subvec(0,11),
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
 
-		StatePropagator::propagateOrbit(0, tf, 10. , X0_true,
+		StatePropagator::propagateOrbit(0, tf, 10. , X0_true.subvec(0,11),
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
@@ -328,8 +330,8 @@ int main() {
 
 	// Initial state
 
-	arma::vec::fixed<12> X0_estimated;
-	arma::mat::fixed<12,12> P0 = arma::zeros<arma::mat>(12,12);
+	arma::vec::fixed<13> X0_estimated;
+	arma::mat::fixed<13,13> P0 = arma::zeros<arma::mat>(13,13);
 
 	if (input_data["USE_TRUE_STATES"]){
 
@@ -351,6 +353,7 @@ int main() {
 		P0(9,9) = 1e-10;
 		P0(10,10) = 1e-10;
 		P0(11,11) = 1e-10;
+		P0(12,12) = 100;
 
 	}
 
@@ -369,7 +372,8 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][2],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
-			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5]
+			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5],
+			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_DENSITY"]
 		};
 
 		if(!P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii)){

@@ -251,7 +251,7 @@ void IterativeClosestPointToPlane::build_matrices(
 
 
 	// the normal is also uncertain
-	double sigma_theta = 5. * arma::datum::pi / 180.; // assume normals are known within a 15 = 3 * 5 degree cone
+	double sigma_theta = 10. * arma::datum::pi / 180.; // assume normals are known within a 30 = 3 * 10 degree cone
 	arma::mat::fixed<3,3> P_n = std::pow(sigma_theta,2) / 2 * (arma::eye<arma::mat>(3,3) - n_i * n_i.t());
 
 	sigma_y_sq += arma::dot(dcm_S * S_i + x - D_i,

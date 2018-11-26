@@ -151,7 +151,7 @@ public:
 	Returns  estimated state
 	@return estimated state (position,velocity,mrp,angular velocity)
 	*/
-	arma::vec::fixed<12> get_estimated_state() const;
+	arma::vec::fixed<13> get_estimated_state() const;
 
 
 

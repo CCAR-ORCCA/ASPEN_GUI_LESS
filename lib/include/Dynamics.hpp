@@ -40,9 +40,9 @@ namespace Dynamics{
 
 	arma::vec point_mass_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
 	arma::mat point_mass_jac_attitude_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args);
+	
 	arma::vec harmonics_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
 	arma::mat harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
-
 
 	arma::vec attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
 	arma::mat attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;

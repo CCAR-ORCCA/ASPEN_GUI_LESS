@@ -66,6 +66,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	std::vector<arma::mat::fixed<3,3 > > BN_measured;
 	std::vector<arma::mat::fixed<3,3 > > BN_true;
 	std::vector<arma::mat::fixed<3,3 > > HN_true;
+	std::vector<double> estimated_mu;
 	std::map<int,arma::vec::fixed<3> > X_pcs;
 	std::map<int,arma::mat::fixed<3,3> > M_pcs;
 	std::map<int,arma::vec::fixed<3> > X_pcs_true;
@@ -269,8 +270,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				final_cov);
 
 			
-
-
+			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
+				estimated_mu.push_back(iod_state.get_mu());
 
 			// Bundle adjustment is periodically run
 			// If an overlap with previous measurements is detected
@@ -425,18 +426,27 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				batch_attitude.run(R_pcs,mrps_LN);
 
+				// The mean and standard deviation of all the measured mu's is extracted
+				arma::vec rho_estimated(estimated_mu.size());
+
+				for (int i = 0; i < estimated_mu.size(); ++i){
+					rho_estimated(i) = estimated_mu[i] / (arma::datum::G * this -> estimated_shape_model -> get_volume());
+				}
 
 
 
-				this -> estimated_state = arma::zeros<arma::vec>(12);
+
+
+
+				this -> estimated_state = arma::zeros<arma::vec>(13);
 				this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
 				this -> estimated_state.subvec(6,11) = batch_attitude.get_attitude_state_history().back();
+				this -> estimated_state(12) = arma::mean(rho_estimated);
 
-
-				this -> covariance_estimated_state = arma::zeros<arma::mat>(12,12);
+				this -> covariance_estimated_state = arma::zeros<arma::mat>(13,13);
 				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
 				this -> covariance_estimated_state.submat(6,6,11,11) = batch_attitude.get_attitude_state_covariances_history().back();
-
+				this -> covariance_estimated_state(12,12) = std::pow(arma::stddev(rho_estimated),2);
 
 
 
@@ -1591,7 +1601,7 @@ arma::mat ShapeBuilder::get_covariance_estimated_state() const{
 }
 
 
-arma::vec::fixed<12> ShapeBuilder::get_estimated_state() const{
+arma::vec::fixed<13> ShapeBuilder::get_estimated_state() const{
 	return this -> estimated_state;
 }
 

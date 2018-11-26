@@ -299,8 +299,8 @@ int main() {
 	std::string path_to_estimated_spherical_harmonics = "";
 
 
-	arma::vec::fixed<12> X_estimated = shape_filter.get_estimated_state();
-	arma::mat::fixed<12,12> covariance_estimated_state = shape_filter.get_covariance_estimated_state();
+	arma::vec::fixed<13> X_estimated = shape_filter.get_estimated_state();
+	arma::mat::fixed<13,13> covariance_estimated_state = shape_filter.get_covariance_estimated_state();
 
 	covariance_estimated_state.save(OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii);
 
@@ -340,6 +340,8 @@ int main() {
 		X_estimated[10], 
 		X_estimated[11]
 	};
+
+	output_data["ESTIMATED_SMALL_BODY_DENSITY"] = X_estimated[12];
 
 
 	nlohmann::json shape_covariances_data;

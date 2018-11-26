@@ -212,7 +212,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 
 
 	// Gravity acceleration expressed in the body frame
-	arma::vec::fixed<3> acc = args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos);
+	arma::vec::fixed<3> acc = X(12) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos);
 
 	// Mapping it back to the inertial frame
 	acc = BN.t() * acc;
@@ -235,7 +235,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "in harmonics_jac_attitude_dxdt_inertial_estimate\n";
 	#endif
-	arma::mat A = arma::zeros<arma::mat>(12,12);
+	arma::mat A = arma::zeros<arma::mat>(13,13);
 
 	arma::vec::fixed<3> pos = X . subvec(0, 2);
 	arma::vec::fixed<6> attitude = X . subvec(6, 11);
@@ -249,11 +249,12 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "Getting spherical harmonics acceleration\n";
 	std::cout << args.get_sbgat_harmonics_estimate() << std::endl;
-
 	#endif
+
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
+	gravity_gradient_mat *= X(12) * gravity_gradient_mat;
 
 	// Partial derivatives of the spacecraft state.
 
@@ -269,14 +270,30 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "Getting partials\n";
 	#endif
+	
 	// drddot/dsigma
-	arma::vec::fixed<3> acc_body_grav = args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
+	arma::vec::fixed<3> acc_body_grav = X(12) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
 
 	A.submat(3,6,5,8) = 4 * (BN.t() * gravity_gradient_mat * BN * RBK::tilde(pos) - RBK::tilde(BN.t() * acc_body_grav));
 
 
 	// The small body is not affected by the spacecraft state
 	A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
+
+
+
+
+
+	// drddot/drho
+
+	A.submat(3,12,5,12) = acc_body_grav / X(12);
+
+	// omega_dot is not affected by a varying bulk density (rho) because 
+	// the rhs of [I]omega_dot = ... is proportional to [I], hence rho
+
+
+
+
 
 	#if HARMONICS_JAC_ATTITUDE_DXDT_INERTIAL_ESTIMATE_DEBUG
 	std::cout << "leaving harmonics_jac_attitude_dxdt_inertial_estimate\n";
