@@ -375,8 +375,8 @@ protected:
 
 	arma::mat LN_t0;
 	arma::mat LB_t0;
-	arma::mat::fixed<12,12>  covariance_estimated_state;
-	arma::vec::fixed<12> estimated_state;
+	arma::mat::fixed<13,13>  covariance_estimated_state;
+	arma::vec::fixed<13> estimated_state;
 	OC::KepState true_kep_state_t0;
 
 
