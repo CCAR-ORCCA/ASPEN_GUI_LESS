@@ -99,13 +99,13 @@ namespace Observer {
 				arma::vec sigma = x.subvec(6,8);
 				x.subvec(6,8) = - sigma / arma::dot(sigma,sigma);
 
-				if (x.n_rows > 12){
+				if (x.n_rows > 13){
 			// Switching matrix
-					arma::mat::fixed<12,12> Theta = arma::eye<arma::mat>(12,12);
+					arma::mat Theta = arma::eye<arma::mat>(13,13);
 					Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
 
 			// The stm is switched
-					x.rows(12,12 + 12 * 12 - 1) = arma::vectorise(Theta * arma::reshape(x.rows(12,12 + 12 * 12 - 1),12,12));
+					x.rows(13,13 + 13 * 13 - 1) = arma::vectorise(Theta * arma::reshape(x.rows(13,13 + 13 * 13 - 1),13,13));
 				}
 			}
 
