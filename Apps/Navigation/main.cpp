@@ -431,12 +431,12 @@ int main() {
 	// Estimated state dynamics
 	if(USE_HARMONICS_ESTIMATED_DYNAMICS){
 
+		std::cout << "Using spherical harmonics gravity in the estimate dynamics\n";
 		
 		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
 		filter.set_jacobian_dynamics_function_estimate(Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate);
 		
 
-		std::cout << "Using spherical harmonics gravity in the estimate dynamics\n";
 
 	}
 	else{

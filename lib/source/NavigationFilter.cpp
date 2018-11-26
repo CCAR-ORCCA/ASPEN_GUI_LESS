@@ -26,7 +26,7 @@ int NavigationFilter::run(
 	std::cout << "-- Computing true navigation state history" << std::endl;
 	#endif
 
-	this -> compute_true_state(T_obs,X0_true_augmented,true);
+	this -> compute_true_state(T_obs,X0_true_augmented.subvec(0,11),true);
 
 	// The filter is initialized
 	if (this -> info_mat_bar_0.n_rows == 0){
