@@ -72,7 +72,9 @@ public:
 
 				#if OPERATOR_DEBUG_ESTIMATED_STATE
 				std::cout << "in operator() with this -> estimate_dynamics_fun != nullptr\n";
+				std::cout << "Number of estimated states: " << this -> N_est << std::endl;
 				#endif
+
 				arma::vec X_spc_estimated = arma::vec(this -> N_est);
 
 				for (unsigned int i = 0; i < X_spc_estimated.n_rows; ++i){
@@ -83,12 +85,24 @@ public:
 					this -> N_est + this -> N_est * this -> N_est - 1), 
 				this -> N_est, this -> N_est );
 				
+
+				#if OPERATOR_DEBUG_ESTIMATED_STATE
+				std::cout << "built stm" << std::endl;
+				#endif
+
 				arma::mat A = this -> jacobian_estimate_dynamics_fun(t,
 					X_spc_estimated,this -> args);
 
+				#if OPERATOR_DEBUG_ESTIMATED_STATE
+				std::cout << "built A matrix" << std::endl;
+				#endif
 
 				arma::vec derivative = this -> estimate_dynamics_fun(t,
 					X_spc_estimated,this -> args);
+
+				#if OPERATOR_DEBUG_ESTIMATED_STATE
+				std::cout << "computed state derivative" << std::endl;
+				#endif
 
 				dxdt.subvec(0,this -> N_est - 1) = derivative;
 				dxdt.subvec(this -> N_est,
