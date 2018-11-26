@@ -217,7 +217,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 	// Mapping it back to the inertial frame
 	acc = BN.t() * acc;
 
-	arma::vec::fixed<13> dxdt = arma::zeros<arma::vec>(12);
+	arma::vec::fixed<13> dxdt = arma::zeros<arma::vec>(13);
 	arma::vec::fixed<6> dxdt_spacecraft = { X(3), X(4), X(5), acc(0), acc(1), acc(2)};
 	
 	dxdt.subvec(0,5) = dxdt_spacecraft;

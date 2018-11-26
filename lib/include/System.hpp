@@ -6,7 +6,7 @@
 #include "Args.hpp"
 
 #define OPERATOR_DEBUG 0
-#define OPERATOR_DEBUG_ESTIMATED_STATE 1
+#define OPERATOR_DEBUG_ESTIMATED_STATE 0
 
 
 
