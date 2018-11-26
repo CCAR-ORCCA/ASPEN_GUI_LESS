@@ -6,6 +6,8 @@
 #include "Args.hpp"
 
 #define OPERATOR_DEBUG 0
+#define OPERATOR_DEBUG_ESTIMATED_STATE 1
+
 
 
 class System {
@@ -68,6 +70,9 @@ public:
 
 			if (this -> estimate_dynamics_fun != nullptr){
 
+				#if OPERATOR_DEBUG_ESTIMATED_STATE
+				std::cout << "in operator() with this -> estimate_dynamics_fun != nullptr\n";
+				#endif
 				arma::vec X_spc_estimated = arma::vec(this -> N_est);
 
 				for (unsigned int i = 0; i < X_spc_estimated.n_rows; ++i){
@@ -75,7 +80,8 @@ public:
 				}
 				
 				arma::mat Phi = arma::reshape(X.subvec(this -> N_est,
-					this -> N_est + this -> N_est * this -> N_est - 1), this -> N_est, this -> N_est );
+					this -> N_est + this -> N_est * this -> N_est - 1), 
+				this -> N_est, this -> N_est );
 				
 				arma::mat A = this -> jacobian_estimate_dynamics_fun(t,
 					X_spc_estimated,this -> args);
@@ -87,6 +93,9 @@ public:
 				dxdt.subvec(0,this -> N_est - 1) = derivative;
 				dxdt.subvec(this -> N_est,
 					this -> N_est + this -> N_est * this -> N_est - 1) = arma::vectorise(A * Phi);
+				#if OPERATOR_DEBUG_ESTIMATED_STATE
+				std::cout << "leaving operator() with this -> estimate_dynamics_fun != nullptr\n";
+				#endif
 			}
 
 
