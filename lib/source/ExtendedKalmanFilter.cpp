@@ -18,6 +18,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 
 	#if EKF_DEBUG
 	std::cout << "in ExtendedKalmanFilter::time_update\n";
+	std::cout << "state size: " << X_hat.n_rows << std::endl;
 	#endif
 
 
