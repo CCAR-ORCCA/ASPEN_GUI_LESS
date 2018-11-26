@@ -141,6 +141,8 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 		arma::vec state(13);
 		state.subvec(0,11) = this -> true_state_history[i];
 		state(12) = X0_true_augmented(12);
+		this -> true_state_history[i] = state;
+
 	}
 
 	if (save == true){
