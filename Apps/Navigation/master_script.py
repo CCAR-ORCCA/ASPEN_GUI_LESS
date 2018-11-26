@@ -29,7 +29,9 @@ else:
 # SKIP_FACTOR : between 0 and 1. if == to 1 , will use all pixels to determine position/attitude mes. Values between 0.9 and 1 seem good enough
 
 
-all_data = [{
+all_data = [
+
+{
 "NAVIGATION_TIMES" : 80,
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
@@ -38,14 +40,17 @@ all_data = [{
 "INSTRUMENT_FREQUENCY" : 1./3600,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1/",
 "USE_TRUE_STATES": False,
 "INPUT_DIR" : base_location + "Navigation/input/test_0",
 "OUTPUT_DIR" : base_location + "Navigation/output/test_0",
 "PROCESS_NOISE_SIGMA_VEL": 1e-9 ,
 "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
 "SKIP_FACTOR": 0.94
-}
+},
+
+
+
 ]
 
 for data in all_data:
