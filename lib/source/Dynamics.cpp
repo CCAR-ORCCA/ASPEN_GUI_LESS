@@ -254,7 +254,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
-	gravity_gradient_mat *= X(12) * gravity_gradient_mat;
+	gravity_gradient_mat *= X(12);
 
 	// Partial derivatives of the spacecraft state.
 
