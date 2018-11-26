@@ -3,7 +3,7 @@
 #include <armadillo>
 #include <vector>
 
-#define PUSH_BACK_AUGMENTED_STATE_DEBUG 0
+#define PUSH_BACK_AUGMENTED_STATE_DEBUG 1
 #define PUSH_BACK_ATTITUDE_STATE_DEBUG 0
 
 namespace Observer {
@@ -110,6 +110,10 @@ namespace Observer {
 			}
 
 			m_states.push_back( x );
+
+			#if PUSH_BACK_AUGMENTED_STATE_DEBUG
+			std::cout << "leaving push_back_augmented_state::operator()\n";
+			#endif
 		}
 	};
 
