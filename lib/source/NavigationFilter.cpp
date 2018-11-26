@@ -141,8 +141,8 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 		for (unsigned int i = 0; i < this -> true_state_history.size(); ++i){
 
 
-			true_spacecraft_state_mat.col(i) = this -> true_state_history[i].rows(0,5);
-			true_asteroid_state_mat.col(i) = this -> true_state_history[i].rows(6,11);
+			true_spacecraft_state_mat.col(i) = this -> true_state_history[i].subvec(0,5);
+			true_asteroid_state_mat.col(i) = this -> true_state_history[i].subvec(6,11);
 
 		}
 
