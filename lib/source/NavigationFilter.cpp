@@ -26,7 +26,7 @@ int NavigationFilter::run(
 	std::cout << "-- Computing true navigation state history" << std::endl;
 	#endif
 
-	this -> compute_true_state(T_obs,X0_true_augmented.subvec(0,11),true);
+	this -> compute_true_state(T_obs,X0_true_augmented,true);
 
 	// The filter is initialized
 	if (this -> info_mat_bar_0.n_rows == 0){
@@ -116,7 +116,7 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	// Containers
 	std::vector<arma::vec> X_augmented;
 	auto N_true = X0_true_augmented.n_rows;
-	arma::vec X0_true_augmented_cp(X0_true_augmented);
+	arma::vec X0_true_augmented_cp(X0_true_augmented.subvec(0,11));
 
 	this -> true_state_history.clear();
 
@@ -132,6 +132,16 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_augmented_cp, tbegin, tend,1e-3,
 		Observer::push_back_augmented_state(this -> true_state_history));
 
+
+
+
+	for (unsigned int i = 0; i < this -> true_state_history.size(); ++i){
+
+
+		arma::vec state(13);
+		state.subvec(0,11) = this -> true_state_history[i];
+		state(12) = X0_true_augmented(12);
+	}
 
 	if (save == true){
 
