@@ -3,7 +3,7 @@
 #include <armadillo>
 #include <vector>
 
-#define PUSH_BACK_AUGMENTED_STATE_DEBUG 1
+#define PUSH_BACK_AUGMENTED_STATE_DEBUG 0
 #define PUSH_BACK_ATTITUDE_STATE_DEBUG 0
 
 namespace Observer {
