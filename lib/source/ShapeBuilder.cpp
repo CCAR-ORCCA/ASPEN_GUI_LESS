@@ -430,12 +430,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec rho_estimated(estimated_mu.size());
 
 				for (int i = 0; i < estimated_mu.size(); ++i){
-					rho_estimated(i) = estimated_mu[i] / (arma::datum::G * this -> estimated_shape_model -> get_volume());
+					rho_estimated(i) = estimated_mu[i];
 				}
-
-
-
-
 
 
 				this -> estimated_state = arma::zeros<arma::vec>(13);

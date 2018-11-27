@@ -341,7 +341,7 @@ int main() {
 		X_estimated[11]
 	};
 
-	output_data["ESTIMATED_SMALL_BODY_DENSITY"] = X_estimated[12];
+	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
 
 
 	nlohmann::json shape_covariances_data;

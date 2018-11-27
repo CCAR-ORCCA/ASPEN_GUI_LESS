@@ -212,7 +212,7 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 
 
 	// Gravity acceleration expressed in the body frame
-	arma::vec::fixed<3> acc = X(12) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos);
+	arma::vec::fixed<3> acc = X(12)/ (arma::datum::G * args.get_estimated_shape_model() -> get_volume()) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos);
 
 	// Mapping it back to the inertial frame
 	acc = BN.t() * acc;
@@ -254,7 +254,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
-	gravity_gradient_mat *= X(12);
+	gravity_gradient_mat *= X(12)/ (arma::datum::G * args.get_estimated_shape_model() -> get_volume());
 
 	// Partial derivatives of the spacecraft state.
 
@@ -272,7 +272,7 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 	#endif
 	
 	// drddot/dsigma
-	arma::vec::fixed<3> acc_body_grav = X(12) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
+	arma::vec::fixed<3> acc_body_grav = X(12)/ (arma::datum::G * args.get_estimated_shape_model() -> get_volume()) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos_B);
 
 	A.submat(3,6,5,8) = 4 * (BN.t() * gravity_gradient_mat * BN * RBK::tilde(pos) - RBK::tilde(BN.t() * acc_body_grav));
 
@@ -284,12 +284,12 @@ arma::mat Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate(double t,const
 
 
 
-	// drddot/drho
+	// drddot/dmu
 
 	A.submat(3,12,5,12) = acc_body_grav / X(12);
 
-	// omega_dot is not affected by a varying bulk density (rho) because 
-	// the rhs of [I]omega_dot = ... is proportional to [I], hence rho
+	// omega_dot is not affected by a varying mu because 
+	// the rhs of [I]omega_dot = ... is proportional to [I], hence mu
 
 
 

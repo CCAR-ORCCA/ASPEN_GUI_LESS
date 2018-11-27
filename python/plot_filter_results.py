@@ -46,24 +46,24 @@ def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Re
         else:
             raise(TypeError("Unrecognized input: " + str(save_str)))
     else:
+        raise(TypeError("Not implemented"))
+
+        # create_input_table(all_results_dirs[0:6],graphics_path + "/input_table_1")
+        # create_input_table(all_results_dirs[6:12],graphics_path + "/input_table_2")
+        # create_input_table(all_results_dirs[12:18],graphics_path + "/input_table_3")
+
+        # create_output_table_mc(all_results_dirs[0:6],graphics_path + "/output_table_mc_1")
+        # create_output_table_mc(all_results_dirs[6:12],graphics_path + "/output_table_mc_2")
+        # create_output_table_mc(all_results_dirs[12:18],graphics_path + "/output_table_mc_3")
+
+        # create_output_table_model(all_results_dirs[0:6],graphics_path + "/output_table_model_1")
+        # create_output_table_model(all_results_dirs[6:12],graphics_path + "/output_table_model_2")
+        # create_output_table_model(all_results_dirs[12:18],graphics_path + "/output_table_model_3")
 
 
-        create_input_table(all_results_dirs[0:6],graphics_path + "/input_table_1")
-        create_input_table(all_results_dirs[6:12],graphics_path + "/input_table_2")
-        create_input_table(all_results_dirs[12:18],graphics_path + "/input_table_3")
-
-        create_output_table_mc(all_results_dirs[0:6],graphics_path + "/output_table_mc_1")
-        create_output_table_mc(all_results_dirs[6:12],graphics_path + "/output_table_mc_2")
-        create_output_table_mc(all_results_dirs[12:18],graphics_path + "/output_table_mc_3")
-
-        create_output_table_model(all_results_dirs[0:6],graphics_path + "/output_table_model_1")
-        create_output_table_model(all_results_dirs[6:12],graphics_path + "/output_table_model_2")
-        create_output_table_model(all_results_dirs[12:18],graphics_path + "/output_table_model_3")
-
-
-        create_consistency_matrix(all_results_dirs[0:6],graphics_path + "/rp_consistency_1")
-        create_consistency_matrix(all_results_dirs[6:12],graphics_path + "/rp_consistency_2")
-        create_consistency_matrix(all_results_dirs[12:18],graphics_path + "/rp_consistency_3")
+        # create_consistency_matrix(all_results_dirs[0:6],graphics_path + "/rp_consistency_1")
+        # create_consistency_matrix(all_results_dirs[6:12],graphics_path + "/rp_consistency_2")
+        # create_consistency_matrix(all_results_dirs[12:18],graphics_path + "/rp_consistency_3")
 
         
         if save_str is "y":
@@ -94,6 +94,7 @@ def plot_all_results(path,savepath = ""):
     plot_cart_state_error_inertial(path,savepath)
     plot_state_error_RIC(path,savepath)
     plot_attitude_state_inertial(path,savepath)
+
 
 
 def plot_orbit_planar(path,savepath = ""):
@@ -270,7 +271,7 @@ def plot_state_error_RIC(path = "",savepath= ""):
     plt.plot(T_obs,- 3 * sd[2,:],"--+")
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel("Position error (m)")
+    plt.ylabel(r"Position error ($\mathrm{m}$)")
     plt.tight_layout()
 
     if savepath == "":
@@ -301,7 +302,7 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel("Velocity error (cm/s)")
+    plt.ylabel(r"Velocity error ($\mathrm{cm/s}$)")
 
     plt.ylim([- 5 * sd[3,2] * 100,5 * sd[3,2] * 100])
     plt.tight_layout()
@@ -314,6 +315,31 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.clf()
     plt.cla()
+
+    # Density
+
+    plt.plot(T_obs,(X_true_RIC[-1,:] - X_hat_RIC[-1,:]),'-o')
+
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(T_obs,3 * sd[-1,:],"--+")
+
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(T_obs,- 3 * sd[-1,:],"--+")
+
+    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.xlabel("Time (min)")
+    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdotm^3 / s^2})$")
+    plt.ylim([- 5 * sd[-1,2] ,5 * sd[-1,2] ])
+    
+    plt.tight_layout()
+
+
+    if savepath == "":
+        plt.show()
+    else:
+        plt.savefig(savepath + "/density_error_RIC.pdf")
 
 
 def plot_attitude_state_inertial(path = "",savepath = ""):
@@ -408,7 +434,7 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
     plt.plot(T_obs,- 3 * r2d* sd[11,:],"--+")
 
     plt.xlabel("Time (min)")
-    plt.ylabel("Omega error (deg/s)")
+    plt.ylabel(r"Omega error ($\mathrm{deg/s}$)")
     plt.gcf().tight_layout()
 
     plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0e'))
@@ -490,7 +516,7 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     plt.plot(T_obs,- 3 * sd[1,:],"--+")
     plt.plot(T_obs,- 3 * sd[2,:],"--+")
     plt.xlabel("Time (min)")
-    plt.ylabel("Position error (m)")
+    plt.ylabel(r"Position error ($\mathrm{m}$)")
     plt.gcf().tight_layout()
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
@@ -525,7 +551,7 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     plt.ylim([- 5 * sd[3,2] * 100,5 * sd[3,2] * 100])
 
     plt.xlabel("Time (min)")
-    plt.ylabel("Velocity error (cm/s)")
+    plt.ylabel(r"Velocity error ($\mathrm{cm/s}$)")
     plt.gcf().tight_layout()
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
 

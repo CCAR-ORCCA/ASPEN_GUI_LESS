@@ -269,7 +269,7 @@ int main() {
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][3],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][4],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5],
-		DENSITY
+		arma::datum::G * true_shape_model . get_volume() * DENSITY
 	};
 
 	/******************************************************/
@@ -353,7 +353,7 @@ int main() {
 		P0(9,9) = 1e-10;
 		P0(10,10) = 1e-10;
 		P0(11,11) = 1e-10;
-		P0(12,12) = 100;
+		P0(12,12) = 10;
 
 	}
 
@@ -373,7 +373,7 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5],
-			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_DENSITY"]
+			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_MU"]
 		};
 
 		if(!P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii)){
