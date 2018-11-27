@@ -4,7 +4,7 @@
 #include "FrameGraph.hpp"
 #include "Lidar.hpp"
 #include <SBGATSphericalHarmo.hpp>
-
+#include <ShapeModelBezier.hpp>
 
 
 template <class PointType> 
