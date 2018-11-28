@@ -330,7 +330,7 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdotm^3 / s^2})$")
+    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdot m^3 / s^2})$")
     plt.ylim([- 5 * sd[-1,2] ,5 * sd[-1,2] ])
     
     plt.tight_layout()
