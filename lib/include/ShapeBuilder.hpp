@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <OrbitConversions.hpp>
+#include <SystemNew.hpp>
 
 class Lidar;
 

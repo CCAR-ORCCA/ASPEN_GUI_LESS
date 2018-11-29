@@ -5,8 +5,8 @@
 #include <armadillo>
 #include "Args.hpp"
 #include "System.hpp"
+#include "SystemNew.hpp"
 #include "Dynamics.hpp"
-#include "DynamicAnalyses.hpp"
 #include "Observer.hpp"
 
 // typedef arma::vec::fixed<6> arma::vec;
@@ -16,16 +16,30 @@
 int main( ){
 
     Args args;
-    DynamicAnalyses dyn_an(nullptr);
-    args.set_mass(1./arma::datum::G);
-    args.set_dyn_analyses(&dyn_an);
 
-    System dynamics(args,6, Dynamics::point_mass_dxdt_odeint);
+    SystemNew system(args);
 
-    arma::vec x0 =  {0,0,1,1,0.,0};
 
-    double R = 10000;
-    double tau = std::sqrt(std::pow(R,3)/398600.);
+
+    arma::vec x0 = arma::zeros<arma::vec>(7 + 49);
+    arma::vec initial_state = {0.1,0.05,1,1,0.01,0.1,1};
+    x0.subvec(0,6) = initial_state;
+    x0.subvec(7, 7 + 48) = arma::vectorise(arma::eye<arma::mat>(7,7));
+
+
+    system.add_next_state("spacecraft_position",3);
+    system.add_next_state("spacecraft_velocity",3);
+    system.add_next_state("mu",1);
+
+
+
+    system.add_dynamics("spacecraft_position",Dynamics::velocity,{"spacecraft_velocity"});
+    system.add_dynamics("spacecraft_velocity",Dynamics::point_mass_acceleration,{"spacecraft_position","mu"});
+
+    system.add_jacobian("spacecraft_position","spacecraft_velocity",Dynamics::identity_33,{"spacecraft_velocity"});
+    system.add_jacobian("spacecraft_velocity","spacecraft_position",Dynamics::point_mass_gravity_gradient_matrix,{"spacecraft_position","mu"});
+    system.add_jacobian("spacecraft_velocity","mu",Dynamics::point_mass_acceleration_unit_mu,{"spacecraft_position"});
+
 
     std::vector<arma::vec> states;
     std::vector<double> energy;
@@ -48,26 +62,50 @@ int main( ){
     typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec  > error_stepper_type;
     auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
-    boost::numeric::odeint::integrate_times(stepper, dynamics, x0, times.begin(), times.end(), 
-        1e-10,Observer::push_back_state_and_energy(states,energy));
+    arma::vec x0_copy(x0);
 
-    arma::mat states_mat = arma::zeros<arma::mat> (states.size(),x0.n_rows);
-    arma::mat energy_vec = arma::zeros (states.size());
+    boost::numeric::odeint::integrate_times(stepper, system, x0_copy, times.begin(), times.end(), 
+        1e-10,Observer::push_back_state(states));
 
-    for (unsigned int i = 0; i < states.size(); ++i){
-        states_mat.row(i) = states[i].t();
-
+    
+    arma::mat orbit(7,states.size());
+    std::vector<arma::mat> stms;
+    for (int i = 0 ; i < states.size(); ++i) {
+        orbit.col(i) = states[i].subvec(0,6);
+        stms.push_back(arma::reshape(states[i].subvec(7, 7 + 48),7,7));
     }
 
-    states_mat.save("./states.txt",arma::raw_ascii);
 
-    for (unsigned int i = 0; i < states.size(); ++i){
-        energy_vec(i) = energy[i];
 
+    // Perturbed orbit
+    arma::vec dx0 = 1e-3 * x0.subvec(0,6);
+    arma::vec x0_p(x0);
+    x0_p.subvec(0,6) += dx0;
+
+    arma::vec x0_p_copy(x0_p);
+
+    std::vector<arma::vec> states_perturbed; 
+    boost::numeric::odeint::integrate_times(stepper, system, x0_p_copy, times.begin(), times.end(), 
+        1e-10,Observer::push_back_state(states_perturbed));
+
+
+    arma::mat orbit_perturbed(7,states_perturbed.size());
+    arma::mat linear_perturbation(7,states_perturbed.size());
+
+
+    for (int i = 0 ; i < states_perturbed.size(); ++i) {
+        orbit_perturbed.col(i) = states_perturbed[i].subvec(0,6);
+        linear_perturbation.col(i) = stms[i] * dx0;
     }
 
-    states_mat.save("./states.txt",arma::raw_ascii);
-    energy_vec.save("./energy.txt",arma::raw_ascii);
+    orbit.save("orbit.txt",arma::raw_ascii);
+    orbit_perturbed.save("orbit_perturbed.txt",arma::raw_ascii);
+    linear_perturbation.save("linear_perturbation.txt",arma::raw_ascii);
+
+
+
+
+
 
 
 }

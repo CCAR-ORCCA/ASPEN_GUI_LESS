@@ -9,15 +9,6 @@
 #define ATTITUDE_DXDT_ESTIMATE_DEBUG 0
 #define ATTITUDE_JAC_DXDT_INERTIAL_ESTIMATE_DEBUG 0
 
-arma::vec::fixed<3> Dynamics::point_mass_acceleration(const arma::vec::fixed<3> & point , double mass) {
-
-	arma::vec::fixed<3> acc = - mass * arma::datum::G / arma::dot(point, point) * arma::normalise(point);
-	
-	return acc;
-
-
-}
-
 
 arma::mat Dynamics::gamma_OD(double dt){
 	arma::mat gamma = arma::zeros<arma::mat>(6,3);
@@ -40,13 +31,15 @@ arma::mat Dynamics::gamma_OD_augmented(double dt){
 
 
 
-arma::mat::fixed<6,6> Dynamics::point_mass_jacobian(const arma::vec::fixed<3> & point , double mass) {
 
+arma::mat Dynamics::point_mass_gravity_gradient_matrix(double t,const arma::vec & X, const Args & args) {
 
-	arma::mat::fixed<6,6> A = arma::zeros<arma::mat>(6,6);
+	// X = {r,mu}
 
-	A.submat(0,3,2,5) = arma::eye<arma::mat>(3,3);
-	A.submat(3,0,5,2) = - mass * arma::datum::G * (
+	const arma::vec::fixed<3> & point = X.subvec(0,2);
+	const double & mu = X(3);
+
+	arma::mat A = - mu * (
 		arma::eye<arma::mat>(3,3) / std::pow(arma::norm(point),3) 
 		- 3 * point * point.t() / std::pow(arma::norm(point),5));
 
@@ -55,20 +48,52 @@ arma::mat::fixed<6,6> Dynamics::point_mass_jacobian(const arma::vec::fixed<3> & 
 }
 
 
+arma::vec Dynamics::point_mass_acceleration(double t,const arma::vec & X, const Args & args) {
+
+	const arma::vec::fixed<3> & point = X.subvec(0,2);
+	const double & mu = X(3);
+
+	arma::vec acc = - mu / arma::dot(point, point) * arma::normalise(point);
+	
+	return acc;
+
+
+}
+
+arma::mat Dynamics::point_mass_acceleration_unit_mu(double t,const arma::vec & X, const Args & args) {
+
+	const arma::vec::fixed<3> & point = X.subvec(0,2);
+
+	arma::mat acc = - 1. / arma::dot(point, point) * arma::normalise(point);
+	
+	return acc;
+
+}
+
+
+arma::mat Dynamics::identity_33(double t,const arma::vec & X, const Args & args) {
+	return arma::eye<arma::mat>(3,3);
+}
+
+
+
+
 
 arma::vec Dynamics::point_mass_attitude_dxdt_inertial_truth(double t,const arma::vec & X, const Args & args) {
 
-	arma::vec::fixed<3> pos = X . subvec(0, 2);
-	arma::vec X_small_body = X . subvec(6, 11);
-	arma::vec acc_body_grav = Dynamics::point_mass_acceleration(pos , args. get_mass_truth());
-
+	throw(std::runtime_error("to reimplement"));
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
-	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
-	
-	dxdt.subvec(0,5) = dxdt_spacecraft;
-	dxdt.subvec(6,11) = Dynamics::attitude_dxdt_truth(t, X_small_body, args);
 
-	return dxdt;
+	// arma::vec::fixed<3> pos = X . subvec(0, 2);
+	// arma::vec X_small_body = X . subvec(6, 11);
+	// arma::vec acc_body_grav = Dynamics::point_mass_acceleration(pos , args. get_mass_truth());
+
+	// arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
+	
+	// dxdt.subvec(0,5) = dxdt_spacecraft;
+	// dxdt.subvec(6,11) = Dynamics::attitude_dxdt_truth(t, X_small_body, args);
+
+	// return dxdt;
 
 }
 
@@ -151,19 +176,19 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_truth(double t,const arma::
 
 arma::vec Dynamics::point_mass_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) {
 
-	
-
-	arma::vec::fixed<3> pos = X . subvec(0, 2);
-	arma::vec::fixed<6> X_small_body = X . subvec(6, 11);
-	arma::vec acc_body_grav = Dynamics::point_mass_acceleration(pos , args. get_mass_estimate());
-
+	throw(std::runtime_error("to reimplement"));
 	arma::vec dxdt = arma::zeros<arma::vec>(12);
-	arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
+
+	// arma::vec::fixed<3> pos = X . subvec(0, 2);
+	// arma::vec::fixed<6> X_small_body = X . subvec(6, 11);
+	// arma::vec acc_body_grav = Dynamics::point_mass_acceleration(pos , args. get_mass_estimate());
+
+	// arma::vec dxdt_spacecraft = { X(3), X(4), X(5), acc_body_grav(0), acc_body_grav(1), acc_body_grav(2)};
 	
-	arma::vec dxdt_small_body = Dynamics::attitude_dxdt_estimate(t, X_small_body, args);
+	// arma::vec dxdt_small_body = Dynamics::attitude_dxdt_estimate(t, X_small_body, args);
 	
-	dxdt.subvec(0,5) = dxdt_spacecraft;
-	dxdt.subvec(6,11) = dxdt_small_body;
+	// dxdt.subvec(0,5) = dxdt_spacecraft;
+	// dxdt.subvec(6,11) = dxdt_small_body;
 
 
 
@@ -172,20 +197,24 @@ arma::vec Dynamics::point_mass_attitude_dxdt_inertial_estimate(double t,const ar
 }
 
 
+arma::vec Dynamics::velocity(double t,const arma::vec & X, const Args & args) {
+	return X;
+}
+
 
 arma::mat Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args){
 
-
+	throw(std::runtime_error("to reimplement"));
 	
 	arma::mat A = arma::zeros<arma::mat>(12,12);
 
-	arma::vec::fixed<3> pos = X . subvec(0, 2);
-	arma::vec::fixed<6> attitude = X . subvec(6, 11);
+	// arma::vec::fixed<3> pos = X . subvec(0, 2);
+	// arma::vec::fixed<6> attitude = X . subvec(6, 11);
 
 
-	A.submat(0,0,5,5) += Dynamics::point_mass_jacobian(pos , args . get_mass_estimate());
+	// A.submat(0,0,5,5) += Dynamics::point_mass_jacobian(pos , args . get_mass_estimate());
 	
-	A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
+	// A.submat(6,6,11,11) += Dynamics::attitude_jacobian(attitude , args . get_inertia_estimate());
 
 
 	return A;
@@ -209,7 +238,6 @@ arma::vec Dynamics::harmonics_attitude_dxdt_inertial_estimate(double t,const arm
 
 	// Body frame position
 	pos = BN * pos;
-
 
 	// Gravity acceleration expressed in the body frame
 	arma::vec::fixed<3> acc = X(12)/ (arma::datum::G * args.get_estimated_shape_model() -> get_volume()) * args.get_sbgat_harmonics_estimate() -> GetAcceleration(pos);
