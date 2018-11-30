@@ -17,7 +17,7 @@ int main( ){
     Args args;
     args.set_distance_from_sun_AU(1.);
 
-    SystemNew system(args);
+    SystemDynamics system(args);
 
     OC::KepState kep_state;
     kep_state.set_state({1e3,0.1,0.1,0.1,0.2,0});
@@ -37,10 +37,10 @@ int main( ){
     x0.subvec(number_of_states, number_of_states + number_of_states * number_of_states - 1) = arma::vectorise(arma::eye<arma::mat>(number_of_states,number_of_states));
 
 
-    system.add_next_state("spacecraft_position",3);
-    system.add_next_state("spacecraft_velocity",3);
-    system.add_next_state("mu",1);
-    system.add_next_state("C",1);
+    system.add_next_state("spacecraft_position",3,false);
+    system.add_next_state("spacecraft_velocity",3,false);
+    system.add_next_state("mu",1,false);
+    system.add_next_state("C",1,false);
 
 
     system.add_dynamics("spacecraft_position",Dynamics::velocity,{"spacecraft_velocity"});
@@ -77,7 +77,8 @@ int main( ){
 
 
     boost::numeric::odeint::integrate_times(stepper, system, x0_copy, times.begin(), times.end(), 
-        1e-10,Observer::push_back_state(states));
+        1e-10,Observer::push_back_state(states,system.get_number_of_states(),
+            system.get_attitude_state_first_indices()));
 
     std::cout << "done integrating\n";
     
@@ -86,7 +87,7 @@ int main( ){
     for (int i = 0 ; i < states.size(); ++i) {
         orbit.col(i) = states[i].subvec(0,number_of_states - 1);
         stms.push_back(arma::reshape(states[i].subvec(number_of_states,
-           number_of_states + number_of_states * number_of_states - 1),
+         number_of_states + number_of_states * number_of_states - 1),
         number_of_states,number_of_states));
     }
 
@@ -109,7 +110,8 @@ int main( ){
 
     std::vector<arma::vec> states_perturbed; 
     boost::numeric::odeint::integrate_times(stepper, system, x0_p_copy, times.begin(), times.end(), 
-        1e-10,Observer::push_back_state(states_perturbed));
+        1e-10,Observer::push_back_state(states_perturbed,system.get_number_of_states(),
+            system.get_attitude_state_first_indices()));
 
 
     arma::mat orbit_perturbed(number_of_states,states_perturbed.size());

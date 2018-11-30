@@ -47,7 +47,10 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	#endif
 	
 	boost::numeric::odeint::integrate_times(stepper, this -> estimated_dynamics_system, x, tbegin, tend,1e-10,
-		Observer::push_back_augmented_state(augmented_state_history));
+		Observer::push_back_state(augmented_state_history,
+			this -> estimated_dynamics_system.get_number_of_states(),
+			this -> estimated_dynamics_system.get_attitude_state_first_indices()
+			));
 
 	if (augmented_state_history.size() != 2){
 		throw(std::runtime_error("augmented_state_history should have two elements only"));
@@ -56,7 +59,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	for (unsigned int i = 0; i < N_est; ++i){
 		X_hat(i) = augmented_state_history[1](i);
 	}
-	
+
 	#if EKF_DEBUG
 	std::cout << "building stm\n";
 	#endif
@@ -79,7 +82,7 @@ void ExtendedKalmanFilter::measurement_update(double t,
 
 	std::cout << "-- EKF measurement update\n";
 	auto H = this -> estimate_jacobian_observations_fun(t, X_bar , this -> args);
-	
+
 	// The Kalman gain is computed
 	arma::mat K = P_bar * H.t() * arma::inv(H * P_bar * H.t() + R);
 
@@ -114,7 +117,7 @@ void ExtendedKalmanFilter::measurement_update(double t,
 	else{
 		previous_mahalanobis_distance = mahalanobis_distance;
 	}
-	
+
 	// The covariance is updated
 	if (done_iterating){
 		P_bar = P_hat;
@@ -123,7 +126,7 @@ void ExtendedKalmanFilter::measurement_update(double t,
 
 	}
 
-	
+
 
 }
 

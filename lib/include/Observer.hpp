@@ -22,128 +22,79 @@ namespace Observer {
 	};
 
 
+	/**
+	Observer structure used to push a state into a container. 
+	If the state is integrated together with its state transition matrix
+	, then the switching of any attitude state possibly present also triggers a switching of the associated state transition matrix partition.
+	The presence or absence of stms is inferred from the size of the inegrated state
+	compared to the provided number of state components. 
+	*/
 	struct push_back_state {
 
 		std::vector< arma::vec > & m_states;
+		int number_of_states;
+		std::vector<int> attitude_state_first_indices;
 
-		push_back_state( std::vector< arma::vec > & states ) : m_states( states )  { 
-		}
+		/**
+		Constructor
+		@param[out] states container storing the integrated states
+		@param[in] n_states effective number of state components. The integrated states can have n_states, or 
+		n_states + n_states * n_states if their associated state transition matrices are integrated alongside them
+		@param[in] attitude_state_first_indices list of indices of first component in attitude states. For instance, for an integrated
+		that looks like X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
+		as this is the first index of sigma in X.
+		*/
+		push_back_state( std::vector< arma::vec > & states , int n_states,std::vector<int> att_state_first_indices = {}) : m_states( states ),
+		number_of_states(n_states) ,attitude_state_first_indices(att_state_first_indices) { 
 
-		void operator()( arma::vec & x,  double t){
-			m_states.push_back( x );
-		}
-	};
-
-
-	struct push_back_attitude_state {
-
-		std::vector< arma::vec > & m_states;
-
-		push_back_attitude_state( std::vector< arma::vec > & states ) : m_states( states )  { 
-
-		}
-
-		void operator()( arma::vec & x,  double t){
-
-			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
-			std::cout << "in push_back_attitude_state::operator() at time t == " << t << "\n";
-			std::cout << "x == " << x.t() << "\n";
-			#endif
-
-			if (arma::norm(x.subvec(0,2)) > 1){
-
-			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
-			std::cout << "switching in push_back_attitude_state::operator()\n";
-			#endif
-				x.subvec(0,2) = - x.subvec(0,2) / arma::dot(x.subvec(0,2),x.subvec(0,2));
-				
-				if (x.n_rows > 6){
-					const arma::vec::fixed<3> & sigma = x.subvec(0,2);
-			// Switching matrix
-					arma::mat::fixed<6,6> Theta = arma::eye<arma::mat>(6,6);
-					Theta.submat(0,0,2,2) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
-
-			// The stm is switched
-					x.subvec(6,6 + 6 * 6 - 1) = arma::vectorise(Theta * arma::reshape(x.subvec(6,6 + 6 * 6 - 1),6,6));
-				}
-			}
-
-
-
-			m_states.push_back( x );
-
-			#if PUSH_BACK_ATTITUDE_STATE_DEBUG
-			std::cout << "leaving push_back_attitude_state::operator()\n";
-			#endif
-		}
-
-	};
-
-
-	struct push_back_augmented_state {
-
-		std::vector< arma::vec > & m_states;
-
-		push_back_augmented_state( std::vector< arma::vec > & states ) : m_states( states )  { 
-		}
-
-		void operator()( arma::vec & x,  double t){
-
-			#if PUSH_BACK_AUGMENTED_STATE_DEBUG
-			std::cout << "push_back_augmented_state::operator()\n";
-			#endif
-
-			if (arma::norm(x.subvec(6,8)) > 1){
-
-		// The state is switched
-				arma::vec sigma = x.subvec(6,8);
-				x.subvec(6,8) = - sigma / arma::dot(sigma,sigma);
-
-				if (x.n_rows > 13){
-			// Switching matrix
-					arma::mat Theta = arma::eye<arma::mat>(13,13);
-					Theta.submat(6,6,8,8) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
-
-			// The stm is switched
-					x.rows(13,13 + 13 * 13 - 1) = arma::vectorise(Theta * arma::reshape(x.rows(13,13 + 13 * 13 - 1),13,13));
-				}
-			}
-
-			m_states.push_back( x );
-
-			#if PUSH_BACK_AUGMENTED_STATE_DEBUG
-			std::cout << "leaving push_back_augmented_state::operator()\n";
-			#endif
-		}
-	};
-
-	struct push_back_augmented_state_no_mrp {
-
-		std::vector< arma::vec > & m_states;
-
-		push_back_augmented_state_no_mrp( std::vector< arma::vec > & states ) : m_states( states )  { 
 		}
 
 		void operator()( arma::vec & x,  double t){
 			
+			if (attitude_state_first_indices.size() > 0){
+				
+				// Switching matrix, which may or may not be necessary if no switching is detected
+				arma::mat Theta;
+
+				// For all the attitude states
+				for (auto i : attitude_state_first_indices){
+
+
+					if (arma::norm(x.subvec(i,i + 2)) > 1){
+
+						const arma::vec::fixed<3> & sigma = x.subvec(i,i + 2);
+
+						x.subvec(i,i + 2) = - sigma / arma::dot(sigma,sigma);
+
+						if (Theta.n_rows == 0 && x.n_rows > number_of_states){
+
+							// There is at least one switching and the stm is being integrated
+							// so we can populate Theta
+							Theta = arma::eye<arma::mat>(number_of_states,number_of_states);
+						}
+
+						if (x.n_rows > number_of_states){
+							// The switching matrix partition is populated 
+							Theta.submat(i,i,i + 2,i + 2) = 1./(arma::dot(sigma,sigma)) * (2 * sigma * sigma.t() / arma::dot(sigma,sigma) - arma::eye<arma::mat>(3,3));
+						}
+
+					}
+
+				}
+
+				if (Theta.n_rows > 0){
+					// If the switching matrix was populated, it means that at least one 
+					// switching took place so we need to switch the full stm. At this stage, 
+					// all switchings have been computed
+					x.rows(number_of_states,number_of_states + number_of_states * number_of_states - 1) = arma::vectorise(Theta * arma::reshape(x.rows(number_of_states,number_of_states + number_of_states * number_of_states - 1),number_of_states,number_of_states));
+				}
+			}
+
 			m_states.push_back( x );
+			
 		}
 	};
 
-
-	struct push_back_state_and_energy{
-
-		std::vector< arma::vec > & m_states;
-		std::vector< double > & m_energy;
-
-		push_back_state_and_energy( std::vector< arma::vec > & states, std::vector< double > & energy ) : m_states(states), m_energy( energy )  { 
-		}
-
-		void operator()( arma::vec & x,  double t){
-			m_states.push_back( x );
-			m_energy.push_back( 0.5 * dot(x.subvec(3,5),x.subvec(3,5))- 1./arma::norm(x.subvec(0,2)));
-		}
-	};
 
 }
 

@@ -184,7 +184,7 @@ void StatePropagator::propagate(std::vector<double> & T, std::vector<arma::vec> 
 		T.begin(), 
 		T.end(),
 		1e-3,
-		Observer::push_back_augmented_state(X_augmented));
+		Observer::push_back_state(X_augmented,initial_state.n_rows,dynamics_system.get_attitude_state_first_indices()));
 
 
 

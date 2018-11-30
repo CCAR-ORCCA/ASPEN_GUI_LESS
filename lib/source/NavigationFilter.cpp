@@ -128,7 +128,9 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	auto tend = T_obs.end();
 
 	boost::numeric::odeint::integrate_times(stepper, this -> true_dynamics_system, X0_true_augmented_cp, tbegin, tend,1e-3,
-		Observer::push_back_augmented_state(this -> true_state_history));
+		Observer::push_back_state(this -> true_state_history,
+			this -> true_dynamics_system.get_number_of_states(),
+			this -> true_dynamics_system.get_attitude_state_first_indices()));
 
 
 	if (save == true){

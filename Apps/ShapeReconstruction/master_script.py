@@ -51,6 +51,44 @@ all_data = [
 "OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
 }
 
+,
+
+{
+"OBSERVATION_TIMES" : 150,
+"IOD_PARTICLES" : 100,
+"IOD_ITERATIONS" : 100,
+"IOD_RIGID_TRANSFORMS_NUMBER" : 7 ,
+"SMA" : 1000,
+"E" : 0.25,
+"I" : 1.4,
+"RAAN" :0.2,
+"PERI_OMEGA" : 0.3,
+"M0" : 1.57, 
+"SPIN_PERIOD" : 12, 
+"LONGITUDE_SPIN" : 0., 
+"LATITUDE_SPIN" : 0., 
+"DENSITY" : 1900,
+"HARMONICS_DEGREE" : 10,
+"DISTANCE_FROM_SUN_AU": 1.3241,
+"CR": 0,
+"USE_HARMONICS" : True,
+"INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
+"MRP_0" : [0,0,0],
+"N_ITER_BUNDLE_ADJUSTMENT" : 2,
+"N_ITER_SHAPE_FILTER" : 3,
+"MIN_TRIANGLE_ANGLE" : 30,
+"MAX_TRIANGLE_SIZE" : 5,
+"SURFACE_APPROX_ERROR" : 1,
+"NUMBER_OF_EDGES" : 2000,
+"BA_H" : 4,
+"LOS_NOISE_SD_BASELINE" : 5e-1,
+"USE_BA" : True,
+"USE_ICP" : True,
+"USE_TRUE_RIGID_TRANSFORMS" : False,
+"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_1",
+"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1"
+}
+
 
 ]
 

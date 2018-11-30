@@ -14,6 +14,7 @@ public:
 	Default Constructor
 	*/
 	SystemDynamics() {
+
 	}
 	
 	/**
@@ -22,15 +23,17 @@ public:
 	stored in the integrated state
 	*/
 	SystemDynamics(Args args) {
-		this -> args = args;
+		this -> args = args ;
 	}
 
 	/**
 	Adds a new state to the state manager
 	@param name name of the new state (exemple: "position", "SRP_coef",...)
 	@param size number of components in the considered state
+	@param is_mrp_state if true, will populate an internal container allowing proper 
+	handling of mrp switches
 	*/
-	void add_next_state(std::string name,unsigned int size){
+	void add_next_state(std::string name,unsigned int size,bool is_mrp_state){
 
 		if (size == 0){
 			throw(std::runtime_error("A state must have at least one component"));
@@ -41,6 +44,11 @@ public:
 		for (unsigned int i = 0; i < size; ++i){
 			indices(i) = this -> number_of_states + i;
 		}
+
+		if (is_mrp_state){
+			this -> attitude_state_first_indices.push_back(indices(0));
+		}
+
 		this -> number_of_states += size;
 
 		state_indices[name] = indices;
@@ -77,6 +85,20 @@ public:
 	void add_jacobian(std::string state,std::string wr_state, arma::mat (*jacobian)(double, const arma::vec &  , const Args & args),std::vector<std::string> input_states){
 		jacobians[state][wr_state].push_back(std::make_pair(jacobian,input_states));
 	}
+
+
+	/**
+	Returns the list of indices of potential attitude states. For instance, for an integrated
+		that looks like X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
+		as this is the first index of sigma in X.
+	*/
+	std::vector<int> get_attitude_state_first_indices() const{
+		return this -> attitude_state_first_indices;
+	}
+
+
+
+
 
 
 	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
@@ -203,14 +225,16 @@ public:
 
 
 
-
+	int get_number_of_states() const{
+		return this -> number_of_states;
+	}
 protected:
 
 	std::map<std::string,arma::uvec> state_indices;
 	std::map<std::string,std::vector< std::pair< arma::vec (*)(double, const arma::vec &  , const Args & args),std::vector<std::string > > > > dynamics;
 	std::map<std::string,std::map<std::string,std::vector< std::pair< arma::mat (*)(double, const arma::vec &  , const Args & args),std::vector<std::string > > > > > jacobians;
 
-
+	std::vector<int> attitude_state_first_indices;
 	
 	Args args;
 	int number_of_states = 0;

@@ -205,12 +205,12 @@ int main() {
 
 	SystemDynamics dynamics_system_truth(args);
 
-	dynamics_system_truth.add_next_state("r",3);
-	dynamics_system_truth.add_next_state("r_dot",3);
-	dynamics_system_truth.add_next_state("sigma_BN",3);
-	dynamics_system_truth.add_next_state("omega_BN",3);
-	dynamics_system_truth.add_next_state("mu",1);
-	dynamics_system_truth.add_next_state("C_srp",1);
+	dynamics_system_truth.add_next_state("r",3,false);
+	dynamics_system_truth.add_next_state("r_dot",3,false);
+	dynamics_system_truth.add_next_state("sigma_BN",3,true);
+	dynamics_system_truth.add_next_state("omega_BN",3,false);
+	dynamics_system_truth.add_next_state("mu",1,false);
+	dynamics_system_truth.add_next_state("C_srp",1,false);
 
 	dynamics_system_truth.add_dynamics("r",Dynamics::velocity,{"r_dot"});
 	
@@ -286,6 +286,7 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
+
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);

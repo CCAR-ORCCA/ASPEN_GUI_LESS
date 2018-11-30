@@ -293,8 +293,8 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 	SystemDynamics estimated_dynamics_system(args);
 
-	estimated_dynamics_system.add_next_state("sigma",3);
-	estimated_dynamics_system.add_next_state("omega",3);
+	estimated_dynamics_system.add_next_state("sigma",3,true);
+	estimated_dynamics_system.add_next_state("omega",3,false);
 
 	estimated_dynamics_system.add_dynamics("sigma",Dynamics::dmrp_dt,{"sigma","omega"});
 	estimated_dynamics_system.add_dynamics("omega",Dynamics::domega_dt_estimate,{"sigma","omega"});
@@ -308,7 +308,9 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 
 
 	boost::numeric::odeint::integrate_times(stepper, estimated_dynamics_system, x, tbegin, tend,1e-10,
-		Observer::push_back_attitude_state(augmented_state_history));
+		Observer::push_back_state(augmented_state_history,
+			estimated_dynamics_system.get_number_of_states(),
+			estimated_dynamics_system.get_attitude_state_first_indices()));
 	
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "\tDone running integrator\n";
