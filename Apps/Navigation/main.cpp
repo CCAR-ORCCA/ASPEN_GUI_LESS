@@ -74,6 +74,9 @@ int main() {
 	double PROCESS_NOISE_SIGMA_OMEG = input_data["PROCESS_NOISE_SIGMA_OMEG"];
 	double SKIP_FACTOR = input_data["SKIP_FACTOR"];
 
+
+
+
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	bool USE_HARMONICS_ESTIMATED_DYNAMICS = input_data["USE_HARMONICS_ESTIMATED_DYNAMICS"];
 
@@ -249,6 +252,13 @@ int main() {
 
 	/******************************************************/
 	/******************************************************/
+	/******************************************************/
+
+
+	
+
+	/******************************************************/
+	/******************************************************/
 	/***************( True ) Initial state ****************/
 	/******************************************************/
 	/******************************************************/
@@ -269,7 +279,8 @@ int main() {
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][3],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][4],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5],
-		arma::datum::G * true_shape_model . get_volume() * DENSITY
+		arma::datum::G * true_shape_model . get_volume() * DENSITY,
+		shape_reconstruction_output_data["CR_TRUTH"]
 	};
 
 	/******************************************************/
@@ -287,32 +298,25 @@ int main() {
 	std::vector<double> T_obs;
 	std::vector<arma::vec> X_true;
 
-	if(USE_HARMONICS){
-		StatePropagator::propagate(T_obs,X_true, 
-			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
-			X0_true.subvec(0,11),
-			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","orbit");
-		StatePropagator::propagate(0, tf, 10. , X0_true.subvec(0,11),
-			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","full_orbit");
-	}
-	else{
-		StatePropagator::propagate(T_obs,X_true, 
-			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
-			X0_true.subvec(0,11),
-			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","orbit");
+	std::cout << "Propagating true state\n";
+	
+	StatePropagator::propagate(T_obs,X_true, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","obs_point_mass");
 
-		StatePropagator::propagate(0, tf, 10. , X0_true.subvec(0,11),
-			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","full_orbit");
-	}
-
+	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","full_orbit_point_mass");
+	
 	arma::vec times(T_obs.size()); 
 	for (int i = 0; i < T_obs.size(); ++i){
 		times(i) = T_obs[i];
 	}
+
 
 	/******************************************************/
 	/******************************************************/
@@ -330,8 +334,8 @@ int main() {
 
 	// Initial state
 
-	arma::vec::fixed<13> X0_estimated;
-	arma::mat::fixed<13,13> P0 = arma::zeros<arma::mat>(13,13);
+	arma::vec::fixed<14> X0_estimated;
+	arma::mat::fixed<14,14> P0 = arma::zeros<arma::mat>(14,14);
 
 	if (input_data["USE_TRUE_STATES"]){
 
@@ -354,6 +358,8 @@ int main() {
 		P0(10,10) = 1e-10;
 		P0(11,11) = 1e-10;
 		P0(12,12) = 10;
+		P0(13,13) = 0.1;
+
 
 	}
 
@@ -373,7 +379,9 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][3],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5],
-			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_MU"]
+			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_MU"],
+			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_CR"],
+
 		};
 
 		if(!P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii)){
@@ -408,8 +416,7 @@ int main() {
 
 	NavigationFilter filter(args);
 	
-	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,
-		PROCESS_NOISE_SIGMA_OMEG);
+	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
 	
 	filter.set_gamma_fun(Dynamics::gamma_OD);
 
@@ -419,32 +426,91 @@ int main() {
 		Observations::obs_pos_mrp_ekf_lidar);	
 
 	// True state dynamics
-	if(USE_HARMONICS){
-		std::cout << "Using spherical harmonics gravity in the true dynamics\n";
-		filter.set_true_dynamics_fun(Dynamics::harmonics_attitude_dxdt_inertial_truth);
+	SystemDynamics dynamics_system_truth(args);
+
+	dynamics_system_truth.add_next_state("r",3,false);
+	dynamics_system_truth.add_next_state("r_dot",3,false);
+	dynamics_system_truth.add_next_state("sigma_BN",3,true);
+	dynamics_system_truth.add_next_state("omega_BN",3,false);
+	dynamics_system_truth.add_next_state("mu",1,false);
+	dynamics_system_truth.add_next_state("CR_TRUTH",1,false);
+
+	dynamics_system_truth.add_dynamics("r",Dynamics::velocity,{"r_dot"});
+	
+	if (USE_HARMONICS){
+		dynamics_system_truth.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_truth,{"r","sigma_BN"});
 	}
 	else{
-		std::cout << "Using point-mass gravity in the true dynamics\n";
-		filter.set_true_dynamics_fun(Dynamics::point_mass_attitude_dxdt_inertial_truth);
+		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
+	
+	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
+	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
+
+
+	filter.set_true_dynamics_system(dynamics_system_truth);
+
+
+	/****************************************/
+	/****************************************/
+	/******* ESTIMATED STATE DYNAMICS *******/
+	/****************************************/
+	/****************************************/
+	/****************************************/
 
 	// Estimated state dynamics
-	if(USE_HARMONICS_ESTIMATED_DYNAMICS){
 
-		std::cout << "Using spherical harmonics gravity in the estimate dynamics\n";
-		
-		filter.set_dynamics_function_estimate(Dynamics::harmonics_attitude_dxdt_inertial_estimate);
-		filter.set_jacobian_dynamics_function_estimate(Dynamics::harmonics_jac_attitude_dxdt_inertial_estimate);
-		
+	SystemDynamics dynamics_system_estimate(args);
 
+	dynamics_system_estimate.add_next_state("r",3,false);
+	dynamics_system_estimate.add_next_state("r_dot",3,false);
+	dynamics_system_estimate.add_next_state("sigma_BN",3,true);
+	dynamics_system_estimate.add_next_state("omega_BN",3,false);
+	dynamics_system_estimate.add_next_state("mu",1,false);
+	dynamics_system_estimate.add_next_state("CR_ESTIMATE",1,false);
 
+	dynamics_system_estimate.add_dynamics("r",Dynamics::velocity,{"r_dot"});
+	
+	if (USE_HARMONICS){
+		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_estimate,{"r","sigma_BN"});
 	}
 	else{
-		std::cout << "Using point-mass gravity in the estimate dynamics\n";
-
-		filter.set_dynamics_function_estimate(Dynamics::point_mass_attitude_dxdt_inertial_estimate);
-		filter.set_jacobian_dynamics_function_estimate(Dynamics::point_mass_jac_attitude_dxdt_inertial_estimate);
+		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
+	dynamics_system_estimate.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_ESTIMATE"});
+	dynamics_system_estimate.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
+	dynamics_system_estimate.add_dynamics("omega_BN",Dynamics::domega_dt_estimate,{"sigma_BN","omega_BN"});
+
+
+	
+	dynamics_system_estimate.add_jacobian("r","r_dot",Dynamics::identity_33,{"r_dot"});
+	
+	if (USE_HARMONICS){
+		dynamics_system_estimate.add_jacobian("r_dot","r",Dynamics::spherical_harmonics_gravity_gradient_matrix_estimate,{"r","sigma_BN","mu"});
+		dynamics_system_estimate.add_jacobian("r_dot","mu",Dynamics::spherical_harmonics_acceleration_estimate_unit_mu,{"r","sigma_BN"});
+	}
+	else{
+		dynamics_system_estimate.add_jacobian("r_dot","r",Dynamics::point_mass_gravity_gradient_matrix,{"r","mu"});
+		dynamics_system_estimate.add_jacobian("r_dot","mu",Dynamics::point_mass_acceleration_unit_mu,{"r"});
+	}
+
+	dynamics_system_estimate.add_jacobian("r_dot","CR_ESTIMATE",Dynamics::SRP_cannonball_unit_C,{"CR_ESTIMATE"});
+
+	dynamics_system_estimate.add_jacobian("sigma_BN","sigma_BN",Dynamics::partial_mrp_dot_partial_mrp,{"sigma_BN","omega_BN"});
+	dynamics_system_estimate.add_jacobian("sigma_BN","omega_BN",Dynamics::partial_mrp_dot_partial_omega,{"sigma_BN"});
+	dynamics_system_estimate.add_jacobian("omega_BN","omega_BN",Dynamics::partial_omega_dot_partial_omega_estimate,{"sigma_BN","omega_BN"});
+	
+	filter.set_estimated_dynamics_system(dynamics_system_estimate);
+
+
+	/****************************************/
+	/*************** END OF *****************/
+	/******* ESTIMATED STATE DYNAMICS *******/
+	/****************************************/
+	/****************************************/
+	/****************************************/
+
 
 	filter.set_initial_information_matrix(arma::inv(P0));
 	auto start = std::chrono::system_clock::now();

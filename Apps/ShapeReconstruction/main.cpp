@@ -88,7 +88,7 @@ int main() {
 	double SURFACE_APPROX_ERROR = input_data["SURFACE_APPROX_ERROR"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
-	double CR = input_data["CR"];
+	double CR_TRUTH = input_data["CR_TRUTH"];
 
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
@@ -210,7 +210,7 @@ int main() {
 	dynamics_system_truth.add_next_state("sigma_BN",3,true);
 	dynamics_system_truth.add_next_state("omega_BN",3,false);
 	dynamics_system_truth.add_next_state("mu",1,false);
-	dynamics_system_truth.add_next_state("C_srp",1,false);
+	dynamics_system_truth.add_next_state("CR_TRUTH",1,false);
 
 	dynamics_system_truth.add_dynamics("r",Dynamics::velocity,{"r_dot"});
 	
@@ -220,7 +220,7 @@ int main() {
 	else{
 		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
-	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"C_srp"});
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
 	
 	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
@@ -246,7 +246,7 @@ int main() {
 	X0_augmented.rows(6,8) = MRP_0;
 	X0_augmented.rows(9,11) = omega_0;
 	X0_augmented(12) = args.get_mu_truth();
-	X0_augmented(13) = CR;
+	X0_augmented(13) = CR_TRUTH;
 
 	/******************************************************/
 	/******************************************************/
@@ -362,6 +362,7 @@ int main() {
 		X_estimated[10], 
 		X_estimated[11]
 	};
+	output_data["CR_TRUTH"] = CR_TRUTH;
 
 	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
 	output_data["ESTIMATED_SMALL_BODY_CR"] = 1.1;
