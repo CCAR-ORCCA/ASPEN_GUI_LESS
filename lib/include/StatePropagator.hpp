@@ -2,7 +2,7 @@
 #define HEADER_STATEPROPAGATOR
 #include <boost/numeric/odeint.hpp>
 #include <Dynamics.hpp>
-#include <System.hpp>
+#include <SystemDynamics.hpp>
 #include <Args.hpp>
 #include <Observer.hpp>
 
@@ -13,28 +13,45 @@ public:
 
 
 
-	static void propagateOrbit(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
-		const double t0, const double tf, const double dt, arma::vec initial_state,
-		arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+	static void propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
+		const double t0, 
+		const double tf, 
+		const double dt, arma::vec initial_state,
+		const SystemDynamics & dynamics_system,
+		const Args & args,
 		std::string savefolder = "",std::string label = "");
 
 
 
-	static void propagateOrbit(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
-		const double t0, const double dt, int N_times, arma::vec initial_state,
-		arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+	static void propagate(std::vector<double> & T, 
+		std::vector<arma::vec> & X_augmented, 
+		const double t0, 
+		const double dt, 
+		int N_times, 
+		arma::vec initial_state,
+		const SystemDynamics & dynamics_system,
+		const Args & args,
 		std::string savefolder = "",std::string label = "");
 
 
-	static void propagateOrbit( const double t0, const double tf, const double dt, arma::vec initial_state,
-		arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+	static void propagate( const double t0, 
+		const double tf, 
+		const double dt, 
+		arma::vec initial_state,
+		const SystemDynamics & dynamics_system,
+		const Args & args,
 		std::string savefolder = "",std::string label = "");
 
 
 
-	static void propagateOrbit( const double t0, const double dt, int N_times, arma::vec initial_state,
-		arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
-		std::string savefolder = "",std::string label = "");
+	static void propagate( const double t0, 
+		const double dt, 
+		int N_times, 
+		arma::vec initial_state,
+		const SystemDynamics & dynamics_system,
+		const Args & args,
+		std::string savefolder = "",
+		std::string label = "");
 
 
 
@@ -42,8 +59,10 @@ public:
 private:
 
 
-	static void propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented,arma::vec initial_state,
-		arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args);
+	static void propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented,
+		arma::vec initial_state,
+		const SystemDynamics & dynamics_system,
+		const Args & args);
 
 
 };

@@ -1,5 +1,5 @@
 #include "NavigationFilter.hpp"
-#include "System.hpp"
+#include "SystemDynamics.hpp"
 #include "Observer.hpp"
 #include "Dynamics.hpp"
 #include <boost/numeric/odeint.hpp>
@@ -121,15 +121,13 @@ void NavigationFilter::compute_true_state(std::vector<double> T_obs,
 	this -> true_state_history.clear();
 
 
-	System dynamics(this -> args,N_true,this -> true_dynamics_fun );
-
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
 	auto tbegin = T_obs.begin();
 	auto tend = T_obs.end();
 
-	boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_augmented_cp, tbegin, tend,1e-3,
+	boost::numeric::odeint::integrate_times(stepper, this -> true_dynamics_system, X0_true_augmented_cp, tbegin, tend,1e-3,
 		Observer::push_back_augmented_state(this -> true_state_history));
 
 

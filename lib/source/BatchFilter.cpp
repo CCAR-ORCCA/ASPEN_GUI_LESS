@@ -1,5 +1,4 @@
 #include "BatchFilter.hpp"
-#include "System.hpp"
 #include "Observer.hpp"
 #include <boost/numeric/odeint.hpp>
 #include "FixVectorSize.hpp"

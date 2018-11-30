@@ -1,5 +1,4 @@
 #include "ExtendedKalmanFilter.hpp"
-#include "System.hpp"
 #include "Observer.hpp"
 #include <boost/numeric/odeint.hpp>
 
@@ -10,7 +9,6 @@
 ExtendedKalmanFilter::ExtendedKalmanFilter(const Args & args) : SequentialFilter(args){
 // 
 }
-
 
 
 void ExtendedKalmanFilter::time_update(double t_now, double t_next,
@@ -26,12 +24,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	unsigned int N_true = 0;
 
 
-	System dynamics(this -> args,
-		N_est,
-		this -> estimate_dynamics_fun ,
-		this -> estimate_jacobian_dynamics_fun,
-		N_true,
-		nullptr );
+	
 
 	arma::vec x(N_est + N_est * N_est);
 	x.rows(0,N_est - 1) = X_hat;
@@ -53,7 +46,7 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	std::cout << "integrating dynamics\n";
 	#endif
 	
-	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
+	boost::numeric::odeint::integrate_times(stepper, this -> estimated_dynamics_system, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state(augmented_state_history));
 
 	if (augmented_state_history.size() != 2){

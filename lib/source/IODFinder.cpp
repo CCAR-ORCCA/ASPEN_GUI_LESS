@@ -2,10 +2,11 @@
 #include "Psopt.hpp"
 #include "IODBounds.hpp"
 #include <RigidBodyKinematics.hpp>
-#include "System.hpp"
 #include "Args.hpp"
 #include "Dynamics.hpp"
 #include "Observer.hpp"
+#include "SystemDynamics.hpp"
+
 
 
 IODFinder::IODFinder(std::vector<RigidTransform> * sequential_rigid_transforms,
@@ -417,12 +418,22 @@ void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 	int N_est = X_hat.n_rows;
 
 	Args args;
-	System dynamics(args,
-		N_est,
-		Dynamics::point_mass_mu_dxdt_odeint ,
-		Dynamics::point_mass_mu_jac_odeint,
-		0,
-		nullptr );
+
+	
+	SystemDynamics dynamics_system(args);
+
+	dynamics_system.add_next_state("position",3);
+	dynamics_system.add_next_state("velocity",3);
+	dynamics_system.add_next_state("mu",1);
+
+
+	dynamics_system.add_dynamics("position",Dynamics::velocity,{"velocity"});
+	dynamics_system.add_dynamics("velocity",Dynamics::point_mass_acceleration,{"position","mu"});
+
+	dynamics_system.add_jacobian("position","velocity",Dynamics::identity_33,{"velocity"});
+    dynamics_system.add_jacobian("velocity","position",Dynamics::point_mass_gravity_gradient_matrix,{"position","mu"});
+    dynamics_system.add_jacobian("velocity","mu",Dynamics::point_mass_acceleration_unit_mu,{"position"});
+
 
 	arma::vec x(N_est + N_est * N_est);
 	x.rows(0,N_est - 1) = X_hat;
@@ -441,7 +452,7 @@ void IODFinder::compute_state_stms(const arma::vec::fixed<7> & X_hat,
 
 	auto tbegin = times.begin();
 	auto tend = times.end();
-	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
+	boost::numeric::odeint::integrate_times(stepper, dynamics_system, x, tbegin, tend,1e-10,
 		Observer::push_back_augmented_state_no_mrp(augmented_state_history));
 
 	for (int i = 0; i < times.size(); ++i){

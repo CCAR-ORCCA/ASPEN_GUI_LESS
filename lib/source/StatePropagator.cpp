@@ -2,10 +2,14 @@
 
 
 
-
-void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
-	const double t0, const double tf, const double dt , arma::vec  initial_state,
-	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+void StatePropagator::propagate(std::vector<double> & T, 
+	std::vector<arma::vec> & X_augmented, 
+	const double t0,
+	const double tf, 
+	const double dt , 
+	arma::vec  initial_state,
+	const SystemDynamics & dynamics_system,
+	const Args & args,
 	std::string savefolder,std::string label){
 
 	int N_times = (int)(std::abs(tf - t0) / dt);
@@ -20,7 +24,7 @@ void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::
 		T.push_back(times(i));
 	}
 
-	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_fun,args);
+	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_system,args);
 
 	if (savefolder.length() > 0){
 
@@ -43,9 +47,10 @@ void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::
 
 
 
-void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
+void StatePropagator::propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
 	const double t0, const double dt, int N_times, arma::vec initial_state,
-	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+	const SystemDynamics & dynamics_system,
+	const Args & args,
 	std::string savefolder ,std::string label ){
 	
 	if (N_times <= 0){
@@ -58,7 +63,7 @@ void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::
 		T.push_back(times(i));
 	}
 
-	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_fun,args);
+	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_system,args);
 
 	if (savefolder.length() > 0){
 
@@ -75,9 +80,14 @@ void StatePropagator::propagateOrbit(std::vector<double> & T, std::vector<arma::
 
 }
 
-void StatePropagator::propagateOrbit( const double t0, const double tf, const double dt, arma::vec initial_state,
-	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
-	std::string savefolder ,std::string label ){
+void StatePropagator::propagate( const double t0, 
+	const double tf, 
+	const double dt,
+	arma::vec initial_state,
+	const SystemDynamics & dynamics_system,
+	const Args & args,
+	std::string savefolder ,
+	std::string label ){
 
 
 
@@ -96,7 +106,7 @@ void StatePropagator::propagateOrbit( const double t0, const double tf, const do
 		T.push_back(times(i));
 	}
 
-	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_fun,args);
+	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_system,args);
 
 	if (savefolder.length() > 0){
 
@@ -121,8 +131,9 @@ void StatePropagator::propagateOrbit( const double t0, const double tf, const do
 }
 
 
-void StatePropagator::propagateOrbit( const double t0, const double dt, int N_times, arma::vec initial_state,
-	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args,
+void StatePropagator::propagate( const double t0, const double dt, int N_times, arma::vec initial_state,
+	const SystemDynamics & dynamics_system,
+	const Args & args,
 	std::string savefolder ,std::string label ){
 
 	std::vector<double> T;
@@ -139,7 +150,7 @@ void StatePropagator::propagateOrbit( const double t0, const double dt, int N_ti
 		T.push_back(times(i));
 	}
 
-	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_fun,args);
+	StatePropagator::propagate(T, X_augmented,initial_state,dynamics_system,args);
 
 	if (savefolder.length() > 0){
 
@@ -156,24 +167,19 @@ void StatePropagator::propagateOrbit( const double t0, const double dt, int N_ti
 
 
 
-
-
-
-
-
 }
 
 
-void StatePropagator::propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented,arma::vec initial_state,
-	arma::vec (*dynamics_fun)(double, const arma::vec & , const Args & args),const Args & args){
-
-	System dynamics(args,initial_state.n_rows,dynamics_fun);
+void StatePropagator::propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented,
+	arma::vec initial_state,
+	const SystemDynamics & dynamics_system,
+	const Args & args){
 
 	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
 	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-10 , 1.0e-16 );
 
 	boost::numeric::odeint::integrate_times(stepper, 
-		dynamics, 
+		dynamics_system, 
 		initial_state,
 		T.begin(), 
 		T.end(),

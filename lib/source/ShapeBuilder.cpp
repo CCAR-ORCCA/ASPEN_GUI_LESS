@@ -143,7 +143,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				- this -> LN_t0 * this -> x_t0,
 				this -> LN_t0);
 
-			
 		}
 
 		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
@@ -427,22 +426,24 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				batch_attitude.run(R_pcs,mrps_LN);
 
 				// The mean and standard deviation of all the measured mu's is extracted
-				arma::vec rho_estimated(estimated_mu.size());
+				arma::vec mu_estimated(estimated_mu.size());
 
 				for (int i = 0; i < estimated_mu.size(); ++i){
-					rho_estimated(i) = estimated_mu[i];
+					mu_estimated(i) = estimated_mu[i];
 				}
 
 
-				this -> estimated_state = arma::zeros<arma::vec>(13);
+				this -> estimated_state = arma::zeros<arma::vec>(14);
 				this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
 				this -> estimated_state.subvec(6,11) = batch_attitude.get_attitude_state_history().back();
-				this -> estimated_state(12) = arma::mean(rho_estimated);
+				this -> estimated_state(12) = arma::mean(mu_estimated);
+				this -> estimated_state(13) = 1.4;
 
-				this -> covariance_estimated_state = arma::zeros<arma::mat>(13,13);
+				this -> covariance_estimated_state = arma::zeros<arma::mat>(14,14);
 				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
 				this -> covariance_estimated_state.submat(6,6,11,11) = batch_attitude.get_attitude_state_covariances_history().back();
-				this -> covariance_estimated_state(12,12) = std::pow(arma::stddev(rho_estimated),2);
+				this -> covariance_estimated_state(12,12) = std::pow(arma::stddev(mu_estimated),2);
+				this -> covariance_estimated_state(13,13) = std::pow(0.1,2);
 
 
 
@@ -1597,7 +1598,9 @@ arma::mat ShapeBuilder::get_covariance_estimated_state() const{
 }
 
 
-arma::vec::fixed<13> ShapeBuilder::get_estimated_state() const{
+arma::vec ShapeBuilder::get_estimated_state() const{
 	return this -> estimated_state;
 }
+
+
 

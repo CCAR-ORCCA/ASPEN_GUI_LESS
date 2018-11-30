@@ -28,11 +28,26 @@ namespace Dynamics{
 
 
 	/**
+	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux and no eclipses
+	@param X (1) state {C == 1} (C ==  SRP constant == 1)
+	@return point mass acceleration expressed in the inertial frame of reference
+	*/
+	arma::mat SRP_cannonball_unit_C(double t,const arma::vec & X, const Args & args);
+
+	/**
 	Evaluates the acceleration due to gravity at the provided point using a point mass model
 	@param X (4 x 1) state {rx,ry,rz,mu}
 	@return point mass acceleration expressed in the inertial frame of reference
 	*/
 	arma::vec point_mass_acceleration(double t,const arma::vec & X, const Args & args) ;
+
+
+	/**
+	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux and no eclipses
+	@param X (1) state {C} (C ==  SRP constant)
+	@return point mass acceleration expressed in the inertial frame of reference
+	*/
+	arma::vec SRP_cannonball(double t,const arma::vec & X, const Args & args) ;
 
 
 	/**
@@ -58,6 +73,24 @@ namespace Dynamics{
 	*/
 	arma::mat::fixed<6,6> attitude_jacobian(const arma::vec::fixed<6> & attitude_state ,const arma::mat & inertia) ;
 
+	/**
+	Computes the acceleration caused by a spherical harmonics gravity model
+	@param t time
+	@param X {position_N_frame,mrp_BN} 6x1
+	@param args structure of extra arguments. Used to extract args.get_sbgat_harmonics_truth()
+	*/
+	arma::vec spherical_harmonics_acceleration_truth(double t,const arma::vec & X, const Args & args) ;
+
+	/**
+	Computes the acceleration caused by a spherical harmonics gravity model
+	@param t time
+	@param X {position_N_frame,mrp_BN} 6x1
+	@param args structure of extra arguments. Used to extract args.get_sbgat_harmonics_estimate()
+	*/
+	arma::vec spherical_harmonics_acceleration_estimate(double t,const arma::vec & X, const Args & args) ;
+
+
+
 
 	arma::vec point_mass_attitude_dxdt_inertial_truth(double t, const arma::vec & X, const Args & args);
 	arma::vec harmonics_attitude_dxdt_inertial_truth(double t,const arma::vec & X, const Args & args);
@@ -70,6 +103,58 @@ namespace Dynamics{
 
 	arma::vec attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
 	arma::mat attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
+
+
+	/**
+	Time derivative of a MRP set
+	@param t time
+	@param X {mrp_set,angular_velocity} (6x1)
+	@param args structure of extra arguments (not used)
+	*/
+	arma::vec dmrp_dt(double t, const arma::vec & X, const Args & args) ;
+
+	/**
+	Computes the time derivative of the angular velocity using the estimated inertia
+	@param t
+	@param X {mrp_set,angular_velocity} (6x1)
+	@param args structure of extra arguments. Uses args . get_inertia_estimate()
+	*/
+	arma::vec domega_dt_estimate(double t, const arma::vec & X, const Args & args) ;
+
+	/**
+	Computes the time derivative of the angular velocity using the true inertia
+	@param t
+	@param X {mrp_set,angular_velocity} (6x1)
+	@param args structure of extra arguments. Uses args . get_inertia_truth()
+	*/
+	arma::vec domega_dt_truth(double t, const arma::vec & X, const Args & args) ;
+
+
+
+
+	/**
+	Computes the partial derivative of the time derivative of a MRP set with respect to the mrp set 
+	@param t time
+	@param X {mrp_set,angular_velocity} (6x1)
+	@param args structure of extra arguments (not used)
+	*/
+	arma::mat partial_mrp_dot_partial_mrp(double t, const arma::vec & x, const Args & args);
+
+	/**
+	Computes the partial derivative of the time derivative of a MRP set with respect to the angular velocity 
+	@param t time
+	@param X {mrp_set} (3x1)
+	@param args structure of extra arguments (not used)
+	*/
+	arma::mat partial_mrp_dot_partial_omega(double t, const arma::vec & X, const Args & args);
+
+	/**
+	Computes the partial derivative of the time derivative of the angular velocity set with respect to the angular velocity 
+	@param t time
+	@param X {mrp_set} (3x1)
+	@param args structure of extra arguments. Uses args . get_inertia_estimate()
+	*/
+	arma::mat partial_omega_dot_partial_omega_estimate(double t, const arma::vec & X, const Args & args);
 
 
 

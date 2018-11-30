@@ -1,7 +1,7 @@
 #include <BatchAttitude.hpp>
 #include <Dynamics.hpp>
 #include <Observer.hpp>
-#include <System.hpp>
+#include <SystemDynamics.hpp>
 
 #define BATCH_ATTITUDE_DEBUG 1
 
@@ -264,13 +264,6 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	std::cout << this -> inertia_estimate << std::endl;
 	#endif 
 	
-	System dynamics(args,
-		N_est,
-		Dynamics::attitude_dxdt_inertial_estimate ,
-		Dynamics::attitude_jac_dxdt_inertial_estimate,
-		0,
-		nullptr);
-
 	
 	#if BATCH_ATTITUDE_DEBUG
 	std::cout << "\tPopulating states . N_est == "<<  N_est << " \n";
@@ -297,7 +290,24 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	std::cout << "\tRunning integrator\n";
 	#endif 
 
-	boost::numeric::odeint::integrate_times(stepper, dynamics, x, tbegin, tend,1e-10,
+
+	SystemDynamics estimated_dynamics_system(args);
+
+	estimated_dynamics_system.add_next_state("sigma",3);
+	estimated_dynamics_system.add_next_state("omega",3);
+
+	estimated_dynamics_system.add_dynamics("sigma",Dynamics::dmrp_dt,{"sigma","omega"});
+	estimated_dynamics_system.add_dynamics("omega",Dynamics::domega_dt_estimate,{"sigma","omega"});
+
+	estimated_dynamics_system.add_jacobian("sigma","sigma",Dynamics::partial_mrp_dot_partial_mrp,{"sigma","omega"});
+	estimated_dynamics_system.add_jacobian("sigma","omega",Dynamics::partial_mrp_dot_partial_omega,{"sigma"});
+	
+	estimated_dynamics_system.add_jacobian("omega","omega",Dynamics::partial_omega_dot_partial_omega_estimate,{"omega"});
+
+
+
+
+	boost::numeric::odeint::integrate_times(stepper, estimated_dynamics_system, x, tbegin, tend,1e-10,
 		Observer::push_back_attitude_state(augmented_state_history));
 	
 	#if BATCH_ATTITUDE_DEBUG

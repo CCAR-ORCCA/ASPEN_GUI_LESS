@@ -6,7 +6,7 @@
 #include <Observations.hpp>
 #include <Dynamics.hpp>
 #include <Observer.hpp>
-#include <System.hpp>
+#include <SystemDynamics.hpp>
 #include <ShapeBuilderArguments.hpp>
 #include <StatePropagator.hpp>
 
@@ -87,6 +87,9 @@ int main() {
 	double MAX_TRIANGLE_SIZE = input_data["MAX_TRIANGLE_SIZE"];
 	double SURFACE_APPROX_ERROR = input_data["SURFACE_APPROX_ERROR"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
+	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
+	double CR = input_data["CR"];
+
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
@@ -168,6 +171,7 @@ int main() {
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
+	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
@@ -197,6 +201,32 @@ int main() {
 	/******************************************************/
 
 
+	// Construction of the true system dynamics
+
+	SystemDynamics dynamics_system_truth(args);
+
+	dynamics_system_truth.add_next_state("r",3);
+	dynamics_system_truth.add_next_state("r_dot",3);
+	dynamics_system_truth.add_next_state("sigma_BN",3);
+	dynamics_system_truth.add_next_state("omega_BN",3);
+	dynamics_system_truth.add_next_state("mu",1);
+	dynamics_system_truth.add_next_state("C_srp",1);
+
+	dynamics_system_truth.add_dynamics("r",Dynamics::velocity,{"r_dot"});
+	
+	if (USE_HARMONICS){
+		dynamics_system_truth.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_truth,{"r","sigma_BN"});
+	}
+	else{
+		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
+	}
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"C_srp"});
+	
+	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
+	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
+
+
+
 	/******************************************************/
 	/******************************************************/
 	/***************( True ) Initial state ****************/
@@ -205,7 +235,7 @@ int main() {
 	/******************************************************/
 
 	// Initial state
-	arma::vec X0_augmented = arma::zeros<arma::vec>(12);
+	arma::vec X0_augmented = arma::zeros<arma::vec>(14);
 
 	arma::vec kep_state_vec = {SMA,E,I,RAAN,PERI_OMEGA,M0};
 	OC::KepState kep_state(kep_state_vec,args.get_mu_truth());
@@ -213,16 +243,15 @@ int main() {
 
 	X0_augmented.rows(0,2) = cart_state.get_position_vector();
 	X0_augmented.rows(3,5) = cart_state.get_velocity_vector();
-
 	X0_augmented.rows(6,8) = MRP_0;
 	X0_augmented.rows(9,11) = omega_0;
+	X0_augmented(12) = args.get_mu_truth();
+	X0_augmented(13) = CR;
 
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
-
-
 
 	/******************************************************/
 	/******************************************************/
@@ -234,28 +263,19 @@ int main() {
 	std::vector<double> T_obs;
 	std::vector<arma::vec> X_augmented;
 	std::cout << "Propagating true state\n";
-	if(USE_HARMONICS){
-		StatePropagator::propagateOrbit(T_obs,X_augmented, 
-			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
-			X0_augmented,
-			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","obs_harmonics");
-		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","full_orbit_harmonics");
-	}
-	else{
-		StatePropagator::propagateOrbit(T_obs,X_augmented, 
-			T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
-			X0_augmented,
-			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","obs_point_mass");
+	
+	StatePropagator::propagate(T_obs,X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+		X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","obs_point_mass");
 
-		StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
-			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
-			OUTPUT_DIR + "/","full_orbit_point_mass");
-	}
-
+	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","full_orbit_point_mass");
+	
 	arma::vec times(T_obs.size()); 
 	for (int i = 0; i < T_obs.size(); ++i){
 		times(i) = T_obs[i];
@@ -292,6 +312,7 @@ int main() {
 	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
 
 	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
+
 	shape_filter.run_shape_reconstruction(times,X_augmented,OUTPUT_DIR);
 
 	nlohmann::json output_data;
@@ -299,8 +320,8 @@ int main() {
 	std::string path_to_estimated_spherical_harmonics = "";
 
 
-	arma::vec::fixed<13> X_estimated = shape_filter.get_estimated_state();
-	arma::mat::fixed<13,13> covariance_estimated_state = shape_filter.get_covariance_estimated_state();
+	arma::vec X_estimated = shape_filter.get_estimated_state();
+	arma::mat covariance_estimated_state = shape_filter.get_covariance_estimated_state();
 
 	covariance_estimated_state.save(OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii);
 
@@ -342,6 +363,7 @@ int main() {
 	};
 
 	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
+	output_data["ESTIMATED_SMALL_BODY_CR"] = 1.1;
 
 
 	nlohmann::json shape_covariances_data;
@@ -363,7 +385,6 @@ int main() {
 	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
 	o << output_data;
 
-	
 	// std::vector<std::array<double ,2> > shape_error_results;
 	// std::vector<arma::vec> spurious_points;
 

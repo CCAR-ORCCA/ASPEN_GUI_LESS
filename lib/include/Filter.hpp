@@ -2,6 +2,8 @@
 #define HEADER_FILTER
 #include <armadillo>
 #include "Args.hpp"
+#include "SystemDynamics.hpp"
+
 
 class Filter {
 
@@ -20,23 +22,13 @@ public:
 	void plot_covariances();
 	void plot_residuals();
 
-	// Setters on dynamics, observations
-	void set_dynamics_funs(
-		arma::vec (*estimate_dynamics_fun)(double, const  arma::vec & , const Args & args),
-		arma::mat (*estimate_jacobian_dynamics_fun)(double, const  arma::vec & , const Args & args),
-		arma::vec (*true_dynamics_fun)(double, const  arma::vec & , const Args & args) = nullptr);
-
+	// Setters on observations
+	
 	void set_observations_funs(
 		arma::vec (*estimate_observation_fun)(double, const  arma::vec & , const Args & args),
 		arma::mat (*estimate_jacobian_observations_fun)(double, const arma::vec & , const Args & args),
 		arma::vec (*true_observation_fun)(double, const arma::vec & , const Args & args) = nullptr);
 
-
-	void set_dynamics_function_estimate(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args));
-
-	void set_jacobian_dynamics_function_estimate(arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args));
-
-	void set_true_dynamics_fun(arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args));
 
 	void set_observations_function_estimate(arma::vec (*estimate_observation_fun)(double, const arma::vec &, const Args & args));
 
@@ -45,7 +37,8 @@ public:
 	void set_true_observations_fun(arma::vec (*true_observation_fun)(double, const arma::vec &, const Args & args));
 
 
-
+	void set_true_dynamics_system(SystemDynamics true_dynamics_system);
+	void set_estimated_dynamics_system(SystemDynamics estimated_dynamics_system);
 
 
 
@@ -75,11 +68,6 @@ protected:
 	void compute_true_state_history(const arma::vec & X0_true, const std::vector<double> & T_obs);
 	void compute_true_observations(const std::vector<double> & T_obs,double mes_noise, double prop_noise = 0);
 
-	// Dynamics
-	arma::vec (*estimate_dynamics_fun)(double, const arma::vec & , const Args & args) = nullptr;
-	arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec & , const Args & args) = nullptr;
-	arma::vec (*true_dynamics_fun)(double, const arma::vec & , const Args & args) = nullptr;
-
 	// Observations
 	arma::vec (*estimate_observation_fun)(double, const arma::vec & , const Args & args);
 	arma::vec (*true_observation_fun)(double, const arma::vec & , const Args & args);
@@ -96,7 +84,9 @@ protected:
 	std::vector< arma::mat > estimated_covariance_history;
 	std::vector< arma::vec > true_obs_history;
 
-
+	SystemDynamics true_dynamics_system;
+	SystemDynamics estimated_dynamics_system;
+	
 	arma::mat info_mat_bar_0;
 	Args args;
 

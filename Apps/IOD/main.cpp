@@ -268,22 +268,22 @@ int main() {
 	std::vector<arma::vec> X_augmented;
 	
 	#if USE_HARMONICS
-	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+	StatePropagator::propagate(T_obs,X_augmented, 
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
 		dir + "/","obs_harmonics");
-	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
 		Dynamics::harmonics_attitude_dxdt_inertial,args,
 		dir + "/","full_orbit_harmonics");
 	#else 
-	StatePropagator::propagateOrbit(T_obs,X_augmented, 
+	StatePropagator::propagate(T_obs,X_augmented, 
 		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
 		X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
 		dir + "/","obs_point_mass");
 
-	StatePropagator::propagateOrbit(T0, T_orbit, 10. , X0_augmented,
+	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
 		Dynamics::point_mass_attitude_dxdt_inertial,args,
 		dir + "/","full_orbit_point_mass");
 	#endif 

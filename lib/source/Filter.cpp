@@ -2,44 +2,17 @@
 #include "DebugFlags.hpp"
 #include "FixVectorSize.hpp"
 
-#include "System.hpp"
 #include "Observer.hpp"
 #include <boost/numeric/odeint.hpp>
 
 
 Filter ::Filter(const Args & args){
 	this -> args = args;
-}
-
-void Filter::set_dynamics_funs(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args),
-	arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args),
-	arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
-	
-	this -> estimate_dynamics_fun = estimate_dynamics_fun;
-	this -> estimate_jacobian_dynamics_fun = estimate_jacobian_dynamics_fun;
-
-	if (true_dynamics_fun == nullptr){
-		this -> true_dynamics_fun = estimate_dynamics_fun;
-	}
-	else{
-		this -> true_dynamics_fun = true_dynamics_fun;
-	}
+	this -> true_dynamics_system = SystemDynamics(this -> args);
+	this -> estimated_dynamics_system = SystemDynamics(this -> args);
 
 }
 
-
-
-void Filter::set_dynamics_function_estimate(arma::vec (*estimate_dynamics_fun)(double, const arma::vec &, const Args & args)){
-	this -> estimate_dynamics_fun = estimate_dynamics_fun; 
-}
-
-void Filter::set_jacobian_dynamics_function_estimate(arma::mat (*estimate_jacobian_dynamics_fun)(double, const arma::vec &, const Args & args)){
-	this -> estimate_jacobian_dynamics_fun = estimate_jacobian_dynamics_fun; 
-}
-
-void Filter::set_true_dynamics_fun(arma::vec (*true_dynamics_fun)(double, const arma::vec &, const Args & args)){
-	this -> true_dynamics_fun = true_dynamics_fun; 
-}
 
 
 
@@ -111,6 +84,14 @@ void Filter::write_estimated_state(std::string path_to_estimate) const{
 
 
 
+void Filter::set_true_dynamics_system(SystemDynamics true_dynamics_system){
+	this -> true_dynamics_system= true_dynamics_system;
+}
+
+void Filter::set_estimated_dynamics_system(SystemDynamics estimated_dynamics_system){
+	this -> estimated_dynamics_system= estimated_dynamics_system;
+}
+
 
 void Filter::write_residuals(std::string path,const arma::mat & R) const{
 
@@ -180,48 +161,32 @@ void Filter::write_estimated_covariance(std::string path_to_covariance) const{
 	}
 	P_hat_history.save(path_to_covariance,arma::raw_ascii);
 
-
 }
 
 
 void Filter::compute_true_state_history(const arma::vec & X0_true,
 	const std::vector<double> & T_obs){
 
-
-	if (this -> true_dynamics_fun == nullptr){
-		this -> true_state_history.push_back(X0_true);
-
-		// true_state_history  already has one state 
-		for (unsigned int i = 1; i < T_obs.size(); ++i){
-			this -> true_state_history.push_back(this -> true_state_history[0]);
-		}
-
-	}
-	else{
-
 		//
 		// Odeint is called here. the state is propagated
 		// along with the state transition matrices
 		//
 
-		unsigned int N_true = X0_true.n_rows;
-		arma::vec X0_true_copy(X0_true);
-
-		System dynamics(this -> args,
-			N_true,
-			this -> true_dynamics_fun );
-		
-		typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
-		auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 , 1.0e-16 );
-		
-		auto tbegin = T_obs.begin();
-		auto tend = T_obs.end();
-
-		boost::numeric::odeint::integrate_times(stepper, dynamics, X0_true_copy, tbegin, tend,1e-10,
-			Observer::push_back_state(this -> true_state_history));
+	unsigned int N_true = X0_true.n_rows;
+	arma::vec X0_true_copy(X0_true);
 
 
-	}
+	typedef boost::numeric::odeint::runge_kutta_cash_karp54< arma::vec > error_stepper_type;
+	auto stepper = boost::numeric::odeint::make_controlled<error_stepper_type>( 1.0e-13 , 1.0e-16 );
+
+	auto tbegin = T_obs.begin();
+	auto tend = T_obs.end();
+
+	boost::numeric::odeint::integrate_times(stepper, this -> true_dynamics_system, X0_true_copy, tbegin, tend,1e-10,
+		Observer::push_back_state(this -> true_state_history));
+
+
+	
 
 }
 

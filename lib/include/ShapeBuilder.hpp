@@ -6,7 +6,7 @@
 #include <set>
 #include <string>
 #include <OrbitConversions.hpp>
-#include <SystemNew.hpp>
+#include <SystemDynamics.hpp>
 
 class Lidar;
 
@@ -143,7 +143,7 @@ public:
 
 	/**
 	Returns covariance of estimated state
-	@return covariance of estimated state (position,velocity,mrp,angular velocity)
+	@return covariance of estimated state (position,velocity,mrp,angular velocity,mu,C_srp)
 	*/
 	arma::mat get_covariance_estimated_state() const;
 
@@ -152,10 +152,16 @@ public:
 	Returns  estimated state
 	@return estimated state (position,velocity,mrp,angular velocity)
 	*/
-	arma::vec::fixed<13> get_estimated_state() const;
+	arma::vec get_estimated_state() const;
 
 
 
+
+	/**
+	Sets the system of estimated dynamics
+	@param estimate_dynamics_system system of estimated dynamics
+	*/
+	void set_estimate_dynamics_system(SystemDynamics estimate_dynamics_system);
 
 
 protected:
@@ -376,12 +382,14 @@ protected:
 
 	arma::mat LN_t0;
 	arma::mat LB_t0;
-	arma::mat::fixed<13,13>  covariance_estimated_state;
-	arma::vec::fixed<13> estimated_state;
+	arma::mat covariance_estimated_state;
+	arma::vec estimated_state;
 	OC::KepState true_kep_state_t0;
 
 
 	arma::vec x_t0;
+
+	SystemDynamics estimate_dynamics_system;
 
 
 };

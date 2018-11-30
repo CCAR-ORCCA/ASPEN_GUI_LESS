@@ -375,6 +375,28 @@ public:
 	}
 
 
+	double get_distance_from_sun_AU() const{
+		return this -> distance_from_sun_AU;
+	}
+	void set_distance_from_sun_AU(double distance_from_sun_AU){
+		this -> distance_from_sun_AU = distance_from_sun_AU;
+	}
+
+
+	double get_solar_constant() const{
+		return this -> solar_constant;
+	}
+
+	void set_area_to_mass_ratio(double a2m){
+		this -> area_to_mass_ratio = a2m;
+	}
+	double get_area_to_mass_ratio() const{
+		return this -> area_to_mass_ratio;
+	}
+
+	arma::vec::fixed<3> get_sun_to_spc_direction() const{
+		return this -> sun_to_spc_direction;
+	}
 	
 
 
@@ -396,6 +418,9 @@ protected:
 	double sd_noise;
 	double sd_noise_prop = 0;
 	double ref_radius ;
+	double distance_from_sun_AU ;
+	double solar_constant = 1361.;
+	double area_to_mass_ratio = 0.01;
 
 	int harmonics_degree_truth;
 	int harmonics_degree_estimate;
@@ -427,6 +452,7 @@ protected:
 	arma::vec true_vel;
 	arma::vec estimated_pos;
 	arma::vec estimated_vel;
+	arma::vec::fixed<3> sun_to_spc_direction = {0,1,0};
 
 	arma::vec true_mrp_BN;
 	arma::vec estimated_mrp_BN;
@@ -437,7 +463,6 @@ protected:
 	vtkSmartPointer<SBGATSphericalHarmo> sbgat_harmonics_estimate;
 
 	std::string output_dir;
-
 
 };	
 

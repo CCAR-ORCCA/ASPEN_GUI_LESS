@@ -7,14 +7,21 @@
 
 
 
-class SystemNew {
+class SystemDynamics {
 public:
+
+	/**
+	Default Constructor
+	*/
+	SystemDynamics() {
+	}
+	
 	/**
 	Constructor
 	@param args structure of arguments that may be necessary for the evaluation of the dynamics and that are not
 	stored in the integrated state
 	*/
-	SystemNew(Args args) {
+	SystemDynamics(Args args) {
 		this -> args = args;
 	}
 
@@ -56,11 +63,11 @@ public:
 
 
 	/**
-	Adds one jacobian function to the list of functions to evaluate to compute the partial derivative of the time derivative
-	of the corresponding state with respect to another existing state. For instance, for a state
-	X = {position, velocity}, the time derivative X_dot == {velocity,acceleration}. In this case, adding a jacobian function to the partial derivative 
+	Adds one jacobian function to the list of functions adding up to compute the partial derivative of the time derivative
+	of the corresponding state with respect to another existing state. For instance, for a full state
+	X = {position, velocity}, the time derivative reads X_dot == {velocity,acceleration}. In this case, adding a jacobian function to the partial derivative 
 	of the velocity with respect to the position would require calling `add_jacobian` with state == "position" and wr_state == "position"
-	@param state name of the state whose partial derivative is to be computed. This state must have been added to the state manager. 
+	@param state name of the state whose time derivative is partially differentiated. This state must have been added to the state manager. 
 	@param wr_state the state with respect to which the partial derivative is to be computed
 	@param jacobian pointer to the function to be added to the list of functions to evaluate to compute the partial derivative ot the time derivative
 	of the corresponding state 	

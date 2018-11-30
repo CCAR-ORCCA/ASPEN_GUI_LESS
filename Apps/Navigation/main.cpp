@@ -288,23 +288,23 @@ int main() {
 	std::vector<arma::vec> X_true;
 
 	if(USE_HARMONICS){
-		StatePropagator::propagateOrbit(T_obs,X_true, 
+		StatePropagator::propagate(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true.subvec(0,11),
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
-		StatePropagator::propagateOrbit(0, tf, 10. , X0_true.subvec(0,11),
+		StatePropagator::propagate(0, tf, 10. , X0_true.subvec(0,11),
 			Dynamics::harmonics_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
 	else{
-		StatePropagator::propagateOrbit(T_obs,X_true, 
+		StatePropagator::propagate(T_obs,X_true, 
 			0, 1./INSTRUMENT_FREQUENCY,NAVIGATION_TIMES, 
 			X0_true.subvec(0,11),
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","orbit");
 
-		StatePropagator::propagateOrbit(0, tf, 10. , X0_true.subvec(0,11),
+		StatePropagator::propagate(0, tf, 10. , X0_true.subvec(0,11),
 			Dynamics::point_mass_attitude_dxdt_inertial_truth,args,
 			OUTPUT_DIR + "/","full_orbit");
 	}
