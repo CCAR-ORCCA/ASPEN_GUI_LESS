@@ -42,9 +42,6 @@ public:
 
 
 
-
-
-
 	// Setters on initial state information matrix
 	void set_initial_information_matrix(const arma::mat & info_mat_bar_0);
 

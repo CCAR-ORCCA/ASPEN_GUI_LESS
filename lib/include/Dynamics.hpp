@@ -65,14 +65,7 @@ namespace Dynamics{
 	*/
 	arma::mat point_mass_gravity_gradient_matrix(double t,const arma::vec & X, const Args & args);
 
-	/**
-	Computes the jacobian of the dynamics of a rigid body undergoing torque free rotation
-	@param attitude attitude set and associated angular velocity (6x1)
-	@param inertia inertia tensor of rigid body
-	@return jacobian of dynamics
-	*/
-	arma::mat::fixed<6,6> attitude_jacobian(const arma::vec::fixed<6> & attitude_state ,const arma::mat & inertia) ;
-
+	
 	/**
 	Computes the acceleration caused by a spherical harmonics gravity model
 	@param t time
@@ -84,26 +77,31 @@ namespace Dynamics{
 	/**
 	Computes the acceleration caused by a spherical harmonics gravity model
 	@param t time
-	@param X {position_N_frame,mrp_BN} 6x1
+	@param X (7 x 1) state {rx,ry,rz,sigma_1,sigma_2,sigma_3,mu}. The position vector {rx,ry,rz} is expressed in the inertial frame.
+	The mrp {sigma_1,sigma_2,sigma_3} govers the [BN] dcm (B == body frame in which the spherical harmonics where computed.)
 	@param args structure of extra arguments. Used to extract args.get_sbgat_harmonics_estimate()
 	*/
 	arma::vec spherical_harmonics_acceleration_estimate(double t,const arma::vec & X, const Args & args) ;
 
+	/**
+	Computes the acceleration caused by a spherical harmonics gravity model under the assumption that mu == 1
+	@param t time
+	@param X (7 x 1) state {rx,ry,rz,sigma_1,sigma_2,sigma_3}. The position vector {rx,ry,rz} is expressed in the inertial frame.
+	The mrp {sigma_1,sigma_2,sigma_3} govers the [BN] dcm (B == body frame in which the spherical harmonics where computed.)
+	@param args structure of extra arguments. Used to extract args.get_sbgat_harmonics_estimate()
+	*/
+	arma::mat spherical_harmonics_acceleration_estimate_unit_mu(double t,const arma::vec & X, const Args & args) ;
 
 
 
-	arma::vec point_mass_attitude_dxdt_inertial_truth(double t, const arma::vec & X, const Args & args);
-	arma::vec harmonics_attitude_dxdt_inertial_truth(double t,const arma::vec & X, const Args & args);
-
-	arma::vec point_mass_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
-	arma::mat point_mass_jac_attitude_dxdt_inertial_estimate(double t, const arma::vec & X, const Args & args);
-
-	arma::vec harmonics_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
-	arma::mat harmonics_jac_attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args);
-
-	arma::vec attitude_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
-	arma::mat attitude_jac_dxdt_inertial_estimate(double t,const arma::vec & X, const Args & args) ;
-
+	/**
+	Evaluates the gravity gradient matrix at the provided point using a spherical harmonics gravity model
+	@param t time
+	@param X (7 x 1) state {rx,ry,rz,sigma_1,sigma_2,sigma_3,mu}. The position vector {rx,ry,rz} is expressed in the inertial frame.
+	The mrp {sigma_1,sigma_2,sigma_3} govers the [BN] dcm (B == body frame in which the spherical harmonics where computed.)
+	@return gravity gradient expressed in the inertial frame of reference
+	*/
+	arma::mat spherical_harmonics_gravity_gradient_matrix_estimate(double t,const arma::vec & X, const Args & args);
 
 	/**
 	Time derivative of a MRP set
@@ -157,17 +155,8 @@ namespace Dynamics{
 	arma::mat partial_omega_dot_partial_omega_estimate(double t, const arma::vec & X, const Args & args);
 
 
-
-
 	arma::mat gamma_OD(double dt);
 	arma::mat gamma_OD_augmented(double dt);
-
-	arma::vec debug(double t,const arma::vec & X, const Args & args) ;
-
-	double energy_attitude(double t, arma::vec  X, Args * args);
-
-	arma::vec::fixed<6> attitude_dxdt_truth(double t, const arma::vec & X, const Args & args) ;
-	arma::vec::fixed<6> attitude_dxdt_estimate(double t, const arma::vec & X, const Args & args) ;
 
 	arma::mat create_Q(double sigma_vel,double sigma_omeg);
 	arma::mat create_Q(double sigma_vel);

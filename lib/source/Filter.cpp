@@ -83,7 +83,6 @@ void Filter::write_estimated_state(std::string path_to_estimate) const{
 }
 
 
-
 void Filter::set_true_dynamics_system(SystemDynamics true_dynamics_system){
 	this -> true_dynamics_system= true_dynamics_system;
 }

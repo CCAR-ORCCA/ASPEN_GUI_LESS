@@ -302,7 +302,7 @@ void BatchAttitude::compute_state_stms(std::vector<arma::vec::fixed<6> > & state
 	estimated_dynamics_system.add_jacobian("sigma","sigma",Dynamics::partial_mrp_dot_partial_mrp,{"sigma","omega"});
 	estimated_dynamics_system.add_jacobian("sigma","omega",Dynamics::partial_mrp_dot_partial_omega,{"sigma"});
 	
-	estimated_dynamics_system.add_jacobian("omega","omega",Dynamics::partial_omega_dot_partial_omega_estimate,{"signa","omega"});
+	estimated_dynamics_system.add_jacobian("omega","omega",Dynamics::partial_omega_dot_partial_omega_estimate,{"sigma","omega"});
 
 
 	boost::numeric::odeint::integrate_times(stepper, estimated_dynamics_system, x, tbegin, tend,1e-10,

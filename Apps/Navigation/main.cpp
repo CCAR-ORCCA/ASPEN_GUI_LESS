@@ -74,9 +74,6 @@ int main() {
 	double PROCESS_NOISE_SIGMA_OMEG = input_data["PROCESS_NOISE_SIGMA_OMEG"];
 	double SKIP_FACTOR = input_data["SKIP_FACTOR"];
 
-
-
-
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	bool USE_HARMONICS_ESTIMATED_DYNAMICS = input_data["USE_HARMONICS_ESTIMATED_DYNAMICS"];
 
@@ -425,7 +422,13 @@ int main() {
 		Observations::obs_pos_mrp_ekf_computed_jac,
 		Observations::obs_pos_mrp_ekf_lidar);	
 
-	// True state dynamics
+	/****************************************/
+	/****************************************/
+	/******* TRUE STATE DYNAMICS *******/
+	/****************************************/
+	/****************************************/
+	/****************************************/
+
 	SystemDynamics dynamics_system_truth(args);
 
 	dynamics_system_truth.add_next_state("r",3,false);
@@ -451,6 +454,12 @@ int main() {
 
 	filter.set_true_dynamics_system(dynamics_system_truth);
 
+	/****************************************/
+	/*************** END OF *****************/
+	/********** TRUE STATE DYNAMICS *********/
+	/****************************************/
+	/****************************************/
+	/****************************************/
 
 	/****************************************/
 	/****************************************/
@@ -472,8 +481,8 @@ int main() {
 
 	dynamics_system_estimate.add_dynamics("r",Dynamics::velocity,{"r_dot"});
 	
-	if (USE_HARMONICS){
-		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_estimate,{"r","sigma_BN"});
+	if (USE_HARMONICS_ESTIMATED_DYNAMICS){
+		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_estimate,{"r","sigma_BN","mu"});
 	}
 	else{
 		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
@@ -486,7 +495,7 @@ int main() {
 	
 	dynamics_system_estimate.add_jacobian("r","r_dot",Dynamics::identity_33,{"r_dot"});
 	
-	if (USE_HARMONICS){
+	if (USE_HARMONICS_ESTIMATED_DYNAMICS){
 		dynamics_system_estimate.add_jacobian("r_dot","r",Dynamics::spherical_harmonics_gravity_gradient_matrix_estimate,{"r","sigma_BN","mu"});
 		dynamics_system_estimate.add_jacobian("r_dot","mu",Dynamics::spherical_harmonics_acceleration_estimate_unit_mu,{"r","sigma_BN"});
 	}
