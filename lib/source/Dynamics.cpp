@@ -420,7 +420,6 @@ arma::vec::fixed<6> Dynamics::attitude_dxdt_truth(double t, const arma::vec & X,
 
 
 arma::vec Dynamics::dmrp_dt(double t, const arma::vec & X, const Args & args) {
-
 	return RBK::dmrpdt(t, X);
 }
 

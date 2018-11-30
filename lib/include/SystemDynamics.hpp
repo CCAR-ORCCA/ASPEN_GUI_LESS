@@ -65,7 +65,13 @@ public:
 	must have been added to the state manager
 	*/
 	void add_dynamics(std::string state,arma::vec (*effect)(double, const arma::vec &  , const Args & args),std::vector<std::string> input_states){
-		dynamics[state].push_back(std::make_pair(effect,input_states));
+		
+		if (this -> state_indices.find(state) != this -> state_indices.end()){
+			this -> dynamics[state].push_back(std::make_pair(effect,input_states));
+		}
+		else{
+			throw(std::runtime_error("in StateDynamics::add_dynamics, State '" + state + "' does not exist"));
+		}
 	}
 
 
@@ -83,7 +89,12 @@ public:
 	must have been added to the state manager
 	*/
 	void add_jacobian(std::string state,std::string wr_state, arma::mat (*jacobian)(double, const arma::vec &  , const Args & args),std::vector<std::string> input_states){
-		jacobians[state][wr_state].push_back(std::make_pair(jacobian,input_states));
+		if (this -> state_indices.find(state) != this -> state_indices.end()){
+			this -> jacobians[state][wr_state].push_back(std::make_pair(jacobian,input_states));
+		}
+		else{
+			throw(std::runtime_error("in StateDynamics::add_jacobian, State '" + state + "' does not exist"));
+		}
 	}
 
 
@@ -103,19 +114,17 @@ public:
 
 	void operator() (const arma::vec & X , arma::vec & dxdt , const double t ){
 		
-
 		arma::vec derivative = arma::zeros<arma::vec>(X.n_rows);
 		
 
 		// For all the states for which time derivatives must be computed
 		for (auto state_dynamics_iter = this -> dynamics.begin(); state_dynamics_iter != this -> dynamics.end(); ++state_dynamics_iter){
 
-
 			const auto & state_indices_in_X = this -> state_indices[state_dynamics_iter -> first];
 
 			const auto & state_dynamics = state_dynamics_iter -> second;
 
-			// For all the particular functions that are adding up to form a given time derivative 
+			// For all the dynamics acting on this state
 			for (unsigned int k = 0 ; k < state_dynamics.size(); ++k){
 
 
@@ -148,6 +157,7 @@ public:
 
 			}
 		}
+
 
 		if (jacobians.size() > 0){
 

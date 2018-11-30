@@ -50,7 +50,7 @@ namespace Observer {
 		}
 
 		void operator()( arma::vec & x,  double t){
-			
+
 			if (attitude_state_first_indices.size() > 0){
 				
 				// Switching matrix, which may or may not be necessary if no switching is detected
@@ -91,7 +91,7 @@ namespace Observer {
 			}
 
 			m_states.push_back( x );
-			
+
 		}
 	};
 
