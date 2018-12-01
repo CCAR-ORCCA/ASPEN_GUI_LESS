@@ -79,15 +79,11 @@ int main() {
 	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
-	std::cout << "Loading estimated shape path...\n";
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
-
-	std::cout << "Loading estimated shape spherical harmonics path...\n";
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
-	
-	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
-
+	double CR_TRUTH = shape_reconstruction_output_data["CR_TRUTH"];
+	double DISTANCE_FROM_SUN_AU = shape_reconstruction_output_data["DISTANCE_FROM_SUN_AU"];
 	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_NAV;
 
 
@@ -183,7 +179,7 @@ int main() {
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_output_dir(OUTPUT_DIR);
 	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
-	
+
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/
@@ -276,7 +272,7 @@ int main() {
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][4],
 		shape_reconstruction_output_data["X0_TRUE_SMALL_BODY"][5],
 		arma::datum::G * true_shape_model . get_volume() * DENSITY,
-		shape_reconstruction_output_data["CR_TRUTH"]
+		CR_TRUTH
 	};
 	std::cout << "True State: " << std::endl;
 	std::cout << X0_true.t() << std::endl;
