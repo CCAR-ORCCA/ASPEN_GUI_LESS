@@ -99,7 +99,7 @@ def plot_all_results(path,savepath = ""):
 
 def plot_orbit_planar(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "/true_orbit.txt")
+    X_true = np.loadtxt(path + "/state_true_orbit.txt")
 
     plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
     plt.xlabel("X (m)")
@@ -140,7 +140,7 @@ def plot_orbit_planar(path,savepath = ""):
 
 def plot_orbit(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "/true_orbit_dense.txt")
+    X_true = np.loadtxt(path + "/state_true_orbit_dense.txt")
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -173,7 +173,7 @@ def plot_orbit(path,savepath = ""):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    X_true_BF = np.loadtxt(path + "/true_orbit.txt")
+    X_true_BF = np.loadtxt(path + "/state_true_orbit.txt")
     for i in range(X_true_BF.shape[1]):
         BN = RBK.mrp_to_dcm(X_true[6:9,i])
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])

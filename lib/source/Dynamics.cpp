@@ -62,11 +62,13 @@ arma::vec Dynamics::point_mass_acceleration(double t,const arma::vec & X, const 
 
 arma::vec Dynamics::SRP_cannonball(double t,const arma::vec & X, const Args & args){
 
-	double srp_flux = std::pow(args . get_distance_from_sun_AU(),2) * args . get_solar_constant();
+
+	double srp_flux =  args . get_solar_constant()/std::pow(args . get_distance_from_sun_AU(),2);
 	const arma::vec::fixed<3> & sun_to_spc_direction = args.get_sun_to_spc_direction();
 
 
-	return (srp_flux / arma::datum::c_0) * X(0) * (args.get_area_to_mass_ratio()) * sun_to_spc_direction;
+
+	return srp_flux / arma::datum::c_0 * X(0) * args.get_area_to_mass_ratio() * sun_to_spc_direction;
 
 }
 
