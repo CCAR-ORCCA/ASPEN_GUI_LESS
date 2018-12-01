@@ -437,7 +437,7 @@ int main() {
 	std::cout << "Propagating true state\n";
 	
 	StatePropagator::propagate(T_obs,X_true, 
-		0, 1./INSTRUMENT_FREQUENCY_NAV,OBSERVATION_TIMES, 
+		0, 1./INSTRUMENT_FREQUENCY_NAV,NAVIGATION_TIMES, 
 		X0_true,
 		dynamics_system_truth,
 		args,
