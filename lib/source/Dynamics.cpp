@@ -176,7 +176,7 @@ arma::vec Dynamics::velocity(double t,const arma::vec & X, const Args & args) {
 arma::mat Dynamics::spherical_harmonics_gravity_gradient_matrix_estimate(double t,const arma::vec & X, const Args & args){
 
 	const arma::vec::fixed<3> & pos = X . subvec(0, 2);
-	const arma::vec::fixed<6> & mrp = X . subvec(3, 5);
+	const arma::vec::fixed<3> & mrp = X . subvec(3, 5);
 	const double & mu = X(6);
 	
 	// DCM BN
@@ -191,9 +191,7 @@ arma::mat Dynamics::spherical_harmonics_gravity_gradient_matrix_estimate(double 
 	gravity_gradient_mat *= mu / (arma::datum::G * args.get_estimated_shape_model() -> get_volume());
 
 
-	arma::mat res = BN.t() * gravity_gradient_mat * BN;
-	std::cout << res << std::endl;
-	return res;
+	return BN.t() * gravity_gradient_mat * BN;
 
 }
 
