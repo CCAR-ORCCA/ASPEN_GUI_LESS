@@ -423,7 +423,7 @@ int main() {
 	/****************************************/
 	/****************************************/
 	/****************************************/
-	
+
 	/******************************************************/
 	/******************************************************/
 	/*********** Propagation of (true) state **************/
@@ -438,12 +438,12 @@ int main() {
 	
 	StatePropagator::propagate(T_obs,X_true, 
 		0, 1./INSTRUMENT_FREQUENCY_NAV,OBSERVATION_TIMES, 
-		X0_augmented,
+		X0_true,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","obs_point_mass");
 
-	StatePropagator::propagate(0, tf, 10. , X0_augmented,
+	StatePropagator::propagate(0, tf, 10. , X0_true,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","full_orbit_point_mass");
