@@ -340,8 +340,7 @@ int main() {
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][4],
 			shape_reconstruction_output_data["X0_ESTIMATED_SMALL_BODY"][5],
 			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_MU"],
-			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_CR"],
-
+			shape_reconstruction_output_data["ESTIMATED_SMALL_BODY_CR"]
 		};
 
 		if(!P0.load(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii)){
