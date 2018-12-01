@@ -182,7 +182,8 @@ int main() {
 	
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_output_dir(OUTPUT_DIR);
-
+	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
+	
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/

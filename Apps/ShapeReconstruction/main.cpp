@@ -366,7 +366,7 @@ int main() {
 
 	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
 	output_data["ESTIMATED_SMALL_BODY_CR"] = 1.1;
-
+	output_data["DISTANCE_FROM_SUN_AU"] = DISTANCE_FROM_SUN_AU;
 
 	nlohmann::json shape_covariances_data;
 	std::cout << "Exporting covariances ...\n";
