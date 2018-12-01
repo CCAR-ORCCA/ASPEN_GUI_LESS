@@ -190,7 +190,7 @@ public:
 
 		if (jacobians.size() > 0){
 
-			std::cout << "in jacobians\n";
+			std::cout << "in jacobians. States: " << number_of_states << "\n";
 			arma::mat A = arma::zeros<arma::mat>(number_of_states,number_of_states);
 
 			// For all the states time derivatives for which a partial derivative must be computed
@@ -200,6 +200,9 @@ public:
 				const auto & state_indices_in_X = this -> state_indices[state_jacobians_iter -> first];
 
 				const auto & state_jacobians = state_jacobians_iter -> second;
+
+
+				std::cout << state_jacobians_iter -> first << std::endl;
 
 				// For all the states with respect to which a partial derivative will be taken
 				for (auto differentiating_state_iter = state_jacobians.begin(); differentiating_state_iter != state_jacobians.end(); ++differentiating_state_iter){
