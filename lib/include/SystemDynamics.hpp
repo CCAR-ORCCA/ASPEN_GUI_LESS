@@ -208,6 +208,8 @@ public:
 				for (auto differentiating_state_iter = state_jacobians.begin(); differentiating_state_iter != state_jacobians.end(); ++differentiating_state_iter){
 
 
+					std::cout << "\t " << differentiating_state_iter -> first << std::endl;
+
 					const auto & differentiating_state_indices_in_X = this -> state_indices[differentiating_state_iter -> first];
 
 					const auto & differentiating_state_jacobians = differentiating_state_iter -> second;
