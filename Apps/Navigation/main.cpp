@@ -262,7 +262,7 @@ int main() {
 
 	// Initial state
 
-	arma::vec::fixed<13> X0_true = {
+	arma::vec X0_true = {
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][0],
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][1],
 		shape_reconstruction_output_data["X0_TRUE_SPACECRAFT"][2],
@@ -278,6 +278,8 @@ int main() {
 		arma::datum::G * true_shape_model . get_volume() * DENSITY,
 		shape_reconstruction_output_data["CR_TRUTH"]
 	};
+	std::cout << "True State: " << std::endl;
+	std::cout << X0_true.t() << std::endl;
 
 	/******************************************************/
 	/******************************************************/
@@ -351,9 +353,7 @@ int main() {
 // A-priori covariance on spacecraft state and asteroid state.
 	
 
-	std::cout << "True State: " << std::endl;
-	std::cout << X0_true.t() << std::endl;
-
+	
 	std::cout << "Initial Estimated state: " << std::endl;
 	std::cout << X0_estimated.t() << std::endl;
 
