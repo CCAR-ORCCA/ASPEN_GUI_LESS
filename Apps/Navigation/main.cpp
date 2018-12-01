@@ -30,7 +30,6 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 
 
 // Shape fitting parameters
@@ -67,7 +66,7 @@ int main() {
 
 	// Fetching input data 
 	double DENSITY = input_data["DENSITY"];
-	double INSTRUMENT_FREQUENCY = input_data["INSTRUMENT_FREQUENCY"];
+	double INSTRUMENT_FREQUENCY_NAV = input_data["INSTRUMENT_FREQUENCY_NAV"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	double LOS_NOISE_FRACTION_MES_TRUTH = input_data["LOS_NOISE_FRACTION_MES_TRUTH"];
 	double PROCESS_NOISE_SIGMA_VEL = input_data["PROCESS_NOISE_SIGMA_VEL"];
@@ -89,7 +88,7 @@ int main() {
 	std::cout << "Loading shape covariances...\n";
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
 
-	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY;
+	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_NAV;
 
 
 // Ref frame graph
@@ -161,7 +160,7 @@ int main() {
 		ROW_RESOLUTION,
 		COL_RESOLUTION,
 		FOCAL_LENGTH,
-		INSTRUMENT_FREQUENCY,
+		INSTRUMENT_FREQUENCY_NAV,
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
@@ -280,42 +279,6 @@ int main() {
 		shape_reconstruction_output_data["CR_TRUTH"]
 	};
 
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-
-	/******************************************************/
-	/******************************************************/
-	/*********** Propagation of (true) state **************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-
-	std::vector<double> T_obs;
-	std::vector<arma::vec> X_true;
-
-	std::cout << "Propagating true state\n";
-	
-	StatePropagator::propagate(T_obs,X_true, 
-		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
-		X0_augmented,
-		dynamics_system_truth,
-		args,
-		OUTPUT_DIR + "/","obs_point_mass");
-
-	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
-		dynamics_system_truth,
-		args,
-		OUTPUT_DIR + "/","full_orbit_point_mass");
-	
-	arma::vec times(T_obs.size()); 
-	for (int i = 0; i < T_obs.size(); ++i){
-		times(i) = T_obs[i];
-	}
-
-
-	/******************************************************/
 	/******************************************************/
 	/******************************************************/
 	/******************************************************/
@@ -460,6 +423,42 @@ int main() {
 	/****************************************/
 	/****************************************/
 	/****************************************/
+	
+	/******************************************************/
+	/******************************************************/
+	/*********** Propagation of (true) state **************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+
+	std::vector<double> T_obs;
+	std::vector<arma::vec> X_true;
+
+	std::cout << "Propagating true state\n";
+	
+	StatePropagator::propagate(T_obs,X_true, 
+		0, 1./INSTRUMENT_FREQUENCY_NAV,OBSERVATION_TIMES, 
+		X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","obs_point_mass");
+
+	StatePropagator::propagate(0, tf, 10. , X0_augmented,
+		dynamics_system_truth,
+		args,
+		OUTPUT_DIR + "/","full_orbit_point_mass");
+	
+	arma::vec times(T_obs.size()); 
+	for (int i = 0; i < T_obs.size(); ++i){
+		times(i) = T_obs[i];
+	}
+
+
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
+	/******************************************************/
 
 	/****************************************/
 	/****************************************/
