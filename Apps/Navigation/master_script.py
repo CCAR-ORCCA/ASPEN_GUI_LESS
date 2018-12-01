@@ -31,43 +31,6 @@ else:
 
 all_data = [
 
-# {
-# "NAVIGATION_TIMES" : 80,
-# "DENSITY" : 1900,
-# "HARMONICS_DEGREE" : 10,
-# "USE_HARMONICS" : True,
-# "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
-# "INSTRUMENT_FREQUENCY" : 1./3600,
-# "LOS_NOISE_SD_BASELINE" : 5e-1,
-# "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-# "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
-# "USE_TRUE_STATES": False,
-# "INPUT_DIR" : base_location + "Navigation/input/test_0",
-# "OUTPUT_DIR" : base_location + "Navigation/output/test_0",
-# "PROCESS_NOISE_SIGMA_VEL": 1e-9 ,
-# "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
-# "SKIP_FACTOR": 0.94
-# },
-
-# {
-# "NAVIGATION_TIMES" : 80,
-# "DENSITY" : 1900,
-# "HARMONICS_DEGREE" : 10,
-# "USE_HARMONICS" : True,
-# "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
-# "INSTRUMENT_FREQUENCY" : 1./3600,
-# "LOS_NOISE_SD_BASELINE" : 5e-1,
-# "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-# "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
-# "USE_TRUE_STATES": False,
-# "INPUT_DIR" : base_location + "Navigation/input/test_1",
-# "OUTPUT_DIR" : base_location + "Navigation/output/test_1",
-# "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
-# "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
-# "SKIP_FACTOR": 0.94
-# }
-
-
 {
 "NAVIGATION_TIMES" : 80,
 "DENSITY" : 1900,
@@ -79,12 +42,49 @@ all_data = [
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
 "USE_TRUE_STATES": False,
-"INPUT_DIR" : base_location + "Navigation/input/test_2",
-"OUTPUT_DIR" : base_location + "Navigation/output/test_2",
+"INPUT_DIR" : base_location + "Navigation/input/test_0",
+"OUTPUT_DIR" : base_location + "Navigation/output/test_0",
 "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
-"PROCESS_NOISE_SIGMA_OMEG": 1e-11 ,
+"PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
+"SKIP_FACTOR": 0.94
+},
+
+{
+"NAVIGATION_TIMES" : 80,
+"DENSITY" : 1900,
+"HARMONICS_DEGREE" : 10,
+"USE_HARMONICS" : True,
+"USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
+"INSTRUMENT_FREQUENCY" : 1./3600,
+"LOS_NOISE_SD_BASELINE" : 5e-1,
+"LOS_NOISE_FRACTION_MES_TRUTH" : 0,
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_1/",
+"USE_TRUE_STATES": False,
+"INPUT_DIR" : base_location + "Navigation/input/test_1",
+"OUTPUT_DIR" : base_location + "Navigation/output/test_1",
+"PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
+"PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
 "SKIP_FACTOR": 0.94
 }
+
+
+# {
+# "NAVIGATION_TIMES" : 80,
+# "DENSITY" : 1900,
+# "HARMONICS_DEGREE" : 10,
+# "USE_HARMONICS" : True,
+# "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
+# "INSTRUMENT_FREQUENCY" : 1./3600,
+# "LOS_NOISE_SD_BASELINE" : 5e-1,
+# "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
+# "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
+# "USE_TRUE_STATES": False,
+# "INPUT_DIR" : base_location + "Navigation/input/test_2",
+# "OUTPUT_DIR" : base_location + "Navigation/output/test_2",
+# "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
+# "PROCESS_NOISE_SIGMA_OMEG": 1e-11 ,
+# "SKIP_FACTOR": 0.94
+# }
 
 
 ]
