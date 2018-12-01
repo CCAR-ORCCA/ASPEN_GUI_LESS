@@ -51,7 +51,7 @@ all_data = [
 # "OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
 # }
 
-,
+# ,
 
 {
 "OBSERVATION_TIMES" : 150,
