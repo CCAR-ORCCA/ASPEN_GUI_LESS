@@ -190,6 +190,7 @@ public:
 
 		if (jacobians.size() > 0){
 
+			std::cout << "in jacobians\n";
 			arma::mat A = arma::zeros<arma::mat>(number_of_states,number_of_states);
 
 			// For all the states time derivatives for which a partial derivative must be computed

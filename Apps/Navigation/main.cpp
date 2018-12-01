@@ -181,7 +181,6 @@ int main() {
 	args.set_estimated_shape_model(&estimated_shape_model);
 	
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
-	args.set_mass_estimate(estimated_shape_model . get_volume() * DENSITY);
 	args.set_output_dir(OUTPUT_DIR);
 
 	/******************************************************/
