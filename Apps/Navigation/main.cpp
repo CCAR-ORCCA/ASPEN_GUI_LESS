@@ -439,12 +439,12 @@ int main() {
 		X0_true,
 		dynamics_system_truth,
 		args,
-		OUTPUT_DIR + "/","obs_point_mass");
+		OUTPUT_DIR + "/","true_orbit");
 
 	StatePropagator::propagate(0, tf, 10. , X0_true,
 		dynamics_system_truth,
 		args,
-		OUTPUT_DIR + "/","full_orbit_point_mass");
+		OUTPUT_DIR + "/","true_orbit_dense");
 	
 	arma::vec times(T_obs.size()); 
 	for (int i = 0; i < T_obs.size(); ++i){

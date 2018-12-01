@@ -99,7 +99,7 @@ def plot_all_results(path,savepath = ""):
 
 def plot_orbit_planar(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "/state_orbit.txt")
+    X_true = np.loadtxt(path + "/true_orbit.txt")
 
     plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
     plt.xlabel("X (m)")
@@ -140,7 +140,7 @@ def plot_orbit_planar(path,savepath = ""):
 
 def plot_orbit(path,savepath = ""):
 
-    X_true = np.loadtxt(path + "/state_orbit.txt")
+    X_true = np.loadtxt(path + "/true_orbit_dense.txt")
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -173,7 +173,7 @@ def plot_orbit(path,savepath = ""):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    X_true_BF = np.loadtxt(path + "/state_orbit.txt")
+    X_true_BF = np.loadtxt(path + "/true_orbit.txt")
     for i in range(X_true_BF.shape[1]):
         BN = RBK.mrp_to_dcm(X_true[6:9,i])
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])
@@ -316,7 +316,35 @@ def plot_state_error_RIC(path = "",savepath= ""):
     plt.clf()
     plt.cla()
 
-    # Density
+    # mu
+
+    plt.plot(T_obs,(X_true_RIC[-2,:] - X_hat_RIC[-2,:]),'-o')
+
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(T_obs,3 * sd[-2,:],"--+")
+
+    plt.gca().set_color_cycle(None)
+
+    plt.plot(T_obs,- 3 * sd[-2,:],"--+")
+
+    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.xlabel("Time (min)")
+    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdot m^3 / s^2})$")
+    plt.ylim([- 5 * sd[-2,2] ,5 * sd[-2,2] ])
+    
+    plt.tight_layout()
+
+
+    if savepath == "":
+        plt.show()
+    else:
+        plt.savefig(savepath + "/mu_error_RIC.pdf")
+
+    plt.clf()
+    plt.cla()
+
+    # Cr
 
     plt.plot(T_obs,(X_true_RIC[-1,:] - X_hat_RIC[-1,:]),'-o')
 
@@ -330,7 +358,7 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdot m^3 / s^2})$")
+    plt.ylabel(r" $\mathrm{C_r}$ error")
     plt.ylim([- 5 * sd[-1,2] ,5 * sd[-1,2] ])
     
     plt.tight_layout()
@@ -339,7 +367,7 @@ def plot_state_error_RIC(path = "",savepath= ""):
     if savepath == "":
         plt.show()
     else:
-        plt.savefig(savepath + "/density_error_RIC.pdf")
+        plt.savefig(savepath + "/Cr_error_RIC.pdf")
 
 
 def plot_attitude_state_inertial(path = "",savepath = ""):
