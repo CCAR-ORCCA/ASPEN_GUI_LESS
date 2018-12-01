@@ -185,12 +185,15 @@ arma::mat Dynamics::spherical_harmonics_gravity_gradient_matrix_estimate(double 
 	// Body frame position
 	arma::vec::fixed<3> pos_B = BN * pos;
 
-	arma::mat gravity_gradient_mat = arma::zeros<arma::mat>(3,3);
+	arma::mat::fixed<3,3> gravity_gradient_mat;
 	args.get_sbgat_harmonics_estimate() -> GetGravityGradientMatrix(pos_B,gravity_gradient_mat);
 	
 	gravity_gradient_mat *= mu / (arma::datum::G * args.get_estimated_shape_model() -> get_volume());
 
-	return BN.t() * gravity_gradient_mat * BN;
+
+	arma::mat res = BN.t() * gravity_gradient_mat * BN;
+	std::cout << res << std::endl;
+	return res;
 
 }
 
