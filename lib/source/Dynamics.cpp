@@ -71,6 +71,12 @@ arma::vec Dynamics::SRP_cannonball(double t,const arma::vec & X, const Args & ar
 }
 
 arma::mat Dynamics::SRP_cannonball_unit_C(double t,const arma::vec & X, const Args & args){
+		
+		std::cout << "in Dynamics::SRP_cannonball_unit_C\n";
+		std::cout << Dynamics::SRP_cannonball(t,arma::ones<arma::vec>(1),args).t() << std::endl;
+		throw;
+
+
 	return  Dynamics::SRP_cannonball(t,arma::ones<arma::vec>(1),args);
 
 }

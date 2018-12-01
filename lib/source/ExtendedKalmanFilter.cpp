@@ -62,13 +62,12 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 	#if EKF_DEBUG
 	std::cout << "building stm\n";
 	#endif
+	
 	arma::mat stm = arma::reshape(
 		augmented_state_history[1].rows(N_est,N_est + N_est * N_est - 1),
 		N_est,N_est);
 
-	stm.save("stm.txt",arma::raw_ascii);
-
-	throw;
+	
 
 	P_hat = stm * P_hat * stm.t();
 
