@@ -66,7 +66,8 @@ void ExtendedKalmanFilter::time_update(double t_now, double t_next,
 		augmented_state_history[1].rows(N_est,N_est + N_est * N_est - 1),
 		N_est,N_est);
 
-	std::cout << stm << std::endl;
+	stm.save("stm.txt",arma::raw_ascii);
+
 	throw;
 
 	P_hat = stm * P_hat * stm.t();
