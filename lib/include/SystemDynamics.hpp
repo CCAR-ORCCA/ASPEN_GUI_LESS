@@ -93,7 +93,7 @@ public:
 	X = {position, velocity}, the time derivative reads X_dot == {velocity,acceleration}. In this case, adding a jacobian function to the partial derivative 
 	of the velocity with respect to the position would require calling `add_jacobian` with state == "position" and wr_state == "position"
 	@param state name of the state whose time derivative is partially differentiated. This state must have been added to the state manager. 
-	@param wr_state the state with respect to which the partial derivative is to be computed
+	@param wr_state the state with respect to which the partial derivative is to be computed. This state must have been added to the state manager. 
 	@param jacobian pointer to the function to be added to the list of functions to evaluate to compute the partial derivative ot the time derivative
 	of the corresponding state 	
 	@param input_states ordered list of strings identifying the states that are required as inputs to the provided function pointer. These states
@@ -128,8 +128,8 @@ public:
 
 
 	/**
-	Returns the list of indices of potential attitude states. For instance, for an integrated
-		that looks like X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
+	Returns the list of first indices of attitude states, if any. For instance, for an integrated
+	 like X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
 		as this is the first index of sigma in X.
 	*/
 	std::vector<int> get_attitude_state_first_indices() const{
