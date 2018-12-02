@@ -482,7 +482,7 @@ int main() {
 	else{
 		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
-	// dynamics_system_estimate.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_ESTIMATE"});
+	dynamics_system_estimate.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_ESTIMATE"});
 	dynamics_system_estimate.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_estimate.add_dynamics("omega_BN",Dynamics::domega_dt_estimate,{"sigma_BN","omega_BN"});
 
@@ -499,7 +499,7 @@ int main() {
 		dynamics_system_estimate.add_jacobian("r_dot","mu",Dynamics::point_mass_acceleration_unit_mu,{"r"});
 	}
 
-	// dynamics_system_estimate.add_jacobian("r_dot","CR_ESTIMATE",Dynamics::SRP_cannonball_unit_C,{"CR_ESTIMATE"});
+	dynamics_system_estimate.add_jacobian("r_dot","CR_ESTIMATE",Dynamics::SRP_cannonball_unit_C,{"CR_ESTIMATE"});
 
 	dynamics_system_estimate.add_jacobian("sigma_BN","sigma_BN",Dynamics::partial_mrp_dot_partial_mrp,{"sigma_BN","omega_BN"});
 	dynamics_system_estimate.add_jacobian("sigma_BN","omega_BN",Dynamics::partial_mrp_dot_partial_omega,{"sigma_BN"});

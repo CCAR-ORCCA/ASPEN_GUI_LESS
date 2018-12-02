@@ -1,76 +1,145 @@
-#include "Bezier.hpp"
-#include "ControlPoint.hpp"
-#include "Ray.hpp"
-#include "ShapeModelBezier.hpp"
+#include <iostream>
+#include <vector>
+
+#include <boost/numeric/odeint.hpp>
+#include <armadillo>
+#include "Args.hpp"
+#include "SystemDynamics.hpp"
+#include "Dynamics.hpp"
+#include "Observer.hpp"
+#include "OrbitConversions.hpp"
+// typedef arma::vec::fixed<6> arma::vec;
+
+// 
+
+int main( ){
+
+    Args args;
+    args.set_distance_from_sun_AU(1.);
+    args.set_inertia_estimate(arma::eye<arma::mat>(3,3));
+
+    OC::KepState kep_state;
+    kep_state.set_state({1e3,0.1,0.1,0.1,0.2,0});
+    kep_state.set_mu(2.35);
+
+    arma::vec attitude_state = {1e-1,1e-2,-1e-1,0,0,1e-5};
+
+    arma::vec::fixed<3> dpos, dvel,dmrp, domega;
+    double dmu,dC;
+
+
+    dpos = {1e-2,0,1e-1};
+    dvel = {1e-3,0e-3,1e-3};
+    dmrp = {1e-3,1e-3,0};
+    domega = {1e-6,0,0};
+
+    dmu = 1e-3;
+    dC = 1e-3;
 
 
 
-#include <chrono>
 
+    arma::vec initial_state = arma::zeros<arma::vec>(14);
+    int number_of_states = initial_state.size();
 
-int main(){
+    initial_state.subvec(0,5) = kep_state.convert_to_cart(0).get_state();
+    std::cout << "Unperturbed initial state: \n";
 
-	arma::arma_rng::set_seed(0);
+    initial_state.subvec(6,11) = attitude_state;
 
-	std::vector<std::shared_ptr<ControlPoint> > vertices;
+    initial_state(12) = kep_state.get_mu();
+    initial_state(13) = 1.2;
+    std::cout << initial_state.subvec(0,number_of_states - 1).t() << std::endl;
 
+    
+    arma::vec x0 = arma::zeros<arma::vec>(number_of_states + number_of_states * number_of_states);
 
-	std::shared_ptr<ControlPoint> v0 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords0 = {0,0,0};
-	v0 -> set_coordinates(nominal_coords0);
-	vertices.push_back(v0);
+    x0.subvec(0,number_of_states - 1) = initial_state;
+    x0.subvec(number_of_states, number_of_states + number_of_states * number_of_states - 1) = arma::vectorise(arma::eye<arma::mat>(number_of_states,number_of_states));
 
-	std::shared_ptr<ControlPoint> v1 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords1 = {1,0,0.5};
-	v1 -> set_coordinates(nominal_coords1);
-	vertices.push_back(v1);
+    SystemDynamics system(args);
 
-	std::shared_ptr<ControlPoint> v2 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords2 = {0.0,1,0.3};
-	v2 -> set_coordinates(nominal_coords2);
-	vertices.push_back(v2);
+    system.add_next_state("spacecraft_position",3,false);
+    system.add_next_state("spacecraft_velocity",3,false);
+    system.add_next_state("sigma",3,true);
+    system.add_next_state("omega",3,false);
 
-	std::shared_ptr<ControlPoint> v3 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords3 = {2,0,0};
-	v3 -> set_coordinates(nominal_coords3);
-	vertices.push_back(v3);
+    system.add_next_state("mu",1,false);
+    system.add_next_state("C",1,false);
 
+    system.add_dynamics("spacecraft_position",Dynamics::velocity,{"spacecraft_velocity"});
+    system.add_dynamics("spacecraft_velocity",Dynamics::point_mass_acceleration,{"spacecraft_position","mu"});
+    system.add_dynamics("spacecraft_velocity",Dynamics::SRP_cannonball,{"C"});
 
-	std::shared_ptr<ControlPoint> v4 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords4 = {1.5,0.5,1};
-	v4 -> set_coordinates(nominal_coords4);
-	vertices.push_back(v4);
+    system.add_dynamics("sigma",Dynamics::dmrp_dt,{"sigma","omega"});
+    system.add_dynamics("omega",Dynamics::domega_dt_estimate,{"sigma","omega"});
 
-	std::shared_ptr<ControlPoint> v5 = std::make_shared<ControlPoint>(ControlPoint());
-	arma::vec nominal_coords5 = {0.5,2,0};
-	v5 -> set_coordinates(nominal_coords5);
-	vertices.push_back(v5);
-	
-	Bezier nominal_patch(vertices);
+    system.add_jacobian("sigma","sigma",Dynamics::partial_mrp_dot_partial_mrp,{"sigma","omega"});
+    system.add_jacobian("sigma","omega",Dynamics::partial_mrp_dot_partial_omega,{"sigma"});
+    
+    system.add_jacobian("omega","omega",Dynamics::partial_omega_dot_partial_omega_estimate,{"sigma","omega"});
 
-	double u = 0.2;
-	double v = 0.3;
-
-	arma::vec n_old = nominal_patch.get_normal_coordinates(u,v);
-
-	auto indices = nominal_patch.get_local_indices(v5);
-	arma::mat dndc = nominal_patch.partial_n_partial_Ck(u, v,std::get<0>(indices),std::get<1>(indices),2);
-
-	arma::vec dC = {0.1, 0.01, -1};
-
-	std::cout << "Old normal: \n" << n_old.t();
-	v5 -> set_coordinates(v5 -> get_coordinates() + dC);
-
-	arma::vec n = nominal_patch.get_normal_coordinates(u,v);
-	std::cout << "New normal: \n" << n.t();
-
-	std::cout << "Predicted new normal : " << std::endl;
-	std::cout << (n_old + dndc * dC).t()<< std::endl;
+    system.add_jacobian("spacecraft_position","spacecraft_velocity",Dynamics::identity_33,{"spacecraft_velocity"});
+    system.add_jacobian("spacecraft_velocity","spacecraft_position",Dynamics::point_mass_gravity_gradient_matrix,{"spacecraft_position","mu"});
+    system.add_jacobian("spacecraft_velocity","mu",Dynamics::point_mass_acceleration_unit_mu,{"spacecraft_position"});
+    system.add_jacobian("spacecraft_velocity","C",Dynamics::SRP_cannonball_unit_C,{"C"});
 
 
 
-	
+    arma::vec state_derivative = arma::zeros<arma::vec>(x0.size());
 
 
-	return 0;
+    system.evaluate_state_derivative(x0 , state_derivative , 0);
+
+    std::cout << "Unperturbed state derivative: \n";
+    std::cout << state_derivative.subvec(0,number_of_states - 1 ).t();
+
+
+    // Perturbed orbit
+    arma::vec dx0 = arma::zeros<arma::vec>(initial_state.size());
+
+    dx0.subvec(0,2) = dpos;
+    dx0.subvec(3,5) = dvel;
+    dx0.subvec(6,8) = dmrp;
+    dx0.subvec(9,11) = domega;
+    dx0(12) = dmu;
+    dx0(13) = dC;
+
+
+
+    std::cout << "State perturbation: \n";
+    std::cout << dx0.t();
+
+    arma::vec x0_p(x0);
+    x0_p.subvec(0,number_of_states - 1) += dx0;
+
+    arma::vec perturbed_state_derivative = arma::zeros<arma::vec>(x0.size());
+
+
+    system.evaluate_state_derivative(x0_p , perturbed_state_derivative , 0);
+
+    
+    std::cout << "Perturbed state derivative: \n";
+    std::cout << perturbed_state_derivative.subvec(0,number_of_states - 1 ).t();
+
+
+    arma::vec state_derivative_difference = (perturbed_state_derivative - state_derivative);
+
+    std::cout << "Difference in state derivative: \n";
+    std::cout << state_derivative_difference.subvec(0,number_of_states - 1).t();
+
+
+
+    auto A_mat = system.compute_A_matrix(x0 , 0);
+    arma::vec state_derivative_difference_linear = (A_mat * dx0);
+  
+    std::cout << "Difference in state derivative, linear: \n";
+    std::cout << state_derivative_difference_linear.t();
+
+
+    std::cout << "Error (%)\n";
+    std::cout << (state_derivative_difference.subvec(0,number_of_states - 1) - state_derivative_difference_linear).t()/state_derivative_difference.subvec(0,number_of_states - 1).t() * 100;
+
+
+
 }

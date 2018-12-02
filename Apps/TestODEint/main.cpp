@@ -28,10 +28,10 @@ int main( ){
     double dmu,dC;
 
 
-    dpos = {0,1,0};
+    dpos = {0,0,0};
     dvel = {0,1e-3,0};
-    dmrp = {-0e-3,0e-3,0e-3};
-    domega = {0e-6,-0e-6,0e-6};
+    dmrp = {0,0,0};
+    domega = {0,0,0};
 
     dmu = 0.0;
     dC = 0.0;
@@ -42,6 +42,11 @@ int main( ){
     arma::vec initial_state(14);
     initial_state.subvec(0,5) = kep_state.convert_to_cart(0).get_state();
     std::cout << initial_state.subvec(0,5).t() << std::endl;
+
+    std::cout << arma::norm(dvel) << std::endl;
+    std::cout << arma::norm(initial_state.subvec(3,5)) << std::endl;
+    
+
     initial_state.subvec(6,11) = attitude_state;
 
     initial_state(12) = kep_state.get_mu();
@@ -64,10 +69,9 @@ int main( ){
     system.add_next_state("mu",1,false);
     system.add_next_state("C",1,false);
 
-
     system.add_dynamics("spacecraft_position",Dynamics::velocity,{"spacecraft_velocity"});
     system.add_dynamics("spacecraft_velocity",Dynamics::point_mass_acceleration,{"spacecraft_position","mu"});
-    system.add_dynamics("spacecraft_velocity",Dynamics::SRP_cannonball,{"C"});
+    // system.add_dynamics("spacecraft_velocity",Dynamics::SRP_cannonball,{"C"});
 
     system.add_dynamics("sigma",Dynamics::dmrp_dt,{"sigma","omega"});
     system.add_dynamics("omega",Dynamics::domega_dt_estimate,{"sigma","omega"});
@@ -79,8 +83,8 @@ int main( ){
 
     system.add_jacobian("spacecraft_position","spacecraft_velocity",Dynamics::identity_33,{"spacecraft_velocity"});
     system.add_jacobian("spacecraft_velocity","spacecraft_position",Dynamics::point_mass_gravity_gradient_matrix,{"spacecraft_position","mu"});
-    system.add_jacobian("spacecraft_velocity","mu",Dynamics::point_mass_acceleration_unit_mu,{"spacecraft_position"});
-    system.add_jacobian("spacecraft_velocity","C",Dynamics::SRP_cannonball_unit_C,{"C"});
+    // system.add_jacobian("spacecraft_velocity","mu",Dynamics::point_mass_acceleration_unit_mu,{"spacecraft_position"});
+    // system.add_jacobian("spacecraft_velocity","C",Dynamics::SRP_cannonball_unit_C,{"C"});
 
     std::vector<arma::vec> states;
     std::vector<double> times;

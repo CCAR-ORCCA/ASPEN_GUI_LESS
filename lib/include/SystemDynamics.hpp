@@ -146,10 +146,33 @@ public:
 		arma::vec derivative = arma::zeros<arma::vec>(X.n_rows);
 
 
-		// For all the states for which time derivatives must be computed
+		
+
+		this -> evaluate_state_derivative(X,derivative,t);
+
+
+		if (jacobians.size() > 0){
+			this -> evaluate_stm_derivative(X,derivative,t);
+		}
+
+		dxdt = derivative;
+
+
+	}
+
+
+
+	int get_number_of_states() const{
+		return this -> number_of_states;
+	}
+
+
+	void evaluate_state_derivative(const arma::vec & X , arma::vec & derivative , const double t ) const{
+
+	// For all the states for which time derivatives must be computed
 		for (auto state_dynamics_iter = this -> dynamics.begin(); state_dynamics_iter != this -> dynamics.end(); ++state_dynamics_iter){
 
-			const auto & state_indices_in_X = this -> state_indices[state_dynamics_iter -> first];
+			const auto & state_indices_in_X = this -> state_indices.at(state_dynamics_iter -> first);
 
 			const auto & state_dynamics = state_dynamics_iter -> second;
 
@@ -163,8 +186,8 @@ public:
 				// For all the inputs needed by this particular function
 				for (unsigned int j = 0; j < state_dynamics[k].second.size(); ++j){
 
-					arma::uvec input_indices = arma::regspace<arma::uvec>(inputs,inputs + static_cast<int>(state_indices[state_dynamics[k].second[j]].size()) -1 );
-					inputs += state_indices[state_dynamics[k].second[j]].size();
+					arma::uvec input_indices = arma::regspace<arma::uvec>(inputs,inputs + static_cast<int>(this -> state_indices.at(state_dynamics[k].second[j]).size()) -1 );
+					inputs += this -> state_indices.at(state_dynamics[k].second[j]).size();
 					input_indices_vector.push_back(input_indices);
 				}
 
@@ -175,7 +198,7 @@ public:
 				for (unsigned int j = 0; j < state_dynamics[k].second.size(); ++j){
 
 					const auto & indices_in_input = input_indices_vector[j];
-					const auto & indices_in_X = state_indices[state_dynamics[k].second[j]];
+					const auto & indices_in_X = this -> state_indices.at(state_dynamics[k].second[j]);
 
 
 					X_input.subvec(indices_in_input(0),indices_in_input(static_cast<int>(indices_in_input.n_rows) - 1)) = X.subvec(indices_in_X(0),indices_in_X(static_cast<int>(indices_in_X.n_rows) - 1));
@@ -186,102 +209,111 @@ public:
 
 			}
 		}
+	}
 
 
-		if (jacobians.size() > 0){
+	void evaluate_stm_derivative(const arma::vec & X , arma::vec & derivative , const double t) const{
 
 			#if SYSTEMDYNAMICS_DEBUG
-			std::cout << "in jacobians. States: " << number_of_states << "\n";
+		std::cout << "in jacobians. States: " << this -> number_of_states << "\n";
 			#endif
 
+		arma::mat A = this -> compute_A_matrix(X,t);
 
-			arma::mat A = arma::zeros<arma::mat>(number_of_states,number_of_states);
+
+		arma::mat Phi = arma::reshape(X.subvec(number_of_states,
+			number_of_states + number_of_states * number_of_states - 1), 
+		number_of_states, number_of_states );
+
+
+		derivative.subvec(number_of_states,
+			number_of_states + number_of_states * number_of_states - 1) = arma::vectorise(A * Phi);
+	}
+
+	arma::mat compute_A_matrix(const arma::vec & X , const double t) const{
+
+
+		arma::mat A = arma::zeros<arma::mat>(this -> number_of_states,this -> number_of_states);
 
 			// For all the states time derivatives for which a partial derivative must be computed
-			for (auto state_jacobians_iter = jacobians.begin(); state_jacobians_iter !=jacobians.end() ; ++state_jacobians_iter){
+		for (auto state_jacobians_iter = jacobians.begin(); state_jacobians_iter !=jacobians.end() ; ++state_jacobians_iter){
 
 
-				const auto & state_indices_in_X = this -> state_indices[state_jacobians_iter -> first];
+			const auto & state_indices_in_X = this -> state_indices.at(state_jacobians_iter -> first);
 
-				const auto & state_jacobians = state_jacobians_iter -> second;
+			const auto & state_jacobians = state_jacobians_iter -> second;
 
 
 				#if SYSTEMDYNAMICS_DEBUG
-				std::cout << state_jacobians_iter -> first << std::endl;
+			std::cout << state_jacobians_iter -> first << std::endl;
 				#endif
 
 				// For all the states with respect to which a partial derivative will be taken
-				for (auto differentiating_state_iter = state_jacobians.begin(); differentiating_state_iter != state_jacobians.end(); ++differentiating_state_iter){
+			for (auto differentiating_state_iter = state_jacobians.begin(); differentiating_state_iter != state_jacobians.end(); ++differentiating_state_iter){
 
 
 					#if SYSTEMDYNAMICS_DEBUG
-					std::cout << "\t " << differentiating_state_iter -> first << std::endl;
+				std::cout << "\t " << differentiating_state_iter -> first << std::endl;
 					#endif
 
-					const auto & differentiating_state_indices_in_X = this -> state_indices[differentiating_state_iter -> first];
+				const auto & differentiating_state_indices_in_X = this -> state_indices.at(differentiating_state_iter -> first);
 
-					const auto & differentiating_state_jacobians = differentiating_state_iter -> second;
+				const auto & differentiating_state_jacobians = differentiating_state_iter -> second;
 
 					// For all the jacobians needed to compute d(*state_jacobians_iter) / d(*differentiating_state_iter)
-					for (unsigned int k = 0 ; k < differentiating_state_jacobians.size(); ++k){
+				for (unsigned int k = 0 ; k < differentiating_state_jacobians.size(); ++k){
 
-						int inputs = 0;
-						std::vector<arma::uvec> input_indices_vector;
-
-						// For all the states taken as inputs to this particular jacobian function
-						for (unsigned int j = 0; j < differentiating_state_jacobians[k].second.size(); ++j){
-
-							arma::uvec input_indices = arma::regspace<arma::uvec>(inputs,inputs + static_cast<int>(state_indices[differentiating_state_jacobians[k].second[j]].size()) - 1);
-							inputs += state_indices[differentiating_state_jacobians[k].second[j]].size();
-							input_indices_vector.push_back(input_indices);
-						}
-
-						arma::vec X_input = arma::zeros<arma::vec>(inputs);
+					int inputs = 0;
+					std::vector<arma::uvec> input_indices_vector;
 
 						// For all the states taken as inputs to this particular jacobian function
-						for (unsigned int j = 0; j < differentiating_state_jacobians[k].second.size(); ++j){
+					for (unsigned int j = 0; j < differentiating_state_jacobians[k].second.size(); ++j){
 
-							const auto & indices_in_input = input_indices_vector[j];
-							const auto & indices_in_X = state_indices[differentiating_state_jacobians[k].second[j]];
+						arma::uvec input_indices = arma::regspace<arma::uvec>(inputs,inputs + static_cast<int>(state_indices.at(differentiating_state_jacobians[k].second[j]).size()) - 1);
+						inputs += this -> state_indices.at(differentiating_state_jacobians[k].second[j]).size();
+						input_indices_vector.push_back(input_indices);
+					}
+
+					arma::vec X_input = arma::zeros<arma::vec>(inputs);
+
+						// For all the states taken as inputs to this particular jacobian function
+					for (unsigned int j = 0; j < differentiating_state_jacobians[k].second.size(); ++j){
+
+						const auto & indices_in_input = input_indices_vector[j];
+						const auto & indices_in_X = this -> state_indices.at(differentiating_state_jacobians[k].second[j]);
 
 
-							X_input.subvec(indices_in_input(0),indices_in_input(static_cast<int>(indices_in_input.n_rows) - 1)) = X.subvec(indices_in_X(0),indices_in_X(static_cast<int>(indices_in_X.n_rows) - 1));
-						}
+						X_input.subvec(indices_in_input(0),indices_in_input(static_cast<int>(indices_in_input.n_rows) - 1)) = X.subvec(indices_in_X(0),indices_in_X(static_cast<int>(indices_in_X.n_rows) - 1));
+					}
 
 						// The partition corresponding to d(*state_jacobians_iter) / d(*differentiating_state_iter)
 						// is incremented with the contribution from the particular jacobian function
-						A.submat(state_indices_in_X(0),
-							differentiating_state_indices_in_X(0),
-							state_indices_in_X(static_cast<int>(state_indices_in_X.n_rows) - 1),
-							differentiating_state_indices_in_X(static_cast<int>(differentiating_state_indices_in_X.n_rows) - 1)) += differentiating_state_jacobians[k].first(t,X_input,this -> args);
-
-					}
+					A.submat(state_indices_in_X(0),
+						differentiating_state_indices_in_X(0),
+						state_indices_in_X(static_cast<int>(state_indices_in_X.n_rows) - 1),
+						differentiating_state_indices_in_X(static_cast<int>(differentiating_state_indices_in_X.n_rows) - 1)) += differentiating_state_jacobians[k].first(t,X_input,this -> args);
 
 				}
 
 			}
 
-
-			arma::mat Phi = arma::reshape(X.subvec(number_of_states,
-				number_of_states + number_of_states * number_of_states - 1), 
-			number_of_states, number_of_states );
-
-
-			derivative.subvec(number_of_states,
-				number_of_states + number_of_states * number_of_states - 1) = arma::vectorise(A * Phi);
 		}
 
-		dxdt = derivative;
+		return A;
+
+
 
 
 	}
 
 
-
-	int get_number_of_states() const{
-		return this -> number_of_states;
-	}
 protected:
+
+
+
+
+
+
 
 	std::map<std::string,arma::uvec> state_indices;
 	std::map<std::string,std::vector< std::pair< arma::vec (*)(double, const arma::vec &  , const Args & args),std::vector<std::string > > > > dynamics;

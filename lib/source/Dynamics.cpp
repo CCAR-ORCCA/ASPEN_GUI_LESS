@@ -238,8 +238,10 @@ arma::mat Dynamics::partial_mrp_dot_partial_mrp(double t, const arma::vec & X, c
 	const arma::vec::fixed<3> & sigma = X.subvec(0,2);
 	const arma::vec::fixed<3> & omega = X.subvec(3,5);
 
-	return (0.5 * (- omega * sigma.t() - RBK::tilde(omega) 
-		+ arma::eye<arma::mat>(3,3)* arma::dot(sigma,omega) + sigma * omega.t()));
+	return (0.5 * (- omega * sigma.t() 
+		- RBK::tilde(omega) 
+		+ arma::eye<arma::mat>(3,3)* arma::dot(sigma,omega) 
+		+ sigma * omega.t()));
 
 }
 
