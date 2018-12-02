@@ -47,9 +47,7 @@ all_data = [
 "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
 "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
 "SKIP_FACTOR": 0.94
-},
-
-
+}
 
 
 
