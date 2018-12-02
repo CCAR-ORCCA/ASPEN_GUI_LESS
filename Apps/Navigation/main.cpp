@@ -349,11 +349,8 @@ int main() {
 
 
 
-	std::cout << "Removing correlations in position/velocity\n";
-	P0.submat(0,3,2,5) = arma::zeros<arma::mat>(3,3);
-	P0.submat(3,0,5,2) = arma::zeros<arma::mat>(3,3);
-
-
+	std::cout << "Removing correlations\n";
+	P0 = arma::diagmat(P0.diag());
 
 
 
