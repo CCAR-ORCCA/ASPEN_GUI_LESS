@@ -405,7 +405,7 @@ int main() {
 		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
 	
-	// dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
 	
 	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
