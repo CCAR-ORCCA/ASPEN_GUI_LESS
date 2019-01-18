@@ -31,11 +31,9 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define INSTRUMENT_FREQUENCY_NAV 0.000145 // frequency at which point clouds are collected during the navigation phase
 #define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
-
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
 // Process noise 
@@ -45,18 +43,13 @@
 // Shape fitting parameters
 #define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
 #define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
-#define N_EDGES 4000 // Number of edges in a-priori
-#define SHAPE_DEGREE 2 // Shape degree
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
-
-// IOD parameters
 
 // Navigation parameters
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
 #define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
 
-// A-priori covariance
 #define T0 0
 
 ///////////////////////////////////////////
@@ -94,7 +87,7 @@ int main() {
 	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
-	int IOD_PARTICLES= input_data["IOD_PARTICLES"]; 
+	int IOD_PARTICLES = input_data["IOD_PARTICLES"]; 
 	int IOD_ITERATIONS  = input_data["IOD_ITERATIONS"]; 
 	int IOD_RIGID_TRANSFORMS_NUMBER = input_data["IOD_RIGID_TRANSFORMS_NUMBER"]; 
 	int N_ITER_BUNDLE_ADJUSTMENT = input_data["N_ITER_BUNDLE_ADJUSTMENT"];
@@ -104,6 +97,7 @@ int main() {
 	bool USE_BA = input_data["USE_BA"]; 
 	bool USE_ICP = input_data["USE_ICP"];
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
+	bool USE_BEZIER_SHAPE = input_data["USE_BEZIER_SHAPE"]; 
 
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 	
@@ -153,7 +147,6 @@ int main() {
 		ROW_RESOLUTION,
 		COL_RESOLUTION,
 		FOCAL_LENGTH,
-		INSTRUMENT_FREQUENCY_SHAPE,
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
@@ -264,8 +257,10 @@ int main() {
 	std::vector<arma::vec> X_augmented;
 	std::cout << "Propagating true state\n";
 	
-	StatePropagator::propagate(T_obs,X_augmented, 
-		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,OBSERVATION_TIMES, 
+	StatePropagator::propagate(T_obs,
+		X_augmented, 
+		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,
+		OBSERVATION_TIMES, 
 		X0_augmented,
 		dynamics_system_truth,
 		args,
@@ -290,9 +285,7 @@ int main() {
 
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_points_retained(POINTS_RETAINED);
 	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
-	shape_filter_args.set_N_edges(N_EDGES);
 	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
@@ -307,7 +300,7 @@ int main() {
 	shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
 	shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
 	shape_filter_args.set_ba_h(BA_H);
-	
+	shape_filter_args.set_use_bezier_shape(USE_BEZIER_SHAPE);
 
 	std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
 	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
@@ -386,78 +379,6 @@ int main() {
 
 	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
 	o << output_data;
-
-	// std::vector<std::array<double ,2> > shape_error_results;
-	// std::vector<arma::vec> spurious_points;
-
-	// // The shape error is computed here
-	// for (unsigned int i = 0; i < estimated_shape_model -> get_NElements(); ++i){
-
-	// 	Bezier * patch = static_cast<Bezier *>( estimated_shape_model -> get_elements() -> at(i).get() );
-	// 	arma::vec center = patch -> evaluate(1./3,1./3);
-	// 	arma::vec normal = patch -> get_normal_coordinates(1./3, 1./3);
-
-	// 	arma::mat P = patch -> covariance_surface_point(1./3,1./3,normal);
-	// 	double sd = std::sqrt(arma::dot(normal,P * normal));
-
-	// 	Ray ray_n(center,normal);
-	// 	Ray ray_mn(center,-normal);
-
-	// 	for (unsigned int facet_index = 0; facet_index < true_shape_model.get_NElements(); ++facet_index){
-
-	// 		Facet * facet = static_cast<Facet *>(true_shape_model.get_elements() -> at(facet_index).get());
-
-	// 		ray_n.single_facet_ray_casting(facet,true,false);
-	// 		ray_mn.single_facet_ray_casting(facet,true,false);
-
-	// 	}
-
-	// 	if (ray_n.get_true_range() < ray_mn.get_true_range()){
-	// 		shape_error_results.push_back({sd,ray_n.get_true_range()});
-	// 	}
-	// 	else if (ray_n.get_true_range() > ray_mn.get_true_range()){
-	// 		shape_error_results.push_back({sd,ray_mn.get_true_range()});
-
-	// 	}
-	// 	else{
-	// 		std::cout << "This ray did not hit\n";
-	// 	}
-
-
-	// }
-
-
-	// arma::mat shape_error_arma(shape_error_results.size(),2);
-	// for (unsigned int j = 0; j < shape_error_results.size(); ++j){
-	// 	shape_error_arma(j,0) = shape_error_results[j][0];
-	// 	shape_error_arma(j,1) = shape_error_results[j][1];
-	// }
-
-
-	// shape_error_arma.save("../output/shape_error.txt",arma::raw_ascii);
-
-
-
-	// args.set_estimated_mass(estimated_shape_model -> get_volume() * DENSITY);
-	// args.set_estimated_inertia(estimated_shape_model -> get_inertia() );
-
-	// std::cout << "Estimated inertia:" << std::endl;
-	// std::cout << estimated_shape_model -> get_inertia() << std::endl;
-
-	// std::cout << "True inertia:" << std::endl;
-	// std::cout << true_shape_model. get_inertia() << std::endl;
-
-	// std::cout << "\nEstimated volume: " << estimated_shape_model -> get_volume();
-	// std::cout << "\nTrue volume: " << true_shape_model.get_volume();
-	// std::cout << "\nVolume sd: " << estimated_shape_model -> get_volume_sd() << std::endl << std::endl;
-	// // estimated_shape_model -> compute_cm_cov();
-
-	// std::cout << "\nCOM covariance: \n" << estimated_shape_model -> get_cm_cov() << std::endl;
-
-
-	// /***************************************/
-	// /* END OF SHAPE RECONSTRUCTION FILTER */
-	// /*************************************/
 
 
 	return 0;

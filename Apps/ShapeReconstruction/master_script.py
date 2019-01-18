@@ -4,77 +4,108 @@ import numpy as np
 
 import os
 import platform
+import sys
+import itertools
+import time
+
+
+def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
+    
+    time_index = int(1000 * time.time())
+   
+    keys, values = zip(*all_cases_dictionnary.items())
+    dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
+
+    all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
+
+
+
+    for e in range(len(dictionnary_list)):
+        all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "ShapeReconstruction/input/case_" + str(e)
+        all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "ShapeReconstruction/output/case_" + str(e)
+
+
+    return all_cases_dictionnary_list
 
 
 
 if (platform.system() == 'Linux'):
-	base_location = "/orc_raid/bebe0705/"
+    base_location = "/orc_raid/bebe0705/"
 else:
-	base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+    base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
 
 
-all_data = [
-
-{
-"OBSERVATION_TIMES" : 150,
-"IOD_PARTICLES" : 100,
-"IOD_ITERATIONS" : 100,
-"IOD_RIGID_TRANSFORMS_NUMBER" : 7 ,
-"SMA" : 1000,
-"E" : 0.25,
-"I" : 1.4,
-"RAAN" :0.2,
-"PERI_OMEGA" : 0.3,
-"M0" : 1.57, 
-"SPIN_PERIOD" : 12, 
-"LONGITUDE_SPIN" : 0., 
-"LATITUDE_SPIN" : 0., 
-"DENSITY" : 1900,
-"HARMONICS_DEGREE" : 10,
-"DISTANCE_FROM_SUN_AU": 1.3241,
-"CR_TRUTH": 1.2,
-"USE_HARMONICS" : True,
-"INSTRUMENT_FREQUENCY_SHAPE" : 0.0005,
-"MRP_0" : [0,0,0],
-"N_ITER_BUNDLE_ADJUSTMENT" : 2,
-"N_ITER_SHAPE_FILTER" : 3,
-"MIN_TRIANGLE_ANGLE" : 30,
-"MAX_TRIANGLE_SIZE" : 5,
-"SURFACE_APPROX_ERROR" : 1,
-"NUMBER_OF_EDGES" : 2000,
-"BA_H" : 4,
-"LOS_NOISE_SD_BASELINE" : 5e-1,
+base_dictionnary = {
+"DISTANCE_FROM_SUN_AU" : 1.3241,
+"CR_TRUTH" : 1.2,
 "USE_BA" : True,
 "USE_ICP" : True,
 "USE_TRUE_RIGID_TRANSFORMS" : False,
-"INPUT_DIR" : base_location + "ShapeReconstruction/input/test_0",
-"OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0"
+"MIN_TRIANGLE_ANGLE" : 30,
+"MAX_TRIANGLE_SIZE" : 5,
+"HARMONICS_DEGREE" : 10,
+"OBSERVATION_TIMES" : 150,
+"USE_HARMONICS" : True,
+"SMA" : 1000.,
+"E" : 0.25,
+"I" : 1.4,
+"RAAN"  : 0.2,
+"PERI_OMEGA" : 0.3,
+"M0" : 1.57,
+"SPIN_PERIOD" : 12.,
+"LONGITUDE_SPIN" : 0., 
+"LATITUDE_SPIN" : 0.,
+"DENSITY" : 1900,
+"MRP_0" : [0,0,0],
+"SURFACE_APPROX_ERROR" : 1,
+"BA_H" : 4,
+"LOS_NOISE_SD_BASELINE" : 5e-1,
+"N_ITER_BUNDLE_ADJUSTMENT" : 3
+}
+
+
+all_cases_dictionnary = {
+"IOD_PARTICLES" : [50,100,150],
+"IOD_ITERATIONS" : [50,100,150],
+"IOD_RIGID_TRANSFORMS_NUMBER" : [5,7,9],
+"USE_BEZIER_SHAPE" : [True,False],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.0005,0.0004,0.0006],
+"N_ITER_SHAPE_FILTER" : [1,2,3],
+"NUMBER_OF_EDGES" : [1500,2000,2500]
 }
 
 
 
-]
+
+all_data = generate_all_cases_dictionnary_list(base_dictionnary,
+	all_cases_dictionnary,base_location)
+
+
+
+
+
+w
 
 for data in all_data:
-	print("\t Case " + data["INPUT_DIR"].split("/")[-1])
-	
-	os.system("mkdir " + data["INPUT_DIR"])
-	os.system("mkdir " + data["OUTPUT_DIR"])
+    print("\t Case " + data["INPUT_DIR"].split("/")[-1])
+    
+    os.system("mkdir " + data["INPUT_DIR"])
+    os.system("mkdir " + data["OUTPUT_DIR"])
 
-	print("\t - Making directory")
-	print("\t - Copying input file in build/")
+    print("\t - Making directory")
+    print("\t - Copying input file in build/")
 
-	with open('input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+    with open('input_file.json', 'w') as outfile:
+        json.dump(data, outfile)
 
-	print("\t - Saving input file in input/ and output/")
-	with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
-	with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+    print("\t - Saving input file in input/ and output/")
+    with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+        json.dump(data, outfile)
+    with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+        json.dump(data, outfile)
 
-	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+    print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
-	os.system("./ShapeReconstruction | tee " + data["OUTPUT_DIR"] + "/log.txt" )
+    os.system("./ShapeReconstruction | tee " + data["OUTPUT_DIR"] + "/log.txt" )
 
 

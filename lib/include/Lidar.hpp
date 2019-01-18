@@ -34,7 +34,6 @@ public:
 	@param y_res horizontal resolution (number of pixel columns)
 	@param z_res vertical resolution (number of pixel rows)
 	@param f focal length (m)
-	@param freq frequency of operation (Hz)
 	@param los_noise_1sd_baseline 1 standard deviation of the baseline line-of-sight gaussian noise
 	Total sd is given by 3 sigma = los_noise_sd_baseline + los_noise_fraction_mes_truth * rho_truth
 	@param los_noise_fraction_mes_truth truth-proportional fraction of the range measurement error
@@ -46,7 +45,6 @@ public:
 		unsigned int y_res ,
 		unsigned int z_res ,
 		double f ,
-		double freq ,
 		double los_noise_1sd_baseline ,
 		double los_noise_fraction_mes_truth
 		);
@@ -102,13 +100,7 @@ public:
 	*/
 	double get_y_res() const ;
 
-	/**
-	Returns the frequency of operation
-	@return Frequency (Hz)
-	*/
-	double get_frequency() const;
-
-
+	
 	/**
 	Writes the location of the pixels to a file
 	@param path Path to the file to store the pixel locations
@@ -198,10 +190,8 @@ public:
 
 
 
-
 protected:
 	double f;
-	// double freq;
 
 	double fov_y ;
 	double fov_z ;

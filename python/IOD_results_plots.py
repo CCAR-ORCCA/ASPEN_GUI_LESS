@@ -650,4 +650,4 @@ def plot_all_results(path,graphics_path = None):
 graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/hawai_2019/paper/Figures/"
 
 
-# list_results(graphics_path = graphics_path)
+list_results(graphics_path = graphics_path)

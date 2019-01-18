@@ -13,10 +13,12 @@ public:
 
 
 
-	static void propagate(std::vector<double> & T, std::vector<arma::vec> & X_augmented, 
+	static void propagate(std::vector<double> & T, 
+		std::vector<arma::vec> & X_augmented, 
 		const double t0, 
 		const double tf, 
-		const double dt, arma::vec initial_state,
+		const double dt, 
+		arma::vec initial_state,
 		const SystemDynamics & dynamics_system,
 		const Args & args,
 		std::string savefolder = "",std::string label = "");

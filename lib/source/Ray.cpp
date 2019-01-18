@@ -52,9 +52,9 @@ Ray::Ray(unsigned int row_index, unsigned int col_index, Lidar * lidar) {
 
 	// Origin and direction
 	arma::vec origin = {x, z, y};
-	this -> direction = arma::normalise( origin);
+	
+	this -> direction = arma::normalise(origin);
 	this -> origin = arma::zeros<arma::vec>(3);
-
 
 	this -> origin_target_frame = arma::zeros<arma::vec>(3);
 	this -> direction_target_frame = arma::zeros<arma::vec>(3);

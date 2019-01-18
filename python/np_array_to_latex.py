@@ -65,6 +65,20 @@ def np_array_to_latex(X,
         # The rest of the array is written to the file
         for i in range(-1,N_row):
             for j in range(-1,N_column):
+
+                formatted_number = format_string.format(X[i,j])
+                split_number = formatted_number.split("e")
+                
+                if len(split_number) != 1:
+                    exponent = str(int(split_number[1].split("+")[-1]))
+                    if (int(exponent) != 0):
+
+                        formatted_number = split_number[0] + r"\cdot 10^{" + exponent +"}"
+                    else:
+                        formatted_number = split_number[0]
+
+
+
                 # upper-left cell (outside array), with column and row headers
                 if (i == -1 and j == - 1 and column_headers != None and row_headers != None ):
                     f.write(' ' + r' & ')
@@ -85,16 +99,16 @@ def np_array_to_latex(X,
                 elif ( i != -1 and j != -1 and j != N_column - 1):
                         
                     if is_symmetric == "no":
-                        f.write(format_string.format(X[i,j]) + r' & ')
+                        f.write(formatted_number + r' & ')
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
-                                f.write(format_string.format(X[i,j]) + r' & ')
+                                f.write(formatted_number + r' & ')
                             else:
                                 f.write(r"\cdot" + r' & ')
                         elif (is_symmetric == "lower"):
                             if (i >= j):
-                                f.write(format_string.format(X[i,j]) + r' & ')
+                                f.write(formatted_number + r' & ')
                             else:
                                 f.write(r"\cdot" + r' & ')
 
@@ -104,16 +118,16 @@ def np_array_to_latex(X,
                 elif ( i != -1 and j != -1 and j == N_column - 1  ):
 
                     if is_symmetric == "no":
-                        f.write(format_string.format(X[i,j]) + r'\\' + '\n' +r'\hline ' + '\n')
+                        f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
-                                f.write(format_string.format(X[i,j]) + r'\\' + '\n' +r'\hline ' + '\n')
+                                f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
                             else:
                                 f.write(r"\cdot" + r'\\' + '\n' +r'\hline ' + '\n')
                         elif (is_symmetric == "lower"):
                             if (i >= j):
-                                f.write(format_string.format(X[i,j]) + r'\\' + '\n' +r'\hline ' + '\n')
+                                f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
                             else:
                                 f.write(r"\cdot" + r'\\' + '\n' +r'\hline ' + '\n')
 
@@ -134,20 +148,33 @@ def np_array_to_latex(X,
         f.write(r'\begin{'+ matrix_type +'}'+'\n')
         for i in range(N_row):
             for j in range(N_column):
+
+                formatted_number = format_string.format(X[i,j])
+                split_number = formatted_number.split("e")
+                
+                if len(split_number) != 1:
+                    exponent = str(int(split_number[1].split("+")[-1]))
+                    if (int(exponent) != 0):
+
+                        formatted_number = split_number[0] + r"\cdot 10^{" + exponent +"}"
+                    else:
+                        formatted_number = split_number[0]
+
+
                 if (j == N_column - 1 and N_row != 1):
 
 
                     if is_symmetric == "no":
-                        f.write(format_string.format(X[i,j]) + r'\\' + '\n' )
+                        f.write(formatted_number + r'\\' + '\n' )
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
-                                f.write(format_string.format(X[i,j]) + r'\\' + '\n' )
+                                f.write(formatted_number + r'\\' + '\n' )
                             else:
                                 f.write(r"\cdot" + r'\\' + '\n' )
                         elif (is_symmetric == "lower"):
                             if (i >= j):
-                                f.write(format_string.format(X[i,j]) + r'\\' + '\n' )
+                                f.write(formatted_number + r'\\' + '\n' )
                             else:
                                 f.write(r"\cdot"+ r'\\' + '\n' )
 
@@ -156,16 +183,16 @@ def np_array_to_latex(X,
                 elif (j == N_column - 1 and N_row == 1):
 
                     if is_symmetric == "no":
-                        f.write(format_string.format(X[i,j]) + '\n' )
+                        f.write(formatted_number + '\n' )
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
-                                f.write(format_string.format(X[i,j]) + '\n' )
+                                f.write(formatted_number + '\n' )
                             else:
                                 f.write(r"\cdot" + '\n' )
                         elif (is_symmetric == "lower"):
                             if (i >= j):
-                                f.write(format_string.format(X[i,j]) + '\n' )
+                                f.write(formatted_number + '\n' )
                             else:
                                 f.write(r"\cdot"+ '\n' )
 
@@ -175,16 +202,16 @@ def np_array_to_latex(X,
                     # f.write(str(X[i,j]) + r' & ')
 
                     if is_symmetric == "no":
-                        f.write(format_string.format(X[i,j]) + r' & ')
+                        f.write(formatted_number + r' & ')
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
-                                f.write(format_string.format(X[i,j]) + r' & ')
+                                f.write(formatted_number + r' & ')
                             else:
                                 f.write(r"\cdot" + r' & ')
                         elif (is_symmetric == "lower"):
                             if (i >= j):
-                                f.write(format_string.format(X[i,j]) + r' & ')
+                                f.write(formatted_number + r' & ')
                             else:
                                 f.write(r"\cdot"+ r' & ')
 

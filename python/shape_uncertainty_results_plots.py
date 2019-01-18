@@ -69,7 +69,7 @@ def create_input_table(all_results_dirs,savepath):
 
 
 
-def draw_2d_covariance(axis,cov,color):
+def draw_2d_covariance(axis,cov,color,linewidth = 1):
 
 	cov_2d = np.zeros([2,2])
 
@@ -115,7 +115,8 @@ def draw_2d_covariance(axis,cov,color):
 	e = Ellipse((0, 0), width, height, angle,
 		facecolor = None,
 		edgecolor = color,
-		fill = False)
+		fill = False,
+		linewidth = linewidth)
 	
 
 	plt.gca().add_artist(e)
@@ -208,13 +209,13 @@ def draw_dispersions(name,
 	print "- Plotting " + name + " in " + cut_names[axis] + " slice " 
 
 	if axis == 0:
-		plt.scatter(parameters[1,: ],parameters[2,: ],marker = ",",color = "lightblue" ,alpha = 0.7)
+		plt.scatter(parameters[1,: ],parameters[2,: ],marker = ",",color = "blue" ,alpha = 0.7)
 	elif axis == 1:
-		plt.scatter(parameters[0,: ],parameters[2,: ],marker = ",",color = "lightblue" ,alpha = 0.7)
+		plt.scatter(parameters[0,: ],parameters[2,: ],marker = ",",color = "blue" ,alpha = 0.7)
 	elif axis == 2:
-		plt.scatter(parameters[0,: ],parameters[1,: ],marker = ",",color = "lightblue" ,alpha = 0.7)
+		plt.scatter(parameters[0,: ],parameters[1,: ],marker = ",",color = "blue" ,alpha = 0.7)
 		
-	draw_2d_covariance(axis,cov_mc,color = "darkblue")
+	draw_2d_covariance(axis,cov_mc,color = "lightgreen",linewidth = 3)
 	draw_2d_covariance(axis,cov_model,color = "red")
 
 	if axis == 0:
@@ -230,7 +231,8 @@ def draw_dispersions(name,
 	plt.scatter(0,0,marker = ".",color = "black" )
 	
 	plt.axis("equal")
-	
+
+
 
 	if (len(output_dir) > 0):
 		plt.savefig(output_dir + "/" + prefix +"" + name + "_" + str(axis) + ".pdf", bbox_inches='tight')
@@ -331,7 +333,7 @@ def plot_all_results(input_dir,output_dir = ""):
 
 	if (len(output_dir)>0):
 		create_output_table(cov_mrp_model,cov_mrp_mc,cov_cm_model,cov_cm_mc,cov_inertia_model,
-		cov_inertia_mc,cov_dims_model,cov_dims_mc,(1e3) ** 4 *cov_moments_model,(1e3) ** 4 *cov_moments_mc,prefix,output_dir)
+		cov_inertia_mc,cov_dims_model,cov_dims_mc,cov_moments_model,cov_moments_mc,prefix,output_dir)
 
 		inertia_tensor = np.zeros([3,3])
 		inertia_vector = np.loadtxt(input_dir + "/I.txt")
@@ -344,7 +346,7 @@ def plot_all_results(input_dir,output_dir = ""):
 
 
 		moments_mean = np.loadtxt(input_dir + "/moments.txt")[0:3]
-		np_array_to_latex((1e3) ** 2 * moments_mean,output_dir + "/" + prefix +"moments",decimals = 3,type = "e")
+		np_array_to_latex(moments_mean,output_dir + "/" + prefix +"moments",decimals = 3,type = "e")
 
 		dims_mean = np.loadtxt(input_dir + "/dims.txt")
 		np_array_to_latex(dims_mean,output_dir + "/" + prefix +"dims",decimals = 3,type = "e")
@@ -371,11 +373,11 @@ def plot_all_results(input_dir,output_dir = ""):
 	draw_dispersions("dims",2,dims,cov_dims_mc,cov_dims_model,[r"$\delta a$ ($\mathrm{km}$)",r"$\delta b$ ($\mathrm{km}$)",r"$\delta c$ ($\mathrm{km}$)"],output_dir = output_dir,
 		prefix = prefix)
 
-	draw_dispersions("moments",0,(1e3) ** 2 * moments,(1e3) ** 4 *cov_moments_mc,(1e3) ** 4 *cov_moments_model,[r"$\delta A$ ($\mathrm{m}^2$)",r"$\delta B$ ($\mathrm{m}^2$)",r"$\delta C$ ($\mathrm{m}^2$)"],output_dir = output_dir,
+	draw_dispersions("moments",0,1000 * moments,1e6 * cov_moments_mc,1e6 * cov_moments_model,[r"$1000\cdot\delta A/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta B/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta C/\rho$ ($\mathrm{km}^5$)"],output_dir = output_dir,
 		prefix = prefix)
-	draw_dispersions("moments",1,(1e3) ** 2 * moments,(1e3) ** 4 *cov_moments_mc,(1e3) ** 4 *cov_moments_model,[r"$\delta A$ ($\mathrm{m}^2$)",r"$\delta B$ ($\mathrm{m}^2$)",r"$\delta C$ ($\mathrm{m}^2$)"],output_dir = output_dir,
+	draw_dispersions("moments",1,1000 * moments,1e6 * cov_moments_mc,1e6 * cov_moments_model,[r"$1000\cdot\delta A/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta B/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta C/\rho$ ($\mathrm{km}^5$)"],output_dir = output_dir,
 		prefix = prefix)
-	draw_dispersions("moments",2,(1e3) ** 2 * moments,(1e3) ** 4 *cov_moments_mc,(1e3) ** 4 *cov_moments_model,[r"$\delta A$ ($\mathrm{m}^2$)",r"$\delta B$ ($\mathrm{m}^2$)",r"$\delta C$ ($\mathrm{m}^2$)"],output_dir = output_dir,
+	draw_dispersions("moments",2,1000 * moments,1e6 * cov_moments_mc,1e6 * cov_moments_model,[r"$1000\cdot\delta A/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta B/\rho$ ($\mathrm{km}^5$)",r"$1000\cdot\delta C/\rho$ ($\mathrm{km}^5$)"],output_dir = output_dir,
 		prefix = prefix)
 	
 	draw_dispersions("mrp",0,mrp,cov_mrp_mc,cov_mrp_model,[r"$\delta \sigma_1$",r"$\delta \sigma_2$",r"$\delta \sigma_3$"],output_dir = output_dir,
@@ -386,7 +388,7 @@ def plot_all_results(input_dir,output_dir = ""):
 		prefix = prefix)
 
 mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeUncertainty/output"
-output_dir = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/shape_uncertainty/R0/Figures"
+output_dir = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/shape_uncertainty/R1/Figures"
 
 list_results(mainpath = mainpath,output_dir = output_dir)
 

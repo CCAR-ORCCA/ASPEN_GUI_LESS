@@ -14,20 +14,27 @@ int main(){
 	FrameGraph frame_graph;
 
 	ShapeModelTri<ControlPoint> truth("", nullptr);
-	ShapeModelBezier<ControlPoint> bezier("", nullptr);
-
 
 	ShapeModelImporter::load_obj_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test_0/true_shape_L0.obj"
 		, 1, true,truth);
 
 
-	ShapeModelImporter::load_bezier_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test_0/fit_shape.b"
-		, 1, true,bezier);
+	ShapeModelBezier<ControlPoint> bezier(truth,"", nullptr);
+	
+
+	truth.update_mass_properties();
+	bezier.update_mass_properties();
+
+	std::cout << truth.get_volume() << std::endl;
+	std::cout << bezier.get_volume() << std::endl;
+	bezier.elevate_degree();
+
+	bezier.populate_mass_properties_coefs_deterministics();
+
+	bezier.update_mass_properties();
+	std::cout << bezier.get_volume() << std::endl;
 
 
-
-	std::cout << truth.get_center_of_mass().t();
-	std::cout << bezier.get_center_of_mass().t();
 
 	return 0;
 }

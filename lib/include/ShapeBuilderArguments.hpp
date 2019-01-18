@@ -186,14 +186,6 @@ public:
 	// }
 
 
-	void set_points_retained(int p){
-		this -> points_retained = p;
-	}
-
-	int get_points_retained() const{
-		return this -> points_retained;
-	}
-
 
 	void set_index_init(unsigned int init){
 		this -> index_init = init;
@@ -336,14 +328,6 @@ public:
 		this -> iter_filter = iter;
 	}
 
-
-	void set_N_edges(unsigned int N_edges){
-		this -> N_edges = N_edges;
-	}
-
-	unsigned int get_N_edges() const{
-		return this -> N_edges;
-	}
 
 
 
@@ -530,6 +514,14 @@ public:
 		this -> ba_h = ba_h;
 	}
 
+	bool get_use_bezier_shape() const{
+		return this -> use_bezier_shape;
+	}
+
+	void set_use_bezier_shape(bool use_bezier_shape){
+		this -> use_bezier_shape = use_bezier_shape;
+	}
+
 protected:
 
 
@@ -550,8 +542,6 @@ protected:
 
 
 
-	int points_retained;
-
 	int iod_rigid_transforms_number;
 	int iod_iterations;
 	int iod_particles;
@@ -567,7 +557,6 @@ protected:
 	unsigned int N_iterations;
 	unsigned int max_recycled_facets;
 	unsigned int iter_filter ;
-	unsigned int N_edges;
 	unsigned int shape_degree;
 	int N_iter_bundle_adjustment;
 
@@ -579,6 +568,7 @@ protected:
 	bool use_icp = true;
 	bool use_ba = false;
 	bool use_true_rigid_transforms = false;
+	bool use_bezier_shape = true;
 
 
 

@@ -28,7 +28,7 @@
 #include <RigidBodyKinematics.hpp>
 #include <BatchAttitude.hpp>
 
-#define IOFLAGS_shape_builder 1
+#define IOFLAGS_shape_builder 0
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
@@ -379,17 +379,22 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << " -- Making PSR a-priori ...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
+				
 				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
 				psr_shape.construct_kd_tree_shape();
 
 				std::cout << " -- Fitting PSR a-priori ...\n";
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
-				this -> estimated_shape_model -> elevate_degree();
+				
+				if (this -> filter_arguments -> get_use_bezier_shape()){
+					this -> estimated_shape_model -> elevate_degree();
+				}
 
 				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
 				this -> estimated_shape_model -> update_mass_properties();
 
 				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
+				
 				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
@@ -1424,6 +1429,9 @@ void ShapeBuilder::extract_a_priori_transform(
 
 	// Assumes a fixed rotation axis and angular velocity
 	arma::mat::fixed<3,3> BN_k_hat = (BN_km1 * BN_km2.t()) * BN_km1 ; 
+	
+	// not sure this spectral decomposition is needed
+
 	arma::cx_vec eigval;
 	arma::cx_mat eigvec;
 	

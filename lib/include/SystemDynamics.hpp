@@ -128,8 +128,8 @@ public:
 
 
 	/**
-	Returns the list of first indices of attitude states, if any. For instance, for an integrated
-	 like X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
+	Returns the list of first indices of attitude states, if any. For instance, for a state
+	 X = {r,r_dot,sigma,omega} where sigma is an attitude set, attitude_state_first_indices should only contain {6} 
 		as this is the first index of sigma in X.
 	*/
 	std::vector<int> get_attitude_state_first_indices() const{
@@ -300,8 +300,6 @@ public:
 		}
 
 		return A;
-
-
 
 
 	}

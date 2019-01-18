@@ -13,7 +13,8 @@ rc('text', usetex=True)
 
 
 
-def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
+def list_results(graphics_path,
+    mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
 
     all_results_dirs  = [x[0] for x in os.walk(mainpath)][1:]
 
@@ -36,6 +37,8 @@ def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Re
 
     index_str = raw_input(" Which one should be processed ? Pick a number or enter 'all'\n")
     save_str = raw_input(" Should results be saved? (y/n) ?\n")
+
+
 
     if index_str != "all":
         if save_str is "y":
@@ -125,6 +128,7 @@ def plot_orbit_planar(path,savepath = ""):
     plt.xlabel("Y (m)")
     plt.ylabel("Z (m)")
     plt.axis('equal')
+    
     if savepath != "":
         plt.savefig(savepath + "/orbit_planar_x.pdf")
     else:
@@ -134,20 +138,17 @@ def plot_orbit_planar(path,savepath = ""):
     plt.clf()
 
 
-
-
-
-
 def plot_orbit(path,savepath = ""):
 
     X_true = np.loadtxt(path + "/state_true_orbit_dense.txt")
+
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot(X_true[0,:]/1000,X_true[1,:]/1000,X_true[2,:]/1000)
 
 
-    ax.set_xlim3d(-1, 1)
+    ax.set_xlim3d(-1,1)
     ax.set_ylim3d(-1,1)
     ax.set_zlim3d(-1,1)
 
@@ -161,6 +162,7 @@ def plot_orbit(path,savepath = ""):
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
+    plt.title("Inertial trajectory")
 
     plt.tight_layout()
     if savepath != "":
@@ -173,16 +175,17 @@ def plot_orbit(path,savepath = ""):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    X_true_BF = np.loadtxt(path + "/state_true_orbit.txt")
+    X_true_BF = np.loadtxt(path + "/state_true_orbit_dense.txt")
     for i in range(X_true_BF.shape[1]):
-        BN = RBK.mrp_to_dcm(X_true[6:9,i])
+        
+        BN = RBK.mrp_to_dcm(X_true_BF[6:9,i])
+
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])
 
     ax.plot(X_true_BF[0,:]/1000,X_true_BF[1,:]/1000,X_true_BF[2,:]/1000)
     
 
-
-    ax.set_xlim3d(-1, 1)
+    ax.set_xlim3d(-1,1)
     ax.set_ylim3d(-1,1)
     ax.set_zlim3d(-1,1)
 
@@ -195,6 +198,7 @@ def plot_orbit(path,savepath = ""):
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
+    plt.title("Body-frame trajectory")
 
     # plt.show()
     plt.tight_layout()
@@ -369,6 +373,9 @@ def plot_state_error_RIC(path = "",savepath= ""):
     else:
         plt.savefig(savepath + "/Cr_error_RIC.pdf")
 
+    plt.cla()
+    plt.clf()
+
 
 def plot_attitude_state_inertial(path = "",savepath = ""):
 
@@ -404,6 +411,7 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
     else:
         plt.savefig(savepath + "/attitude.pdf")
 
+    plt.cla()
     plt.clf()
     plt.gca().set_color_cycle(None)
 
