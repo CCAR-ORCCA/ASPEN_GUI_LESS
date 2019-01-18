@@ -31,14 +31,11 @@
 
 // Instrument specs
 #define FOCAL_LENGTH 1e1 // meters
-#define SKIP_FACTOR 0.94 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
+#define SKIP_FACTOR 1 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
 
 // Noise
 #define LOS_NOISE_FRACTION_MES_TRUTH 0.
 
-// Process noise 
-#define PROCESS_NOISE_SIGMA_VEL 2e-8 // velocity
-#define PROCESS_NOISE_SIGMA_OMEG 1e-10 // angular velocity
 
 // Shape fitting parameters
 #define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
@@ -49,7 +46,6 @@
 #define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
 #define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
 #define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
-
 #define T0 0
 
 ///////////////////////////////////////////
@@ -82,9 +78,9 @@ int main() {
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
 	double CR_TRUTH = input_data["CR_TRUTH"];
-
+	double TF =  double(input_data["TF"]) * 3600;
+	
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
-	int OBSERVATION_TIMES = input_data["OBSERVATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
 	int IOD_PARTICLES = input_data["IOD_PARTICLES"]; 
@@ -100,10 +96,32 @@ int main() {
 	bool USE_BEZIER_SHAPE = input_data["USE_BEZIER_SHAPE"]; 
 
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
-	
+
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
 
-	double T_orbit = (OBSERVATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_SHAPE;
+	// Kep state arguments
+	// - sma : semi-major axis [L]
+	// - e : eccentricity [-]
+	// - i : inclination in [0,pi] [rad]
+	// - Omega : right-ascension of ascending node in [0,2 pi] [rad] 
+	// - omega : longitude of perigee [0,2 pi] [rad] 
+	// - M0 : mean anomaly at epoch [rad]
+
+	double au2meters = 149597870700;
+	double d2r = arma::datum::pi / 180.;
+
+	arma::vec itokaw_kep_state = {
+		1.3241 * au2meters,
+		0.2802,
+		1.6215 * d2r,
+		69.080 * d2r,
+		162.81 * d2r,
+		0
+	};
+
+	double mu_sun = 1.32712440018 * 10e20 ;
+
+	OC::KepState kep_state_small_body(itokaw_kep_state,mu_sun);
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_PERIOD * 3600);
@@ -165,6 +183,7 @@ int main() {
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
 	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
+	args.set_kep_state_small_body(kep_state_small_body);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
@@ -193,7 +212,6 @@ int main() {
 	/******************************************************/
 	/******************************************************/
 
-
 	// Construction of the true system dynamics
 
 	SystemDynamics dynamics_system_truth(args);
@@ -206,7 +224,7 @@ int main() {
 	dynamics_system_truth.add_next_state("CR_TRUTH",1,false);
 
 	dynamics_system_truth.add_dynamics("r",Dynamics::velocity,{"r_dot"});
-	
+
 	if (USE_HARMONICS){
 		dynamics_system_truth.add_dynamics("r_dot",Dynamics::spherical_harmonics_acceleration_truth,{"r","sigma_BN"});
 	}
@@ -214,7 +232,7 @@ int main() {
 		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
 	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
-	
+
 	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
 
@@ -256,21 +274,25 @@ int main() {
 	std::vector<double> T_obs;
 	std::vector<arma::vec> X_augmented;
 	std::cout << "Propagating true state\n";
-	
+
 	StatePropagator::propagate(T_obs,
 		X_augmented, 
-		T0, 1./INSTRUMENT_FREQUENCY_SHAPE,
-		OBSERVATION_TIMES, 
+		T0, 
+		TF, 
+		1./INSTRUMENT_FREQUENCY_SHAPE,
 		X0_augmented,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","obs_point_mass");
 
-	StatePropagator::propagate(T0, T_orbit, 10. , X0_augmented,
+	StatePropagator::propagate(T0, 
+		TF, 
+		10. , 
+		X0_augmented,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","full_orbit_point_mass");
-	
+
 	arma::vec times(T_obs.size()); 
 	for (int i = 0; i < T_obs.size(); ++i){
 		times(i) = T_obs[i];
@@ -286,7 +308,6 @@ int main() {
 	ShapeBuilderArguments shape_filter_args;
 	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
 	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
-	shape_filter_args.set_shape_degree(SHAPE_DEGREE);
 	shape_filter_args.set_use_icp(USE_ICP);
 	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
 	shape_filter_args.set_use_ba(USE_BA);

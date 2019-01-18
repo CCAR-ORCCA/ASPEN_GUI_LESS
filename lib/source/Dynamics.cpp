@@ -64,17 +64,15 @@ arma::vec Dynamics::SRP_cannonball(double t,const arma::vec & X, const Args & ar
 
 
 	double srp_flux =  args . get_solar_constant()/std::pow(args . get_distance_from_sun_AU(),2);
-	const arma::vec::fixed<3> & sun_to_spc_direction = args.get_sun_to_spc_direction();
 
+	arma::vec::fixed<3> R = args . get_kep_state_small_body().convert_to_cart(t).get_position_vector(); // itokawa position vector w/r to the sun expressed in inertially-pointing barycentered frame
 
-
-	return srp_flux / arma::datum::c_0 * X(0) * args.get_area_to_mass_ratio() * sun_to_spc_direction;
+	return srp_flux / arma::datum::c_0 * X(0) * args.get_area_to_mass_ratio() * arma::normalise(R);
 
 }
 
 arma::mat Dynamics::SRP_cannonball_unit_C(double t,const arma::vec & X, const Args & args){
-		
-		
+
 	return  Dynamics::SRP_cannonball(t,arma::ones<arma::vec>(1),args);
 
 }
@@ -106,7 +104,6 @@ arma::vec Dynamics::spherical_harmonics_acceleration_truth(double t,const arma::
 	const arma::vec::fixed<3> & pos = X . subvec(0, 2);
 	const arma::vec::fixed<3> & sigma_BN = X . subvec(3, 5);
 
-	
 	// DCM BN
 	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(sigma_BN);
 
@@ -255,13 +252,24 @@ arma::mat Dynamics::partial_mrp_dot_partial_omega(double t, const arma::vec & X,
 
 arma::mat Dynamics::partial_omega_dot_partial_omega_estimate(double t, const arma::vec & X, const Args & args){
 
-	const arma::vec::fixed<3> & sigma = X.subvec(0,2);
 	const arma::vec::fixed<3> & omega = X.subvec(3,5);
 	const arma::mat::fixed<3,3> & inertia = args . get_inertia_estimate();
 
 	return arma::solve(inertia,- RBK::tilde(omega) * inertia + RBK::tilde(inertia * omega));
 }
 
+arma::vec Dynamics::third_body_acceleration_itokawa_sun(double t, 
+	const arma::vec & X,
+	 const Args & args){
+
+	const arma::vec::fixed<3> & r = X.subvec(0,2);// spacecraft position in inertially-pointing barycentered frame
+
+	arma::vec::fixed<3> R = args . get_kep_state_small_body().convert_to_cart(t).get_position_vector(); // itokawa position vector w/r to the sun expressed in inertially-pointing barycentered frame
+
+	return  args . get_kep_state_small_body().get_mu() * (- r / std::pow(arma::norm(r),3) + R / std::pow(arma::norm(R),3));
+
+
+}
 
 
 

@@ -128,6 +128,15 @@ namespace Dynamics{
 	arma::vec domega_dt_truth(double t, const arma::vec & X, const Args & args) ;
 
 
+	/**
+	Computes the acceleration caused by the sun to an object evolving in 
+	an inertially-pointing Itokawa body-fixed frame 
+	@param t
+	@param X {spacecraft_position} (3x1)
+	@param args structure of extra arguments. 
+	*/
+	arma::vec third_body_acceleration_itokawa_sun(double t, const arma::vec & X, const Args & args);
+
 
 
 	/**
@@ -160,6 +169,11 @@ namespace Dynamics{
 
 	arma::mat create_Q(double sigma_vel,double sigma_omeg);
 	arma::mat create_Q(double sigma_vel);
+
+
+
+
+
 
 }
 

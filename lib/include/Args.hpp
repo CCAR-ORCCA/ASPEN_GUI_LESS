@@ -5,6 +5,7 @@
 #include "Lidar.hpp"
 #include <SBGATSphericalHarmo.hpp>
 #include <ShapeModelBezier.hpp>
+#include <OrbitConversions.hpp>
 
 
 template <class PointType> 
@@ -394,10 +395,16 @@ public:
 		return this -> area_to_mass_ratio;
 	}
 
-	arma::vec::fixed<3> get_sun_to_spc_direction() const{
-		return this -> sun_to_spc_direction;
+	const OC::KepState & get_kep_state_small_body() const{
+		return this -> kep_state_small_body;
 	}
-	
+
+	void set_kep_state_small_body(OC::KepState kep_state_small_body){
+		this -> kep_state_small_body = kep_state_small_body;
+	}
+
+
+
 
 
 protected:
@@ -444,6 +451,7 @@ protected:
 	arma::mat inertia_estimate;
 
 	arma::mat P_hat;
+	OC::KepState kep_state_small_body;
 
 	std::shared_ptr<arma::mat> batch_output_covariance_ptr = std::make_shared<arma::mat>(arma::eye<arma::mat>(3,3));
 
@@ -452,7 +460,6 @@ protected:
 	arma::vec true_vel;
 	arma::vec estimated_pos;
 	arma::vec estimated_vel;
-	arma::vec::fixed<3> sun_to_spc_direction = {0,1,0};
 
 	arma::vec true_mrp_BN;
 	arma::vec estimated_mrp_BN;

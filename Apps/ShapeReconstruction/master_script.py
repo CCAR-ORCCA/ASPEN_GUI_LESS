@@ -44,8 +44,8 @@ base_dictionnary = {
 "MIN_TRIANGLE_ANGLE" : 30,
 "MAX_TRIANGLE_SIZE" : 5,
 "HARMONICS_DEGREE" : 10,
-"OBSERVATION_TIMES" : 150,
 "USE_HARMONICS" : True,
+"TF" : 92.,
 "SMA" : 1000.,
 "E" : 0.25,
 "I" : 1.4,
@@ -60,31 +60,23 @@ base_dictionnary = {
 "SURFACE_APPROX_ERROR" : 1,
 "BA_H" : 4,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
-"N_ITER_BUNDLE_ADJUSTMENT" : 3
+"N_ITER_BUNDLE_ADJUSTMENT" : 3,
+"N_ITER_SHAPE_FILTER" : 3,
+"IOD_ITERATIONS" : 100
 }
 
 
 all_cases_dictionnary = {
 "IOD_PARTICLES" : [50,100,150],
-"IOD_ITERATIONS" : [50,100,150],
 "IOD_RIGID_TRANSFORMS_NUMBER" : [5,7,9],
 "USE_BEZIER_SHAPE" : [True,False],
 "INSTRUMENT_FREQUENCY_SHAPE" : [0.0005,0.0004,0.0006],
-"N_ITER_SHAPE_FILTER" : [1,2,3],
 "NUMBER_OF_EDGES" : [1500,2000,2500]
 }
 
 
-
-
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 	all_cases_dictionnary,base_location)
-
-
-
-
-
-w
 
 for data in all_data:
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
