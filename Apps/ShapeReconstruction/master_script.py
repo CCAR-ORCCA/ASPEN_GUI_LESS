@@ -7,6 +7,7 @@ import platform
 import sys
 import itertools
 import time
+import smtplib
 
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
@@ -80,7 +81,7 @@ all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 
 for data in all_data:
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
-    
+
     os.system("mkdir " + data["INPUT_DIR"])
     os.system("mkdir " + data["OUTPUT_DIR"])
 
@@ -99,5 +100,19 @@ for data in all_data:
     print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
     os.system("./ShapeReconstruction | tee " + data["OUTPUT_DIR"] + "/log.txt" )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

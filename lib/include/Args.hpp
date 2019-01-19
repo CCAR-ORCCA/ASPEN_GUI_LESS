@@ -376,13 +376,6 @@ public:
 	}
 
 
-	double get_distance_from_sun_AU() const{
-		return this -> distance_from_sun_AU;
-	}
-	void set_distance_from_sun_AU(double distance_from_sun_AU){
-		this -> distance_from_sun_AU = distance_from_sun_AU;
-	}
-
 
 	double get_solar_constant() const{
 		return this -> solar_constant;
@@ -425,7 +418,6 @@ protected:
 	double sd_noise;
 	double sd_noise_prop = 0;
 	double ref_radius ;
-	double distance_from_sun_AU ;
 	double solar_constant = 1361.;
 	double area_to_mass_ratio = 0.01;
 

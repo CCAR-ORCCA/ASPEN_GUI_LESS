@@ -110,7 +110,7 @@ int main() {
 	double au2meters = 149597870700;
 	double d2r = arma::datum::pi / 180.;
 
-	arma::vec itokaw_kep_state = {
+	arma::vec itokawa_kep_state = {
 		1.3241 * au2meters,
 		0.2802,
 		1.6215 * d2r,
@@ -121,7 +121,7 @@ int main() {
 
 	double mu_sun = 1.32712440018 * 10e20 ;
 
-	OC::KepState kep_state_small_body(itokaw_kep_state,mu_sun);
+	OC::KepState kep_state_small_body(itokawa_kep_state,mu_sun);
 
 	// Angular velocity in body frame
 	double omega = 2 * arma::datum::pi / (SPIN_PERIOD * 3600);
@@ -182,7 +182,6 @@ int main() {
 	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
 	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
-	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
 	args.set_kep_state_small_body(kep_state_small_body);
 
 	/******************************************************/
@@ -401,7 +400,6 @@ int main() {
 
 	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
 	o << output_data;
-
 
 	return 0;
 }
