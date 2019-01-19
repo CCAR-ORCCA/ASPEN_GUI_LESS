@@ -1,4 +1,5 @@
 #include "Dynamics.hpp"
+#include "Ray.hpp"
 
 #define POINT_MASS_JAC_ATTITUDE_DXDT_INERTIAL_DEBUG 0
 #define POINT_MASS_ATTITUDE_DXDT_INERTIAL_DEBUG 0
@@ -60,20 +61,71 @@ arma::vec Dynamics::point_mass_acceleration(double t,const arma::vec & X, const 
 
 }
 
-arma::vec Dynamics::SRP_cannonball(double t,const arma::vec & X, const Args & args){
+arma::vec Dynamics::SRP_cannonball_truth(double t,const arma::vec & X, const Args & args){
 
+	double au2meters = 149597870700;
 
-	double srp_flux =  args . get_solar_constant()/std::pow(args . get_distance_from_sun_AU(),2);
 
 	arma::vec::fixed<3> R = args . get_kep_state_small_body().convert_to_cart(t).get_position_vector(); // itokawa position vector w/r to the sun expressed in inertially-pointing barycentered frame
+	double srp_flux =  args . get_solar_constant()/std::pow(arma::norm(R + X.subvec(0,2)) / au2meters,2);
 
-	return srp_flux / arma::datum::c_0 * X(0) * args.get_area_to_mass_ratio() * arma::normalise(R);
+	const arma::vec::fixed<3> & sigma_BN = X . subvec(3, 5);
+
+	// DCM BN
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(sigma_BN);
+
+	arma::vec::fixed<3> ray_direction_body_frame = - BN * arma::normalise(R + X.subvec(0,2));
+	arma::vec::fixed<3> ray_origin_body_frame = BN * X.subvec(0,2);
+
+	Ray ray(ray_origin_body_frame, ray_direction_body_frame) ;
+
+	if (args . get_true_shape_model() -> ray_trace(&ray)){
+
+		return arma::zeros<arma::vec>(3);
+	}
+	else{
+
+		return srp_flux / arma::datum::c_0 * X(6) * args.get_area_to_mass_ratio() * arma::normalise(R + X.subvec(0,2));
+	}
+}
+
+
+arma::vec Dynamics::SRP_cannonball_estimate(double t,const arma::vec & X, const Args & args){
+
+	double au2meters = 149597870700;
+
+	arma::vec::fixed<3> R = args . get_kep_state_small_body().convert_to_cart(t).get_position_vector(); // itokawa position vector w/r to the sun expressed in inertially-pointing barycentered frame
+	double srp_flux =  args . get_solar_constant()/std::pow(arma::norm(R + X.subvec(0,2)) / au2meters,2);
+
+	const arma::vec::fixed<3> & sigma_BN = X . subvec(3, 5);
+
+	// DCM BN
+	arma::mat::fixed<3,3> BN = RBK::mrp_to_dcm(sigma_BN);
+
+	arma::vec::fixed<3> ray_direction_body_frame = - BN * arma::normalise(R + X.subvec(0,2));
+	arma::vec::fixed<3> ray_origin_body_frame = BN * X.subvec(0,2);
+
+	Ray ray(ray_origin_body_frame, ray_direction_body_frame) ;
+
+	if (args . get_estimated_shape_model() -> ray_trace(&ray)){
+		return arma::zeros<arma::vec>(3);
+	}
+	else{
+		return srp_flux / arma::datum::c_0 * X(6) * args.get_area_to_mass_ratio() * arma::normalise(R + X.subvec(0,2));
+	}
+}
+
+arma::mat Dynamics::SRP_cannonball_unit_C_truth(double t,const arma::vec & X, const Args & args){
+
+	arma::vec X_input = {X(0),X(1),X(2),X(3),X(4),X(5),1};
+	return  Dynamics::SRP_cannonball_truth(t,X_input,args);
 
 }
 
-arma::mat Dynamics::SRP_cannonball_unit_C(double t,const arma::vec & X, const Args & args){
+arma::mat Dynamics::SRP_cannonball_unit_C_estimate(double t,const arma::vec & X, const Args & args){
 
-	return  Dynamics::SRP_cannonball(t,arma::ones<arma::vec>(1),args);
+	arma::vec X_input = {X(0),X(1),X(2),X(3),X(4),X(5),1};
+	return  Dynamics::SRP_cannonball_estimate(t,X_input,args);
 
 }
 
@@ -260,13 +312,15 @@ arma::mat Dynamics::partial_omega_dot_partial_omega_estimate(double t, const arm
 
 arma::vec Dynamics::third_body_acceleration_itokawa_sun(double t, 
 	const arma::vec & X,
-	 const Args & args){
+	const Args & args){
 
 	const arma::vec::fixed<3> & r = X.subvec(0,2);// spacecraft position in inertially-pointing barycentered frame
 
 	arma::vec::fixed<3> R = args . get_kep_state_small_body().convert_to_cart(t).get_position_vector(); // itokawa position vector w/r to the sun expressed in inertially-pointing barycentered frame
 
-	return  args . get_kep_state_small_body().get_mu() * (- r / std::pow(arma::norm(r),3) + R / std::pow(arma::norm(R),3));
+
+
+	return  args . get_kep_state_small_body().get_mu() * (- (r + R) / std::pow(arma::norm((r + R)),3) + R / std::pow(arma::norm(R),3));
 
 
 }

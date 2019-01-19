@@ -28,11 +28,23 @@ namespace Dynamics{
 
 
 	/**
-	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux and no eclipses
-	@param X (1) state {C == 1} (C ==  SRP constant == 1)
-	@return point mass acceleration expressed in the inertial frame of reference
+	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux
+	checks for eclipses with true shape model
+	sets CRP coefficient to 1
+	@param X (7) state {position,mrp_BN,C == 1} (C ==  SRP constant == 1)
+	@return srp acceleration expressed in the inertial frame of reference
 	*/
-	arma::mat SRP_cannonball_unit_C(double t,const arma::vec & X, const Args & args);
+	arma::mat SRP_cannonball_unit_C_truth(double t,const arma::vec & X, const Args & args);
+
+
+	/**
+	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux
+	checks for eclipses with estimated shape model
+	sets CRP coefficient to 1
+	@param X (7) state {position,mrp_BN,C == 1} (C ==  SRP constant == 1)
+	@return srp acceleration expressed in the inertial frame of reference
+	*/
+	arma::mat SRP_cannonball_unit_C_estimate(double t,const arma::vec & X, const Args & args);
 
 	/**
 	Evaluates the acceleration due to gravity at the provided point using a point mass model
@@ -44,10 +56,20 @@ namespace Dynamics{
 
 	/**
 	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux and no eclipses
-	@param X (1) state {C} (C ==  SRP constant)
+	checks for eclipses with true shape model
+	@param X (7) state {position,mrp_BN,C} (C ==  SRP coefficient)
 	@return point mass acceleration expressed in the inertial frame of reference
 	*/
-	arma::vec SRP_cannonball(double t,const arma::vec & X, const Args & args) ;
+	arma::vec SRP_cannonball_truth(double t,const arma::vec & X, const Args & args) ;
+
+	/**
+	Evaluates the acceleration due to SRP at the provided point using a cannonball model assuming constant solar flux and no eclipses
+	checks for eclipses with estimated shape model
+	@param X (7) state {position,mrp_BN,C} (C ==  SRP coefficient)
+	@return point mass acceleration expressed in the inertial frame of reference
+	*/
+	arma::vec SRP_cannonball_estimate(double t,const arma::vec & X, const Args & args) ;
+
 
 
 	/**

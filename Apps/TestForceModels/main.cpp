@@ -1,4 +1,3 @@
-#include <Lidar.hpp>
 #include <ShapeModelTri.hpp>
 #include <ShapeModelBezier.hpp>
 #include <ShapeModelImporter.hpp>
@@ -20,37 +19,10 @@
 
 #include "json.hpp"
 
-
-// Various constants that set up the visibility emulator scenario
-
-// Lidar settings
-#define ROW_RESOLUTION 128 // Goldeneye
-#define COL_RESOLUTION 128 // Goldeneye
-#define ROW_FOV 20 // ?
-#define COL_FOV 20 // ?
-
-// Instrument specs
-#define FOCAL_LENGTH 1e1 // meters
-#define SKIP_FACTOR 1 // between 0 and 1 . Determines the focal plane fraction that will be kept during the navigation phase (as a fraction of ROW_RESOLUTION)
-
-// Noise
-#define LOS_NOISE_FRACTION_MES_TRUTH 0.
-
-
-// Shape fitting parameters
-#define POINTS_RETAINED 2000000 // Number of points to be retained in the shape fitting
-#define RIDGE_COEF 0e-5 // Ridge coef (regularization of normal equations)
 #define TARGET_SHAPE "itokawa_64_scaled_aligned" // Target shape
 
-// Navigation parameters
-#define USE_PHAT_IN_BATCH false // If true, the state covariance is used to provide an a-priori to the batch
-#define N_ITER_MES_UPDATE 10 // Number of iterations in the navigation filter measurement update
-#define USE_CONSISTENCY_TEST false // If true, will exit IEKF if consistency test is satisfied
-#define T0 0
+int main(){
 
-///////////////////////////////////////////
-
-int main() {
 
 	// Loading case parameters from file
 	arma::arma_rng::set_seed(0);
@@ -79,6 +51,7 @@ int main() {
 	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
 	double CR_TRUTH = input_data["CR_TRUTH"];
 	double TF =  double(input_data["TF"]) * 3600;
+	double T0 = 0;
 	
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
@@ -113,9 +86,9 @@ int main() {
 	arma::vec itokaw_kep_state = {
 		1.3241 * au2meters,
 		0.2802,
-		1.6215 * d2r,
-		69.080 * d2r,
-		162.81 * d2r,
+		0 * 1.6215 * d2r,
+		0 * 69.080 * d2r,
+		0 * 162.81 * d2r,
 		0
 	};
 
@@ -157,16 +130,7 @@ int main() {
 
 	true_shape_model.construct_kd_tree_shape();
 
-// Lidar
-	Lidar lidar(&frame_graph,
-		"L",
-		ROW_FOV,
-		COL_FOV ,
-		ROW_RESOLUTION,
-		COL_RESOLUTION,
-		FOCAL_LENGTH,
-		LOS_NOISE_SD_BASELINE,
-		LOS_NOISE_FRACTION_MES_TRUTH);
+
 
 	// Integrator extra arguments
 	Args args;
@@ -174,15 +138,7 @@ int main() {
 	args.set_true_shape_model(&true_shape_model);
 	args.set_mu_truth(arma::datum::G * true_shape_model . get_volume() * DENSITY);
 	args.set_mass_truth(true_shape_model . get_volume() * DENSITY);
-	args.set_lidar(&lidar);
-	args.set_sd_noise(LOS_NOISE_SD_BASELINE);
-	args.set_sd_noise_prop(LOS_NOISE_FRACTION_MES_TRUTH);
-	args.set_use_P_hat_in_batch(USE_PHAT_IN_BATCH);
-	args.set_N_iter_mes_update(N_ITER_MES_UPDATE);
-	args.set_use_consistency_test(USE_CONSISTENCY_TEST);
-	args.set_skip_factor(SKIP_FACTOR);
 	args.set_inertia_truth(true_shape_model.get_inertia());
-	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
 	args.set_kep_state_small_body(kep_state_small_body);
 
 	/******************************************************/
@@ -234,6 +190,7 @@ int main() {
 	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball_truth,{"r","sigma_BN","CR_TRUTH"});
 	dynamics_system_truth.add_dynamics("r_dot",Dynamics::third_body_acceleration_itokawa_sun,{"r"});
 
+
 	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
 
@@ -276,17 +233,10 @@ int main() {
 	std::vector<arma::vec> X_augmented;
 	std::cout << "Propagating true state\n";
 
-	StatePropagator::propagate(T_obs,
-		X_augmented, 
+	StatePropagator::propagate(
+		T_obs,
+		X_augmented,
 		T0, 
-		TF, 
-		1./INSTRUMENT_FREQUENCY_SHAPE,
-		X0_augmented,
-		dynamics_system_truth,
-		args,
-		OUTPUT_DIR + "/","obs_point_mass");
-
-	StatePropagator::propagate(T0, 
 		TF, 
 		10. , 
 		X0_augmented,
@@ -299,121 +249,51 @@ int main() {
 		times(i) = T_obs[i];
 	}
 
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
-	/******************************************************/
+	// Evaluating the force models along the trajectory
+	
+	arma::mat SRP_forces(3,T_obs.size());
+	arma::mat third_body_forces(3,T_obs.size());
+	arma::mat gravity_forces(3,T_obs.size());
 
 
-	ShapeBuilderArguments shape_filter_args;
-	shape_filter_args.set_los_noise_sd_baseline(LOS_NOISE_SD_BASELINE);
-	shape_filter_args.set_N_iter_shape_filter(N_ITER_SHAPE_FILTER);
-	shape_filter_args.set_use_icp(USE_ICP);
-	shape_filter_args.set_N_iter_bundle_adjustment(N_ITER_BUNDLE_ADJUSTMENT);
-	shape_filter_args.set_use_ba(USE_BA);
-	shape_filter_args.set_iod_rigid_transforms_number(IOD_RIGID_TRANSFORMS_NUMBER);
-	shape_filter_args.set_iod_particles(IOD_PARTICLES);
-	shape_filter_args.set_iod_iterations(IOD_ITERATIONS);
-	shape_filter_args.set_use_true_rigid_transforms(USE_TRUE_RIGID_TRANSFORMS);
-	shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
-	shape_filter_args.set_min_triangle_angle(MIN_TRIANGLE_ANGLE);
-	shape_filter_args.set_max_triangle_size(MAX_TRIANGLE_SIZE);
-	shape_filter_args.set_surface_approx_error(SURFACE_APPROX_ERROR);
-	shape_filter_args.set_number_of_edges(NUMBER_OF_EDGES);
-	shape_filter_args.set_ba_h(BA_H);
-	shape_filter_args.set_use_bezier_shape(USE_BEZIER_SHAPE);
-
-	std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
-	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;
-
-	ShapeBuilder shape_filter(&frame_graph,&lidar,&true_shape_model,&shape_filter_args);
-
-	shape_filter.run_shape_reconstruction(times,X_augmented,OUTPUT_DIR);
-
-	nlohmann::json output_data;
-	std::string path_to_estimated_shape = "";
-	std::string path_to_estimated_spherical_harmonics = "";
+	for (int i = 0; i < T_obs.size(); ++i){
 
 
-	arma::vec X_estimated = shape_filter.get_estimated_state();
-	arma::mat covariance_estimated_state = shape_filter.get_covariance_estimated_state();
+		arma::vec gravity_input_states = {
+			X_augmented[i](0),
+			X_augmented[i](1),
+			X_augmented[i](2),
+			X_augmented[i](6),
+			X_augmented[i](7),
+			X_augmented[i](8)
+		};
 
-	covariance_estimated_state.save(OUTPUT_DIR + "/covariance_estimated_state.txt",arma::raw_ascii);
+		arma::vec srp_input_states = {
+			X_augmented[i](0),
+			X_augmented[i](1),
+			X_augmented[i](2),
+			X_augmented[i](6),
+			X_augmented[i](7),
+			X_augmented[i](8),
+			X_augmented[i](13)
+		};
 
-	std::cout << "Fetching output data...\n";
-	output_data["X0_TRUE_SPACECRAFT"] = { 
-		X_augmented.back()[0], 
-		X_augmented.back()[1], 
-		X_augmented.back()[2],
-		X_augmented.back()[3], 
-		X_augmented.back()[4], 
-		X_augmented.back()[5]
-	};
+		third_body_forces.col(i) = Dynamics::third_body_acceleration_itokawa_sun(times(i),X_augmented[i].subvec(0,2),args);
+		SRP_forces.col(i) = Dynamics::SRP_cannonball_truth(times(i),srp_input_states,args);
+		gravity_forces.col(i) = Dynamics::spherical_harmonics_acceleration_truth(times(i),gravity_input_states,args);
 
-	output_data["X0_TRUE_SMALL_BODY"] = { 
-		X_augmented.back()[6], 
-		X_augmented.back()[7], 
-		X_augmented.back()[8],
-		X_augmented.back()[9], 
-		X_augmented.back()[10], 
-		X_augmented.back()[11]
-	};
 
-	output_data["X0_ESTIMATED_SPACECRAFT"] = { 
-		X_estimated[0], 
-		X_estimated[1], 
-		X_estimated[2],
-		X_estimated[3], 
-		X_estimated[4], 
-		X_estimated[5]
-	};
-
-	output_data["X0_ESTIMATED_SMALL_BODY"] = { 
-		X_estimated[6], 
-		X_estimated[7], 
-		X_estimated[8],
-		X_estimated[9], 
-		X_estimated[10], 
-		X_estimated[11]
-	};
-	output_data["CR_TRUTH"] = CR_TRUTH;
-
-	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
-	output_data["ESTIMATED_SMALL_BODY_CR"] = 1.1;
-	output_data["DISTANCE_FROM_SUN_AU"] = DISTANCE_FROM_SUN_AU;
-
-	nlohmann::json shape_covariances_data;
-	std::cout << "Exporting covariances ...\n";
-	for (int e = 0; e < shape_filter.get_estimated_shape_model() -> get_NElements(); ++e){
-
-		const arma::vec & P_X_param = shape_filter.get_estimated_shape_model() -> get_element(e).get_P_X_param();
-		std::vector<double> P_X_param_vector;
-		for (int i = 0; i < P_X_param.n_rows; ++i){
-			P_X_param_vector.push_back(P_X_param(i));
-		}
-		shape_covariances_data.push_back(P_X_param_vector);
 	}
 
-	output_data["ESTIMATED_SHAPE_COVARIANCES"] = shape_covariances_data;
-	output_data["ESTIMATED_SHAPE_PATH"] = OUTPUT_DIR + "/fit_shape_B_frame";
-	output_data["ESTIMATED_SPHERICAL_HARMONICS"] = path_to_estimated_spherical_harmonics;
+	third_body_forces.save(OUTPUT_DIR + "/" + "third_body_forces.txt",arma::raw_ascii);
+	SRP_forces.save(OUTPUT_DIR + "/" + "SRP_forces.txt",arma::raw_ascii);
+	gravity_forces.save(OUTPUT_DIR + "/" + "gravity_forces.txt",arma::raw_ascii);
 
-	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
-	o << output_data;
+
+
+
+
 
 
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
