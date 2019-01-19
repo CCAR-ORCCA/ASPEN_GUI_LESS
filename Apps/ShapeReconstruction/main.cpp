@@ -78,7 +78,7 @@ int main() {
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
 	double CR_TRUTH = input_data["CR_TRUTH"];
-	double TF =  double(input_data["TF"]) * 3600;
+	double TF = double(input_data["TF"]) * 3600;
 	
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	

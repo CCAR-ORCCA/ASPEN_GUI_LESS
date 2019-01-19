@@ -253,8 +253,8 @@ int main(){
 	
 	arma::mat SRP_forces(3,T_obs.size());
 	arma::mat third_body_forces(3,T_obs.size());
-	arma::mat gravity_forces(3,T_obs.size());
-
+	arma::mat SH_gravity_forces(3,T_obs.size());
+	arma::mat point_mass_gravity_forces(3,T_obs.size());
 
 	for (int i = 0; i < T_obs.size(); ++i){
 
@@ -266,6 +266,14 @@ int main(){
 			X_augmented[i](6),
 			X_augmented[i](7),
 			X_augmented[i](8)
+		};
+
+
+		arma::vec point_mass_state = {
+			X_augmented[i](0),
+			X_augmented[i](1),
+			X_augmented[i](2),
+			X_augmented[i](12)
 		};
 
 		arma::vec srp_input_states = {
@@ -280,14 +288,16 @@ int main(){
 
 		third_body_forces.col(i) = Dynamics::third_body_acceleration_itokawa_sun(times(i),X_augmented[i].subvec(0,2),args);
 		SRP_forces.col(i) = Dynamics::SRP_cannonball_truth(times(i),srp_input_states,args);
-		gravity_forces.col(i) = Dynamics::spherical_harmonics_acceleration_truth(times(i),gravity_input_states,args);
+		SH_gravity_forces.col(i) = Dynamics::spherical_harmonics_acceleration_truth(times(i),gravity_input_states,args);
+		point_mass_gravity_forces.col(i) = Dynamics::point_mass_acceleration(times(i),point_mass_state,args);
 
 
 	}
 
 	third_body_forces.save(OUTPUT_DIR + "/" + "third_body_forces.txt",arma::raw_ascii);
 	SRP_forces.save(OUTPUT_DIR + "/" + "SRP_forces.txt",arma::raw_ascii);
-	gravity_forces.save(OUTPUT_DIR + "/" + "gravity_forces.txt",arma::raw_ascii);
+	SH_gravity_forces.save(OUTPUT_DIR + "/" + "SH_gravity_forces.txt",arma::raw_ascii);
+	point_mass_gravity_forces.save(OUTPUT_DIR + "/" + "point_mass_gravity_forces.txt",arma::raw_ascii);
 
 
 
