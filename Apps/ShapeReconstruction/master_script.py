@@ -59,7 +59,7 @@ base_dictionnary = {
 "DENSITY" : 1900,
 "MRP_0" : [0,0,0],
 "SURFACE_APPROX_ERROR" : 1,
-"BA_H" : 4,
+"BA_H" : 5,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "N_ITER_BUNDLE_ADJUSTMENT" : 3,
 "N_ITER_SHAPE_FILTER" : 3,
