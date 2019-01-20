@@ -389,24 +389,24 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
 				
 				std::cout << " -- Fitting PSR a-priori ...\n";
+				
 				if (this -> filter_arguments -> get_use_bezier_shape()){
 					std::cout << " --- Elevating degree ...\n";
 
 					this -> estimated_shape_model -> elevate_degree();
+
+					std::cout << " -- Populating mass properties ...\n";
+
+					this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
+
+					std::cout << " -- Updating mass properties ...\n";
+
+					this -> estimated_shape_model -> update_mass_properties();
+
+					std::cout << " -- Saving both ...\n";
+
+					this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
 				}
-
-				std::cout << " -- Populating mass properties ...\n";
-
-				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
-				
-				std::cout << " -- Updating mass properties ...\n";
-
-				this -> estimated_shape_model -> update_mass_properties();
-
-				std::cout << " -- Saving both ...\n";
-
-				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
-
 
 				std::cout << " -- Calling shape fitter ...\n";
 
@@ -415,23 +415,31 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> filter_arguments -> get_ridge_coef());
 				this -> estimated_shape_model -> update_mass_properties();	
 
-				
-
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
 				
 
 				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
 
+				std::cout << " -- Rotating shape ...\n";
+
+
 				this -> estimated_shape_model -> rotate(this -> LN_t0.t());
+
+				std::cout << " -- Translating shape ...\n";
+
 				this -> estimated_shape_model -> translate(initial_spacecraft_position);
 
 				// The estimated shape should now be aligned with the true shape model
 
 				// The estimated shape model is bary-centered 
+				std::cout << " -- Updating mass properties before N_frame save ...\n";
+
 				this -> estimated_shape_model -> update_mass_properties();	
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_N_frame");
 
 				this -> estimated_shape_model -> rotate(BN_measured.front());
+				std::cout << " -- Updating mass properties before B_frame save ...\n";
+
 				this -> estimated_shape_model -> update_mass_properties();	
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
 

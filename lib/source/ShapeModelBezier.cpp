@@ -1584,7 +1584,6 @@ void ShapeModelBezier<PointType>::populate_mass_properties_coefs_deterministics(
 
 	std::cout << "- Inertia coefficients: " << this -> inertia_indices_coefs_table.size() << std::endl;
 
-
 }
 
 

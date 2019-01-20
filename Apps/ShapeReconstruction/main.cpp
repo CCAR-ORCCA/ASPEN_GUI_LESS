@@ -52,6 +52,9 @@
 
 int main() {
 
+	auto start = std::chrono::system_clock::now();
+
+
 	// Loading case parameters from file
 	arma::arma_rng::set_seed(0);
 
@@ -400,6 +403,13 @@ int main() {
 
 	std::ofstream o(OUTPUT_DIR + "/output_file_from_shape_reconstruction.json");
 	o << output_data;
+
+	auto end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "Time elapsed in full simulation : " << elapsed_seconds.count() << std::endl;
+
 
 	return 0;
 }
