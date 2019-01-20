@@ -383,23 +383,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
 				psr_shape.construct_kd_tree_shape();
 
-				std::cout << " -- Fitting PSR a-priori ...\n";
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
 				
 				if (this -> filter_arguments -> get_use_bezier_shape()){
+					std::cout << " -- Fitting PSR a-priori ...\n";
+
 					this -> estimated_shape_model -> elevate_degree();
 
-				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
-				this -> estimated_shape_model -> update_mass_properties();
+					this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
+					this -> estimated_shape_model -> update_mass_properties();
 
-				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
-				
-				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
-				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
-					this -> filter_arguments -> get_ridge_coef());
-				this -> estimated_shape_model -> update_mass_properties();	
+					this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
+
+					ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
+					shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
+						this -> filter_arguments -> get_ridge_coef());
+					this -> estimated_shape_model -> update_mass_properties();	
 
 				}
+				
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
 				
 

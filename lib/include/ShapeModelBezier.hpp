@@ -30,19 +30,7 @@ public:
 		std::string ref_frame_name,
 		FrameGraph * frame_graph);
 
-	/**
-	Constructor
-	@param shape_model pointer to polyhedral shape model used to construct 
-	this new shape model
-	@param frame_graph Pointer to the graph storing
-	reference frame relationships
-	@param frame_graph Pointer to the reference frame graph
-	@param surface_noise use in patch covariance setting
-	*/
-	ShapeModelBezier(ShapeModelTri<PointType> & shape_model,
-		std::string ref_frame_name,
-		FrameGraph * frame_graph,double surface_noise);
-
+	
 	/**
 	Constructor
 	@param frame_graph Pointer to the graph storing

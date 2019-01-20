@@ -62,46 +62,6 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 
 }
 
-template <class PointType>
-ShapeModelBezier<PointType>::ShapeModelBezier(ShapeModelTri<PointType> & shape_model,
-	std::string ref_frame_name,
-	FrameGraph * frame_graph,
-	double surface_noise): ShapeModel<PointType>(ref_frame_name,frame_graph){
-
-	// // All the facets of the original shape model are browsed
-	// // The shape starts as a uniform union of order-2 Bezier patches
-
-	// // The control point of this shape model are the same as that
-	// // of the provided shape
-	// this -> control_points = (*shape_model -> get_points());
-
-	// // The ownership relationships are reset
-	// for (unsigned int i = 0; i < shape_model -> get_NControlPoints(); ++i){
-	// 	this -> control_points[i] -> reset_ownership();
-	// }
-
-	// // The surface elements are almost the same, expect that they are 
-	// // Bezier patches and not facets
-	// for (unsigned int i = 0; i < shape_model -> get_NElements(); ++i){
-	// 	auto patch = std::make_shared<Bezier>(Bezier(*shape_model -> get_elements() -> at(i) -> get_points()));
-	// 	patch -> set_global_index(i);
-	// 	this -> elements.push_back(patch);
-
-	// 	patch -> get_points() -> at(0) -> add_ownership(patch.get());
-	// 	patch -> get_points() -> at(1) -> add_ownership(patch.get());
-	// 	patch -> get_points() -> at(2) -> add_ownership(patch.get());
-	// 	patch -> set_P_X(surface_noise * surface_noise * arma::eye<arma::mat>(9,9));
-
-	// }
-	// this -> build_edges();
-
-	// this -> build_structure();
-
-	// this -> construct_kd_tree_control_points();
-	// this -> populate_mass_properties_coefs();
-	// this -> update_mass_properties();
-
-}
 
 template <class PointType>
 std::shared_ptr<arma::mat> ShapeModelBezier<PointType>::get_info_mat_ptr() const{

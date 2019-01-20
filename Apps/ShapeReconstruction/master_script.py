@@ -75,6 +75,8 @@ all_cases_dictionnary = {
 "NUMBER_OF_EDGES" : [1500,2000,2500]
 }
 
+
+
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 	all_cases_dictionnary,base_location)
 
@@ -98,7 +100,7 @@ for data in all_data:
 
     print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
-    os.system("./ShapeReconstruction | tee " + data["OUTPUT_DIR"] + "/log.txt" )
+    os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
 
 
 
