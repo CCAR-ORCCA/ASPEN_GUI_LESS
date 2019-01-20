@@ -388,7 +388,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 				if (this -> filter_arguments -> get_use_bezier_shape()){
 					this -> estimated_shape_model -> elevate_degree();
-				}
 
 				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
 				this -> estimated_shape_model -> update_mass_properties();
@@ -400,8 +399,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> filter_arguments -> get_ridge_coef());
 				this -> estimated_shape_model -> update_mass_properties();	
 
+				}
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
-
+				
 
 				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
 

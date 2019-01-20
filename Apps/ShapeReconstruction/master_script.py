@@ -63,18 +63,17 @@ base_dictionnary = {
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "N_ITER_BUNDLE_ADJUSTMENT" : 3,
 "N_ITER_SHAPE_FILTER" : 3,
-"IOD_ITERATIONS" : 100
+"IOD_ITERATIONS" : 100,
+"IOD_RIGID_TRANSFORMS_NUMBER" : 7
 }
 
 
 all_cases_dictionnary = {
 "IOD_PARTICLES" : [50,100,150],
-"IOD_RIGID_TRANSFORMS_NUMBER" : [5,7,9],
 "USE_BEZIER_SHAPE" : [True,False],
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.0005,0.0004,0.0006],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
 "NUMBER_OF_EDGES" : [1500,2000,2500]
 }
-
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 	all_cases_dictionnary,base_location)
