@@ -39,43 +39,44 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 	PointCloudIO<PointNormal>::save_to_obj(pc_footpoints,"footpoints_pc.obj");
 
+	if (this -> shape_model -> get_degree() > 1){
+		for (unsigned int i = 0; i < N_iter; ++i){
 
-	for (unsigned int i = 0; i < N_iter; ++i){
+			std::cout << "\nIteration " << i + 1 << " / " << N_iter << std::endl;
 
-		std::cout << "\nIteration " << i + 1 << " / " << N_iter << std::endl;
+			std::cout << "\n\t Updating shape from the " << footpoints.size() <<  " footpoints...\n";
 
-		std::cout << "\n\t Updating shape from the " << footpoints.size() <<  " footpoints...\n";
+			bool done = this -> update_shape(footpoints,ridge_coef);
 
-		bool done = this -> update_shape(footpoints,ridge_coef);
-
-		std::cout << "\n\t Refining footpoints" << std::endl;
-		boost::progress_display progress_1(footpoints.size());
+			std::cout << "\n\t Refining footpoints" << std::endl;
+			boost::progress_display progress_1(footpoints.size());
 		#pragma omp parallel for
-		for (int e = 0; e < footpoints.size(); ++e){
-			if (footpoints[e].element >= 0){
-				this -> refine_footpoint_coordinates(this -> shape_model -> get_element(footpoints[e].element),footpoints[e]);
+			for (int e = 0; e < footpoints.size(); ++e){
+				if (footpoints[e].element >= 0){
+					this -> refine_footpoint_coordinates(this -> shape_model -> get_element(footpoints[e].element),footpoints[e]);
+				}
+				++progress_1;
 			}
-			++progress_1;
-		}
 
-		std::vector<Footpoint> footpoints_temp;
-		std::cout << "\n\t Pruning footpoints" << std::endl;
-		boost::progress_display progress_2(footpoints.size());
-		
-		for (int e = 0; e < footpoints.size(); ++e){
-			if (footpoints[e].element >= 0){
-				footpoints_temp.push_back(footpoints[e]);
+			std::vector<Footpoint> footpoints_temp;
+			std::cout << "\n\t Pruning footpoints" << std::endl;
+			boost::progress_display progress_2(footpoints.size());
+			
+			for (int e = 0; e < footpoints.size(); ++e){
+				if (footpoints[e].element >= 0){
+					footpoints_temp.push_back(footpoints[e]);
+				}
+				++progress_2;
 			}
-			++progress_2;
+
+			std::cout << "\n\t Discarded " << (int)(footpoints.size()) - (int)(footpoints_temp.size()) << " from the " << footpoints.size() << " initial ones\n";
+			footpoints = footpoints_temp;
+
+			if (done){
+				break;
+			}
+
 		}
-
-		std::cout << "\n\t Discarded " << (int)(footpoints.size()) - (int)(footpoints_temp.size()) << " from the " << footpoints.size() << " initial ones\n";
-		footpoints = footpoints_temp;
-
-		if (done){
-			break;
-		}
-
 	}
 
 	std::cout << "\n - Done fitting. Training covariances... \n";
