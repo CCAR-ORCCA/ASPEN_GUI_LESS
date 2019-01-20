@@ -395,10 +395,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					this -> estimated_shape_model -> elevate_degree();
 				}
 
+				std::cout << " -- Populating mass properties ...\n";
+
 				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
+				
+				std::cout << " -- Updating mass properties ...\n";
+
 				this -> estimated_shape_model -> update_mass_properties();
 
+				std::cout << " -- Saving both ...\n";
+
 				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
+
+
+				std::cout << " -- Calling shape fitter ...\n";
 
 				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),

@@ -70,7 +70,7 @@ base_dictionnary = {
 
 all_cases_dictionnary = {
 "IOD_PARTICLES" : [50,100,150],
-"USE_BEZIER_SHAPE" : [True,False],
+"USE_BEZIER_SHAPE" : [False,True],
 "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
 "NUMBER_OF_EDGES" : [1500,2000,2500]
 }
