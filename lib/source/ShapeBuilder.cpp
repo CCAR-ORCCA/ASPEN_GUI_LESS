@@ -237,8 +237,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				// }
 
-				if (time_index % 10 == 0)
-					
+				if (time_index % 5 == 0)
+
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 				
 
