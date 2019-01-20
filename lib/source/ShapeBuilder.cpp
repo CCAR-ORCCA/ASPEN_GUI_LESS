@@ -223,30 +223,34 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			
 			if (this -> filter_arguments -> get_use_ba()){
-				ba_test.update_overlap_graph();
+				
+				if (time_index % 10 == 0)
+					ba_test.update_overlap_graph();
 
 
-				std::cout << "Error in ICP rigid transform before bundle adjustment: \n";
+				// std::cout << "Error in ICP rigid transform before bundle adjustment: \n";
 
-				for (int k = 1; k <= time_index;++k){
-					std::cout << "\n\t At index k = " << k << std::endl;
-					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
-					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
-					std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
+				// for (int k = 1; k <= time_index;++k){
+				// 	std::cout << "\n\t At index k = " << k << std::endl;
+				// 	std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
+				// 	std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
+				// 	std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
 
-				}
+				// }
 
 
 				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
-				std::cout << "Error in ICP rigid transform after bundle adjustment: \n";
+				
 
-				for (int k = 1; k <= time_index;++k){
-					std::cout << "\n\t At index k = " << k << std::endl;
-					std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
-					std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
-					std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
-					
-				}
+				// std::cout << "Error in ICP rigid transform after bundle adjustment: \n";
+
+				// for (int k = 1; k <= time_index;++k){
+				// 	std::cout << "\n\t At index k = " << k << std::endl;
+				// 	std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
+				// 	std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
+				// 	std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
+				
+				// }
 
 			}
 
