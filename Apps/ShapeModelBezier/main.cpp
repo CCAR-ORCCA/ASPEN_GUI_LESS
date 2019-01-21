@@ -27,7 +27,7 @@ int main(){
 
 	std::cout << truth.get_volume() << std::endl;
 	std::cout << bezier.get_volume() << std::endl;
-	bezier.elevate_degree();
+	// bezier.elevate_degree();
 
 	bezier.populate_mass_properties_coefs_deterministics();
 

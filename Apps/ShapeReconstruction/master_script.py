@@ -46,7 +46,7 @@ base_dictionnary = {
 "MAX_TRIANGLE_SIZE" : 5,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
-"TF" : 92.,
+"TF" : 72.,
 "SMA" : 1000.,
 "E" : 0.25,
 "I" : 1.4,

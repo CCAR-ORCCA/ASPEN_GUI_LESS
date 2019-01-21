@@ -41,6 +41,7 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 	// The surface elements are almost the same, expect that they are 
 	// Bezier patches and not facets
 	for (unsigned int i = 0; i < shape_model.get_NElements(); ++i){
+		
 		Bezier patch(shape_model.get_element_control_points(i),this);
 		auto control_points_indices = patch.get_points();
 		patch.set_global_index(i);
@@ -59,6 +60,7 @@ ShapeModelBezier<PointType>::ShapeModelBezier(const ShapeModelTri<PointType> & s
 
 	this -> assemble_mapping_matrices();
 	this -> update_mass_properties();
+
 
 }
 
@@ -3157,7 +3159,6 @@ void ShapeModelBezier<PointType>::elevate_degree(){
 	// The reverse table is constructed
 	auto rev_before_elevation = Bezier::reverse_table(n);
 	auto rev_after_elevation = Bezier::reverse_table(n + 1);
-
 
 	for (int e = 0; e < this -> elements.size(); ++e){
 		for (int i = 0; i < forw_after_elevation.size(); ++i){

@@ -66,3 +66,7 @@ void Element::set_global_index(int i ){
 int Element::get_global_index() const{
 	return this -> global_index;
 }
+
+int Element::get_NControlPoints_in_owning_shape() const{
+	return this -> owning_shape -> get_NControlPoints();
+}

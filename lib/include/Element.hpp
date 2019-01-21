@@ -60,8 +60,14 @@ public:
 
 	void set_control_points(std::vector<int > & control_points);
 
-
 	void set_owning_shape(ShapeModel<ControlPoint> * owning_shape);
+
+	/**
+	Returns number of control points in owning shape
+	@return number of control points in owning shape
+	*/
+
+	int get_NControlPoints_in_owning_shape() const;
 
 	
 	/**

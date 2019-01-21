@@ -8,9 +8,15 @@
 
 Bezier::Bezier( std::vector<int> vertices,ShapeModel<ControlPoint> * owning_shape) : Element(vertices,owning_shape){
 
+	if (this -> owning_shape -> get_NControlPoints() == 0){
+		throw(std::runtime_error("in Bezier::Bezier, the provided owning shape has no control points"));
+	}
+
 	double n = (-3 + std::sqrt(9 - 8 * (1 - vertices.size() )))/2;
 	double intpart;
 	this -> P_X = 1e10 * arma::eye<arma::mat>(3 * this -> control_points.size(),3 * this -> control_points.size());
+
+
 
 
 	if (modf(n,&intpart) == 0){
@@ -23,7 +29,6 @@ Bezier::Bezier( std::vector<int> vertices,ShapeModel<ControlPoint> * owning_shap
 	this -> construct_index_tables();
 
 	this -> update();
-
 
 }
 
@@ -62,7 +67,7 @@ std::tuple<int, int,int> Bezier::get_local_indices(int i) const{
 
 
 void Bezier::construct_index_tables(){
-	
+
 	this -> rev_table = reverse_table(this -> n);
 	this -> forw_table =  forward_table(this -> n);
 
@@ -378,14 +383,17 @@ std::set < int > Bezier::get_neighbors(bool all_neighbors) const{
 arma::vec::fixed<3> Bezier::evaluate(const double u, const double v) const{
 
 	arma::vec P = arma::zeros<arma::vec>(3);
+
 	for (unsigned int l = 0; l < this -> control_points.size(); ++l){
-		
+
+
 		int i = std::get<0>(this -> forw_table[l]);
 		int j = std::get<1>(this -> forw_table[l]);
 
 		P += this -> bernstein(u,v,i,j,this -> n) * this -> owning_shape -> get_point_coordinates(this -> control_points[l]);
 
 	}
+
 	return P;
 }
 
@@ -631,6 +639,7 @@ void Bezier::train_patch_covariance(){
 	this -> P_X = arma::diagmat(arma::exp(arma::vectorise(arma::repmat(L,1,3),1)));
 
 	this -> P_X_param = L;
+	
 	#if BEZIER_DEBUG_TRAINING
 	std::cout << "-- Initial guess: " << std::log(alpha) << std::endl;
 	std::cout << "-- Initial log-likelihood: " << Bezier::compute_log_likelihood_block_diagonal(std::log(alpha) * arma::ones<arma::vec>(N_C), this) << std::endl;

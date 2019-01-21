@@ -19,7 +19,8 @@ ShapeFitterBezier::ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
 	this -> psr_shape = psr_shape;
 	this -> shape_model = shape_model;
 	this -> pc = pc;
-} 
+
+}
 
 
 bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
@@ -50,6 +51,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 
 			std::cout << "\n\t Refining footpoints" << std::endl;
 			boost::progress_display progress_1(footpoints.size());
+		
 		#pragma omp parallel for
 			for (int e = 0; e < footpoints.size(); ++e){
 				if (footpoints[e].element >= 0){
@@ -358,9 +360,9 @@ void ShapeFitterBezier::match_footpoint_to_element(Footpoint & footpoint) const 
 	// The prospective element this footpoint belongs to is found by ray-tracing the shape from the point cloud
 	// along +/- the normal at the Ptilde
 
+
 	Ray ray_plus(footpoint.Ptilde, footpoint.ntilde);
 	Ray ray_minus(footpoint.Ptilde, -footpoint.ntilde);
-
 
 	// The ShapeModelTri is ray-traced
 
@@ -383,14 +385,16 @@ void ShapeFitterBezier::match_footpoint_to_element(Footpoint & footpoint) const 
 	else if (distance_hit_plus > distance_hit_minus && element_hit_minus != -1){
 
 		const Bezier & patch = this -> shape_model -> get_element(element_hit_minus);
-
 		ShapeFitterBezier::refine_footpoint_coordinates(patch,footpoint);
 
 	}
 
+
+
 }
 
 bool ShapeFitterBezier::refine_footpoint_coordinates(const Bezier & patch,Footpoint & footpoint){
+
 
 	arma::mat::fixed<2,2> H = arma::zeros<arma::mat>(2,2);
 	arma::vec::fixed<2> Y = arma::zeros<arma::vec>(2);
@@ -402,6 +406,7 @@ bool ShapeFitterBezier::refine_footpoint_coordinates(const Bezier & patch,Footpo
 	unsigned int N_iter = 30;
 
 	for (unsigned int i = 0; i < N_iter; ++i){
+
 		dbezier_dchi = patch.partial_bezier(chi(0),chi(1));
 
 		H.row(0) = dbezier_dchi.col(0).t() * dbezier_dchi - (footpoint.Ptilde - Pbar).t() * patch.partial_bezier_du(chi(0),chi(1));
@@ -419,6 +424,7 @@ bool ShapeFitterBezier::refine_footpoint_coordinates(const Bezier & patch,Footpo
 		if (arma::max(chi) > 0.99 || arma::min(chi) < 0.01 || arma::sum(chi) > 0.99 || arma::sum(chi) < 0.01 ){
 			footpoint.element = -1;
 			return false;
+
 		}	
 
 		arma::vec::fixed<3> normal = patch.get_normal_coordinates(chi(0),chi(1));
@@ -436,6 +442,8 @@ bool ShapeFitterBezier::refine_footpoint_coordinates(const Bezier & patch,Footpo
 		}
 
 	}
+
+
 	footpoint.element = -1;
 	return false;
 }

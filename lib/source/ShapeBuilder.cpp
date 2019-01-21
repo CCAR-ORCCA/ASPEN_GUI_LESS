@@ -78,7 +78,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 	arma::vec iod_guess;
 
-	int last_ba_call_index = 0;
+	int last_iod_epoch_index = 0;
 	int cutoff_index = 0;
 	OC::CartState iod_state;
 	int epoch_time_index = 0;
@@ -288,13 +288,14 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 
-			if (time_index - last_ba_call_index == this -> filter_arguments -> get_iod_rigid_transforms_number()){
+			if (time_index - last_iod_epoch_index == this -> filter_arguments -> get_iod_rigid_transforms_number() && 
+				time_index != times.n_rows - 1){
 
 				this -> save_attitude(dir + "/true",time_index,BN_true);
 
 				if (!this -> filter_arguments -> get_use_ba() ){
 					this -> save_attitude(dir + "/measured_no_BA",time_index,BN_measured);
-					last_ba_call_index = time_index;
+					last_iod_epoch_index = time_index;
 				}
 
 				else{
@@ -331,7 +332,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						epoch_cov,
 						final_cov);
 
-					last_ba_call_index = time_index;
+					last_iod_epoch_index = time_index;
 
 				}
 			}
@@ -343,9 +344,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				if (this -> filter_arguments -> get_use_ba()){
 					ba_test.set_h(0);
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,true);
-
-					
 				}
+
 				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 				
@@ -387,7 +387,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				psr_shape.construct_kd_tree_shape();
 
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
-				
+				for (int e = 0; e < this -> estimated_shape_model -> get_NElements(); ++e){
+					this -> estimated_shape_model -> get_element(e).set_owning_shape(this -> estimated_shape_model.get());
+				}
+
+
 				std::cout << " -- Fitting PSR a-priori ...\n";
 				
 				if (this -> filter_arguments -> get_use_bezier_shape()){
@@ -409,14 +413,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				}
 
 				std::cout << " -- Calling shape fitter ...\n";
+				std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
 
-				ShapeFitterBezier shape_fitter(&psr_shape,this -> estimated_shape_model.get(),&global_pc); 
+				ShapeFitterBezier shape_fitter(&psr_shape,
+					this -> estimated_shape_model.get(),&global_pc); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 				this -> estimated_shape_model -> update_mass_properties();	
 
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
-				
+
 
 				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
 
@@ -476,38 +482,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				this -> covariance_estimated_state(13,13) = std::pow(0.1,2);
 
 
-
-			// The measured states are saved
-			// as they will be provided to the navigation filter
-			// as a-priori
-
-			// The final position is obtained from inverting the rigid transforms,
-			// using the computed position of the center of mass in the stitching frame
-
-				// OC::KepState kep_state_epoch = iod_state.convert_to_kep(0);
-				// OC::CartState cart_state_tf = kep_state_epoch.convert_to_cart(times(time_index) - times(epoch_time_index));
-				
-				// arma::vec final_pos = cart_state_tf.get_position_vector();// could do better here by unrolling the rigid transforms
-				// arma::vec final_vel = cart_state_tf.get_velocity_vector();
-
-			// the final angular velocity is obtained by finite differencing
-			// of the successive BAed (or not!) attitude measurements
-
-				// arma::vec sigma_final = RBK::dcm_to_mrp(BN_measured.back());
-				// arma::vec sigma_final_before = RBK::dcm_to_mrp(BN_measured[BN_measured.size() -2]);
-
-				// arma::vec dmrp = sigma_final - sigma_final_before;
-
-			// dmrp/dt == 1/4 Bmat(sigma_before) * omega
-				// arma::vec omega_final = 4./dt * arma::inv(RBK::Bmat(sigma_final_before)) * (sigma_final - sigma_final_before);
-
-				// this -> filter_arguments -> set_position_final(final_pos);
-				// this -> filter_arguments -> set_velocity_final(final_vel);
-
-				// this -> filter_arguments -> set_mrp_EN_final(sigma_final);
-				// this -> filter_arguments -> set_omega_EN_final(omega_final);
-
-
 				return;
 
 			}
@@ -543,7 +517,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 
 	// arma::vec iod_guess;
 
-	// int last_ba_call_index = 0;
+	// int last_iod_epoch_index = 0;
 	// int cutoff_index = 0;
 
 
@@ -720,7 +694,7 @@ void ShapeBuilder::run_iod(const arma::vec &times ,
 	// 		cov,
 	// 		crude_guess,
 	// 		times,
-	// 		last_ba_call_index ,
+	// 		last_iod_epoch_index ,
 	// 		this -> filter_arguments -> get_iod_rigid_transforms_number() - 1, 
 	// 		mrps_LN,
 	// 		X_pcs,
