@@ -20,10 +20,10 @@ def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,b
 
 		return all_cases_dictionnary_list
 
-		if (platform.system() == 'Linux'):
-			base_location = "/orc_raid/bebe0705/"
-		else:
-			base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+if (platform.system() == 'Linux'):
+	base_location = "/orc_raid/bebe0705/"
+else:
+	base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
 
 
 # NAVIGATION_TIMES : number of observation times
