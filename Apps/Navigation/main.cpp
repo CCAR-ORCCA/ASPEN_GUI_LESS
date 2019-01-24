@@ -89,7 +89,7 @@ int main() {
 	input_file_from_shape_reconstruction >> input_file_from_shape_reconstruction_json;
 
 
-	double T0 = input_file_from_shape_reconstruction_json["TF"] * 3600;
+	double T0 = double(input_file_from_shape_reconstruction_json["TF"]) * 3600;
 	double TF = input_data["TF"];
 
 
@@ -159,7 +159,6 @@ int main() {
 		ROW_RESOLUTION,
 		COL_RESOLUTION,
 		FOCAL_LENGTH,
-		INSTRUMENT_FREQUENCY_NAV,
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
