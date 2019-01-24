@@ -43,8 +43,7 @@ else:
 # SKIP_FACTOR : between 0 and 1. if == to 1 , will use all pixels to determine position/attitude mes. Values between 0.9 and 1 seem good enough
 
 
-base_dictionnary = 
-{
+base_dictionnary = {
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
