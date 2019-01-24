@@ -90,7 +90,7 @@ int main() {
 
 
 	double T0 = double(input_file_from_shape_reconstruction_json["TF"]) * 3600;
-	double TF = input_data["TF"];
+	double TF = double(input_data["TF"]) * * 3600;
 
 
 // Ref frame graph

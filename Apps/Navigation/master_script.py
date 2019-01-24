@@ -42,7 +42,6 @@ else:
 # PROCESS_NOISE_SIGMA_OMEG : 1 sigma amplitude of small-body attitude state SNC process noise (rad/s^2)
 # SKIP_FACTOR : between 0 and 1. if == to 1 , will use all pixels to determine position/attitude mes. Values between 0.9 and 1 seem good enough
 
-
 base_dictionnary = {
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
