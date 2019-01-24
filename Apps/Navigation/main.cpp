@@ -59,7 +59,6 @@ int main() {
 	std::string SHAPE_RECONSTRUCTION_OUTPUT_DIR = input_data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"];
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
 
-	
 	std::ifstream j(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "output_file_from_shape_reconstruction.json");
 	nlohmann::json shape_reconstruction_output_data;
 	j >> shape_reconstruction_output_data;
@@ -76,15 +75,22 @@ int main() {
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	bool USE_HARMONICS_ESTIMATED_DYNAMICS = input_data["USE_HARMONICS_ESTIMATED_DYNAMICS"];
 
-	int NAVIGATION_TIMES = input_data["NAVIGATION_TIMES"]; 
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 
 	std::string ESTIMATED_SHAPE_PATH = shape_reconstruction_output_data["ESTIMATED_SHAPE_PATH"];
 	std::string ESTIMATED_SPHERICAL_HARMONICS = shape_reconstruction_output_data["ESTIMATED_SPHERICAL_HARMONICS"];
 	nlohmann::json SHAPE_COVARIANCES = shape_reconstruction_output_data["ESTIMATED_SHAPE_COVARIANCES"];
 	double CR_TRUTH = shape_reconstruction_output_data["CR_TRUTH"];
-	double DISTANCE_FROM_SUN_AU = shape_reconstruction_output_data["DISTANCE_FROM_SUN_AU"];
-	double tf = (NAVIGATION_TIMES - 1) * 1./INSTRUMENT_FREQUENCY_NAV;
+	
+
+
+	std::ifstream input_file_from_shape_reconstruction(SHAPE_RECONSTRUCTION_OUTPUT_DIR + "input_file.json");
+	nlohmann::json input_file_from_shape_reconstruction_json;
+	input_file_from_shape_reconstruction >> input_file_from_shape_reconstruction_json;
+
+
+	double T0 = input_file_from_shape_reconstruction_json["TF"] * 3600;
+	double TF = input_data["TF"];
 
 
 // Ref frame graph
@@ -145,9 +151,6 @@ int main() {
 
 	}
 
-
-
-
 // Lidar
 	Lidar lidar(&frame_graph,
 		"L",
@@ -178,7 +181,6 @@ int main() {
 	
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_output_dir(OUTPUT_DIR);
-	args.set_distance_from_sun_AU(DISTANCE_FROM_SUN_AU);
 
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
@@ -368,15 +370,7 @@ int main() {
 	std::cout << "Initial Error: " << std::endl;
 	std::cout << (X0_true-X0_estimated).t() << std::endl;
 
-	arma::vec nav_times(NAVIGATION_TIMES);
-
-	// Times
-	std::vector<double> nav_times_vec;
-	for (unsigned int i = 0; i < NAVIGATION_TIMES; ++i){
-		nav_times(i) = double(i)/INSTRUMENT_FREQUENCY_NAV;
-		nav_times_vec.push_back( nav_times(i));
-	}
-
+	
 	NavigationFilter filter(args);
 	
 	arma::mat Q = Dynamics::create_Q(PROCESS_NOISE_SIGMA_VEL,PROCESS_NOISE_SIGMA_OMEG);
@@ -413,7 +407,8 @@ int main() {
 		dynamics_system_truth.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
 	
-	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_TRUTH"});
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::SRP_cannonball_truth,{"r","sigma_BN","CR_TRUTH"});
+	dynamics_system_truth.add_dynamics("r_dot",Dynamics::third_body_acceleration_itokawa_sun,{"r"});
 	
 	dynamics_system_truth.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_truth.add_dynamics("omega_BN",Dynamics::domega_dt_truth,{"sigma_BN","omega_BN"});
@@ -440,14 +435,17 @@ int main() {
 
 	std::cout << "Propagating true state\n";
 	
-	StatePropagator::propagate(T_obs,X_true, 
-		0, 1./INSTRUMENT_FREQUENCY_NAV,NAVIGATION_TIMES, 
+	StatePropagator::propagate(T_obs,
+		X_true, 
+		T0, 
+		TF,
+		1./INSTRUMENT_FREQUENCY_NAV,
 		X0_true,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","true_orbit");
 
-	StatePropagator::propagate(0, tf, 10. , X0_true,
+	StatePropagator::propagate(T0, TF, 10. , X0_true,
 		dynamics_system_truth,
 		args,
 		OUTPUT_DIR + "/","true_orbit_dense");
@@ -456,6 +454,7 @@ int main() {
 	for (int i = 0; i < T_obs.size(); ++i){
 		times(i) = T_obs[i];
 	}
+
 
 
 	/******************************************************/
@@ -490,9 +489,17 @@ int main() {
 	else{
 		dynamics_system_estimate.add_dynamics("r_dot",Dynamics::point_mass_acceleration,{"r","mu"});
 	}
-	dynamics_system_estimate.add_dynamics("r_dot",Dynamics::SRP_cannonball,{"CR_ESTIMATE"});
+
+	dynamics_system_estimate.add_dynamics("r_dot",Dynamics::SRP_cannonball_estimate,{"r","sigma_BN","CR_ESTIMATE"});
+
 	dynamics_system_estimate.add_dynamics("sigma_BN",Dynamics::dmrp_dt,{"sigma_BN","omega_BN"});
 	dynamics_system_estimate.add_dynamics("omega_BN",Dynamics::domega_dt_estimate,{"sigma_BN","omega_BN"});
+
+
+
+	dynamics_system_estimate.add_dynamics("r_dot",Dynamics::third_body_acceleration_itokawa_sun,{"r"});
+
+
 
 
 	
@@ -507,7 +514,8 @@ int main() {
 		dynamics_system_estimate.add_jacobian("r_dot","mu",Dynamics::point_mass_acceleration_unit_mu,{"r"});
 	}
 
-	dynamics_system_estimate.add_jacobian("r_dot","CR_ESTIMATE",Dynamics::SRP_cannonball_unit_C,{"CR_ESTIMATE"});
+	dynamics_system_estimate.add_jacobian("r_dot","CR_ESTIMATE",Dynamics::SRP_cannonball_unit_C_estimate,{"r","sigma_BN","CR_ESTIMATE"});
+
 
 	dynamics_system_estimate.add_jacobian("sigma_BN","sigma_BN",Dynamics::partial_mrp_dot_partial_mrp,{"sigma_BN","omega_BN"});
 	dynamics_system_estimate.add_jacobian("sigma_BN","omega_BN",Dynamics::partial_mrp_dot_partial_omega,{"sigma_BN"});
@@ -530,7 +538,7 @@ int main() {
 	int iter = filter.run(1,
 		X0_true,
 		X0_estimated,
-		nav_times_vec,
+		T_obs,
 		arma::ones<arma::mat>(1,1),
 		Q);
 
@@ -543,7 +551,7 @@ int main() {
 
 	filter.write_estimated_state(OUTPUT_DIR + "/X_hat.txt");
 	filter.write_true_state(OUTPUT_DIR + "/X_true.txt");
-	filter.write_T_obs(nav_times_vec,OUTPUT_DIR + "/nav_times.txt");
+	filter.write_T_obs(T_obs,OUTPUT_DIR + "/nav_times.txt");
 	filter.write_estimated_covariance(OUTPUT_DIR + "/covariances.txt");
 
 	return 0;

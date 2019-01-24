@@ -13,9 +13,6 @@
 #
 ################################################################################
 
-# OMP-friendly GCC Major version (will only be used on Mac OS systems)
-set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
-
 ################################################################################
 #
 #
@@ -40,18 +37,9 @@ elseif(UNIX AND NOT APPLE)
 	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/usr/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/usr/local/lib/cmake/CGAL_interface")
-	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
 endif()
 
-cmake_minimum_required(VERSION 3.0.0)
-
-
-if (${USE_GCC})
-	include(cmake/FindOmpGcc.cmake)
-else()
-	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-endif()
+cmake_minimum_required(VERSION 3.12.0)
 
 
 # Building procedure
@@ -71,7 +59,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
 add_definitions(-Wall -O2 )
-
 
 
 # Enable C++17 

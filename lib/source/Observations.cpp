@@ -26,10 +26,8 @@ arma::vec Observations::obs_lidar_range_true(double t,
 	Lidar *  lidar = args.get_lidar();
 	FrameGraph *  frame_graph = args.get_frame_graph();
 
-
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_origin_from_parent(lidar_pos);
 	frame_graph -> get_frame(lidar -> get_ref_frame_name()) -> set_mrp_from_parent(mrp_LN);
-
 
 	// Setting the small body to its inertial attitude. 
 	frame_graph -> get_frame(args.get_true_shape_model() -> get_ref_frame_name()) -> set_mrp_from_parent(args.get_true_mrp_BN());

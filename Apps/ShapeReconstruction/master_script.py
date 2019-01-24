@@ -37,7 +37,6 @@ else:
 
 
 base_dictionnary = {
-"DISTANCE_FROM_SUN_AU" : 1.3241,
 "CR_TRUTH" : 1.2,
 "USE_BA" : True,
 "USE_ICP" : True,
@@ -64,12 +63,12 @@ base_dictionnary = {
 "N_ITER_BUNDLE_ADJUSTMENT" : 3,
 "N_ITER_SHAPE_FILTER" : 3,
 "IOD_ITERATIONS" : 100,
-"IOD_RIGID_TRANSFORMS_NUMBER" : 7
+"IOD_RIGID_TRANSFORMS_NUMBER" : 7,
+"IOD_PARTICLES" : 100
 }
 
 
 all_cases_dictionnary = {
-"IOD_PARTICLES" : [50,100,150],
 "USE_BEZIER_SHAPE" : [False,True],
 "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
 "NUMBER_OF_EDGES" : [1500,2000,2500]

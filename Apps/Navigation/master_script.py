@@ -46,7 +46,8 @@ all_data = [
 "OUTPUT_DIR" : base_location + "Navigation/output/test_0",
 "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
 "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
-"SKIP_FACTOR": 0.94
+"SKIP_FACTOR": 0.94,
+"TF" : 100.
 }
 
 
