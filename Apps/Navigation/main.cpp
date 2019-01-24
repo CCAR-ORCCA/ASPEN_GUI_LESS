@@ -90,7 +90,7 @@ int main() {
 
 
 	double T0 = double(input_file_from_shape_reconstruction_json["TF"]) * 3600;
-	double TF = double(input_data["TF"]) * * 3600;
+	double TF = double(input_data["TF"]) * 3600;
 
 
 // Ref frame graph
@@ -186,7 +186,7 @@ int main() {
 
 	double mu_sun = 1.32712440018 * 10e20 ;
 	OC::KepState kep_state_small_body(itokawa_kep_state,mu_sun);
-	
+
 	// Integrator extra arguments
 	Args args;
 	args.set_frame_graph(&frame_graph);
@@ -206,7 +206,7 @@ int main() {
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_output_dir(OUTPUT_DIR);
 	args.set_kep_state_small_body(kep_state_small_body);
-	
+
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/
