@@ -52,14 +52,14 @@ base_dictionnary = {
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
 "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/case_1/",
 "USE_TRUE_STATES": False,
-"PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
-"PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
 "SKIP_FACTOR": 0.94,
 "TF" : 100.
 }
 
 
 all_cases_dictionnary = {
+"PROCESS_NOISE_SIGMA_VEL": [1e-8,1e-9,1e-10] ,
+"PROCESS_NOISE_SIGMA_OMEG": [1e-8,1e-9,1e-10] ,
 "INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500,1./2500],
 }
 
