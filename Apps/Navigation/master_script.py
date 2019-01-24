@@ -3,13 +3,27 @@ import json
 import numpy as np
 
 import os
+import itertools
 import platform
 
 
+def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
+       
+    keys, values = zip(*all_cases_dictionnary.items())
+    dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
+
+    all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
+
+    for e in range(len(dictionnary_list)):
+        all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/case_" + str(e)
+        all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/case_" + str(e)
+
+    return all_cases_dictionnary_list
+
 if (platform.system() == 'Linux'):
-	base_location = "/orc_raid/bebe0705/"
+    base_location = "/orc_raid/bebe0705/"
 else:
-	base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+    base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
 
 
 # NAVIGATION_TIMES : number of observation times
@@ -29,21 +43,16 @@ else:
 # SKIP_FACTOR : between 0 and 1. if == to 1 , will use all pixels to determine position/attitude mes. Values between 0.9 and 1 seem good enough
 
 
-all_data = [
-
+base_dictionnary = 
 {
-"NAVIGATION_TIMES" : 80,
 "DENSITY" : 1900,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
 "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
-"INSTRUMENT_FREQUENCY_NAV" : 1./3600,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/test_0/",
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/case_1/",
 "USE_TRUE_STATES": False,
-"INPUT_DIR" : base_location + "Navigation/input/test_0",
-"OUTPUT_DIR" : base_location + "Navigation/output/test_0",
 "PROCESS_NOISE_SIGMA_VEL": 1e-10 ,
 "PROCESS_NOISE_SIGMA_OMEG": 1e-10 ,
 "SKIP_FACTOR": 0.94,
@@ -51,8 +60,14 @@ all_data = [
 }
 
 
+all_cases_dictionnary = {
+"INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500,1./2500],
+}
 
-]
+
+all_data = generate_all_cases_dictionnary_list(base_dictionnary,
+	all_cases_dictionnary,base_location)
+
 
 for data in all_data:
 	print("\t Case " + data["INPUT_DIR"].split("/")[-1])
@@ -77,6 +92,6 @@ for data in all_data:
 
 	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
-	os.system("./Navigation | tee " + data["OUTPUT_DIR"] + "/log.txt" )
+	os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
 
 

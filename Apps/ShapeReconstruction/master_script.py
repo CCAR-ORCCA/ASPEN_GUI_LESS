@@ -7,28 +7,20 @@ import platform
 import sys
 import itertools
 import time
-import smtplib
 
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
-    
-    time_index = int(1000 * time.time())
-   
+       
     keys, values = zip(*all_cases_dictionnary.items())
     dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
     all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
 
-
-
     for e in range(len(dictionnary_list)):
         all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "ShapeReconstruction/input/case_" + str(e)
         all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "ShapeReconstruction/output/case_" + str(e)
 
-
     return all_cases_dictionnary_list
-
-
 
 if (platform.system() == 'Linux'):
     base_location = "/orc_raid/bebe0705/"
