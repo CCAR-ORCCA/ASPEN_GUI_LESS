@@ -18,7 +18,7 @@ def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,b
 		all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/case_" + str(e)
 		all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/case_" + str(e)
 
-		return all_cases_dictionnary_list
+	return all_cases_dictionnary_list
 
 if (platform.system() == 'Linux'):
 	base_location = "/orc_raid/bebe0705/"
@@ -83,16 +83,16 @@ for data in all_data:
 	with open('input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
 
-		print("\t - Saving input file in output/")
+	print("\t - Saving input file in output/")
 
-		with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-			json.dump(data, outfile)
+	with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+		json.dump(data, outfile)
 
-			with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-				json.dump(data, outfile)
+	with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+		json.dump(data, outfile)
 
-				print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
-				os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+	os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
 
 
