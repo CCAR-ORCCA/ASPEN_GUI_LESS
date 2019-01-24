@@ -162,6 +162,31 @@ int main() {
 		LOS_NOISE_SD_BASELINE,
 		LOS_NOISE_FRACTION_MES_TRUTH);
 
+	// 
+
+	// Kep state arguments
+	// - sma : semi-major axis [L]
+	// - e : eccentricity [-]
+	// - i : inclination in [0,pi] [rad]
+	// - Omega : right-ascension of ascending node in [0,2 pi] [rad] 
+	// - omega : longitude of perigee [0,2 pi] [rad] 
+	// - M0 : mean anomaly at epoch [rad]
+
+	double au2meters = 149597870700;
+	double d2r = arma::datum::pi / 180.;
+
+	arma::vec itokawa_kep_state = {
+		1.3241 * au2meters,
+		0.2802,
+		1.6215 * d2r,
+		69.080 * d2r,
+		162.81 * d2r,
+		0
+	};
+
+	double mu_sun = 1.32712440018 * 10e20 ;
+	OC::KepState kep_state_small_body(itokawa_kep_state,mu_sun);
+	
 	// Integrator extra arguments
 	Args args;
 	args.set_frame_graph(&frame_graph);
@@ -180,7 +205,8 @@ int main() {
 	
 	args.set_inertia_estimate(estimated_shape_model.get_inertia());
 	args.set_output_dir(OUTPUT_DIR);
-
+	args.set_kep_state_small_body(kep_state_small_body);
+	
 	/******************************************************/
 	/********* Computation of spherical harmonics *********/
 	/**************** about orbited shape *****************/

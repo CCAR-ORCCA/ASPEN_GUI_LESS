@@ -8,22 +8,22 @@ import platform
 
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
-       
-    keys, values = zip(*all_cases_dictionnary.items())
-    dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
-    all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
+	keys, values = zip(*all_cases_dictionnary.items())
+	dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
-    for e in range(len(dictionnary_list)):
-        all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/case_" + str(e)
-        all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/case_" + str(e)
+	all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
 
-    return all_cases_dictionnary_list
+	for e in range(len(dictionnary_list)):
+		all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/case_" + str(e)
+		all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/case_" + str(e)
 
-if (platform.system() == 'Linux'):
-    base_location = "/orc_raid/bebe0705/"
-else:
-    base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+		return all_cases_dictionnary_list
+
+		if (platform.system() == 'Linux'):
+			base_location = "/orc_raid/bebe0705/"
+		else:
+			base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
 
 
 # NAVIGATION_TIMES : number of observation times
@@ -49,7 +49,6 @@ base_dictionnary = {
 "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : base_location + "ShapeReconstruction/output/case_1/",
 "USE_TRUE_STATES": False,
 "SKIP_FACTOR": 0.94,
 "TF" : 100.
@@ -60,6 +59,10 @@ all_cases_dictionnary = {
 "PROCESS_NOISE_SIGMA_VEL": [1e-8,1e-9,1e-10] ,
 "PROCESS_NOISE_SIGMA_OMEG": [1e-8,1e-9,1e-10] ,
 "INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500,1./2500],
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [base_location + "ShapeReconstruction/output/case_1/",
+base_location + "ShapeReconstruction/output/case_0/",
+base_location + "ShapeReconstruction/output/case_41/",
+base_location + "ShapeReconstruction/output/case_40/"]
 }
 
 
@@ -80,16 +83,16 @@ for data in all_data:
 	with open('input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
 
-	print("\t - Saving input file in output/")
-	
-	with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
-	
-	with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+		print("\t - Saving input file in output/")
 
-	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+		with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+			json.dump(data, outfile)
 
-	os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+			with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+				json.dump(data, outfile)
+
+				print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+
+				os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
 
 
