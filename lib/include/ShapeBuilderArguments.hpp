@@ -522,6 +522,14 @@ public:
 		this -> use_bezier_shape = use_bezier_shape;
 	}
 
+	bool get_use_target_poi() const{
+		return this -> use_target_poi;
+	}
+
+	void set_use_target_poi(bool use_target_poi){
+		this -> use_target_poi = use_target_poi;
+	}
+
 protected:
 
 
@@ -569,7 +577,7 @@ protected:
 	bool use_ba = false;
 	bool use_true_rigid_transforms = false;
 	bool use_bezier_shape = true;
-
+	bool use_target_poi = false;
 
 
 	arma::vec mrp_EN_final;

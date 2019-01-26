@@ -56,13 +56,20 @@ base_dictionnary = {
 "N_ITER_SHAPE_FILTER" : 3,
 "IOD_ITERATIONS" : 100,
 "IOD_RIGID_TRANSFORMS_NUMBER" : 7,
-"IOD_PARTICLES" : 100
+"IOD_PARTICLES" : 100,
+"USE_BEZIER_SHAPE" : False,
+"INSTRUMENT_FREQUENCY_SHAPE" : 0.0004,
+"NUMBER_OF_EDGES" : 2000
 }
 
+# all_cases_dictionnary = {
+# "USE_BEZIER_SHAPE" : [False,True],
+# "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
+# "NUMBER_OF_EDGES" : [1500,2000,2500]
+# }
+
 all_cases_dictionnary = {
-"USE_BEZIER_SHAPE" : [False,True],
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
-"NUMBER_OF_EDGES" : [1500,2000,2500]
+    "USE_TARGET_POI" : [False,True]
 }
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,

@@ -64,7 +64,7 @@ double IODFinder::cost_function_cartesian(
 	int N = args -> size();
 	arma::mat positions(3,N + 1);
 
-	// The epoch time is taken as the time when the last point
+	// The epoch time is taken as the time when the first point
 	// cloud in the considered rigid transform was collected
 
 	double epoch_time = args -> front().t_start;

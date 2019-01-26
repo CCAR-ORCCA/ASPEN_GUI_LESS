@@ -190,7 +190,7 @@ protected:
 
 
 	void estimate_coverage(
-		std::string dir,PointCloud<PointNormal> * pc  = nullptr) const;
+		std::string dir,PointCloud<PointNormal> * pc  = nullptr) ;
 
 
 	/**
@@ -388,6 +388,9 @@ protected:
 
 
 	arma::vec x_t0;
+	arma::vec r0_from_kep_arc;
+	arma::vec target_of_interest_N_frame;
+	arma::vec target_of_interest_L0_frame;
 
 	SystemDynamics estimate_dynamics_system;
 
