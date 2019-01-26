@@ -315,7 +315,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "\n-- Estimating coverage...\n";
 
-					// this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+					this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
 
 					std::cout << "\n-- Running IOD Finder ...\n";
 
