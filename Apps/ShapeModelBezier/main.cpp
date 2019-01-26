@@ -15,7 +15,7 @@ int main(){
 
 	ShapeModelTri<ControlPoint> truth("", nullptr);
 
-	ShapeModelImporter::load_obj_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/test_0/true_shape_L0.obj"
+	ShapeModelImporter::load_obj_shape_model("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/resources/shape_models/itokawa_8.obj"
 		, 1, true,truth);
 
 

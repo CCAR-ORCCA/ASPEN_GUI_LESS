@@ -608,7 +608,7 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
 #     savepath = "" )
 
 
-graphics_path = ""
+graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/paper/Figures"
 
 
 list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output")

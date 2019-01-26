@@ -50,7 +50,7 @@ base_dictionnary = {
 "DENSITY" : 1900,
 "MRP_0" : [0,0,0],
 "SURFACE_APPROX_ERROR" : 1,
-"BA_H" : 5,
+"BA_H" : 6,
 "LOS_NOISE_SD_BASELINE" : 5e-1,
 "N_ITER_BUNDLE_ADJUSTMENT" : 3,
 "N_ITER_SHAPE_FILTER" : 3,
@@ -59,19 +59,17 @@ base_dictionnary = {
 "IOD_PARTICLES" : 100
 }
 
-
 all_cases_dictionnary = {
 "USE_BEZIER_SHAPE" : [False,True],
 "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
 "NUMBER_OF_EDGES" : [1500,2000,2500]
 }
 
-
-
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 	all_cases_dictionnary,base_location)
 
 for data in all_data:
+
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
     os.system("mkdir " + data["INPUT_DIR"])
@@ -92,7 +90,6 @@ for data in all_data:
     print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
     os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
-
 
 
 

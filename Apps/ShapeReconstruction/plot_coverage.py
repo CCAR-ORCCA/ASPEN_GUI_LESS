@@ -43,17 +43,20 @@ for directory in dir_list:
 
     longitudes = np.arctan2(coordinates[:,1],coordinates[:,0]) * 180./np.pi
     latitudes = np.arctan(coordinates[:,2]/np.linalg.norm(coordinates[:,0:2],axis = 1)) * 180./np.pi
-
+    # radii = np.linalg.norm()
     print ("Done computing ...")
 
-    plt.hist2d(longitudes, latitudes, bins=(100, 50),norm=LogNorm())
+    plt.hist2d(longitudes, latitudes, bins=(50, 25),norm=LogNorm(),cmin  = 30)
     plt.xlabel("Longitude (deg)")
     plt.ylabel("Latitude (deg)")
     plt.title("Coverage, case " + directory.split("_")[1])
     plt.colorbar()
     plt.tight_layout()
-    plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/paper/Figures/coverage_" + directory + ".pdf")
+    plt.show()
+    # plt.savefig("/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/paper/Figures/coverage_" + directory + ".pdf")
     plt.clf()
+
+
 
 
 

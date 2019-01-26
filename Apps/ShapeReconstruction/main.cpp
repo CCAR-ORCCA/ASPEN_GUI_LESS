@@ -74,15 +74,15 @@ int main() {
 	double LONGITUDE_SPIN = input_data["LONGITUDE_SPIN"];
 	double SPIN_PERIOD = input_data["SPIN_PERIOD"];
 	double DENSITY = input_data["DENSITY"];
+
 	double INSTRUMENT_FREQUENCY_SHAPE = input_data["INSTRUMENT_FREQUENCY_SHAPE"];
 	double MIN_TRIANGLE_ANGLE = input_data["MIN_TRIANGLE_ANGLE"];
 	double MAX_TRIANGLE_SIZE = input_data["MAX_TRIANGLE_SIZE"];
 	double SURFACE_APPROX_ERROR = input_data["SURFACE_APPROX_ERROR"];
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
-	double DISTANCE_FROM_SUN_AU = input_data["DISTANCE_FROM_SUN_AU"];
 	double CR_TRUTH = input_data["CR_TRUTH"];
 	double TF = double(input_data["TF"]) * 3600;
-	
+		
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];
@@ -383,7 +383,6 @@ int main() {
 
 	output_data["ESTIMATED_SMALL_BODY_MU"] = X_estimated[12];
 	output_data["ESTIMATED_SMALL_BODY_CR"] = 1.1;
-	output_data["DISTANCE_FROM_SUN_AU"] = DISTANCE_FROM_SUN_AU;
 
 	nlohmann::json shape_covariances_data;
 	std::cout << "Exporting covariances ...\n";
