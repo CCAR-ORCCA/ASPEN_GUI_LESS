@@ -1312,9 +1312,18 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	}
 
 	std::cout << "\n-- Number of points in global pc: " << global_pc.size() << std::endl;
+	std::cout << "\n-- Building KD-tree ..." << std::endl;
+
+
+	auto start = std::chrono::system_clock::now();
 
 	// The KD tree of this pc is built
 	global_pc.build_kdtree(false);
+
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
+
+	std::cout << "\n-- Done building KD-tree in " << elapsed_seconds.count( ) << " seconds" << std::endl;
 
 
 	// The normals are NOT re-estimated. they come from the concatenated point clouds
@@ -1332,25 +1341,32 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	// which is a consistent criterion in the event of a perfect, uniform sampling
 	// along with the exact surface normals. when eta ~ 1, coverage is complete
 
-	arma::vec S(global_pc.size());
+	start = std::chrono::system_clock::now();
+
+	arma::uvec S(global_pc.size());
 	
 	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
 
 		// The closest neighbors are extracted
-		std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),3);
+		// std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),3);
+		std::vector<int> closest_points = global_pc.get_nearest_neighbors_radius(global_pc.get_point_coordinates(i),1.);
 
-		S(i) = (--closest_points.end()) -> first;
+		S(i) = closest_points.size();
 	}
 
-	// The coverage criterion is evaluated
-	std::cout << "\n-- Mean spacing : " << arma::mean(S) << std::endl;
-	std::cout << "-- Max spacing : " << arma::max(S) << std::endl;
-	std::cout << "-- Stddev in spacing : " << arma::stddev(S)  << std::endl;
+	end = std::chrono::system_clock::now();
+	elapsed_seconds = end-start;
+	arma::uvec satisfying_points = arma::find(S > 3);
+
+	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
+	std::cout << "Uniformity score: " << double(satisfying_points.size())/S.size() * 100 << " %\n";
 
 
-	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
-	PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
+	
+
+	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
+	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
 
 
 	if (pc != nullptr){
