@@ -389,7 +389,7 @@ protected:
 
 	arma::vec x_t0;
 	arma::vec r0_from_kep_arc;
-	arma::vec target_of_interest_N_frame;
+	arma::vec lidar_to_target_of_interest_N_frame;
 	arma::vec target_of_interest_L0_frame;
 
 	SystemDynamics estimate_dynamics_system;
