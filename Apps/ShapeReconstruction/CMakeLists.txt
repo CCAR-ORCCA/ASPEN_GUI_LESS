@@ -39,7 +39,7 @@ elseif(UNIX AND NOT APPLE)
 	set(CGAL_interface_LOC "/usr/local/lib/cmake/CGAL_interface")
 endif()
 
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 
 # Building procedure
