@@ -355,7 +355,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// As well as uniform time sampling
 			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
 
-			this -> target_of_interest_N_frame = (- r_extrapolated_next_time 
+			this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
 				+ BN_extrapolated_next_time.t() 
 				* ( BN_measured.front() 
 					* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * target_of_interest_L0_frame)));
@@ -1101,7 +1101,7 @@ void ShapeBuilder::get_new_states(
 	arma::vec e_r ;
 
 	if (this -> filter_arguments -> get_use_target_poi() && mrps_LN.size() > 10){
-		e_r = - arma::normalise(this -> target_of_interest_N_frame);
+		e_r = arma::normalise(this -> lidar_to_target_of_interest_N_frame);
 	}
 	else{
 		e_r = - arma::normalise(lidar_pos);
