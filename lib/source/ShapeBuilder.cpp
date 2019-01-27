@@ -1371,6 +1371,7 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	start = std::chrono::system_clock::now();
 
 	arma::uvec S(global_pc.size());
+
 	
 	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
@@ -1389,8 +1390,9 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
 
-	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min());
-	
+	// this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min());
+	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.index_min());
+
 	
 	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
 	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
