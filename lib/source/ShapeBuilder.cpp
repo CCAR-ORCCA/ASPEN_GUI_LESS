@@ -288,7 +288,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
 				std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
 			}
-			
+
 			// Assumes a fixed rotation axis and angular velocity
 			// As well as uniform time sampling
 			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
@@ -1388,12 +1388,12 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	end = std::chrono::system_clock::now();
 	elapsed_seconds = end-start;
 	arma::uvec unsatisfying_points = arma::find(S <= 3);
+	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.index_min());
 
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
-
+	std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
 	// this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min());
-	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.index_min());
 
 	
 	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
