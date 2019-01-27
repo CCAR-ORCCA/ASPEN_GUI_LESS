@@ -1102,11 +1102,17 @@ void ShapeBuilder::get_new_states(
 	// barycenter
 	arma::vec e_r ;
 
+	std::cout << "\t Possible choice for los in N frame: \n";
+	std::cout << "\t\tFrom poi: " << arma::normalise(this -> lidar_to_target_of_interest_N_frame).t();
+	std::cout << "\t\tNadir: " << - arma::normalise(lidar_pos);
+
 	if (this -> filter_arguments -> get_use_target_poi() && mrps_LN.size() > 10){
 		e_r = arma::normalise(this -> lidar_to_target_of_interest_N_frame);
+		std::cout << "Pointing at POI\n";
 	}
 	else{
 		e_r = - arma::normalise(lidar_pos);
+		std::cout << "Pointing at nadir\n";
 
 	}
 	arma::vec e_h = arma::normalise(arma::cross(e_r,-lidar_vel));
