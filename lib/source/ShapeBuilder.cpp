@@ -117,6 +117,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		// Getting the true observations (noise is added)
 		this -> lidar -> send_flash(this -> true_shape_model,true);
+		this -> lidar -> save(dir + "/pc_" + std::to_string(time_index));
 
 		// The rigid transform best aligning the two point clouds is found
 		// The solution to this first registration will be used to prealign the 

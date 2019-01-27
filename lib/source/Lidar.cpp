@@ -102,8 +102,6 @@ void Lidar::send_flash(ShapeModel<ControlPoint> * shape_model,bool add_noise,dou
 		}
 	}
 
-
-
 	auto start = std::chrono::system_clock::now();
 	
 	#pragma omp parallel for if (USE_OMP_LIDAR)
