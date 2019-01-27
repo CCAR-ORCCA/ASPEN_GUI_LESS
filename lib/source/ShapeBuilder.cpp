@@ -284,6 +284,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			arma::vec::fixed<3> r_extrapolated_next_time = (
 				iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
 
+			this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+
 			if (time_index <= times.n_rows - 2){
 				std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
 				std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
@@ -298,6 +300,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					+ BN_extrapolated_next_time.t() 
 					* ( BN_measured.front() 
 						* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * this -> target_of_interest_L0_frame)));
+
+				if (arma::dot(this -> lidar_to_target_of_interest_N_frame,r_extrapolated_next_time) > 0){
+					this -> lidar_to_target_of_interest_N_frame.reset();
+					std::cout << "\tTarget has faded\n";
+				}
 			}
 
 			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
@@ -333,7 +340,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
 
-						ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
+						ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 					}
 
 					std::cout << "\n-- Saving attitude...\n";
@@ -342,7 +349,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 					std::cout << "\n-- Estimating coverage...\n";
 
-					this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
 
 					std::cout << "\n-- Running IOD Finder ...\n";
 
@@ -374,15 +380,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				if (this -> filter_arguments -> get_use_ba()){
 					ba_test.set_h(0);
-					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,true);
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false,true);
 				}
 
 				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
-
-				std::cout << "\n-- Estimating coverage...\n";
-
-				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
 
 				std::cout << "\n-- Running IOD Finder ...\n";
 
@@ -1373,7 +1375,6 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	start = std::chrono::system_clock::now();
 
 	arma::uvec S(global_pc.size());
-
 	
 	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
