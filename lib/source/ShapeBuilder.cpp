@@ -278,8 +278,25 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << "true r0: " << this -> x_t0.subvec(0,2).t();
 			}
 
+			// Should define extrapolated location of target of interest at the next timestep
+				// right here
 
-			
+			arma::vec::fixed<3> r_extrapolated_next_time = (
+				iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
+
+			std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
+			std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
+
+			// Assumes a fixed rotation axis and angular velocity
+			// As well as uniform time sampling
+			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
+
+			this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
+				+ BN_extrapolated_next_time.t() 
+				* ( BN_measured.front() 
+					* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * target_of_interest_L0_frame)));
+
+
 			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
 				estimated_mu.push_back(iod_state.get_mu());
 
@@ -296,29 +313,68 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// first run:  (tk --  tk+ 1), (tk + 1 -- tk + 2), ... , (tk + N-1 -- tk + N)
 			// second run:  (tk + N --  tk + N + 1), (tk + N + 1 -- tk + N + 2), ... , (tk + 2N-1 -- tk + 2N)
 
-			if (time_index - last_iod_epoch_index == this -> filter_arguments -> get_iod_rigid_transforms_number() && 
-				time_index != times.n_rows - 1){
+			if (time_index - last_iod_epoch_index == this -> filter_arguments -> get_iod_rigid_transforms_number() && time_index != times.n_rows - 1){
 
 				this -> save_attitude(dir + "/true",time_index,BN_true);
 
-			if (!this -> filter_arguments -> get_use_ba() ){
-				this -> save_attitude(dir + "/measured_no_BA",time_index,BN_measured);
-				last_iod_epoch_index = time_index;
-			}
-
-			else{
-
-				std::cout << "\n-- Applying BA to successive point clouds\n";
-
-				this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
-
-				if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
-
-					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
+				if (!this -> filter_arguments -> get_use_ba() ){
+					this -> save_attitude(dir + "/measured_no_BA",time_index,BN_measured);
+					last_iod_epoch_index = time_index;
 				}
 
-				std::cout << "\n-- Saving attitude...\n";
+				else{
 
+					std::cout << "\n-- Applying BA to successive point clouds\n";
+
+					this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
+
+					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
+
+						ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true);
+					}
+
+					std::cout << "\n-- Saving attitude...\n";
+
+					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+
+					std::cout << "\n-- Estimating coverage...\n";
+
+					this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+
+					std::cout << "\n-- Running IOD Finder ...\n";
+
+					this -> run_IOD_finder(times, 
+						epoch_time_index ,
+						time_index, 
+						mrps_LN,
+						X_pcs,
+						M_pcs,
+						R_pcs,
+						iod_state,
+						epoch_state,
+						final_state,
+						epoch_cov,
+						final_cov);
+
+
+
+					last_iod_epoch_index = time_index;
+
+				}
+
+
+			}
+
+
+			else if (time_index == times.n_rows - 1){
+
+
+				if (this -> filter_arguments -> get_use_ba()){
+					ba_test.set_h(0);
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,true);
+				}
+
+				std::cout << " -- Saving attitude ...\n";
 				this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
 				std::cout << "\n-- Estimating coverage...\n";
@@ -327,7 +383,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				std::cout << "\n-- Running IOD Finder ...\n";
 
-				this -> run_IOD_finder(times, 
+				this -> run_IOD_finder(times,
 					epoch_time_index ,
 					time_index, 
 					mrps_LN,
@@ -341,193 +397,128 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					final_cov);
 
 
+				this -> save_rigid_transforms(dir, 
+					X_pcs,
+					M_pcs,
+					X_pcs_true,
+					M_pcs_true,
+					R_pcs);
 
-				last_iod_epoch_index = time_index;
+				std::cout << " -- Estimating coverage ...\n";
+				PointCloud<PointNormal> global_pc;
+				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_",&global_pc);
 
-			}
+				std::cout << " -- Making PSR a-priori ...\n";
+				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 
+				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
+				psr_shape.construct_kd_tree_shape();
 
-
-				// Should define extrapolated location of target of interest at the next timestep
-				// right here
-
-			arma::vec::fixed<3> r_extrapolated_next_time = (
-				iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
-
-			std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
-			std::cout << "\nTrue position at next timestep: " << X[time_index +1].subvec(0,2).t();
-
-			// Assumes a fixed rotation axis and angular velocity
-			// As well as uniform time sampling
-			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
-
-			this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
-				+ BN_extrapolated_next_time.t() 
-				* ( BN_measured.front() 
-					* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * target_of_interest_L0_frame)));
-
-			
-			
+				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
+				for (int e = 0; e < this -> estimated_shape_model -> get_NElements(); ++e){
+					this -> estimated_shape_model -> get_element(e).set_owning_shape(this -> estimated_shape_model.get());
+				}
 
 
+				std::cout << " -- Fitting PSR a-priori ...\n";
+
+				if (this -> filter_arguments -> get_use_bezier_shape()){
+					std::cout << " --- Elevating degree ...\n";
+
+					this -> estimated_shape_model -> elevate_degree();
+
+					std::cout << " -- Populating mass properties ...\n";
+
+					this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
+
+					std::cout << " -- Updating mass properties ...\n";
+
+					this -> estimated_shape_model -> update_mass_properties();
+
+					std::cout << " -- Saving both ...\n";
+
+					this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
+				}
+
+				std::cout << " -- Calling shape fitter ...\n";
+				std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
+
+				ShapeFitterBezier shape_fitter(&psr_shape,
+					this -> estimated_shape_model.get(),&global_pc); 
+				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
+					this -> filter_arguments -> get_ridge_coef());
+				this -> estimated_shape_model -> update_mass_properties();	
+
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape");
 
 
-		}
+				arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
+
+				std::cout << " -- Rotating shape ...\n";
 
 
-		else if (time_index == times.n_rows - 1){
+				this -> estimated_shape_model -> rotate(this -> LN_t0.t());
 
+				std::cout << " -- Translating shape ...\n";
 
-			if (this -> filter_arguments -> get_use_ba()){
-				ba_test.set_h(0);
-				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,true,true);
-			}
-
-			std::cout << " -- Saving attitude ...\n";
-			this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
-
-			std::cout << "\n-- Estimating coverage...\n";
-
-			this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
-
-			std::cout << "\n-- Running IOD Finder ...\n";
-
-			this -> run_IOD_finder(times,
-				epoch_time_index ,
-				time_index, 
-				mrps_LN,
-				X_pcs,
-				M_pcs,
-				R_pcs,
-				iod_state,
-				epoch_state,
-				final_state,
-				epoch_cov,
-				final_cov);
-
-
-			this -> save_rigid_transforms(dir, 
-				X_pcs,
-				M_pcs,
-				X_pcs_true,
-				M_pcs_true,
-				R_pcs);
-
-			std::cout << " -- Estimating coverage ...\n";
-			PointCloud<PointNormal> global_pc;
-			this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_",&global_pc);
-
-			std::cout << " -- Making PSR a-priori ...\n";
-			ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
-
-			ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
-			psr_shape.construct_kd_tree_shape();
-
-			this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
-			for (int e = 0; e < this -> estimated_shape_model -> get_NElements(); ++e){
-				this -> estimated_shape_model -> get_element(e).set_owning_shape(this -> estimated_shape_model.get());
-			}
-
-
-			std::cout << " -- Fitting PSR a-priori ...\n";
-
-			if (this -> filter_arguments -> get_use_bezier_shape()){
-				std::cout << " --- Elevating degree ...\n";
-
-				this -> estimated_shape_model -> elevate_degree();
-
-				std::cout << " -- Populating mass properties ...\n";
-
-				this -> estimated_shape_model -> populate_mass_properties_coefs_deterministics();
-
-				std::cout << " -- Updating mass properties ...\n";
-
-				this -> estimated_shape_model -> update_mass_properties();
-
-				std::cout << " -- Saving both ...\n";
-
-				this -> estimated_shape_model -> save_both(dir + "/elevated_shape");
-			}
-
-			std::cout << " -- Calling shape fitter ...\n";
-			std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
-
-			ShapeFitterBezier shape_fitter(&psr_shape,
-				this -> estimated_shape_model.get(),&global_pc); 
-			shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
-				this -> filter_arguments -> get_ridge_coef());
-			this -> estimated_shape_model -> update_mass_properties();	
-
-			this -> estimated_shape_model -> save_both(dir + "/fit_shape");
-
-
-			arma::vec::fixed<3> initial_spacecraft_position = - this -> LN_t0.t() * this -> estimated_shape_model -> get_center_of_mass();
-
-			std::cout << " -- Rotating shape ...\n";
-
-
-			this -> estimated_shape_model -> rotate(this -> LN_t0.t());
-
-			std::cout << " -- Translating shape ...\n";
-
-			this -> estimated_shape_model -> translate(initial_spacecraft_position);
+				this -> estimated_shape_model -> translate(initial_spacecraft_position);
 
 				// The estimated shape should now be aligned with the true shape model
 
 				// The estimated shape model is bary-centered 
-			std::cout << " -- Updating mass properties before N_frame save ...\n";
+				std::cout << " -- Updating mass properties before N_frame save ...\n";
 
-			this -> estimated_shape_model -> update_mass_properties();	
-			this -> estimated_shape_model -> save_both(dir + "/fit_shape_N_frame");
+				this -> estimated_shape_model -> update_mass_properties();	
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape_N_frame");
 
-			this -> estimated_shape_model -> rotate(BN_measured.front());
-			std::cout << " -- Updating mass properties before B_frame save ...\n";
+				this -> estimated_shape_model -> rotate(BN_measured.front());
+				std::cout << " -- Updating mass properties before B_frame save ...\n";
 
-			this -> estimated_shape_model -> update_mass_properties();	
-			this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
+				this -> estimated_shape_model -> update_mass_properties();	
+				this -> estimated_shape_model -> save_both(dir + "/fit_shape_B_frame");
 
-			BatchAttitude batch_attitude(times,M_pcs);
+				BatchAttitude batch_attitude(times,M_pcs);
 
 				// Estimating small body state
-			arma::vec::fixed<6> a_priori_state;
-			a_priori_state.subvec(0,2) = RBK::dcm_to_mrp(BN_measured.front());
-			a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
+				arma::vec::fixed<6> a_priori_state;
+				a_priori_state.subvec(0,2) = RBK::dcm_to_mrp(BN_measured.front());
+				a_priori_state.subvec(3,5) = 4 * arma::inv(RBK::Bmat(RBK::dcm_to_mrp(BN_measured.front()))) * (RBK::dcm_to_mrp(BN_measured[1]) - RBK::dcm_to_mrp(BN_measured.front()))/(times(1) - times(0));
 
-			batch_attitude.set_a_priori_state(a_priori_state);
-			batch_attitude.set_inertia_estimate(this -> estimated_shape_model -> get_inertia());
+				batch_attitude.set_a_priori_state(a_priori_state);
+				batch_attitude.set_inertia_estimate(this -> estimated_shape_model -> get_inertia());
 
-			batch_attitude.run(R_pcs,mrps_LN);
+				batch_attitude.run(R_pcs,mrps_LN);
 
 				// The mean and standard deviation of all the measured mu's is extracted
-			arma::vec mu_estimated(estimated_mu.size());
+				arma::vec mu_estimated(estimated_mu.size());
 
-			for (int i = 0; i < estimated_mu.size(); ++i){
-				mu_estimated(i) = estimated_mu[i];
+				for (int i = 0; i < estimated_mu.size(); ++i){
+					mu_estimated(i) = estimated_mu[i];
+				}
+
+
+				this -> estimated_state = arma::zeros<arma::vec>(14);
+				this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
+				this -> estimated_state.subvec(6,11) = batch_attitude.get_attitude_state_history().back();
+				this -> estimated_state(12) = arma::mean(mu_estimated);
+				this -> estimated_state(13) = 1.4;
+
+				this -> covariance_estimated_state = arma::zeros<arma::mat>(14,14);
+				this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
+				this -> covariance_estimated_state.submat(6,6,11,11) = batch_attitude.get_attitude_state_covariances_history().back();
+				this -> covariance_estimated_state(12,12) = std::pow(arma::stddev(mu_estimated),2);
+				this -> covariance_estimated_state(13,13) = std::pow(0.1,2);
+
+
+				return;
+
 			}
 
 
-			this -> estimated_state = arma::zeros<arma::vec>(14);
-			this -> estimated_state.subvec(0,5) = final_state.subvec(0,5);
-			this -> estimated_state.subvec(6,11) = batch_attitude.get_attitude_state_history().back();
-			this -> estimated_state(12) = arma::mean(mu_estimated);
-			this -> estimated_state(13) = 1.4;
-
-			this -> covariance_estimated_state = arma::zeros<arma::mat>(14,14);
-			this -> covariance_estimated_state.submat(0,0,5,5) = final_cov.submat(0,0,5,5);
-			this -> covariance_estimated_state.submat(6,6,11,11) = batch_attitude.get_attitude_state_covariances_history().back();
-			this -> covariance_estimated_state(12,12) = std::pow(arma::stddev(mu_estimated),2);
-			this -> covariance_estimated_state(13,13) = std::pow(0.1,2);
-
-
-			return;
 
 		}
 
-
-
 	}
-
-}
 
 
 }
