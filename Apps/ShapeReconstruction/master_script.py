@@ -58,14 +58,13 @@ base_dictionnary = {
 "IOD_RIGID_TRANSFORMS_NUMBER" : 7,
 "IOD_PARTICLES" : 100,
 "USE_BEZIER_SHAPE" : False,
-"INSTRUMENT_FREQUENCY_SHAPE" : 0.0004,
- "USE_TARGET_POI" : False
+"USE_TARGET_POI" : False
 }
 
 all_cases_dictionnary = {
 "USE_BEZIER_SHAPE" : [False,True],
 "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
-"NUMBER_OF_EDGES" : [1500,2000,2500]
+"NUMBER_OF_EDGES" : [1500,2000,2500,3000]
 }
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,

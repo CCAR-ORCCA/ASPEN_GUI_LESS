@@ -309,7 +309,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					}
 				}
 			}
-			
+
 
 			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
 				estimated_mu.push_back(iod_state.get_mu());
@@ -1402,12 +1402,13 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
 
 	
-	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
-	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
-
+	
 
 	if (pc != nullptr){
 		*pc = global_pc;
+		PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
+		PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
+
 	}
 
 }
