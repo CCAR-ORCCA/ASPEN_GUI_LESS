@@ -291,11 +291,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// As well as uniform time sampling
 			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
 
-			this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
-				+ BN_extrapolated_next_time.t() 
-				* ( BN_measured.front() 
-					* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * target_of_interest_L0_frame)));
-
+			if (this -> target_of_interest_L0_frame.n_rows != 0){
+				this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
+					+ BN_extrapolated_next_time.t() 
+					* ( BN_measured.front() 
+						* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * this -> target_of_interest_L0_frame)));
+			}
 
 			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
 				estimated_mu.push_back(iod_state.get_mu());
