@@ -1104,7 +1104,7 @@ void ShapeBuilder::get_new_states(
 
 	std::cout << "\t Possible choice for los in N frame: \n";
 	std::cout << "\t\tFrom poi: " << arma::normalise(this -> lidar_to_target_of_interest_N_frame).t();
-	std::cout << "\t\tNadir: " << - arma::normalise(lidar_pos);
+	std::cout << "\t\tNadir: " << - arma::normalise(lidar_pos).t();
 
 	if (this -> filter_arguments -> get_use_target_poi() && mrps_LN.size() > 10){
 		e_r = arma::normalise(this -> lidar_to_target_of_interest_N_frame);
@@ -1343,10 +1343,15 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 
 	// A PC is formed with all the registered point clouds
 	PointCloud<PointNormal> global_pc;
+	std::vector<int> last_pc_indices;
 
 	for (int i = 0; i < this -> all_registered_pc.size(); ++i){
 		for (int j = 0; j <  this -> all_registered_pc[i] -> size(); ++j){
+			if (j == int(this -> all_registered_pc[i] -> size()) - 1){
+				last_pc_indices.push_back(global_pc.size());
+			}
 			global_pc.push_back( this -> all_registered_pc[i] -> get_point(j));
+
 		}
 	}
 
@@ -1388,7 +1393,7 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
 
-	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.index_min());
+	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min());
 	
 	
 	// PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
