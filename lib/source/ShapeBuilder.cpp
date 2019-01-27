@@ -281,31 +281,35 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should define extrapolated location of target of interest at the next timestep
 				// right here
 
-			arma::vec::fixed<3> r_extrapolated_next_time = (
-				iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
-
 			this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
-
+			
 			if (time_index <= times.n_rows - 2){
+				arma::vec::fixed<3> r_extrapolated_next_time = (
+					iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
+
+
 				std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
 				std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
-			}
+
+
 
 			// Assumes a fixed rotation axis and angular velocity
 			// As well as uniform time sampling
-			arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
+				arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
 
-			if (this -> target_of_interest_L0_frame.n_rows != 0){
-				this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
-					+ BN_extrapolated_next_time.t() 
-					* ( BN_measured.front() 
-						* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * this -> target_of_interest_L0_frame)));
+				if (this -> target_of_interest_L0_frame.n_rows != 0){
+					this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
+						+ BN_extrapolated_next_time.t() 
+						* ( BN_measured.front() 
+							* ( this -> r0_from_kep_arc + RBK::mrp_to_dcm(mrps_LN.front()).t() * this -> target_of_interest_L0_frame)));
 
-				if (arma::dot(arma::normalise(this -> lidar_to_target_of_interest_N_frame),arma::normalise(r_extrapolated_next_time)) > 0){
-					this -> lidar_to_target_of_interest_N_frame.reset();
-					std::cout << "\tTarget has faded\n";
+					if (arma::dot(arma::normalise(this -> lidar_to_target_of_interest_N_frame),arma::normalise(r_extrapolated_next_time)) > 0){
+						this -> lidar_to_target_of_interest_N_frame.reset();
+						std::cout << "\tTarget has faded\n";
+					}
 				}
 			}
+			
 
 			if (time_index > this -> filter_arguments -> get_iod_rigid_transforms_number())
 				estimated_mu.push_back(iod_state.get_mu());
