@@ -273,6 +273,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			if (epoch_time_index == 0){
 				this -> r0_from_kep_arc = epoch_state.subvec(0,2);
+				std::cout << "r0_from_kep_arc: " << this -> r0_from_kep_arc.t();
+				std::cout << "true r0: " << this -> x_t0.subvec(0,2).t();
 			}
 
 
