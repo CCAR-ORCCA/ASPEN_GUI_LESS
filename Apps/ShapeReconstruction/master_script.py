@@ -95,7 +95,7 @@ for data in all_data:
 
         os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
     else:
-        print(data["INPUT_DIR"] + " has already finished running. skipping case ...")
+        print("Case " + data["INPUT_DIR"].split("/")[-1] + " has already finished running. skipping case ...")
 
 
 
