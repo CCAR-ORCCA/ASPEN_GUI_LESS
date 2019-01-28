@@ -74,11 +74,11 @@ for data in all_data:
 
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
-
-    if (os.path.isdir(data["INPUT_DIR"]) is False):
-
         os.system("mkdir " + data["INPUT_DIR"])
         os.system("mkdir " + data["OUTPUT_DIR"])
+
+    if (os.path.isfile(data["INPUT_DIR"] + "/fit_shape.obj") is False):
+
 
         print("\t - Making directory")
         print("\t - Copying input file in build/")
@@ -96,7 +96,7 @@ for data in all_data:
 
         os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
     else:
-        print(data["INPUT_DIR"] + " already exists. skipping case ...")
+        print(data["INPUT_DIR"] + " has already finished running. skipping case ...")
 
 
 
