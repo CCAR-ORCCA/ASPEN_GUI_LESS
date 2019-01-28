@@ -73,14 +73,13 @@ all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 for data in all_data:
 
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
+    print("\t - Making directory")
 
     os.system("mkdir " + data["INPUT_DIR"])
     os.system("mkdir " + data["OUTPUT_DIR"])
 
-    if (os.path.isfile(data["INPUT_DIR"] + "/fit_shape.obj") is False):
+    if (os.path.isfile(data["OUTPUT_DIR"] + "/fit_shape.obj") is False):
 
-
-        print("\t - Making directory")
         print("\t - Copying input file in build/")
 
         with open('input_file.json', 'w') as outfile:
