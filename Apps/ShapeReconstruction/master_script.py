@@ -74,25 +74,29 @@ for data in all_data:
 
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
-    os.system("mkdir " + data["INPUT_DIR"])
-    os.system("mkdir " + data["OUTPUT_DIR"])
 
-    print("\t - Making directory")
-    print("\t - Copying input file in build/")
+    if (!os.path.isdir(data["INPUT_DIR"])):
 
-    with open('input_file.json', 'w') as outfile:
-        json.dump(data, outfile)
+        os.system("mkdir " + data["INPUT_DIR"])
+        os.system("mkdir " + data["OUTPUT_DIR"])
 
-    print("\t - Saving input file in input/ and output/")
-    with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-        json.dump(data, outfile)
-    with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-        json.dump(data, outfile)
+        print("\t - Making directory")
+        print("\t - Copying input file in build/")
 
-    print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+        with open('input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
 
-    os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+        print("\t - Saving input file in input/ and output/")
+        with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
+        with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
 
+        print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+
+        os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+    else:
+        print(data["INPUT_DIR"] + " already exists. skipping case ...")
 
 
 

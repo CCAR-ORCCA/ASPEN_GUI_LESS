@@ -1380,6 +1380,8 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 
 	arma::uvec S(global_pc.size());
 	
+	std::cout << "\n-- Computing coverage ..."<< std::endl;
+
 	#pragma omp parallel for 
 	for (int i = 0; i < global_pc.size(); ++i){
 
@@ -1392,18 +1394,22 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 
 	end = std::chrono::system_clock::now();
 	elapsed_seconds = end-start;
+	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
+	std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
+
 	arma::uvec unsatisfying_points = arma::find(S <= 3);
-	// this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(S.index_min());
+	
+	std::cout << "\n-- Getting POI index ..." << std::endl;
+
 	int POI_index = last_pc_indices[S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min()];
+	std::cout << "\n-- Setting target of interest ..." << std::endl;
+	
 	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
 
-	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
 	std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
 
 	
-	
-
 	if (pc != nullptr){
 		*pc = global_pc;
 		PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
