@@ -75,7 +75,7 @@ for data in all_data:
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
 
-    if (!os.path.isdir(data["INPUT_DIR"])):
+    if (os.path.isdir(data["INPUT_DIR"]) is False):
 
         os.system("mkdir " + data["INPUT_DIR"])
         os.system("mkdir " + data["OUTPUT_DIR"])
