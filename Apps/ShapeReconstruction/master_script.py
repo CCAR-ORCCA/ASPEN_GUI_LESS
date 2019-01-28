@@ -74,8 +74,8 @@ for data in all_data:
 
     print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
-        os.system("mkdir " + data["INPUT_DIR"])
-        os.system("mkdir " + data["OUTPUT_DIR"])
+    os.system("mkdir " + data["INPUT_DIR"])
+    os.system("mkdir " + data["OUTPUT_DIR"])
 
     if (os.path.isfile(data["INPUT_DIR"] + "/fit_shape.obj") is False):
 
