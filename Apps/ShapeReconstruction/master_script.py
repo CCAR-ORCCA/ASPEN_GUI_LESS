@@ -37,7 +37,7 @@ base_dictionnary = {
 "MAX_TRIANGLE_SIZE" : 5,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
-"TF" : 96.,
+"TF" : 100.,
 "SMA" : 1000.,
 "E" : 0.25,
 "I" : 1.4,
@@ -57,7 +57,6 @@ base_dictionnary = {
 "IOD_ITERATIONS" : 100,
 "IOD_RIGID_TRANSFORMS_NUMBER" : 7,
 "IOD_PARTICLES" : 100,
-"USE_BEZIER_SHAPE" : False,
 "USE_TARGET_POI" : False
 }
 
