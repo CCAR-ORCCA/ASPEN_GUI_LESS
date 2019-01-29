@@ -53,7 +53,7 @@ ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	const std::vector<arma::vec> & X,const std::string dir) {
 
-	std::cout << "Running the filter" << std::endl;
+	std::cout << "Running the filter and saving results to " << dir << std::endl;
 
 	arma::vec X_S = arma::zeros<arma::vec>(X[0].n_rows);
 
@@ -204,7 +204,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				/****************************************************************************/
 				/****************************************************************************/
 
-
 			// The measured BN dcm is saved
 			// using the ICP measurement
 			// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
@@ -224,34 +223,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			
 			if (this -> filter_arguments -> get_use_ba()){
-				ba_test.update_overlap_graph();
 				
-
-
-				// std::cout << "Error in ICP rigid transform before bundle adjustment: \n";
-
-				// for (int k = 1; k <= time_index;++k){
-				// 	std::cout << "\n\t At index k = " << k << std::endl;
-				// 	std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
-				// 	std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
-				// 	std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
-
-				// }
-
-
-				ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
+				if(ba_test.update_overlap_graph()){
+					std::cout << "Detected loop closure. Running bundle adjustment ...";
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
+				}
 				
-
-				// std::cout << "Error in ICP rigid transform after bundle adjustment: \n";
-
-				// for (int k = 1; k <= time_index;++k){
-				// 	std::cout << "\n\t At index k = " << k << std::endl;
-				// 	std::cout << "\t\t x: " << (X_pcs[k] - X_pcs_true[k]).t() << std::endl;
-				// 	std::cout << "\t\t sigma: " << RBK::dcm_to_mrp(M_pcs[k] * M_pcs_true[k].t()).t() << std::endl;
-				// 	std::cout << "\t\t covariance: \n" << R_pcs[k] << std::endl;
-
-				// }
-
 			}
 
 			std::cout << "True state at epoch time of index "<< epoch_time_index << " before running IOD: " << X[epoch_time_index].subvec(0,5).t();
@@ -1402,9 +1379,10 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	std::cout << "\n-- Getting POI index ..." << std::endl;
 
 	int POI_index = last_pc_indices[S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min()];
-	std::cout << "\n-- Setting target of interest ..." << std::endl;
 	
-	this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
+	// std::cout << "\n-- Setting target of interest from POI #..." << POI_index << std::endl;
+	// TODO: there's probably a NAN in POI_index at some point or something of the like
+	// this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
 
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
 	std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();

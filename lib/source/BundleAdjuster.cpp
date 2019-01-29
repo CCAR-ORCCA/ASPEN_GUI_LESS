@@ -749,9 +749,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 
 
-
-
-void BundleAdjuster::update_overlap_graph(){
+bool BundleAdjuster::update_overlap_graph(){
 
 	if (!this -> graph.vertexexists(0)){
 		std::cout << "\t Inserting point cloud #0 in graph\n";
@@ -764,13 +762,23 @@ void BundleAdjuster::update_overlap_graph(){
 	this -> graph.addvertex(new_pc_index);
 
 	auto overlap = this -> find_overlap_with_pc(new_pc_index,0,new_pc_index - 1,false);
-
+	int max_closure_length = -1;
+	
 	for (auto it = overlap.begin(); it != overlap.end(); ++it){
 		this -> graph.addedge(new_pc_index,it -> second,it -> first);
+
+		max_closure_length = std::max(max_closure_length,std::abs(new_pc_index - it -> second));
 	}
 
-	std::cout << "Graph has " << this -> graph.get_n_edges() << " unique edges\n";
-
+	std::cout << "Graph has " << this -> graph.get_n_edges() << " unique edges. Longest closure: " <<  max_closure_length << "\n";
+	
+	if (max_closure_length > this -> cluster_size){
+		// there is closure between new_pc_index and another point cluster more than this -> cluster_size away. run bundle adjustment
+		return true;
+	}
+	else{
+		return false;
+	}
 
 }
 

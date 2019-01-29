@@ -60,7 +60,12 @@ public:
 
 	void set_use_true_pairs(bool use_true_pairs);
 
-	void update_overlap_graph();
+	/**
+	Returns true if the update of the overlap graph has revealed a loop closure 
+	between the latest point cloud and another point cloud more that cluster_size indices away
+	@return true if bundle adjustment should be run, false otherwise
+	*/
+	bool update_overlap_graph();
 
 	/**
 	Sets the maximum number of point clouds in a given cluster
