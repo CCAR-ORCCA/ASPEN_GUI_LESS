@@ -51,18 +51,14 @@ base_dictionnary = {
 "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
 "USE_TRUE_STATES": False,
 "SKIP_FACTOR": 0.94,
-"TF" : 100.
 }
-
 
 all_cases_dictionnary = {
 "PROCESS_NOISE_SIGMA_VEL": [1e-8,1e-9,1e-10] ,
 "PROCESS_NOISE_SIGMA_OMEG": [1e-9,1e-10] ,
 "INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500,1./2500],
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [base_location + "ShapeReconstruction/output/case_1/",
-base_location + "ShapeReconstruction/output/case_0/",
-base_location + "ShapeReconstruction/output/case_41/",
-base_location + "ShapeReconstruction/output/case_40/"]
+"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [base_location + "ShapeReconstruction/output/case_9/"],
+"TF" : [25.,50.,100.]
 }
 
 
@@ -71,6 +67,7 @@ all_data = generate_all_cases_dictionnary_list(base_dictionnary,
 
 
 for data in all_data:
+	
 	print("\t Case " + data["INPUT_DIR"].split("/")[-1])
 
 	print("\t - Making directory")

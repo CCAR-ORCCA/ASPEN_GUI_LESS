@@ -37,7 +37,6 @@ base_dictionnary = {
 "MAX_TRIANGLE_SIZE" : 5,
 "HARMONICS_DEGREE" : 10,
 "USE_HARMONICS" : True,
-"TF" : 100.,
 "SMA" : 1000.,
 "E" : 0.25,
 "I" : 1.4,
@@ -61,11 +60,21 @@ base_dictionnary = {
 }
 
 
+# all_cases_dictionnary = {
+# "USE_BEZIER_SHAPE" : [False,True],
+# "INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
+# "NUMBER_OF_EDGES" : [1500,2000,2500,3000]
+# }
+
 all_cases_dictionnary = {
+"TF" : [100.,150],
 "USE_BEZIER_SHAPE" : [False,True],
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.0003],
 "NUMBER_OF_EDGES" : [1500,2000,2500,3000]
 }
+
+
+
 
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
