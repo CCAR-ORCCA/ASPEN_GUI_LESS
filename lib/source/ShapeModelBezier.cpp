@@ -493,7 +493,7 @@ void ShapeModelBezier<PointType>::compute_all_statistics(){
 
 	std::cout << "\n- Computing all statistics over the " << connected_elements.size() << " surface element combinations ...\n";
 
-	boost::progress_display progress(connected_elements.size()) ;
+	// boost::progress_display progress(connected_elements.size()) ;
 	
 	#if !__APPLE__
 	#pragma omp parallel for reduction(+:vol_sd_temp), reduction(+:cm_cov_temp), reduction(+:P_I_temp), reduction(+:P_M_I_temp)
@@ -509,8 +509,8 @@ void ShapeModelBezier<PointType>::compute_all_statistics(){
 		cm_cov_temp += this -> compute_patch_pair_cm_cov_contribution(patch_e,patch_f) ;
 		P_I_temp += this -> compute_patch_pair_PI_contribution(patch_e,patch_f);
 		P_M_I_temp += this -> compute_patch_pair_P_MI_contribution(patch_e,patch_f);
-		++progress;
-
+		// ++progress;
+		
 	}
 
 
@@ -636,8 +636,7 @@ arma::mat::fixed<3,3> ShapeModelBezier<PointType>::compute_patch_pair_cm_cov_con
 
 	for (int index = 0 ; index <  this -> cm_cov_1_indices_coefs_table.size(); ++index) {
 
-		const std::vector<double> & coefs_row = this -> cm_cov_1_indices_coefs_table[index];
-
+		const std::vector<double> & coefs_row = this -> cm_cov_1_indices_coefs_table[index];		
 				// i
 		int i =  int(coefs_row[0]);
 		int j =  int(coefs_row[1]);
@@ -687,6 +686,8 @@ arma::mat::fixed<3,3> ShapeModelBezier<PointType>::compute_patch_pair_cm_cov_con
 
 		const arma::mat::fixed<12,3> & left_mat = this -> elements_to_cm_mapping_matrices[patch_e.get_global_index()].at((patch_e_indices_array));
 		const arma::mat::fixed<12,3> & right_mat = this -> elements_to_cm_mapping_matrices[patch_f.get_global_index()].at((patch_f_indices_array));
+
+
 
 		d_cm_cov += coefs_row[16] * this -> increment_cm_cov(P_CC,left_mat,right_mat, i_g,j_g,k_g,l_g, m_g,p_g,q_g,r_g);
 	}
@@ -883,6 +884,8 @@ void ShapeModelBezier<PointType>::construct_cm_mapping_mat(arma::mat::fixed<12,3
 	const arma::vec::fixed<3> & Cj = this -> control_points[j].get_point_coordinates();
 	const arma::vec::fixed<3> & Ck = this -> control_points[k].get_point_coordinates();
 	const arma::vec::fixed<3> & Cl = this -> control_points[l].get_point_coordinates();
+
+
 
 	mat.submat(0,0,2,2) = arma::eye<arma::mat>(3,3) * arma::dot(Cj,arma::cross(Ck,Cl));
 	mat.submat(3,0,5,2) = arma::cross(Ck,Cl) * Ci. t();
@@ -1134,7 +1137,9 @@ void ShapeModelBezier<PointType>::assemble_mapping_matrices(){
 			this -> construct_cm_mapping_mat(left_mat,i_g,j_g,k_g,l_g);
 
 			this -> elements_to_cm_mapping_matrices[e][array] = left_mat;
+			
 		}
+
 
 		// Inertia
 		for (int c = 0; c < static_cast<int>(this -> inertia_indices_coefs_table.size()); ++c){
@@ -1164,6 +1169,9 @@ void ShapeModelBezier<PointType>::assemble_mapping_matrices(){
 			this -> construct_inertia_mapping_mat(left_mat,i_g,j_g,k_g,l_g,m_g);
 
 			this -> elements_to_inertia_mapping_matrices[e][array] = left_mat;
+
+
+
 		}
 
 

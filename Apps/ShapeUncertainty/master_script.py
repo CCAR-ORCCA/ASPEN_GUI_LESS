@@ -68,12 +68,35 @@ all_data = [
 # "CORRELATION_DISTANCE" : 1.5e-1,
 # "N_MONTE_CARLO" : 25000,
 #  "dir" : "../output/test_10"},
- {"PATH_SHAPE" : "../../../resources/shape_models/67P_lowlowres.obj",
-"ERROR_STANDARD_DEV" : 7.5e-2,
-"CORRELATION_DISTANCE" : 3e-1,
-"N_MONTE_CARLO" : 10000,
- "dir" : "../output/test_11"},
- ]
+#  {"PATH_SHAPE" : "../../../resources/shape_models/67P_lowlowres.obj",
+# "ERROR_STANDARD_DEV" : 7.5e-2,
+# "CORRELATION_DISTANCE" : 3e-1,
+# "N_MONTE_CARLO" : 10000,
+#  "dir" : "../output/test_11"},
+]
+
+all_data = [
+{
+"PATH_SHAPE" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/input/skewed_aligned.obj",
+"ERROR_STANDARD_DEV" : 0.05,
+"CORRELATION_DISTANCE" : 1,
+"N_MONTE_CARLO" : 1000,
+"dir" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/build/test_0"},
+# {
+# "PATH_SHAPE" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/input/skewed.obj",
+# "ERROR_STANDARD_DEV" : 0.05,
+# "CORRELATION_DISTANCE" : 1,
+# "N_MONTE_CARLO" : 1000,
+# "dir" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/build/test_2"},
+
+# {
+# "PATH_SHAPE" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/input/skewed.obj",
+# "ERROR_STANDARD_DEV" : 0.05,
+# "CORRELATION_DISTANCE" : 1,
+# "N_MONTE_CARLO" : 10000,
+# "dir" : "/Users/bbercovici/GDrive/CUBoulder/Research/code/SBGAT/Tests/build/test_2"}
+
+]
 
 
 
@@ -86,11 +109,11 @@ for data in all_data:
 	with open('input_file.json', 'w') as outfile:
 		json.dump(data, outfile)
 
-	print("\t - Saving input file in output/")
-	with open(data["dir"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
-	print("\t - Running case " +  data["dir"].split("/")[-1])
+		print("\t - Saving input file in output/")
+		with open(data["dir"] + '/input_file.json', 'w') as outfile:
+			json.dump(data, outfile)
+			print("\t - Running case " +  data["dir"].split("/")[-1])
 
-	os.system("./ShapeUncertainty | tee " + data["dir"] + "/log.txt" )
+			os.system("./ShapeUncertainty | tee " + data["dir"] + "/log.txt" )
 
 

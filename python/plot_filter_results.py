@@ -2,20 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import rc
-from polyhedron import plot_shape
+import polyhedron
 import RigidBodyKinematics as RBK
 import matplotlib.ticker as mtick
 import os
 from pprint import pprint
+from IOD_results_plots import draw_sphere
 
 import json
 rc('text', usetex=True)
 
 
-
 def list_results(graphics_path,
     mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
-
+    
+    print "Searching " + mainpath
     all_results_dirs  = [x[0] for x in os.walk(mainpath)][1:]
 
     all_results_dirs_tag = np.array([int(all_results_dirs[i].split("_")[-1]) for i in range(len(all_results_dirs))])
@@ -146,6 +147,8 @@ def plot_orbit(path,savepath = ""):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot(X_true[0,:]/1000,X_true[1,:]/1000,X_true[2,:]/1000)
+    ax.scatter(X_true[0,0]/1000,X_true[1,0]/1000,X_true[2,0]/1000,color = 'green')
+    ax.scatter(X_true[0,-1]/1000,X_true[1,-1]/1000,X_true[2,-1]/1000,color = 'red')
 
 
     ax.set_xlim3d(-1,1)
@@ -155,6 +158,8 @@ def plot_orbit(path,savepath = ""):
     ax.set_xlabel("X (km)")
     ax.set_ylabel("Y (km)")
     ax.set_zlabel("Z (km)")
+
+    draw_sphere(535./2000)
 
     # plt.show()
     ax.grid(False)
@@ -183,7 +188,13 @@ def plot_orbit(path,savepath = ""):
         X_true_BF[0:3,i] = BN.dot(X_true_BF[0:3,i])
 
     ax.plot(X_true_BF[0,:]/1000,X_true_BF[1,:]/1000,X_true_BF[2,:]/1000)
+    ax.scatter(X_true_BF[0,0]/1000,X_true_BF[1,0]/1000,X_true_BF[2,0]/1000,color = 'green')
+    ax.scatter(X_true_BF[0,-1]/1000,X_true_BF[1,-1]/1000,X_true_BF[2,-1]/1000,color = 'red')
     
+
+    vertices,facets = polyhedron.load_shape("../resources/shape_models/itokawa_8.obj")
+    polyhedron.draw_shape(vertices,facets)
+
 
     ax.set_xlim3d(-1,1)
     ax.set_ylim3d(-1,1)
@@ -608,7 +619,6 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
 #     savepath = "" )
 
 
-graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/paper/Figures"
-
+graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/presentation/Figures"
 
 list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output")

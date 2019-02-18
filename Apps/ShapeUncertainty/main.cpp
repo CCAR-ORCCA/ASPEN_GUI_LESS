@@ -32,7 +32,7 @@ int main(){
 	FrameGraph frame_graph;
 	ShapeModelTri<ControlPoint> tri_shape("", &frame_graph);
 
-	ShapeModelImporter::load_obj_shape_model(path_shape, 1, false,tri_shape);
+	ShapeModelImporter::load_obj_shape_model(path_shape, 1, true,tri_shape);
 	ShapeModelBezier<ControlPoint> bezier_shape(tri_shape,"", &frame_graph);
 
 	std::cout << "\nVolume (km^3): \n";
@@ -40,6 +40,9 @@ int main(){
 
 	std::cout << "\nCenter-of-mass (km): \n";
 	std::cout << tri_shape.get_center_of_mass().t() << " / " << bezier_shape.get_center_of_mass().t() << std::endl;
+
+	std::cout << "\nInertia (m^5): \n";
+	std::cout << tri_shape.get_inertia() << "\n / \n" << bezier_shape.get_inertia().t() << std::endl;
 
 	std::cout << "\nVolume error: (%) \n";
 	std::cout << std::abs(bezier_shape.get_volume() - tri_shape.get_volume())/bezier_shape.get_volume() * 100 << std::endl;
@@ -245,9 +248,9 @@ int main(){
 	std::cout << "######***** Volume *****######"<< std::endl;
 
 	
-	std::cout << "SD volume from MC: " << arma::stddev(results_volume,1) << std::endl;
-	std::cout << "SD volume predicted: " << volume_sd << std::endl << std::endl;
-	std::cout << "Deviation : " << (arma::stddev(results_volume,1) - volume_sd)/volume_sd * 100 << " %" << std::endl << std::endl;
+	std::cout << "Variance of volume from MC: " << arma::var(results_volume,1) << std::endl;
+	std::cout << "Variance of volume predicted: " << std::pow(volume_sd,2) << std::endl << std::endl;
+	std::cout << "Deviation : " << (arma::var(results_volume,1) - std::pow(volume_sd,2))/std::pow(volume_sd,2) * 100 << " %" << std::endl << std::endl;
 
 
 	std::cout << "######***** CM *****######"<< std::endl;

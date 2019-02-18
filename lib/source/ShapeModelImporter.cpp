@@ -38,7 +38,7 @@ void ShapeModelImporter::load_bezier_shape_model(std::string filename,
 		char type;
 		linestream >> type;
 
-		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || type == 'g' || line.size() == 0) {
 			continue;
 		}
 
@@ -171,7 +171,7 @@ void ShapeModelImporter::load_obj_shape_model(std::string filename, double scali
 		char type;
 		linestream >> type;
 
-		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || line.size() == 0) {
+		if (type == '#' || type == 's'  || type == 'o' || type == 'm' || type == 'u' || type == 'g' || line.size() == 0) {
 			continue;
 		}
 

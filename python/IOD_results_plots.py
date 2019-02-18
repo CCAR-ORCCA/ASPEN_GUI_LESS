@@ -647,7 +647,7 @@ def plot_all_results(path,graphics_path = None):
         suffix = "XY_vel.pdf")
 
 
-graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/hawai_2019/paper/Figures/"
+# graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/hawai_2019/paper/Figures/"
 
 
-list_results(graphics_path = graphics_path)
+# list_results(graphics_path = graphics_path)
