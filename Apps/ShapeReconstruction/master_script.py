@@ -48,7 +48,6 @@ base_dictionnary = {
 "DENSITY" : 1900,
 "MRP_0" : [0,0,0],
 "SURFACE_APPROX_ERROR" : 1,
-"BA_H" : 6,
 "N_ITER_BUNDLE_ADJUSTMENT" : 3,
 "N_ITER_SHAPE_FILTER" : 3,
 "IOD_ITERATIONS" : 100,
@@ -56,7 +55,8 @@ base_dictionnary = {
 "IOD_PARTICLES" : 100,
 "USE_TARGET_POI" : False,
 "USE_BEZIER_SHAPE" : True,
-"TF" : 150
+"TF" : 150,
+"INSTRUMENT_FREQUENCY_SHAPE" : 0.0006
 }
 
 # all_cases_dictionnary = {
@@ -66,9 +66,9 @@ base_dictionnary = {
 # }
 
 all_cases_dictionnary = {
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.0004,0.0005,0.0006],
-"NUMBER_OF_EDGES" : [1500,2500],
+"NUMBER_OF_EDGES" : [1500,2000,2500],
 "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
+"BA_H" : [4,6],
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
 

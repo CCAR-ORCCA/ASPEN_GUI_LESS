@@ -287,7 +287,7 @@ int main() {
 		X0_augmented,
 		dynamics_system_truth,
 		args,
-		OUTPUT_DIR + "/","obs_point_mass");
+		OUTPUT_DIR + "/","sparse_orbit");
 
 	StatePropagator::propagate(T0, 
 		TF, 
@@ -295,7 +295,7 @@ int main() {
 		X0_augmented,
 		dynamics_system_truth,
 		args,
-		OUTPUT_DIR + "/","full_orbit_point_mass");
+		OUTPUT_DIR + "/","full_orbit");
 
 	arma::vec times(T_obs.size()); 
 	for (int i = 0; i < T_obs.size(); ++i){
