@@ -58,8 +58,6 @@ public:
 
 	};
 
-	int get_cutoff_index() const;
-
 	void set_use_true_pairs(bool use_true_pairs);
 
 	/**
@@ -74,10 +72,11 @@ public:
 	*/
 	void set_cluster_size(int size);
 
+
 protected:
 
 	void remove_edges_from_graph();
-	
+		
 
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
@@ -117,11 +116,11 @@ protected:
 	arma::vec * x_t0;
 	arma::vec X;
 
-	int ground_pc_index = 0;
-
 	bool use_true_pairs = false;
 
-	int closure_index = 0;
+	int anchor_pc_index = 0;
+	int next_anchor_pc_index = 0;
+
 	int h;
 	int N_iter;
 	int cluster_size = 4;

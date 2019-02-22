@@ -317,18 +317,18 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				else{
 
-					std::cout << "\n-- Applying BA to successive point clouds\n";
+					// std::cout << "\n-- Applying BA to successive point clouds\n";
 
-					this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
+					// this -> save_attitude(dir + "/measured_before_BA",time_index,BN_measured);
 
-					if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
+					// if (!this -> filter_arguments -> get_use_true_rigid_transforms()){
 
-						ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
-					}
+					// 	ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
+					// }
 
-					std::cout << "\n-- Saving attitude...\n";
+					// std::cout << "\n-- Saving attitude...\n";
 
-					this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
+					// this -> save_attitude(dir + "/measured_after_BA",time_index,BN_measured);
 
 					std::cout << "\n-- Estimating coverage...\n";
 

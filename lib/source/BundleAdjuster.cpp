@@ -63,19 +63,22 @@ void BundleAdjuster::run(
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
 	bool save_connectivity,
 	bool apply_deviation){
-	int Q = this -> all_registered_pc -> size();
+
+	if (this -> all_registered_pc -> size() == 0){
+		std::cout << " - Nothing to do here\n";
+		return;
+	}
+
+	// There are Q - 1 bundle adjusted PC + one anchor PC
+	int Q = this -> all_registered_pc -> size() - this -> anchor_pc_index;
+
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
 	std::cout << "- Creating point cloud pairs" << std::endl;
 	this -> create_pairs();
 
-	if (this -> all_registered_pc -> size() == 0){
-		std::cout << " - Nothing to do here, no loop closure or already closed\n";
-		return;
-	}
 
 	if (this -> N_iter > 0){
-		
 		// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs,X_pcs,apply_deviation);
 
@@ -84,38 +87,40 @@ void BundleAdjuster::run(
 
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
-	
-
-	// The connectivity matrix is saved
-	#if IOFLAGS_bundle_adjuster
-	std::cout << "- Saving connectivity ... " << std::endl;
-	this -> save_connectivity();
-	#endif
-
-
-
 
 	std::cout << "- Removing edges from graph ...\n";
 	this -> remove_edges_from_graph();
+
+	if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
+		this -> anchor_pc_index = this -> next_anchor_pc_index;
+		std::cout << "- Saving connectivity ... " << std::endl;
+		this -> save_connectivity();
+	}
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
 
 }
 
 
-void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-	const std::map<int,arma::vec::fixed<3> > & X_pcs,bool apply_deviation){
-	int Q = this -> all_registered_pc -> size();
+void BundleAdjuster::solve_bundle_adjustment(
+	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
+	const std::map<int,arma::vec::fixed<3> > & X_pcs,
+	bool apply_deviation){
+	
 
+	int Q = this -> all_registered_pc -> size() - this -> anchor_pc_index;
+	std::cout << "\t Number of considered point clouds (Q): " << Q << std::endl;
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
 	this -> update_point_cloud_pairs();
 
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
-		std::cout << "Iteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
+		std::cout << "\tIteration: " << std::to_string(iter + 1) << " /" << std::to_string(N_iter) << std::endl;
 
 		std::vector<T> coefficients;          
+		
 		EigVec Nmat(6 * (Q - 1)); 
 		Nmat.setZero();
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
@@ -130,7 +135,9 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 			arma::mat Lambda_k;
 			arma::vec N_k;
 
-			if (this -> point_cloud_pairs . at(k).D_k != 0 && this -> point_cloud_pairs . at(k).S_k != 0){
+			assert(this -> point_cloud_pairs . at(k).D_k > this -> point_cloud_pairs . at(k).S_k);
+
+			if (this -> point_cloud_pairs . at(k).D_k != this -> anchor_pc_index && this -> point_cloud_pairs . at(k).S_k != this -> anchor_pc_index){
 				Lambda_k = arma::zeros<arma::mat>(12,12);
 				N_k = arma::zeros<arma::vec>(12);
 			}
@@ -205,9 +212,6 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 
 }
 
-int BundleAdjuster::get_cutoff_index() const{
-	return this -> closure_index;
-}
 
 void BundleAdjuster::create_pairs(){
 
@@ -216,7 +220,10 @@ void BundleAdjuster::create_pairs(){
 	std::set<int> vertices = this -> graph. get_vertices();
 
 	// Need to pull the point cloud pairs from the bundle adjustment graph
-	for (auto vertex : vertices){
+	// Bundle adjustment only runs between point cloud #anchor_pc_index and the last registered pc
+
+	for (int vertex : vertices){
+
 		std::set<int> neighbors = this -> graph. getneighbors(vertex);
 		for (auto neighbor : neighbors){
 			std::set<int> pair = {vertex,neighbor};
@@ -229,11 +236,18 @@ void BundleAdjuster::create_pairs(){
 
 	for (auto pair_set : pairs){
 		BundleAdjuster::PointCloudPair pair;
+		
+		// S_k is always less than S_k because the set is ordered
 		int S_k = *(pair_set.begin());
 		int D_k = *(--pair_set.end());
 		pair.S_k = S_k;
 		pair.D_k = D_k;
-		this -> point_cloud_pairs.push_back(pair);
+
+		// If S_k is greater or equal than $anchor_pc_index then this point-cloud pair will 
+		// be processed
+
+		if (pair.S_k >= this -> anchor_pc_index)
+			this -> point_cloud_pairs.push_back(pair);
 	}
 
 
@@ -249,6 +263,10 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 	std::vector<PointPair> point_pairs;
 
 	// The point pairs must be computed using the current estimate of the point clouds' rigid transform
+	int S_k = point_cloud_pair.S_k - this -> anchor_pc_index;
+	int D_k = point_cloud_pair.D_k - this -> anchor_pc_index;
+
+
 
 	arma::vec::fixed<3> x_S = arma::zeros<arma::vec>(3);
 	arma::mat::fixed<3,3> dcm_S = arma::eye<arma::mat>(3,3);
@@ -256,14 +274,14 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 	arma::vec::fixed<3> x_D = arma::zeros<arma::vec>(3);
 	arma::mat::fixed<3,3> dcm_D = arma::eye<arma::mat>(3,3);
 
-	if (point_cloud_pair.S_k != 0){
-		x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
-		dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.S_k - 1) + 3, 6 * (point_cloud_pair.S_k - 1) + 5));
+	if (point_cloud_pair.S_k != this -> anchor_pc_index){
+		x_S = this -> X.subvec(6 * (S_k - 1) , 6 * (S_k - 1) + 2);
+		dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (S_k - 1) + 3, 6 * (S_k - 1) + 5));
 	}
 
-	if (point_cloud_pair.D_k != 0){
-		x_D = this -> X.subvec(6 * (point_cloud_pair.D_k - 1) , 6 * (point_cloud_pair.D_k - 1) + 2);
-		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
+	if (point_cloud_pair.D_k != this -> anchor_pc_index){
+		x_D = this -> X.subvec(6 * (D_k - 1) , 6 * (D_k - 1) + 2);
+		dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (D_k - 1) + 3, 6 * (D_k - 1) + 5));
 	}
 	
 	int active_h;
@@ -287,20 +305,14 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 	}
 
 	else{
-		active_h = 0;
-		for (int i = 0; i < this -> all_registered_pc -> at(point_cloud_pair.S_k) -> size(); ++i){
-			point_pairs.push_back(std::make_pair(i,i));
-		}
+		throw(std::runtime_error("Not implemented"));
 		
 	}
-
-
 
 	
 	arma::rowvec H_ki;
 
-
-	if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
+	if (point_cloud_pair.D_k != this -> anchor_pc_index && point_cloud_pair.S_k != this -> anchor_pc_index){
 		H_ki = arma::zeros<arma::rowvec>(12);
 	}
 	else{
@@ -310,7 +322,6 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
-
 
 		double y_ki = IterativeClosestPointToPlane::compute_distance(point_pairs[i],
 			dcm_S,
@@ -326,25 +337,34 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 		const arma::vec::fixed<3> & n = p_D.get_normal_coordinates();
 
-		if (point_cloud_pair.D_k != 0 && point_cloud_pair.S_k != 0){
+		if (point_cloud_pair.D_k != this -> anchor_pc_index && point_cloud_pair.S_k != this -> anchor_pc_index){
 
-			H_ki.subvec(0,2) = n.t() * dcm_D.t();
-			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(p_S.get_point_coordinates());
-			H_ki.subvec(6,8) = - n.t() * dcm_D.t();
-			H_ki.subvec(9,11) = 4 * ( n.t() * RBK::tilde(p_D.get_point_coordinates()) 
-				- (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D * RBK::tilde(n));
-			// think I fixed a sign error
+			// H_ki.subvec(0,2) = n.t() * dcm_D.t();
+			// H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(p_S.get_point_coordinates());
+			// H_ki.subvec(6,8) = - n.t() * dcm_D.t();
+			// H_ki.subvec(9,11) = 4 * ( n.t() * RBK::tilde(p_D.get_point_coordinates()) 
+			// 	- (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D * RBK::tilde(n));
+			// // think I fixed a sign error
+
+			H_ki.subvec(0,2) = (dcm_D * n).t();
+			H_ki.subvec(3,5) = (4 * RBK::tilde(p_S.get_point_coordinates()) * dcm_S.t() * dcm_D * n).t();
+			H_ki.subvec(6,8) = -(dcm_D * n).t();
+			H_ki.subvec(9,11) = (- 4 * RBK::tilde(p_D.get_point_coordinates()) * n +  4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * p_S.get_point_coordinates() 
+				+ x_S - dcm_D * p_D.get_point_coordinates() - x_D)).t();
+
 		}
 
-		else if(point_cloud_pair.S_k != 0) {
-			H_ki.subvec(0,2) = n.t() * dcm_D.t();
-			H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(p_S.get_point_coordinates());
+		else if(point_cloud_pair.S_k != this -> anchor_pc_index) {
+
+			throw(std::runtime_error("This should never happen"));
+			H_ki.subvec(0,2) = (dcm_D * n).t();
+			H_ki.subvec(3,5) = (4 * RBK::tilde(p_S.get_point_coordinates()) * dcm_S.t() * dcm_D * n).t();
 		}
 
 		else{
-			H_ki.subvec(0,2) = - n.t() * dcm_D.t();
-			H_ki.subvec(3,5) = 4 * ( n.t() * RBK::tilde(p_D.get_point_coordinates()) 
-				- (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D * RBK::tilde(n));
+			H_ki.subvec(0,2) = -(dcm_D * n).t();
+			H_ki.subvec(3,5) = (- 4 * RBK::tilde(p_D.get_point_coordinates()) * n + 4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * p_S.get_point_coordinates() 
+				+ x_S - dcm_D * p_D.get_point_coordinates() - x_D)).t();
 		}
 
 		// epsilon = y - Hx !!!
@@ -352,10 +372,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 
 		// Uncertainty on measurement
-		
-		arma::rowvec::fixed<3> mapping_vector = (
-			dcm_S * p_S.get_point_coordinates() + x_S
-			- dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
+		arma::rowvec::fixed<3> mapping_vector = (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
 		
 		arma::vec::fixed<3> e = {1,0,0};
 		double sigma_angle = 0.3; //5.7 deg of uncertainty
@@ -390,8 +407,12 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
-
 		const BundleAdjuster::PointCloudPair & point_cloud_pair = this -> point_cloud_pairs[k];
+
+
+
+		int S_k = point_cloud_pair.S_k - this -> anchor_pc_index;
+		int D_k = point_cloud_pair.D_k - this -> anchor_pc_index;
 
 
 		arma::vec::fixed<3> x_S = arma::zeros<arma::vec>(3);
@@ -401,29 +422,25 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		arma::mat::fixed<3,3> dcm_D = arma::eye<arma::mat>(3,3);
 
 
-		if (point_cloud_pair.S_k != 0){
-			x_S = this -> X.subvec(6 * (point_cloud_pair.S_k - 1) , 6 * (point_cloud_pair.S_k - 1) + 2);
-			dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.S_k - 1) + 3, 6 * (point_cloud_pair.S_k - 1) + 5));
+		if (point_cloud_pair.S_k != this -> anchor_pc_index){
+			x_S = this -> X.subvec(6 * (S_k - 1) , 6 * (S_k - 1) + 2);
+			dcm_S =  RBK::mrp_to_dcm(this -> X.subvec(6 * (S_k - 1) + 3, 6 * (S_k - 1) + 5));
 		}
 
-		if (point_cloud_pair.D_k != 0){
-			x_D = this -> X.subvec(6 * (point_cloud_pair.D_k - 1) , 6 * (point_cloud_pair.D_k - 1) + 2);
-			dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (point_cloud_pair.D_k - 1) + 3, 6 * (point_cloud_pair.D_k - 1) + 5));
+		if (point_cloud_pair.D_k != this -> anchor_pc_index){
+			x_D = this -> X.subvec(6 * (D_k - 1) , 6 * (D_k - 1) + 2);
+			dcm_D = RBK::mrp_to_dcm(this -> X.subvec(6 * (D_k - 1) + 3, 6 * (D_k - 1) + 5));
 		}
 
-		assert(point_cloud_pair.D_k != 0);
+		assert(point_cloud_pair.D_k != this -> anchor_pc_index);
 
 
 		std::vector<PointPair> point_pairs;
 		int active_h;
 
 		if (!this -> use_true_pairs){
-
-
 			
 			active_h = this -> h;
-
-			
 
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(point_cloud_pair.S_k),
@@ -436,10 +453,8 @@ void BundleAdjuster::update_point_cloud_pairs(){
 		}
 
 		else{
-			active_h = 0;
-			for (int i = 0; i < this -> all_registered_pc -> at(point_cloud_pair.S_k) -> size(); ++i){
-				point_pairs.push_back(std::make_pair(i,i));
-			}
+
+			throw(std::runtime_error("This should never happen"));
 
 		}
 
@@ -509,8 +524,8 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 	const arma::vec & N_k,
 	const PointCloudPair & point_cloud_pair){
 
-	int S_k = point_cloud_pair.S_k;
-	int D_k = point_cloud_pair.D_k;
+	int S_k = point_cloud_pair.S_k - this -> anchor_pc_index;
+	int D_k = point_cloud_pair.D_k - this -> anchor_pc_index;
 
 	
 	if (D_k != 0 && S_k != 0){
@@ -543,6 +558,8 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 	else if (S_k != 0){
 
+		throw(std::runtime_error("BundleAdjuster::add_subproblem_to_problem: This should never happen"));
+
 		// S_k substate
 		for(unsigned int i = 0; i < 6; ++i){
 			for(unsigned int j = 0; j < 6; ++j){
@@ -569,18 +586,18 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
-
-
-
 	std::cout << "\t Deviations: \n";
 
-	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+	for (unsigned int i = 1 + this -> anchor_pc_index ; i < this -> all_registered_pc -> size(); ++i){
 		
+		int x_index = 6 * (i - 1 - this -> anchor_pc_index);
+		int mrp_index = x_index + 3 ;
 
-		int x_index = 6 * (i - 1);
-		int mrp_index = 6 * (i - 1) + 3;
+		std::cout << "x_index = " << x_index << std::endl;
+		std::cout << "deviation.size() = " << deviation.size() << std::endl;
 
-		std::cout << "\t\t pc " << i << arma::vec::fixed<6>({
+
+		std::cout << "\t\t pc # " << i << arma::vec::fixed<6>({
 			deviation(x_index),
 			deviation(x_index + 1),
 			deviation(x_index + 2),
@@ -591,13 +608,13 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 
 
 
-	boost::progress_display progress(this -> all_registered_pc -> size());
+	boost::progress_display progress(this -> all_registered_pc -> size() - this -> anchor_pc_index);
 	++progress;
 	#pragma omp parallel for
-	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+	for (unsigned int i = 1 + this -> anchor_pc_index ; i < this -> all_registered_pc -> size(); ++i){
 
-		int x_index = 6 * (i - 1);
-		int mrp_index = 6 * (i - 1) + 3;
+		int x_index = 6 * (i - 1 - this -> anchor_pc_index);
+		int mrp_index = x_index + 3 ;
 
 		arma::vec::fixed<3> dx  = {
 			deviation(x_index),
@@ -640,14 +657,14 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 	std::vector<arma::mat::fixed<3,3> > & BN_measured,
 	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
-	boost::progress_display progress(this -> all_registered_pc -> size());
+	boost::progress_display progress(this -> all_registered_pc -> size() - this -> anchor_pc_index );
 	++progress;
 	
 	#pragma omp parallel for
-	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+	for (unsigned int i = 1 + this -> anchor_pc_index ; i < this -> all_registered_pc -> size(); ++i){
 
-		int x_index = 6 * (i - 1);
-		int mrp_index = 6 * (i - 1) + 3;
+		int x_index = 6 * (i - 1 - this -> anchor_pc_index);
+		int mrp_index = x_index + 3 ;
 
 		const arma::vec::fixed<3> & x = this -> X.subvec(x_index , x_index + 2);
 		const arma::vec::fixed<3> & mrp = this -> X.subvec(mrp_index, mrp_index + 2);
@@ -796,16 +813,28 @@ bool BundleAdjuster::update_overlap_graph(){
 	std::cout << "\t Inserting point cloud # " << new_pc_index  << " in graph\n";
 	this -> graph.addvertex(new_pc_index);
 
-	auto overlap = this -> find_overlap_with_pc(new_pc_index,0,new_pc_index - 1,false);
+	auto overlap = this -> find_overlap_with_pc(new_pc_index,this -> anchor_pc_index,new_pc_index - 1,false);
 	int max_closure_length = -1;
+
 	
 	for (auto it = overlap.begin(); it != overlap.end(); ++it){
 		this -> graph.addedge(new_pc_index,it -> second,it -> first);
 
 		max_closure_length = std::max(max_closure_length,std::abs(new_pc_index - it -> second));
+
+
+		if (it -> second == this -> anchor_pc_index && max_closure_length > this -> cluster_size){
+			
+			// We have full loop closure. new_pc_index will define the new anchor index
+			// after ba has been run
+			this -> next_anchor_pc_index = new_pc_index;
+			std::cout << "\t Found closure with anchor index\n";
+		}
+
+
 	}
 
-	std::cout << "Graph has " << this -> graph.get_n_edges() << " unique edges. Longest closure: " <<  max_closure_length << "\n";
+	std::cout << "\t Graph has " << this -> graph.get_n_edges() << " unique edges. Longest closure: " <<  max_closure_length << "\n";
 	
 	if (max_closure_length > this -> cluster_size){
 		// there is closure between new_pc_index and another point cluster more than this -> cluster_size away. run bundle adjustment
@@ -817,15 +846,9 @@ bool BundleAdjuster::update_overlap_graph(){
 
 }
 
-
-
-
 void BundleAdjuster::set_cluster_size(int size){
 	this -> cluster_size = size;
 }
-
-
-
 
 void BundleAdjuster::remove_edges_from_graph(){
 
@@ -903,7 +926,6 @@ void BundleAdjuster::remove_edges_from_graph(){
 		#endif
 
 
-
 		// Clusters now stores all the different clusters of neighbors.
 		// only only one point cloud per cluster will be kept
 
@@ -940,26 +962,9 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 		}
 
-
-
-
-
-		
-
-
-
-
-
-
 	}
 
-
-
 }
-
-
-
-
 
 void BundleAdjuster::set_h(int h){
 	this -> h = h;

@@ -296,11 +296,13 @@ def dcm_to_quat(dcm) :
     '''
 
     quat = np.zeros(4)
+    trace_dcm = np.trace(dcm)
+
     quat_s = np.array([
-        1. / 4. * ( 1 + np.trace(dcm) ),
-        1. / 4. * (1 + 2 * dcm[0, 0] - np.trace(dcm)),
-        1. / 4. * (1 + 2 * dcm[1, 1] - np.trace(dcm)),
-        1. / 4. * (1 + 2 * dcm[2, 2] - np.trace(dcm))])
+        1. / 4. * ( 1 + trace_dcm ),
+        1. / 4. * (1 + 2 * dcm[0, 0] - trace_dcm),
+        1. / 4. * (1 + 2 * dcm[1, 1] - trace_dcm),
+        1. / 4. * (1 + 2 * dcm[2, 2] - trace_dcm)])
 
 
     max_coef_index = np.argmax(quat_s)
