@@ -55,8 +55,8 @@ base_dictionnary = {
 "IOD_PARTICLES" : 100,
 "USE_TARGET_POI" : False,
 "USE_BEZIER_SHAPE" : True,
-"TF" : 50,
-"BA_H" : 3,
+"TF" : 150,
+"BA_H" : 4,
 "NUMBER_OF_EDGES" : 2000
 }
 
