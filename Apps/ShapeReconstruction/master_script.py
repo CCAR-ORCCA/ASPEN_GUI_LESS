@@ -56,7 +56,8 @@ base_dictionnary = {
 "USE_TARGET_POI" : False,
 "USE_BEZIER_SHAPE" : True,
 "TF" : 150,
-"INSTRUMENT_FREQUENCY_SHAPE" : 0.0006
+"BA_H" : 4,
+"NUMBER_OF_EDGES" : 2000
 }
 
 # all_cases_dictionnary = {
@@ -66,12 +67,10 @@ base_dictionnary = {
 # }
 
 all_cases_dictionnary = {
-"NUMBER_OF_EDGES" : [2500],
 "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
-"BA_H" : [4],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.004,0.0006],
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
-
 
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
