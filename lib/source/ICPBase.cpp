@@ -3,7 +3,7 @@
 #include <EstimationFeature.hpp>
 #include <PointCloudIO.hpp>
 
-#define ICP_DEBUG 1
+#define ICP_DEBUG 0
 
 
 #pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\

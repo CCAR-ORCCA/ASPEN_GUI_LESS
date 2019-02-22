@@ -63,8 +63,6 @@ void BundleAdjuster::run(
 	const std::vector<arma::vec::fixed<3> > & mrps_LN,
 	bool save_connectivity,
 	bool apply_deviation){
-
-
 	int Q = this -> all_registered_pc -> size();
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
@@ -132,7 +130,6 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 			arma::mat Lambda_k;
 			arma::vec N_k;
 
-
 			if (this -> point_cloud_pairs . at(k).D_k != 0 && this -> point_cloud_pairs . at(k).S_k != 0){
 				Lambda_k = arma::zeros<arma::mat>(12,12);
 				N_k = arma::zeros<arma::vec>(12);
@@ -157,10 +154,7 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 			
 			// The Lambda_k and N_k specific to this point-cloud pair are computed
-			this -> assemble_subproblem(Lambda_k_vector. at(k),
-				N_k_vector. at(k),
-				this -> point_cloud_pairs . at(k),
-				M_pcs,X_pcs);
+			this -> assemble_subproblem(Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k),M_pcs,X_pcs);
 			#if !BUNDLE_ADJUSTER_DEBUG
 			++progress;
 			#endif
@@ -168,12 +162,8 @@ void BundleAdjuster::solve_bundle_adjustment(const std::map<int,arma::mat::fixed
 		}
 
 		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-
 			// They are added to the whole problem
-			this -> add_subproblem_to_problem(coefficients,
-				Nmat,Lambda_k_vector. at(k),
-				N_k_vector. at(k),
-				this -> point_cloud_pairs . at(k));
+			this -> add_subproblem_to_problem(coefficients,Nmat,Lambda_k_vector. at(k),N_k_vector. at(k),this -> point_cloud_pairs . at(k));
 		}	
 
 		
@@ -578,6 +568,17 @@ void BundleAdjuster::add_subproblem_to_problem(std::vector<T>& coeffs,
 
 
 void BundleAdjuster::apply_deviation(const EigVec & deviation){
+
+
+
+
+	std::cout << "\t Deviations: \n";
+
+	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+		int x_index = 6 * (i - 1);
+		std::cout << "\t\t pc " << i << deviation.subvec(x_index,x_index + 5).t();
+	}
+
 
 
 	boost::progress_display progress(this -> all_registered_pc -> size());
