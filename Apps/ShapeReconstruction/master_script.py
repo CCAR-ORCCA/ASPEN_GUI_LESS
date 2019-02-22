@@ -68,7 +68,7 @@ base_dictionnary = {
 
 all_cases_dictionnary = {
 "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.004,0.0006],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.0003,0.0004,0.0005],
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
 
