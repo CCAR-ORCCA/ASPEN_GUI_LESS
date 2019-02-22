@@ -575,8 +575,18 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 	std::cout << "\t Deviations: \n";
 
 	for (unsigned int i = 1; i < this -> all_registered_pc -> size(); ++i){
+		
+
 		int x_index = 6 * (i - 1);
-		std::cout << "\t\t pc " << i << deviation.subvec(x_index,x_index + 5).t();
+		int mrp_index = 6 * (i - 1) + 3;
+
+		std::cout << "\t\t pc " << i << arma::vec::fixed<6>({
+			deviation(x_index),
+			deviation(x_index + 1),
+			deviation(x_index + 2),
+			deviation(mrp_index),
+			deviation(mrp_index + 1),
+			deviation(mrp_index + 2)}).t();
 	}
 
 
