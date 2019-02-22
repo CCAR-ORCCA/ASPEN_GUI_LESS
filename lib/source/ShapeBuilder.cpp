@@ -93,7 +93,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 		this -> filter_arguments -> get_ba_h(),
 		&this -> LN_t0,
 		&this -> x_t0,
-		dir);
+		dir,
+		&mrps_LN,
+		&BN_measured);
 
 
 	for (int time_index = 0; time_index < times.n_rows; ++time_index) {
@@ -1137,134 +1139,6 @@ void ShapeBuilder::get_new_states(
 
 
 
-void ShapeBuilder::initialize_shape(unsigned int cutoff_index){
-
-	throw(std::runtime_error("not implemented yet"));
-
-	// std::string pc_path = "../output/pc/source_transformed_poisson.cgal";
-	// std::string pc_path_obj = "../output/pc/source_transformed_poisson.obj";
-	// std::string a_priori_path = "../output/shape_model/apriori.obj";
-	// std::string pc_aligned_path_obj = "../output/pc/source_aligned_poisson.obj";
-	// std::shared_ptr<PC> destination_pc_concatenated;
-
-
-	// if (this -> filter_arguments -> get_use_icp()){
-
-	// // The point clouds are bundle-adjusted
-	// 	std::vector<std::shared_ptr< PC>> kept_pcs;
-
-	// 	if (this -> filter_arguments -> get_use_ba()){
-
-	// 		// Only the point clouds that looped with the first one are kept
-
-	// 		std::cout << " - Keeping all pcs until # " << cutoff_index + 1<< " over a total of " << this -> all_registered_pc.size() << std::endl;
-
-	// 		for(int pc = 0; pc <= cutoff_index; ++pc){
-	// 			std::cout << "keeping pc " << pc << " / " << cutoff_index << std::endl;
-	// 			kept_pcs.push_back(this -> all_registered_pc.at(pc));
-	// 		}
-
-
-	// 	}
-	// 	else{
-	// 		kept_pcs = this -> all_registered_pc;
-	// 	}
-
-	// 	std::cout << "-- Constructing point cloud...\n";
-	// 	std::shared_ptr<PC> pc_before_ba = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
-
-	// 	pc_before_ba -> save("../output/pc/source_transformed_before_ba.obj",this -> LN_t0.t(),this -> x_t0);
-
-
-
-	// 	destination_pc_concatenated = std::make_shared<PC>(PC(kept_pcs,this -> filter_arguments -> get_points_retained()));
-
-	// 	destination_pc_concatenated -> save(
-	// 		pc_path, 
-	// 		arma::eye<arma::mat>(3,3), 
-	// 		arma::zeros<arma::vec>(3), 
-	// 		true,
-	// 		false);
-
-
-
-	// 	destination_pc_concatenated -> save(
-	// 		pc_path_obj, 
-	// 		arma::eye<arma::mat>(3,3), 
-	// 		arma::zeros<arma::vec>(3), 
-	// 		false,
-	// 		true);
-
-
-
-	// 	// The concatenated point cloud is saved after being transformed so as to "overlap" with the true shape. It
-	// 	// should perfectly overlap without noise and bundle-adjustment/ICP errors
-
-
-	// 	destination_pc_concatenated -> save(pc_aligned_path_obj, this -> LN_t0.t(),this -> x_t0);
-
-
-	// }
-
-	// else{
-
-	// 	arma::mat points,normals;
-
-	// 	this -> true_shape_model -> random_sampling(this -> filter_arguments -> get_points_retained(),points,normals);
-
-	// 	destination_pc_concatenated = std::make_shared<PC>(PC(points,normals));
-
-	// 	destination_pc_concatenated -> save(
-	// 		pc_path, 
-	// 		arma::eye<arma::mat>(3,3), 
-	// 		arma::zeros<arma::vec>(3), 
-	// 		true,
-	// 		false);
-
-	// 	destination_pc_concatenated -> save(
-	// 		pc_path_obj, 
-	// 		arma::eye<arma::mat>(3,3), 
-	// 		arma::zeros<arma::vec>(3), 
-	// 		false,
-	// 		true);
-
-
-	// }
-
-
-	// std::cout << "-- Running PSR...\n";
-	// CGALINTERFACE::CGAL_interface(pc_path.c_str(),a_priori_path.c_str(),this -> filter_arguments -> get_N_edges());
-
-
-
-	// ShapeModelTri a_priori_obj("", nullptr);
-	// ShapeModelImporter::load_obj_shape_model(a_priori_path, 1, true,a_priori_obj);
-
-
-
-
-	// std::shared_ptr<ShapeModelBezier< ControlPoint > > a_priori_bezier = std::make_shared<ShapeModelBezier>(ShapeModelBezier(&a_priori_obj,"E", this -> frame_graph));
-
-	// // the shape is elevated to the prescribed degree
-	// unsigned int starting_degree = a_priori_bezier -> get_degree();
-	// for (unsigned int i = starting_degree; i < this -> filter_arguments -> get_shape_degree(); ++i){
-	// 	a_priori_bezier -> elevate_degree();
-	// }
-
-	// a_priori_bezier -> initialize_index_table();
-	// a_priori_bezier -> save_both("../output/shape_model/a_priori_bezier");
-
-	// ShapeFitterBezier shape_fitter(a_priori_bezier.get(),destination_pc_concatenated.get());
-
-	// shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),this -> filter_arguments -> get_ridge_coef());
-
-	// a_priori_bezier -> save_both("../output/shape_model/fit_a_priori");
-
-	// // The estimated shape model is finally initialized
-	// this -> estimated_shape_model = a_priori_bezier;
-	// this -> estimated_shape_model -> update_mass_properties();
-
-}
 
 
 arma::vec ShapeBuilder::get_center_collected_pcs(

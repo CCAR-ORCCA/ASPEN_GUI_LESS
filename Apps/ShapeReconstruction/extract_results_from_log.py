@@ -66,7 +66,6 @@ for directory in dir_list:
 
             if (store_converged_res_icp_counter == 0):            	converged_res_icp += [float(split_line[1])]
 
-
             if split_line[0] == "###################" and split_line[1] == "Index":
                 time += [split_line[-4]]
 

@@ -122,12 +122,10 @@ if(OPENMP_FOUND)
 endif()
 
 
-# Fortran compiler, required by Armadillo on Linux/Ubuntu
-# if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
-# 	find_library(GFORTRAN_LIBRARY gfortran
-# 	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
-# 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
-# endif()
+# Removing spurious include sometimes brought in by one of VTK's dependencies
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+list(REMOVE_ITEM dirs "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/include")
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES ${dirs})
 
 # Add source files in root directory
 add_executable(${EXE_NAME}

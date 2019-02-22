@@ -27,7 +27,9 @@ public:
 		int h,
 		arma::mat * LN_t0,
 		arma::vec * x_t0,
-		std::string dir);
+		std::string dir,
+		std::vector<arma::vec::fixed<3> > * mrps_LN,
+		std::vector<arma::mat::fixed<3,3 > > * BN_measured);
 
 	BundleAdjuster(double sigma_rho,
 		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_,
@@ -131,6 +133,9 @@ protected:
 	MatrixXd Pdense;
 
 	std::vector<std::set<int> >edges_to_remove;
+	std::vector<arma::vec::fixed<3> > * mrp_LN_ptr;
+	std::vector<arma::mat::fixed<3,3> > * BN_measured_ptr;
+
 
 };
 

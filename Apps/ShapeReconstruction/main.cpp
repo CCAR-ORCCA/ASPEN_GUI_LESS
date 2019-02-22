@@ -208,7 +208,7 @@ int main() {
 		spherical_harmonics -> Update();
 
 	// The spherical harmonics are saved to a file
-		spherical_harmonics -> SaveToJson("../output/harmo_" + std::string(TARGET_SHAPE) + ".json");
+		spherical_harmonics -> SaveToJson(OUTPUT_DIR + "/harmo_" + std::string(TARGET_SHAPE) + ".json");
 		args.set_sbgat_harmonics_truth(spherical_harmonics);
 	}
 	/******************************************************/

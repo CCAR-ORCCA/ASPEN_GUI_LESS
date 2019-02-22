@@ -295,6 +295,23 @@ def load_shape(path,scale_factor = 1):
     return vertices,facets
 
 
+def save_shape(vertices,facets,scale_factor,path):
+    
+    file = open(path,"w")
+
+    for v in range(len(vertices)):
+      file.write("v " + str(vertices[v][0] * scale_factor) + " " + str(vertices[v][1] * scale_factor) + " " + str(vertices[v][2] * scale_factor) + "\n")
+
+    for f in range(len(facets)):
+      if f < len(facets) - 1:
+        file.write("f " + str(1 + facets[f][0]) + " " + str(1 + facets[f][1]) + " " + str(1 + facets[f][2]) + "\n")
+      else: 
+        file.write("f " + str(1 + facets[f][0]) + " " + str(1 + facets[f][1]) + " " + str(1 + facets[f][2]))
+
+    file.close();
+
+
+
 def get_circumscribing_radius(vertices):
     max_radius = -1
     for i in range(len(vertices)):

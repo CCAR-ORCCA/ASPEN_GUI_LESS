@@ -66,16 +66,16 @@ base_dictionnary = {
 # }
 
 all_cases_dictionnary = {
-"NUMBER_OF_EDGES" : [1500,2000,2500],
+"NUMBER_OF_EDGES" : [2500],
 "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
-"BA_H" : [4,6],
+"BA_H" : [4],
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
 
 
 
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
-    all_cases_dictionnary,base_location,"thesis")
+    all_cases_dictionnary,base_location,"thesis_fast_slam")
 
 
 

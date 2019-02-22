@@ -8,7 +8,7 @@
 #include <PointCloudIO.hpp>
 
 #define BUNDLE_ADJUSTER_DEBUG 1
-
+#define IOFLAGS_bundle_adjuster 0
 
 BundleAdjuster::BundleAdjuster(
 	double sigma_rho,
@@ -17,7 +17,9 @@ BundleAdjuster::BundleAdjuster(
 	int h,
 	arma::mat * LN_t0,
 	arma::vec * x_t0,
-	std::string dir){
+	std::string dir,
+	std::vector<arma::vec::fixed<3> > * mrps_LN,
+	std::vector<arma::mat::fixed<3,3> > * BN_measured){
 
 	this -> sigma_rho = sigma_rho;
 	this -> all_registered_pc = all_registered_pc_;
@@ -26,6 +28,8 @@ BundleAdjuster::BundleAdjuster(
 	this -> N_iter = N_iter;
 	this -> h = h;
 	this -> dir = dir;
+	this -> mrp_LN_ptr = mrps_LN;
+	this -> BN_measured_ptr = BN_measured;
 
 }
 
@@ -85,14 +89,13 @@ void BundleAdjuster::run(
 	
 
 	// The connectivity matrix is saved
-	if (save_connectivity){
-		
-		std::cout << "- Saving connectivity ... " << std::endl;
-		this -> save_connectivity();
+	#if IOFLAGS_bundle_adjuster
+	std::cout << "- Saving connectivity ... " << std::endl;
+	this -> save_connectivity();
+	#endif
 
-		
 
-	}	
+
 
 	std::cout << "- Removing edges from graph ...\n";
 	this -> remove_edges_from_graph();
@@ -706,39 +709,60 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 	for (auto other_pc_index : pcs_to_check){
 
-
-
 		if (other_pc_index == pc_global_index) continue;
 
 
-		double p = std::log2(this -> all_registered_pc -> at(pc_global_index) -> size());
+		// Should compute the los here and do not attempt overlap check
+		// if they are more than 90 degrees apart
+		std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
 
-		int N_pairs = (int)(std::pow(2, p - active_h));
-
-		try{
-
-			IterativeClosestPointToPlane::compute_pairs(point_pairs,
-				this -> all_registered_pc -> at(pc_global_index),
-				this -> all_registered_pc -> at(other_pc_index),
-				active_h);
-
-			double prop = double(point_pairs.size()) / N_pairs * 100;
-			std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
-
-			std::cout << " ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
-
-			std::cout << this -> all_registered_pc -> at(*current_pc_pair.begin()) -> size()  << " / " << this -> all_registered_pc -> at(* (-- current_pc_pair.end())) -> size()<< std::endl;
-			if (prop > 80){
-				overlaps[prop] = other_pc_index;
-				if (prune_overlaps && overlaps.size() > 5){
-					return overlaps;
-				}
-			}
+		// We need the [BL] dcms
+		arma::vec::fixed<3> los_pc_global_index = {1,0,0};
+		arma::vec::fixed<3> los_other_pc_index = {1,0,0};
 
 
+		arma::mat::fixed<3,3> LB_pc_global_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(pc_global_index)) * BN_measured_ptr -> at(pc_global_index).t();
+		arma::mat::fixed<3,3> LB_pc_other_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(other_pc_index)) * BN_measured_ptr -> at(other_pc_index).t();
+		
+		los_pc_global_index = LB_pc_global_index.t() * los_pc_global_index;
+		los_other_pc_index = LB_pc_other_index.t() * los_other_pc_index;
+
+		double angle = std::acos(arma::dot(los_pc_global_index,los_other_pc_index) ) * 180./arma::datum::pi;
+
+		if (angle > 90){
+			std::cout << " Skipping ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
 		}
-		catch(ICPNoPairsException & e){
+		else{
 
+			std::cout << " Investigating ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
+
+			double p = std::log2(this -> all_registered_pc -> at(pc_global_index) -> size());
+
+			int N_pairs = (int)(std::pow(2, p - active_h));
+
+			try{
+
+				IterativeClosestPointToPlane::compute_pairs(point_pairs,
+					this -> all_registered_pc -> at(pc_global_index),
+					this -> all_registered_pc -> at(other_pc_index),
+					active_h);
+
+				double prop = double(point_pairs.size()) / N_pairs * 100;
+
+				std::cout << "\t ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
+
+				std::cout << this -> all_registered_pc -> at(*current_pc_pair.begin()) -> size()  << " / " << this -> all_registered_pc -> at(* (-- current_pc_pair.end())) -> size()<< std::endl;
+				if (prop > 80){
+					overlaps[prop] = other_pc_index;
+					if (prune_overlaps && overlaps.size() > 5){
+						return overlaps;
+					}
+				}
+
+			}
+			catch(ICPNoPairsException & e){
+
+			}
 		}
 
 	}
@@ -795,10 +819,6 @@ void BundleAdjuster::set_cluster_size(int size){
 void BundleAdjuster::remove_edges_from_graph(){
 
 
-
-	
-
-
 	for (auto & edge_to_remove : this -> edges_to_remove){
 		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ") based on residuals\n";
 
@@ -806,32 +826,33 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 	}
 
-
-
-
 	// The graph is cleaned up by keeping up to N at each node
 	for (int i = 0; i < this -> all_registered_pc -> size(); ++i){
 
 		std::set<int> neighbors = this -> graph.getneighbors(i);
 
-		// Removing immediate connections
+		
+		// Keep edges between consecutive point clouds
 		if (i > 0){
 			neighbors.erase(i - 1);
-		}
 
+		}
 		if (i < static_cast<int>(this -> all_registered_pc -> size()) - 1){
 			neighbors.erase(i + 1);
 		}
 
+		if (neighbors.size() == 0){
+			std::cout << "\t pc # " << i << " has no non-consecutive neighbors\n";
+			continue;
+		}
+		
 		std::vector<std::set<int> > clusters;
 
 		std::set<int> cluster;
 		
 		cluster.insert(*neighbors.begin());
 
-		for (auto neighbor_it = neighbors.begin(); neighbor_it != neighbors.end(); ++neighbor_it){
-
-			int neighbor = (*neighbor_it);
+		for (int neighbor : neighbors){
 
 			if (std::abs(neighbor - *(cluster.begin())) <= this -> cluster_size){
 				// If this neighbor and the one that started the cluster
@@ -851,25 +872,23 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 			}
 
-			
-
 		}
 
 		if (cluster.size() != 0){
 			clusters.push_back(cluster);
 		}
+		
 
 
 		#if BUNDLE_ADJUSTER_DEBUG
-		std::cout << "For pc # " << i << ", formed clusters: \n";
+		std::cout << "\tFor pc # " << i << ", formed clusters: \n";
 		for (int k = 0; k < clusters.size(); ++k){
-			std::cout << "\tCluster #" << k << " : (";
+			std::cout << "\t\tCluster #" << k << " : (";
 			for (auto index : clusters[k]){
 				std::cout << index << ", ";
 			}
 			std::cout << ")" << std::endl;
 		}
-
 		#endif
 
 
@@ -877,24 +896,47 @@ void BundleAdjuster::remove_edges_from_graph(){
 		// Clusters now stores all the different clusters of neighbors.
 		// only only one point cloud per cluster will be kept
 
+		// Would be nice to have a receding memory cleanup of the graph. That is, 
+		// only edges between consecutive point clouds are kept forever. Edges formed in 
+		// the bundle adjustment phase will be kept if they are within 10 * this -> cluster size from
+		// the current point cloud
+
 		for (auto cluster_to_process : clusters){
 
-
-			auto cluster_to_process_it = cluster_to_process.begin();
 			
-			// The first index in the cluster is kept
-			++cluster_to_process_it;
+			auto cluster_to_process_it = cluster_to_process.begin();
+
+			
+			// // The first index in the cluster is kept
+			// ++cluster_to_process_it;
 
 			// The rest of the indices in this cluster are discarded
 			while(cluster_to_process_it != cluster_to_process.end()){
-				std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
 
-				this -> graph.removeedge(i,*cluster_to_process_it);
+
+				if(std::abs(std::max(*cluster_to_process_it,i) - (int(this -> all_registered_pc -> size()) - 1) ) > 3 * this -> cluster_size){
+					std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on receding graph memory\n";
+					this -> graph.removeedge(i,*cluster_to_process_it);
+				}
+				else if (cluster_to_process_it != cluster_to_process.begin()){
+					std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
+					this -> graph.removeedge(i,*cluster_to_process_it);
+				}
+
 				++cluster_to_process_it;
 
 			}
 
 		}
+
+
+
+
+
+		
+
+
+
 
 
 

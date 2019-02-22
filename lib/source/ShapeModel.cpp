@@ -483,7 +483,6 @@ void ShapeModel<PointType>::assemble_covariance(arma::mat & P,
 		P.submat(9,9,11,11) = Cl .get_covariance();
 	}
 
-
 }
 
 template <class PointType>
