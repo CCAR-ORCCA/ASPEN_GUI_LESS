@@ -56,7 +56,7 @@ base_dictionnary = {
 "USE_TARGET_POI" : False,
 "USE_BEZIER_SHAPE" : True,
 "TF" : 150,
-"BA_H" : 4,
+"BA_H" : 3,
 "NUMBER_OF_EDGES" : 2000
 }
 
@@ -68,7 +68,7 @@ base_dictionnary = {
 
 all_cases_dictionnary = {
 "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
-"INSTRUMENT_FREQUENCY_SHAPE" : [0.0003,0.0004,0.0005],
+"INSTRUMENT_FREQUENCY_SHAPE" : [0.0003,0.0004,0.0005,0.0006],
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
 
