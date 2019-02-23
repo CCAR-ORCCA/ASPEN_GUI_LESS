@@ -73,6 +73,9 @@ public:
 	void set_cluster_size(int size);
 
 
+	void set_origin_shift(arma::vec::fixed<3> new_origin_shift){this -> shift_origin = new_origin_shift;}
+
+
 protected:
 
 	void remove_edges_from_graph();
@@ -130,6 +133,8 @@ protected:
 
 	Adjacency_List<int,double> graph;
 	MatrixXd Pdense;
+
+	arma::vec::fixed<3> shift_origin = {0,0,0};
 
 	std::vector<std::set<int> >edges_to_remove;
 	std::vector<arma::vec::fixed<3> > * mrp_LN_ptr;

@@ -335,22 +335,19 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		const PointNormal & p_S = this -> all_registered_pc -> at(point_cloud_pair.S_k) -> get_point(point_pairs[i].first);
 		const PointNormal & p_D = this -> all_registered_pc -> at(point_cloud_pair.D_k) -> get_point(point_pairs[i].second);
 
+		const arma::vec::fixed<3> & S_i = p_S.get_point_coordinates();
+		const arma::vec::fixed<3> & D_i = p_D.get_point_coordinates();
+
+
 		const arma::vec::fixed<3> & n = p_D.get_normal_coordinates();
 
 		if (point_cloud_pair.D_k != this -> anchor_pc_index && point_cloud_pair.S_k != this -> anchor_pc_index){
 
-			// H_ki.subvec(0,2) = n.t() * dcm_D.t();
-			// H_ki.subvec(3,5) = - 4 * n.t() * dcm_D.t() * dcm_S * RBK::tilde(p_S.get_point_coordinates());
-			// H_ki.subvec(6,8) = - n.t() * dcm_D.t();
-			// H_ki.subvec(9,11) = 4 * ( n.t() * RBK::tilde(p_D.get_point_coordinates()) 
-			// 	- (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D * RBK::tilde(n));
-			// // think I fixed a sign error
-
 			H_ki.subvec(0,2) = (dcm_D * n).t();
-			H_ki.subvec(3,5) = (4 * RBK::tilde(p_S.get_point_coordinates()) * dcm_S.t() * dcm_D * n).t();
+			H_ki.subvec(3,5) = (4 * RBK::tilde(S_i - this -> shift_origin) * dcm_S.t() * dcm_D * n).t();
 			H_ki.subvec(6,8) = -(dcm_D * n).t();
-			H_ki.subvec(9,11) = (- 4 * RBK::tilde(p_D.get_point_coordinates()) * n +  4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * p_S.get_point_coordinates() 
-				+ x_S - dcm_D * p_D.get_point_coordinates() - x_D)).t();
+			H_ki.subvec(9,11) = (- 4 * RBK::tilde(D_i) * n +  4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * (S_i - this -> shift_origin)
+				+ x_S - dcm_D * (D_i - this -> shift_origin) - x_D)).t();
 
 		}
 
@@ -358,13 +355,13 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 			throw(std::runtime_error("This should never happen"));
 			H_ki.subvec(0,2) = (dcm_D * n).t();
-			H_ki.subvec(3,5) = (4 * RBK::tilde(p_S.get_point_coordinates()) * dcm_S.t() * dcm_D * n).t();
+			H_ki.subvec(3,5) = (4 * RBK::tilde(S_i - this -> shift_origin) * dcm_S.t() * dcm_D * n).t();
 		}
 
 		else{
 			H_ki.subvec(0,2) = -(dcm_D * n).t();
-			H_ki.subvec(3,5) = (- 4 * RBK::tilde(p_D.get_point_coordinates()) * n + 4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * p_S.get_point_coordinates() 
-				+ x_S - dcm_D * p_D.get_point_coordinates() - x_D)).t();
+			H_ki.subvec(3,5) = (- 4 * RBK::tilde(D_i - this -> shift_origin) * n + 4 * RBK::tilde(n) * dcm_D.t() * (dcm_S * (S_i - this -> shift_origin) 
+				+ x_S - dcm_D * (D_i - this -> shift_origin) - x_D)).t();
 		}
 
 		// epsilon = y - Hx !!!
@@ -372,7 +369,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 
 		// Uncertainty on measurement
-		arma::rowvec::fixed<3> mapping_vector = (dcm_S * p_S.get_point_coordinates() + x_S - dcm_D * p_D.get_point_coordinates() - x_D).t() * dcm_D ;
+		arma::rowvec::fixed<3> mapping_vector = (dcm_S * (S_i - this -> shift_origin) + x_S - dcm_D * (D_i - this -> shift_origin) - x_D).t() * dcm_D ;
 		
 		arma::vec::fixed<3> e = {1,0,0};
 		double sigma_angle = 0.3; //5.7 deg of uncertainty
@@ -383,10 +380,10 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 
 		sigma_y_squared += std::pow(this -> sigma_rho,2) * arma::dot(
-			dcm_D * p_D.get_normal_coordinates(),
+			dcm_D * n,
 			(dcm_S * M_pcs.at(point_cloud_pair.S_k) * e * e.t() * (dcm_S * M_pcs.at(point_cloud_pair.S_k)).t()
 				+ dcm_D * M_pcs.at(point_cloud_pair.D_k) * e * e.t() * (dcm_D * M_pcs.at(point_cloud_pair.D_k)).t())
-			* dcm_D * p_D.get_normal_coordinates());
+			* dcm_D * n);
 
 
 		Lambda_k +=  H_ki.t() * H_ki / sigma_y_squared;
@@ -641,7 +638,7 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 		arma::mat::fixed<3,3> SS_bar = RBK::mrp_to_dcm(d_mrp);
 		arma::mat::fixed<3,3> NS_bar = RBK::mrp_to_dcm(this -> X.subvec(mrp_index, mrp_index + 2));
 
-		this -> X.subvec(x_index , x_index + 2) += dx;
+		this -> X.subvec(x_index , x_index + 2) += dx ;
 		this -> X.subvec(mrp_index, mrp_index + 2) = RBK::dcm_to_mrp(NS_bar * SS_bar.t());
 
 		++progress;

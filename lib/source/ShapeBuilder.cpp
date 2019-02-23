@@ -142,9 +142,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			R_pcs[time_index] = arma::zeros<arma::mat>(6,6);
 
-			true_shape_model -> save(dir + "/true_shape_L0.obj",
-				- this -> LN_t0 * this -> x_t0,
-				this -> LN_t0);
+			true_shape_model -> save(dir + "/true_shape_L0.obj",- this -> LN_t0 * this -> x_t0, this -> LN_t0);
 
 		}
 
@@ -223,11 +221,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(M_pcs.size() == BN_true.size());
 			assert(X_pcs.size() == BN_true.size());
 
-			
 			if (this -> filter_arguments -> get_use_ba()){
 				
 				if(ba_test.update_overlap_graph()){
 					std::cout << "Detected loop closure. Running bundle adjustment ...";
+					ba_test.set_origin_shift(- this -> get_center_collected_pcs());
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 				}
 				
@@ -363,6 +361,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				if (this -> filter_arguments -> get_use_ba()){
 					ba_test.set_h(0);
+					ba_test.set_origin_shift(- this -> get_center_collected_pcs());
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false,true);
 				}
 
@@ -1125,13 +1124,8 @@ void ShapeBuilder::get_new_states(
 		this -> LN_t0 = dcm_LN;
 		this -> x_t0 = lidar_pos;
 		this -> LB_t0 = dcm_LB;
-
-
-
-
 		OC::CartState true_cart_state_t0(X_S.rows(0,5),this -> true_shape_model -> get_volume() * 1900 * arma::datum::G);
 		this -> true_kep_state_t0 = true_cart_state_t0.convert_to_kep(0);
-
 	}
 
 }
