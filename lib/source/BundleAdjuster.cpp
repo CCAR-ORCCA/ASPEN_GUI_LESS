@@ -368,6 +368,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		H_ki = - H_ki;
 
 
+
 		// Uncertainty on measurement
 		arma::rowvec::fixed<3> mapping_vector = (dcm_S * (S_i - this -> shift_origin) + x_S - dcm_D * (D_i - this -> shift_origin) - x_D).t() * dcm_D ;
 		
