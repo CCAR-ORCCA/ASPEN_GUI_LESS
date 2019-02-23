@@ -143,6 +143,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			R_pcs[time_index] = arma::zeros<arma::mat>(6,6);
 
 			true_shape_model -> save(dir + "/true_shape_L0.obj",- this -> LN_t0 * this -> x_t0, this -> LN_t0);
+			ba_test.set_origin_shift(this -> get_center_collected_pcs());
+			
 
 		}
 
@@ -225,7 +227,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 				if(ba_test.update_overlap_graph()){
 					std::cout << "Detected loop closure. Running bundle adjustment ...";
-					ba_test.set_origin_shift(this -> get_center_collected_pcs());
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
 				}
 				
@@ -361,7 +362,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				if (this -> filter_arguments -> get_use_ba()){
 					ba_test.set_h(0);
-					ba_test.set_origin_shift(this -> get_center_collected_pcs());
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false,true);
 				}
 
