@@ -143,7 +143,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			R_pcs[time_index] = arma::zeros<arma::mat>(6,6);
 
 			true_shape_model -> save(dir + "/true_shape_L0.obj",- this -> LN_t0 * this -> x_t0, this -> LN_t0);
-			ba_test.set_origin_shift(this -> get_center_collected_pcs());
 			
 
 		}
