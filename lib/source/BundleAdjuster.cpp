@@ -104,7 +104,10 @@ void BundleAdjuster::run(
 			this -> LN_t0 -> t(), 
 			*this -> x_t0);
 
-		
+		// The new anchor pc is effectively replaced by the new local structure
+		std::cout << "last pointer in bundle adjuster: " << this -> all_registered_pc -> back() << std::endl;
+		*this -> all_registered_pc -> back() = this -> local_bundles.back();
+
 
 		
 

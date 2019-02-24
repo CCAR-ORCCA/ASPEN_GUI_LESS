@@ -132,6 +132,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		this -> store_point_clouds(time_index,dir);
 
+		// If a local structure was created at the previous timestep, use it as destination point 
+		// cloud
+
+
+
+
+
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
 
@@ -180,6 +187,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
+				std::cout << "this -> destination_pc pointer in bundle adjuster: " << this -> destination_pc -> back() << std::endl;
+				std::cout << " this -> source_pc pointer in ShapeBuilder: " << this -> source_pc -> back() << std::endl;
 
 
 
@@ -1074,7 +1083,6 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 			// The source and destination point clouds are combined into the new source point cloud
 
 			this -> destination_pc = this -> source_pc;
-
 
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
