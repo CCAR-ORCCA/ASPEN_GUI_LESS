@@ -458,14 +458,16 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	for (int i = 0; i < node -> indices.size(); ++i){
 
 
-		if (this -> owner -> get_point(node -> indices[i]).get_point_coordinates().n_rows != 3){
-
-			std::cout << node -> indices[i] << std::endl;
+	
+		try{
+			double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+		}
+		catch(std::logic_error & e){
+			td::cout << node -> indices[i] << std::endl;
 			throw(std::runtime_error( "found culprit\n"));
-			
 		}
 
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+
 		if (new_distance < distance) {
 			distance = new_distance;
 			best_guess_index = node -> indices[i];
