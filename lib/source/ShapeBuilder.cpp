@@ -119,11 +119,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		// Getting the true observations (noise is added)
 		this -> lidar -> send_flash(this -> true_shape_model,true);
+
+		#if IOFLAGS_shape_builder
 		this -> lidar -> save(dir + "/pc_" + std::to_string(time_index),true);
+		#endif
 
 		// The rigid transform best aligning the two point clouds is found
 		// The solution to this first registration will be used to prealign the 
 		// shape model and the source point cloud
+
+
 
 		this -> store_point_clouds(time_index,dir);
 
@@ -1041,7 +1046,12 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		else {
 
 			// The source and destination point clouds are combined into the new source point cloud
+			std::cout << "this -> source_pc has " << this -> source_pc -> size() << " points\n";
+			std::cout << "this -> destination_pc has " << this -> destination_pc -> size() << " points\n";
+
 			this -> destination_pc = this -> source_pc;
+			std::cout << "after transfer, this -> destination_pc has " << this -> destination_pc -> size() << " points\n";
+
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
