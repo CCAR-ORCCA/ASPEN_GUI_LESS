@@ -1246,9 +1246,9 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	end = std::chrono::system_clock::now();
 	elapsed_seconds = end-start;
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-	// std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
+	std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
 
-	// arma::uvec unsatisfying_points = arma::find(S <= 3);
+	arma::uvec unsatisfying_points = arma::find(S <= 3);
 	
 	// std::cout << "\n-- Getting POI index ..." << std::endl;
 
