@@ -108,9 +108,11 @@ void BundleAdjuster::run(
 		*this -> all_registered_pc -> back() = this -> local_bundles.back();
 
 
-		for (int j = 0; j < this -> all_registered_pc -> back() -> size(); ++j){
+		std::shared_ptr<PointCloud<PointNormal > > last_pc = this -> all_registered_pc -> back();
 
-			if (this -> all_registered_pc -> back() -> at(j). get_point_coordinates().n_rows != ){
+		for (int j = 0; j < last_pc -> size(); ++j){
+
+			if (last_pc -> get_point(j).get_point_coordinates().n_rows != ){
 				throw(std::runtime_error("Point " + std::to_string(j) + " in new_structure_pc is fishy"));
 			}
 		}
