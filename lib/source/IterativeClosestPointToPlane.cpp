@@ -120,6 +120,8 @@ void IterativeClosestPointToPlane::compute_pairs(
 	// #pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
+		std::cout << source_pc -> get_point_coordinates(destination_source_dist_vector[i].second).n_rows << std::endl;
+
 		arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
 
 		int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
@@ -247,7 +249,7 @@ void IterativeClosestPointToPlane::build_matrices(
 	arma::mat::fixed<3,3> dcm_S = RBK::mrp_to_dcm(mrp) ;
 	double sigma_y_sq = std::pow(los_noise_sd_baseline,2) * arma::dot(n_i,
 		(dcm_S * e * e.t() * dcm_S.t() 
-		+ M_pc_D * e * e.t() *   M_pc_D.t()) * n_i);
+			+ M_pc_D * e * e.t() *   M_pc_D.t()) * n_i);
 
 
 	// the normal is also uncertain
@@ -267,7 +269,7 @@ void IterativeClosestPointToPlane::build_matrices(
 	info_mat_temp = H.t() * H / sigma_y_sq;
 
 	normal_mat_temp =  H.t() * (arma::dot(n_i.t(),dcm_S * S_i + x - D_i)) / sigma_y_sq;
-		
+
 	residual_vector(pair_index) = arma::dot(n_i.t(),dcm_S * S_i + x - D_i);
 	sigma_vector(pair_index) = std::sqrt(sigma_y_sq);
 
@@ -316,7 +318,7 @@ void IterativeClosestPointToPlane::build_matrices(
 // 			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
 // 		}
 // 		icp.set_pairs(kept_matches);
-		
+
 // 		// Registering using these pairs
 // 		icp.register_pc();
 
@@ -350,7 +352,7 @@ void IterativeClosestPointToPlane::build_matrices(
 // 			#endif
 
 // 			if (J < residuals_threshold){
-				
+
 // 				// If it surpasses the previous best
 // 				if (J < J_best){
 // 					#if RANSAC_DEBUG
@@ -366,7 +368,7 @@ void IterativeClosestPointToPlane::build_matrices(
 // 			}
 
 // 		}
-		
+
 // 	}
 
 // }
