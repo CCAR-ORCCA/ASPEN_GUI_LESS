@@ -105,7 +105,7 @@ void BundleAdjuster::run(
 			*this -> x_t0);
 
 		// The new anchor pc is effectively replaced by the new local structure
-		*this -> all_registered_pc -> at(this -> anchor_pc_index) = this -> local_bundles.back();
+		*this -> all_registered_pc -> back() = this -> local_bundles.back();
 
 
 
