@@ -1246,20 +1246,20 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	end = std::chrono::system_clock::now();
 	elapsed_seconds = end-start;
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-	std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
+	// std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
 
-	arma::uvec unsatisfying_points = arma::find(S <= 3);
+	// arma::uvec unsatisfying_points = arma::find(S <= 3);
 	
-	std::cout << "\n-- Getting POI index ..." << std::endl;
+	// std::cout << "\n-- Getting POI index ..." << std::endl;
 
-	int POI_index = last_pc_indices[S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min()];
+	// int POI_index = last_pc_indices[S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min()];
 	
-	// std::cout << "\n-- Setting target of interest from POI #..." << POI_index << std::endl;
-	// TODO: there's probably a NAN in POI_index at some point or something of the like
-	// this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
+	// // std::cout << "\n-- Setting target of interest from POI #..." << POI_index << std::endl;
+	// // TODO: there's probably a NAN in POI_index at some point or something of the like
+	// // this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
 
 	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
-	std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
+	// std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
 
 	
 	if (pc != nullptr){

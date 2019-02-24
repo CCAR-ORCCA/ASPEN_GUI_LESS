@@ -427,6 +427,10 @@ template <>
 double KDTree<PointCloud,PointNormal>::distance(const PointNormal & point_in_pc,
 	const arma::vec & point) const{
 
+	assert(point.n_rows == 3);
+	assert(point_in_pc.get_point_coordinates().n_rows == 3);
+	
+
 	return arma::norm(point_in_pc.get_point_coordinates() - point);
 
 }

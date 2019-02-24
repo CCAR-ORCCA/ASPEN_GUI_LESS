@@ -229,6 +229,9 @@ template <class PointType>
 void PointCloud<PointType>::build_kdtree(bool verbose){
 
 	auto start = std::chrono::system_clock::now();
+	if (verbose){
+		std::cout << "- building kd tree ..." << std::endl;
+	}
 
 	std::vector<int> indices;
 	for (int i =0; i < this -> size(); ++i){
