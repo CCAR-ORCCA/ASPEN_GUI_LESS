@@ -121,9 +121,12 @@ void IterativeClosestPointToPlane::compute_pairs(
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
 		arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
-		std::cout << source_pc -> get_point_coordinates(test_source_point).t() << std::endl;
+		std::cout << test_source_point.t() << std::endl;
 
 		int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
+		
+		std::cout << index_closest_destination_point << " / " << int(destination_pc -> size()) - 1 << std::endl;
+
 		const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
 		
 		arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
