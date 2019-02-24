@@ -108,6 +108,13 @@ void BundleAdjuster::run(
 		*this -> all_registered_pc -> back() = this -> local_bundles.back();
 
 
+		for (int j = 0; j< this -> all_registered_pc -> size(); ++j){
+
+			if (nthis -> all_registered_pc -> at(j).get_point_coordinates().n_rows != ){
+				throw(std::runtime_error("Point " + std::to_string(j) + " in new_structure_pc is fishy"));
+			}
+		}
+
 
 	}
 
@@ -707,9 +714,11 @@ void BundleAdjuster::create_local_bundle(){
 		
 	}
 
+
+
 	new_structure_pc.build_kdtree(true);
 
-	std::cout << "\t created local structure with " << new_structure_pc.size() << " points\n";
+	std::cout << "\t Created local structure with " << new_structure_pc.size() << " points\n";
 	
 	this -> local_bundles.push_back(new_structure_pc);
 
