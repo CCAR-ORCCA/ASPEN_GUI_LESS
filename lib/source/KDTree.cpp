@@ -429,9 +429,9 @@ double KDTree<PointCloud,PointNormal>::distance(const PointNormal & point_in_pc,
 
 	assert(point.n_rows == 3);
 	assert(point_in_pc.get_point_coordinates().n_rows == 3);
-	
 
-	return arma::norm(point_in_pc.get_point_coordinates() - point);
+
+	return arma::norm(point - point_in_pc.get_point_coordinates());
 
 }
 
