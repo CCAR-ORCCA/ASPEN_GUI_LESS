@@ -131,6 +131,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 		this -> store_point_clouds(time_index,dir);
+		std::cout << "done storing point clouds\n";
 
 		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
 			this -> all_registered_pc.push_back(this -> destination_pc);
@@ -159,6 +160,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				arma::mat::fixed<3,3> M_pc_a_priori;
 				arma::vec::fixed<3> X_pc_a_priori;
+
+				std::cout << "getting best a-priori rigid transform\n";
+
 
 				this -> get_best_a_priori_rigid_transform(
 					M_pc_a_priori,
@@ -1046,11 +1050,8 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		else {
 
 			// The source and destination point clouds are combined into the new source point cloud
-			std::cout << "this -> source_pc has " << this -> source_pc -> size() << " points\n";
-			std::cout << "this -> destination_pc has " << this -> destination_pc -> size() << " points\n";
 
 			this -> destination_pc = this -> source_pc;
-			std::cout << "after transfer, this -> destination_pc has " << this -> destination_pc -> size() << " points\n";
 
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
@@ -1059,11 +1060,9 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 			arma::vec::fixed<3> los = {1,0,0};
 
-			std::cout << "estimating normals of source ...\n";
 			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
 			estimate_normals.set_los_dir(los);
 			estimate_normals.estimate(6);
-			std::cout << "done estimating normals of source ...\n";
 
 
 			#if IOFLAGS_shape_builder
