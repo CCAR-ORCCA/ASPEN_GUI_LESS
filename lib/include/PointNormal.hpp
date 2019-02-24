@@ -68,7 +68,7 @@ public:
 protected:
 
 	arma::vec point;
-	arma::vec normal;
+	arma::vec normal = {0,0,0};
 
 	int inclusion_counter = 0;
 	int match = -1;

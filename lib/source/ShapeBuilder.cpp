@@ -226,7 +226,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				
 				if(ba_test.update_overlap_graph()){
 					std::cout << "Detected loop closure. Running bundle adjustment ...";
-					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false);
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 				}
 				
 			}
@@ -361,7 +361,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 				if (this -> filter_arguments -> get_use_ba()){
 					ba_test.set_h(0);
-					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN,false,true);
+					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 				}
 
 				std::cout << " -- Saving attitude ...\n";
@@ -1213,7 +1213,6 @@ void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * p
 	std::chrono::duration<double> elapsed_seconds = end-start;
 
 	std::cout << "\n-- Done building KD-tree in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-
 
 	// The normals are NOT re-estimated. they come from the concatenated point clouds
 

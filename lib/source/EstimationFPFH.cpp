@@ -10,7 +10,7 @@ EstimationFPFH<T,U>::EstimationFPFH(const PointCloud<T> & input,PointCloud<U> & 
 }
 
 template<class T,class U>
-void EstimationFPFH<T,U>::estimate(double radius_neighbors){
+void EstimationFPFH<T,U>::estimate(double radius_neighbors,bool force_use_previous){
 
 	if (radius_neighbors < 0){
 		throw(std::runtime_error("neighborhood_radius is negative"));
@@ -59,7 +59,7 @@ void EstimationFPFH<T,U>::set_N_bins(int N_bins){
 
 
 template<class T,class U>
-void EstimationFPFH<T,U>::estimate(int N_neighbors){
+void EstimationFPFH<T,U>::estimate(int N_neighbors,bool force_use_previous){
 	throw(std::runtime_error("EstimationFPFH<T,U>::estimate(int N_neighbors) is not implemented"));
 }
 

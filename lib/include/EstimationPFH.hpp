@@ -9,8 +9,8 @@ template <class T,class U> class EstimationPFH : public EstimationFeature<T,U>{
 public:
 
 	EstimationPFH(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
-	virtual void estimate(double radius_neighbors);
-	virtual	void estimate(int N_neighbors);
+	virtual void estimate(double radius_neighbors,bool force_use_previous = false);
+	virtual	void estimate(int N_neighbors,bool force_use_previous = false);
 
 	void set_N_bins(int N_bins);
 

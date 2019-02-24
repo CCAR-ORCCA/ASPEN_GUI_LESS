@@ -8,7 +8,7 @@ EstimationNormals<T,U>::EstimationNormals(const PointCloud<T> & input_pc,PointCl
 
 
 template <>
-void EstimationNormals<PointNormal,PointNormal>::estimate(int N_neighbors){
+void EstimationNormals<PointNormal,PointNormal>::estimate(int N_neighbors,bool force_use_previous){
 	
 	#pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> input_pc .  size(); ++i) {
@@ -37,19 +37,32 @@ void EstimationNormals<PointNormal,PointNormal>::estimate(int N_neighbors){
 		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
 
 		// The normal is flipped to make sure it is facing the los
-		if (arma::dot(n, this -> los_dir) < 0) {
-			this -> output_pc.get_point(i).set_normal_coordinates(n);
+		// or that it is consistently oriented with a previously computed normal
+		if (force_use_previous){
+			if (arma::dot(n, this -> output_pc.get_point(i).get_normal_coordinates()) < 0) {
+				this -> output_pc.get_point(i).set_normal_coordinates(n);
+			}
+			else {
+				this -> output_pc.get_point(i).set_normal_coordinates(-n);
+			}
 		}
-		else {
-			this -> output_pc.get_point(i).set_normal_coordinates(-n);
+		else{
+			if (arma::dot(n, this -> los_dir) < 0) {
+				this -> output_pc.get_point(i).set_normal_coordinates(n);
+			}
+			else {
+				this -> output_pc.get_point(i).set_normal_coordinates(-n);
+			}
 		}
+
+
 	}
 	
 }
 
 
 template <>
-void EstimationNormals<PointNormal,PointNormal>::estimate(double radius){
+void EstimationNormals<PointNormal,PointNormal>::estimate(double radius,bool force_use_previous){
 	
 	#pragma omp parallel for 
 	for (unsigned int i = 0; i < this -> input_pc .  size(); ++i) {
@@ -79,12 +92,26 @@ void EstimationNormals<PointNormal,PointNormal>::estimate(double radius){
 		arma::vec n = arma::normalise(eigvec.col(arma::abs(eigval).index_min()).rows(0, 2));
 
 		// The normal is flipped to make sure it is facing the los
-		if (arma::dot(n, this -> los_dir) < 0) {
-			this -> output_pc.get_point(i).set_normal_coordinates(n);
+		if (force_use_previous){
+
+			if (arma::dot(n, this -> output_pc.get_point(i).get_normal_coordinates()) < 0) {
+				this -> output_pc.get_point(i).set_normal_coordinates(n);
+			}
+			else {
+				this -> output_pc.get_point(i).set_normal_coordinates(-n);
+			}
+
 		}
-		else {
-			this -> output_pc.get_point(i).set_normal_coordinates(-n);
+		else{
+			if (arma::dot(n, this -> los_dir) < 0) {
+				this -> output_pc.get_point(i).set_normal_coordinates(n);
+			}
+			else {
+				this -> output_pc.get_point(i).set_normal_coordinates(-n);
+			}
 		}
+
+
 	}
 	
 }

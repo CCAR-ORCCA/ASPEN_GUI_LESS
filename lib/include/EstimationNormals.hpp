@@ -8,8 +8,8 @@ template <class T,class U> class EstimationNormals : public EstimationFeature<T,
 public:
 
 	EstimationNormals(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
-	virtual	void estimate(double radius_neighbors);
-	virtual	void estimate(int N_neighbors);
+	virtual	void estimate(double radius_neighbors,bool force_use_previous = false);
+	virtual	void estimate(int N_neighbors,bool force_use_previous = false);
 
 	void set_los_dir(const arma::vec::fixed<3> & los_dir);
 

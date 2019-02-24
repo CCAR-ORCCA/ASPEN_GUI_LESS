@@ -60,9 +60,7 @@ void BundleAdjuster::run(
 	std::map<int,arma::vec::fixed<3> > & X_pcs,
 	std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 	std::vector<arma::mat::fixed<3,3> > & BN_measured,
-	const std::vector<arma::vec::fixed<3> > & mrps_LN,
-	bool save_connectivity,
-	bool apply_deviation){
+	const std::vector<arma::vec::fixed<3> > & mrps_LN){
 
 	if (this -> all_registered_pc -> size() == 0){
 		std::cout << " - Nothing to do here\n";
@@ -80,7 +78,7 @@ void BundleAdjuster::run(
 
 	if (this -> N_iter > 0){
 		// solve the bundle adjustment problem
-		this -> solve_bundle_adjustment(M_pcs,X_pcs,apply_deviation);
+		this -> solve_bundle_adjustment(M_pcs,X_pcs);
 
 	}	
 
@@ -93,9 +91,9 @@ void BundleAdjuster::run(
 
 	if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
 		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
+		std::cout << "- Saving local structure ... " << std::endl;
+		this -> save_local_bundle();
 		this -> anchor_pc_index = this -> next_anchor_pc_index;
-		std::cout << "- Saving connectivity ... " << std::endl;
-		this -> save_connectivity();
 	}
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
@@ -105,8 +103,7 @@ void BundleAdjuster::run(
 
 void BundleAdjuster::solve_bundle_adjustment(
 	const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-	const std::map<int,arma::vec::fixed<3> > & X_pcs,
-	bool apply_deviation){
+	const std::map<int,arma::vec::fixed<3> > & X_pcs){
 	
 
 	int Q = this -> all_registered_pc -> size() - this -> anchor_pc_index;
@@ -186,19 +183,15 @@ void BundleAdjuster::solve_bundle_adjustment(
 		EigVec deviation = chol.solve(Nmat);    
 
 		// It is applied to all of the point clouds (minus the first one)
-		if (apply_deviation){
-			std::cout << "\n- Applying the deviation" << std::endl;
+		std::cout << "\n- Applying the deviation" << std::endl;
 
-			this -> apply_deviation(deviation);
-			std::cout << "\n- Updating the point cloud pairs" << std::endl;
+		this -> apply_deviation(deviation);
+		std::cout << "\n- Updating the point cloud pairs" << std::endl;
 
 		// The point cloud pairs are updated: their residuals are updated
 		// and the rigid transforms positioning them are also updated
-			this -> update_point_cloud_pairs();
-		}
-		else{
-			std::cout << "Not applying deviations, just extracting covariances\n";
-		}
+		this -> update_point_cloud_pairs();
+		
 
 		// The covariances are extracted
 
@@ -700,15 +693,24 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 }
 
-void BundleAdjuster::save_connectivity() const{
+void BundleAdjuster::save_local_bundle() const{
 
-	for (int k = 1; k < this -> all_registered_pc -> size(); ++k){
-		PointCloudIO<PointNormal>::save_to_obj(
-			*this -> all_registered_pc -> at(k),
-			this -> dir + "/destination_" + std::to_string(k) + "_ba.obj",
-			this -> LN_t0 -> t(), 
-			*this -> x_t0);
+
+	PointCloud<PointNormal> new_structure_pc;
+	
+	for (int k = this -> anchor_pc_index; k <= this -> next_anchor_pc_index; ++k){
+		
+		for (int j = 0; j <  this -> all_registered_pc -> at(k) -> size(); ++j){
+			new_structure_pc.push_back( this -> all_registered_pc -> at(k) -> get_point(j));
+		}
+		
 	}
+
+	PointCloudIO<PointNormal>::save_to_obj(
+		new_structure_pc,
+		this -> dir + "/local_bundle_" + std::to_string(this -> next_anchor_pc_index) + ".obj",
+		this -> LN_t0 -> t(), 
+		*this -> x_t0);
 
 }
 

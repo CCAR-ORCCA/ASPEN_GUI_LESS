@@ -10,8 +10,8 @@ template <class T,class U> class EstimationFPFH : public EstimationFeature<T,U>{
 public:
 
 	EstimationFPFH(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
-	virtual void estimate(double radius_neighbors);
-	virtual	void estimate(int N_neighbors);
+	virtual void estimate(double radius_neighbors,bool force_use_previous = false);
+	virtual	void estimate(int N_neighbors,bool force_use_previous = false);
 
 	/**
 	Toggles normalization of spfh

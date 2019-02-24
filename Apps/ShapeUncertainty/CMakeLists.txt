@@ -72,8 +72,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 # Compiler flags
 add_definitions(-Wall -O2 )
 
-
-
 # Enable C++17 
 if (EXISTS /home/bebe0705/.am_fortuna)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fext-numeric-literals")
@@ -103,7 +101,6 @@ include_directories(${RBK_INCLUDE_DIR})
 # Find RBK 
 find_package(OrbitConversions REQUIRED PATHS ${OC_LOC})
 include_directories(${OC_INCLUDE_DIR})
-
 
 # Find VTK Package
 find_package(VTK REQUIRED PATHS ${VTK_PATH})

@@ -9,8 +9,8 @@ template <class T,class U> class EstimationFeature{
 public:
 
 	EstimationFeature(const PointCloud<T> & input_pc,PointCloud<U> & output_pc);
-	virtual void estimate(double radius_neighbors) = 0; 
-	virtual	void estimate(int N_neighbors) = 0;
+	virtual void estimate(double radius_neighbors,bool force_use_previous = false) = 0; 
+	virtual	void estimate(int N_neighbors,bool force_use_previous = false) = 0;
 
 
 	static arma::vec compute_distances_to_center(const arma::vec & center , const PointCloud<U> & pc);

@@ -41,9 +41,7 @@ public:
 		std::map<int,arma::vec::fixed<3> > & X_pcs,
 		std::map<int,arma::mat::fixed<6,6> > & R_pcs,
 		std::vector<arma::mat::fixed<3,3> > & BN_measured,
-		const std::vector<arma::vec::fixed<3> > & mrps_LN,
-		bool save_connectivity,
-		bool apply_deviation = true);
+		const std::vector<arma::vec::fixed<3> > & mrps_LN);
 
 
 	void set_h(int h);
@@ -86,7 +84,7 @@ protected:
 
 	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index,
 		bool prune_overlaps = true) const;
-	void save_connectivity() const;
+	void save_local_bundle() const;
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair,
@@ -103,7 +101,7 @@ protected:
 	void apply_deviation(const EigVec & deviation);
 
 	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
-		const std::map<int,arma::vec::fixed<3> > & X_pcs,bool apply_deviation = true);
+		const std::map<int,arma::vec::fixed<3> > & X_pcs);
 
 
 	void create_pairs();
