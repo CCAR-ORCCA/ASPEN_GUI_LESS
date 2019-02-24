@@ -1,5 +1,5 @@
 #include "IterativeClosestPointToPlane.hpp"
-#define ICP2P_DEBUG 0
+#define ICP2P_DEBUG 1
 #define RANSAC_DEBUG 1
 #include <chrono>
 

@@ -1409,6 +1409,7 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	// (M_pc_iod,X_pc_iod) or (M_pc,X_pc) yields the best pairs
 
 	// Previous rigid transform
+	std::cout << "running icp prealign\n";
 	IterativeClosestPointToPlane icp_pc_prealign(this -> destination_pc, this -> source_pc);
 	icp_pc_prealign.compute_pairs(4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	
