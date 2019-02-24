@@ -709,6 +709,10 @@ void BundleAdjuster::create_local_bundle(){
 
 
 	new_structure_pc.build_kdtree(false);
+	std::cout << "testing kdtree query\n";
+	int p = new_structure_pc -> get_closest_point(arma::vec::fixed<3,3>({1,2,3}));
+
+	std::cout << p << std::endl;
 
 	this -> local_bundles.push_back(new_structure_pc);
 
