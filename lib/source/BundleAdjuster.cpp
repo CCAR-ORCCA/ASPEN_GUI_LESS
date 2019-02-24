@@ -112,7 +112,7 @@ void BundleAdjuster::run(
 
 		for (int j = 0; j < last_pc -> size(); ++j){
 
-			if (last_pc -> get_point(j).get_point_coordinates().n_rows != ){
+			if (last_pc -> get_point(j).get_point_coordinates().n_rows != 3){
 				throw(std::runtime_error("Point " + std::to_string(j) + " in new_structure_pc is fishy"));
 			}
 		}
