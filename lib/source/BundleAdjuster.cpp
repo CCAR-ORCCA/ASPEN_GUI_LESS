@@ -90,10 +90,25 @@ void BundleAdjuster::run(
 	this -> remove_edges_from_graph();
 
 	if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+		
 		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
 		std::cout << "- Saving local structure ... " << std::endl;
-		this -> save_local_bundle();
+		
+		this -> create_local_bundle();
+		this -> previous_anchor_pc_index = this -> anchor_pc_index;
 		this -> anchor_pc_index = this -> next_anchor_pc_index;
+
+		PointCloudIO<PointNormal>::save_to_obj(
+			this -> local_bundles.back(),
+			this -> dir + "/local_bundle_" + std::to_string(this -> next_anchor_pc_index) + ".obj",
+			this -> LN_t0 -> t(), 
+			*this -> x_t0);
+
+		// The new anchor pc is effectively replaced by the new local structure
+		*this -> all_registered_pc -> at(this -> anchor_pc_index) = this -> local_bundles.back();
+
+
+
 	}
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
@@ -121,7 +136,6 @@ void BundleAdjuster::solve_bundle_adjustment(
 		EigVec Nmat(6 * (Q - 1)); 
 		Nmat.setZero();
 		SpMat Lambda(6 * (Q - 1), 6 * (Q - 1));
-		
 		
 		std::vector<arma::mat> Lambda_k_vector;
 		std::vector<arma::vec> N_k_vector;
@@ -669,18 +683,6 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 		M_pcs[i] = NS_bar * M_pcs[i];
 		X_pcs[i] = NS_bar * X_pcs[i] + x;
 
-		// Not using the bundle adjuster covariances
-
-		// const auto & m = this -> Pdense.block<6,6>(x_index,x_index);
-
-		// arma::mat::fixed<6,6> R;
-		// for (int k = 0; k < 6; ++k){
-		// 	for (int p = 0; p < 6; ++p){
-		// 		R(k,p) = m(k,p);
-		// 	}
-		// }
-
-		// R_pcs[i] = R;
 
 		// The small body attitude is fixed
 		// M_pc(k) is [LB](t_0) * [BL](t_k) = [LN](t_0)[NB](t_0) * [BN](t_k) * [NL](t_k);
@@ -690,10 +692,9 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 	}
 
-
 }
 
-void BundleAdjuster::save_local_bundle() const{
+void BundleAdjuster::create_local_bundle(){
 
 
 	PointCloud<PointNormal> new_structure_pc;
@@ -706,11 +707,8 @@ void BundleAdjuster::save_local_bundle() const{
 		
 	}
 
-	PointCloudIO<PointNormal>::save_to_obj(
-		new_structure_pc,
-		this -> dir + "/local_bundle_" + std::to_string(this -> next_anchor_pc_index) + ".obj",
-		this -> LN_t0 -> t(), 
-		*this -> x_t0);
+
+	this -> local_bundles.push_back(new_structure_pc);
 
 }
 
@@ -744,18 +742,46 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 		// if they are more than 90 degrees apart
 		std::set<int> current_pc_pair = {pc_global_index,other_pc_index};
 
-		// We need the [BL] dcms
+		// We need the [BL] dcms to transform the line of sights into the body-fixed frame
 		arma::vec::fixed<3> los_pc_global_index = {1,0,0};
 		arma::vec::fixed<3> los_other_pc_index = {1,0,0};
 
 
-		arma::mat::fixed<3,3> LB_pc_global_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(pc_global_index)) * BN_measured_ptr -> at(pc_global_index).t();
-		arma::mat::fixed<3,3> LB_pc_other_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(other_pc_index)) * BN_measured_ptr -> at(other_pc_index).t();
-		
-		los_pc_global_index = LB_pc_global_index.t() * los_pc_global_index;
-		los_other_pc_index = LB_pc_other_index.t() * los_other_pc_index;
+		// Some point cloud indices may actually be pointing at a point cloud bundle
+		// We must loop over each point cloud in the bundle to see if one makes sense or not
+		double angle = std::numeric_limits<double>::infinity();
 
-		double angle = std::acos(arma::dot(los_pc_global_index,los_other_pc_index) ) * 180./arma::datum::pi;
+
+		if (other_pc_index == this -> anchor_pc_index){
+			// The other pc index points at a point cloud bundle. It is necessary
+			// to compare the los associated with pc_global_index to the los associated 
+			// to each of the bundle's point clouds
+			std::cout << " Checking " << other_pc_index << " since it concludes a bundle\n" << std::endl;
+
+			for (int k = this -> previous_anchor_pc_index; k <= this -> anchor_pc_index ; ++k ){
+
+				arma::mat::fixed<3,3> LB_pc_global_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(pc_global_index)) * BN_measured_ptr -> at(pc_global_index).t();
+				arma::mat::fixed<3,3> LB_pc_k = RBK::mrp_to_dcm(mrp_LN_ptr -> at(k)) * BN_measured_ptr -> at(k).t();
+
+				angle = std::min(std::acos(arma::dot(LB_pc_global_index.t() * los_pc_global_index,
+					LB_pc_k.t() * los_other_pc_index) ) * 180./arma::datum::pi,angle);
+				std::cout << "\t Angle == " << angle << " for pc # " << k <<  " in bundle \n" << std::endl;
+
+			}
+
+		}
+		else{
+
+			arma::mat::fixed<3,3> LB_pc_global_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(pc_global_index)) * BN_measured_ptr -> at(pc_global_index).t();
+			arma::mat::fixed<3,3> LB_pc_other_index = RBK::mrp_to_dcm(mrp_LN_ptr -> at(other_pc_index)) * BN_measured_ptr -> at(other_pc_index).t();
+
+			angle = std::acos(arma::dot(LB_pc_global_index.t() * los_pc_global_index,
+				LB_pc_other_index.t() * los_other_pc_index) ) * 180./arma::datum::pi;
+
+		}
+
+
+
 
 		if (angle > 90){
 			std::cout << " Skipping ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
@@ -804,7 +830,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 bool BundleAdjuster::update_overlap_graph(){
 
 	if (!this -> graph.vertexexists(0)){
-		std::cout << "\t Inserting point cloud #0 in graph\n";
+		std::cout << "\t Inserting anchor point cloud # 0  in graph\n";
 		this -> graph.addvertex(0);
 	}
 
@@ -816,7 +842,6 @@ bool BundleAdjuster::update_overlap_graph(){
 	auto overlap = this -> find_overlap_with_pc(new_pc_index,this -> anchor_pc_index,new_pc_index - 1,false);
 	int max_closure_length = -1;
 
-	
 	for (auto it = overlap.begin(); it != overlap.end(); ++it){
 		this -> graph.addedge(new_pc_index,it -> second,it -> first);
 
@@ -830,7 +855,6 @@ bool BundleAdjuster::update_overlap_graph(){
 			this -> next_anchor_pc_index = new_pc_index;
 			std::cout << "\t Found closure with anchor index\n";
 		}
-
 
 	}
 
@@ -855,9 +879,7 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 	for (auto & edge_to_remove : this -> edges_to_remove){
 		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ") based on residuals\n";
-
 		this -> graph.removeedge(*edge_to_remove.begin(),*(--edge_to_remove.end()));
-
 	}
 
 	// The graph is cleaned up by keeping up to N at each node
@@ -912,8 +934,6 @@ void BundleAdjuster::remove_edges_from_graph(){
 			clusters.push_back(cluster);
 		}
 		
-
-
 		#if BUNDLE_ADJUSTER_DEBUG
 		std::cout << "\tFor pc # " << i << ", formed clusters: \n";
 		for (int k = 0; k < clusters.size(); ++k){
@@ -955,9 +975,7 @@ void BundleAdjuster::remove_edges_from_graph(){
 					std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
 					this -> graph.removeedge(i,*cluster_to_process_it);
 				}
-
 				++cluster_to_process_it;
-
 			}
 
 		}
