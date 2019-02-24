@@ -14,27 +14,27 @@
 
 template <template<class> class ContainerType, class PointType>
 KDTree<ContainerType,PointType>::KDTree(ContainerType<PointType> * owner) {
-this -> owner = owner;
+	this -> owner = owner;
 }
 
 template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::set_depth(int depth) {
-this -> depth = depth;
+	this -> depth = depth;
 }
 
 template <template<class> class ContainerType, class PointType>
 double KDTree<ContainerType,PointType>::get_value() const {
-return this -> value;
+	return this -> value;
 }
 
 template <template<class> class ContainerType, class PointType>
 unsigned int KDTree<ContainerType,PointType>::get_axis() const {
-return this -> axis;
+	return this -> axis;
 }
 
 template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::set_value(double value) {
-this -> value = value;
+	this -> value = value;
 }
 template <template<class> class ContainerType, class PointType> void KDTree<ContainerType,PointType>::set_axis(unsigned int axis) {
 this -> axis = axis;
@@ -43,9 +43,9 @@ this -> axis = axis;
 
 template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & test_point,
-const std::shared_ptr<KDTree> & node,
-int & best_guess_index,
-double & distance) const {
+	const std::shared_ptr<KDTree> & node,
+	int & best_guess_index,
+	double & distance) const {
 
 	// If the left child of this node is nullptr, so is the right
 	// and we have a leaf node
@@ -419,17 +419,13 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 
 template <template<class> class ContainerType, class PointType>
 unsigned int KDTree<ContainerType,PointType>::size() const {
-return static_cast<int>(this -> indices.size());
+	return static_cast<int>(this -> indices.size());
 }
 
 
 template <>
 double KDTree<PointCloud,PointNormal>::distance(const PointNormal & point_in_pc,
 	const arma::vec & point) const{
-
-	assert(point.n_rows == 3);
-	assert(point_in_pc.get_point_coordinates().n_rows == 3);
-
 
 	return arma::norm(point - point_in_pc.get_point_coordinates());
 
@@ -460,6 +456,15 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	double & distance) const{
 
 	for (int i = 0; i < node -> indices.size(); ++i){
+
+
+		if (this -> owner -> get_point(node -> indices[i]).n_rows == 0){
+
+			std::cout << node -> indices[i] << std::endl;
+			throw(std::runtime_error( "found culprit\n"));
+			
+		}
+
 		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
 		if (new_distance < distance) {
 			distance = new_distance;

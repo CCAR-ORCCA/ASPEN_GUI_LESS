@@ -708,6 +708,8 @@ void BundleAdjuster::create_local_bundle(){
 	}
 
 	new_structure_pc.build_kdtree(true);
+
+	std::cout << "\t created local structure with " << new_structure_pc.size() << " points\n";
 	
 	this -> local_bundles.push_back(new_structure_pc);
 
