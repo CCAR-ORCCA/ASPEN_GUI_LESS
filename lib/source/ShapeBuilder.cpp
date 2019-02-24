@@ -187,8 +187,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-				std::cout << "this -> destination_pc pointer in bundle adjuster: " << this -> destination_pc -> back() << std::endl;
-				std::cout << " this -> source_pc pointer in ShapeBuilder: " << this -> source_pc -> back() << std::endl;
+				std::cout << "this -> destination_pc pointer in bundle adjuster: " << this -> destination_pc  << std::endl;
+				std::cout << " this -> source_pc pointer in ShapeBuilder: " << this -> source_pc  << std::endl;
 
 
 
