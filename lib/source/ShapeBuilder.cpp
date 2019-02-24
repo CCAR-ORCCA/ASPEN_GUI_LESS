@@ -1059,13 +1059,14 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 			arma::vec::fixed<3> los = {1,0,0};
 
+			std::cout << "estimating normals of source ...\n";
 			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
 			estimate_normals.set_los_dir(los);
 			estimate_normals.estimate(6);
+			std::cout << "done estimating normals of source ...\n";
+
 
 			#if IOFLAGS_shape_builder
-			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index - 1) + ".obj",
-				this -> LN_t0.t(),this -> x_t0);
 			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
 				this -> LN_t0.t(),this -> x_t0);
 			#endif
