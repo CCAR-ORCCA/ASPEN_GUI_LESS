@@ -707,7 +707,6 @@ void BundleAdjuster::create_local_bundle(){
 		
 	}
 
-
 	new_structure_pc.build_kdtree(true);
 	
 	this -> local_bundles.push_back(new_structure_pc);
