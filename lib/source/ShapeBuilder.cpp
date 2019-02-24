@@ -171,10 +171,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					}
 				}
 
-				for (int j = 0; j <this ->  destination_pc -> size(); ++j){
+				for (int j = 0; j < this ->  destination_pc -> size(); ++j){
 
 					if (this -> destination_pc -> get_point(j).get_point_coordinates().n_rows != 3){
-						throw(std::runtime_error("Point " + std::to_string(j) + " in source_pc is fishy"));
+						throw(std::runtime_error("Point " + std::to_string(j) + " in destination_pc is fishy"));
 					}
 				}
 
@@ -1074,6 +1074,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 			// The source and destination point clouds are combined into the new source point cloud
 
 			this -> destination_pc = this -> source_pc;
+
 
 
 			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
