@@ -163,6 +163,29 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << "getting best a-priori rigid transform\n";
 
 
+
+				for (int j = 0; j < this -> source_pc -> size(); ++j){
+
+					if (this -> source_pc -> get_point(j).get_point_coordinates().n_rows != 3){
+						throw(std::runtime_error("Point " + std::to_string(j) + " in source_pc is fishy"));
+					}
+				}
+
+				for (int j = 0; j <this ->  destination_pc -> size(); ++j){
+
+					if (this -> destination_pc -> get_point(j).get_point_coordinates().n_rows != 3){
+						throw(std::runtime_error("Point " + std::to_string(j) + " in source_pc is fishy"));
+					}
+				}
+
+
+
+
+
+
+
+
+
 				this -> get_best_a_priori_rigid_transform(
 					M_pc_a_priori,
 					X_pc_a_priori,
