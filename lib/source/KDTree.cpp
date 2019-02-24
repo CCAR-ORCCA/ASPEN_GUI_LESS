@@ -458,7 +458,7 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	for (int i = 0; i < node -> indices.size(); ++i){
 
 
-		if (this -> owner -> get_point(node -> indices[i]).n_rows == 0){
+		if (this -> owner -> get_point(node -> indices[i]).get_point_coordinates().n_rows != 3){
 
 			std::cout << node -> indices[i] << std::endl;
 			throw(std::runtime_error( "found culprit\n"));
