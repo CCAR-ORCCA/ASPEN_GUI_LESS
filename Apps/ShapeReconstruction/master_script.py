@@ -66,7 +66,7 @@ def run_sim(data,quiet = True):
 
             print("Case " + data["INPUT_DIR"].split("/")[-1] + " has already finished running. skipping case ...")
 
-def start_sims(n_pools = 1)
+def start_sims(n_pools = 1):
 
     base_dictionnary = {
     "CR_TRUTH" : 1.2,
