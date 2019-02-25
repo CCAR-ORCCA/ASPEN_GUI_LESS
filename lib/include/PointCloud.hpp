@@ -119,9 +119,9 @@ public:
 
 
 	/**
-	Empties the point cloud and associated kd tree
+	Empties the point cloud 
 	*/
-	void clear(){this -> points.clear(); delete this -> kdt;}
+	void clear(){this -> points.clear();}
 
 
 protected:
