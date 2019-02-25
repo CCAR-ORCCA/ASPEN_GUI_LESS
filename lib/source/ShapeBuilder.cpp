@@ -1210,8 +1210,10 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 	int N = this -> all_registered_pc.size();
 	int N_p = 0;
 	for (int i = 0; i < N; ++i){	
-		center += this -> all_registered_pc[i] -> size() * EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]) ; 
-		N_p += this -> all_registered_pc[i] -> size();
+		if (this -> all_registered_pc[i] -> size() > 0){
+			center += this -> all_registered_pc[i] -> size() * EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]) ; 
+			N_p += this -> all_registered_pc[i] -> size();
+		}
 	}
 	return center / N_p;
 }
