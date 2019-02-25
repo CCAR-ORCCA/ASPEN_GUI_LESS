@@ -50,7 +50,8 @@
 
 ///////////////////////////////////////////
 
-int main() {
+int main(int argc, char **argv) {
+
 
 	auto start = std::chrono::system_clock::now();
 
@@ -59,9 +60,17 @@ int main() {
 	arma::arma_rng::set_seed(0);
 
 	// Loading input data from json file
-	std::ifstream i("input_file.json");
 	nlohmann::json input_data;
-	i >> input_data;
+
+	if (argc == 1){
+		std::ifstream i("input_file.json");
+		i >> input_data;
+	}
+	else{
+		std::ifstream i(argv[1]);
+		i >> input_data;
+	}
+
 
 	// Fetching input data 
 	double SMA = input_data["SMA"];
@@ -82,7 +91,7 @@ int main() {
 	double LOS_NOISE_SD_BASELINE = input_data["LOS_NOISE_SD_BASELINE"];
 	double CR_TRUTH = input_data["CR_TRUTH"];
 	double TF = double(input_data["TF"]) * 3600;
-		
+
 	bool USE_HARMONICS = input_data["USE_HARMONICS"];
 	int HARMONICS_DEGREE = input_data["HARMONICS_DEGREE"];	
 	int NUMBER_OF_EDGES = input_data["NUMBER_OF_EDGES"];

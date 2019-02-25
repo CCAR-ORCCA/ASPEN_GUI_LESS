@@ -7,7 +7,7 @@ import platform
 import sys
 import itertools
 import time
-
+from multiprocessing import Pool
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location,sim_name):
        
@@ -26,6 +26,45 @@ if (platform.system() == 'Linux'):
     base_location = "/orc_raid/bebe0705/"
 else:
     base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+
+def run_sim(data,quiet = True):
+
+    if not quiet:
+        print("\t Case " + data["INPUT_DIR"].split("/")[-1])
+        print("\t - Making directory")
+
+    os.system("mkdir " + data["INPUT_DIR"])
+    os.system("mkdir " + data["OUTPUT_DIR"])
+
+    if (os.path.isfile(data["OUTPUT_DIR"] + "/fit_shape.obj") is False):
+
+        if not quiet:
+            print("\t - Copying input file in build/")
+
+        with open('input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
+
+        if not quiet:    
+            print("\t - Saving input file in input/ and output/")
+        
+        with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
+        with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
+
+        if not quiet:
+            print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+
+        if not quiet:
+
+            os.system("./ShapeReconstruction " + data["OUTPUT_DIR"] + '/input_file.json' + " 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+        else:
+            os.system("./ShapeReconstruction " + data["OUTPUT_DIR"] + "/input_file.json  >> " + data["OUTPUT_DIR"] + "/log.txt 2>&1" )
+    
+    else:
+        if not quiet:
+
+            print("Case " + data["INPUT_DIR"].split("/")[-1] + " has already finished running. skipping case ...")
 
 
 base_dictionnary = {
@@ -72,38 +111,18 @@ all_cases_dictionnary = {
 "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
 }
 
-
 all_data = generate_all_cases_dictionnary_list(base_dictionnary,
     all_cases_dictionnary,base_location,"thesis_fast_slam")
 
 
+p = Pool(10)
+p.map(run_sim, all_data)
 
-for data in all_data:
+# for data in all_data:
 
-    print("\t Case " + data["INPUT_DIR"].split("/")[-1])
-    print("\t - Making directory")
 
-    os.system("mkdir " + data["INPUT_DIR"])
-    os.system("mkdir " + data["OUTPUT_DIR"])
 
-    if (os.path.isfile(data["OUTPUT_DIR"] + "/fit_shape.obj") is False):
-
-        print("\t - Copying input file in build/")
-
-        with open('input_file.json', 'w') as outfile:
-            json.dump(data, outfile)
-
-        print("\t - Saving input file in input/ and output/")
-        with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-            json.dump(data, outfile)
-        with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-            json.dump(data, outfile)
-
-        print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
-
-        os.system("./ShapeReconstruction 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
-    else:
-        print("Case " + data["INPUT_DIR"].split("/")[-1] + " has already finished running. skipping case ...")
+#     run_sim(data)
 
 
 
