@@ -232,9 +232,9 @@ void BundleAdjuster::solve_bundle_adjustment(
 
 		// The covariances are extracted
 
-		std::cout << "\n- Extracting the covariances" << std::endl;
+		// std::cout << "\n- Extracting the covariances" << std::endl;
 
-		this -> Pdense = Lambda_dense.inverse();
+		// this -> Pdense = Lambda_dense.inverse();
 
 	}
 
@@ -883,7 +883,7 @@ bool BundleAdjuster::update_overlap_graph(){
 		max_closure_length = std::max(max_closure_length,std::abs(new_pc_index - it -> second));
 
 
-		if (it -> second == this -> anchor_pc_index && max_closure_length > this -> cluster_size){
+		if (this -> overlap_with_anchor_cluster_from_outside(new_pc_index,it -> second)){
 			
 			// We have full loop closure. new_pc_index will define the new anchor index
 			// after ba has been run
@@ -1031,6 +1031,20 @@ std::shared_ptr<PointCloud < PointNormal > > BundleAdjuster::get_anchor_pc() con
 	return this -> all_registered_pc -> at(this -> anchor_pc_index);
 }
 
+
+bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,int pc_maybe_in_anchor_cluster) const{
+
+
+	if (std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size && std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size){
+		return true;
+	}
+	else{
+		return false;
+	}
+
+
+
+}
 
 
 
