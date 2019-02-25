@@ -213,11 +213,11 @@ void BundleAdjuster::solve_bundle_adjustment(
 		// Sparsity in information matrix
 		std::cout << "- Lambda is filled at " << double(Lambda.nonZeros()) / (6 * (Q - 1) * 6 * (Q - 1)) * 100  <<  " %\n";
 
-		// The cholesky decomposition of Lambda is computed
-		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
+		// Switching to dense
+		MatrixXd Lambda_dense(Lambda);
 
 		// The deviation is computed
-		EigVec deviation = chol.solve(Nmat);    
+		EigVec deviation = Lambda_dense.colPivHouseholderQr().solve(Nmat);    
 
 		// It is applied to all of the point clouds (minus the first one)
 		std::cout << "\n- Applying the deviation" << std::endl;
