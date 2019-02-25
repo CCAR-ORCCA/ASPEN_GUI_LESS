@@ -211,7 +211,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 		
 
 		// Sparsity in information matrix
-		std::cout << "- Lambda is filled at " << Lambda.nonZeros() / (6 * (Q - 1) * 6 * (Q - 1)) * 100  <<  " %\n";
+		std::cout << "- Lambda is filled at " << double(Lambda.nonZeros()) / (6 * (Q - 1) * 6 * (Q - 1)) * 100  <<  " %\n";
 
 		// The cholesky decomposition of Lambda is computed
 		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
