@@ -529,6 +529,12 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		if ((errors(k) - mean_error)/stdev_error > 2){
 			if (std::abs(this -> point_cloud_pairs[k].D_k - this -> point_cloud_pairs[k].S_k) != 1){
+
+				if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+					std::cout << "-- Cancelling creation of local structure since a bad edge was present\n";
+					this -> next_anchor_pc_index = this -> anchor_pc_index;
+				}
+				
 				std::set<int> edge_to_remove;
 				edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
 				edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
@@ -616,10 +622,6 @@ void BundleAdjuster::apply_deviation(const EigVec & deviation){
 		
 		int x_index = 6 * (i - 1 - this -> anchor_pc_index);
 		int mrp_index = x_index + 3 ;
-
-		std::cout << "x_index = " << x_index << std::endl;
-		std::cout << "deviation.size() = " << deviation.size() << std::endl;
-
 
 		std::cout << "\t\t pc # " << i << arma::vec::fixed<6>({
 			deviation(x_index),
@@ -903,7 +905,10 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 	for (auto & edge_to_remove : this -> edges_to_remove){
 		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ") based on residuals\n";
+
+		
 		this -> graph.removeedge(*edge_to_remove.begin(),*(--edge_to_remove.end()));
+
 	}
 
 	// The graph is cleaned up by keeping up to N at each node
