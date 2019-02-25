@@ -106,7 +106,7 @@ protected:
 
 	void create_pairs();
 
-	void update_point_cloud_pairs();
+	void update_point_cloud_pairs(bool last_iter);
 	void update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 
 		std::map<int,arma::vec::fixed<3> > & X_pcs,
 		std::map<int,arma::mat::fixed<6,6> > & R_pcs,

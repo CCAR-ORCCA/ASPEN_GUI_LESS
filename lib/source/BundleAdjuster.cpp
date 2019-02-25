@@ -144,7 +144,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 	std::cout << "\t Number of considered point clouds (Q): " << Q << std::endl;
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
-	this -> update_point_cloud_pairs();
+	this -> update_point_cloud_pairs(false);
 
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
@@ -223,7 +223,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 
 		// The point cloud pairs are updated: their residuals are updated
 		// and the rigid transforms positioning them are also updated
-		this -> update_point_cloud_pairs();
+		this -> update_point_cloud_pairs(int(this -> N_iter) - 1 == iter );
 		
 
 		// The covariances are extracted
@@ -421,7 +421,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 }
 
-void BundleAdjuster::update_point_cloud_pairs(){
+void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	double max_error = -1;
 	int worst_Sk,worst_Dk;
@@ -529,7 +529,7 @@ void BundleAdjuster::update_point_cloud_pairs(){
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		if ((errors(k) - mean_error)/stdev_error > 2){
 
-			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index && last_iter){
 				std::cout << "-- Cancelling creation of local structure since a bad edge was present\n";
 				this -> next_anchor_pc_index = this -> anchor_pc_index;
 			}
