@@ -528,13 +528,15 @@ void BundleAdjuster::update_point_cloud_pairs(){
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		if ((errors(k) - mean_error)/stdev_error > 2){
+
+			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+				std::cout << "-- Cancelling creation of local structure since a bad edge was present\n";
+				this -> next_anchor_pc_index = this -> anchor_pc_index;
+			}
 			if (std::abs(this -> point_cloud_pairs[k].D_k - this -> point_cloud_pairs[k].S_k) != 1){
 
-				if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
-					std::cout << "-- Cancelling creation of local structure since a bad edge was present\n";
-					this -> next_anchor_pc_index = this -> anchor_pc_index;
-				}
 				
+
 				std::set<int> edge_to_remove;
 				edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
 				edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
