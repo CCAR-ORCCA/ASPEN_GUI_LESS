@@ -717,15 +717,13 @@ void BundleAdjuster::save_local_bundle(){
 
 	PointCloud<PointNormal> new_structure_pc;
 	
-	for (int k = this -> anchor_pc_index; k <= this -> next_anchor_pc_index; ++k){
+	for (int k = this -> anchor_pc_index + 1; k <= this -> next_anchor_pc_index; ++k){
 		
 		for (int j = 0; j <  this -> all_registered_pc -> at(k) -> size(); ++j){
 			new_structure_pc.push_back( this -> all_registered_pc -> at(k) -> get_point(j));
 		}
 		
 	}
-
-	new_structure_pc.build_kdtree(true);
 
 	PointCloudIO<PointNormal>::save_to_obj(
 		new_structure_pc,
