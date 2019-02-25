@@ -234,7 +234,6 @@ void BundleAdjuster::solve_bundle_adjustment(
 
 		std::cout << "\n- Extracting the covariances" << std::endl;
 
-		MatrixXd Lambda_dense(Lambda);
 		this -> Pdense = Lambda_dense.inverse();
 
 	}
