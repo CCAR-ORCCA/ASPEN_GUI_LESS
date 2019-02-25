@@ -118,7 +118,10 @@ public:
 	bool check_if_point_valid(int i) const;
 
 
-
+	/**
+	Empties the point cloud
+	*/
+	void clear(){this -> points.clear();}
 
 
 protected:

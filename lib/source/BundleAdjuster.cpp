@@ -105,9 +105,15 @@ void BundleAdjuster::run(
 			*this -> x_t0);
 
 		// The new anchor pc is effectively replaced by the new local structure
-		std::cout << "last pointer in bundle adjuster: " << this -> all_registered_pc -> back() << std::endl;
-		*this -> all_registered_pc -> back() = this -> local_bundles.back();
+		
+		auto destination_pc = this -> all_registered_pc -> back();
+		destination_pc -> clear();
 
+		for (int j = 0; j < this -> local_bundles.back().size(); ++j){
+			destination_pc -> push_back(this -> local_bundles.back().get_point(j));
+		}
+
+		destination_pc -> build_kdtree(false);
 
 		
 
