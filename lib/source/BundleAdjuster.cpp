@@ -209,6 +209,10 @@ void BundleAdjuster::solve_bundle_adjustment(
 		// The deviation in all of the rigid transforms is computed
 		Lambda.setFromTriplets(coefficients.begin(), coefficients.end());
 		
+
+		// Sparsity in information matrix
+		std::cout << "- Lambda is filled at " << Lambda.nonZeros() / (6 * (Q - 1) * 6 * (Q - 1)) * 100  <<  " %\n";
+
 		// The cholesky decomposition of Lambda is computed
 		Eigen::SimplicialCholesky<SpMat> chol(Lambda);  
 
