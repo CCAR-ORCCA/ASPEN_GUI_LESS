@@ -79,7 +79,7 @@ public:
 protected:
 
 	void remove_edges_from_graph();
-	
+
 
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
@@ -104,6 +104,9 @@ protected:
 
 	void solve_bundle_adjustment(const std::map<int,arma::mat::fixed<3,3> > & M_pcs,
 		const std::map<int,arma::vec::fixed<3> > & X_pcs);
+
+	bool overlap_with_anchor_cluster_from_outside(int new_pc_index,int pc_maybe_in_anchor_cluster) const;
+
 
 
 	void create_pairs();
