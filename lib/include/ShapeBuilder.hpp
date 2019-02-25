@@ -189,8 +189,7 @@ protected:
 	arma::vec::fixed<3> get_center_collected_pcs() const;
 
 
-	void estimate_coverage(
-		std::string dir,PointCloud<PointNormal> * pc  = nullptr) ;
+	void estimate_coverage(std::shared_ptr<PointCloud < PointNormal > > anchor_pc) ;
 
 
 	/**

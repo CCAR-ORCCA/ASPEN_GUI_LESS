@@ -530,9 +530,13 @@ void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		if ((errors(k) - mean_error)/stdev_error > 2){
 
 			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index && last_iter){
-				std::cout << "-- Cancelling creation of local structure since a bad edge was present\n";
-				this -> next_anchor_pc_index = this -> anchor_pc_index;
+
+				if (this -> point_cloud_pairs[k].D_k <= this -> next_anchor_pc_index){
+					std::cout << "-- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
+					this -> next_anchor_pc_index = this -> anchor_pc_index;
+				}
 			}
+
 			if (std::abs(this -> point_cloud_pairs[k].D_k - this -> point_cloud_pairs[k].S_k) != 1){
 
 				
@@ -1020,7 +1024,9 @@ void BundleAdjuster::set_h(int h){
 }
 
 
-
+std::shared_ptr<PointCloud < PointNormal > > BundleAdjuster::get_anchor_pc() const{
+	return this -> all_registered_pc -> at(this -> anchor_pc_index);
+}
 
 
 

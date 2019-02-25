@@ -73,11 +73,13 @@ public:
 
 	void set_origin_shift(arma::vec::fixed<3> new_origin_shift){this -> shift_origin = new_origin_shift;}
 
+	std::shared_ptr<PointCloud < PointNormal > > get_anchor_pc() const;
+
 
 protected:
 
 	void remove_edges_from_graph();
-		
+	
 
 	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;

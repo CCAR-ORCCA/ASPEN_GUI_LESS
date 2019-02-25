@@ -292,7 +292,8 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			// Should define extrapolated location of target of interest at the next timestep
 				// right here
 
-			this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_");
+			this -> estimate_coverage(ba_test.get_anchor_pc());
+			
 			
 			if (time_index <= times.n_rows - 2){
 				arma::vec::fixed<3> r_extrapolated_next_time = (
@@ -424,14 +425,13 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					M_pcs_true,
 					R_pcs);
 
-				std::cout << " -- Estimating coverage ...\n";
-				PointCloud<PointNormal> global_pc;
-				this -> estimate_coverage(dir +"/"+ std::to_string(time_index) + "_",&global_pc);
+				std::cout << " -- Estimating final coverage ...\n";
+				this -> estimate_coverage(ba_test.get_anchor_pc());
 
 				std::cout << " -- Making PSR a-priori ...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 
-				ShapeBuilder::run_psr(&global_pc,dir,psr_shape,this -> filter_arguments);
+				ShapeBuilder::run_psr(ba_test.get_anchor_pc().get(),dir,psr_shape,this -> filter_arguments);
 				psr_shape.construct_kd_tree_shape();
 
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
@@ -464,7 +464,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
 
 				ShapeFitterBezier shape_fitter(&psr_shape,
-					this -> estimated_shape_model.get(),&global_pc); 
+					this -> estimated_shape_model.get(),ba_test.get_anchor_pc().get()); 
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 				this -> estimated_shape_model -> update_mass_properties();	
@@ -1221,81 +1221,30 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 
 
 
-void ShapeBuilder::estimate_coverage(std::string dir,PointCloud<PointNormal> * pc){
+void ShapeBuilder::estimate_coverage(std::shared_ptr<PointCloud < PointNormal > > anchor_pc){
 
-	std::cout << "\n-- Fetching points ...\n";
-
-	// A PC is formed with all the registered point clouds
-	PointCloud<PointNormal> global_pc;
-	std::vector<int> last_pc_indices;
-
-	for (int i = 0; i < this -> all_registered_pc.size(); ++i){
-		for (int j = 0; j <  this -> all_registered_pc[i] -> size(); ++j){
-			if (j == int(this -> all_registered_pc[i] -> size()) - 1){
-				last_pc_indices.push_back(global_pc.size());
-			}
-			global_pc.push_back( this -> all_registered_pc[i] -> get_point(j));
-
-		}
-	}
-
-	std::cout << "\n-- Number of points in global pc: " << global_pc.size() << std::endl;
-	std::cout << "\n-- Building KD-tree ..." << std::endl;
-
+	std::cout << "\n-- Number of points in anchor pc: " << anchor_pc -> size() << std::endl;
 
 	auto start = std::chrono::system_clock::now();
-
-	// The KD tree of this pc is built
-	global_pc.build_kdtree(false);
-
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end-start;
-
-	std::cout << "\n-- Done building KD-tree in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-
-	// The normals are NOT re-estimated. they come from the concatenated point clouds
-
-	start = std::chrono::system_clock::now();
-
-	arma::uvec S(global_pc.size());
 	
 	std::cout << "\n-- Computing coverage ..."<< std::endl;
-
-	#pragma omp parallel for 
-	for (int i = 0; i < global_pc.size(); ++i){
+	int unsatisfying_points_count = 0;
+	#pragma omp parallel for reduction(+:unsatisfying_points_count)
+	for (int i = 0; i < anchor_pc -> size(); ++i){
 
 		// The closest neighbors are extracted
 		// std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),3);
-		std::vector<int> closest_points = global_pc.get_nearest_neighbors_radius(global_pc.get_point_coordinates(i),1.);
 
-		S(i) = closest_points.size();
+		if (anchor_pc -> get_nearest_neighbors_radius(anchor_pc -> get_point_coordinates(i),1.).size() <= 3){
+			++unsatisfying_points_count;
+		}
+
 	}
 
-	end = std::chrono::system_clock::now();
-	elapsed_seconds = end-start;
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-	std::cout << "\n-- Finding unsatisfying points ..." << std::endl;
-
-	arma::uvec unsatisfying_points = arma::find(S <= 3);
-	
-	// std::cout << "\n-- Getting POI index ..." << std::endl;
-
-	// int POI_index = last_pc_indices[S.rows(last_pc_indices.front(),last_pc_indices.back()).index_min()];
-	
-	// // std::cout << "\n-- Setting target of interest from POI #..." << POI_index << std::endl;
-	// // TODO: there's probably a NAN in POI_index at some point or something of the like
-	// // this -> target_of_interest_L0_frame = global_pc.get_point_coordinates(POI_index);
-
-	std::cout << "Uniformity score: " << double(S.size() - unsatisfying_points.size())/S.size() * 100 << " %\n";
-	// std::cout << "Point of interest coordinates in L0 frame: " << this -> target_of_interest_L0_frame.t();
-
-	
-	if (pc != nullptr){
-		*pc = global_pc;
-		PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc.obj",this -> LN_t0.t(), this -> x_t0);
-		PointCloudIO<PointNormal>::save_to_obj(global_pc,dir + "coverage_pc_as_is.obj");
-
-	}
+	std::cout << "\n-- Uniformity score: " << double(int(anchor_pc -> size()) - unsatisfying_points_count)/int(anchor_pc -> size()) * 100 << " %\n";
 
 }
 
