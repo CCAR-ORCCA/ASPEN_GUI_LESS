@@ -94,28 +94,38 @@ void BundleAdjuster::run(
 		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
 		std::cout << "- Saving local structure ... " << std::endl;
 		
-		this -> create_local_bundle();
+		this -> save_local_bundle();
 		this -> previous_anchor_pc_index = this -> anchor_pc_index;
 		this -> anchor_pc_index = this -> next_anchor_pc_index;
 
-		PointCloudIO<PointNormal>::save_to_obj(
-			this -> local_bundles.back(),
-			this -> dir + "/local_bundle_" + std::to_string(this -> next_anchor_pc_index) + ".obj",
-			this -> LN_t0 -> t(), 
-			*this -> x_t0);
-
-		// The new anchor pc is effectively replaced by the new local structure
 		
+		// The new anchor pc is effectively replaced by the new local structure
 		auto destination_pc = this -> all_registered_pc -> back();
-		destination_pc -> clear();
-
-		for (int j = 0; j < this -> local_bundles.back().size(); ++j){
-			destination_pc -> push_back(this -> local_bundles.back().get_point(j));
+		for (int j = 0; j < this -> all_registered_pc -> size() ; ++j){
+			if (this -> all_registered_pc -> at(j) != destination_pc){
+				for (int k = 0; k < this -> all_registered_pc -> at(j) -> size(); ++k){
+					destination_pc -> push_back(this -> all_registered_pc -> at(j) -> get_point(k));
+				}
+			}
+			else{
+				std::cout << "not copying destination_pc into itself\n";
+			}
 		}
 
 		destination_pc -> build_kdtree(false);
 
-		
+		// All the other point clouds are deleted, but the length of this -> all_registered_pc 
+		// is left as is for indexing purposed
+		for (int j = 0; j < this -> all_registered_pc -> size() ; ++j){
+
+			if(this -> all_registered_pc -> at(j) == destination_pc){
+				break;
+			}
+			else{
+				this -> all_registered_pc -> at(j) -> clear();
+			}
+
+		}
 
 
 	}
@@ -703,8 +713,7 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 }
 
-void BundleAdjuster::create_local_bundle(){
-
+void BundleAdjuster::save_local_bundle(){
 
 	PointCloud<PointNormal> new_structure_pc;
 	
@@ -716,13 +725,16 @@ void BundleAdjuster::create_local_bundle(){
 		
 	}
 
-
-
 	new_structure_pc.build_kdtree(true);
+
+	PointCloudIO<PointNormal>::save_to_obj(
+		new_structure_pc,
+		this -> dir + "/local_bundle_" + std::to_string(this -> next_anchor_pc_index) + ".obj",
+		this -> LN_t0 -> t(), 
+		*this -> x_t0);
 
 	std::cout << "\t Created local structure with " << new_structure_pc.size() << " points\n";
 	
-	this -> local_bundles.push_back(new_structure_pc);
 
 }
 
@@ -779,7 +791,8 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 				angle = std::min(std::acos(arma::dot(LB_pc_global_index.t() * los_pc_global_index,
 					LB_pc_k.t() * los_other_pc_index) ) * 180./arma::datum::pi,angle);
-				std::cout << "\t Angle == " << angle << " for pc # " << k <<  " in bundle \n" << std::endl;
+				std::cout << "\t Angle == " << std::acos(arma::dot(LB_pc_global_index.t() * los_pc_global_index,
+					LB_pc_k.t() * los_other_pc_index) ) * 180./arma::datum::pi << " for pc # " << k <<  " in bundle \n" << std::endl;
 
 			}
 
@@ -819,7 +832,6 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 				std::cout << "\t ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 
-				std::cout << this -> all_registered_pc -> at(*current_pc_pair.begin()) -> size()  << " / " << this -> all_registered_pc -> at(* (-- current_pc_pair.end())) -> size()<< std::endl;
 				if (prop > 80){
 					overlaps[prop] = other_pc_index;
 					if (prune_overlaps && overlaps.size() > 5){

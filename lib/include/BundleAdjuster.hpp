@@ -84,7 +84,7 @@ protected:
 
 	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index,
 		bool prune_overlaps = true) const;
-	void create_local_bundle();
+	void save_local_bundle();
 
 	void assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		const PointCloudPair & point_cloud_pair,
@@ -139,8 +139,6 @@ protected:
 	std::vector<std::set<int> >edges_to_remove;
 	std::vector<arma::vec::fixed<3> > * mrp_LN_ptr;
 	std::vector<arma::mat::fixed<3,3> > * BN_measured_ptr;
-
-	std::vector<PointCloud<PointNormal > > local_bundles; 
 
 
 };
