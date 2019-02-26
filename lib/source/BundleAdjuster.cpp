@@ -539,7 +539,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	arma::uvec cluster_populations(N_clusters);
 	for (int i = 0; i < N_clusters; ++i){
-		cluster_populations(i) = arma::find(residuals_gaus_ids == (unsigned int)(i)).size();
+		cluster_populations(i) = arma::uvec(arma::find(residuals_gaus_ids == (unsigned int)(i))).size();
 	}
 
 	int most_populated_cluster = cluster_populations.max();
@@ -547,8 +547,8 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	std::cout << "Cluster assignments: (residuals)" << std::endl;
 
-	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-		std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) " \n";
+	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+		std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
 	}
 
 	double stdev_error = arma::stddev(errors);
@@ -560,7 +560,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	this -> edges_to_remove.clear();
 	
-	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
 		if (residuals_gaus_ids(k) == (unsigned int)(smallest_errors_cluster)){
 			// Nothing to do here
