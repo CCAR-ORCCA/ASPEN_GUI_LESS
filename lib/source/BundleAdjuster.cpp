@@ -913,7 +913,6 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 
 	for (auto & edge_to_remove : this -> edges_to_remove){
-		if ()
 		std::cout << "\t Removing edge (" << *edge_to_remove.begin() << "," << *(--edge_to_remove.end()) << ") based on residuals\n";
 
 		
