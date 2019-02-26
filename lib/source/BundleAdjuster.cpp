@@ -76,7 +76,7 @@ void BundleAdjuster::run(
 
 	if (this -> N_iter > 0){
 		this -> create_pairs();
-		
+
 		// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs,X_pcs);
 
@@ -229,6 +229,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 
 		std::cout << "\n- Removing edges from graph \n";
 		this -> remove_edges_from_graph();
+		this -> create_pairs();
 
 		
 		// The covariances are extracted
