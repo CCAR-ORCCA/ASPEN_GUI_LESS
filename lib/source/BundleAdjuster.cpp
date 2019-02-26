@@ -524,53 +524,29 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	}
 
-	arma::gmm_diag model_residuals,model_sizes;
+	if (this -> point_cloud_pairs.size() < 3) return false;
 
-	if (this -> anchor_pc_index == 0){
+	arma::gmm_diag model_residuals;
 
-		model_residuals.learn(errors.t(), 2, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
-		model_sizes.learn(pc_pair_sizes.t(), 2, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
+	model_residuals.learn(errors.t(), 3, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
 
-		model_residuals.means.print("Residuals GMM means: ");
-		arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
-
-		model_sizes.means.print("Number-of-pair GMM means: ");
-		arma::sqrt(model_sizes.dcovs).print("Number-of-pair GMM standard deviations: ");
-
-		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
-		arma::urowvec sizes_gaus_ids = model_sizes.assign( pc_pair_sizes.t(), arma::prob_dist );
-
-		std::cout << "Cluster assignments: (residuals/number of pairs)" << std::endl;
-
-		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-			std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " , " << sizes_gaus_ids(k) << " \n";
-		}
-
-		std::cout << "\n";
-
-	}
-	else{
+	model_residuals.means.print("Residuals GMM means: ");
+	arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
 
 
-		model_residuals.learn(errors.t(), 3, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
-		model_sizes.learn(pc_pair_sizes.t(), 3, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
+	arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
 
-		model_residuals.means.print("Residuals GMM means: ");
-		arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
+	arma::uvec cluster_populations(3);
+	cluster_populations(0) = arma::find(residuals_gaus_ids == 0).size();
+	cluster_populations(1) = arma::find(residuals_gaus_ids == 1).size();
+	cluster_populations(2) = arma::find(residuals_gaus_ids == 2).size();
 
-		model_sizes.means.print("Number-of-pair GMM means: ");
-		arma::sqrt(model_sizes.dcovs).print("Number-of-pair GMM standard deviations: ");
+	int most_populated_cluster = cluster_populations.max();
 
-		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
-		arma::urowvec sizes_gaus_ids = model_sizes.assign( pc_pair_sizes.t(), arma::prob_dist );
+	std::cout << "Cluster assignments: (residuals)" << std::endl;
 
-		std::cout << "Cluster assignments: (residuals/number of pairs)" << std::endl;
-
-		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-			std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " , " << sizes_gaus_ids(k) << " \n";
-		}
-
-
+	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+		std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) " \n";
 	}
 
 	double stdev_error = arma::stddev(errors);
@@ -583,12 +559,14 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	this -> edges_to_remove.clear();
 	
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-		if ((errors(k) - mean_error)/stdev_error > 2){
+		if ((errors(k) - mean_error)/stdev_error > 2 && residuals_gaus_ids(k) != (unsigned int)(most_populated_cluster) ){
+
+			std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
 
 			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index && last_iter){
 
 				if (this -> point_cloud_pairs[k].D_k <= this -> next_anchor_pc_index){
-					std::cout << "-- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
+					std::cout << "--- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
 					this -> next_anchor_pc_index = this -> anchor_pc_index;
 				}
 			}
