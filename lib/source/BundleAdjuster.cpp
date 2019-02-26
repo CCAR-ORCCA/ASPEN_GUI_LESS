@@ -490,12 +490,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		icp.set_pc_source(this -> all_registered_pc -> at(point_cloud_pair.S_k));
 		icp.set_pairs(point_pairs);
 
-		double error = std::abs(icp.compute_residuals(point_pairs,
-			dcm_S ,
-			x_S,
-			{},
-			dcm_D ,
-			x_D));
+		double error = std::abs(icp.compute_residuals(point_pairs,dcm_S ,x_S,{},dcm_D ,x_D));
 
 		errors(k) = error * point_pairs.size();
 		sum_point_pairs_sizes += point_pairs.size();
@@ -521,11 +516,12 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	}
 
-	errors /= sum_point_pairs_sizes;
+	errors /= (sum_point_pairs_sizes / this -> point_cloud_pairs.size());
 
 
 	double stdev_error = arma::stddev(errors);
 	double mean_error = arma::mean(errors);
+	
 	std::cout << "-- Mean error: " << mean_error << std::endl;
 	std::cout << "-- 2 sigma thresholds : [ " << mean_error - 2 *  stdev_error << " , " << mean_error + 2 *  stdev_error << " ] " << std::endl;
 	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
