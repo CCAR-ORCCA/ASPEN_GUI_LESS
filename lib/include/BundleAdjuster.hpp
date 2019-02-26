@@ -109,7 +109,9 @@ protected:
 
 
 
-	void create_pairs();
+	bool can_remove_edge(const std::set<int> & edge_to_remove) ;
+
+	void create_pairs();	
 
 	void update_point_cloud_pairs(bool last_iter);
 	void update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & M_pcs, 

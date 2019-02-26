@@ -540,15 +540,17 @@ void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 				}
 			}
 
-			if (std::abs(this -> point_cloud_pairs[k].D_k - this -> point_cloud_pairs[k].S_k) != 1){
+			std::set<int> edge_to_remove;
+			edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
+			edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
+
+			if (this -> can_remove_edge(edge_to_remove)){
 
 				
-
-				std::set<int> edge_to_remove;
-				edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
-				edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
 				this -> edges_to_remove.push_back(edge_to_remove);
+
 			}
+
 		}
 	}
 
@@ -1006,12 +1008,20 @@ void BundleAdjuster::remove_edges_from_graph(){
 
 
 				if(std::abs(std::max(*cluster_to_process_it,i) - (int(this -> all_registered_pc -> size()) - 1) ) > 3 * this -> cluster_size){
-					std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on receding graph memory\n";
-					this -> graph.removeedge(i,*cluster_to_process_it);
+					
+					if (this ->  can_remove_edge(std::set<int>({i,*cluster_to_process_it}))){
+
+						std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on receding graph memory\n";
+						this -> graph.removeedge(i,*cluster_to_process_it);
+					}
 				}
 				else if (cluster_to_process_it != cluster_to_process.begin()){
-					std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
-					this -> graph.removeedge(i,*cluster_to_process_it);
+					
+					if (this ->  can_remove_edge(std::set<int>({i,*cluster_to_process_it}))){
+
+						std::cout << "\t Removing edge (" << i << "," << *cluster_to_process_it << ") based on clustering\n";
+						this -> graph.removeedge(i,*cluster_to_process_it);
+					}
 				}
 				++cluster_to_process_it;
 			}
@@ -1042,6 +1052,39 @@ bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,i
 		return false;
 	}
 
+
+
+}
+
+bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
+
+
+	int p0 = *edge_to_remove.begin();
+	int p1 = *(--edge_to_remove.end());
+
+
+	auto first_pc_neighbors = this -> graph . getneighbors(p0);
+	auto second_pc_neighbors = this -> graph . getneighbors(p1);
+
+	// Only looking for other neighbors
+	first_pc_neighbors.erase(p1);
+	second_pc_neighbors.erase(p0);
+
+	// Checking connectivity of other neighbors
+	// For the edge to be removable, the neighbors can't all be after or before the considered points
+	// So the two pcs must have at least two neighbors left
+
+	if (first_pc_neighbors.size() < 2 || second_pc_neighbors.size()){
+		return false;
+	}
+
+	// If the two pcs have at least two neighbors, we need to check if one pc's neighbors are "around" it
+
+	bool p0_surrounded = (first_pc_neighbors.lower_bound(p0) != first_pc_neighbors.end()) && (first_pc_neighbors.upper_bound(p0) != first_pc_neighbors.end());
+	bool p1_surrounded = (second_pc_neighbors.lower_bound(p1) != second_pc_neighbors.end()) && (second_pc_neighbors.upper_bound(p1) != second_pc_neighbors.end());
+
+
+	return (p0_surrounded && p1_surrounded);
 
 
 }
