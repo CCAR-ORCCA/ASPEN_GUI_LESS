@@ -232,7 +232,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 		this -> create_pairs();
 
 		if (has_converged){
-			std::cout << "\n- All point-cloud pairs are satisfying. Stopping BA \n";
+			std::cout << "\n- All point-cloud pairs are satisfying. BA has converged \n";
 			break;
 		}
 
@@ -522,10 +522,12 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	}
 
-	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
-
 	double stdev_error = arma::stddev(errors);
 	double mean_error = arma::mean(errors);
+	std::cout << "-- Mean error: " << mean_error << std::endl;
+	std::cout << "-- 2 sigma thresholds : [ " << mean_error - 2 *  stdev_error << " , " << mean_error + 2 *  stdev_error << " ] " << std::endl;
+	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
+
 	this -> edges_to_remove.clear();
 	
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){

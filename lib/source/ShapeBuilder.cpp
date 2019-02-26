@@ -395,7 +395,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 				if (this -> filter_arguments -> get_use_ba()){
-					ba_test.set_h(0);
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 				}
 
@@ -418,12 +417,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					final_cov);
 
 
-				this -> save_rigid_transforms(dir, 
-					X_pcs,
-					M_pcs,
-					X_pcs_true,
-					M_pcs_true,
-					R_pcs);
+				this -> save_rigid_transforms(dir, X_pcs,M_pcs,X_pcs_true,M_pcs_true,R_pcs);
 
 				std::cout << " -- Estimating final coverage ...\n";
 				this -> estimate_coverage(ba_test.get_anchor_pc());
