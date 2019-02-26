@@ -528,13 +528,13 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	if (this -> anchor_pc_index == 0){
 		arma::mat means;
 
-		arma::kmeans( means, errors, 2, arma::random_subset, 10, true );
+		arma::kmeans( means, errors.t(), 2, arma::random_subset, 10, true );
 	}
 	else{
 
 		arma::mat means;
 
-		arma::kmeans( means, errors, 3, arma::random_subset, 10, true );
+		arma::kmeans( means, errors.t(), 3, arma::random_subset, 10, true );
 
 	}
 
