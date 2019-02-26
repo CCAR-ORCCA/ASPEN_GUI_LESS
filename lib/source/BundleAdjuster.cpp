@@ -530,23 +530,28 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 		arma::gmm_diag model;
 
-		bool status = model.learn(errors.t(), 2, arma::maha_dist, arma::random_subset, 10, 5, 1e-10, true);
+		bool status = model.learn(errors.t(), 2, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
 		model.means.print("GMM dist means: ");
 		arma::urowvec gaus_ids = model.assign( errors.t(), arma::prob_dist );
 		std::cout << "Cluster assignments: " << gaus_ids << std::endl;
 
+		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+			std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << gaus_ids(k) << " \n";
+		}
 
 	}
 	else{
 
 		arma::gmm_diag model;
 
-		bool status = model.learn(errors.t(), 2, arma::maha_dist, arma::random_subset, 10, 5, 1e-10, true);
+		bool status = model.learn(errors.t(), 3, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
 		model.means.print("GMM dist means: ");
 		arma::urowvec gaus_ids = model.assign( errors.t(), arma::prob_dist );
 		std::cout << "Cluster assignments: " << gaus_ids << std::endl;
 
-	
+		for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+			std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << gaus_ids(k) << " \n";
+		}
 
 	}
 
