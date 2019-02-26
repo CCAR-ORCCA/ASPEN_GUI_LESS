@@ -142,7 +142,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 	std::cout << "\t Number of considered point clouds (Q): " << Q << std::endl;
 
 	// This allows to compute the ICP RMS residuals for each considered point-cloud pair before running the bundle adjuster
-	this -> update_point_cloud_pairs(false);
+	bool has_converged = this -> update_point_cloud_pairs(false);
 
 	for (int iter = 0 ; iter < this -> N_iter; ++iter){
 
@@ -225,18 +225,16 @@ void BundleAdjuster::solve_bundle_adjustment(
 
 		// The point cloud pairs are updated: their residuals are updated
 		// and the rigid transforms positioning them are also updated
-		this -> update_point_cloud_pairs(int(this -> N_iter) - 1 == iter );
+		has_converged = this -> update_point_cloud_pairs(int(this -> N_iter) - 1 == iter );
 
 		std::cout << "\n- Removing edges from graph \n";
 		this -> remove_edges_from_graph();
 		this -> create_pairs();
 
-		
-		// The covariances are extracted
-
-		// std::cout << "\n- Extracting the covariances" << std::endl;
-
-		// this -> Pdense = Lambda_dense.inverse();
+		if (has_converged){
+			std::cout << "\n- All point-cloud pairs are satisfying. Stopping BA \n";
+			break;
+		}
 
 	}
 
@@ -425,7 +423,7 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 
 }
 
-void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
+bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	double max_error = -1;
 	int worst_Sk,worst_Dk;
@@ -529,7 +527,7 @@ void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	double stdev_error = arma::stddev(errors);
 	double mean_error = arma::mean(errors);
 	this -> edges_to_remove.clear();
-
+	
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		if ((errors(k) - mean_error)/stdev_error > 2){
 
@@ -546,16 +544,19 @@ void BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
 
 			if (this -> can_remove_edge(edge_to_remove)){
-
-				
 				this -> edges_to_remove.push_back(edge_to_remove);
 
 			}
-
 		}
 	}
 
-
+	// If no edge needs to be removed, BA has converged
+	if (this -> edges_to_remove.size() == 0){
+		return true;
+	}
+	else{
+		return false;
+	}
 
 
 }
