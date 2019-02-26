@@ -528,15 +528,25 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	if (this -> anchor_pc_index == 0){
 		arma::mat means;
 
-		arma::kmeans( means, errors.t(), 2, arma::random_subset, 10, true );
-		std::cout << "K-Means clustering results: " << means << std::endl;
+		arma::gmm_diag model;
+
+		bool status = model.learn(errors.t(), 2, maha_dist::maha_dist, arma::random_subset, 10, 5, 1e-10, true);
+		model.means.print("GMM dist means: ");
+		arma::urowvec gaus_ids = model.assign( errors.t(), arma::prob_dist );
+		std::cout << "Cluster assignments: " << gaus_ids << std::endl;
+
+
 	}
 	else{
 
-		arma::mat means;
+		arma::gmm_diag model;
 
-		arma::kmeans( means, errors.t(), 3, arma::random_subset, 10, true );
-		std::cout << "K-Means clustering results: " << means << std::endl;
+		bool status = model.learn(errors.t(), 2, maha_dist::maha_dist, arma::random_subset, 10, 5, 1e-10, true);
+		model.means.print("GMM dist means: ");
+		arma::urowvec gaus_ids = model.assign( errors.t(), arma::prob_dist );
+		std::cout << "Cluster assignments: " << gaus_ids << std::endl;
+
+	
 
 	}
 
