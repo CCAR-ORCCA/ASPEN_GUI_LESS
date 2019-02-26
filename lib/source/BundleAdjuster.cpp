@@ -86,9 +86,7 @@ void BundleAdjuster::run(
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 
-	std::cout << "- Removing edges from graph ...\n";
-	this -> remove_edges_from_graph();
-
+	
 	if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
 		
 		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
@@ -228,8 +226,11 @@ void BundleAdjuster::solve_bundle_adjustment(
 		// The point cloud pairs are updated: their residuals are updated
 		// and the rigid transforms positioning them are also updated
 		this -> update_point_cloud_pairs(int(this -> N_iter) - 1 == iter );
-		
 
+		std::cout << "\n- Removing edges from graph \n";
+		this -> remove_edges_from_graph();
+
+		
 		// The covariances are extracted
 
 		// std::cout << "\n- Extracting the covariances" << std::endl;
@@ -1063,16 +1064,12 @@ bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 	int p0 = *edge_to_remove.begin();
 	int p1 = *(--edge_to_remove.end());
 
-
 	auto first_pc_neighbors = this -> graph . getneighbors(p0);
 	auto second_pc_neighbors = this -> graph . getneighbors(p1);
-
-
 
 	// Only looking for other neighbors
 	first_pc_neighbors.erase(p1);
 	second_pc_neighbors.erase(p0);
-
 
 	// Checking connectivity of other neighbors
 	// For the edge to be removable, the neighbors can't all be after or before the considered points
