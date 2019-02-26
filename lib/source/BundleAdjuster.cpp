@@ -533,7 +533,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	model_residuals.means.print("Residuals GMM means: ");
 	arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
-	arma::vec(model_residuals.means - 2 * arma::sqrt(model_residuals.dcovs)).print("Residuals GMM means minus 2 standard deviations: ");
+	arma::rowvec(model_residuals.means - 2 * arma::sqrt(model_residuals.dcovs)).print("Residuals GMM means minus 2 standard deviations: ");
 
 
 
