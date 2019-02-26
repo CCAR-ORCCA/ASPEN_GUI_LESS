@@ -430,6 +430,8 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	int sum_point_pairs_sizes = 0;
 
 	arma::vec errors(this -> point_cloud_pairs.size());
+	arma::vec pc_pair_sizes(this -> point_cloud_pairs.size());
+
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 		
@@ -492,6 +494,8 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 		errors(k) = error * point_pairs.size();
 		sum_point_pairs_sizes += point_pairs.size();
+		pc_pair_sizes(k) = point_pairs.size();
+
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
 		
@@ -515,7 +519,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-		std::cout << " -- h == " << this -> h << " , (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << errors(k) << " | "<< this -> point_cloud_pairs[k].size() << " point pairs" << std::endl;
+		std::cout << " -- h == " << this -> h << " , (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << errors(k) << " | " << pc_pair_sizes(k) << " point pairs" << std::endl;
 
 	}
 
