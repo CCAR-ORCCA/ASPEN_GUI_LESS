@@ -524,11 +524,12 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	}
 
-	if (this -> point_cloud_pairs.size() < 3) return false;
+	if (this -> point_cloud_pairs.size() < 2) return false;
 
 	arma::gmm_diag model_residuals;
+	int N_clusters = 2;
 
-	model_residuals.learn(errors.t(), 3, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
+	model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
 
 	model_residuals.means.print("Residuals GMM means: ");
 	arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
@@ -536,12 +537,13 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
 
-	arma::uvec cluster_populations(3);
-	cluster_populations(0) = arma::find(residuals_gaus_ids == 0).size();
-	cluster_populations(1) = arma::find(residuals_gaus_ids == 1).size();
-	cluster_populations(2) = arma::find(residuals_gaus_ids == 2).size();
+	arma::uvec cluster_populations(N_clusters);
+	for (int i = 0; i < N_clusters; ++i){
+		cluster_populations(i) = arma::find(residuals_gaus_ids == (unsigned int)(i)).size();
+	}
 
 	int most_populated_cluster = cluster_populations.max();
+	int smallest_errors_cluster = model_residuals.means.min();
 
 	std::cout << "Cluster assignments: (residuals)" << std::endl;
 
@@ -559,7 +561,15 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	this -> edges_to_remove.clear();
 	
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-		if ((errors(k) - mean_error)/stdev_error > 2 && residuals_gaus_ids(k) != (unsigned int)(most_populated_cluster) ){
+
+		if (residuals_gaus_ids(k) == (unsigned int)(smallest_errors_cluster)){
+			// Nothing to do here
+			continue;
+		}
+
+
+
+		if ((errors(k) - mean_error)/stdev_error > 2 ){
 
 			std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
 
