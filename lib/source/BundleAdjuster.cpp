@@ -504,19 +504,26 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		this -> point_cloud_pairs[k].N_accepted_pairs = point_pairs.size();
 		this -> point_cloud_pairs[k].N_pairs = N_pairs;
 
+	}
 
-		if (error > max_error){
-			max_error = error;
+	errors /= (sum_point_pairs_sizes / this -> point_cloud_pairs.size());
+
+
+	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+
+		if (errors(k) > max_error){
+			max_error = errors(k);
 			worst_Dk = this -> point_cloud_pairs[k].D_k;
 			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-
-		std::cout << " -- h == " << active_h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << error << " | "<< point_pairs.size() << " point pairs" << std::endl;
+		std::cout << " -- h == " << active_h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << errors(k) << " | "<< point_pairs.size() << " point pairs" << std::endl;
 
 	}
 
-	errors /= (sum_point_pairs_sizes / this -> point_cloud_pairs.size());
+
+
+
 
 
 	double stdev_error = arma::stddev(errors);
