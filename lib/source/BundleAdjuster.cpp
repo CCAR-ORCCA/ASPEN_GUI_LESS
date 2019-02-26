@@ -1090,9 +1090,11 @@ bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 		}
 
 		std::cout << 		*first_pc_neighbors.lower_bound(p0) << std::endl;
+		std::cout << 		*first_pc_neighbors.upper_bound(p0) << std::endl;
+		
 
-		std::cout << (first_pc_neighbors.lower_bound(p0) != first_pc_neighbors.end()) << std::endl;
-		std::cout << (first_pc_neighbors.upper_bound(p0) != first_pc_neighbors.end()) << std::endl;
+		// std::cout << (first_pc_neighbors.lower_bound(p0) != first_pc_neighbors.end()) << std::endl;
+		// std::cout << (first_pc_neighbors.upper_bound(p0) != first_pc_neighbors.end()) << std::endl;
 		throw;
 	}	
 
