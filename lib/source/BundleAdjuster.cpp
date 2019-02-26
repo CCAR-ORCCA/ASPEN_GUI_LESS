@@ -492,10 +492,12 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 		double error = std::abs(icp.compute_residuals(point_pairs,dcm_S ,x_S,{},dcm_D ,x_D));
 
-		errors(k) = error * point_pairs.size();
+		// errors(k) = error * point_pairs.size();
 		sum_point_pairs_sizes += point_pairs.size();
 		pc_pair_sizes(k) = point_pairs.size();
 
+		errors(k) = error ;
+		
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
 		
@@ -508,8 +510,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	}
 
-	errors /= (sum_point_pairs_sizes / this -> point_cloud_pairs.size());
-
+	// errors /= (sum_point_pairs_sizes / this -> point_cloud_pairs.size());
 
 	for (int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
@@ -524,9 +525,18 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	}
 
 
+	if (this -> anchor_pc_index == 0){
+		arma::vec means;
 
+		arma::kmeans( means, errors, 2, arma::random_subset, 10, true );
+	}
+	else{
 
+		arma::vec means;
 
+		arma::kmeans( means, errors, 3, arma::random_subset, 10, true );
+
+	}
 
 	double stdev_error = arma::stddev(errors);
 	double mean_error = arma::mean(errors);
