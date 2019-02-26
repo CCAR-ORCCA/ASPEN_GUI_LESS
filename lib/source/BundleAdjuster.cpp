@@ -1087,7 +1087,7 @@ bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 
 
 	if (p0 == this -> anchor_pc_index){
-		p0_surrounded = (p0 < *(--first_pc_neighbors.end()))
+		p0_surrounded = (p0 < *(--first_pc_neighbors.end()));
 	}
 	if (p1 == int(this -> graph.getnumv()) - 1){
 		p1_surrounded = (p1 > *second_pc_neighbors.begin());
