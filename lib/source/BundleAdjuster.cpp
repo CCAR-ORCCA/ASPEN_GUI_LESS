@@ -1058,6 +1058,7 @@ bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,i
 
 bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 
+	assert(edge_to_remove.size() == 2);
 
 	int p0 = *edge_to_remove.begin();
 	int p1 = *(--edge_to_remove.end());
@@ -1066,15 +1067,18 @@ bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 	auto first_pc_neighbors = this -> graph . getneighbors(p0);
 	auto second_pc_neighbors = this -> graph . getneighbors(p1);
 
+
+
 	// Only looking for other neighbors
 	first_pc_neighbors.erase(p1);
 	second_pc_neighbors.erase(p0);
+
 
 	// Checking connectivity of other neighbors
 	// For the edge to be removable, the neighbors can't all be after or before the considered points
 	// So the two pcs must have at least two neighbors left
 
-	if (first_pc_neighbors.size() < 2 || second_pc_neighbors.size()){
+	if (first_pc_neighbors.size() < 2 || second_pc_neighbors.size() < 2){
 		return false;
 	}
 
