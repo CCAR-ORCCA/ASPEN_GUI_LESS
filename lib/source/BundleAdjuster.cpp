@@ -1084,6 +1084,13 @@ bool BundleAdjuster::can_remove_edge(const std::set<int> & edge_to_remove) {
 
 	// If the two pcs have at least two neighbors, we need to check if one pc's neighbors are "around" it
 
+	if (p0 == 0){
+		for (auto n : first_pc_neighbors){
+			std::cout << n << " / \n";
+		}
+	}
+
+
 	bool p0_surrounded = (first_pc_neighbors.lower_bound(p0) != first_pc_neighbors.end()) && (first_pc_neighbors.upper_bound(p0) != first_pc_neighbors.end());
 	bool p1_surrounded = (second_pc_neighbors.lower_bound(p1) != second_pc_neighbors.end()) && (second_pc_neighbors.upper_bound(p1) != second_pc_neighbors.end());
 
