@@ -462,16 +462,14 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 
 		std::vector<PointPair> point_pairs;
-		int active_h;
 
 		if (!this -> use_true_pairs){
 			
-			active_h = this -> h;
 
 			IterativeClosestPointToPlane::compute_pairs(point_pairs,
 				this -> all_registered_pc -> at(point_cloud_pair.S_k),
 				this -> all_registered_pc -> at(point_cloud_pair.D_k),
-				active_h,
+				this -> h,
 				dcm_S ,
 				x_S,
 				dcm_D ,
@@ -497,7 +495,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
 		
-		int N_pairs = (int)(std::pow(2, p - active_h));
+		int N_pairs = (int)(std::pow(2, p - this -> h));
 
 
 		this -> point_cloud_pairs[k].error = error;
@@ -517,7 +515,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-		std::cout << " -- h == " << active_h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << errors(k) << " | "<< point_pairs.size() << " point pairs" << std::endl;
+		std::cout << " -- h == " << this -> h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << errors(k) << " | "<< point_pairs.size() << " point pairs" << std::endl;
 
 	}
 
