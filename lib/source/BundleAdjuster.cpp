@@ -515,7 +515,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-		std::cout << " -- h == " << this -> h << " , (" << point_cloud_pair.S_k << " , " << point_cloud_pair.D_k <<  ") : " << errors(k) << " | "<< point_pairs.size() << " point pairs" << std::endl;
+		std::cout << " -- h == " << this -> h << " , (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << errors(k) << " | "<< this -> point_cloud_pairs[k].size() << " point pairs" << std::endl;
 
 	}
 
