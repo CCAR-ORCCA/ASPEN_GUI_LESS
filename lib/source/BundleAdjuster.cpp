@@ -529,12 +529,14 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		arma::mat means;
 
 		arma::kmeans( means, errors.t(), 2, arma::random_subset, 10, true );
+		std::cout << "K-Means clustering results: " << means << std::endl;
 	}
 	else{
 
 		arma::mat means;
 
 		arma::kmeans( means, errors.t(), 3, arma::random_subset, 10, true );
+		std::cout << "K-Means clustering results: " << means << std::endl;
 
 	}
 
