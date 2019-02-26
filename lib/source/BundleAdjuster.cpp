@@ -72,11 +72,11 @@ void BundleAdjuster::run(
 
 	this -> X = arma::zeros<arma::vec>(6 * (Q - 1));
 
-	std::cout << "- Creating point cloud pairs" << std::endl;
-	this -> create_pairs();
 
 
 	if (this -> N_iter > 0){
+		this -> create_pairs();
+		
 		// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs,X_pcs);
 
@@ -253,7 +253,6 @@ void BundleAdjuster::create_pairs(){
 	// Bundle adjustment only runs between point cloud #anchor_pc_index and the last registered pc
 
 	for (int vertex : vertices){
-
 		std::set<int> neighbors = this -> graph. getneighbors(vertex);
 		for (auto neighbor : neighbors){
 			std::set<int> pair = {vertex,neighbor};
