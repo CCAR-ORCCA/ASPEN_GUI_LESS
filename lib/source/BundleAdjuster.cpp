@@ -545,7 +545,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			std::cout << "\t -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
 		}
 
-		if (arma::min(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)) > 0){
+		if ((model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).min() > 0){
 			break;
 		}
 
