@@ -550,7 +550,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		hist.print("\tPopulation of each cluster: ");
 
 
-		std::cout << "\tCluster assignments: (residuals)" << std::endl;
+		std::cout << "\tCluster assignments: " << std::endl;
 
 		for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 			std::cout << "\t -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
@@ -561,7 +561,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			// The acceptable clusters are stored
 			arma::urowvec most_populated_clusters = arma::find(hist == hist.max()).t();
 			double largest_acceptable_error = 1.2 * arma::min(model_residuals.means(most_populated_clusters));
-			std::cout<< "\t\tClustering achieved. Maximum acceptable error: " << largest_acceptable_error << std::endl;
+			std::cout<< "\t\tClustering achieved. Maximum acceptable cluster mean error: " << largest_acceptable_error << std::endl;
 			
 			for (unsigned int p = 0; p < N_clusters; ++p){
 				if (model_residuals.means(p) <= largest_acceptable_error){
