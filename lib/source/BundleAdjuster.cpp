@@ -537,7 +537,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
 		arma::rowvec(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).print("\tResiduals GMM means minus 3 standard deviations: ");
 		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist);
-		arma::hist(residuals_gaus_ids,arma::regspace<arma::vec>(1,N_clusters)).t().print("\tPopulation of each cluster: ");
+		arma::hist(residuals_gaus_ids.t(),arma::regspace<arma::uvec>(1,N_clusters)).t().print("\tPopulation of each cluster: ");
 
 		std::cout << "\tCluster assignments: (residuals)" << std::endl;
 
