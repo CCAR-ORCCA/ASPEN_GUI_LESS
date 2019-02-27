@@ -527,31 +527,24 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	if (this -> point_cloud_pairs.size() < 2) return false;
 
 	arma::gmm_diag model_residuals;
-	int N_clusters = 2;
 
-	model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, true);
+	for (int N_clusters = 1; N_clusters < 5; ++N_clusters){
 
-	model_residuals.means.print("Residuals GMM means: ");
-	arma::sqrt(model_residuals.dcovs).print("Residuals GMM standard deviations: ");
-	arma::rowvec(model_residuals.means - 2 * arma::sqrt(model_residuals.dcovs)).print("Residuals GMM means minus 2 standard deviations: ");
+		model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, false);
+		std::cout << "\tUsing " << N_clusters << " mixtures\n";
+		model_residuals.means.print("\tResiduals GMM means: ");
+		arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
+		arma::rowvec(model_residuals.means - 2 * arma::sqrt(model_residuals.dcovs)).print("\tResiduals GMM means minus 2 standard deviations: ");
 
+		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
 
+		std::cout << "\tCluster assignments: (residuals)" << std::endl;
 
-	arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist );
-
-	arma::uvec cluster_populations(N_clusters);
-	for (int i = 0; i < N_clusters; ++i){
-		cluster_populations(i) = arma::uvec(arma::find(residuals_gaus_ids == (unsigned int)(i))).size();
+		for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+			std::cout << "\t -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
+		}
 	}
 
-	int most_populated_cluster = cluster_populations.max();
-	int smallest_errors_cluster = model_residuals.means.min();
-
-	std::cout << "Cluster assignments: (residuals)" << std::endl;
-
-	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
-		std::cout << " -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
-	}
 
 	double stdev_error = arma::stddev(errors);
 	double mean_error = arma::mean(errors);
@@ -564,10 +557,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	
 	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
-		if (residuals_gaus_ids(k) == (unsigned int)(smallest_errors_cluster)){
-			// Nothing to do here
-			continue;
-		}
+		
 
 
 
