@@ -534,10 +534,13 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	for (int N_clusters = 1; N_clusters <= N_clusters_max; ++N_clusters){
 
-		arma::urowvec hist = arma::hist(residuals_gaus_ids,arma::regspace<arma::urowvec>(0,N_clusters - 1));
 
 		acceptable_clusters.clear();
+		
+		// Training GMM
 		model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, false);
+
+		arma::urowvec hist = arma::hist(residuals_gaus_ids,arma::regspace<arma::urowvec>(0,N_clusters - 1));
 		std::cout << "\tUsing " << N_clusters << " mixtures\n";
 		model_residuals.means.print("\tResiduals GMM means: ");
 		arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
