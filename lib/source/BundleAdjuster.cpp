@@ -952,15 +952,15 @@ bool BundleAdjuster::update_overlap_graph(){
 	}
 
 	std::cout << "\t Graph has " << this -> graph.get_n_edges() << " unique edges. Longest closure: " <<  max_closure_length << "\n";
-	return true;
+	// return true;
 
-	// if (max_closure_length > this -> cluster_size){
-	// 	// there is closure between new_pc_index and another point cluster more than this -> cluster_size away. run bundle adjustment
-	// 	return true;
-	// }
-	// else{
-	// 	return false;
-	// }
+	if (max_closure_length > this -> cluster_size){
+		// there is closure between new_pc_index and another point cluster more than this -> cluster_size away. run bundle adjustment
+		return true;
+	}
+	else{
+		return false;
+	}
 
 }
 

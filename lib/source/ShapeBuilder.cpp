@@ -381,15 +381,10 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 						epoch_cov,
 						final_cov);
 
-
-
 					last_iod_epoch_index = time_index;
 
 				}
-
-
 			}
-
 
 			else if (time_index == times.n_rows - 1){
 
@@ -411,7 +406,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					epoch_cov,
 					final_cov);
 
-
+				ba_test.get_anchor_pc() -> save(dir + "/final_pc.obj");
 				this -> save_rigid_transforms(dir, X_pcs,M_pcs,X_pcs_true,M_pcs_true,R_pcs);
 
 				std::cout << " -- Estimating final coverage ...\n";
