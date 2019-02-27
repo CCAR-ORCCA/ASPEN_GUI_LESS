@@ -534,15 +534,16 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	for (int N_clusters = 1; N_clusters <= N_clusters_max; ++N_clusters){
 
-
+		// Init GMM 
+		std::cout << "\tUsing " << N_clusters << " mixtures\n";
 		acceptable_clusters.clear();
-		
+
 		// Training GMM
 		model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, false);
 		residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist);
-		
+
+		// GMM learned parameters
 		arma::urowvec hist = arma::hist(residuals_gaus_ids,arma::regspace<arma::urowvec>(0,N_clusters - 1));
-		std::cout << "\tUsing " << N_clusters << " mixtures\n";
 		model_residuals.means.print("\tResiduals GMM means: ");
 		arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
 		arma::rowvec(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).print("\tResiduals GMM means minus 3 standard deviations: ");
@@ -559,10 +560,10 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 			// The acceptable clusters are stored
 			arma::urowvec most_populated_clusters = arma::find(hist == hist.max());
-			double largest_acceptable_error = arma::max(model_residuals.means(most_populated_clusters));
+			double largest_acceptable_error = 1.1 * arma::max(model_residuals.means(most_populated_clusters));
 			std::cout<< "\t\tClustering achieved. Maximum acceptable error: " << largest_acceptable_error << std::endl;
-			for (unsigned int p = 0; p < residuals_gaus_ids.size(); ++p){
-				if (model_residuals.means(p) <= 1.1 * largest_acceptable_error){
+			for (unsigned int p = 0; p < N_clusters; ++p){
+				if (model_residuals.means(p) <= largest_acceptable_error){
 					acceptable_clusters.insert(p);
 				}
 			}
