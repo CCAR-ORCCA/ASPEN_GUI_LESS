@@ -407,12 +407,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					final_cov);
 
 
-				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
+				PointCloudIO<PointNormal>::save_to_obj(*ba_test.get_anchor_pc(),
 					dir + "/final_pc.obj",
 					this -> LN_t0.t(), 
 					this -> x_t0);
 
-				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
+				PointCloudIO<PointNormal>::save_to_obj(*ba_test.get_anchor_pc(),
 					dir + "/final_pc_as_is.obj");
 
 
