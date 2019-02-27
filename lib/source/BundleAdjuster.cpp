@@ -585,7 +585,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 			std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
 
-			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index && last_iter){
+			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
 
 				if (this -> point_cloud_pairs[k].D_k <= this -> next_anchor_pc_index){
 					std::cout << "--- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
@@ -953,7 +953,7 @@ bool BundleAdjuster::update_overlap_graph(){
 
 	std::cout << "\t Graph has " << this -> graph.get_n_edges() << " unique edges. Longest closure: " <<  max_closure_length << "\n";
 	return true;
-	
+
 	// if (max_closure_length > this -> cluster_size){
 	// 	// there is closure between new_pc_index and another point cluster more than this -> cluster_size away. run bundle adjustment
 	// 	return true;
