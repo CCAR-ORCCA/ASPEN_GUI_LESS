@@ -528,6 +528,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	arma::gmm_diag model_residuals;
 	std::set<unsigned int> acceptable_clusters;
+	arma::urowvec residuals_gaus_ids;
 
 	int N_clusters_max = int(this -> point_cloud_pairs.size()) - 1;
 
@@ -539,7 +540,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		model_residuals.means.print("\tResiduals GMM means: ");
 		arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
 		arma::rowvec(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).print("\tResiduals GMM means minus 3 standard deviations: ");
-		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist);
+		residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist);
 		arma::hist(residuals_gaus_ids.t(),arma::regspace<arma::uvec>(0,N_clusters - 1)).t().print("\tPopulation of each cluster: ");
 
 
