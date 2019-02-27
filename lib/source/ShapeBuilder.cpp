@@ -406,7 +406,16 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					epoch_cov,
 					final_cov);
 
-				ba_test.get_anchor_pc() -> save(dir + "/final_pc.obj");
+
+				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
+					dir + "/final_pc.obj",
+					this -> LN_t0.t(), 
+					this -> x_t0);
+
+				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
+					dir + "/final_pc_as_is.obj");
+
+
 				this -> save_rigid_transforms(dir, X_pcs,M_pcs,X_pcs_true,M_pcs_true,R_pcs);
 
 				std::cout << " -- Estimating final coverage ...\n";

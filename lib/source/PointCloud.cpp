@@ -241,7 +241,8 @@ void PointCloud<PointType>::build_kdtree(bool verbose){
 	}
 
 	this -> kdt = std::make_shared< KDTree<PointCloud,PointType> >(KDTree< PointCloud,PointType> (this));
-	this -> kdt -> build(indices,0);
+	if (indices.size() > 0)
+		this -> kdt -> build(indices,0);
 
 	auto end = std::chrono::system_clock::now();
 
