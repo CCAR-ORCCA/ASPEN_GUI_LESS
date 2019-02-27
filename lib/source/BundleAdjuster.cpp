@@ -527,10 +527,13 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	if (this -> point_cloud_pairs.size() < 2) return false;
 
 	arma::gmm_diag model_residuals;
+	std::set<unsigned int> acceptable_clusters;
+
 	int N_clusters_max = int(this -> point_cloud_pairs.size()) - 1;
 
 	for (int N_clusters = 1; N_clusters <= N_clusters_max; ++N_clusters){
 
+		acceptable_clusters.clear();
 		model_residuals.learn(errors.t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, false);
 		std::cout << "\tUsing " << N_clusters << " mixtures\n";
 		model_residuals.means.print("\tResiduals GMM means: ");
@@ -539,6 +542,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		arma::urowvec residuals_gaus_ids = model_residuals.assign( errors.t(), arma::prob_dist);
 		arma::hist(residuals_gaus_ids.t(),arma::regspace<arma::uvec>(0,N_clusters - 1)).t().print("\tPopulation of each cluster: ");
 
+
 		std::cout << "\tCluster assignments: (residuals)" << std::endl;
 
 		for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
@@ -546,30 +550,30 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		}
 
 		if ((model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).min() > 0){
+
+			// The acceptable clusters are stored
+			auto hist = arma::hist(residuals_gaus_ids.t(),arma::regspace<arma::uvec>(0,N_clusters - 1));
+			arma::uvec most_populated_clusters = arma::find(hist == hist.max());
+			double largest_acceptable_error = arma::max(model_residuals.means(most_populated_clusters));
+			for (unsigned int p = 0; p < residuals_gaus_ids.size(); ++p){
+				if (model_residuals.means(p) <= largest_acceptable_error){
+					acceptable_clusters.insert(p);
+				}
+			}
+
 			break;
 		}
-
-
 
 	}
 
 
-	double stdev_error = arma::stddev(errors);
-	double mean_error = arma::mean(errors);
-	
-	std::cout << "-- Mean error: " << mean_error << std::endl;
-	std::cout << "-- 2 sigma thresholds : [ " << mean_error - 2 *  stdev_error << " , " << mean_error + 2 *  stdev_error << " ] " << std::endl;
 	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
 
 	this -> edges_to_remove.clear();
 	
 	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
-		
-
-
-
-		if ((errors(k) - mean_error)/stdev_error > 2 ){
+		if (acceptable_clusters.find(residuals_gaus_ids(k)) == acceptable_clusters.end() ){
 
 			std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
 
