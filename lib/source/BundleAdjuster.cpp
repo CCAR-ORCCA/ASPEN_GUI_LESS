@@ -560,7 +560,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 			// The acceptable clusters are stored
 			arma::urowvec most_populated_clusters = arma::find(hist == hist.max());
-			double largest_acceptable_error = 1.1 * arma::max(model_residuals.means(most_populated_clusters));
+			double largest_acceptable_error = 1.2 * arma::max(model_residuals.means(most_populated_clusters));
 			std::cout<< "\t\tClustering achieved. Maximum acceptable error: " << largest_acceptable_error << std::endl;
 			for (unsigned int p = 0; p < N_clusters; ++p){
 				if (model_residuals.means(p) <= largest_acceptable_error){
