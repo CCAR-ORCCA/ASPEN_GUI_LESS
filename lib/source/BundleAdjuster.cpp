@@ -527,7 +527,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 	if (this -> point_cloud_pairs.size() < 2) return false;
 
 	arma::gmm_diag model_residuals;
-	int N_clusters_max = 5;
+	int N_clusters_max = int(this -> point_cloud_pairs.size()) - 1;
 
 	for (int N_clusters = 1; N_clusters <= N_clusters_max; ++N_clusters){
 
@@ -544,6 +544,13 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 			std::cout << "\t -- (" << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<  ") : " << residuals_gaus_ids(k) << " \n";
 		}
+
+		if (arma::min(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)) > 0){
+			break;
+		}
+
+
+
 	}
 
 
