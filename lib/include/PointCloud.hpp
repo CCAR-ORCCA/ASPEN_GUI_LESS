@@ -24,7 +24,7 @@ public:
 
 	PointCloud(const std::vector<PointType> & points);
 	PointCloud(std::vector< std::shared_ptr< PointCloud < PointType> > > & pcs,int points_retained);
-	PointCloud(std::string filename);
+	PointCloud(std::string filename,bool is_txt = false);
 
 	/**
 	Returns the index to point cloud element whose point is closest to the provided test_point

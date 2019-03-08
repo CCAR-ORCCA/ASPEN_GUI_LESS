@@ -1,7 +1,7 @@
 #include "IterativeClosestPointToPlane.hpp"
 #define ICP2P_DEBUG 0
-#define RANSAC_DEBUG 1
 #include <chrono>
+#include <set>
 
 IterativeClosestPointToPlane::IterativeClosestPointToPlane() : ICPBase(){
 
@@ -122,7 +122,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 		arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
 		int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
-				
+
 		const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
 		
 		arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
@@ -196,14 +196,55 @@ void IterativeClosestPointToPlane::compute_pairs(
 		dist_vec(i) = formed_pairs[i].second;
 	}
 
-	// Only pairs featuring an error that is less a one sd threshold are inliers 
-	// included in the final pairing
-	double mean = arma::mean(dist_vec);
-	double sd = arma::stddev(dist_vec);
+	
+
+
+
+	arma::gmm_diag model_residuals;
+	std::set<unsigned int> acceptable_pairs;
+	arma::urowvec residuals_gaus_ids;
+
+	int N_clusters = 3;
+
+
+		// Init GMM 
+	#if ICP2P_DEBUG
+	std::cout << "\tUsing " << N_clusters << " mixtures\n";
+	#endif
+
+	acceptable_pairs.clear();
+
+		// Training GMM
+	model_residuals.learn(abs(dist_vec).t(), N_clusters, arma::maha_dist, arma::random_subset, 10, 10, 1e-10, false);
+	residuals_gaus_ids = model_residuals.assign( abs(dist_vec).t(), arma::prob_dist);
+
+		// GMM learned parameters
+	arma::urowvec hist = arma::hist(residuals_gaus_ids,arma::regspace<arma::urowvec>(0,N_clusters - 1));
+	
+	#if ICP2P_DEBUG
+	model_residuals.means.print("\tResiduals GMM means: ");
+	arma::sqrt(model_residuals.dcovs).print("\tResiduals GMM standard deviations: ");
+	arma::rowvec(model_residuals.means - 3 * arma::sqrt(model_residuals.dcovs)).print("\tResiduals GMM means minus 3 standard deviations: ");
+	hist.print("\tPopulation of each cluster: ");
+	#endif
+
+
+	// The acceptable clusters are stored
+	arma::urowvec most_populated_clusters = arma::find(hist == hist.max()).t();
+	double largest_acceptable_error = 1.2 * arma::min(model_residuals.means(most_populated_clusters));
+	#if ICP2P_DEBUG
+	std::cout<< "\t\tClustering achieved. Maximum acceptable cluster mean error: " << largest_acceptable_error << std::endl;
+	#endif
+
+	for (unsigned int p = 0; p < N_clusters; ++p){
+		if (model_residuals.means(p) <= largest_acceptable_error){
+			acceptable_pairs.insert(p);
+		}
+	}
 
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
-		if (std::abs(dist_vec(i) - mean) <= 3 * sd){
+		if (acceptable_pairs.find(residuals_gaus_ids(i)) != acceptable_pairs.end() ){
 			
 			point_pairs.push_back(
 				std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
@@ -213,11 +254,33 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 	}
 
+
+
+
+
 	#if ICP2P_DEBUG
-	std::cout << "\tMean pair distance : " << mean << std::endl;
-	std::cout << "\tDistance sd : " << sd << std::endl;
 	std::cout << "\tKept " << point_pairs.size() << " pairs\n";
 	#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 

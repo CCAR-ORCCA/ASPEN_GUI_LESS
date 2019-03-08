@@ -352,8 +352,6 @@ def plot_all_results(input_dir,output_dir = ""):
 		np_array_to_latex(dims_mean,output_dir + "/" + prefix +"dims",decimals = 3,type = "e")
 
 
-
-
 	draw_slice(0,slices_x,output_dir = output_dir,prefix = prefix)
 	draw_slice(1,slices_y,output_dir = output_dir,prefix = prefix)
 	draw_slice(2,slices_z,output_dir = output_dir,prefix = prefix)

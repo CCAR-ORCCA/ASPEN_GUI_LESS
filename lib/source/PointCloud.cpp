@@ -159,7 +159,7 @@ const arma::vec & PointCloud<PointDescriptor>::get_normal_coordinates(int i) con
 
 
 template <> 
-PointCloud<PointNormal>::PointCloud(std::string filename){
+PointCloud<PointNormal>::PointCloud(std::string filename,bool is_txt){
 
 	std::cout << "Reading " << filename << std::endl;
 
@@ -174,37 +174,54 @@ PointCloud<PointNormal>::PointCloud(std::string filename){
 	std::vector<arma::vec::fixed<3>> vertices,normals;
 	std::vector<std::vector<unsigned int> > shape_patch_indices;
 
-	while (std::getline(ifs, line)) {
+	if (!is_txt){
+		while (std::getline(ifs, line)) {
 
-		std::stringstream linestream(line);
+			std::stringstream linestream(line);
 
 
-		std::string type;
-		linestream >> type;
+			std::string type;
+			linestream >> type;
 
-		if (type == "#" || type == "s"  || type == "o" || type == "m" || type == "u" || line.size() == 0) {
-			continue;
+			if (type == "#" || type == "s"  || type == "o" || type == "m" || type == "u" || line.size() == 0) {
+				continue;
+			}
+
+			else if (type == "v") {
+				double vx, vy, vz;
+				linestream >> vx >> vy >> vz;
+				arma::vec::fixed<3> vertex = {vx, vy, vz};
+				vertices.push_back(vertex);
+
+			}
+			else if (type == "vn"){
+				double nx,ny,nz;
+				linestream >> nx >> ny >> nz;
+				arma::vec::fixed<3> normal = {nx, ny, nz};
+
+				normals.push_back(normal);
+
+			}
+
+			else {
+				throw(std::runtime_error(" unrecognized string in input file : "  + type));
+			}
+
 		}
+	}
+	else{
 
-		else if (type == "v") {
+		while (std::getline(ifs, line)) {
+
+			std::stringstream linestream(line);
+
 			double vx, vy, vz;
 			linestream >> vx >> vy >> vz;
 			arma::vec::fixed<3> vertex = {vx, vy, vz};
 			vertices.push_back(vertex);
 
 		}
-		else if (type == "vn"){
-			double nx,ny,nz;
-			linestream >> nx >> ny >> nz;
-			arma::vec::fixed<3> normal = {nx, ny, nz};
 
-			normals.push_back(normal);
-
-		}
-
-		else {
-			throw(std::runtime_error(" unrecognized string in input file : "  + type));
-		}
 
 	}
 
