@@ -1090,10 +1090,6 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 			estimate_normals.estimate(6);
 
 
-			#if IOFLAGS_shape_builder
-			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
-				this -> LN_t0.t(),this -> x_t0);
-			#endif
 
 		}
 	}
