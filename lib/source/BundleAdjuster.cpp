@@ -800,7 +800,7 @@ void BundleAdjuster::save_local_bundle(){
 		this -> LN_t0 -> t(), 
 		*this -> x_t0);
 
-	std::cout << "\t Created local structure with " << new_structure_pc.size() << " points\n";
+	std::cout << "\t Created local structure local_bundle_" + std::to_string(this -> next_anchor_pc_index) << " with " << new_structure_pc.size() << " points\n";
 	
 
 }
