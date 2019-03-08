@@ -258,7 +258,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 			if (this -> filter_arguments -> get_use_ba()){
 				
-				if(ba_test.update_overlap_graph()){
+				if(ba_test.update_overlap_graph() || true){
 					std::cout << "Detected loop closure. Running bundle adjustment ...";
 					ba_test.run(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 				}
@@ -1406,6 +1406,9 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 		std::cout << "\t Residuals from iod rt: " << res_previous_iod << " from "<< icp_pc_prealign.get_point_pairs().size()  << " pairs" << std::endl << std::endl;
 		std::cout << "\t Rigid transforms from iod rt: " << RBK::dcm_to_mrp(M_pc_iod).t() << " , " << X_pc_iod.t() << std::endl << std::endl;
+		
+
+
 	}
 	catch(ICPNoPairsException & e){
 		e.what();
