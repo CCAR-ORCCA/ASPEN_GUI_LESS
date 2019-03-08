@@ -95,8 +95,9 @@ void IterativeClosestPointToPlane::compute_pairs(
 	std::cout << "\t\t MRP_D: " << RBK::dcm_to_mrp(dcm_D).t();
 	#endif	
 
-		std::vector<std::pair<unsigned int , double> > formed_pairs;
-
+	std::vector<std::pair<unsigned int , double> > formed_pairs;
+	std::vector<PointPair> destination_source_dist_vector;
+	
 
 	if (N_pairs_max_from_source < N_pairs_max_from_destination){
 
@@ -104,7 +105,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 		arma::ivec random_source_indices = arma::randi<arma::ivec>(N_pairs_max_from_source,arma::distr_param(0,source_pc -> size() - 1));
 
-		std::vector<PointPair> destination_source_dist_vector;
 
 		for (int i = 0; i < N_pairs_max_from_source; ++i) {
 			PointPair destination_source_dist_pair = std::make_pair(-1,random_source_indices(i));
