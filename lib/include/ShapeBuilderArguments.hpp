@@ -530,6 +530,15 @@ public:
 		this -> use_target_poi = use_target_poi;
 	}
 
+
+	void set_save_transformed_source_pc(bool flag){
+		this -> save_transformed_source_pc = flag;
+	}
+	bool get_save_transformed_source_pc() const {
+		return this -> save_transformed_source_pc ;
+	}
+
+
 protected:
 
 
@@ -578,6 +587,7 @@ protected:
 	bool use_true_rigid_transforms = false;
 	bool use_bezier_shape = true;
 	bool use_target_poi = false;
+	bool save_transformed_source_pc = false;
 
 
 	arma::vec mrp_EN_final;

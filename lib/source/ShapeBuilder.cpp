@@ -1069,6 +1069,13 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 			// The source and destination point clouds are combined into the new source point cloud
 
+
+			if (this -> filter_arguments -> get_save_transformed_source_pc()){
+				PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
+					this -> LN_t0.t(),this -> x_t0);
+			}
+
+
 			this -> destination_pc = this -> source_pc;
 
 

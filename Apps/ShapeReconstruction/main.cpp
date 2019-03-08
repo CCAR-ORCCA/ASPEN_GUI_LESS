@@ -107,7 +107,8 @@ int main(int argc, char **argv) {
 	bool USE_TRUE_RIGID_TRANSFORMS = input_data["USE_TRUE_RIGID_TRANSFORMS"]; 
 	bool USE_BEZIER_SHAPE = input_data["USE_BEZIER_SHAPE"]; 
 	bool USE_TARGET_POI = input_data["USE_TARGET_POI"];
-
+	bool SAVE_TRANSFORMED_SOURCE_PC = input_data["SAVE_TRANSFORMED_SOURCE_PC"];
+	
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
@@ -336,7 +337,7 @@ int main(int argc, char **argv) {
 	shape_filter_args.set_ba_h(BA_H);
 	shape_filter_args.set_use_bezier_shape(USE_BEZIER_SHAPE);
 	shape_filter_args.set_use_target_poi(USE_TARGET_POI);
-
+	shape_filter_args.set_save_transformed_source_pc(SAVE_TRANSFORMED_SOURCE_PC);
 
 	std::cout << "True state at initial time: " << cart_state.get_state().t() << std::endl;
 	std::cout << "\t with mu = " << cart_state.get_mu() << std::endl;

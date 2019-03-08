@@ -98,7 +98,8 @@ def start_sims(n_pools = 1):
     "TF" : 150,
     "BA_H" : 3,
     "NUMBER_OF_EDGES" : 2000,
-    "INSTRUMENT_FREQUENCY_SHAPE" : 0.0003
+    "INSTRUMENT_FREQUENCY_SHAPE" : 0.0003,
+    "SAVE_TRANSFORMED_SOURCE_PC" : True
     }
 
 
