@@ -203,6 +203,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 			destination_source_dist_vector.push_back(destination_source_dist_pair);
 		}
 
+
 	#if ICP2P_DEBUG
 		std::cout << "\t\tHaving a maximum of " << destination_source_dist_vector.size() << " pairs\n";
 	#endif
@@ -333,7 +334,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 	#if ICP2P_DEBUG
 	std::cout<< "\t\tClustering achieved. Maximum acceptable cluster mean error: " << largest_acceptable_error << std::endl;
 	#endif
-	
+
 
 	for (unsigned int p = 0; p < N_clusters; ++p){
 		if (model_residuals.means(p) <= largest_acceptable_error){
@@ -345,9 +346,11 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 		if (acceptable_pairs.find(residuals_gaus_ids(i)) != acceptable_pairs.end() ){
 
+			std::cout << formed_pairs[i].first << std::endl;
+			std::cout << destination_source_dist_vector[formed_pairs[i].first].second <<" " << destination_source_dist_vector[formed_pairs[i].first].first << std::endl << std::endl;
 
-			
-			point_pairs.push_back(std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,destination_source_dist_vector[formed_pairs[i].first].first));
+			point_pairs.push_back(std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
+				destination_source_dist_vector[formed_pairs[i].first].first));
 
 
 
