@@ -108,10 +108,16 @@ int main(int argc, char **argv) {
 	bool USE_BEZIER_SHAPE = input_data["USE_BEZIER_SHAPE"]; 
 	bool USE_TARGET_POI = input_data["USE_TARGET_POI"];
 	bool SAVE_TRANSFORMED_SOURCE_PC = input_data["SAVE_TRANSFORMED_SOURCE_PC"];
-	
+
 	arma::vec::fixed<3> MRP_0 = {input_data["MRP_0"][0],input_data["MRP_0"][1],input_data["MRP_0"][2]};
 
 	std::string OUTPUT_DIR = input_data["OUTPUT_DIR"];
+
+
+
+
+	std::cout << input_data.dump(4) << std::endl;
+
 
 	// Kep state arguments
 	// - sma : semi-major axis [L]
