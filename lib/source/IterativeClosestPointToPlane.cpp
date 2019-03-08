@@ -47,13 +47,13 @@ void IterativeClosestPointToPlane::compute_pairs(int h,
 
 		this -> point_pairs.clear();
 		double p = std::log2(this -> pc_source -> size());
-		int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
+		int N_pairs_max_from_source = (int)(std::pow(2, std::max(p - h,0.)));
 
 		arma::ivec random_source_indices = arma::linspace<arma::ivec>(0, this -> pc_source -> size() - 1,this -> pc_source -> size());
 		if (h != 0){
 			random_source_indices = arma::shuffle(random_source_indices);
 		}
-		for (int i = 0; i < N_pairs_max; ++i){
+		for (int i = 0; i < N_pairs_max_from_source; ++i){
 			this -> point_pairs.push_back(std::make_pair<int,int>(random_source_indices(i),random_source_indices(i)));
 			
 		}
@@ -82,11 +82,14 @@ void IterativeClosestPointToPlane::compute_pairs(
 	std::map<double, PointPair > all_pairs;
 
 	// int N_points = (int)(source_pc -> size() / std::pow(2, h));
-	double p = std::log2(source_pc -> size());
-	int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
+	int N_pairs_max_from_source = (int)(std::pow(2, std::max(std::log2(source_pc -> size()) - h,0.)));
+	int N_pairs_max_from_destination = (int)(std::pow(2, std::max(std::log2(destination_pc -> size()) - h,0.)));
+
+
+
 
 	#if ICP2P_DEBUG
-	std::cout << "\tMaking " << N_pairs_max << " pairs at h = " << h << "\n";
+	std::cout << "\tMaking " << std::min(N_pairs_max_from_source,N_pairs_max_from_destination) << " pairs at h = " << h << "\n";
 	std::cout << "\tUsing a-priori transform:" << std::endl;
 	std::cout << "\t\t X_S: " <<x_S.t();
 	std::cout << "\t\t MRP_S: " << RBK::dcm_to_mrp(dcm_S).t() ;
@@ -96,21 +99,21 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 
 
-	// a maximum of $N_pairs_max pairs will be formed. $N_points points are extracted from the source point cloud	
-	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> size() - 1,source_pc -> size());
-	random_source_indices = arma::shuffle(random_source_indices);
+	if (N_pairs_max_from_source < N_pairs_max_from_destination){
 
-	std::vector<PointPair> destination_source_dist_vector;
+	// a maximum of $N_pairs_max_from_source pairs will be formed. $N_points points are extracted from the source point cloud	
 
-	for (int i = 0; i < N_pairs_max; ++i) {
-		PointPair destination_source_dist_pair = std::make_pair(-1,random_source_indices(i));
-		destination_source_dist_vector.push_back(destination_source_dist_pair);
-	}
+		arma::ivec random_source_indices = arma::randi<arma::ivec>(N_pairs_max_from_source,arma::distr_param(0,source_pc -> size() - 1));
 
+		std::vector<PointPair> destination_source_dist_vector;
 
+		for (int i = 0; i < N_pairs_max_from_source; ++i) {
+			PointPair destination_source_dist_pair = std::make_pair(-1,random_source_indices(i));
+			destination_source_dist_vector.push_back(destination_source_dist_pair);
+		}
 
 	#if ICP2P_DEBUG
-	std::cout << "\t\tHaving a maximum of " << destination_source_dist_vector.size() << " pairs\n";
+		std::cout << "\t\tHaving a maximum of " << destination_source_dist_vector.size() << " pairs\n";
 	#endif
 	// The $N_points half-pair we defined are mapped to the destination frame using the 
 	// a-priori transform. Then, the destination pc is queried for the closest destination point
@@ -118,27 +121,24 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
-		arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
-		int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
+			arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
+			int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
 
-		const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
-		
-		arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
-		arma::vec::fixed<3> n_source = dcm_S * source_pc -> get_normal_coordinates(destination_source_dist_vector[i].second);
+			const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
+
+			arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
+			arma::vec::fixed<3> n_source = dcm_S * source_pc -> get_normal_coordinates(destination_source_dist_vector[i].second);
 
 		// If the two normals are compatible, the points are matched
-		if (arma::dot(n_dest,n_source) > std::sqrt(2) / 2 ) {
-			destination_source_dist_vector[i].first = index_closest_destination_point;
+			if (arma::dot(n_dest,n_source) > std::sqrt(2) / 2 ) {
+				destination_source_dist_vector[i].first = index_closest_destination_point;
 
+			}
 		}
-	}
 
 
-	#if ICP2P_DEBUG
-	std::cout << "\t\tFound compatible closest destination points of randomly sampled source points\n";
-	#endif
 
 	// The destination point is mapped to the source frame using the inverse of the a-priori transform
 	// Then, the source pc is queried for the closest source point
@@ -148,8 +148,67 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-		if (destination_source_dist_vector[i].first != -1){
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+			if (destination_source_dist_vector[i].first != -1){
+				arma::vec test_destination_point = dcm_S.t() * ( dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D - x_S);
+
+
+				int index_closest_source_point = source_pc -> get_closest_point(test_destination_point);
+				arma::vec closest_source_point = source_pc -> get_point_coordinates(index_closest_source_point);
+
+				arma::vec n_source = dcm_S * source_pc -> get_normal_coordinates(index_closest_source_point);
+				arma::vec n_destination = dcm_D * destination_pc -> get_normal_coordinates(destination_source_dist_vector[i].first);
+
+		// If the two normals are compatible, the points are matched
+				if (arma::dot(n_source,n_destination) > std::sqrt(2) / 2 ) {
+					destination_source_dist_vector[i].second = index_closest_source_point;
+				}
+			}
+
+		}
+
+	// The source/destination pairs are pre-formed
+		std::vector<std::pair<unsigned int , double> > formed_pairs;
+
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+
+			if (destination_source_dist_vector[i].first != -1){
+				arma::vec S = dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second) + x_S;
+				arma::vec n = dcm_D * destination_pc -> get_normal_coordinates(destination_source_dist_vector[i].first);
+				arma::vec D = dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
+
+				formed_pairs.push_back(std::make_pair(i,arma::dot(n,S - D)));
+			}
+		}	
+
+
+
+	}
+	else{
+
+
+		// a maximum of $N_pairs_max_from_destination pairs will be formed. $N_points points are extracted from the destination point cloud	
+
+		arma::ivec random_destination_indices = arma::randi<arma::ivec>(N_pairs_max_from_destination,arma::distr_param(0,destination_pc -> size() - 1));
+
+		std::vector<PointPair> destination_source_dist_vector;
+
+		for (int i = 0; i < N_pairs_max_from_destination; ++i) {
+			PointPair destination_source_dist_pair = std::make_pair(random_destination_indices(i),-1);
+			destination_source_dist_vector.push_back(destination_source_dist_pair);
+		}
+
+	#if ICP2P_DEBUG
+		std::cout << "\t\tHaving a maximum of " << destination_source_dist_vector.size() << " pairs\n";
+	#endif
+	// The $N_points half-pair we defined are mapped to the destination frame using the 
+	// a-priori transform. Then, the source pc is queried for the closest source point
+	// to the mapped destination point
+
+
+	#pragma omp parallel for
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+
 			arma::vec test_destination_point = dcm_S.t() * ( dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D - x_S);
 
 
@@ -163,23 +222,58 @@ void IterativeClosestPointToPlane::compute_pairs(
 			if (arma::dot(n_source,n_destination) > std::sqrt(2) / 2 ) {
 				destination_source_dist_vector[i].second = index_closest_source_point;
 			}
+
 		}
+
+
+
+	// The source point is mapped to the destination frame using the inverse of the a-priori transform
+	// Then, the destination pc is queried for the closest destination point
+	// to the mapped source point
+	// This double mapping process gets rid of edge points
+
+
+	#pragma omp parallel for
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+			
+			if (destination_source_dist_vector[i].second != -1){
+				
+
+				arma::vec::fixed<3> test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second)+ x_S - x_D);
+				int index_closest_destination_point = destination_pc -> get_closest_point(test_source_point);
+
+				const PointNormal & closest_destination_point = destination_pc -> get_point(index_closest_destination_point);
+
+				arma::vec::fixed<3> n_dest = dcm_D * closest_destination_point.get_normal_coordinates();
+				arma::vec::fixed<3> n_source = dcm_S * source_pc -> get_normal_coordinates(destination_source_dist_vector[i].second);
+
+		// If the two normals are compatible, the points are matched
+				if (arma::dot(n_dest,n_source) > std::sqrt(2) / 2 ) {
+					destination_source_dist_vector[i].first = index_closest_destination_point;
+
+				}
+
+			}
+
+		}
+
+	// The source/destination pairs are pre-formed
+		std::vector<std::pair<unsigned int , double> > formed_pairs;
+
+		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
+
+			if (destination_source_dist_vector[i].second != -1){
+				arma::vec S = dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second) + x_S;
+				arma::vec n = dcm_D * destination_pc -> get_normal_coordinates(destination_source_dist_vector[i].first);
+				arma::vec D = dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
+
+				formed_pairs.push_back(std::make_pair(i,arma::dot(n,S - D)));
+			}
+		}	
+
 
 	}
 
-	// The source/destination pairs are pre-formed
-	std::vector<std::pair<unsigned int , double> > formed_pairs;
-
-	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-
-		if (destination_source_dist_vector[i].first != -1){
-			arma::vec S = dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second) + x_S;
-			arma::vec n = dcm_D * destination_pc -> get_normal_coordinates(destination_source_dist_vector[i].first);
-			arma::vec D = dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
-
-			formed_pairs.push_back(std::make_pair(i,arma::dot(n,S - D)));
-		}
-	}	
 
 
 	#if ICP2P_DEBUG
@@ -338,100 +432,5 @@ void IterativeClosestPointToPlane::build_matrices(
 }
 
 
-
-// void IterativeClosestPointToPlane::ransac(
-// 	const std::vector<PointPair> & all_pairs,
-// 	int N_feature_pairs,
-// 	int minimum_N_icp_pairs,
-// 	double residuals_threshold,
-// 	int N_iter_ransac,
-// 	std::shared_ptr<PC> pc_source,
-// 	std::shared_ptr<PC> pc_destination,
-// 	arma::mat::fixed<3,3> & dcm_ransac,
-// 	arma::vec::fixed<3> & x_ransac,
-// 	std::vector< PointPair > & matches_ransac){
-
-
-// 	double J_best = std::numeric_limits<double>::infinity();
-// 	std::vector<PointPair> best_pairs;
-
-// 	for (int iter = 0; iter < N_iter_ransac; ++iter){
-
-// 		#if RANSAC_DEBUG
-// 		std::cout << "RANSAC iteration " << iter + 1 << "/" << N_iter_ransac << std::endl;
-// 		#endif
-
-// 		// Creating the icp instance
-// 		IterativeClosestPointToPlane icp;
-// 		icp.set_pc_source(pc_source);
-// 		icp.set_pc_destination(pc_destination);
-
-
-// 		#if RANSAC_DEBUG
-// 		std::cout << "\tSampling arbitrary feature pairs" << std::endl;
-// 		#endif
-
-
-// 		// Sampling random feature correspondance pairs
-// 		std::vector< PointPair > kept_matches;
-// 		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
-// 		for (int j = 0; j < N_feature_pairs; ++j){
-// 			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
-// 		}
-// 		icp.set_pairs(kept_matches);
-
-// 		// Registering using these pairs
-// 		icp.register_pc();
-
-
-// 		arma::vec::fixed<3> x = icp.get_x();
-// 		arma::mat::fixed<3,3> dcm = icp.get_dcm();
-
-// 		// Computing the point pairs arising from the ICP cost function
-// 		try{
-// 			icp.compute_pairs(6,icp.get_dcm(),icp.get_x());
-// 		}
-// 		catch(ICPNoPairsException & e){
-// 			continue;
-// 		}
-// 		// Getting the ICP pairs
-// 		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
-
-
-// 		#if RANSAC_DEBUG
-// 		std::cout << "\tRANSAC: Got " << icp_pairs.size() << " active ICP pairs" << std::endl;
-// 		#endif
-
-// 		// If there are enough active pairs
-// 		if (icp_pairs.size() > minimum_N_icp_pairs){
-
-// 			// and if these pairs give good ICP residuals
-// 			double J = icp.compute_residuals(icp_pairs,dcm,x);
-
-// 			#if RANSAC_DEBUG
-// 			std::cout << "\tRANSAC: Residuals:  " << J << " , previous best residuals: " << J_best << std::endl;
-// 			#endif
-
-// 			if (J < residuals_threshold){
-
-// 				// If it surpasses the previous best
-// 				if (J < J_best){
-// 					#if RANSAC_DEBUG
-// 					std::cout << "\tRANSAC: Found better model. Best J= " << J << std::endl;
-// 					#endif
-// 					J_best = J;
-
-// 					matches_ransac = kept_matches;
-// 					matches_ransac.insert(matches_ransac.end(), icp_pairs.begin(), icp_pairs.end());
-// 					dcm_ransac = dcm;
-// 					x_ransac = x;
-// 				}
-// 			}
-
-// 		}
-
-// 	}
-
-// }
 
 
