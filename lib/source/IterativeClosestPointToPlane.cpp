@@ -347,6 +347,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 		if (acceptable_pairs.find(residuals_gaus_ids(i)) != acceptable_pairs.end() ){
 
 			std::cout << formed_pairs[i].first << std::endl;
+			std::cout << destination_source_dist_vector.size() << std::endl;
 			std::cout << destination_source_dist_vector[formed_pairs[i].first].second <<" " << destination_source_dist_vector[formed_pairs[i].first].first << std::endl << std::endl;
 
 			point_pairs.push_back(std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
