@@ -227,8 +227,7 @@ void BundleAdjuster::solve_bundle_adjustment(
 		// and the rigid transforms positioning them are also updated
 		has_converged = this -> update_point_cloud_pairs(int(this -> N_iter) - 1 == iter );
 
-		std::cout << "\n- Removing edges from graph \n";
-		this -> remove_edges_from_graph();
+		
 		this -> create_pairs();
 
 		if (has_converged){
@@ -237,6 +236,9 @@ void BundleAdjuster::solve_bundle_adjustment(
 		}
 
 	}
+
+	std::cout << "\n- Removing edges from graph \n";
+	this -> remove_edges_from_graph();
 
 
 }

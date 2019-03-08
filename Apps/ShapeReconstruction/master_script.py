@@ -8,6 +8,7 @@ import sys
 import itertools
 import time
 from multiprocessing import Pool
+import socket
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location,sim_name):
        
@@ -22,10 +23,17 @@ def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,b
 
     return all_cases_dictionnary_list
 
-if (platform.system() == 'Linux'):
+# Replace the paths after 'base_location' with the existing directory under which the input/ and /output sub-directories
+# will be created and populated
+if (socket.gethostname() == "fortuna"):
     base_location = "/orc_raid/bebe0705/"
 else:
-    base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+    base_location = "../"
+
+
+
+
+
 
 def run_sim(data,quiet = True):
 
