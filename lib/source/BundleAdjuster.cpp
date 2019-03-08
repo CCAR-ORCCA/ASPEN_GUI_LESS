@@ -1109,10 +1109,10 @@ std::shared_ptr<PointCloud < PointNormal > > BundleAdjuster::get_anchor_pc() con
 bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,int pc_maybe_in_anchor_cluster) const{
 
 
-	std::cout << "new_pc_index: " << new_pc_index << std::endl;
+	std::cout << "\nnew_pc_index: " << new_pc_index << std::endl;
 	std::cout << "pc_maybe_in_anchor_cluster: " << pc_maybe_in_anchor_cluster << std::endl;
-	std::cout << std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size << std::endl;
-	std::cout << std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size <= this -> cluster_size << std::endl << std::endl;
+	std::cout << (bool)(std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size) << std::endl;
+	std::cout << (bool)(std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size <= this -> cluster_size) << std::endl << std::endl;
 
 	if (std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size && std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size){
 		return true;
