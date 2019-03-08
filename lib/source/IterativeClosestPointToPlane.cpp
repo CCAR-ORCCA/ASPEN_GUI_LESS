@@ -100,6 +100,9 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 
 	if (N_pairs_max_from_source < N_pairs_max_from_destination){
+		#if ICP2P_DEBUG
+		std::cout<< "source_pc is the smallest point cloud\n";
+		#endif
 
 	// a maximum of $N_pairs_max_from_source pairs will be formed. $N_points points are extracted from the source point cloud	
 
@@ -185,6 +188,10 @@ void IterativeClosestPointToPlane::compute_pairs(
 	else{
 
 
+
+	#if ICP2P_DEBUG
+		std::cout<< "destination_pc is the smallest point cloud\n";
+		#endif
 		// a maximum of $N_pairs_max_from_destination pairs will be formed. $N_points points are extracted from the destination point cloud	
 
 		arma::ivec random_destination_indices = arma::randi<arma::ivec>(N_pairs_max_from_destination,arma::distr_param(0,destination_pc -> size() - 1));
@@ -326,6 +333,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 	#if ICP2P_DEBUG
 	std::cout<< "\t\tClustering achieved. Maximum acceptable cluster mean error: " << largest_acceptable_error << std::endl;
 	#endif
+	
 
 	for (unsigned int p = 0; p < N_clusters; ++p){
 		if (model_residuals.means(p) <= largest_acceptable_error){
@@ -336,10 +344,12 @@ void IterativeClosestPointToPlane::compute_pairs(
 	for (unsigned int i = 0; i < dist_vec.n_rows; ++i) {
 
 		if (acceptable_pairs.find(residuals_gaus_ids(i)) != acceptable_pairs.end() ){
+
+
 			
-			point_pairs.push_back(
-				std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
-					destination_source_dist_vector[formed_pairs[i].first].first));
+			point_pairs.push_back(std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,destination_source_dist_vector[formed_pairs[i].first].first));
+
+
 
 		}
 
