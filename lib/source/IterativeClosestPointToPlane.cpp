@@ -1,5 +1,5 @@
 #include "IterativeClosestPointToPlane.hpp"
-#define ICP2P_DEBUG 0
+#define ICP2P_DEBUG 1
 #include <chrono>
 #include <set>
 
@@ -97,7 +97,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 	std::vector<std::pair<unsigned int , double> > formed_pairs;
 	std::vector<PointPair> destination_source_dist_vector;
-	
+
 
 	if (N_pairs_max_from_source < N_pairs_max_from_destination){
 
