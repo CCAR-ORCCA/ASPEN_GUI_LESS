@@ -1,5 +1,5 @@
 #include "IterativeClosestPointToPlane.hpp"
-#define ICP2P_DEBUG 1
+#define ICP2P_DEBUG 0
 #include <chrono>
 #include <set>
 
@@ -196,8 +196,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 		arma::ivec random_destination_indices = arma::randi<arma::ivec>(N_pairs_max_from_destination,arma::distr_param(0,destination_pc -> size() - 1));
 
-		std::vector<PointPair> destination_source_dist_vector;
-
 		for (int i = 0; i < N_pairs_max_from_destination; ++i) {
 			PointPair destination_source_dist_pair = std::make_pair(random_destination_indices(i),-1);
 			destination_source_dist_vector.push_back(destination_source_dist_pair);
@@ -346,10 +344,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 
 		if (acceptable_pairs.find(residuals_gaus_ids(i)) != acceptable_pairs.end() ){
 
-			std::cout << formed_pairs[i].first << std::endl;
-			std::cout << destination_source_dist_vector.size() << std::endl;
-			std::cout << destination_source_dist_vector[formed_pairs[i].first].second <<" " << destination_source_dist_vector[formed_pairs[i].first].first << std::endl << std::endl;
-
+			
 			point_pairs.push_back(std::make_pair(destination_source_dist_vector[formed_pairs[i].first].second,
 				destination_source_dist_vector[formed_pairs[i].first].first));
 
