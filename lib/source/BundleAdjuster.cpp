@@ -577,36 +577,41 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 	std::cout << "-- Maximum point-cloud pair ICP error at (" << worst_Sk << " , " << worst_Dk <<  ") : " << max_error << std::endl;
 
-	this -> edges_to_remove.clear();
-	
-	for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
+	if(last_iter){
+		this -> edges_to_remove.clear();
 
-		if (acceptable_clusters.find(residuals_gaus_ids(k)) == acceptable_clusters.end() ){
+		for (unsigned int k = 0; k < this -> point_cloud_pairs.size(); ++k){
 
-			std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
+			if (acceptable_clusters.find(residuals_gaus_ids(k)) == acceptable_clusters.end() ){
 
-			if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+				std::cout << "-- Bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ")\n";
 
-				if (this -> point_cloud_pairs[k].D_k <= this -> next_anchor_pc_index){
-					std::cout << "--- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
-					this -> next_anchor_pc_index = this -> anchor_pc_index;
+				if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
+
+					if (this -> point_cloud_pairs[k].D_k <= this -> next_anchor_pc_index){
+						std::cout << "--- Cancelling creation of local structure since a bad edge ("  << this -> point_cloud_pairs[k].S_k << " , " << this -> point_cloud_pairs[k].D_k <<   ") was present\n";
+						this -> next_anchor_pc_index = this -> anchor_pc_index;
+					}
+				}
+
+				std::set<int> edge_to_remove;
+				edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
+				edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
+
+				if (this -> can_remove_edge(edge_to_remove)){
+					this -> edges_to_remove.push_back(edge_to_remove);
+
 				}
 			}
-
-			std::set<int> edge_to_remove;
-			edge_to_remove.insert(this -> point_cloud_pairs[k].D_k);
-			edge_to_remove.insert(this -> point_cloud_pairs[k].S_k);
-
-			if (this -> can_remove_edge(edge_to_remove)){
-				this -> edges_to_remove.push_back(edge_to_remove);
-
-			}
 		}
-	}
 
 	// If no edge needs to be removed, BA has converged
-	if (this -> edges_to_remove.size() == 0){
-		return true;
+		if (this -> edges_to_remove.size() == 0){
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 	else{
 		return false;
