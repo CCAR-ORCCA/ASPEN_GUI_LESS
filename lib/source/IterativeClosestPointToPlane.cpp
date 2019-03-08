@@ -86,8 +86,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 	int N_pairs_max_from_destination = (int)(std::pow(2, std::max(std::log2(destination_pc -> size()) - h,0.)));
 
 
-
-
 	#if ICP2P_DEBUG
 	std::cout << "\tMaking " << std::min(N_pairs_max_from_source,N_pairs_max_from_destination) << " pairs at h = " << h << "\n";
 	std::cout << "\tUsing a-priori transform:" << std::endl;
@@ -97,6 +95,7 @@ void IterativeClosestPointToPlane::compute_pairs(
 	std::cout << "\t\t MRP_D: " << RBK::dcm_to_mrp(dcm_D).t();
 	#endif	
 
+		std::vector<std::pair<unsigned int , double> > formed_pairs;
 
 
 	if (N_pairs_max_from_source < N_pairs_max_from_destination){
@@ -168,7 +167,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 		}
 
 	// The source/destination pairs are pre-formed
-		std::vector<std::pair<unsigned int , double> > formed_pairs;
 
 		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
@@ -258,7 +256,6 @@ void IterativeClosestPointToPlane::compute_pairs(
 		}
 
 	// The source/destination pairs are pre-formed
-		std::vector<std::pair<unsigned int , double> > formed_pairs;
 
 		for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 
