@@ -946,8 +946,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	OC::CartState cartesian_state_at_epoch(epoch_state.subvec(0,5),epoch_state(6));
 	OC::KepState keplerian_state_at_epoch = cartesian_state_at_epoch.convert_to_kep(0);
 
-	double epoch_time = iod_finder -> get_sequential_rigid_transforms() -> at(0).t_start;
-	double final_time = iod_finder -> get_sequential_rigid_transforms() -> back().t_end;
+	double epoch_time = iod_finder.get_sequential_rigid_transforms() -> at(0).t_start;
+	double final_time = iod_finder.get_sequential_rigid_transforms() -> back().t_end;
 
 
 	OC::CartState cartesian_state_at_final = keplerian_state_at_epoch.convert_to_cart(final_time - epoch_time);
