@@ -13,9 +13,6 @@
 #
 ################################################################################
 
-# OMP-friendly GCC Major version (will only be used on Mac OS systems)
-set (OMP_FRIENDLY_GCC_MAJOR_VERSION 7)
-
 ################################################################################
 #
 #
@@ -40,18 +37,9 @@ elseif(UNIX AND NOT APPLE)
 	set(SBGAT_LOC "/home/bebe0705/libs/local/lib/cmake/SbgatCore")
 	set(ASPEN_LOC "/usr/local/lib/cmake/ASPEN")
 	set(CGAL_interface_LOC "/usr/local/lib/cmake/CGAL_interface")
-	set (VTK_PATH /home/ben/Work/VTK-no-QT/build)
 endif()
 
-cmake_minimum_required(VERSION 3.0.0)
-
-
-if (${USE_GCC})
-	include(cmake/FindOmpGcc.cmake)
-else()
-	set(CMAKE_C_COMPILER /usr/bin/gcc CACHE STRING "C Compiler" FORCE)
-	set(CMAKE_CXX_COMPILER /usr/bin/g++ CACHE STRING "C++ Compiler" FORCE)
-endif()
+cmake_minimum_required(VERSION 3.5.0)
 
 
 # Building procedure
@@ -71,7 +59,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/source/cmake)
 
 # Compiler flags
 add_definitions(-Wall -O2 )
-
 
 
 # Enable C++17 
@@ -135,12 +122,10 @@ if(OPENMP_FOUND)
 endif()
 
 
-# Fortran compiler, required by Armadillo on Linux/Ubuntu
-# if(UNIX AND NOT APPLE AND ${CMAKE_MINOR_VERSION} GREATER 0 AND NOT ${IS_FORTUNA})
-# 	find_library(GFORTRAN_LIBRARY gfortran
-# 	    PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/)
-# 	list(APPEND ARMADILLO_LIBRARIES "${GFORTRAN_LIBRARY}")
-# endif()
+# Removing spurious include sometimes brought in by one of VTK's dependencies
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+list(REMOVE_ITEM dirs "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/include")
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES ${dirs})
 
 # Add source files in root directory
 add_executable(${EXE_NAME}
@@ -164,8 +149,11 @@ set(library_dependencies
 if (UNIX AND NOT APPLE)
 
 	target_link_libraries(${EXE_NAME} ${library_dependencies})
-else()
+elseif (OPENMP_FOUND)
 	target_link_libraries(${EXE_NAME} ${library_dependencies} OpenMP::OpenMP_CXX)
+
+else()
+	target_link_libraries(${EXE_NAME} ${library_dependencies} )
 
 endif()
 
