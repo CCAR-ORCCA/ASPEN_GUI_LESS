@@ -311,7 +311,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				BN_extrapolated_next_time.print("Extrapolated attitude at next timestep: ");
 				RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).print("True attitude at next timestep: ");
 
-				arma::dcm_to_mrp(BN_extrapolated_next_time *RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).t() ).t().print("Atttude extrapolation error:");
+				RBK::dcm_to_mrp(BN_extrapolated_next_time *RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).t() ).t().print("Atttude extrapolation error:");
 			
 				if (this -> target_of_interest_L0_frame.n_rows != 0){
 					this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
