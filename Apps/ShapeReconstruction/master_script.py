@@ -65,7 +65,7 @@ def run_sim(data,quiet = True):
 
         if not quiet:
 
-            os.system("./ShapeReconstruction " + data["OUTPUT_DIR"] + '/input_file.json' + " 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+            os.system("./ShapeReconstruction " + data["OUTPUT_DIR"] + '/input_file.json' + " 2>&1 | tee " + data["OUTPUT_DIR"] + "/log.txt" )
         else:
             os.system("./ShapeReconstruction " + data["OUTPUT_DIR"] + "/input_file.json  >> " + data["OUTPUT_DIR"] + "/log.txt 2>&1" )
     
