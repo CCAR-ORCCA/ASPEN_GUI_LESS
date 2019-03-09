@@ -915,6 +915,11 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 			}
 			catch(ICPNoPairsException & e){
+				std::cerr << e.what() << std::endl;
+
+			}
+			catch(std::logic_error & e){
+				std::cerr << e.what() << std::endl;
 
 			}
 		}
@@ -1114,11 +1119,11 @@ bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,i
 		
 		std::cout << "\t Found closure with anchor index\n";
 
-		return true;
-	}
-	else{
-		return false;
-	}
+	return true;
+}
+else{
+	return false;
+}
 
 
 
