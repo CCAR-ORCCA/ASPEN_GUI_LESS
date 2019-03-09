@@ -953,7 +953,6 @@ bool BundleAdjuster::update_overlap_graph(){
 			// We have full loop closure. new_pc_index will define the new anchor index
 			// after ba has been run
 			this -> next_anchor_pc_index = new_pc_index;
-			std::cout << "\t Found closure with anchor index\n";
 		}
 
 	}
@@ -1115,6 +1114,9 @@ bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,i
 	std::cout << (bool)(std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size <= this -> cluster_size) << std::endl << std::endl;
 
 	if (std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size && std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size){
+		
+		std::cout << "\t Found closure with anchor index\n";
+		
 		return true;
 	}
 	else{
