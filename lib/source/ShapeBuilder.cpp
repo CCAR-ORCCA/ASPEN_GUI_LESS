@@ -940,7 +940,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	};
 	
 
-	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
+	iod_finder.run_pso(lower_bounds, upper_bounds,0,guess);
 	epoch_state = iod_finder.get_result();
 	
 	OC::CartState cartesian_state_at_epoch(epoch_state.subvec(0,5),epoch_state(6));
@@ -1431,7 +1431,7 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 		e.what();
 	}
 
-	if (res_previous_rt < res_previous_iod || N_pairs_iod == 0){
+	if ((bool)(res_previous_rt < res_previous_iod || N_pairs_iod == 0 ) && time_index < this -> filter_arguments -> get_iod_rigid_transforms_number() ){
 		std::cout << "\t Choosing previous rt a-priori\n";
 
 		icp_pc_prealign.clear_point_pairs();
