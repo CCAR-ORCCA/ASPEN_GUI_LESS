@@ -884,7 +884,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 
 
-		if (angle > 90){
+		if (angle > 120){
 			std::cout << " Skipping ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
 		}
 		else{
@@ -1108,10 +1108,6 @@ std::shared_ptr<PointCloud < PointNormal > > BundleAdjuster::get_anchor_pc() con
 bool BundleAdjuster::overlap_with_anchor_cluster_from_outside(int new_pc_index,int pc_maybe_in_anchor_cluster) const{
 
 
-	std::cout << "\nnew_pc_index: " << new_pc_index << std::endl;
-	std::cout << "pc_maybe_in_anchor_cluster: " << pc_maybe_in_anchor_cluster << std::endl;
-	std::cout << (bool)(std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size) << std::endl;
-	std::cout << (bool)(std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size) << std::endl << std::endl;
 
 	if ((bool)(std::abs(pc_maybe_in_anchor_cluster - this -> anchor_pc_index) <= this -> cluster_size)  
 		&& (bool)(std::abs(new_pc_index - pc_maybe_in_anchor_cluster) > this -> cluster_size) ){
