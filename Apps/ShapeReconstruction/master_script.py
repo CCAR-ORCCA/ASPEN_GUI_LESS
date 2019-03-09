@@ -100,7 +100,7 @@ def start_sims(n_pools = 1):
     "N_ITER_SHAPE_FILTER" : 3,
     "IOD_ITERATIONS" : 100,
     "IOD_RIGID_TRANSFORMS_NUMBER" : 7,
-    "IOD_PARTICLES" : 100,
+    "IOD_PARTICLES" : 300,
     "USE_TARGET_POI" : False,
     "USE_BEZIER_SHAPE" : True,
     "TF" : 150,
