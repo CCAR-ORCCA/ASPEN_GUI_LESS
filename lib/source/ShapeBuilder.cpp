@@ -299,16 +299,20 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec::fixed<3> r_extrapolated_next_time = (
 					iod_state.convert_to_kep(0).convert_to_cart(times(time_index + 1) - times(epoch_time_index)).get_position_vector());
 
-
-				std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
-				std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
-
-
-
-			// Assumes a fixed rotation axis and angular velocity
+				// Assumes a fixed rotation axis and angular velocity
 			// As well as uniform time sampling
 				arma::mat::fixed<3,3> BN_extrapolated_next_time = (BN_measured.back() * (BN_measured.end()[-2]).t()) * BN_measured.back() ; 
 
+
+				std::cout << "\nExtrapolated position at next timestep: " << r_extrapolated_next_time.t();
+				std::cout << "True position at next timestep: " << X[time_index +1].subvec(0,2).t();
+				arma::abs(r_extrapolated_next_time - X[time_index +1].subvec(0,2)).t().print("Position extrapolation error:");
+
+				BN_extrapolated_next_time.print("Extrapolated attitude at next timestep: ");
+				RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).print("True attitude at next timestep: ")
+
+				(BN_extrapolated_next_time *RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).t() ).print("Atttude extrapolation error:");
+			
 				if (this -> target_of_interest_L0_frame.n_rows != 0){
 					this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
 						+ BN_extrapolated_next_time.t() 
