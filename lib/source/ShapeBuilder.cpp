@@ -942,10 +942,25 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 	iod_finder.run_pso(lower_bounds, upper_bounds,1,guess);
 	epoch_state = iod_finder.get_result();
-	final_state = arma::zeros<arma::vec>(epoch_state.n_rows);
-
 	
-	iod_finder.run_batch(epoch_state,final_state,epoch_cov,final_cov,R_pcs);
+	OC::CartState cartesian_state_at_epoch(epoch_state.subvec(0,5),epoch_state(6));
+	OC::KepState keplerian_state_at_epoch = cartesian_state_at_epoch.convert_to_kep(0);
+
+	double epoch_time = iod_finder -> get_sequential_rigid_transforms() -> at(0).t_start;
+	double final_time = iod_finder -> get_sequential_rigid_transforms() -> back().t_end;
+
+
+	OC::CartState cartesian_state_at_final = keplerian_state_at_epoch.convert_to_cart(final_time - epoch_time);
+
+
+	final_state = cartesian_state_at_final.get_state();
+
+
+	arma::vec batch_epoch_state = epoch_state;
+	arma::vec batch_final_state = final_state;
+
+	iod_finder.run_batch(batch_epoch_state,batch_final_state,epoch_cov,final_cov,R_pcs);
+	
 	cart_state.set_state(epoch_state.subvec(0,5));
 	cart_state.set_mu(epoch_state(6));
 	final_state.t().print("Final state on the IOD arc after fit:");

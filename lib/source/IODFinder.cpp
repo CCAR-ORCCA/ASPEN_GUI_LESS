@@ -346,7 +346,7 @@ void IODFinder::run_batch(
 	arma::mat & final_cov,
 	const std::map<int, arma::mat::fixed<6,6> > & R_pcs){
 
-	int N_iter = 10;
+	int N_iter = 1;
 
 	arma::mat info_mat(7,7);
 	arma::vec normal_mat(7);

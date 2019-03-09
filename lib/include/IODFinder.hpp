@@ -57,7 +57,11 @@ public:
 	void compute_W(const std::vector<arma::vec::fixed<3>> & positions);
 
 	static arma::rowvec::fixed<7> partial_rp_partial_state(const arma::vec::fixed<7> & state );
-	
+		
+	std::vector<RigidTransform> * get_sequential_rigid_transforms() const{
+		return this -> sequential_rigid_transforms;
+	}
+
 protected:
 
 
