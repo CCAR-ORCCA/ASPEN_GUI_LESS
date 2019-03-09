@@ -913,7 +913,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 		2
 	};
 
-	std::cout << "Initial guess on the IOD arc: " << guess.t() << std::endl;
+	guess.t().print("Initial guess on the IOD arc:");
 
 	arma::vec lower_bounds = {
 		guess(0) - 100,
@@ -944,6 +944,8 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 	iod_finder.run_batch(epoch_state,final_state,epoch_cov,final_cov,R_pcs);
 	cart_state.set_state(epoch_state.subvec(0,5));
 	cart_state.set_mu(epoch_state(6));
+	final_state.t().print("Final state on the IOD arc after fit:");
+
 
 }
 
