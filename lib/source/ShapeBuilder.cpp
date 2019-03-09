@@ -957,7 +957,7 @@ void ShapeBuilder::run_IOD_finder(const arma::vec & times,
 
 
 	arma::vec batch_epoch_state = epoch_state;
-	arma::vec batch_final_state = final_state;
+	arma::vec batch_final_state = arma::zeros<arma::vec>(7);
 
 	iod_finder.run_batch(batch_epoch_state,batch_final_state,epoch_cov,final_cov,R_pcs);
 	
