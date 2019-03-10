@@ -15,7 +15,7 @@ public:
 	std::vector<int> indices;
 
 	KDTree(ContainerType<PointType> * owner);
-	~KDTree(){std::cout << "\tCalling ~KDTree on " << indices.size() << " points\n"};
+	~KDTree(){std::cout << "\tCalling ~KDTree on " << indices.size() << " points\n";}
 
 
 	void build(const std::vector< int > & indices, int depth) ;
