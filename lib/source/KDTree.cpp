@@ -299,17 +299,17 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 	#endif
 
 	if (static_cast<int>(this -> indices.size()) == 0) {
-		// #if KDTREE_BUILD_DEBUG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Empty node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
-		// #endif
+		#endif
 		return;
 	}
 	else if (static_cast<int>(this -> indices.size()) == 1){
-		// #if KDTREE_BUILD_DEBUG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Trivial node" << std::endl;
 		std::cout << "Leaf depth: " << depth << std::endl;
-		// #endif
+		#endif
 		return;
 	}
 	else if (static_cast<int>(this -> indices.size()) < this -> get_min_indices_per_node()){
@@ -321,11 +321,10 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 	}
 	else if (this -> depth == this -> get_max_depth()){
 		
-		#if KDTREE_BUILD_DEBUG
+		// #if KDTREE_BUILD_DEBUG
 		std::cout << "Max depth (" << this -> get_max_depth()  << ") reached\n";
 		std::cout << "Node contains "  <<static_cast<int>(this -> indices.size()) << " indices \n";
-
-		#endif
+		// #endif
 		return ;
 
 	}
