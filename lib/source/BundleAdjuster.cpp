@@ -108,16 +108,14 @@ void BundleAdjuster::run(
 		
 		// The new anchor pc is effectively replaced by the new local structure
 		auto destination_pc = this -> all_registered_pc -> back();
-		for (int j = 0; j < this -> all_registered_pc -> size() ; ++j){
-			if (this -> all_registered_pc -> at(j) != destination_pc){
-				for (int k = 0; k < this -> all_registered_pc -> at(j) -> size(); ++k){
-					destination_pc -> push_back(this -> all_registered_pc -> at(j) -> get_point(k));
-				}
-				this -> all_registered_pc -> at(j) -> clear();
+
+		for (auto iter = this -> all_registered_pc -> begin(); iter != (--this -> all_registered_pc -> end()); ++iter){
+
+			for (int k = 0; k < (*iter) -> size(); ++k){
+				destination_pc -> push_back((*iter)-> get_point(k));
 			}
-			else{
-				std::cout << "not copying destination_pc into itself\n";
-			}
+			this -> all_registered_pc -> at(j) -> clear();
+			
 		}
 
 		destination_pc -> build_kdtree(false);
