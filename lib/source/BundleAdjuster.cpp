@@ -113,6 +113,7 @@ void BundleAdjuster::run(
 				for (int k = 0; k < this -> all_registered_pc -> at(j) -> size(); ++k){
 					destination_pc -> push_back(this -> all_registered_pc -> at(j) -> get_point(k));
 				}
+				this -> all_registered_pc -> at(j) -> clear();
 			}
 			else{
 				std::cout << "not copying destination_pc into itself\n";
@@ -120,19 +121,6 @@ void BundleAdjuster::run(
 		}
 
 		destination_pc -> build_kdtree(false);
-
-		// All the other point clouds are deleted, but the length of this -> all_registered_pc 
-		// is left as is for indexing purposed
-		for (int j = 0; j < this -> all_registered_pc -> size() ; ++j){
-
-			if(this -> all_registered_pc -> at(j) == destination_pc){
-				break;
-			}
-			else{
-				this -> all_registered_pc -> at(j) -> clear();
-			}
-
-		}
 
 
 	}
