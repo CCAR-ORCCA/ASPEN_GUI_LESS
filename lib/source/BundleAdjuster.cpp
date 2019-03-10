@@ -79,7 +79,7 @@ void BundleAdjuster::run(
 
 
 		
-		return ;
+		// return ;
 
 
 
