@@ -78,7 +78,7 @@ void BundleAdjuster::run(
 		this -> create_pairs();
 
 
-		
+
 
 
 
@@ -87,10 +87,13 @@ void BundleAdjuster::run(
 
 	}	
 
-		return ;
-	
+
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
+
+
+
+	return ;
 
 	
 	if (this -> anchor_pc_index !=  this -> next_anchor_pc_index){
