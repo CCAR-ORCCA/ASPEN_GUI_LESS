@@ -79,7 +79,6 @@ void BundleAdjuster::run(
 
 
 		
-		// return ;
 
 
 
@@ -88,7 +87,8 @@ void BundleAdjuster::run(
 
 	}	
 
-
+		return ;
+	
 	std::cout << "- Updating point clouds ... " << std::endl;
 	this -> update_point_clouds(M_pcs,X_pcs,R_pcs,BN_measured,mrps_LN);
 
