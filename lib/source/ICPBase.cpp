@@ -3,7 +3,7 @@
 #include <EstimationFeature.hpp>
 #include <PointCloudIO.hpp>
 
-#define ICP_DEBUG 0
+#define ICP_DEBUG 1
 
 
 #pragma omp declare reduction (+ : arma::vec::fixed<6> : omp_out += omp_in)\
@@ -164,6 +164,7 @@ void ICPBase::register_pc(
 
 			if ( (next_h == true && this -> hierarchical) || h == 0) {
 				// The pairs are formed only after a change in the hierchical search
+
 		#if ICP_DEBUG
 				std::cout << "Updating pairs at h == " << h << std::endl;
 		#endif
