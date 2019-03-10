@@ -96,28 +96,30 @@ def start_sims(n_pools = 1):
     "DENSITY" : 1900,
     "MRP_0" : [0,0,0],
     "SURFACE_APPROX_ERROR" : 1,
-    "N_ITER_BUNDLE_ADJUSTMENT" : 3,
+    "N_ITER_BUNDLE_ADJUSTMENT" : 5,
     "N_ITER_SHAPE_FILTER" : 3,
     "IOD_ITERATIONS" : 100,
     "IOD_RIGID_TRANSFORMS_NUMBER" : 10,
     "IOD_PARTICLES" : 200,
     "USE_TARGET_POI" : False,
     "USE_BEZIER_SHAPE" : True,
-    "TF" : 150,
+    "TF" : 200,
     "NUMBER_OF_EDGES" : 2000,
-    "SAVE_TRANSFORMED_SOURCE_PC" : False
+    "SAVE_TRANSFORMED_SOURCE_PC" : False,
+    "LOS_NOISE_SD_BASELINE" : 5e-1,
+    "LATITUDE_SPIN" : 0.
+
     }
 
 
     all_cases_dictionnary = {
-    "BA_H" : [0,1,2,3],
+    "BA_H" : [0,1,2],
     "INSTRUMENT_FREQUENCY_SHAPE" : [0.0003,0.0004],
-    "LOS_NOISE_SD_BASELINE" : [5e-1,1e0,1.5e0],
-    "LATITUDE_SPIN" : [1. * np.pi / 180,0.,10. * np.pi / 180]
+
     }
 
     all_data = generate_all_cases_dictionnary_list(base_dictionnary,
-        all_cases_dictionnary,base_location,"thesis_fast_slam")
+        all_cases_dictionnary,base_location,"thesis_fast_slam_speed")
 
     if (n_pools > 1):
         p = Pool(n_pools)

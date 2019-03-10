@@ -906,7 +906,7 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 				std::cout << "\t ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) : " << point_pairs.size() << " point pairs , " << prop << " (%) overlap"<< std::endl;
 
-				if (prop > 80 || std::abs(*(--current_pc_pair.end()) - *current_pc_pair.begin())){
+				if (prop > 80 ){
 					overlaps[prop] = other_pc_index;
 					if (prune_overlaps && overlaps.size() > 5){
 						return overlaps;

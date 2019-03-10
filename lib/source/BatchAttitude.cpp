@@ -89,7 +89,7 @@ void BatchAttitude::run(const std::map<int, arma::mat::fixed<6,6> > & R_pcs,
 	std::cout << "In BatchAttitude::run\n";
 	#endif
 
-	int N_iter = 10;
+	int N_iter = 5;
 
 	std::vector<arma::vec::fixed<6> > state_history;
 	std::vector<arma::mat::fixed<6,6> > stms;
