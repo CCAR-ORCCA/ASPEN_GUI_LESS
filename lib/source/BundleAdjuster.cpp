@@ -102,24 +102,23 @@ void BundleAdjuster::run(
 		// std::cout << "- Saving local structure ... " << std::endl;
 		// this -> save_local_bundle();
 
-		this -> previous_anchor_pc_index = this -> anchor_pc_index;
-		this -> anchor_pc_index = this -> next_anchor_pc_index;
+		// this -> previous_anchor_pc_index = this -> anchor_pc_index;
+		// this -> anchor_pc_index = this -> next_anchor_pc_index;
 
 		
-		// The new anchor pc is effectively replaced by the new local structure
-		auto destination_pc = this -> all_registered_pc -> back();
+		// // The new anchor pc is effectively replaced by the new local structure
+		// auto destination_pc = this -> all_registered_pc -> back();
 
-		for (auto iter = this -> all_registered_pc -> begin(); iter != (--this -> all_registered_pc -> end()); ++iter){
+		// for (auto iter = this -> all_registered_pc -> begin(); iter != (--this -> all_registered_pc -> end()); ++iter){
 
-			for (int k = 0; k < (*iter) -> size(); ++k){
-				destination_pc -> push_back((*iter)-> get_point(k));
-			}
-			(*iter) -> clear();
-			std::cout << (*iter)  -> size() << std::endl;
+		// 	for (int k = 0; k < (*iter) -> size(); ++k){
+		// 		destination_pc -> push_back((*iter)-> get_point(k));
+		// 	}
+		// 	(*iter) -> clear();
 			
-		}
+		// }
 
-		destination_pc -> build_kdtree(false);
+		// destination_pc -> build_kdtree(false);
 
 	}
 
