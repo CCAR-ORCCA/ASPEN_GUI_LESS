@@ -75,7 +75,7 @@ protected:
 		double & distance) const;
 
 	int depth;
-	int max_depth = 20;
+	int max_depth = 25;
 	int min_indices_per_node = -1;
 
 	double value;
