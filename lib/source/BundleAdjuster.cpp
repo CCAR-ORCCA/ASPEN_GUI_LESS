@@ -111,6 +111,7 @@ void BundleAdjuster::run(
 
 		for (auto iter = this -> all_registered_pc -> begin(); iter != (--this -> all_registered_pc -> end()); ++iter){
 
+			std::cout << (*iter) -> size() << std::endl;
 			for (int k = 0; k < (*iter) -> size(); ++k){
 				destination_pc -> push_back((*iter)-> get_point(k));
 			}
