@@ -121,7 +121,6 @@ void BundleAdjuster::run(
 
 		destination_pc -> build_kdtree(false);
 
-
 	}
 
 	std::cout << "- Leaving bundle adjustment" << std::endl;
