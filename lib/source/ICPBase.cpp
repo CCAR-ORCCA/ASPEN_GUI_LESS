@@ -305,10 +305,18 @@ void ICPBase::register_pc(
 
 bool ICPBase::check_convergence(const int & iter,const double & J,const double & J_0, double & J_previous,int & h,bool & next_h){
 
-	
+	// Has converged
+	if ( (bool)(J / J_0 <= this -> r_tol || J == 0) &&  h > this -> minimum_h) {
+
+		if (this -> hierarchical){
+			h = h - 1;
+			next_h = true;
+
+		}
+	}
 
 	// Has stalled
-	if ( (std::abs(J - J_previous) / J <= this -> s_tol && h > this -> minimum_h) && iter + 1 < this -> iterations_max) {
+	else if ( (std::abs(J - J_previous) / J <= this -> s_tol && h > this -> minimum_h) && iter + 1 < this -> iterations_max) {
 		h = h - 1;
 		next_h = true;
 
