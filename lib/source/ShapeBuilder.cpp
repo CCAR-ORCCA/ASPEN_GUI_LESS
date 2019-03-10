@@ -312,7 +312,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).print("True attitude at next timestep: ");
 
 				RBK::dcm_to_mrp(BN_extrapolated_next_time *RBK::mrp_to_dcm(X[time_index +1].subvec(6,8)).t() ).t().print("Atttude extrapolation error:");
-			
+
 				if (this -> target_of_interest_L0_frame.n_rows != 0){
 					this -> lidar_to_target_of_interest_N_frame = (- r_extrapolated_next_time 
 						+ BN_extrapolated_next_time.t() 
@@ -428,7 +428,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Making PSR a-priori ...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 
-				ShapeBuilder::run_psr(ba_test.get_anchor_pc().get(),dir,psr_shape,this -> filter_arguments);
+				ShapeBuilder::run_psr(ba_test.get_anchor_pc().get(),
+					dir,
+					psr_shape,
+					this -> filter_arguments);
+
 				psr_shape.construct_kd_tree_shape();
 
 				this -> estimated_shape_model = std::make_shared<ShapeModelBezier<ControlPoint>>(ShapeModelBezier<ControlPoint>(psr_shape,"E",this -> frame_graph));
@@ -461,9 +465,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
 
 				ShapeFitterBezier shape_fitter(&psr_shape,
-					this -> estimated_shape_model.get(),ba_test.get_anchor_pc().get()); 
+					this -> estimated_shape_model.get(),
+					ba_test.get_anchor_pc().get()); 
+
 				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
+				
 				this -> estimated_shape_model -> update_mass_properties();	
 
 				this -> estimated_shape_model -> save_both(dir + "/fit_shape");

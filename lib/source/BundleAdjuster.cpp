@@ -77,6 +77,12 @@ void BundleAdjuster::run(
 	if (this -> N_iter > 0){
 		this -> create_pairs();
 
+
+		
+		return ;
+
+
+
 		// solve the bundle adjustment problem
 		this -> solve_bundle_adjustment(M_pcs,X_pcs);
 

@@ -232,7 +232,6 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 		// The different control points for this patch have their contribution added
 		// for (auto iter_points = control_points.begin(); iter_points != control_points.end(); ++iter_points){
 
-
 		for (int l = 0; l < control_points.size(); ++l){
 
 			auto local_indices = patch.get_local_indices(l);
