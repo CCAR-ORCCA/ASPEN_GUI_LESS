@@ -114,7 +114,7 @@ void BundleAdjuster::run(
 			for (int k = 0; k < (*iter) -> size(); ++k){
 				destination_pc -> push_back((*iter)-> get_point(k));
 			}
-			this -> all_registered_pc -> at(j) -> clear();
+			(*iter) -> clear();
 			
 		}
 
