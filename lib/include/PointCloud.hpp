@@ -121,7 +121,7 @@ public:
 	/**
 	Empties the point cloud and kd tree
 	*/
-	void clear(){this -> points.clear(); this -> build_kdtree(false);}
+	void clear(){this -> points.clear(); this -> kdt = nullptr;}
 
 
 protected:

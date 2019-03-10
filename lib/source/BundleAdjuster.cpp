@@ -115,6 +115,7 @@ void BundleAdjuster::run(
 				destination_pc -> push_back((*iter)-> get_point(k));
 			}
 			(*iter) -> clear();
+			std::cout << (*iter)  -> size() << std::endl;
 			
 		}
 
