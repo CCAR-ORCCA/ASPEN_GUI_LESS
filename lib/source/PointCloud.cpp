@@ -54,7 +54,7 @@ int PointCloud<PointType>::get_closest_point(const arma::vec & test_point) const
 	double distance = std::numeric_limits<double>::infinity();
 	int closest_point_index = -1;
 
-	this -> kdt  -> closest_point_search(test_point,this -> kdt,closest_point_index,distance);
+	this -> kdt  -> closest_point_search(test_point,this -> kdt,closest_point_index,distance,this);
 
 	return closest_point_index;
 
@@ -67,7 +67,7 @@ const unsigned int & N) const {
 	std::map<double,int > closest_points;
 	double distance = std::numeric_limits<double>::infinity();
 
-	this -> kdt -> closest_N_point_search(test_point,N,this -> kdt,distance,closest_points);
+	this -> kdt -> closest_N_point_search(test_point,N,this -> kdt,distance,closest_points,this);
 
 	return closest_points;
 
@@ -122,7 +122,7 @@ return this -> points.size();
 
 template <class PointType> std::vector<int> PointCloud<PointType>::get_nearest_neighbors_radius(const arma::vec & test_point, const double & radius) const{
 std::vector< int > neighbors_indices;
-this -> kdt -> radius_point_search(test_point,this -> kdt,radius,neighbors_indices);
+this -> kdt -> radius_point_search(test_point,this -> kdt,radius,neighbors_indices,this);
 return neighbors_indices;
 }
 
@@ -255,9 +255,9 @@ void PointCloud<PointType>::build_kdtree(bool verbose){
 		}
 	}
 
-	this -> kdt = std::make_shared< KDTree<PointCloud,PointType> >(KDTree< PointCloud,PointType> (this));
+	this -> kdt = std::make_shared< KDTree<PointCloud,PointType> >(KDTree< PointCloud,PointType> ());
 	if (indices.size() > 0)
-		this -> kdt -> build(indices,0);
+		this -> kdt -> build(indices,0,this);
 
 	auto end = std::chrono::system_clock::now();
 

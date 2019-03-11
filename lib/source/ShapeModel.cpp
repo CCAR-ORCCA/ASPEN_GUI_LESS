@@ -103,6 +103,12 @@ PointType & ShapeModel<PointType>::get_point(unsigned int i) {
 	return this -> control_points[i];
 }
 
+
+template <class PointType>
+const PointType & ShapeModel<PointType>::get_point(unsigned int i) const {
+	return this -> control_points[i];
+}
+
 template <class PointType>
 const arma::vec::fixed<3> & ShapeModel<PointType>::get_point_coordinates(unsigned int i) const{
 	return this -> control_points[i].get_point_coordinates();
@@ -127,8 +133,8 @@ void ShapeModel<PointType>::construct_kd_tree_control_points(){
 			indices.push_back(i);
 	}
 
-	this -> kdt_control_points = std::make_shared< KDTree<ShapeModel,PointType> >(KDTree< ShapeModel,PointType> (this));
-	this -> kdt_control_points -> build(indices,0);
+	this -> kdt_control_points = std::make_shared< KDTree<ShapeModel,PointType> >(KDTree< ShapeModel,PointType> ());
+	this -> kdt_control_points -> build(indices,0,this);
 
 }
 

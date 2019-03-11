@@ -126,6 +126,8 @@ public:
 
 
 	PointType & get_point(unsigned int i) ;
+	const PointType & get_point(unsigned int i) const;
+
 	const arma::vec::fixed<3> & get_point_coordinates(unsigned int i) const;
 
 	virtual arma::vec::fixed<3> get_point_normal_coordinates(unsigned int i) const = 0;

@@ -14,11 +14,6 @@
 #define KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG 1
 
 template <template<class> class ContainerType, class PointType>
-KDTree<ContainerType,PointType>::KDTree(ContainerType<PointType> * owner) {
-	this -> owner = owner;
-}
-
-template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::set_depth(int depth) {
 	this -> depth = depth;
 }
@@ -46,7 +41,8 @@ template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & test_point,
 	const std::shared_ptr<KDTree> & node,
 	int & best_guess_index,
-	double & distance) const {
+	double & distance,
+	const ContainerType<PointType> * owner) const {
 
 
 	#if KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG
@@ -63,7 +59,7 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 		#if KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG
 		std::cout << "Leaf node\n";
 		#endif
-		KDTree<ContainerType,PointType>::search_node(test_point,node,best_guess_index,distance);
+		KDTree<ContainerType,PointType>::search_node(test_point,node,best_guess_index,distance,owner);
 		
 
 	}
@@ -87,14 +83,16 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 				node -> closest_point_search(test_point,
 					node -> left,
 					best_guess_index,
-					distance);
+					distance,
+					owner);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
 				node -> closest_point_search(test_point,
 					node -> right,
 					best_guess_index,
-					distance);
+					distance,
+					owner);
 			}
 
 		}
@@ -105,14 +103,16 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 				node -> closest_point_search(test_point,
 					node -> right,
 					best_guess_index,
-					distance);
+					distance,
+					owner);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
 				node -> closest_point_search(test_point,
 					node -> left,
 					best_guess_index,
-					distance);
+					distance,
+					owner);
 			}
 
 		}
@@ -133,7 +133,8 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 	const unsigned int & N_points,
 	const std::shared_ptr<KDTree> & node,
 	double & distance,
-	std::map<double,int > & closest_points) const{
+	std::map<double,int > & closest_points,
+	const ContainerType<PointType> * owner) const{
 
 	#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
 	std::cout << "#############################\n";
@@ -149,7 +150,7 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 		std::cout << "Leaf node\n";
 		#endif
 
-		KDTree<ContainerType,PointType>::search_node(test_point,N_points,node,distance,closest_points);
+		KDTree<ContainerType,PointType>::search_node(test_point,N_points,node,distance,closest_points,owner);
 
 	}
 
@@ -174,7 +175,8 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 					N_points,
 					node -> left,
 					distance,
-					closest_points);
+					closest_points,
+					owner);
 			}
 
 			if (test_point(node -> get_axis()) + distance > node -> get_value()) {
@@ -182,7 +184,8 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 					N_points,
 					node -> right,
 					distance,
-					closest_points);
+					closest_points,
+					owner);
 			}
 
 		}
@@ -194,7 +197,8 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 					N_points,
 					node -> right,
 					distance,
-					closest_points);
+					closest_points,
+					owner);
 			}
 
 			if (test_point(node -> get_axis()) - distance <= node -> get_value()) {
@@ -202,7 +206,8 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 					N_points,
 					node -> left,
 					distance,
-					closest_points);
+					closest_points,
+					owner);
 			}
 
 		}
@@ -214,7 +219,7 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 	std::cout << " Leaving "<<  std::endl; ;
 	std::cout << "Points found : " << std::endl;
 	for (auto it = closest_points.begin(); it != closest_points.end(); ++it){
-		std::cout << it -> first << " : " << this -> owner -> get_point_coordinates(it -> second).t().t();
+		std::cout << it -> first << " : " << owner -> get_point_coordinates(it -> second).t().t();
 	}
 	#endif
 
@@ -226,7 +231,8 @@ template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test_point,
 	const std::shared_ptr<KDTree> & node,
 	const double & distance,
-	std::vector< int > & closest_points_indices) {
+	std::vector< int > & closest_points_indices,
+	const ContainerType<PointType> * owner) {
 
 
 
@@ -247,7 +253,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 		std::cout << "Leaf node\n";
 		#endif
 
-		KDTree<ContainerType,PointType>::search_node(test_point,node,distance,closest_points_indices);
+		KDTree<ContainerType,PointType>::search_node(test_point,node,distance,closest_points_indices,owner);
 
 	}
 
@@ -270,14 +276,16 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 				node -> radius_point_search(test_point,
 					node -> left,
 					distance,
-					closest_points_indices);
+					closest_points_indices,
+					owner);
 			}
 
 			if (test_value + distance >= node_value) {
 				node -> radius_point_search(test_point,
 					node -> right,
 					distance,
-					closest_points_indices);
+					closest_points_indices,
+					owner);
 			}
 
 		}
@@ -291,14 +299,16 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 				node -> radius_point_search(test_point,
 					node -> right,
 					distance,
-					closest_points_indices);
+					closest_points_indices,
+					owner);
 			}
 
 			if (test_value - distance <= node_value) {
 				node -> radius_point_search(test_point,
 					node -> left,
 					distance,
-					closest_points_indices);
+					closest_points_indices,
+					owner);
 			}
 
 		}
@@ -308,7 +318,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 }
 
 template <template<class> class ContainerType, class PointType>
-void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, int depth) {
+void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, int depth,const ContainerType<PointType> * owner) {
 
 	this -> indices = indices;
 	this -> left = nullptr;
@@ -352,16 +362,16 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 
 	else {
 
-		this -> left = std::make_shared<KDTree<ContainerType,PointType>>( KDTree<ContainerType,PointType>(this -> owner) );
-		this -> right = std::make_shared<KDTree<ContainerType,PointType>>( KDTree<ContainerType,PointType>(this -> owner) );
+		this -> left = std::make_shared<KDTree<ContainerType,PointType>>( KDTree<ContainerType,PointType>() );
+		this -> right = std::make_shared<KDTree<ContainerType,PointType>>( KDTree<ContainerType,PointType>() );
 
 		this -> left -> indices = std::vector<int >();
 		this -> right -> indices = std::vector<int >();
 
 	}
 
-	arma::vec midpoint = arma::zeros<arma::vec>(this -> owner -> get_point_coordinates(indices[0]).size());
-	const arma::vec & start_point = this -> owner -> get_point_coordinates(indices[0]);
+	arma::vec midpoint = arma::zeros<arma::vec>(owner -> get_point_coordinates(indices[0]).size());
+	const arma::vec & start_point = owner -> get_point_coordinates(indices[0]);
 
 	arma::vec min_bounds = start_point;
 	arma::vec max_bounds = start_point;
@@ -369,7 +379,7 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 	// Could multithread here
 	for (unsigned int i = 0; i < indices.size(); ++i) {
 
-		const arma::vec & point = this -> owner -> get_point_coordinates(indices[i]);
+		const arma::vec & point = owner -> get_point_coordinates(indices[i]);
 
 		max_bounds = arma::max(max_bounds,point);
 		min_bounds = arma::min(min_bounds,point);
@@ -408,7 +418,7 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 
 	for (unsigned int i = 0; i < indices.size() ; ++i) {
 
-		if (midpoint(longest_axis) >= this -> owner -> get_point_coordinates(indices[i]).at(longest_axis)) {
+		if (midpoint(longest_axis) >= owner -> get_point_coordinates(indices[i]).at(longest_axis)) {
 			left_points.push_back(indices[i]);
 		}
 
@@ -432,8 +442,8 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 
 
 	// Recursion continues
-	this -> left -> build(left_points, depth + 1);
-	this -> right -> build(right_points, depth + 1);
+	this -> left -> build(left_points, depth + 1,owner);
+	this -> right -> build(right_points, depth + 1,owner);
 
 }
 
@@ -465,7 +475,6 @@ template <>
 double KDTree<ShapeModel,ControlPoint>::distance(const ControlPoint & point_in_shape,
 	const arma::vec & point) const{
 
-
 	return arma::norm(point_in_shape.get_point_coordinates() - point);
 
 }
@@ -474,7 +483,8 @@ template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	const std::shared_ptr<KDTree> & node,
 	int & best_guess_index,
-	double & distance) const{
+	double & distance,
+	const ContainerType<PointType> * owner) const{
 
 	for (int i = 0; i < node -> indices.size(); ++i){
 
@@ -482,7 +492,7 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 
 		
 		try{
-			new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+			new_distance = this -> distance(owner -> get_point(node -> indices[i]),test_point);
 		}
 		catch(std::logic_error & e){
 			std::cout << node -> indices[i] << std::endl;
@@ -502,11 +512,12 @@ template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	const std::shared_ptr<KDTree> & node,
 	const double & distance,
-	std::vector< int > & closest_points_indices) const{
+	std::vector< int > & closest_points_indices,
+	const ContainerType<PointType> * owner) const{
 
 
 	for (int i = 0; i < node -> indices.size(); ++i){
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+		double new_distance = this -> distance( owner -> get_point(node -> indices[i]),test_point);
 
 		#if KDTTREE_DEBUG_FLAG
 		std::cout << "Distance to query_point: " << new_distance << std::endl;
@@ -529,10 +540,11 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	const unsigned int & N_points,
 	const std::shared_ptr<KDTree> & node,
 	double & distance,
-	std::map<double,int > & closest_points) const{
+	std::map<double,int > & closest_points,
+	const ContainerType<PointType> * owner) const{
 
 	for (int i =0 ; i < node -> indices.size(); ++i){
-		double new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
+		double new_distance = this -> distance(owner -> get_point(node -> indices[i]),test_point);
 
 
 		#if KDTTREE_DEBUG_FLAG
