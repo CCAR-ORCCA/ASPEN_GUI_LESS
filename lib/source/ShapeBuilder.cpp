@@ -797,14 +797,14 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree(false);
 
-		this -> all_registered_pc.push_back(pc);
-
 		arma::vec::fixed<3> los = {1,0,0};
-
-		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[destination_pc_index],
-			this -> all_registered_pc[destination_pc_index]);
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
+
+		this -> all_registered_pc.push_back(pc);
+
+		
 
 		#if IOFLAGS_shape_builder
 		PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[destination_pc_index], dir + "/destination_" + std::to_string(index) + ".obj",
@@ -820,15 +820,16 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree (false);
+		
+		arma::vec::fixed<3> los = {1,0,0};
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
+		estimate_normals.set_los_dir(los);
+		estimate_normals.estimate(6);
+
 		this -> all_registered_pc.push_back(pc);
 
 
-		arma::vec::fixed<3> los = {1,0,0};
-
-		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[this -> source_pc_index]
-			,this -> all_registered_pc[this -> source_pc_index]);
-		estimate_normals.set_los_dir(los);
-		estimate_normals.estimate(6);
+		
 
 
 			#if IOFLAGS_shape_builder
@@ -859,15 +860,15 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree (false);
+
+		arma::vec::fixed<3> los = {1,0,0};
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
+		estimate_normals.set_los_dir(los);
+		estimate_normals.estimate(6);
+
 		this -> all_registered_pc.push_back(pc);
 
 
-		arma::vec::fixed<3> los = {1,0,0};
-
-		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[this -> source_pc_index],
-			this -> all_registered_pc[this -> source_pc_index]);
-		estimate_normals.set_los_dir(los);
-		estimate_normals.estimate(6);
 
 
 	}
@@ -1161,16 +1162,11 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 	// Previous rigid transform
 	IterativeClosestPointToPlane icp_pc_prealign;
-	std::cout << this -> source_pc_index << " " << this -> destination_pc_index << " " << time_index - 1 << std::endl;
-	M_pcs.at(time_index - 1).print("");
-	X_pcs.at(time_index - 1).print("");
-
+	
 	icp_pc_prealign.compute_pairs(this -> all_registered_pc[this -> source_pc_index],
 		this -> all_registered_pc[this -> destination_pc_index],
 		4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	
-	std::cout << "got pairs\n";
-
 
 	double res_previous_rt = icp_pc_prealign.compute_residuals(
 		this -> all_registered_pc[this -> source_pc_index],
