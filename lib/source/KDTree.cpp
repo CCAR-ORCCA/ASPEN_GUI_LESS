@@ -243,7 +243,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 
 	if (node -> left == nullptr ) {
 
-		#if KDTTREE_DEBUG_FLAG
+		#if KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG
 		std::cout << "Leaf node\n";
 		#endif
 
@@ -478,6 +478,9 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	for (int i = 0; i < node -> indices.size(); ++i){
 
 		double new_distance;
+
+		std::cout << this -> owner -> size() << std::endl;
+		std::cout << node -> indices[i] << std::endl;
 		
 		try{
 			new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
