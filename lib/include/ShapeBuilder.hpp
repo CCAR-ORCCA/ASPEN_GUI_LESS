@@ -375,7 +375,7 @@ protected:
 
 	std::shared_ptr<PointCloud < PointNormal > > destination_pc = nullptr;
 	std::shared_ptr<PointCloud < PointNormal > > source_pc = nullptr;
-	std::shared_ptr<PointCloud < PointNormal > > destination_pc_shape = nullptr;
+
 	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
 	std::vector< std::shared_ptr<PointCloud < PointNormal > > > all_registered_pc;
 
