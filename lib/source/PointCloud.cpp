@@ -48,17 +48,15 @@ PointCloud<PointType>::PointCloud(const std::vector< PointType > & points) {
 
 }
 
-template <class PointType> int PointCloud<PointType>::get_closest_point(const arma::vec & test_point) const {
+template <class PointType> 
+int PointCloud<PointType>::get_closest_point(const arma::vec & test_point) const {
 
-double distance = std::numeric_limits<double>::infinity();
-int closest_point_index = -1;
+	double distance = std::numeric_limits<double>::infinity();
+	int closest_point_index = -1;
 
-this -> kdt  -> closest_point_search(test_point,
-	this -> kdt,
-	closest_point_index,
-	distance);
+	this -> kdt  -> closest_point_search(test_point,this -> kdt,closest_point_index,distance);
 
-return closest_point_index;
+	return closest_point_index;
 
 }
 

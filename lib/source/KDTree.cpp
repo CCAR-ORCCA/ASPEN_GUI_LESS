@@ -7,7 +7,7 @@
 
 
 
-#define KDTTREE_DEBUG_FLAG 0
+#define KDTTREE_DEBUG_FLAG 1
 #define KDTREE_BUILD_DEBUG 0
 
 
