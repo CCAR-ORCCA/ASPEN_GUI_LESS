@@ -465,6 +465,7 @@ template <>
 double KDTree<ShapeModel,ControlPoint>::distance(const ControlPoint & point_in_shape,
 	const arma::vec & point) const{
 
+
 	return arma::norm(point_in_shape.get_point_coordinates() - point);
 
 }
@@ -479,7 +480,6 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 
 		double new_distance;
 
-		std::cout << this -> owner -> get_point(node -> indices[i]) << std::endl;
 		
 		try{
 			new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);

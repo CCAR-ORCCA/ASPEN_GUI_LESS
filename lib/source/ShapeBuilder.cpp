@@ -829,9 +829,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		estimate_normals.estimate(6);
 
 	
-		this -> all_registered_pc.push_back(pc);
-
-
+		std::cout << pc.get_closest_point(this -> all_registered_pc.front().get_point(0).get_point_coordinates()) << std::endl;
 		
 
 
