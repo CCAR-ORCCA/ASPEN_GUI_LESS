@@ -20,6 +20,8 @@
 #include <EstimationNormals.hpp>
 #include <IODBounds.hpp>
 #include <PointCloud.hpp>
+#include <PointNormal.hpp>
+
 #include <PointCloudIO.hpp>
 
 #include <boost/progress.hpp>

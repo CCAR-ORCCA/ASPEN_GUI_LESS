@@ -7,12 +7,14 @@
 #include <string>
 #include <OrbitConversions.hpp>
 #include <SystemDynamics.hpp>
+#include <PointCloud.hpp>
+#include <PointNormal.hpp>
 
 class Lidar;
 
 template <class PointType> class ShapeModelTri;
 template <class PointType> class ShapeModelBezier;
-template <class PointType> class PointCloud;
+// template <class PointType> class PointCloud;
 
 class ShapeBuilderArguments;
 class FrameGraph;

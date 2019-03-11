@@ -2,6 +2,7 @@
 #define HEADER_LIDAR
 
 #include "OMP_flags.hpp"
+#include <PointCloud.hpp>
 #include <assert.h>
 #include <string>
 #include <utility>
