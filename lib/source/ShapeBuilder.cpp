@@ -166,8 +166,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::mat::fixed<3,3> M_pc_a_priori;
 				arma::vec::fixed<3> X_pc_a_priori;
 
-				std::cout << "getting best a-priori rigid transform\n";
-
+				std::cout << "\tGetting best a-priori rigid transform\n";
 
 
 				this -> get_best_a_priori_rigid_transform(
@@ -861,7 +860,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree (false);
 		this -> all_registered_pc.push_back(pc);
-		
+
 
 		arma::vec::fixed<3> los = {1,0,0};
 
@@ -1162,9 +1161,15 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 	// Previous rigid transform
 	IterativeClosestPointToPlane icp_pc_prealign;
-	icp_pc_prealign.compute_pairs(this -> all_registered_pc[this -> source_pc_index],this -> all_registered_pc[this -> destination_pc_index],4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	std::cout << this -> source_pc_index << " " << this -> destination_pc_index << " " << time_index - 1 << std::endl;
+	icp_pc_prealign.compute_pairs(this -> all_registered_pc[this -> source_pc_index],
+		this -> all_registered_pc[this -> destination_pc_index],
+		4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	
-	double res_previous_rt = icp_pc_prealign.compute_residuals(this -> all_registered_pc[this -> source_pc_index],this -> all_registered_pc[this -> destination_pc_index],M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	double res_previous_rt = icp_pc_prealign.compute_residuals(
+		this -> all_registered_pc[this -> source_pc_index],
+		this -> all_registered_pc[this -> destination_pc_index],
+		M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	int N_pairs_previous_rt = icp_pc_prealign.get_point_pairs().size();
 	
 	std::cout << "\t Residuals from previous rt: " << res_previous_rt << " from " << icp_pc_prealign.get_point_pairs().size()<< " pairs" << std::endl;
