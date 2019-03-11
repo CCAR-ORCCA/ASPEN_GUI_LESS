@@ -38,8 +38,6 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 		pc_footpoints.push_back(footpoints[i].Pbar);
 	}
 
-	PointCloudIO<PointNormal>::save_to_obj(pc_footpoints,"footpoints_pc.obj");
-
 	for (unsigned int i = 0; i < N_iter; ++i){
 
 		std::cout << "\nIteration " << i + 1 << " / " << N_iter << std::endl;
