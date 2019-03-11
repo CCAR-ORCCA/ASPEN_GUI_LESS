@@ -796,7 +796,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		
 		
-		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()));
 
 		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
 		pc.build_kdtree(false);
@@ -819,7 +819,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		
 		this -> source_pc_index = index;
 
-		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()));
 
 		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
 		pc.build_kdtree(false);
@@ -861,7 +861,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		this -> destination_pc_index = this -> source_pc_index;
 		this -> source_pc_index = index;
 
-		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()));
 
 		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
 		pc.build_kdtree(false);
