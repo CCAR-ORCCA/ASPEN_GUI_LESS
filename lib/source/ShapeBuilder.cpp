@@ -138,6 +138,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
+		std::cout << this -> all_registered_pc.back() -> get_normal_coordinates(0).t() << std::endl;
+
+
 
 		if (this -> destination_pc_index > -1  && this -> source_pc_index == -1){
 
@@ -828,9 +831,7 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
 
-	
-		std::cout << pc.get_closest_point(this -> all_registered_pc.front().get_point(0).get_point_coordinates()) << std::endl;
-		
+
 
 
 			#if IOFLAGS_shape_builder
