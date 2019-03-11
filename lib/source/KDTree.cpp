@@ -7,10 +7,11 @@
 
 
 
-#define KDTTREE_DEBUG_FLAG 1
+#define KDTTREE_DEBUG_FLAG 0
 #define KDTREE_BUILD_DEBUG 0
-
-
+#define KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG 0
+#define KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG 0
+#define KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG 1
 
 template <template<class> class ContainerType, class PointType>
 KDTree<ContainerType,PointType>::KDTree(ContainerType<PointType> * owner) {
@@ -47,10 +48,23 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 	int & best_guess_index,
 	double & distance) const {
 
+
+	#if KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG
+	std::cout << "#############################\n";
+	std::cout << "Depth: " << this -> depth << std::endl; ;
+	std::cout << "Points in node: " << node -> indices.size() << std::endl;
+	std::cout << "Points found so far : " << closest_points.size() << std::endl;
+	#endif
+
 	// If the left child of this node is nullptr, so is the right
 	// and we have a leaf node
 	if (node -> left == nullptr) {
+		#if KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG
+		std::cout << "Leaf node\n";
+		#endif
 		KDTree<ContainerType,PointType>::search_node(test_point,node,best_guess_index,distance);
+		
+
 	}
 
 	else {
@@ -104,6 +118,12 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 
 	}
 
+	#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
+	std::cout << "#############################\n";
+	std::cout << " Leaving "<<  std::endl; ;
+	std::cout << "Best guess index: : " << best_guess_index << " at distance " << distance << std::endl;
+	#endif
+
 
 }
 
@@ -114,7 +134,7 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 	double & distance,
 	std::map<double,int > & closest_points) const{
 
-	#if KDTTREE_DEBUG_FLAG
+	#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
 	std::cout << "#############################\n";
 	std::cout << "Depth: " << this -> depth << std::endl; ;
 	std::cout << "Points in node: " << node -> indices.size() << std::endl;
@@ -124,7 +144,7 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 	// DEPRECATED
 	if (node -> left == nullptr) {
 
-		#if KDTTREE_DEBUG_FLAG
+		#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
 		std::cout << "Leaf node\n";
 		#endif
 
@@ -188,7 +208,7 @@ void KDTree<ContainerType,PointType>::closest_N_point_search(const arma::vec & t
 
 	}
 
-	#if KDTTREE_DEBUG_FLAG
+	#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
 	std::cout << "#############################\n";
 	std::cout << " Leaving "<<  std::endl; ;
 	std::cout << "Points found : " << std::endl;
@@ -213,7 +233,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 	double test_value = test_point(node -> get_axis());
 
 
-	#if KDTTREE_DEBUG_FLAG
+	#if KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG
 	std::cout << "#############################\n";
 	std::cout << "Depth: " << node -> depth << std::endl; ;
 	std::cout << "Points in node: " << node -> indices.size() << std::endl;
@@ -232,7 +252,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 
 	else {
 
-		#if KDTTREE_DEBUG_FLAG
+		#if KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG
 		std::cout << "Fork node\n";
 		#endif
 
@@ -240,7 +260,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 
 		if (test_value <= node_value) {
 
-			#if KDTTREE_DEBUG_FLAG
+			#if KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG
 			std::cout << "Searching left first\n";
 			#endif
 
@@ -263,7 +283,7 @@ void KDTree<ContainerType,PointType>::radius_point_search(const arma::vec & test
 
 		else {
 
-			#if KDTTREE_DEBUG_FLAG
+			#if KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG
 			std::cout << "Searching right first\n";
 			#endif
 			if (test_value + distance >= node_value) {
