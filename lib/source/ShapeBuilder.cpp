@@ -138,7 +138,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-		std::cout << this -> all_registered_pc.back() -> get_normal_coordinates(0).t() << std::endl;
+		std::cout << this -> all_registered_pc.back().get_normal_coordinates(0).t() << std::endl;
 
 
 
