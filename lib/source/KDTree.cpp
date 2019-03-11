@@ -321,10 +321,10 @@ void KDTree<ContainerType,PointType>::build(const std::vector< int > & indices, 
 	}
 	else if (this -> depth == this -> get_max_depth()){
 		
-		// #if KDTREE_BUILD_DEBUG
+		#if KDTREE_BUILD_DEBUG
 		std::cout << "Max depth (" << this -> get_max_depth()  << ") reached\n";
 		std::cout << "Node contains "  <<static_cast<int>(this -> indices.size()) << " indices \n";
-		// #endif
+		#endif
 		return ;
 
 	}
