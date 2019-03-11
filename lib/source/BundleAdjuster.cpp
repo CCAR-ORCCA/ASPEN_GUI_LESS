@@ -100,7 +100,7 @@ void BundleAdjuster::run(
 		std::cout << "- Updating anchor_pc_index from " << this -> anchor_pc_index << " to " << this -> next_anchor_pc_index << std::endl;
 		
 		// std::cout << "- Saving local structure ... " << std::endl;
-		// this -> save_local_bundle();
+		this -> save_local_bundle();
 
 
 		this -> previous_anchor_pc_index = this -> anchor_pc_index;

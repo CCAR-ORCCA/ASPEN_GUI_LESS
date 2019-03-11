@@ -32,9 +32,6 @@ else:
 
 
 
-
-
-
 def run_sim(data,quiet = True):
 
     if not quiet:
@@ -86,11 +83,11 @@ def start_sims(n_pools = 1):
     "HARMONICS_DEGREE" : 10,
     "USE_HARMONICS" : True,
     "SMA" : 1000.,
-    "E" : 0.25,
+    "E" : 0.15,
     "I" : 1.4,
-    "RAAN"  : 0.2,
+    "RAAN"  : 0.01,
     "PERI_OMEGA" : 0.3,
-    "M0" : 1.57,
+    "M0" : 0,
     "SPIN_PERIOD" : 12.,
     "LONGITUDE_SPIN" : 0., 
     "DENSITY" : 1900,
