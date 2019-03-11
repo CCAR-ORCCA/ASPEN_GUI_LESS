@@ -39,17 +39,16 @@ class ShapeFitterBezier {
 public:
 
 	ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
-		ShapeModelBezier<ControlPoint> * shape_model,
-		PointCloud<PointNormal> * pc);
+		ShapeModelBezier<ControlPoint> * shape_model);
+		
 
-	bool fit_shape_batch(unsigned int N_iter, double ridge_coef);
-
+	bool fit_shape_batch(const PointCloud<PointNormal> & pc,unsigned int N_iter, double ridge_coef);
 
 protected:
 
 	ShapeModelBezier<ControlPoint> * shape_model;
 	ShapeModelTri<ControlPoint> * psr_shape;
-	std::vector<Footpoint> find_footpoints_omp() const;
+	std::vector<Footpoint> find_footpoints_omp(const PointCloud<PointNormal> & pc) const;
 
 	void add_to_problem(std::vector<T>& coeffs,
 		EigVec & N,
@@ -73,8 +72,6 @@ protected:
 	void train_shape_covariances(const std::vector<Footpoint> & footpoints);
 
 	
-	PointCloud<PointNormal> * pc;
-
 
 
 

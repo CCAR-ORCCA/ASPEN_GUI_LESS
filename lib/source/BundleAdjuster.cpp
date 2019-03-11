@@ -12,7 +12,7 @@
 
 BundleAdjuster::BundleAdjuster(
 	double sigma_rho,
-	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
+	std::vector< PointCloud<PointNormal > >  * all_registered_pc_, 
 	int N_iter,
 	int h,
 	arma::mat * LN_t0,
@@ -34,7 +34,7 @@ BundleAdjuster::BundleAdjuster(
 }
 
 BundleAdjuster::BundleAdjuster(double sigma_rho,
-	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
+	std::vector< PointCloud<PointNormal > >  * all_registered_pc_, 
 	arma::mat * LN_t0,
 	arma::vec * x_t0,
 	std::string dir){
@@ -108,18 +108,18 @@ void BundleAdjuster::run(
 
 		
 		// The new anchor pc is effectively replaced by the new local structure
-		auto destination_pc = this -> all_registered_pc -> back();
+		PointCloud<PointNormal> & destination_pc = this -> all_registered_pc -> back();
 
 		for (auto iter = this -> all_registered_pc -> begin(); iter != (--this -> all_registered_pc -> end()); ++iter){
 
-			for (int k = 0; k < (*iter) -> size(); ++k){
-				destination_pc -> push_back((*iter)-> get_point(k));
+			for (int k = 0; k < iter -> size(); ++k){
+				destination_pc . push_back(iter-> get_point(k));
 			}
-			(*iter) -> clear();
+			iter -> clear();
 			
 		}
 
-		destination_pc -> build_kdtree(false);
+		destination_pc . build_kdtree(false);
 
 	}
 
@@ -318,10 +318,10 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 		active_h = this -> h;
 
 		
-
-		IterativeClosestPointToPlane::compute_pairs(point_pairs,
+		IterativeClosestPointToPlane::compute_pairs(
 			this -> all_registered_pc -> at(point_cloud_pair.S_k),
 			this -> all_registered_pc -> at(point_cloud_pair.D_k),
+			point_pairs,
 			active_h,
 			dcm_S ,
 			x_S,
@@ -348,17 +348,20 @@ void BundleAdjuster::assemble_subproblem(arma::mat & Lambda_k,arma::vec & N_k,
 	// For all the point pairs that where formed
 	for (unsigned int i = 0; i < point_pairs.size(); ++i){
 
-		double y_ki = IterativeClosestPointToPlane::compute_distance(point_pairs[i],
+		IterativeClosestPointToPlane icp;
+
+		double y_ki = icp.compute_distance(
+			this -> all_registered_pc -> at(point_cloud_pair.S_k),
+			this -> all_registered_pc -> at(point_cloud_pair.D_k),
+			point_pairs[i],
 			dcm_S,
 			x_S,
 			dcm_D,
-			x_D,
-			this -> all_registered_pc -> at(point_cloud_pair.S_k),
-			this -> all_registered_pc -> at(point_cloud_pair.D_k));
+			x_D);
 		
 
-		const PointNormal & p_S = this -> all_registered_pc -> at(point_cloud_pair.S_k) -> get_point(point_pairs[i].first);
-		const PointNormal & p_D = this -> all_registered_pc -> at(point_cloud_pair.D_k) -> get_point(point_pairs[i].second);
+		const PointNormal & p_S = this -> all_registered_pc -> at(point_cloud_pair.S_k) . get_point(point_pairs[i].first);
+		const PointNormal & p_D = this -> all_registered_pc -> at(point_cloud_pair.D_k) . get_point(point_pairs[i].second);
 
 		const arma::vec::fixed<3> & S_i = p_S.get_point_coordinates();
 		const arma::vec::fixed<3> & D_i = p_D.get_point_coordinates();
@@ -465,9 +468,10 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		if (!this -> use_true_pairs){
 			
 
-			IterativeClosestPointToPlane::compute_pairs(point_pairs,
+			IterativeClosestPointToPlane::compute_pairs(
 				this -> all_registered_pc -> at(point_cloud_pair.S_k),
 				this -> all_registered_pc -> at(point_cloud_pair.D_k),
+				point_pairs,
 				this -> h,
 				dcm_S ,
 				x_S,
@@ -483,11 +487,15 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 
 		IterativeClosestPointToPlane icp;
 
-		icp.set_pc_destination(this -> all_registered_pc -> at(point_cloud_pair.D_k));
-		icp.set_pc_source(this -> all_registered_pc -> at(point_cloud_pair.S_k));
-		icp.set_pairs(point_pairs);
-
-		double error = std::abs(icp.compute_residuals(point_pairs,dcm_S ,x_S,{},dcm_D ,x_D));
+		double error = std::abs(icp.compute_residuals(
+			this -> all_registered_pc -> at(point_cloud_pair.S_k),
+			this -> all_registered_pc -> at(point_cloud_pair.D_k),
+			point_pairs,
+			dcm_S ,
+			x_S,
+			{},
+			dcm_D ,
+			x_D));
 
 		// errors(k) = error * point_pairs.size();
 		sum_point_pairs_sizes += point_pairs.size();
@@ -496,7 +504,8 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 		errors(k) = error ;
 		
 
-		double p = std::log2(this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size());
+		double p = std::log2(
+			this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k).size());
 		
 		int N_pairs = (int)(std::pow(2, p - this -> h));
 
@@ -517,7 +526,7 @@ bool BundleAdjuster::update_point_cloud_pairs(bool last_iter){
 			worst_Sk = this -> point_cloud_pairs[k].S_k;
 		}
 
-		std::cout << " -- h == " << this -> h << " , (" << this -> point_cloud_pairs[k].S_k << "||"  <<  this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) -> size() << ", " << this -> point_cloud_pairs[k].D_k << "||"  <<  this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k) -> size() <<  ") : " << errors(k) << " | " << pc_pair_sizes(k) << " point pairs" << std::endl;
+		std::cout << " -- h == " << this -> h << " , (" << this -> point_cloud_pairs[k].S_k << "||"  <<  this -> all_registered_pc -> at(this -> point_cloud_pairs[k].S_k) . size() << ", " << this -> point_cloud_pairs[k].D_k << "||"  <<  this -> all_registered_pc -> at(this -> point_cloud_pairs[k].D_k) . size() <<  ") : " << errors(k) << " | " << pc_pair_sizes(k) << " point pairs" << std::endl;
 
 	}
 
@@ -766,8 +775,8 @@ void BundleAdjuster::update_point_clouds(std::map<int,arma::mat::fixed<3,3> > & 
 
 		arma::mat::fixed<3,3> NS_bar = RBK::mrp_to_dcm(mrp);
 		
-		this -> all_registered_pc -> at(i) -> transform(NS_bar, x);
-		this -> all_registered_pc -> at(i) -> build_kdtree(false);
+		this -> all_registered_pc -> at(i) . transform(NS_bar, x);
+		this -> all_registered_pc -> at(i) . build_kdtree(false);
 
 		// The rigid transforms are fixed
 		M_pcs[i] = NS_bar * M_pcs[i];
@@ -790,8 +799,8 @@ void BundleAdjuster::save_local_bundle(){
 	
 	for (int k = this -> anchor_pc_index + 1; k <= this -> next_anchor_pc_index; ++k){
 		
-		for (int j = 0; j <  this -> all_registered_pc -> at(k) -> size(); ++j){
-			new_structure_pc.push_back( this -> all_registered_pc -> at(k) -> get_point(j));
+		for (int j = 0; j <  this -> all_registered_pc -> at(k) . size(); ++j){
+			new_structure_pc.push_back( this -> all_registered_pc -> at(k) . get_point(j));
 		}
 		
 	}
@@ -878,7 +887,6 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 
 
-
 		if (angle > 120){
 			std::cout << " Skipping ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
 		}
@@ -886,15 +894,16 @@ std::map<double,int> BundleAdjuster::find_overlap_with_pc(int pc_global_index,in
 
 			std::cout << " Investigating ( " << *current_pc_pair.begin() << " , "<< *(--current_pc_pair.end()) << " ) since los are " << angle <<  " degrees appart" << std::endl;
 
-			double p = std::log2(this -> all_registered_pc -> at(pc_global_index) -> size());
+			double p = std::log2(this -> all_registered_pc -> at(pc_global_index) . size());
 
 			int N_pairs = (int)(std::pow(2, p - active_h));
 
 			try{
 
-				IterativeClosestPointToPlane::compute_pairs(point_pairs,
+				IterativeClosestPointToPlane::compute_pairs(
 					this -> all_registered_pc -> at(pc_global_index),
 					this -> all_registered_pc -> at(other_pc_index),
+					point_pairs,
 					active_h);
 
 				double prop = double(point_pairs.size()) / N_pairs * 100;
@@ -1102,7 +1111,7 @@ void BundleAdjuster::set_h(int h){
 }
 
 
-std::shared_ptr<PointCloud < PointNormal > > BundleAdjuster::get_anchor_pc() const{
+const PointCloud < PointNormal > & BundleAdjuster::get_anchor_pc() const{
 	return this -> all_registered_pc -> at(this -> anchor_pc_index);
 }
 

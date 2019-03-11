@@ -189,7 +189,7 @@ protected:
 	arma::vec::fixed<3> get_center_collected_pcs() const;
 
 
-	void estimate_coverage(std::shared_ptr<PointCloud < PointNormal > > anchor_pc) ;
+	void estimate_coverage(const PointCloud < PointNormal > & anchor_pc) ;
 
 
 	/**
@@ -310,7 +310,7 @@ protected:
 
 	void save_attitude(std::string prefix,int index,const std::vector<arma::mat::fixed<3,3> > & BN) const;
 
-	static void run_psr(PointCloud<PointNormal> * pc,
+	static void run_psr(const PointCloud<PointNormal> & pc,
 		const std::string dir,
 		ShapeModelTri<ControlPoint> & psr_shape,
 		ShapeBuilderArguments * filter_arguments);
@@ -373,11 +373,13 @@ protected:
 
 	std::shared_ptr<ShapeModelBezier< ControlPoint > > estimated_shape_model;
 
-	std::shared_ptr<PointCloud < PointNormal > > destination_pc = nullptr;
-	std::shared_ptr<PointCloud < PointNormal > > source_pc = nullptr;
+
+	int destination_pc_index = -1;
+	int source_pc_index = -1;
+
 
 	std::vector< std::shared_ptr<PointNormal> > concatenated_pc_vector;
-	std::vector< std::shared_ptr<PointCloud < PointNormal > > > all_registered_pc;
+	std::vector< PointCloud < PointNormal > > all_registered_pc;
 
 	arma::mat LN_t0;
 	arma::mat LB_t0;

@@ -13,17 +13,15 @@
 #include "boost/progress.hpp"
 
 ShapeFitterBezier::ShapeFitterBezier(ShapeModelTri<ControlPoint> * psr_shape,
-	ShapeModelBezier<ControlPoint> * shape_model,
-	PointCloud<PointNormal> * pc) {
+	ShapeModelBezier<ControlPoint> * shape_model) {
 
 	this -> psr_shape = psr_shape;
 	this -> shape_model = shape_model;
-	this -> pc = pc;
 
 }
 
 
-bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
+bool ShapeFitterBezier::fit_shape_batch(const PointCloud<PointNormal> & pc,unsigned int N_iter, double ridge_coef){
 
 	std::cout << "- Fitting shape ...\n";
 
@@ -31,7 +29,7 @@ bool ShapeFitterBezier::fit_shape_batch(unsigned int N_iter, double ridge_coef){
 	// to another element so there is no need to recompute the KD tree
 
 	// The initial matches are found
-	std::vector<Footpoint> footpoints = this -> find_footpoints_omp();
+	std::vector<Footpoint> footpoints = this -> find_footpoints_omp(pc);
 	PointCloud<PointNormal> pc_footpoints;
 
 	for (int i = 0; i < footpoints.size(); ++i ){
@@ -311,17 +309,17 @@ bool ShapeFitterBezier::update_shape(std::vector<Footpoint> & footpoints,double 
 
 }
 
-std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
+std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp(const PointCloud<PointNormal> & pc) const{
 
 	std::vector<Footpoint> tentative_footpoints,footpoints;
 
 	std::cout << "\t\tFinding footpoints ...";
 
-	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
+	for (unsigned int i = 0; i < pc. size(); ++i){
 		
 		Footpoint footpoint;
-		footpoint.Ptilde = this -> pc -> get_point_coordinates(i);
-		footpoint.ntilde = this -> pc -> get_normal_coordinates(i);
+		footpoint.Ptilde = pc. get_point_coordinates(i);
+		footpoint.ntilde = pc. get_normal_coordinates(i);
 		footpoint.u = 1./3;
 		footpoint.v = 1./3;
 		footpoint.element = -1;
@@ -329,15 +327,15 @@ std::vector<Footpoint> ShapeFitterBezier::find_footpoints_omp() const{
 		
 		tentative_footpoints.push_back(footpoint);
 	}
-	boost::progress_display progress(this -> pc -> size());
+	boost::progress_display progress( pc.  size());
 	
 	#pragma omp parallel for
-	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
+	for (unsigned int i = 0; i < pc. size(); ++i){
 		this -> match_footpoint_to_element(tentative_footpoints[i]);
 		++progress;
 	}
 
-	for (unsigned int i = 0; i < this -> pc -> size(); ++i){
+	for (unsigned int i = 0; i < pc.  size(); ++i){
 		if (tentative_footpoints[i].element >= 0){
 			footpoints.push_back(tentative_footpoints[i]);
 		}

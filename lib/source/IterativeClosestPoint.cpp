@@ -7,36 +7,39 @@ IterativeClosestPoint::IterativeClosestPoint() : ICPBase(){
 }
 
 
-IterativeClosestPoint::IterativeClosestPoint(std::shared_ptr<PC> pc_destination, std::shared_ptr<PC> pc_source) : ICPBase(pc_destination,pc_source){
 
-}
-
-
-double IterativeClosestPoint::compute_distance(const PointPair & point_pair, 
+double IterativeClosestPoint::compute_distance(
+	const PC & source_pc,
+	const PC & destination_pc,
+	const PointPair & point_pair, 
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
 	const arma::mat::fixed<3,3> & dcm_D ,
-	const arma::vec::fixed<3> & x_D ) const{
+	const arma::vec::fixed<3> & x_D ) const {
 
-	return arma::norm(dcm_S * this -> pc_source -> get_point_coordinates(point_pair.first) + x_S 
-		- dcm_D * this -> pc_destination -> get_point_coordinates( point_pair.second) - x_D) ;
+	return arma::norm(dcm_S * source_pc . get_point_coordinates(point_pair.first) + x_S 
+		- dcm_D * destination_pc . get_point_coordinates( point_pair.second) - x_D) ;
 
 }
 
 
-void IterativeClosestPoint::compute_pairs(int h,const arma::mat::fixed<3,3> & dcm ,const arma::vec::fixed<3> & x ) {
+void IterativeClosestPoint::compute_pairs(
+	const PC & source_pc,
+	const PC & destination_pc,
+	int h,
+	const arma::mat::fixed<3,3> & dcm ,const arma::vec::fixed<3> & x ) {
 
 
 	if (use_true_pairs){
 
-		if (this -> pc_source -> size() != this -> pc_destination -> size()){
+		if (source_pc.size() != destination_pc.size()){
 			throw(std::runtime_error("Can't pair point clouds one-to-one since they are of different size"));
 		}
 		this -> point_pairs.clear();
-		double p = std::log2(this -> pc_source -> size());
+		double p = std::log2(source_pc.size());
 		int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
 
-		arma::ivec random_source_indices = arma::linspace<arma::ivec>(0, this -> pc_source -> size() - 1,this -> pc_source -> size());
+		arma::ivec random_source_indices = arma::linspace<arma::ivec>(0,source_pc.size() - 1,source_pc. size());
 		random_source_indices = arma::shuffle(random_source_indices);
 
 		for (int i = 0; i < N_pairs_max; ++i){
@@ -46,15 +49,15 @@ void IterativeClosestPoint::compute_pairs(int h,const arma::mat::fixed<3,3> & dc
 
 	}
 	else{
-		IterativeClosestPoint::compute_pairs(this -> point_pairs,this -> pc_source,this -> pc_destination,h, dcm,x);
+		IterativeClosestPoint::compute_pairs(source_pc,destination_pc,this -> point_pairs,h, dcm,x);
 	}
 
 }
 
 void IterativeClosestPoint::compute_pairs(
+	const PC & source_pc,
+	const PC & destination_pc, 
 	std::vector<PointPair> & point_pairs,
-	std::shared_ptr<PC> source_pc,
-	std::shared_ptr<PC> destination_pc, 
 	int h,
 	const arma::mat::fixed<3,3> & dcm_S ,
 	const arma::vec::fixed<3> & x_S ,
@@ -66,7 +69,7 @@ void IterativeClosestPoint::compute_pairs(
 	std::map<double, PointPair > all_pairs;
 
 	// int N_points = (int)(source_pc -> size() / std::pow(2, h));
-	double p = std::log2(source_pc -> size());
+	double p = std::log2(source_pc . size());
 	int N_pairs_max = (int)(std::pow(2, std::max(p - h,0.)));
 
 	#if ICP_DEBUG
@@ -79,7 +82,7 @@ void IterativeClosestPoint::compute_pairs(
 	#endif
 
 	// a maximum of $N_pairs_max pairs will be formed. $N_points points are extracted from the source point cloud	
-	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc -> size() - 1,source_pc -> size());
+	arma::uvec random_source_indices = arma::linspace<arma::uvec>(0, source_pc . size() - 1,source_pc . size());
 	random_source_indices = arma::shuffle(random_source_indices);
 	std::vector<PointPair> destination_source_dist_vector;
 
@@ -99,8 +102,8 @@ void IterativeClosestPoint::compute_pairs(
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
-		arma::vec test_source_point = dcm_D.t() * (dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second) + x_S - x_D);
-		destination_source_dist_vector[i].first = destination_pc -> get_closest_point(test_source_point);
+		arma::vec test_source_point = dcm_D.t() * (dcm_S * source_pc. get_point_coordinates(destination_source_dist_vector[i].second) + x_S - x_D);
+		destination_source_dist_vector[i].first = destination_pc. get_closest_point(test_source_point);
 	}
 
 	#if ICP_DEBUG
@@ -115,8 +118,8 @@ void IterativeClosestPoint::compute_pairs(
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 		if (destination_source_dist_vector[i].first != -1){
-			arma::vec test_destination_point = dcm_S.t() * ( dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D - x_S);
-			destination_source_dist_vector[i].second = source_pc -> get_closest_point(test_destination_point);
+			arma::vec test_destination_point = dcm_S.t() * ( dcm_D * destination_pc . get_point_coordinates(destination_source_dist_vector[i].first) + x_D - x_S);
+			destination_source_dist_vector[i].second = source_pc . get_closest_point(test_destination_point);
 		}
 	}
 
@@ -130,8 +133,8 @@ void IterativeClosestPoint::compute_pairs(
 	std::vector<std::pair<unsigned int , double> > formed_pairs;
 	for (unsigned int i = 0; i < destination_source_dist_vector.size(); ++i) {
 		if (destination_source_dist_vector[i].first != -1){
-			arma::vec S = dcm_S * source_pc -> get_point_coordinates(destination_source_dist_vector[i].second) + x_S;
-			arma::vec D = dcm_D * destination_pc -> get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
+			arma::vec S = dcm_S * source_pc . get_point_coordinates(destination_source_dist_vector[i].second) + x_S;
+			arma::vec D = dcm_D * destination_pc . get_point_coordinates(destination_source_dist_vector[i].first) + x_D;
 			formed_pairs.push_back(std::make_pair(i,std::pow(arma::norm(S - D),2)));
 		}
 	}	
@@ -176,7 +179,10 @@ void IterativeClosestPoint::compute_pairs(
 }
 
 
-void IterativeClosestPoint::build_matrices(const int pair_index,
+void IterativeClosestPoint::build_matrices(
+	const PC & source_pc,
+	const PC & destination_pc, 
+	const int pair_index,
 	const arma::vec::fixed<3> & mrp, 
 	const arma::vec::fixed<3> & x,
 	arma::mat::fixed<6,6> & info_mat_temp,
@@ -187,8 +193,8 @@ void IterativeClosestPoint::build_matrices(const int pair_index,
 	const double & los_noise_sd_baseline,
 	const arma::mat::fixed<3,3> & M_pc_D){
 
-	const arma::vec::fixed<3> & S_i = this -> pc_source -> get_point_coordinates(point_pairs[pair_index].first);
-	const arma::vec::fixed<3> & D_i = this -> pc_destination -> get_point_coordinates(point_pairs[pair_index].second);
+	const arma::vec::fixed<3> & S_i = source_pc . get_point_coordinates(point_pairs[pair_index].first);
+	const arma::vec::fixed<3> & D_i = destination_pc . get_point_coordinates(point_pairs[pair_index].second);
 
 	// The partial derivative of the observation model is computed
 	arma::mat::fixed<3,6> H = arma::zeros<arma::mat>(3,6);
@@ -204,72 +210,4 @@ void IterativeClosestPoint::build_matrices(const int pair_index,
 
 
 
-// void IterativeClosestPoint::ransac(
-// 	const std::vector<PointPair> & all_pairs,
-// 	int N_feature_pairs,
-// 	int minimum_N_icp_pairs,
-// 	double residuals_threshold,
-// 	int N_iter_ransac,
-// 	std::shared_ptr<PC> pc_source,
-// 	std::shared_ptr<PC> pc_destination){
-
-
-// 	double J_best = std::numeric_limits<double>::infinity();
-// 	std::vector<PointPair> best_pairs;
-// 	for (int iter = 0; iter < N_iter_ransac; ++iter){
-
-// 		// Creating the icp instance
-// 		IterativeClosestPoint icp;
-// 		icp.set_pc_source(pc_source);
-// 		icp.set_pc_destination(pc_destination);
-
-// 		// Sampling random feature correspondance pairs
-// 		std::vector< PointPair > kept_matches;
-// 		arma::ivec kept_pairs_indices = arma::shuffle(arma::regspace<arma::ivec>(0,static_cast<int>(all_pairs.size()) - 1));
-// 		for (int j = 0; j < N_feature_pairs; ++j){
-// 			kept_matches.push_back(all_pairs[kept_pairs_indices(j)]);
-// 		}
-// 		icp.set_pairs(kept_matches);
-
-// 		// Registering using these pairs
-// 		icp.register_pc();
-// 		arma::vec::fixed<3> x = icp.get_x();
-// 		arma::mat::fixed<3,3> dcm = icp.get_dcm();
-
-// 		// Computing the point pairs arising from the ICP cost function
-// 		icp.compute_pairs(4,icp.get_dcm(),icp.get_x());
-
-// 		// Getting the ICP pairs
-// 		const std::vector<PointPair> & icp_pairs = icp.get_point_pairs();
-
-// 		// If there are enough active pairs
-// 		if (icp_pairs.size() > minimum_N_icp_pairs){
-
-// 			// and if these pairs give good ICP residuals
-// 			double J = icp.compute_residuals(icp_pairs,dcm,x);
-
-// 			if (J < residuals_threshold){
-				
-// 				// If it surpasses the previous best
-// 				if (J < J_best){
-// 					J_best = icp.get_J_res();
-
-// 					best_pairs = kept_matches;
-// 					best_pairs.insert(best_pairs.end(), icp_pairs.begin(), icp_pairs.end());
-// 				}
-// 			}
-
-// 		}
-		
-
-
-
-
-// 	}
-
-
-
-
-
-// }
 

@@ -17,8 +17,7 @@ class ICPBase {
 public:
 
 	ICPBase();
-	ICPBase(std::shared_ptr<PC > pc_destination, 
-		std::shared_ptr<PC > pc_source);
+	
 
 
 	arma::vec::fixed<3> get_x() const;
@@ -30,6 +29,8 @@ public:
 	const std::vector<PointPair > & get_point_pairs();
 
 	double compute_residuals(
+		const PC & pc_source,
+		const PC & pc_destination,
 		const std::vector<PointPair> & point_pairs,
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
@@ -38,29 +39,16 @@ public:
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const;
 
 
-
-
 	void set_pairs(const std::vector<PointPair> & point_pairs);
 
 	
 	void register_pc(
+		const PC & pc_source,
+		const PC & pc_destination,
 		double los_noise_sd_baseline,
 		const arma::mat::fixed<3,3> & M_pc_D,
 		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & X_0  = arma::zeros<arma::vec>(3));
-
-	void register_pc_RANSAC(double fraction_inliers_used,
-		double fraction_inliers_requested,
-		unsigned int iter_ransac_max,
-		const arma::mat::fixed<3,3> & dcm_0 = arma::eye<arma::mat>(3,3),
-		const arma::vec::fixed<3> & X_0  = arma::zeros<arma::vec>(3));
-
-
-	void register_pc_bf(unsigned int iter_bf_max,
-		int N_possible_matches,
-		int N_tentative_source_points,
-		const arma::mat::fixed<3,3>  & dcm_0 = arma::eye<arma::mat>(3,3),
-		const arma::vec::fixed<3>  & X_0 = arma::zeros<arma::vec>(3));
 
 	void set_use_true_pairs(bool use_true_pairs);
 	
@@ -76,9 +64,7 @@ public:
 	void set_save_rigid_transform(const arma::vec::fixed<3> & x_save,
 		const arma::mat::fixed<3,3> & dcm_save);
 
-	bool get_use_pca_prealignment() const;
-	void set_use_pca_prealignment(bool use_pca_prealignment);
-
+	
 	unsigned int get_minimum_h() const;
 	void set_minimum_h(unsigned int min_h);
 
@@ -93,36 +79,43 @@ public:
 	void set_pc_destination(std::shared_ptr<PC> pc_destination);
 
 	
-	arma::vec compute_y_vector(const std::vector<PointPair> & point_pairs,
-		const arma::mat::fixed<3,3> & dcm_S ,
-		const arma::vec::fixed<3> & x_S) const ;
-	
 	double compute_residuals(
+		const PC & pc_source,
+		const PC & pc_destination,
 		const arma::mat::fixed<3,3> & dcm,
 		const arma::vec::fixed<3> & x,
-		const arma::vec & weights = {});
+		const arma::vec & weights = {}) const;
 
 	void clear_point_pairs();
 
 protected:
-	std::shared_ptr< PointCloud<PointNormal > > pc_destination;
-	std::shared_ptr< PointCloud<PointNormal > > pc_source;
-
+	
 	double static compute_Huber_loss(const arma::vec & y, double threshold);
 
+	
+	virtual double compute_distance(
+		const PC & pc_source,
+		const PC & pc_destination,
 
-	virtual double compute_distance(const PointPair & point_pair, 
+		const PointPair & point_pair, 
 		const arma::mat::fixed<3,3> & dcm_S = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_S = arma::zeros<arma::vec>(3),
 		const arma::mat::fixed<3,3> & dcm_D = arma::eye<arma::mat>(3, 3),
 		const arma::vec::fixed<3> & x_D = arma::zeros<arma::vec>(3)) const = 0;
 
+
+
 	virtual void compute_pairs(
+		const PC & pc_source,
+		const PC & pc_destination,
 		int h,
 		const arma::mat::fixed<3,3> & dcm = arma::eye<arma::mat>(3,3),
 		const arma::vec::fixed<3> & x = arma::zeros<arma::vec>(3))= 0;
 
-	virtual void build_matrices(const int pair_index,
+	virtual void build_matrices(
+		const PC & pc_source,
+		const PC & pc_destination,
+		const int pair_index,
 		const arma::vec::fixed<3> & mrp, 
 		const arma::vec::fixed<3> & x,
 		arma::mat::fixed<6,6> & info_mat_temp,
@@ -132,11 +125,6 @@ protected:
 		const double & w,
 		const double & los_noise_sd_baseline,
 		const arma::mat::fixed<3,3> & M_pc_D) = 0;
-
-	void pca_prealignment(arma::vec::fixed<3> & mrp,arma::vec::fixed<3> & x) const;
-
-	arma::vec weigh_ransac_pairs(const std::vector<PointPair> & matched_pairs,
-		double radius);
 
 
 	bool check_convergence(const int & iter, const double & J, const double & J_0,double & J_previous,int & h,bool & next_h);
@@ -161,7 +149,6 @@ protected:
 	unsigned int N_bins = 3;
 	
 	bool use_true_pairs = false;
-	bool use_pca_prealignment = false;
 	bool keep_correlations = true;
 	bool use_FPFH = false;
 	bool hierarchical;

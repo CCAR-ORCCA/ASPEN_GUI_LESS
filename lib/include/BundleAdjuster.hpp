@@ -22,7 +22,7 @@ class BundleAdjuster {
 public:
 
 	BundleAdjuster(double sigma_rho,
-		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_, 
+		std::vector< PointCloud<PointNormal > >  * all_registered_pc_, 
 		int N_iter,
 		int h,
 		arma::mat * LN_t0,
@@ -32,7 +32,7 @@ public:
 		std::vector<arma::mat::fixed<3,3 > > * BN_measured);
 
 	BundleAdjuster(double sigma_rho,
-		std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc_,
+		std::vector< PointCloud<PointNormal > >  * all_registered_pc_,
 		arma::mat * LN_t0,
 		arma::vec * x_t0,
 		std::string dir);
@@ -73,7 +73,7 @@ public:
 
 	void set_origin_shift(arma::vec::fixed<3> new_origin_shift){this -> shift_origin = new_origin_shift;}
 
-	std::shared_ptr<PointCloud < PointNormal > > get_anchor_pc() const;
+	const PointCloud < PointNormal > & get_anchor_pc() const;
 
 
 protected:
@@ -81,7 +81,7 @@ protected:
 	void remove_edges_from_graph();
 
 
-	std::vector< std::shared_ptr<PointCloud<PointNormal > > > * all_registered_pc;
+	std::vector< PointCloud<PointNormal >  > * all_registered_pc;
 	std::vector< PointCloudPair > point_cloud_pairs;
 
 	std::map<double,int> find_overlap_with_pc(int pc_global_index,int start_index,int end_index,

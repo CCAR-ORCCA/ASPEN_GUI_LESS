@@ -79,7 +79,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 	arma::vec iod_guess;
 
 	int last_iod_epoch_index = 0;
-	int cutoff_index = 0;
 	OC::CartState iod_state;
 	int epoch_time_index = 0;
 
@@ -138,8 +137,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-		if (this -> destination_pc != nullptr && this -> source_pc == nullptr){
-			this -> all_registered_pc.push_back(this -> destination_pc);
+		if (this -> destination_pc_index > -1  && this -> source_pc_index == -1){
 
 			// It is legit to use the true attitude state at the first timestep
 			// as it just defines an offset
@@ -158,7 +156,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 		}
 
-		else if (this -> destination_pc != nullptr && this -> source_pc != nullptr){
+		else if (this -> destination_pc_index > -1 && this -> source_pc_index > -1){
 
 
 			if(this -> filter_arguments -> get_use_icp()){
@@ -167,24 +165,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				arma::vec::fixed<3> X_pc_a_priori;
 
 				std::cout << "getting best a-priori rigid transform\n";
-
-
-
-				for (int j = 0; j < this -> source_pc -> size(); ++j){
-
-					if (this -> source_pc -> get_point(j).get_point_coordinates().n_rows != 3){
-						throw(std::runtime_error("Point " + std::to_string(j) + " in source_pc is fishy"));
-					}
-				}
-
-				for (int j = 0; j < this ->  destination_pc -> size(); ++j){
-
-					if (this -> destination_pc -> get_point(j).get_point_coordinates().n_rows != 3){
-						throw(std::runtime_error("Point " + std::to_string(j) + " in destination_pc is fishy"));
-					}
-				}
-
-
 
 
 
@@ -200,9 +180,11 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					X_pcs,
 					mrps_LN);
 
-				IterativeClosestPointToPlane icp_pc(this -> destination_pc, this -> source_pc);
+				IterativeClosestPointToPlane icp_pc;
 				
 				icp_pc.register_pc(
+					this -> all_registered_pc[this -> source_pc_index],
+					this -> all_registered_pc[this -> destination_pc_index],
 					this -> filter_arguments -> get_los_noise_sd_baseline(),
 					M_pcs.at(time_index - 1),
 					M_pc_a_priori,
@@ -245,8 +227,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			
 			// The source pc is registered, using the rigid transform that 
 			// the ICP returned
-			this -> source_pc -> transform(M_pc,X_pc);
-			this -> all_registered_pc.push_back(this -> source_pc);
+			this -> all_registered_pc[this -> source_pc_index].transform(M_pc,X_pc);
 
 			M_pcs[time_index] = M_pc;
 			X_pcs[time_index] = X_pc;
@@ -410,12 +391,12 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 					final_cov);
 
 
-				PointCloudIO<PointNormal>::save_to_obj(*ba_test.get_anchor_pc(),
+				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
 					dir + "/final_pc.obj",
 					this -> LN_t0.t(), 
 					this -> x_t0);
 
-				PointCloudIO<PointNormal>::save_to_obj(*ba_test.get_anchor_pc(),
+				PointCloudIO<PointNormal>::save_to_obj(ba_test.get_anchor_pc(),
 					dir + "/final_pc_as_is.obj");
 
 
@@ -427,7 +408,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << " -- Making PSR a-priori ...\n";
 				ShapeModelTri<ControlPoint> psr_shape("",this -> frame_graph);
 
-				ShapeBuilder::run_psr(ba_test.get_anchor_pc().get(),
+				ShapeBuilder::run_psr(ba_test.get_anchor_pc(),
 					dir,
 					psr_shape,
 					this -> filter_arguments);
@@ -464,10 +445,9 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 				std::cout << this -> estimated_shape_model -> get_NControlPoints() << std::endl;
 
 				ShapeFitterBezier shape_fitter(&psr_shape,
-					this -> estimated_shape_model.get(),
-					ba_test.get_anchor_pc().get()); 
+					this -> estimated_shape_model.get()); 
 
-				shape_fitter.fit_shape_batch(this -> filter_arguments -> get_N_iter_shape_filter(),
+				shape_fitter.fit_shape_batch(ba_test.get_anchor_pc(),this -> filter_arguments -> get_N_iter_shape_filter(),
 					this -> filter_arguments -> get_ridge_coef());
 
 				this -> estimated_shape_model -> update_mass_properties();	
@@ -809,79 +789,84 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 
 	// No point cloud has been collected yet
-	if (this -> destination_pc == nullptr) {
+	if (this -> destination_pc_index < 0) {
+
+		this -> destination_pc_index = index;
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-		this -> destination_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-		this -> destination_pc -> build_kdtree (false);
+		pc.build_kdtree(false);
+
+		this -> all_registered_pc.push_back(pc);
+
 		arma::vec::fixed<3> los = {1,0,0};
 
-		EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> destination_pc,*this -> destination_pc);
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[destination_pc_index],
+			this -> all_registered_pc[destination_pc_index]);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
 
 		#if IOFLAGS_shape_builder
-		PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
+		PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[destination_pc_index], dir + "/destination_" + std::to_string(index) + ".obj",
 			this -> LN_t0.t(),this -> x_t0);
 		#endif
 
 	}
 
-	else {
+	else if (this -> source_pc_index < 0) {
 
-		// Only one destination point cloud has been collected
-		if (this -> source_pc == nullptr) {
+		
+		this -> source_pc_index = index;
 
-			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-			this -> source_pc -> build_kdtree (false);
+		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
+		pc.build_kdtree (false);
 
-			arma::vec::fixed<3> los = {1,0,0};
+		arma::vec::fixed<3> los = {1,0,0};
 
-			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
-			estimate_normals.set_los_dir(los);
-			estimate_normals.estimate(6);
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[this -> source_pc_index]
+			,this -> all_registered_pc[this -> source_pc_index]);
+		estimate_normals.set_los_dir(los);
+		estimate_normals.estimate(6);
 
 
 			#if IOFLAGS_shape_builder
-			PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
-				this -> LN_t0.t(),this -> x_t0);
-			PointCloudIO<PointNormal>::save_to_obj(*this -> destination_pc, dir + "/destination_" + std::to_string(index) + ".obj",
-				this -> LN_t0.t(),this -> x_t0);
+		PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[this -> source_pc_index], dir + "/source_" + std::to_string(index) + ".obj",
+			this -> LN_t0.t(),this -> x_t0);
+		PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[destination_pc_index], dir + "/destination_" + std::to_string(index) + ".obj",
+			this -> LN_t0.t(),this -> x_t0);
 			#endif
 
 
-		}
+	}
 
 		// Two point clouds have been collected : "nominal case")
-		else {
+	else {
 
 			// The source and destination point clouds are combined into the new source point cloud
 
 
-			if (this -> filter_arguments -> get_save_transformed_source_pc()){
-				PointCloudIO<PointNormal>::save_to_obj(*this -> source_pc, dir + "/source_" + std::to_string(index) + ".obj",
-					this -> LN_t0.t(),this -> x_t0);
-			}
-
-
-			this -> destination_pc = this -> source_pc;
-
-
-			PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-			this -> source_pc = std::make_shared<PointCloud<PointNormal>>(pc);
-			this -> source_pc -> build_kdtree (false);
-
-			arma::vec::fixed<3> los = {1,0,0};
-
-			EstimationNormals<PointNormal,PointNormal> estimate_normals(*this -> source_pc,*this -> source_pc);
-			estimate_normals.set_los_dir(los);
-			estimate_normals.estimate(6);
-
-
-
+		if (this -> filter_arguments -> get_save_transformed_source_pc()){
+			PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[this -> source_pc_index], 
+				dir + "/source_" + std::to_string(index) + ".obj",
+				this -> LN_t0.t(),this -> x_t0);
 		}
+
+
+		this -> destination_pc_index = this -> source_pc_index;
+		this -> source_pc_index = index;
+
+		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
+		pc.build_kdtree (false);
+
+		arma::vec::fixed<3> los = {1,0,0};
+
+		EstimationNormals<PointNormal,PointNormal> estimate_normals(this -> all_registered_pc[this -> source_pc_index],
+			this -> all_registered_pc[this -> source_pc_index]);
+		estimate_normals.set_los_dir(los);
+		estimate_normals.estimate(6);
+
+
 	}
+	
 }
 
 
@@ -962,7 +947,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 	arma::vec pc_center;
 	for (int i = first_pc_index; i < last_pc_index + 1; ++i){		
 
-		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
+		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(this -> all_registered_pc[i]);
 
 		center += 1./N * (absolute_rigid_transforms.at(i).M * (
 			absolute_true_rigid_transforms.at(i).M.t() * (pc_center - absolute_true_rigid_transforms.at(i).X) ) + absolute_rigid_transforms.at(i).X); 
@@ -981,7 +966,7 @@ arma::vec ShapeBuilder::get_center_collected_pcs(
 
 	for (int i = first_pc_index; i < last_pc_index + 1; ++i){	
 
-		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]);
+		pc_center = EstimationFeature<PointNormal,PointNormal>::compute_center(this -> all_registered_pc[i]);
 
 		center += 1./N * pc_center ; 
 	}
@@ -995,9 +980,9 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 	int N = this -> all_registered_pc.size();
 	int N_p = 0;
 	for (int i = 0; i < N; ++i){	
-		if (this -> all_registered_pc[i] -> size() > 0){
-			center += this -> all_registered_pc[i] -> size() * EstimationFeature<PointNormal,PointNormal>::compute_center(*this -> all_registered_pc[i]) ; 
-			N_p += this -> all_registered_pc[i] -> size();
+		if (this -> all_registered_pc[i].size() > 0){
+			center += this -> all_registered_pc[i].size() * EstimationFeature<PointNormal,PointNormal>::compute_center(this -> all_registered_pc[i]) ; 
+			N_p += this -> all_registered_pc[i].size();
 		}
 	}
 	return center / N_p;
@@ -1006,21 +991,21 @@ arma::vec::fixed<3> ShapeBuilder::get_center_collected_pcs() const{
 
 
 
-void ShapeBuilder::estimate_coverage(std::shared_ptr<PointCloud < PointNormal > > anchor_pc){
+void ShapeBuilder::estimate_coverage(const PointCloud < PointNormal >  & anchor_pc){
 
-	std::cout << "\n-- Number of points in anchor pc: " << anchor_pc -> size() << std::endl;
+	std::cout << "\n-- Number of points in anchor pc: " << anchor_pc . size() << std::endl;
 
 	auto start = std::chrono::system_clock::now();
 	
 	std::cout << "\n-- Computing coverage ..."<< std::endl;
 	int unsatisfying_points_count = 0;
 	#pragma omp parallel for reduction(+:unsatisfying_points_count)
-	for (int i = 0; i < anchor_pc -> size(); ++i){
+	for (int i = 0; i < anchor_pc . size(); ++i){
 
 		// The closest neighbors are extracted
 		// std::map<double, int > closest_points = global_pc.get_closest_N_points(global_pc.get_point_coordinates(i),3);
 
-		if (anchor_pc -> get_nearest_neighbors_radius(anchor_pc -> get_point_coordinates(i),1.).size() <= 3){
+		if (anchor_pc . get_nearest_neighbors_radius(anchor_pc . get_point_coordinates(i),1.).size() <= 3){
 			++unsatisfying_points_count;
 		}
 
@@ -1029,12 +1014,12 @@ void ShapeBuilder::estimate_coverage(std::shared_ptr<PointCloud < PointNormal > 
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end-start;
 	std::cout << "\n-- Done computing coverage in " << elapsed_seconds.count( ) << " seconds" << std::endl;
-	std::cout << "\n-- Uniformity score: " << double(int(anchor_pc -> size()) - unsatisfying_points_count)/int(anchor_pc -> size()) * 100 << " %\n";
+	std::cout << "\n-- Uniformity score: " << double(int(anchor_pc . size()) - unsatisfying_points_count)/int(anchor_pc . size()) * 100 << " %\n";
 
 }
 
 
-void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
+void ShapeBuilder::run_psr(const PointCloud<PointNormal> & pc,
 	const std::string dir,
 	ShapeModelTri<ControlPoint> & psr_shape,
 	ShapeBuilderArguments * filter_arguments){
@@ -1047,17 +1032,17 @@ void ShapeBuilder::run_psr(PointCloud<PointNormal> * pc,
 	PointCloud<PointNormal> pc_downsampled;
 
 	std::vector<int> indices;
-	for (int i = 0; i < pc -> size(); ++i){
+	for (int i = 0; i < pc . size(); ++i){
 		indices.push_back(i);
 	}
 
 	std::cout << "\tShuffling\n";
 	std::random_shuffle ( indices.begin(), indices.end() );
 
-	int points_kept = static_cast<int>(percentage_point_kept/100. * pc -> size() );
+	int points_kept = static_cast<int>(percentage_point_kept/100. * pc . size() );
 
 	for (int i = 0; i < points_kept; ++i){
-		pc_downsampled.push_back(pc -> get_point(indices[i]));
+		pc_downsampled.push_back(pc . get_point(indices[i]));
 	}
 
 	std::cout << "\tSaving to txt\n";
@@ -1170,10 +1155,10 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	// (M_pc_iod,X_pc_iod) or (M_pc,X_pc) yields the best pairs
 
 	// Previous rigid transform
-	IterativeClosestPointToPlane icp_pc_prealign(this -> destination_pc, this -> source_pc);
-	icp_pc_prealign.compute_pairs(4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	IterativeClosestPointToPlane icp_pc_prealign;
+	icp_pc_prealign.compute_pairs(this -> all_registered_pc[this -> source_pc_index],this -> all_registered_pc[this -> destination_pc_index],4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	
-	double res_previous_rt = icp_pc_prealign.compute_residuals(M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
+	double res_previous_rt = icp_pc_prealign.compute_residuals(this -> all_registered_pc[this -> source_pc_index],this -> all_registered_pc[this -> destination_pc_index],M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	int N_pairs_previous_rt = icp_pc_prealign.get_point_pairs().size();
 	
 	std::cout << "\t Residuals from previous rt: " << res_previous_rt << " from " << icp_pc_prealign.get_point_pairs().size()<< " pairs" << std::endl;
@@ -1184,10 +1169,20 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	double res_previous_iod = std::numeric_limits<double>::infinity();
 	
 	try{
-		icp_pc_prealign.compute_pairs(4,M_pc_iod,X_pc_iod);
+		icp_pc_prealign.compute_pairs(
+			this -> all_registered_pc[this -> source_pc_index],
+			this -> all_registered_pc[this -> destination_pc_index],
+			4,
+			M_pc_iod,
+			X_pc_iod);
+
 		N_pairs_iod = icp_pc_prealign.get_point_pairs().size();
 		std::cout <<"\t N_pairs_iod: " << N_pairs_iod << std::endl;
-		res_previous_iod = icp_pc_prealign.compute_residuals(M_pc_iod,X_pc_iod);
+		res_previous_iod = icp_pc_prealign.compute_residuals(
+			this -> all_registered_pc[this -> source_pc_index],
+			this -> all_registered_pc[this -> destination_pc_index],
+			M_pc_iod,
+			X_pc_iod);
 
 		std::cout << "\t Residuals from iod rt: " << res_previous_iod << " from "<< icp_pc_prealign.get_point_pairs().size()  << " pairs" << std::endl << std::endl;
 		std::cout << "\t Rigid transforms from iod rt: " << RBK::dcm_to_mrp(M_pc_iod).t() << " , " << X_pc_iod.t() << std::endl << std::endl;
@@ -1204,7 +1199,7 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 
 		icp_pc_prealign.clear_point_pairs();
 		icp_pc_prealign.set_minimum_h(4);
-		icp_pc_prealign.register_pc(this -> filter_arguments -> get_los_noise_sd_baseline(),
+		icp_pc_prealign.register_pc(this -> all_registered_pc[this -> source_pc_index],this -> all_registered_pc[this -> destination_pc_index],this -> filter_arguments -> get_los_noise_sd_baseline(),
 			M_pcs.at(std::max(0,time_index - 2)),
 			M_pcs.at(time_index - 1),
 			X_pcs.at(time_index - 1));
