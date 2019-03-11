@@ -1162,10 +1162,16 @@ void ShapeBuilder::get_best_a_priori_rigid_transform(
 	// Previous rigid transform
 	IterativeClosestPointToPlane icp_pc_prealign;
 	std::cout << this -> source_pc_index << " " << this -> destination_pc_index << " " << time_index - 1 << std::endl;
+	M_pcs.at(time_index - 1).print("");
+	X_pcs.at(time_index - 1).print("");
+
 	icp_pc_prealign.compute_pairs(this -> all_registered_pc[this -> source_pc_index],
 		this -> all_registered_pc[this -> destination_pc_index],
 		4,M_pcs.at(time_index - 1),X_pcs.at(time_index - 1));
 	
+	std::cout << "got pairs\n";
+
+
 	double res_previous_rt = icp_pc_prealign.compute_residuals(
 		this -> all_registered_pc[this -> source_pc_index],
 		this -> all_registered_pc[this -> destination_pc_index],
