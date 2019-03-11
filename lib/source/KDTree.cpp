@@ -11,7 +11,7 @@
 #define KDTREE_BUILD_DEBUG 0
 #define KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG 0
 #define KDTTREE_RADIUS_POINT_SEARCH_DEBUG_FLAG 0
-#define KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG 1
+#define KDTTREE_CLOSEST_POINT_SEARCH_DEBUG_FLAG 0
 
 template <template<class> class ContainerType, class PointType>
 void KDTree<ContainerType,PointType>::set_depth(int depth) {
