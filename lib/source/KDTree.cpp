@@ -53,7 +53,8 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 	std::cout << "#############################\n";
 	std::cout << "Depth: " << this -> depth << std::endl; ;
 	std::cout << "Points in node: " << node -> indices.size() << std::endl;
-	std::cout << "Points found so far : " << closest_points.size() << std::endl;
+	std::cout << "Best guess index so far : " << best_guess_index << " at distance " << distance << std::endl;
+	
 	#endif
 
 	// If the left child of this node is nullptr, so is the right
@@ -121,7 +122,7 @@ void KDTree<ContainerType,PointType>::closest_point_search(const arma::vec & tes
 	#if KDTTREE_CLOSEST_N_POINT_SEARCH_DEBUG_FLAG
 	std::cout << "#############################\n";
 	std::cout << " Leaving "<<  std::endl; ;
-	std::cout << "Best guess index: : " << best_guess_index << " at distance " << distance << std::endl;
+	std::cout << "Best guess index: " << best_guess_index << " at distance " << distance << std::endl;
 	#endif
 
 
