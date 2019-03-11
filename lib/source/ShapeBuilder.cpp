@@ -794,17 +794,18 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		this -> destination_pc_index = index;
 
-		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-		pc.build_kdtree(false);
+		
+		
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
 
+		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
+		pc.build_kdtree(false);
 		arma::vec::fixed<3> los = {1,0,0};
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
 
-		this -> all_registered_pc.push_back(pc);
-
-		
+	
 
 		#if IOFLAGS_shape_builder
 		PointCloudIO<PointNormal>::save_to_obj(this -> all_registered_pc[destination_pc_index], dir + "/destination_" + std::to_string(index) + ".obj",
@@ -818,14 +819,16 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		
 		this -> source_pc_index = index;
 
-		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-		pc.build_kdtree (false);
-		
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
+
+		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
+		pc.build_kdtree(false);
 		arma::vec::fixed<3> los = {1,0,0};
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
 
+	
 		this -> all_registered_pc.push_back(pc);
 
 
@@ -858,16 +861,16 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 		this -> destination_pc_index = this -> source_pc_index;
 		this -> source_pc_index = index;
 
-		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
-		pc.build_kdtree (false);
+		this -> all_registered_pc.push_back(PointCloud<PointNormal >(this -> lidar -> get_focal_plane()););
 
+		PointCloud<PointNormal > & pc = this -> all_registered_pc.back();
+		pc.build_kdtree(false);
 		arma::vec::fixed<3> los = {1,0,0};
 		EstimationNormals<PointNormal,PointNormal> estimate_normals(pc,pc);
 		estimate_normals.set_los_dir(los);
 		estimate_normals.estimate(6);
 
-		this -> all_registered_pc.push_back(pc);
-
+	
 
 
 

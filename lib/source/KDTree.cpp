@@ -478,9 +478,6 @@ void KDTree<ContainerType,PointType>::search_node(const arma::vec & test_point,
 	for (int i = 0; i < node -> indices.size(); ++i){
 
 		double new_distance;
-
-		std::cout << this -> owner  << std::endl;
-		std::cout << node -> indices[i] << std::endl;
 		
 		try{
 			new_distance = this -> distance(this -> owner -> get_point(node -> indices[i]),test_point);
