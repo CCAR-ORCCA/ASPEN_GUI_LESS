@@ -138,9 +138,6 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 
 
 
-		std::cout << this -> all_registered_pc.back().get_normal_coordinates(0).t() << std::endl;
-
-
 
 		if (this -> destination_pc_index > -1  && this -> source_pc_index == -1){
 
