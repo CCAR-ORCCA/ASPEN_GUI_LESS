@@ -821,6 +821,8 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree (false);
+		this -> all_registered_pc.push_back(pc);
+
 
 		arma::vec::fixed<3> los = {1,0,0};
 
@@ -858,6 +860,8 @@ void ShapeBuilder::store_point_clouds(int index,const std::string dir) {
 
 		PointCloud<PointNormal > pc(this -> lidar -> get_focal_plane());
 		pc.build_kdtree (false);
+		this -> all_registered_pc.push_back(pc);
+		
 
 		arma::vec::fixed<3> los = {1,0,0};
 
