@@ -1,29 +1,31 @@
 import os
 import json
 import numpy as np
-
-import os
 import itertools
 import platform
+import socket
 
 
-def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location):
+def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location,sim_name):
+       
+    keys, values = zip(*all_cases_dictionnary.items())
+    dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
-	keys, values = zip(*all_cases_dictionnary.items())
-	dictionnary_list = [dict(zip(keys, v)) for v in itertools.product(*values)]
+    all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
 
-	all_cases_dictionnary_list = [{**dictionnary_list[e],**base_dictionnary} for e in range(len(dictionnary_list))]
+    for e in range(len(dictionnary_list)):
+        all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/" + sim_name + "_" + str(e)
+        all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/" + sim_name + "_" + str(e)
 
-	for e in range(len(dictionnary_list)):
-		all_cases_dictionnary_list[e]["INPUT_DIR"] = base_location + "Navigation/input/case_" + str(e)
-		all_cases_dictionnary_list[e]["OUTPUT_DIR"] = base_location + "Navigation/output/case_" + str(e)
+    return all_cases_dictionnary_list
 
-	return all_cases_dictionnary_list
-
-if (platform.system() == 'Linux'):
-	base_location = "/orc_raid/bebe0705/"
+# Replace the paths after 'base_location' with the existing directory under which the input/ and /output sub-directories
+# will be created and populated
+if (socket.gethostname() == "fortuna"):
+    base_location = "/orc_raid/bebe0705/"
 else:
-	base_location = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/"
+    base_location = "../"
+
 
 
 # NAVIGATION_TIMES : number of observation times
@@ -42,54 +44,81 @@ else:
 # PROCESS_NOISE_SIGMA_OMEG : 1 sigma amplitude of small-body attitude state SNC process noise (rad/s^2)
 # SKIP_FACTOR : between 0 and 1. if == to 1 , will use all pixels to determine position/attitude mes. Values between 0.9 and 1 seem good enough
 
-base_dictionnary = {
-"DENSITY" : 1900,
-"HARMONICS_DEGREE" : 10,
-"USE_HARMONICS" : True,
-"USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
-"LOS_NOISE_SD_BASELINE" : 5e-1,
-"LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-"USE_TRUE_STATES": False,
-"SKIP_FACTOR": 0.94,
-}
+def run_sim(data,quiet = True):
 
-all_cases_dictionnary = {
-"PROCESS_NOISE_SIGMA_VEL": [1e-8,1e-9,1e-10] ,
-"PROCESS_NOISE_SIGMA_OMEG": [1e-9,1e-10] ,
-"INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500,1./2500],
-"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [base_location + "ShapeReconstruction/output/case_9/"],
-"TF" : [25.,50.,100.]
-}
+    if not quiet:
+        print("\t Case " + data["INPUT_DIR"].split("/")[-1])
+        print("\t - Making directory")
 
+    os.system("mkdir " + data["INPUT_DIR"])
+    os.system("mkdir " + data["OUTPUT_DIR"])
 
-all_data = generate_all_cases_dictionnary_list(base_dictionnary,
-	all_cases_dictionnary,base_location)
+    if (os.path.isfile(data["OUTPUT_DIR"] + "/covariances.txt") is False):
 
+        if not quiet:
+            print("\t - Copying input file in build/")
 
-for data in all_data:
-	
-	print("\t Case " + data["INPUT_DIR"].split("/")[-1])
+        with open('input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
 
-	print("\t - Making directory")
+        if not quiet:    
+            print("\t - Saving input file in input/ and output/")
+        
+        with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
+        with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
+            json.dump(data, outfile)
 
-	os.system("mkdir " + data["INPUT_DIR"])
-	os.system("mkdir " + data["OUTPUT_DIR"])
+        if not quiet:
+            print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
 
-	print("\t - Copying input file in build/")
+        if not quiet:
 
-	with open('input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+            os.system("./Navigation " + data["OUTPUT_DIR"] + '/input_file.json' + " 2>&1 | tee " + data["OUTPUT_DIR"] + "/log.txt" )
+        else:
+            os.system("./Navigation " + data["OUTPUT_DIR"] + "/input_file.json  >> " + data["OUTPUT_DIR"] + "/log.txt 2>&1" )
+    
+    else:
+        if not quiet:
 
-	print("\t - Saving input file in output/")
+            print("Case " + data["INPUT_DIR"].split("/")[-1] + " has already finished running. skipping case ...")
 
-	with open(data["INPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+def start_sims(n_pools = 1):
 
-	with open(data["OUTPUT_DIR"] + '/input_file.json', 'w') as outfile:
-		json.dump(data, outfile)
+	base_dictionnary = {
+	"DENSITY" : 1900,
+	"HARMONICS_DEGREE" : 10,
+	"USE_HARMONICS" : True,
+	"USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
+	"LOS_NOISE_FRACTION_MES_TRUTH" : 0,
+	"USE_TRUE_STATES": False,
+	"SKIP_FACTOR": 0.94,
+	"TF" : 100.
+	}
 
-	print("\t - Running case " +  data["INPUT_DIR"].split("/")[-1])
+	all_cases_dictionnary = {
+	"LOS_NOISE_SD_BASELINE" : [5e-1,1e0],
+	"PROCESS_NOISE_SIGMA_VEL": [1e-9,1e-10] ,
+	"PROCESS_NOISE_SIGMA_OMEG": [1e-9,1e-10] ,
+	"INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500] ,
+	"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_0/",
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_3/",
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_0/",
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_1/",
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_2/",
+	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_3/"
+	]
+	}
 
-	os.system("./Navigation 2>&1 | tee -a " + data["OUTPUT_DIR"] + "/log.txt" )
+	all_data = generate_all_cases_dictionnary_list(base_dictionnary,
+        all_cases_dictionnary,base_location,"thesis_nav")
+
+    if (n_pools > 1):
+        p = Pool(n_pools)
+        p.map(run_sim, all_data)
+    else:
+        for data in all_data:
+            run_sim(data,quiet = False)
 
 

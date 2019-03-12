@@ -107,7 +107,6 @@ def start_sims(n_pools = 1):
 
     }
 
-
     all_cases_dictionnary = {
     "INSTRUMENT_FREQUENCY_SHAPE" : [0.0003,0.0004],
     "LATITUDE_SPIN" : [5 * np.pi / 180],
