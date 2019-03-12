@@ -4,6 +4,7 @@ import numpy as np
 import itertools
 import platform
 import socket
+from multiprocessing import Pool
 
 
 def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,base_location,sim_name):
