@@ -85,33 +85,33 @@ def run_sim(data,quiet = True):
 
 def start_sims(n_pools = 1):
 
-	base_dictionnary = {
-	"DENSITY" : 1900,
-	"HARMONICS_DEGREE" : 10,
-	"USE_HARMONICS" : True,
-	"USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
-	"LOS_NOISE_FRACTION_MES_TRUTH" : 0,
-	"USE_TRUE_STATES": False,
-	"SKIP_FACTOR": 0.94,
-	"TF" : 100.
-	}
+    base_dictionnary = {
+    "DENSITY" : 1900,
+    "HARMONICS_DEGREE" : 10,
+    "USE_HARMONICS" : True,
+    "USE_HARMONICS_ESTIMATED_DYNAMICS" : True,
+    "LOS_NOISE_FRACTION_MES_TRUTH" : 0,
+    "USE_TRUE_STATES": False,
+    "SKIP_FACTOR": 0.94,
+    "TF" : 100.
+    }
 
-	all_cases_dictionnary = {
-	"LOS_NOISE_SD_BASELINE" : [5e-1,1e0],
-	"PROCESS_NOISE_SIGMA_VEL": [1e-9,1e-10] ,
-	"PROCESS_NOISE_SIGMA_OMEG": [1e-9,1e-10] ,
-	"INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500] ,
-	"SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_0/",
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_3/",
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_0/",
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_1/",
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_2/",
-	base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_3/"
-	]
-	}
+    all_cases_dictionnary = {
+    "LOS_NOISE_SD_BASELINE" : [5e-1,1e0],
+    "PROCESS_NOISE_SIGMA_VEL": [1e-9,1e-10] ,
+    "PROCESS_NOISE_SIGMA_OMEG": [1e-9,1e-10] ,
+    "INSTRUMENT_FREQUENCY_NAV" : [1./3600,1./4500] ,
+    "SHAPE_RECONSTRUCTION_OUTPUT_DIR" : [
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_0/",
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_speed_3/",
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_0/",
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_1/",
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_2/",
+    base_location + "ShapeReconstruction/output/thesis_fast_slam_robustness_3/"
+    ]
+    }
 
-	all_data = generate_all_cases_dictionnary_list(base_dictionnary,
+    all_data = generate_all_cases_dictionnary_list(base_dictionnary,
         all_cases_dictionnary,base_location,"thesis_nav")
 
     if (n_pools > 1):
