@@ -8,7 +8,10 @@ def np_array_to_latex(X,
  type = 'f', 
  decimals = 2, 
  ante_decimals = 6,
- is_symmetric = "no"):
+ is_symmetric = "no",
+ pretty = False,
+ integer_row = [],
+ integer_column = []):
     '''
     Exports the np.array provided as argument to a latex file that can be imported
     By B.Bercovici (03/2016)
@@ -28,6 +31,9 @@ def np_array_to_latex(X,
     -- "no" : self explanatory, all components are saved.
     -- "upper" : symmetric, will only save upper triangular component
     -- "lower" : symmetric, will only save lower triangular component
+    - pretty : if True, will add extra space between rows
+    - integer_row : list containing indices of rows that only contain integers
+    - integer_column : list containing indices of columns that only contain integers
 
     '''
     ## Format specifier
@@ -54,13 +60,21 @@ def np_array_to_latex(X,
     if (column_headers != None or row_headers != None):
 
         # The array header is generated
-        style = ['|c' for x in range(N_column + (row_headers is not None))]
-        style = ''.join([str(num) for num in style])
-        style = style + '|'
+        if pretty:
+            style = ['c' for x in range(N_column + (row_headers is not None))]
+            style = ''.join([str(num) for num in style])
+
+        else:
+            style = ['|c' for x in range(N_column + (row_headers is not None))]
+            style = ''.join([str(num) for num in style])
+            style = style + '|'
 
         # Write the first two lines
         f.write(r'\begin{tabular}{' + style + '}'+'\n')
-        f.write(r'\hline ' + '\n')
+        if pretty: 
+            f.write(r'\hline ' + '\n' + r'\hline \\' + '\n')
+        else:
+            f.write(r'\hline ' + '\n')
 
         # The rest of the array is written to the file
         for i in range(-1,N_row):
@@ -69,7 +83,9 @@ def np_array_to_latex(X,
                 formatted_number = format_string.format(X[i,j])
                 split_number = formatted_number.split("e")
                 
-                if len(split_number) != 1:
+                if i in integer_row or j in integer_column:
+                    formatted_number = str(int(X[i,j]))
+                elif len(split_number) != 1:
                     exponent = str(int(split_number[1].split("+")[-1]))
                     if (int(exponent) != 0):
 
@@ -91,7 +107,11 @@ def np_array_to_latex(X,
                     f.write(column_headers[j] + r' & ')
                 # last cell of column header row : the last column header (if any) is added along with and end-of-line character
                 elif (i == -1 and j == N_column - 1 and column_headers != None):
-                    f.write(column_headers[j] + r'\\' + '\n' +r'\hline ' + '\n' )
+                    if pretty:
+                        f.write(column_headers[j] + r'\\ \\' + '\n' +r'\hline ' + '\n'+r'\hline \\' + '\n ' )
+
+                    else:
+                        f.write(column_headers[j] + r'\\' + '\n' +r'\hline ' + '\n' )
                 # row header column is filled with row headers (if any)
                 elif (i != -1 and j == -1 and row_headers != None):
                     f.write(row_headers[i] + r' & ' )
@@ -118,7 +138,11 @@ def np_array_to_latex(X,
                 elif ( i != -1 and j != -1 and j == N_column - 1  ):
 
                     if is_symmetric == "no":
-                        f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
+                        if pretty:
+                            f.write(formatted_number + r'\\ \\' + '\n ')
+
+                        else:
+                            f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
                     else:
                         if (is_symmetric == "upper"):
                             if (i <= j):
@@ -130,8 +154,11 @@ def np_array_to_latex(X,
                                 f.write(formatted_number + r'\\' + '\n' +r'\hline ' + '\n')
                             else:
                                 f.write(r"\cdot" + r'\\' + '\n' +r'\hline ' + '\n')
+        if pretty:
+            f.write(r'\hline' + '\n' + r'\hline' + '\n' +r'\end{tabular}')
 
-        f.write(r'\end{tabular}')
+        else:
+            f.write('\n' + r'\end{tabular}')
 
 
     # Else the array is simply exported as a bmatrix

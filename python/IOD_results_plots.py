@@ -369,7 +369,7 @@ def draw_dispersions(name,
 
     cut_names = ["Y-Z","X-Z","X-Y"]
 
-    print "- Plotting " + name + " in " + cut_names[axis] + " slice " 
+    print("- Plotting " + name + " in " + cut_names[axis] + " slice \n")
 
     x_max = -1
     y_max = -1
@@ -447,16 +447,16 @@ def list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Re
 
     all_results_dirs = [all_results_dirs[sorted_order[i]] for i in range(len(sorted_order))]
 
-    print "\t Found " + str(len(all_results_dirs)) + " result directories\n\n"
+    print("\t Found " + str(len(all_results_dirs)) + " result directories\n\n")
 
     for i in range(len(all_results_dirs)):
-        print str(i) + " : " + all_results_dirs[i] + "\n"
+        print(str(i) + " : " + all_results_dirs[i] + "\n")
 
         with open(all_results_dirs[i] + "/input_file.json") as f:
             data = json.load(f)
 
         pprint(data)
-        print "\n"
+        print("\n")
 
     index_str = raw_input(" Which one should be processed ? Pick a number or enter 'all'\n")
     save_str = raw_input(" Should results be saved? (y/n) ?\n")
@@ -560,7 +560,7 @@ def plot_all_results(path,graphics_path = None):
     all_rps_m_mean = all_rps - true_rp
     prefix = path.split("/")[-1] + "_"
 
-    print "\t Plotting case " + str(prefix)
+    print("\t Plotting case " + str(prefix))
 
 
     vertices,facets = polyhedron.load_shape("../resources/shape_models/itokawa_8_scaled.obj")

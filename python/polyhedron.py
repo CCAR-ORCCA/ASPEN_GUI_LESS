@@ -281,7 +281,7 @@ def plot_jacobi(path):
 
 def load_shape(path,scale_factor = 1):
     # The obj file is read
-    read_obj = np.loadtxt(path,dtype = 'string')
+    read_obj = np.loadtxt(path,dtype = 'str')
     vertices = []
     facets = []
     for line_index in range(len(read_obj)):

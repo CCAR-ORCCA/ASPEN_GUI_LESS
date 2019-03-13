@@ -8,15 +8,238 @@ import matplotlib.ticker as mtick
 import os
 from pprint import pprint
 from IOD_results_plots import draw_sphere
+from multiprocessing import Pool
+from np_array_to_latex import np_array_to_latex
 
 import json
 rc('text', usetex=True)
 
 
-def list_results(graphics_path,
+def create_input_tables(all_results_dirs,save_path,table_size = 10):
+    n_tables = int(float(len(all_results_dirs)) / table_size)
+    size_last_table = len(all_results_dirs) - n_tables * table_size
+    
+    print((len(all_results_dirs),n_tables,size_last_table))
+    for table_index in range(n_tables):
+
+        table = np.zeros([5,table_size])
+
+
+        for i in range(table_size):
+            data = {}
+            with open(all_results_dirs[table_index * table_size + i] + "/input_file.json") as f:
+                data = json.load(f)
+
+
+            table[0,i] = data["LOS_NOISE_SD_BASELINE"]
+            table[1,i] = 1e9 * data["PROCESS_NOISE_SIGMA_VEL"]
+            table[2,i] = 1e9 * data["PROCESS_NOISE_SIGMA_OMEG"]
+            table[3,i] = int(1./data["INSTRUMENT_FREQUENCY_NAV"])
+            table[4,i] = str(int(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"].split("_")[-1][0]) + 1 + (6 if "robustness" in str(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]) else 0))
+
+
+        np_array_to_latex(table,save_path + "/input_table_case_" + str(table_index * table_size + 1)  + "_to_" + str(table_index * table_size + table_size) ,
+        row_headers = [r"$\sigma_{\rho}$ ($\mathrm{m}$)",
+        r"$\sigma_{\ddot{\mathbf{r}}}$ ($\mathrm{nm/s^2}$)",
+        r"$\sigma_{\dot{\boldsymbol{\omega}}}$ ($\mathrm{nrad/s^2}$)",
+        r"$T_{\mathrm{obs}}$ ($\mathrm{s}$)",
+        "Input Case"],
+        column_headers = ["Case " + str(i) for i in range(table_index * table_size + 1,table_index * table_size + 1 + table_size + 1)],
+     column = True,
+     type = 'f', 
+     decimals = 2, 
+     ante_decimals = 6,
+     is_symmetric = "no",
+     pretty = True,
+     integer_row = [3,4])
+
+    table = np.zeros([5,size_last_table])
+    if (size_last_table > 0):
+        for i in range(size_last_table):
+            data = {}
+            with open(all_results_dirs[n_tables * table_size + i] + "/input_file.json") as f:
+                data = json.load(f)
+
+
+            table[0,i] = data["LOS_NOISE_SD_BASELINE"]
+            table[1,i] = 1e9 * data["PROCESS_NOISE_SIGMA_VEL"]
+            table[2,i] = 1e9 * data["PROCESS_NOISE_SIGMA_OMEG"]
+            table[3,i] = int(1./data["INSTRUMENT_FREQUENCY_NAV"])
+            table[4,i] = str(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]).split("_")[-1][0]
+
+
+        np_array_to_latex(table,save_path + "/input_table_case_" + str(n_tables * table_size + 1)  + "_to_" + str((n_tables) * table_size + size_last_table ) ,
+            row_headers = [r"$\sigma_{rho}$ ($\mathrm{m}$)",
+            r"$\sigma_{\ddot{\mathbf{r}}}$ ($\mathrm{nm/s^2}$)",
+            r"$\sigma_{\dot{\boldsymbol{\omega}}}$ ($\mathrm{nrad/s^2}$)",
+            r"$T_{\mathrm{obs}}$ ($\mathrm{s}$)",
+            "Input Case"],
+            column_headers = ["Case " + str(i) for i in range((n_tables ) * table_size + 1,(n_tables ) * table_size + 1 + size_last_table )],
+         column = True,
+         type = 'f', 
+         decimals = 2, 
+         ante_decimals = 6,
+         is_symmetric = "no",
+         pretty = True,
+         integer_row = [3,4])
+        
+
+
+def create_output_tables(all_results_dirs,save_path,table_size = 10):
+    n_tables = int(float(len(all_results_dirs)) / table_size)
+    size_last_table = len(all_results_dirs) - n_tables * table_size
+    
+    row_headers = [
+        r"$\sigma_{\mathbf{r}}$ ($\mathrm{m}$)",
+        r"$\sigma_{\dot{\mathbf{r}}}$ ($\mathrm{m/s}$)",
+        r"$\sigma_{\boldsymbol{\sigma}}$",
+        r"$\sigma_{\boldsymbol{\omega}}$ ($\mathrm{rad/s}$)",
+        r"$\sigma_{\mu}$",
+        r"$\sigma_{C_r}$"]
+
+
+    for table_index in range(n_tables):
+
+        table = np.zeros([6,table_size])
+        table[:] = np.nan
+
+
+        for i in range(table_size):
+            
+            input_path =  all_results_dirs[table_index * table_size + i]
+            
+            try:
+                X_true = np.loadtxt(input_path + "/X_true.txt")
+                X_hat = np.loadtxt(input_path + "/X_hat.txt")
+            except IOError:
+                break
+
+            dX = X_hat - X_true
+
+            mrp_error = np.zeros([3,dX.shape[1]])
+            for t in range(dX.shape[1]):
+                mrp_error[:,t] = RBK.dcm_to_mrp(RBK.mrp_to_dcm(X_true[6:9,t]).T.dot(RBK.mrp_to_dcm(X_hat[6:9,t])))
+
+            mean_dX_position = np.mean(dX[0:3,:],axis = 1)
+            mean_dX_velocity = np.mean(dX[3:6,:],axis = 1)
+            mean_dX_mrp = np.mean(mrp_error,axis = 1)
+            mean_dX_omega = np.mean(dX[9:12,:],axis = 1)
+            mean_dX_Mu = np.mean(dX[12,:])
+            mean_dX_Cr = np.mean(dX[13,:])
+
+            sd_position = 0
+            sd_velocity = 0
+            sd_mrp = 0
+            sd_omega = 0
+            sd_mu = 0
+            sd_Cr = 0
+
+            for t in range(dX.shape[1]):
+                sd_position += 1./dX.shape[1] * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
+                sd_velocity += 1./dX.shape[1] * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
+                sd_mrp += 1./dX.shape[1] * np.linalg.norm(dX[6:9,t] - mean_dX_mrp) ** 2
+                sd_omega += 1./dX.shape[1] * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
+                sd_mu += 1./dX.shape[1] * (dX[12,t] - mean_dX_Mu) ** 2
+                sd_Cr += 1./dX.shape[1] * (dX[13,t] - mean_dX_Cr) ** 2
+
+            sd_position = np.sqrt(sd_position)
+            sd_velocity = np.sqrt(sd_velocity)
+            sd_mrp = np.sqrt(sd_mrp)
+            sd_omega = np.sqrt(sd_omega)
+            sd_mu = np.std(sd_mu)
+            sd_Cr = np.std(sd_Cr)
+
+            table[0,i] = sd_position
+            table[1,i] = sd_velocity
+            table[2,i] = sd_mrp
+            table[3,i] = sd_omega
+            table[4,i] = sd_mu
+            table[5,i] = sd_Cr
+
+        np_array_to_latex(table,save_path + "/output_table_case_" + str(table_index * table_size + 1)  + "_to_" + str(table_index * table_size + table_size) ,
+        row_headers = row_headers,
+        column_headers = ["Case " + str(i) for i in range(table_index * table_size + 1,table_index * table_size + 1 + table_size + 1)],
+     column = True,
+     type = 'e', 
+     decimals = 2, 
+     ante_decimals = 6,
+     is_symmetric = "no",
+     pretty = True)
+
+    table = np.zeros([6,size_last_table])
+    table[:] = np.nan
+
+    if (size_last_table > 0):
+        for i in range(size_last_table):
+            
+            input_path =  all_results_dirs[table_index * table_size + i]
+            
+            try:
+                X_true = np.loadtxt(input_path + "/X_true.txt")
+                X_hat = np.loadtxt(input_path + "/X_hat.txt")
+            except IOError:
+                break
+
+
+            dX = X_hat - X_true
+
+            mrp_error = np.zeros([3,dX.shape[1]])
+            for t in range(dX.shape[1]):
+                mrp_error[:,t] = RBK.dcm_to_mrp(RBK.mrp_to_dcm(X_true[6:9,t]).T.dot(RBK.mrp_to_dcm(X_hat[6:9,t])))
+
+            mean_dX_position = np.mean(dX[0:3,:],axis = 1)
+            mean_dX_velocity = np.mean(dX[3:6,:],axis = 1)
+            mean_dX_mrp = np.mean(mrp_error,axis = 1)
+            mean_dX_omega = np.mean(dX[9:12,:],axis = 1)
+            mean_dX_Mu = np.mean(dX[12,:])
+            mean_dX_Cr = np.mean(dX[13,:])
+
+            sd_position = 0
+            sd_velocity = 0
+            sd_mrp = 0
+            sd_omega = 0
+            sd_mu = 0
+            sd_Cr = 0
+
+            for t in range(dX.shape[1]):
+                sd_position += 1./dX.shape[1] * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
+                sd_velocity += 1./dX.shape[1] * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
+                sd_mrp += 1./dX.shape[1] * np.linalg.norm(dX[6:9,t] - mean_dX_mrp) ** 2
+                sd_omega += 1./dX.shape[1] * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
+                sd_mu += 1./dX.shape[1] * (dX[12,t] - mean_dX_Mu) ** 2
+                sd_Cr += 1./dX.shape[1] * (dX[13,t] - mean_dX_Cr) ** 2
+
+            sd_position = np.sqrt(sd_position)
+            sd_velocity = np.sqrt(sd_velocity)
+            sd_mrp = np.sqrt(sd_mrp)
+            sd_omega = np.sqrt(sd_omega)
+            sd_mu = np.std(sd_mu)
+            sd_Cr = np.std(sd_Cr)
+
+            table[0,i] = sd_position
+            table[1,i] = sd_velocity
+            table[2,i] = sd_mrp
+            table[3,i] = sd_omega
+            table[4,i] = sd_mu
+            table[5,i] = sd_Cr
+
+
+        np_array_to_latex(table,save_path + "/output_table_case_" + str(n_tables * table_size + 1)  + "_to_" + str((n_tables) * table_size + size_last_table ) ,
+            row_headers = row_headers,
+            column_headers = ["Case " + str(i) for i in range((n_tables ) * table_size + 1,(n_tables ) * table_size + 1 + size_last_table )],
+         column = True,
+         type = 'e', 
+         decimals = 2, 
+         ante_decimals = 6,
+         is_symmetric = "no",
+         pretty = True)
+
+
+def list_results(save_path,
     mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
     
-    print "Searching " + mainpath
+
+    print("Searching " + mainpath)
     all_results_dirs  = [x[0] for x in os.walk(mainpath)][1:]
 
     all_results_dirs_tag = np.array([int(all_results_dirs[i].split("_")[-1]) for i in range(len(all_results_dirs))])
@@ -25,62 +248,73 @@ def list_results(graphics_path,
 
     all_results_dirs = [all_results_dirs[sorted_order[i]] for i in range(len(sorted_order))]
 
-    print "\t Found " + str(len(all_results_dirs)) + " result directories\n\n"
+    print("\t Found " + str(len(all_results_dirs)) + " result directories\n\n")
 
     for i in range(len(all_results_dirs)):
-        print str(i) + " : " + all_results_dirs[i] + "\n"
+        print(str(i) + " : " + all_results_dirs[i] + "\n")
 
         with open(all_results_dirs[i] + "/input_file.json") as f:
             data = json.load(f)
 
         pprint(data)
-        print "\n"
+        print("\n")
 
-    index_str = raw_input(" Which one should be processed ? Pick a number or enter 'all'\n")
-    save_str = raw_input(" Should results be saved? (y/n) ?\n")
+    index_str = input(" Which one should be processed ? Pick a number or enter 'all'\n")
+    save_str = input(" Should results be saved? (y/n) ?\n")
 
 
 
     if index_str != "all":
         if save_str is "y":
-            plot_all_results(all_results_dirs[int(index_str)],graphics_path)
+            plot_all_results(all_results_dirs[int(index_str)],save_path)
         elif save_str is "n":
             plt.switch_backend('Qt5Agg')
+
             plot_all_results(all_results_dirs[int(index_str)])
         else:
             raise(TypeError("Unrecognized input: " + str(save_str)))
-    else:
-        raise(TypeError("Not implemented"))
+    else:   
 
-        # create_input_table(all_results_dirs[0:6],graphics_path + "/input_table_1")
-        # create_input_table(all_results_dirs[6:12],graphics_path + "/input_table_2")
-        # create_input_table(all_results_dirs[12:18],graphics_path + "/input_table_3")
-
-        # create_output_table_mc(all_results_dirs[0:6],graphics_path + "/output_table_mc_1")
-        # create_output_table_mc(all_results_dirs[6:12],graphics_path + "/output_table_mc_2")
-        # create_output_table_mc(all_results_dirs[12:18],graphics_path + "/output_table_mc_3")
-
-        # create_output_table_model(all_results_dirs[0:6],graphics_path + "/output_table_model_1")
-        # create_output_table_model(all_results_dirs[6:12],graphics_path + "/output_table_model_2")
-        # create_output_table_model(all_results_dirs[12:18],graphics_path + "/output_table_model_3")
-
-
-        # create_consistency_matrix(all_results_dirs[0:6],graphics_path + "/rp_consistency_1")
-        # create_consistency_matrix(all_results_dirs[6:12],graphics_path + "/rp_consistency_2")
-        # create_consistency_matrix(all_results_dirs[12:18],graphics_path + "/rp_consistency_3")
-
-        
         if save_str is "y":
-            for i in range(len(all_results_dirs)):
-                plot_all_results(all_results_dirs[i],graphics_path)
+
+            create_input_tables(all_results_dirs,save_path)
+            create_output_tables(all_results_dirs,save_path)
+
+
+            plt.switch_backend('PDF')
+
+            all_results_pooled = [[all_results_dirs[i],save_path] for i in range(len(all_results_dirs))]
+
+            p = Pool(10)
+            p.map(plot_all_results_pool, all_results_pooled)
 
         elif save_str is "n":
             plt.switch_backend('Qt5Agg')
-            for i in range(len(all_results_dirs)):
-                plot_all_results(all_results_dirs[i])
 
+            for directory in all_results_dirs:
+                plot_all_results(directory)
         else:
             raise(TypeError("Unrecognized input: " + str(save_str)))
+
+        # create_input_table(all_results_dirs[0:6],save_path + "/input_table_1")
+        # create_input_table(all_results_dirs[6:12],save_path + "/input_table_2")
+        # create_input_table(all_results_dirs[12:18],save_path + "/input_table_3")
+
+        # create_output_table_mc(all_results_dirs[0:6],save_path + "/output_table_mc_1")
+        # create_output_table_mc(all_results_dirs[6:12],save_path + "/output_table_mc_2")
+        # create_output_table_mc(all_results_dirs[12:18],save_path + "/output_table_mc_3")
+
+        # create_output_table_model(all_results_dirs[0:6],save_path + "/output_table_model_1")
+        # create_output_table_model(all_results_dirs[6:12],save_path + "/output_table_model_2")
+        # create_output_table_model(all_results_dirs[12:18],save_path + "/output_table_model_3")
+
+
+        # create_consistency_matrix(all_results_dirs[0:6],save_path + "/rp_consistency_1")
+        # create_consistency_matrix(all_results_dirs[6:12],save_path + "/rp_consistency_2")
+        # create_consistency_matrix(all_results_dirs[12:18],save_path + "/rp_consistency_3")
+
+        
+        
 
 
 
@@ -91,27 +325,55 @@ def normalized(a, axis=-1, order=2):
     l2[l2==0] = 1
     return a / np.expand_dims(l2, axis)
 
-def plot_all_results(path,savepath = ""):
+def plot_all_results(path,save_path = ""):
+    print("\t Plotting from " + path + "\n")
+    try:
 
-    plot_orbit_planar(path,savepath)
-    plot_orbit(path,savepath)
-    plot_cart_state_error_inertial(path,savepath)
-    plot_state_error_RIC(path,savepath)
-    plot_attitude_state_inertial(path,savepath)
+        plot_orbit_planar(path,save_path)
+        plot_orbit(path,save_path)
+        plot_cart_state_error_inertial(path,save_path)
+        plot_state_error_RIC(path,save_path)
+        plot_attitude_state_inertial(path,save_path)
+    except IOError:
+
+        pass
+
+def plot_all_results_pool(inputs):
+    path = inputs[0]
+    save_path = inputs[1]
+
+    print("\t Plotting from " + path + "\n")
+    try:
+        
+        plot_orbit_planar(path,save_path)
+        plot_orbit(path,save_path)
+        plot_cart_state_error_inertial(path,save_path)
+        plot_state_error_RIC(path,save_path)
+        plot_attitude_state_inertial(path,save_path)
+    except IOError:
+
+        pass
 
 
 
-def plot_orbit_planar(path,savepath = ""):
+
+def plot_orbit_planar(path,save_path = ""):
 
     X_true = np.loadtxt(path + "/state_true_orbit.txt")
-
+    case = int(path.split("_")[-1]) + 1
     plt.plot(X_true[0,:]/1000,X_true[1,:]/1000)
     plt.xlabel("X (m)")
     plt.ylabel("Y (m)")
     plt.axis('equal')
-    if savepath != "":
-        plt.savefig(savepath + "/orbit_planar_z.pdf")
+    plt.title("Z-plane orbit, Case " + str(case))
+
+
+    if save_path != "":
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/orbit_planar_z_" + str(case) + ".pdf",bbox_to_inches = "tight")
     else:
+
         plt.show()
 
     plt.clf()
@@ -119,8 +381,12 @@ def plot_orbit_planar(path,savepath = ""):
     plt.xlabel("X (m)")
     plt.ylabel("Z (m)")
     plt.axis('equal')
-    if savepath != "":
-        plt.savefig(savepath + "/orbit_planar_y.pdf")
+    plt.title("Y-plane orbit, Case " + str(case))
+
+    if save_path != "":
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/orbit_planar_y_" + str(case) + ".pdf",bbox_to_inches = "tight")
     else:
         plt.show()
 
@@ -128,10 +394,13 @@ def plot_orbit_planar(path,savepath = ""):
     plt.plot(X_true[1,:]/1000,X_true[2,:]/1000)
     plt.xlabel("Y (m)")
     plt.ylabel("Z (m)")
+    plt.title("X-plane orbit, Case " + str(case))
     plt.axis('equal')
     
-    if savepath != "":
-        plt.savefig(savepath + "/orbit_planar_x.pdf")
+    if save_path != "":
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/orbit_planar_x_" + str(case) + ".pdf",bbox_to_inches = "tight")
     else:
         plt.show()
 
@@ -139,10 +408,10 @@ def plot_orbit_planar(path,savepath = ""):
     plt.clf()
 
 
-def plot_orbit(path,savepath = ""):
+def plot_orbit(path,save_path = ""):
 
     X_true = np.loadtxt(path + "/state_true_orbit_dense.txt")
-
+    case = int(path.split("_")[-1]) + 1
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -167,15 +436,21 @@ def plot_orbit(path,savepath = ""):
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
-    plt.title("Inertial trajectory")
+    plt.title("Inertial trajectory, Case " + str(case))
 
-    plt.tight_layout()
-    if savepath != "":
-        plt.savefig(savepath + "/trajectory_inertial.pdf")
+    if save_path != "":
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/trajectory_inertial_case_" + str(case) + ".pdf",
+            bbox_to_inches = "tight")
     else:
+        plt.tight_layout()
+
         plt.show()
     plt.cla()
     plt.clf()
+    plt.close(fig)
+
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -209,29 +484,31 @@ def plot_orbit(path,savepath = ""):
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
-    plt.title("Body-frame trajectory")
-
-    # plt.show()
-    plt.tight_layout()
+    plt.title("Body-frame trajectory, Case " + str(case))
 
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/orbit_body_frame.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/orbit_body_frame_case_" + str(case) + ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
     plt.cla()
+    plt.close(fig)
 
 
-def plot_state_error_RIC(path = "",savepath= ""):
+def plot_state_error_RIC(path,save_path= ""):
 
     X_true = np.loadtxt(path + "/X_true.txt")
     X_hat = np.loadtxt(path + "/X_hat.txt")
     P = np.loadtxt(path + "/covariances.txt")
     T_obs = np.loadtxt(path + "/nav_times.txt") / 60
 
-
+    case = int(path.split("_")[-1]) + 1
     # The states must be converted to RIC frame
     X_true_RIC = np.zeros(X_true.shape)
     X_hat_RIC = np.zeros(X_hat.shape)
@@ -273,26 +550,30 @@ def plot_state_error_RIC(path = "",savepath= ""):
     plt.plot(T_obs,X_true_RIC[1,:] - X_hat_RIC[1,:],'-o',label = "in-track")
     plt.plot(T_obs,X_true_RIC[2,:] - X_hat_RIC[2,:],'-o',label = "cross-track")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[0,:],"--+")
     plt.plot(T_obs,3 * sd[1,:],"--+")
     plt.plot(T_obs,3 * sd[2,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[0,:],"--+")
     plt.plot(T_obs,- 3 * sd[1,:],"--+")
     plt.plot(T_obs,- 3 * sd[2,:],"--+")
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.legend(loc = "upper right")
     plt.xlabel("Time (min)")
-    plt.ylabel(r"Position error ($\mathrm{m}$)")
-    plt.tight_layout()
+    plt.ylabel(r"Error ($\mathrm{m}$)")
+    plt.title("RIC frame position error, Case " + str(case))
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig( savepath + "/position_error_RIC.pdf")
+        # plt.tight_layout()
+
+        plt.savefig( save_path + "/position_error_RIC_" + str(case) +  ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
     plt.cla()
@@ -303,30 +584,35 @@ def plot_state_error_RIC(path = "",savepath= ""):
     plt.plot(T_obs,100 * (X_true_RIC[4,:] - X_hat_RIC[4,:]),'-o',label = "in-track")
     plt.plot(T_obs,100 * (X_true_RIC[5,:] - X_hat_RIC[5,:]),'-o',label = "cross-track")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[3,:] * 100,"--+")
     plt.plot(T_obs,3 * sd[4,:] * 100,"--+")
     plt.plot(T_obs,3 * sd[5,:] * 100,"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[3,:] * 100,"--+")
     plt.plot(T_obs,- 3 * sd[4,:] * 100,"--+")
     plt.plot(T_obs,- 3 * sd[5,:] * 100,"--+")
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.legend(loc = "upper right")
     plt.xlabel("Time (min)")
-    plt.ylabel(r"Velocity error ($\mathrm{cm/s}$)")
+    plt.ylabel(r"Error ($\mathrm{cm/s}$)")
+    plt.title("RIC frame velocity error, Case " + str(case))
+
 
     plt.ylim([- 5 * sd[3,2] * 100,5 * sd[3,2] * 100])
-    plt.tight_layout()
 
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/velocity_error_RIC.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/velocity_error_RIC_" + str(case) +  ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
     plt.cla()
@@ -335,26 +621,29 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.plot(T_obs,(X_true_RIC[-2,:] - X_hat_RIC[-2,:]),'-o')
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[-2,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[-2,:],"--+")
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel(r" $\mu$ error $(\mathrm{kg\cdot m^3 / s^2})$")
+    plt.ylabel(r" Error $(\mathrm{kg\cdot m^3 / s^2})$")
+    plt.title("Standard gravitational error, Case " + str(case))
     plt.ylim([- 5 * sd[-2,2] ,5 * sd[-2,2] ])
     
-    plt.tight_layout()
 
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/mu_error_RIC.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/mu_error_RIC_" + str(case) + ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
     plt.cla()
@@ -363,32 +652,36 @@ def plot_state_error_RIC(path = "",savepath= ""):
 
     plt.plot(T_obs,(X_true_RIC[-1,:] - X_hat_RIC[-1,:]),'-o')
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[-1,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[-1,:],"--+")
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
     plt.xlabel("Time (min)")
-    plt.ylabel(r" $\mathrm{C_r}$ error")
+    plt.ylabel(r"Error")
+    plt.title("SRP cannonball coefficient error, Case " + str(case))
     plt.ylim([- 5 * sd[-1,2] ,5 * sd[-1,2] ])
     
-    plt.tight_layout()
 
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/Cr_error_RIC.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/Cr_error_RIC_" + str(case) +  ".pdf",bbox_to_inches = "tight")
 
     plt.cla()
     plt.clf()
 
 
-def plot_attitude_state_inertial(path = "",savepath = ""):
+def plot_attitude_state_inertial(path,save_path = ""):
+    case = int(path.split("_")[-1]) + 1
 
     X_true = np.loadtxt(path + "/X_true.txt")
     X_hat = np.loadtxt(path + "/X_hat.txt")
@@ -406,25 +699,28 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
     sd = np.vstack(sd).T
 
     # estimated MRP 
-    plt.plot(T_obs,X_hat[6,:],'-o',label = r"$\sigma_1$")
-    plt.plot(T_obs,X_hat[7,:],'-o',label = r"$\sigma_2$")
-    plt.plot(T_obs,X_hat[8,:],'-o',label = r"$\sigma_3$")
+    plt.plot(T_obs,X_true[6,:],'-o',label = r"$\sigma_1$")
+    plt.plot(T_obs,X_true[7,:],'-o',label = r"$\sigma_2$")
+    plt.plot(T_obs,X_true[8,:],'-o',label = r"$\sigma_3$")
 
     plt.xlabel("Time (min)")
     plt.ylabel("MRP (estimated)")
-    plt.gcf().tight_layout()
+    plt.title("Attitude MRP, Case " + str(case))
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
-    plt.tight_layout()
+    plt.legend(loc = "best")
     
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
         plt.show()
     else:
-        plt.savefig(savepath + "/attitude.pdf")
+        # plt.tight_layout()
+
+
+        plt.savefig(save_path + "/attitude_" + str(case) + ".pdf",bbox_to_inches = "tight")
 
     plt.cla()
     plt.clf()
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
 
     # Position error
@@ -432,34 +728,39 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
     plt.plot(T_obs,mrp_error[1,:],'-o',label = r"$\sigma_2$")
     plt.plot(T_obs,mrp_error[2,:],'-o',label = r"$\sigma_3$")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[6,:],"--+")
     plt.plot(T_obs,3 * sd[7,:],"--+")
     plt.plot(T_obs,3 * sd[8,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[6,:],"--+")
     plt.plot(T_obs,- 3 * sd[7,:],"--+")
     plt.plot(T_obs,- 3 * sd[8,:],"--+")
 
     plt.xlabel("Time (min)")
-    plt.ylabel("MRP error")
+    plt.ylabel("Error")
+    plt.title("Attitude MRP error, Case " + str(case))
+
     plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0e'))
 
-    plt.gcf().tight_layout()
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
-    plt.tight_layout()
+    plt.legend(loc = "upper right")
     
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
+
     else:
-        plt.savefig(savepath + "/error_attitude.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/error_attitude_" +  str(case) + ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     # Velocity error
 
@@ -468,48 +769,56 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
     plt.plot(T_obs,r2d * (X_true[10,:] - X_hat[10,:]),'-o',label = r"$\omega_2$")
     plt.plot(T_obs,r2d * (X_true[11,:] - X_hat[11,:]),'-o',label = r"$\omega_3$")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,r2d * 3 * sd[9,:],"--+")
     plt.plot(T_obs,r2d * 3 * sd[10,:],"--+")
     plt.plot(T_obs,r2d * 3 * sd[11,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * r2d* sd[9,:],"--+")
     plt.plot(T_obs,- 3 * r2d* sd[10,:],"--+")
     plt.plot(T_obs,- 3 * r2d* sd[11,:],"--+")
 
     plt.xlabel("Time (min)")
-    plt.ylabel(r"Omega error ($\mathrm{deg/s}$)")
-    plt.gcf().tight_layout()
+    plt.ylabel(r"Error ($\mathrm{deg/s}$)")
+    plt.title("Angular velocity error, Case " + str(case))
 
     plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0e'))
     plt.ylim([- 5 * r2d * sd[9,2],5 * r2d * sd[9,2]])
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.legend(loc = "upper right")
 
-    if savepath == "":
+    if save_path == "":
+        plt.gcf().tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/error_omega.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/error_omega_"+ str(case) +  ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
 
     # angle error
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,4 * np.arctan(np.linalg.norm(mrp_error,axis = 0)) * 180./np.pi,'-o')
    
     plt.xlabel("Time (min)")
-    plt.ylabel("Angle error (deg)")
+    plt.ylabel("Error (deg)")
+    plt.title("Principal angle error, Case " + str(case))
 
-    plt.gcf().tight_layout()
 
-    if savepath == "":
+    if save_path == "":
+        plt.gcf().tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/error_angle.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/error_angle_" + str(case) + ".pdf",bbox_to_inches = "tight")
 
     plt.clf()
 
@@ -522,7 +831,8 @@ def plot_attitude_state_inertial(path = "",savepath = ""):
 
     
 
-def plot_cart_state_error_inertial(path = "",savepath = ""):
+def plot_cart_state_error_inertial(path = "",save_path = ""):
+    case = int(path.split("_")[-1]) + 1
 
     X_true = np.loadtxt(path + "/X_true.txt")
     X_hat = np.loadtxt(path + "/X_hat.txt")
@@ -551,30 +861,32 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     plt.plot(T_obs,X_true[1,:] - X_hat[1,:],'-o',label = "Y")
     plt.plot(T_obs,X_true[2,:] - X_hat[2,:],'-o',label = "Z")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[0,:],"--+")
     plt.plot(T_obs,3 * sd[1,:],"--+")
     plt.plot(T_obs,3 * sd[2,:],"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[0,:],"--+")
     plt.plot(T_obs,- 3 * sd[1,:],"--+")
     plt.plot(T_obs,- 3 * sd[2,:],"--+")
     plt.xlabel("Time (min)")
-    plt.ylabel(r"Position error ($\mathrm{m}$)")
-    plt.gcf().tight_layout()
+    plt.ylabel(r"Error ($\mathrm{m}$)")
+    plt.title("Inertial frame position error, Case " + str(case))
 
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.legend(loc = "upper right")
 
-    if savepath == "":
+    if save_path == "":
+        plt.gcf().tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/error_pos.pdf")
+        # plt.tight_layout()
 
-        np.savetxt(savepath + "/X_hat_augmented.txt",X_hat_augmented)
-        np.savetxt(savepath + "/X_true_augmented.txt",X_true_augmented)
+        plt.savefig(save_path + "/error_pos_" + str(case) + ".pdf",bbox_to_inches = "tight")
+
 
     plt.clf()
     
@@ -583,13 +895,13 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     plt.plot(T_obs,100 * (X_true[4,:] - X_hat[4,:]),'-o',label = "Y")
     plt.plot(T_obs,100 * (X_true[5,:] - X_hat[5,:]),'-o',label = "Z")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,3 * sd[3,:] * 100,"--+")
     plt.plot(T_obs,3 * sd[4,:] * 100,"--+")
     plt.plot(T_obs,3 * sd[5,:] * 100,"--+")
 
-    plt.gca().set_color_cycle(None)
+    plt.gca().set_prop_cycle(None)
 
     plt.plot(T_obs,- 3 * sd[3,:] * 100,"--+")
     plt.plot(T_obs,- 3 * sd[4,:] * 100,"--+")
@@ -598,27 +910,25 @@ def plot_cart_state_error_inertial(path = "",savepath = ""):
     plt.ylim([- 5 * sd[3,2] * 100,5 * sd[3,2] * 100])
 
     plt.xlabel("Time (min)")
-    plt.ylabel(r"Velocity error ($\mathrm{cm/s}$)")
-    plt.gcf().tight_layout()
-    plt.legend(loc = "upper center",bbox_to_anchor = (0.5,1.05),ncol = 3,framealpha = 1)
+    plt.ylabel(r"Error ($\mathrm{cm/s}$)")
+    plt.title("Inertial frame velocity error, Case " + str(case))
+    plt.legend(loc = "upper right")
 
-    if savepath == "":
+    if save_path == "":
+        plt.tight_layout()
+
         plt.show()
     else:
-        plt.savefig(savepath + "/error_vel.pdf")
+        # plt.tight_layout()
+
+        plt.savefig(save_path + "/error_vel_" + str(case) +  ".pdf",bbox_to_inches = "tight")
 
 
     plt.clf()
     plt.cla()
 
 
-# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/ShapeReconstruction/output/filter/",
-#     savepath = "/Users/bbercovici/GDrive/CUBoulder/Research/papers/UQ_NAV_JGCD/R0/Figures" )
 
-# plot_all_results("/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output/test_0/",
-#     savepath = "" )
+save_path = "/Users/bbercovici/GDrive/CUBoulder/Research/thesis/figs/navigation"
 
-
-graphics_path = "/Users/bbercovici/GDrive/CUBoulder/Research/conferences/GNSKi_2019/presentation/Figures"
-
-list_results(graphics_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output")
+list_results(save_path,mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output")
