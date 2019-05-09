@@ -37,6 +37,7 @@ def create_input_tables(all_results_dirs,save_path,table_size = 10):
             table[3,i] = int(1./data["INSTRUMENT_FREQUENCY_NAV"])
             table[4,i] = str(int(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"].split("_")[-1][0]) + 1 + (6 if "robustness" in str(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]) else 0))
 
+            print([table_index * table_size + i,table[4,i]])
 
         np_array_to_latex(table,save_path + "/input_table_case_" + str(table_index * table_size + 1)  + "_to_" + str(table_index * table_size + table_size) ,
         row_headers = [r"$\sigma_{\rho}$ ($\mathrm{m}$)",
@@ -65,11 +66,12 @@ def create_input_tables(all_results_dirs,save_path,table_size = 10):
             table[1,i] = 1e9 * data["PROCESS_NOISE_SIGMA_VEL"]
             table[2,i] = 1e9 * data["PROCESS_NOISE_SIGMA_OMEG"]
             table[3,i] = int(1./data["INSTRUMENT_FREQUENCY_NAV"])
-            table[4,i] = str(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]).split("_")[-1][0]
+            table[4,i] = str(int(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"].split("_")[-1][0]) + 1 + (6 if "robustness" in str(data["SHAPE_RECONSTRUCTION_OUTPUT_DIR"]) else 0))
+            
 
 
         np_array_to_latex(table,save_path + "/input_table_case_" + str(n_tables * table_size + 1)  + "_to_" + str((n_tables) * table_size + size_last_table ) ,
-            row_headers = [r"$\sigma_{rho}$ ($\mathrm{m}$)",
+            row_headers = [r"$\sigma_{\rho}$ ($\mathrm{m}$)",
             r"$\sigma_{\ddot{\mathbf{r}}}$ ($\mathrm{nm/s^2}$)",
             r"$\sigma_{\dot{\boldsymbol{\omega}}}$ ($\mathrm{nrad/s^2}$)",
             r"$T_{\mathrm{obs}}$ ($\mathrm{s}$)",
@@ -88,13 +90,16 @@ def create_input_tables(all_results_dirs,save_path,table_size = 10):
 def create_output_tables(all_results_dirs,save_path,table_size = 10):
     n_tables = int(float(len(all_results_dirs)) / table_size)
     size_last_table = len(all_results_dirs) - n_tables * table_size
+
+
+    full_output_table = np.zeros([6,len(all_results_dirs)])
     
     row_headers = [
         r"$\sigma_{\mathbf{r}}$ ($\mathrm{m}$)",
-        r"$\sigma_{\dot{\mathbf{r}}}$ ($\mathrm{m/s}$)",
-        r"$\sigma_{\boldsymbol{\sigma}}$",
-        r"$\sigma_{\boldsymbol{\omega}}$ ($\mathrm{rad/s}$)",
-        r"$\sigma_{\mu}$",
+        r"$\sigma_{\dot{\mathbf{r}}}$ ($\mathrm{mm/s}$)",
+        r"$\sigma_{\boldsymbol{\sigma}}$ ($\mathrm{deg}$)",
+        r"$\sigma_{\boldsymbol{\omega}}$ ($\mathrm{\mu deg/s}$)",
+        r"$\sigma_{\mu}$ ($\mathrm{cm^3/s^2}$)",
         r"$\sigma_{C_r}$"]
 
 
@@ -112,17 +117,20 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
                 X_true = np.loadtxt(input_path + "/X_true.txt")
                 X_hat = np.loadtxt(input_path + "/X_hat.txt")
             except IOError:
-                break
+                print("Skipping " + str(input_path) + ", can't find outputs")
+                continue
 
             dX = X_hat - X_true
 
             mrp_error = np.zeros([3,dX.shape[1]])
+            principal_angle_error = np.zeros(dX.shape[1])
             for t in range(dX.shape[1]):
                 mrp_error[:,t] = RBK.dcm_to_mrp(RBK.mrp_to_dcm(X_true[6:9,t]).T.dot(RBK.mrp_to_dcm(X_hat[6:9,t])))
+                principal_angle_error[t] = 4 * np.arctan(np.linalg.norm(mrp_error[:,t]))
 
             mean_dX_position = np.mean(dX[0:3,:],axis = 1)
             mean_dX_velocity = np.mean(dX[3:6,:],axis = 1)
-            mean_dX_mrp = np.mean(mrp_error,axis = 1)
+            mean_dX_principal_angle = np.mean(principal_angle_error)
             mean_dX_omega = np.mean(dX[9:12,:],axis = 1)
             mean_dX_Mu = np.mean(dX[12,:])
             mean_dX_Cr = np.mean(dX[13,:])
@@ -135,19 +143,20 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
             sd_Cr = 0
 
             for t in range(dX.shape[1]):
-                sd_position += 1./dX.shape[1] * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
-                sd_velocity += 1./dX.shape[1] * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
-                sd_mrp += 1./dX.shape[1] * np.linalg.norm(dX[6:9,t] - mean_dX_mrp) ** 2
-                sd_omega += 1./dX.shape[1] * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
-                sd_mu += 1./dX.shape[1] * (dX[12,t] - mean_dX_Mu) ** 2
-                sd_Cr += 1./dX.shape[1] * (dX[13,t] - mean_dX_Cr) ** 2
+                sd_position += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
+                sd_velocity += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
+                sd_mrp += 1./(dX.shape[1] - 1) * (principal_angle_error[t] - mean_dX_principal_angle) ** 2
+                sd_omega += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
+                sd_mu += 1./(dX.shape[1] - 1) * (dX[12,t] - mean_dX_Mu) ** 2
+                sd_Cr += 1./(dX.shape[1] - 1) * (dX[13,t] - mean_dX_Cr) ** 2
 
             sd_position = np.sqrt(sd_position)
-            sd_velocity = np.sqrt(sd_velocity)
-            sd_mrp = np.sqrt(sd_mrp)
-            sd_omega = np.sqrt(sd_omega)
-            sd_mu = np.std(sd_mu)
-            sd_Cr = np.std(sd_Cr)
+            sd_velocity = 1e3 * np.sqrt(sd_velocity)
+            sd_mrp = 180./np.pi * np.sqrt(sd_mrp)
+            sd_omega = 1e6 * 180./np.pi * np.sqrt(sd_omega)
+            sd_mu = 1e6 * np.sqrt(sd_mu)
+            sd_Cr = np.sqrt(sd_Cr)
+           
 
             table[0,i] = sd_position
             table[1,i] = sd_velocity
@@ -156,12 +165,14 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
             table[4,i] = sd_mu
             table[5,i] = sd_Cr
 
+
+        full_output_table[:,table_index * table_size:table_index * table_size + table_size] = table
         np_array_to_latex(table,save_path + "/output_table_case_" + str(table_index * table_size + 1)  + "_to_" + str(table_index * table_size + table_size) ,
         row_headers = row_headers,
         column_headers = ["Case " + str(i) for i in range(table_index * table_size + 1,table_index * table_size + 1 + table_size + 1)],
      column = True,
-     type = 'e', 
-     decimals = 2, 
+     type = 'f', 
+     decimals = 3, 
      ante_decimals = 6,
      is_symmetric = "no",
      pretty = True)
@@ -172,25 +183,29 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
     if (size_last_table > 0):
         for i in range(size_last_table):
             
-            input_path =  all_results_dirs[table_index * table_size + i]
+            input_path =  all_results_dirs[(n_tables) * table_size + i]
             
             try:
                 X_true = np.loadtxt(input_path + "/X_true.txt")
                 X_hat = np.loadtxt(input_path + "/X_hat.txt")
             except IOError:
-                break
+                print("Skipping " + str(input_path) + ", can't find outputs")
+
+                continue
 
 
             dX = X_hat - X_true
 
             mrp_error = np.zeros([3,dX.shape[1]])
+            principal_angle_error = np.zeros(dX.shape[1])
             for t in range(dX.shape[1]):
                 mrp_error[:,t] = RBK.dcm_to_mrp(RBK.mrp_to_dcm(X_true[6:9,t]).T.dot(RBK.mrp_to_dcm(X_hat[6:9,t])))
+                principal_angle_error[t] = 4 * np.arctan(np.linalg.norm(mrp_error[:,t]))
 
             mean_dX_position = np.mean(dX[0:3,:],axis = 1)
             mean_dX_velocity = np.mean(dX[3:6,:],axis = 1)
-            mean_dX_mrp = np.mean(mrp_error,axis = 1)
             mean_dX_omega = np.mean(dX[9:12,:],axis = 1)
+            mean_dX_principal_angle = np.mean(principal_angle_error)
             mean_dX_Mu = np.mean(dX[12,:])
             mean_dX_Cr = np.mean(dX[13,:])
 
@@ -202,19 +217,19 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
             sd_Cr = 0
 
             for t in range(dX.shape[1]):
-                sd_position += 1./dX.shape[1] * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
-                sd_velocity += 1./dX.shape[1] * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
-                sd_mrp += 1./dX.shape[1] * np.linalg.norm(dX[6:9,t] - mean_dX_mrp) ** 2
-                sd_omega += 1./dX.shape[1] * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
-                sd_mu += 1./dX.shape[1] * (dX[12,t] - mean_dX_Mu) ** 2
-                sd_Cr += 1./dX.shape[1] * (dX[13,t] - mean_dX_Cr) ** 2
+                sd_position += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[0:3,t] - mean_dX_position) ** 2
+                sd_velocity += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[3:6,t] - mean_dX_velocity) ** 2
+                sd_mrp += 1./(dX.shape[1] - 1) * (principal_angle_error[t] - mean_dX_principal_angle) ** 2
+                sd_omega += 1./(dX.shape[1] - 1) * np.linalg.norm(dX[9:12,t] - mean_dX_omega) ** 2
+                sd_mu += 1./(dX.shape[1] - 1) * (dX[12,t] - mean_dX_Mu) ** 2
+                sd_Cr += 1./(dX.shape[1] - 1) * (dX[13,t] - mean_dX_Cr) ** 2
 
             sd_position = np.sqrt(sd_position)
-            sd_velocity = np.sqrt(sd_velocity)
-            sd_mrp = np.sqrt(sd_mrp)
-            sd_omega = np.sqrt(sd_omega)
-            sd_mu = np.std(sd_mu)
-            sd_Cr = np.std(sd_Cr)
+            sd_velocity = 1e3 * np.sqrt(sd_velocity)
+            sd_mrp = 180./np.pi * np.sqrt(sd_mrp)
+            sd_omega = 1e6 * 180./np.pi * np.sqrt(sd_omega)
+            sd_mu = 1e6 * np.sqrt(sd_mu)
+            sd_Cr = np.sqrt(sd_Cr)
 
             table[0,i] = sd_position
             table[1,i] = sd_velocity
@@ -228,12 +243,16 @@ def create_output_tables(all_results_dirs,save_path,table_size = 10):
             row_headers = row_headers,
             column_headers = ["Case " + str(i) for i in range((n_tables ) * table_size + 1,(n_tables ) * table_size + 1 + size_last_table )],
          column = True,
-         type = 'e', 
-         decimals = 2, 
+         type = 'f', 
+         decimals = 3, 
          ante_decimals = 6,
          is_symmetric = "no",
          pretty = True)
 
+
+        full_output_table[:,n_tables * table_size:(n_tables) * table_size + size_last_table] = table
+
+        np.savetxt(save_path + "/all_nav_results_table.txt",full_output_table)
 
 def list_results(save_path,
     mainpath = "/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/Navigation/output"):
@@ -279,7 +298,7 @@ def list_results(save_path,
 
             create_input_tables(all_results_dirs,save_path)
             create_output_tables(all_results_dirs,save_path)
-
+            
 
             plt.switch_backend('PDF')
 
@@ -295,30 +314,8 @@ def list_results(save_path,
                 plot_all_results(directory)
         else:
             raise(TypeError("Unrecognized input: " + str(save_str)))
-
-        # create_input_table(all_results_dirs[0:6],save_path + "/input_table_1")
-        # create_input_table(all_results_dirs[6:12],save_path + "/input_table_2")
-        # create_input_table(all_results_dirs[12:18],save_path + "/input_table_3")
-
-        # create_output_table_mc(all_results_dirs[0:6],save_path + "/output_table_mc_1")
-        # create_output_table_mc(all_results_dirs[6:12],save_path + "/output_table_mc_2")
-        # create_output_table_mc(all_results_dirs[12:18],save_path + "/output_table_mc_3")
-
-        # create_output_table_model(all_results_dirs[0:6],save_path + "/output_table_model_1")
-        # create_output_table_model(all_results_dirs[6:12],save_path + "/output_table_model_2")
-        # create_output_table_model(all_results_dirs[12:18],save_path + "/output_table_model_3")
-
-
-        # create_consistency_matrix(all_results_dirs[0:6],save_path + "/rp_consistency_1")
-        # create_consistency_matrix(all_results_dirs[6:12],save_path + "/rp_consistency_2")
-        # create_consistency_matrix(all_results_dirs[12:18],save_path + "/rp_consistency_3")
-
+ 
         
-        
-
-
-
-
 
 def normalized(a, axis=-1, order=2):
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))

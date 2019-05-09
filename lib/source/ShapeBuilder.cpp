@@ -30,7 +30,7 @@
 #include <RigidBodyKinematics.hpp>
 #include <BatchAttitude.hpp>
 
-#define IOFLAGS_shape_builder 0
+#define IOFLAGS_shape_builder 1
 
 ShapeBuilder::ShapeBuilder(FrameGraph * frame_graph,
 	Lidar * lidar,
@@ -237,7 +237,7 @@ void ShapeBuilder::run_shape_reconstruction(const arma::vec &times ,
 			assert(M_pcs.size() == BN_true.size());
 			assert(X_pcs.size() == BN_true.size());
 
-			if (this -> filter_arguments -> get_use_ba()){
+			if (this -> filter_arguments -> get_use_ba() && !this -> filter_arguments -> get_use_true_rigid_transforms()){
 				
 				if(ba_test.update_overlap_graph() || true){
 					std::cout << "Detected loop closure. Running bundle adjustment ...";

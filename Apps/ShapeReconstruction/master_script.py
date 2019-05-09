@@ -28,7 +28,7 @@ def generate_all_cases_dictionnary_list(base_dictionnary,all_cases_dictionnary,b
 if (socket.gethostname() == "fortuna"):
     base_location = "/orc_raid/bebe0705/"
 else:
-    base_location = "../"
+    base_location = '/Users/bbercovici/GDrive/CUBoulder/Research/code/ASPEN_gui_less/Apps/'
 
 
 
@@ -75,9 +75,9 @@ def start_sims(n_pools = 1):
 
     base_dictionnary = {
     "CR_TRUTH" : 1.2,
-    "USE_BA" : True,
+    "USE_BA" : False,
     "USE_ICP" : True,
-    "USE_TRUE_RIGID_TRANSFORMS" : False,
+    "USE_TRUE_RIGID_TRANSFORMS" : True,
     "MIN_TRIANGLE_ANGLE" : 30,
     "MAX_TRIANGLE_SIZE" : 5,
     "HARMONICS_DEGREE" : 10,
@@ -114,7 +114,7 @@ def start_sims(n_pools = 1):
     }
 
     all_data = generate_all_cases_dictionnary_list(base_dictionnary,
-        all_cases_dictionnary,base_location,"thesis_fast_slam_robustness")
+        all_cases_dictionnary,base_location,"dummy")
 
     if (n_pools > 1):
         p = Pool(n_pools)
